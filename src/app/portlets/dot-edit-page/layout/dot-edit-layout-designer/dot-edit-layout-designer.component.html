@@ -6,9 +6,13 @@
 >
 </dot-theme-selector>
 
-<form [formGroup]="form" (ngSubmit)="saveLayout()" novalidate>
-    <p-toolbar class="dot-edit-layout__toolbar">
-        <div class="ui-toolbar-group-right">
+<dot-edit-toolbar>
+    <div class="main-toolbar-left">
+        <dot-edit-page-info [pageState]="pageState"></dot-edit-page-info>
+    </div>
+
+    <div class="main-toolbar-right">
+        <form [formGroup]="form" (ngSubmit)="saveLayout()" novalidate>
             <dot-global-message></dot-global-message>
             <input
                 #templateName
@@ -47,37 +51,22 @@
                 *ngIf="!isLayout()"
                 [inode]="pageState.template.inode"
             ></dot-template-addtional-actions-menu>
-        </div>
-    </p-toolbar>
+        </form>
+    </div>
 
-    <div class="dot-edit-layout__actions">
-        <dot-edit-page-info [pageState]="pageState"></dot-edit-page-info>
-        <div class="dot-edit__layout-actions-right">
-            <div *ngIf="!currentTheme; then permission; else noPermission"></div>
-            <ng-template #permission>
-                <div
-                    class="dot-edit__layout-actions-themes"
-                    pTooltip="{{
-                        dotMessageService.get(
-                            'org.dotcms.frontend.content.submission.not.proper.permissions'
-                        )
-                    }}"
-                    tooltipPosition="left"
-                >
-                    <button
-                        pButton
-                        tiny
-                        link
-                        type="button"
-                        class="dot-edit-layout__toolbar-action-themes"
-                        icon="fa fa-paint-brush"
-                        label="{{ dotMessageService.get('editpage.layout.theme.button.label') }}"
-                        (click)="themeDialogVisibility = !themeDialogVisibility"
-                        disabled="false"
-                    ></button>
-                </div>
-            </ng-template>
-            <ng-template #noPermission>
+    <div class="secondary-toolbar-left"></div>
+    <div class="secondary-toolbar-right">
+        <div *ngIf="!currentTheme; then permission; else noPermission"></div>
+        <ng-template #permission>
+            <div
+                class="dot-edit__layout-actions-themes"
+                pTooltip="{{
+                    dotMessageService.get(
+                        'org.dotcms.frontend.content.submission.not.proper.permissions'
+                    )
+                }}"
+                tooltipPosition="left"
+            >
                 <button
                     pButton
                     tiny
@@ -85,14 +74,27 @@
                     type="button"
                     class="dot-edit-layout__toolbar-action-themes"
                     icon="fa fa-paint-brush"
-                    label="{{ currentTheme?.name || 'Themes' }}"
+                    label="{{ dotMessageService.get('editpage.layout.theme.button.label') }}"
                     (click)="themeDialogVisibility = !themeDialogVisibility"
+                    disabled="false"
                 ></button>
-            </ng-template>
-            <dot-layout-properties [group]="form.get('layout')"></dot-layout-properties>
-            <dot-icon-button [size]="32" float icon="add" (click)="addGridBox()"></dot-icon-button>
-        </div>
+            </div>
+        </ng-template>
+        <ng-template #noPermission>
+            <button
+                pButton
+                tiny
+                link
+                type="button"
+                class="dot-edit-layout__toolbar-action-themes"
+                icon="fa fa-paint-brush"
+                label="{{ currentTheme?.name || 'Themes' }}"
+                (click)="themeDialogVisibility = !themeDialogVisibility"
+            ></button>
+        </ng-template>
+        <dot-layout-properties [group]="form.get('layout')"></dot-layout-properties>
+        <dot-icon-button [size]="32" float icon="add" (click)="addGridBox()"></dot-icon-button>
     </div>
+</dot-edit-toolbar>
 
-    <dot-layout-designer [group]="form.get('layout')"></dot-layout-designer>
-</form>
+<dot-layout-designer [group]="form.get('layout')"></dot-layout-designer>

@@ -1,0 +1,35 @@
+@import "variables";
+
+:host {
+
+    .dot-edit-toolbar__main,
+    .dot-edit-toolbar__secondary:empty {
+        display: none;
+    }
+
+    .dot-edit-toolbar__main {
+        background-color: $white;
+        border-bottom: solid 1px $gray-light;
+        display: flex;
+        padding: $basic-padding * 2;
+    }
+
+    .dot-edit-toolbar__secondary {
+        display: flex;
+        height: $dot-edit-toolbar-height;
+        padding: 0 $basic-padding * 2;
+    }
+
+    ::ng-deep {
+        .main-toolbar-left,
+        .secondary-toolbar-left {
+            display: flex;
+            flex-grow: 1;
+        }
+
+        .secondary-toolbar-right {
+            align-items: center;
+            display: flex;
+        }
+    }
+}

@@ -1,25 +1,9 @@
 @import "variables";
-@import "mixins";
 
-$toolbar-height: 52px;
-
-:host {
-    display: block;
-    position: relative;
-    z-index: 1;
-
-    ::ng-deep {
-        .ui-toolbar {
-            height: $toolbar-height;
-        }
-
-        .ui-toolbar-group-right {
-            flex: 0
-        }
-    }
+.edit-page-toolbar__cancel {
+    margin-right: $basic-padding;
 }
 
-
-p-checkbox {
-    margin-left: $basic-padding * 3;
+.dot-edit__what-changed-button {
+    margin-left: $basic-padding * 2;
 }

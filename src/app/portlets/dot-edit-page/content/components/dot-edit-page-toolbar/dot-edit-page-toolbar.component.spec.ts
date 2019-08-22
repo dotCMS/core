@@ -1,23 +1,31 @@
 import { async, ComponentFixture } from '@angular/core/testing';
-import { DebugElement, Component, Input } from '@angular/core';
+import { DebugElement, Component, Input, Injectable } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
-import { of } from 'rxjs';
-
-import { CheckboxModule, ToolbarModule } from 'primeng/primeng';
+import { CheckboxModule, ToolbarModule, ButtonModule } from 'primeng/primeng';
 
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DOTTestBed } from '@tests/dot-test-bed';
 import { mockDotRenderedPageState } from '@tests/dot-rendered-page-state.mock';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 
-import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
-import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
 import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
+import { CommonModule } from '@angular/common';
+import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-toolbar/dot-edit-toolbar.module';
+import { FormsModule } from '@angular/forms';
+import { DotPageMode } from '@portlets/dot-edit-page/shared/models';
+import { Observable, of } from 'rxjs';
+import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
+import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
+import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
+import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
+import { SiteService, LoginService } from 'dotcms-js';
+import { SiteServiceMock } from '@tests/site-service.mock';
+import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
+import { LoginServiceMock } from '@tests/login-service.mock';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -27,6 +35,13 @@ import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-
 })
 class TestHostComponent {
     @Input() pageState: DotRenderedPageState = mockDotRenderedPageState;
+}
+
+@Injectable()
+class MockDotLicenseService {
+    isEnterprise(): Observable<boolean> {
+        return of(true);
+    }
 }
 
 describe('DotEditPageToolbarComponent', () => {
@@ -41,22 +56,38 @@ describe('DotEditPageToolbarComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [TestHostComponent, DotEditPageToolbarComponent],
             imports: [
+                ButtonModule,
+                CommonModule,
                 CheckboxModule,
+                DotEditToolbarModule,
+                FormsModule,
+                ToolbarModule,
                 DotEditPageViewAsControllerModule,
                 DotEditPageStateControllerModule,
-                ToolbarModule
+                DotGlobalMessageModule,
+                DotEditPageInfoModule,
+                DotEditPageWorkflowsActionsModule
             ],
             providers: [
-                DotLicenseService,
+                { provide: DotLicenseService, useClass: MockDotLicenseService },
                 {
                     provide: DotMessageService,
                     useValue: new MockDotMessageService({
-                        'dot.common.whats.changed': 'Whats'
+                        'dot.common.whats.changed': 'Whats',
+                        'dot.common.cancel': 'Cancel'
                     })
                 },
                 {
                     provide: DotPageStateService,
                     useValue: {}
+                },
+                {
+                    provide: SiteService,
+                    useClass: SiteServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
                 }
             ]
         });
@@ -78,24 +109,98 @@ describe('DotEditPageToolbarComponent', () => {
             fixtureHost.detectChanges();
         });
 
-        it('should have a primeng toolbar element', () => {
-            expect(de.query(By.css('p-toolbar'))).toBeDefined();
-            expect(de.query(By.css('.ui-toolbar-group-left'))).toBeDefined();
-            expect(de.query(By.css('.ui-toolbar-group-right'))).toBeDefined();
+        it('should have elements placed correctly', () => {
+            const editToolbar = de.query(By.css('dot-edit-toolbar'));
+            const editPageInfo = de.query(
+                By.css('dot-edit-toolbar .main-toolbar-left dot-edit-page-info')
+            );
+            const globalMessage = de.query(
+                By.css('dot-edit-toolbar .main-toolbar-right dot-global-message')
+            );
+            const editCancelBtn = de.query(
+                By.css('dot-edit-toolbar .main-toolbar-right .edit-page-toolbar__cancel')
+            );
+            const editWorkflowActions = de.query(
+                By.css('dot-edit-toolbar .main-toolbar-right dot-edit-page-workflows-actions')
+            );
+            const editStateController = de.query(
+                By.css('dot-edit-toolbar .secondary-toolbar-left dot-edit-page-state-controller')
+            );
+            const whatsChangedCheck = de.query(
+                By.css('dot-edit-toolbar .secondary-toolbar-left .dot-edit__what-changed-button')
+            );
+            const editPageViewAs = de.query(
+                By.css('dot-edit-toolbar .secondary-toolbar-right dot-edit-page-view-as-controller')
+            );
+            expect(editToolbar).toBeDefined();
+            expect(editPageInfo).toBeDefined();
+            expect(globalMessage).toBeDefined();
+            expect(editCancelBtn).toBeDefined();
+            expect(editWorkflowActions).toBeDefined();
+            expect(editStateController).toBeDefined();
+            expect(whatsChangedCheck).toBeDefined();
+            expect(editPageViewAs).toBeDefined();
+        });
+    });
+
+    describe('dot-edit-page-info', () => {
+        it('should have pageState attr', () => {
+            fixtureHost.detectChanges();
+            const dotEditPageInfo = de.query(By.css('dot-edit-page-info'));
+            expect(dotEditPageInfo.componentInstance.pageState).toBe(mockDotRenderedPageState);
+        });
+    });
+
+    describe('edit-page-toolbar-cancel', () => {
+        it('should have right attr', () => {
+            fixtureHost.detectChanges();
+            const editPageCancelBtn = de.query(By.css('.edit-page-toolbar__cancel'));
+            expect(editPageCancelBtn.attributes.class).toBe('edit-page-toolbar__cancel');
+            expect(editPageCancelBtn.attributes.secondary).toBeDefined();
+            expect(editPageCancelBtn.attributes.tiny).toBeDefined();
+            expect(editPageCancelBtn.nativeElement.innerText).toBe('CANCEL');
         });
 
-        it('should have page state controller', () => {
-            const pageStateController = de.query(By.css('dot-edit-page-state-controller'))
-                .componentInstance;
-            expect(pageStateController).toBeDefined();
-            expect(pageStateController.pageState).toEqual(mockDotRenderedPageState);
+        it('should emit on click', () => {
+            spyOn(component.cancel, 'emit');
+            fixtureHost.detectChanges();
+            const editPageCancelBtn = de.query(By.css('.edit-page-toolbar__cancel'));
+            editPageCancelBtn.triggerEventHandler('click', {});
+            expect(component.cancel.emit).toHaveBeenCalled();
+        });
+    });
+
+    describe('dot-edit-page-workflows-actions', () => {
+        it('should have pageState attr', () => {
+            fixtureHost.detectChanges();
+            const dotEditWorkflowActions = de.query(By.css('dot-edit-page-workflows-actions'));
+            expect(dotEditWorkflowActions.componentInstance.page).toBe(
+                mockDotRenderedPageState.page
+            );
         });
 
-        it('should have view as controller', () => {
-            const viewAsController = de.query(By.css('dot-edit-page-view-as-controller'))
-                .componentInstance;
-            expect(viewAsController).toBeDefined();
-            expect(viewAsController.pageState).toEqual(mockDotRenderedPageState);
+        it('should emit on click', () => {
+            spyOn(component.actionFired, 'emit');
+            fixtureHost.detectChanges();
+            const dotEditWorkflowActions = de.query(By.css('dot-edit-page-workflows-actions'));
+            dotEditWorkflowActions.triggerEventHandler('fired', {});
+            expect(component.actionFired.emit).toHaveBeenCalled();
+        });
+    });
+
+    describe('dot-edit-page-state-controller', () => {
+        it('should have pageState attr', () => {
+            fixtureHost.detectChanges();
+            const dotEditPageState = de.query(By.css('dot-edit-page-state-controller'));
+            expect(dotEditPageState.componentInstance.pageState).toBe(mockDotRenderedPageState);
+        });
+    });
+
+    describe('dot-edit-page-view-as-controller', () => {
+        it('should have pageState attr', () => {
+            fixtureHost.detectChanges();
+            const dotEditPageViewAs = de.query(By.css('dot-edit-page-view-as-controller'));
+            expect(dotEditPageViewAs.componentInstance.pageState).toBe(mockDotRenderedPageState);
         });
     });
 
@@ -107,7 +212,7 @@ describe('DotEditPageToolbarComponent', () => {
             });
 
             it('should not show', () => {
-                const whatsChangedElem = de.query(By.css('p-checkbox'));
+                const whatsChangedElem = de.query(By.css('.dot-edit__what-changed-button'));
                 expect(whatsChangedElem).toBeNull();
             });
         });
@@ -115,7 +220,6 @@ describe('DotEditPageToolbarComponent', () => {
         describe('with license', () => {
             beforeEach(() => {
                 spyOn(component.whatschange, 'emit');
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
             });
 
             it('should hide what\'s change selector', () => {

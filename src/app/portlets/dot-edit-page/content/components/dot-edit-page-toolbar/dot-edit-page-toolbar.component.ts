@@ -1,11 +1,10 @@
 import { Component, OnInit, Input, EventEmitter, Output, OnChanges } from '@angular/core';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotRenderedPageState, DotPageMode } from '@portlets/dot-edit-page/shared/models';
-
 
 @Component({
     selector: 'dot-edit-page-toolbar',
@@ -17,11 +16,17 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     pageState: DotRenderedPageState;
 
     @Output()
+    cancel = new EventEmitter<boolean>();
+
+    @Output()
+    actionFired = new EventEmitter<boolean>();
+
+    @Output()
     whatschange = new EventEmitter<boolean>();
 
     isEnterpriseLicense$: Observable<boolean>;
     showWhatsChanged: boolean;
-    whatschangeLabel$: Observable<string>;
+    messagesKey: { [key: string]: string } = {};
 
     constructor(
         public dotMessageService: DotMessageService,
@@ -30,11 +35,15 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
 
     ngOnInit() {
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
-        this.whatschangeLabel$ = this.dotMessageService
-            .getMessages(['dot.common.whats.changed'])
-            .pipe(
-                map((messages: { [key: string]: string }) => messages['dot.common.whats.changed'])
-            );
+        this.dotMessageService
+            .getMessages([
+                'dot.common.whats.changed',
+                'dot.common.cancel'
+            ])
+            .pipe(take(1))
+            .subscribe((messages: { [key: string]: string }) => {
+                this.messagesKey = messages;
+            });
     }
 
     ngOnChanges(): void {

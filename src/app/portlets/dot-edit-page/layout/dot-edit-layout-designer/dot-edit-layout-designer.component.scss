@@ -1,8 +1,6 @@
 @import "mixins";
 @import "variables";
 
-$toolbar-height: 48px;
-
 :host {
     min-width: 750px;
 }
@@ -15,7 +13,7 @@ dot-layout-designer {
     background-color: $white;
     box-shadow: $md-shadow-1;
     flex-grow: 1;
-    margin: 0 $basic-padding * 2 $basic-padding * 2;
+    margin: 0 $basic-padding * 2;
     padding: $basic-padding * 4;
     // This canculating the space of the layout editor
     // based on the toolbars and required margin
@@ -25,7 +23,8 @@ dot-layout-designer {
 
 .dot-edit-layout__actions {
     display: flex;
-    justify-content: space-between;
+    height: $dot-edit-toolbar-height;
+    justify-content: flex-end;
     padding: $basic-padding * 2;
 }
 
@@ -37,9 +36,8 @@ dot-layout-designer {
 
     ::ng-deep {
         .ui-toolbar {
-            border-bottom: solid 1px $gray-bg;
-            height: $toolbar-height;
-            padding-left: 0;
+            border-bottom: solid 1px $gray-light;
+            padding: $basic-padding * 2;
         }
     }
 }

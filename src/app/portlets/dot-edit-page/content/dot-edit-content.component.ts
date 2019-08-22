@@ -31,6 +31,7 @@ import {
     PageModelChangeEventType
 } from './services/dot-edit-content-html/models';
 
+
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
  *
@@ -330,7 +331,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private getMessages(): void {
         this.dotMessageService
             .getMessages([
-                'dot.common.cancel',
                 'editpage.content.contentlet.remove.confirmation_message.message',
                 'editpage.content.contentlet.remove.confirmation_message.header',
                 'dot.common.message.saving',

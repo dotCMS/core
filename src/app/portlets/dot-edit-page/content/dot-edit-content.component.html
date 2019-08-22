@@ -9,34 +9,14 @@
 <dot-reorder-menu [url]="reorderMenuUrl" (close)="onCloseReorderDialog()"></dot-reorder-menu>
 
 <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
-
 <ng-container *ngIf="pageState$ | async as pageState">
-    <div class="dot-edit__page-actions">
-        <dot-edit-page-info [pageState]="pageState"></dot-edit-page-info>
-        <div>
-            <dot-global-message></dot-global-message>
-            <button
-                pButton
-                secondary
-                tiny
-                type="button"
-                class="edit-page-toolbar__cancel"
-                [label]="messagesKey['dot.common.cancel']"
-                (click)="onCancelToolbar()"
-            ></button>
-            <dot-edit-page-workflows-actions
-                [page]="pageState.page"
-                (fired)="reload()"
-            ></dot-edit-page-workflows-actions>
-        </div>
-    </div>
-
     <dot-edit-page-toolbar
+        (cancel)="onCancelToolbar()"
+        (actionFired)="reload()"
         (whatschange)="showWhatsChanged = $event"
         [pageState]="pageState"
         class="dot-edit__toolbar"
-    >
-    </dot-edit-page-toolbar>
+    ></dot-edit-page-toolbar>
 
     <div
         class="dot-edit__page-wrapper"

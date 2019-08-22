@@ -244,6 +244,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
             // expect(languageSelector.value).toEqual(mockDotPersona);
             expect(deviceSelector.value).toEqual(mockDotEditPageViewAs.device);
             expect(personaSelector.value).toEqual(mockDotEditPageViewAs.persona);
+            // expect(personaSelector.pageId).toEqual(mockDotRenderedPage.page.identifier);
         });
 
         it('should show device information', () => {

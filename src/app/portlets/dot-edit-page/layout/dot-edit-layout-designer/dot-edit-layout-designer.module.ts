@@ -27,6 +27,8 @@ import { DotContainerSelectorModule } from '@components/dot-container-selector/d
 import { DotEditPageInfoModule } from '../../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotThemeSelectorModule } from '../components/dot-theme-selector/dot-theme-selector.module';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
+import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-toolbar/dot-edit-toolbar.module';
+import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 
 @NgModule({
     declarations: [DotEditLayoutDesignerComponent, DotLayoutDesignerComponent],
@@ -50,7 +52,9 @@ import { DotGlobalMessageModule } from '@components/_common/dot-global-message/d
         InputTextModule,
         ReactiveFormsModule,
         ToolbarModule,
-        TooltipModule
+        TooltipModule,
+        DotEditToolbarModule,
+        DotEditPageViewAsControllerModule
     ],
     exports: [DotEditLayoutDesignerComponent],
     providers: [
