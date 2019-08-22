@@ -1,9 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -14,21 +12,16 @@ import java.util.Optional;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.context.Context;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
-import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.mock.request.MockHttpRequest;
-import com.dotcms.mock.response.BaseResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -38,14 +31,12 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.util.DNSUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.Company;
-import com.liferay.portal.util.ContentUtil;
 
 import io.vavr.control.Try;
 /**
