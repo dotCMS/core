@@ -6,7 +6,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 
-import org.junit.Before
+import org.junit.Before;
 import org.junit.Test;
 
 import com.dotcms.datagen.UserDataGen;
