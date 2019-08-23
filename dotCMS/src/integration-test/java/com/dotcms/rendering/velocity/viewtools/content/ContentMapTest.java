@@ -90,7 +90,7 @@ public class ContentMapTest extends IntegrationTestBase {
 
         final Context velocityContext = mock(Context.class);
 
-        final ContentMap contentMap = new ContentMap(contentlet,userAPI.getAnonymousUser(),
+        final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
                 PageMode.LIVE,defaultHost,velocityContext);
 
         //If is null no categories were pulled

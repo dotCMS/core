@@ -3271,7 +3271,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                                        final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
         // if already on workflow or has an actionid skip this method.
-        if (this.isDisableWorkflow(contentletIn) || this.isWorkflowInProgress(contentletIn) || UtilMethods.isSet(contentletIn.getActionId())) {
+        if (this.isDisableWorkflow(contentletIn)
+                || this.isWorkflowInProgress(contentletIn)
+                || this.isInvalidContentTypeForWorkflow(contentletIn)
+                || UtilMethods.isSet(contentletIn.getActionId())) {
 
             return Optional.empty();
         }
@@ -3318,7 +3321,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                                                       boolean generateSystemEvent) throws DotSecurityException, DotDataException {
 
         // if already on workflow or has an actionid skip this method.
-        if (this.isDisableWorkflow(contentletIn) || this.isWorkflowInProgress(contentletIn) || UtilMethods.isSet(contentletIn.getActionId())) {
+        if (this.isDisableWorkflow(contentletIn)
+                || this.isWorkflowInProgress(contentletIn)
+                || this.isInvalidContentTypeForWorkflow(contentletIn)
+                || UtilMethods.isSet(contentletIn.getActionId())) {
 
             return Optional.empty();
         }
@@ -3359,6 +3365,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         return Optional.empty();
+    }
+
+    private boolean isInvalidContentTypeForWorkflow(final Contentlet contentletIn) {
+
+        return Host.HOST_VELOCITY_VAR_NAME.equals(contentletIn.getContentType().variable());
     }
 
     private boolean isDisableWorkflow(final Contentlet contentlet) {

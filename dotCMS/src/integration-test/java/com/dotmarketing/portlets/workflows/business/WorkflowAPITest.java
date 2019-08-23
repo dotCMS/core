@@ -18,9 +18,8 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.LanguageDataGen;
-import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.*;
+import com.dotcms.rest.api.v1.workflow.WorkflowTestUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -802,28 +801,29 @@ public class WorkflowAPITest extends IntegrationTestBase {
     @Test()
     public void mapSystemActionToWorkflowActionForWorkflowScheme_Test() throws DotDataException, DotSecurityException {
 
-        final WorkflowAction saveAction =
-                workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+        final WorkflowScheme myWorkflow = TestWorkflowUtils.getDocumentWorkflow("Workflow"+System.currentTimeMillis());
 
-        workflowAPI.saveSchemeIdsForContentType(contentType, CollectionsUtils.set(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID));
-        workflowAPI.saveSchemeIdsForContentType(contentType2, CollectionsUtils.set(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID));
-        final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+        workflowAPI.saveSchemeIdsForContentType(contentType,  CollectionsUtils.set(myWorkflow.getId()));
+        workflowAPI.saveSchemeIdsForContentType(contentType2, CollectionsUtils.set(myWorkflow.getId()));
+
+        final WorkflowAction firstAction =
+            workflowAPI.findActions(workflowAPI.findFirstStep(myWorkflow.getId()).get(), user).stream().findFirst().get();
         final SystemActionWorkflowActionMapping mapping =
                 workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme
-                        (WorkflowAPI.SystemAction.NEW, saveAction, systemWorkflow);
+                        (WorkflowAPI.SystemAction.NEW, firstAction, myWorkflow);
 
         assertNotNull(mapping);
         assertEquals(WorkflowAPI.SystemAction.NEW, mapping.getSystemAction());
-        assertEquals(saveAction,  mapping.getWorkflowAction());
-        assertEquals(systemWorkflow, mapping.getOwner());
+        assertEquals(firstAction,  mapping.getWorkflowAction());
+        assertEquals(myWorkflow, mapping.getOwner());
 
         final List<SystemActionWorkflowActionMapping> systemActionsByScheme = workflowAPI.findSystemActionsByScheme
-                (systemWorkflow, APILocator.systemUser());
+                (myWorkflow, APILocator.systemUser());
 
         assertNotNull(systemActionsByScheme);
         assertTrue(UtilMethods.isSet(systemActionsByScheme));
         assertTrue(systemActionsByScheme.stream().anyMatch(systemMapping ->
-                systemMapping.getSystemAction() == WorkflowAPI.SystemAction.NEW && systemMapping.getWorkflowAction().equals(saveAction)));
+                systemMapping.getSystemAction() == WorkflowAPI.SystemAction.NEW && systemMapping.getWorkflowAction().equals(firstAction)));
 
         final Contentlet contentlet = new Contentlet();
         contentlet.setContentType(contentType2); // content type without default actions
@@ -831,7 +831,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 (contentlet, WorkflowAPI.SystemAction.NEW, APILocator.systemUser());
 
         assertTrue(newAction.isPresent());
-        assertEquals(saveAction, newAction.get());
+        assertEquals(firstAction, newAction.get());
 
         for (final SystemActionWorkflowActionMapping systemActionWorkflowActionMapping: systemActionsByScheme) {
 
@@ -839,7 +839,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
         }
 
         final List<SystemActionWorkflowActionMapping> systemActionsBySchemeDeleted = workflowAPI.findSystemActionsByScheme
-                (systemWorkflow, APILocator.systemUser());
+                (myWorkflow, APILocator.systemUser());
 
         assertFalse(UtilMethods.isSet(systemActionsBySchemeDeleted));
     }

@@ -188,7 +188,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 .stream().filter(Objects::nonNull).collect(Collectors.toList());
 
         assertNotNull(contentlets);
-        assertTrue(contentlets.size() >= 50);
+        assertTrue("The number of contentlet returned is: " + contentlets.size(),contentlets.size() >= 50);
 
         final List<Contentlet>   contentletsDefaultRefresh    = contentlets.subList(0, 15);
         final List<Contentlet>   contentletsImmediateRefresh  = contentlets.subList(15, 30);

@@ -282,6 +282,7 @@ public class VTLResourceIntegrationTest {
         getVTLFileAsset.setIndexPolicy(IndexPolicy.FORCE);
         getVTLFileAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
         getVTLFileAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        getVTLFileAsset.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         APILocator.getContentletAPI().publish(getVTLFileAsset, systemUser, false);
 
         //Assign permissions
