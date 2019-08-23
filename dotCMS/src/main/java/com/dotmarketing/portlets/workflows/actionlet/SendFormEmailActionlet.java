@@ -25,6 +25,7 @@ import com.dotcms.mock.request.MockHttpRequest;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -45,7 +46,7 @@ import io.vavr.control.Try;
  * workflow action is skipped
  *
  */
-public class SendFormEmail extends WorkFlowActionlet {
+public class SendFormEmailActionlet extends WorkFlowActionlet {
 
   private static final long serialVersionUID = 1L;
   private static final  String FROM_EMAIL="fromEmail";
@@ -124,7 +125,8 @@ public class SendFormEmail extends WorkFlowActionlet {
       } catch (Exception e) {
         e.printStackTrace();
       }
-      return;
+      //processor.abort();
+      //return;
     }
     final Mailer mail = new Mailer();
     mail.setToEmail(toEmail);
@@ -148,26 +150,7 @@ public class SendFormEmail extends WorkFlowActionlet {
 
 
   
-  /**
-   * Best efforts to determine the ipAddress of the content 
-   * @param contentlet
-   * @return
-   */
-  private String resolveIPAddress(final Contentlet contentlet) {
-    return (String) (getInsensitive(contentlet, "ipaddress") != null ? getInsensitive(contentlet, "ipaddress")
-        : getInsensitive(contentlet, "ip") != null ? getInsensitive(contentlet, "ip") : "n/a");
-  }
 
-  /**
-   * gets an HTTPRequest to use for velocity
-   * @param contentlet
-   * @return
-   */
-  private HttpServletRequest resolveRequest(final Contentlet contentlet) {
-
-    return (HttpServletRequestThreadLocal.INSTANCE.getRequest() != null) ? HttpServletRequestThreadLocal.INSTANCE.getRequest()
-        : new MockHttpRequest(resolveHost(contentlet).getHostname(), null).request();
-  }
 
   /**
    * Best efforts to determine the HOST of the content 
@@ -212,6 +195,9 @@ public class SendFormEmail extends WorkFlowActionlet {
     
     final LinkedHashMap<String, Object> map = new LinkedHashMap<>();
     final Contentlet contentlet = processor.getContentlet();
+    if(contentlet.getModUser()==null) {
+      contentlet.setModUser(Try.of(()-> processor.getUser().getUserId()).getOrElse(UserAPI.CMS_ANON_USER_ID));
+    }
     final ContentType contentType = contentlet.getContentType();
     final Map<String,Object> printableMap = Try.of(()->ContentletUtil.getContentPrintableMap(processor.getUser(), contentlet)).getOrElse(contentlet.getMap());
     final Host host =  resolveHost(contentlet);    
@@ -219,8 +205,11 @@ public class SendFormEmail extends WorkFlowActionlet {
       if(ignoreFields.contains(field.variable()))continue;
       Object obj = contentlet.get(field.variable());
       if(obj==null)continue;
-      if(field instanceof BinaryField && UtilMethods.isSet(contentlet.getInode())) {
-        map.put(field.name(), "http://" + host.getHostname() + printableMap.get(field.variable() + "Version"));
+      if(field instanceof BinaryField ) {
+        map.remove(field.name());
+        if(UtilMethods.isSet(contentlet.getInode())) {
+          map.put(field.name(), "http://" + host.getHostname() + printableMap.get(field.variable() + "Version"));
+        }
         continue;
       }
       

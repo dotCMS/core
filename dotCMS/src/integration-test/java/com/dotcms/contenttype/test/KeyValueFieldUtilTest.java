@@ -83,4 +83,24 @@ public class KeyValueFieldUtilTest {
         Assert.assertNotNull(value);
         assertThat("Value contains escaped backslash", value.contains("&#92;"));
     }
+    
+    
+    /**
+     * Test a json with no quotes
+     */
+    @Test
+    public void testJsonKeyValueMapWithNoQuotes() throws Exception {
+        String json = String.format("{data:test1, data2:test2, data3:test3}");
+        Map<String, Object> data = KeyValueFieldUtil.JSONValueToHashMap(json);
+
+        Assert.assertNotNull(data);
+        assertThat("Map data size == 3", data.size() ==3);
+
+        String value = (String) data.get("data2");
+        assertThat("data2==test2", "test2".equals(value));
+
+    }
+    
+    
+    
 }

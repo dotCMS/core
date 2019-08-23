@@ -169,7 +169,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				MessageActionlet.class,
 				VelocityScriptActionlet.class,
 				LargeMessageActionlet.class,
-				SendFormEmail.class
+				SendFormEmailActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();

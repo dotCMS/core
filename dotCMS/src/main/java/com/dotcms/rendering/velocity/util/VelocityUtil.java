@@ -261,6 +261,9 @@ public class VelocityUtil {
     final HttpServletRequest requestProxy= (HttpServletRequestThreadLocal.INSTANCE.getRequest() != null) ? HttpServletRequestThreadLocal.INSTANCE.getRequest()
         : new MockHttpRequest(host.getHostname(), null).request();
     
+    
+    
+    
     final HttpServletResponse responseProxy = new BaseResponse().response();
 
     Context context = getWebContext(VelocityUtil.getBasicContext(), requestProxy, responseProxy);
@@ -270,6 +273,7 @@ public class VelocityUtil {
     context.put("user", processor.getUser());
     context.put("company", APILocator.getCompanyAPI().getDefaultCompany());
     context.put("workflow", processor);
+    context.put("actionName", processor.getAction().getName());
     context.put("stepName", processor.getStep().getName());
     context.put("stepId", processor.getStep().getId());
     context.put("nextAssign", processor.getNextAssign().getName());
@@ -277,6 +281,7 @@ public class VelocityUtil {
     context.put("nextStepResolved", processor.getNextStep().isResolved());
     context.put("nextStepId", processor.getNextStep().getId());
     context.put("nextStepName", processor.getNextStep().getName());
+    context.put("ipAddress", requestProxy.getRemoteAddr());
     
     if (UtilMethods.isSet(processor.getTask())) {
       context.put("workflowTask", processor.getTask());
@@ -288,7 +293,7 @@ public class VelocityUtil {
       context.put("modDate", processor.getContentlet().getModDate());
     }
     context.put("contentTypeName", processor.getContentlet().getContentType().name());
-
+    context.put("content", contentlet);
     context.put("contentlet", contentlet);
     context.put("contentMap", new ContentMap(contentlet, processor.getUser(),PageMode.PREVIEW_MODE,host,context));
     return context;
