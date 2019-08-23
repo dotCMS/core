@@ -67,11 +67,13 @@ public class TempFileResource {
         try {
             verifyTempResourceEnabled();
 
-            final boolean allowAnonToUseTempFiles = !Config
+            final boolean allowAnonToUseTempFiles = Config
                     .getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
 
             new WebResource.InitBuilder(request, response)
-              .requiredAnonAccess(AnonymousAccess.WRITE).init();
+              .requiredAnonAccess(AnonymousAccess.WRITE)
+              .rejectWhenNoUser(!allowAnonToUseTempFiles)
+              .init();
 
 
 
@@ -124,9 +126,13 @@ public class TempFileResource {
 
             verifyTempResourceEnabled();
 
-            new WebResource.InitBuilder(request, response)
-            .requiredAnonAccess(AnonymousAccess.WRITE).init();
+            final boolean allowAnonToUseTempFiles = Config
+                .getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
 
+              new WebResource.InitBuilder(request, response)
+                .requiredAnonAccess(AnonymousAccess.WRITE)
+                .rejectWhenNoUser(!allowAnonToUseTempFiles)
+                .init();
 
             if (!new SecurityUtils().validateReferer(request)) {
                 throw new BadRequestException("Invalid Origin or referer");
