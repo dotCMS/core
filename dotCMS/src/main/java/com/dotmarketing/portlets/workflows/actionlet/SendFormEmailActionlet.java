@@ -116,6 +116,10 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
       CacheLocator.getVeloctyResourceCache().clearCache();
     }
     final String toEmail = velocity.eval(params.get(TO_EMAIL).getValue());
+    if(!UtilMethods.isSet(toEmail)) {
+      Logger.warn(this.getClass(), "Form is missing the " + TO_EMAIL + " property. Please make sure that so the form can be emailed");
+      return;
+    }
     final String fromEmail = velocity.eval(params.get(FROM_EMAIL).getOrDefault(company.getEmailAddress()));
     final String fromName = velocity.eval(params.get(FROM_NAME).getOrDefault("dotCMS"));
     final String emailSubject = velocity.eval(params.get(EMAIL_SUBJECT).getValue());
@@ -134,7 +138,10 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
       return;
     }
     
-    
+    if(!UtilMethods.isSet(toEmail)) {
+      Logger.warn(this.getClass(), contentType.name() + " content " + contentlet.getTitle() + " is being emailed to " + toEmail + ".");
+      return;
+    }
     final Mailer mail = new Mailer();
     mail.setToEmail(toEmail);
     mail.setFromEmail(fromEmail);
@@ -196,7 +203,12 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
 
   }
   
-  private final static Set<String> ignoreFields = ImmutableSet.of(FormContentType.FORM_EMAIL_FIELD_VAR, FormContentType.FORM_RETURN_PAGE_FIELD_VAR,FormContentType.FORM_TITLE_FIELD_VAR);
+  private final static Set<String> ignoreFields = ImmutableSet.of(
+      FormContentType.FORM_EMAIL_FIELD_VAR, 
+      FormContentType.FORM_RETURN_PAGE_FIELD_VAR,
+      FormContentType.FORM_TITLE_FIELD_VAR,
+      FormContentType.FORM_SUCCESS_CALLBACK
+      );
   
   private Map<String,Object> getFormMap(WorkflowProcessor processor){
     
@@ -208,8 +220,7 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
 
     final Company company = APILocator.getCompanyAPI().getDefaultCompany();
     
-    
-    
+
     final ContentType contentType = contentlet.getContentType();
     final Map<String,Object> printableMap = Try.of(()->ContentletUtil.getContentPrintableMap(processor.getUser(), contentlet)).getOrElse(contentlet.getMap());
 

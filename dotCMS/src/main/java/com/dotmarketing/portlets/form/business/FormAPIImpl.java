@@ -206,8 +206,7 @@ public class FormAPIImpl implements FormAPI {
 
 			final ContentType formStructure = APILocator.getContentTypeAPI(systemUser).find(formId);
 			final String formStructureTitle = formStructure.name();
-			final String formTitleFieldValue = APILocator.getContentTypeFieldAPI().byContentTypeAndVar(formStructure, FormAPI.FORM_TITLE_FIELD_VELOCITY_VAR_NAME).values();
-
+			final String formTitleFieldValue = formStructureTitle;
 			Contentlet formInstance = new Contentlet();
 			formInstance.setStructureInode(formWidget.getInode());
 			formInstance.setProperty(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME, formId);
