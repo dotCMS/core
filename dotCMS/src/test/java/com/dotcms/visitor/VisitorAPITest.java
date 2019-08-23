@@ -52,6 +52,20 @@ public class VisitorAPITest extends UnitTestBase {
         verify(mockSession).setAttribute(WebKeys.VISITOR, visitor.get());
     }
 
+    /**
+     * Should remove {@link WebKeys#VISITOR} from session
+     */
+    @Test
+    public void testRemoveVisitor() {
+        HttpSession mockSession = mock(HttpSession.class);
+
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getSession(false)).thenReturn(mockSession);
+
+        APILocator.getVisitorAPI().removeVisitor(mockRequest);
+        verify(mockSession).removeAttribute(WebKeys.VISITOR);
+    }
+
     private Language getLanguage() {
         Language language = new Language(1);
         language.setCountry("United States");

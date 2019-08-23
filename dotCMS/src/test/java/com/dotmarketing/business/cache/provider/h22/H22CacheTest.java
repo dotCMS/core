@@ -1,6 +1,7 @@
 package com.dotmarketing.business.cache.provider.h22;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
@@ -156,7 +157,8 @@ public class H22CacheTest {
 		}
 
 		Logger.info(this, "Number of groups: " + cache.getGroups().size());
-		assertThat("Cache filled , we should have 100 groups", cache.getGroups().size() == numberOfGroups);
+		assertEquals("Cache filled , we should have 100 groups", numberOfGroups,
+				cache.getGroups().size());
 		cache.remove("group_1");
 		size = cache.getGroups().size();
 		for(int i=0;i<20;i++){

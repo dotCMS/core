@@ -1,18 +1,17 @@
 package com.dotmarketing.servlets.ajax;
 
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource;
+import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.WebResource;
-import com.dotmarketing.util.Logger;
-import com.liferay.portal.model.User;
 
 public abstract class AjaxAction {
 	User user;
@@ -22,7 +21,12 @@ public abstract class AjaxAction {
     private WebResource webResource;
 
 	public AjaxAction() {
-		this.webResource = new WebResource();
+		this(new WebResource());
+	}
+
+	@VisibleForTesting
+	public AjaxAction(final WebResource webResource) {
+		this.webResource = webResource;
 	}
 
 	public void setWebResource(final WebResource webResource) {

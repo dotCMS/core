@@ -141,7 +141,7 @@ public class VelocityUtil {
 			variableToReturn = variableToReturn.replaceAll("[^_0-9A-Za-z]", "_");
 		}
 
-		if(variableToReturn.matches(".*[a-zA-Z].*")) {
+		if(variableToReturn.matches("[a-zA-Z].*")) {
 			variableToReturn = (firstLetterUppercase)
 					? StringUtils.camelCaseUpper(variableToReturn)
 					: StringUtils.camelCaseLower(variableToReturn);

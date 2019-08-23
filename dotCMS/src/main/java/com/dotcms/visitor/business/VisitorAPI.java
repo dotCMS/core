@@ -14,4 +14,5 @@ public interface VisitorAPI {
 
     Optional<Visitor> getVisitor(HttpServletRequest request, boolean create);
 
+    void removeVisitor(HttpServletRequest request);
 }

@@ -92,6 +92,12 @@ public class VisitorAPIImpl implements VisitorAPI {
         return visitorOpt;
     }
 
+    public void removeVisitor(final HttpServletRequest request){
+        DotPreconditions.checkNotNull(request, IllegalArgumentException.class, "Null Request");
+        final HttpSession session = request.getSession(false);
+        session.removeAttribute(WebKeys.VISITOR);
+    }
+
     private Visitor createVisitor(final HttpServletRequest request) {
 
         final Visitor visitor = new Visitor();

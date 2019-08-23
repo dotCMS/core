@@ -11,15 +11,15 @@ printUsage () {
   echo "============================================================================"
   echo "         Examples:"
   echo ""
-  echo "         ./run.sh"
-  echo "         ./run.sh -r"
-  echo "         ./run.sh -c"
-  echo "         ./run.sh -d mysql"
-  echo "         ./run.sh -d mysql -b origin/master"
-  echo "         ./run.sh -d mysql -b myBranchName"
-  echo '         ./run.sh -e "--debug-jvm"'
-  echo '         ./run.sh -e "--tests *HTMLPageAssetRenderedTest"'
-  echo '         ./run.sh -e "--debug-jvm --tests *HTMLPageAssetRenderedTest"'
+  echo "         ./integration.sh"
+  echo "         ./integration.sh -r"
+  echo "         ./integration.sh -c"
+  echo "         ./integration.sh -d mysql"
+  echo "         ./integration.sh -d mysql -b origin/master"
+  echo "         ./integration.sh -d mysql -b myBranchName"
+  echo '         ./integration.sh -e "--debug-jvm"'
+  echo '         ./integration.sh -e "--tests *HTMLPageAssetRenderedTest"'
+  echo '         ./integration.sh -e "--debug-jvm --tests *HTMLPageAssetRenderedTest"'
   echo "============================================================================"
   echo "============================================================================"
   echo ""
@@ -110,7 +110,7 @@ fi
 # Starting the container for the build image
 export databaseType=${database}
 export IMAGE_BASE_NAME=${BUILD_IMAGE_TAG}
-docker-compose -f base-service.yml \
+docker-compose -f integration-service.yml \
   -f ${database}-docker-compose.yml \
   up \
   --abort-on-container-exit
@@ -119,15 +119,18 @@ docker-compose -f base-service.yml \
 testsReturnCode=$?
 
 # Cleaning up
-docker-compose -f base-service.yml -f ${database}-docker-compose.yml down
+docker-compose -f integration-service.yml -f ${database}-docker-compose.yml down
 
+echo
+echo -e "\e[36m==========================================================================================================================\e[0m"
+echo -e "\e[36m==========================================================================================================================\e[0m"
+echo
 if [ ${testsReturnCode} == 0 ]
 then
-  echo ">>"
-  echo ">> Integration tests executed successfully"
-  echo ">>"
+  echo -e "\e[1;32m                                 >>> Integration tests executed SUCCESSFULLY <<<\e[0m"
 else
-  echo ">>"
-  echo ">>Integration tests failed" >&2
-  echo ">>"
+  echo -e "\e[1;31m                                       >>> Integration tests FAILED <<<\e[0m"
 fi
+echo
+echo -e "\e[36m==========================================================================================================================\e[0m"
+echo -e "\e[36m==========================================================================================================================\e[0m"

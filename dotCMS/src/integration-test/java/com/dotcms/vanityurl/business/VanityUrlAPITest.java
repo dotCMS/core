@@ -25,6 +25,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -393,9 +395,12 @@ public class VanityUrlAPITest {
      * Checks the proper validation of not allowed Action codes
      */
     @Test
-    public void checkInvalidActionTest() throws DotDataException, DotSecurityException {
+    public void checkInvalidActionTest()
+            throws DotDataException, DotSecurityException, LanguageException {
 
         long currentTime = System.currentTimeMillis();
+        final String expectedInvalidCodeMessage = LanguageUtil
+                .get("message.vanity.url.error.invalidAction");
         Contentlet vanityURLContentlet = null;
         try {
             vanityURLContentlet = filtersUtil
@@ -441,7 +446,7 @@ public class VanityUrlAPITest {
                 fail("Using an invalid 600 action code, the checking method should fail...");
             } catch (Exception e) {
                 e.printStackTrace();
-                assertEquals("message.vanity.url.error.invalidAction", e.getMessage());
+                assertEquals(expectedInvalidCodeMessage, e.getMessage());
             }
         } finally {
             contentletAPI.archive(vanityURLContentlet, user, false);
