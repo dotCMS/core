@@ -216,6 +216,9 @@ $inputswitch-warn-normal-track-color: rgba($orange, 0.38);
 $inputswitch-warn-checked-track-color: rgba($orange, 0.38);
 $inputswitch-warn-hecked-thumb-color: $orange;
 
+$inputswitch-disabled-track-color: $gray-light;
+$inputswitch-disabled-thumb-color: $gray;
+
 
 // TOAST
 $toast-padding: $basic-padding * 2;

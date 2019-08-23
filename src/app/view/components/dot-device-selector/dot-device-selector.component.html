@@ -5,7 +5,7 @@
     <p-dropdown
         (onChange)="change($event.value)"
         [(ngModel)]="value"
-        [disabled]="!options || options.length === 1"
+        [disabled]="disabled"
         [options]="options"
         [style]="{ width: '120px' }"
         dataKey="inode"

@@ -2,7 +2,7 @@
     secondary
     [(ngModel)]="mode"
     (onChange)="stateSelectorHandler($event.value)"
-    [options]="options$ | async"
+    [options]="options"
 ></p-selectButton>
 <p-inputSwitch
     #locker

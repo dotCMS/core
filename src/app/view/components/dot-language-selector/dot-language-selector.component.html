@@ -5,7 +5,8 @@
     <p-dropdown
         (onChange)="change($event.value)"
         [(ngModel)]="value"
-        [options]="languagesOptions"
+        [disabled]="disabled"
+        [options]="options"
         [style]="{ width: '120px' }"
         dataKey="id"
         optionLabel="language"

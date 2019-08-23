@@ -42,10 +42,11 @@
     }
 
     .ui-state-disabled & {
-        background-color: $inputswitch-normal-track-color;
+        background-color: $inputswitch-disabled-track-color;
+        opacity: 0.3;
 
         &:before {
-            background-color: $inputswitch-normal-track-color;
+            background-color: $inputswitch-disabled-thumb-color;
         }
     }
 }

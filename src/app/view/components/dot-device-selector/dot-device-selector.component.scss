@@ -11,6 +11,13 @@
             box-shadow: none;
         }
     }
+
+    &.disabled {
+        &::ng-deep dot-icon i,
+        label {
+            color: $field-disabled-color;
+        }
+    }
 }
 
 dot-icon {

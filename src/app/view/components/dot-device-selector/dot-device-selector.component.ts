@@ -1,4 +1,13 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    HostBinding,
+    OnInit,
+    OnChanges,
+    SimpleChanges
+} from '@angular/core';
 import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
 import { DotDevice } from '@models/dot-device/dot-device.model';
 import { DotMessageService } from '@services/dot-messages-service';
@@ -9,12 +18,13 @@ import { map, take, flatMap, filter, toArray } from 'rxjs/operators';
     templateUrl: './dot-device-selector.component.html',
     styleUrls: ['./dot-device-selector.component.scss']
 })
-export class DotDeviceSelectorComponent implements OnInit {
+export class DotDeviceSelectorComponent implements OnInit, OnChanges {
     @Input() value: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
+    @HostBinding('class.disabled') disabled: boolean;
 
-    options: DotDevice[];
-    label = '';
+    options: DotDevice[] = [];
+    label: string;
 
     constructor(
         private dotDevicesService: DotDevicesService,
@@ -25,28 +35,16 @@ export class DotDeviceSelectorComponent implements OnInit {
         this.dotMessageService
             .getMessages(['editpage.viewas.default.device', 'editpage.viewas.label.device'])
             .pipe(take(1))
-            .subscribe((messages: {[key: string]: string}) => {
-                this.label = messages['editpage.viewas.label.device']
-                this.dotDevicesService
-                    .get()
-                    .pipe(
-                        take(1),
-                        flatMap((devices: DotDevice[]) => devices),
-                        filter(
-                            (device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0
-                        ),
-                        toArray(),
-                        map((devices: DotDevice[]) =>
-                            this.setOptions(
-                                this.dotMessageService.get('editpage.viewas.default.device'),
-                                devices
-                            )
-                        )
-                    )
-                    .subscribe((devices: DotDevice[]) => {
-                        this.options = devices;
-                    });
+            .subscribe((messages: { [key: string]: string }) => {
+                this.label = messages['editpage.viewas.label.device'];
+                this.loadOptions();
             });
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes.value && !changes.value.firstChange) {
+            this.loadOptions();
+        }
     }
 
     /**
@@ -55,6 +53,32 @@ export class DotDeviceSelectorComponent implements OnInit {
      */
     change(device: DotDevice) {
         this.selected.emit(device);
+    }
+
+    private loadOptions(): void {
+        this.dotDevicesService
+            .get()
+            .pipe(
+                take(1),
+                flatMap((devices: DotDevice[]) => devices),
+                filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
+                toArray(),
+                map((devices: DotDevice[]) =>
+                    this.setOptions(
+                        this.dotMessageService.get('editpage.viewas.default.device'),
+                        devices
+                    )
+                )
+            )
+            .subscribe(
+                (devices: DotDevice[]) => {
+                    this.options = devices;
+                    this.disabled = this.options.length < 2;
+                },
+                () => {
+                    this.disabled = true;
+                }
+            );
     }
 
     private setOptions(message: string, devices: DotDevice[]): DotDevice[] {

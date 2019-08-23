@@ -4,26 +4,43 @@ import { DotLanguagesService } from '@services/dot-languages/dot-languages.servi
 import { DotLanguagesServiceMock } from '../../../test/dot-languages-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DebugElement } from '@angular/core';
+import { DebugElement, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { mockDotLanguage } from '../../../test/dot-language.mock';
 import { Dropdown } from 'primeng/primeng';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
+import { of } from 'rxjs';
+import { DotLanguage } from '@shared/models/dot-language/dot-language.model';
 
 const messageServiceMock = new MockDotMessageService({
     'editpage.viewas.label.language': 'Language'
 });
 
+@Component({
+    selector: 'dot-test-host-component',
+    template: `
+        <dot-language-selector [value]="value"></dot-language-selector>
+    `
+})
+class TestHostComponent {
+    value: DotLanguage = mockDotLanguage;
+    contentInode = '123';
+}
+
 describe('DotLanguageSelectorComponent', () => {
+    let fixtureHost: ComponentFixture<TestHostComponent>;
+    // let componentHost: TestHostComponent;
+    let deHost: DebugElement;
+    let dotLanguagesService: DotLanguagesService;
     let component: DotLanguageSelectorComponent;
-    let fixture: ComponentFixture<DotLanguageSelectorComponent>;
+    // let fixture: ComponentFixture<DotLanguageSelectorComponent>;
     let de: DebugElement;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [DotLanguageSelectorComponent],
+        const testbed = DOTTestBed.configureTestingModule({
+            declarations: [TestHostComponent, DotLanguageSelectorComponent],
             imports: [BrowserAnimationsModule, DotIconModule],
             providers: [
                 {
@@ -37,31 +54,35 @@ describe('DotLanguageSelectorComponent', () => {
             ]
         });
 
-        fixture = DOTTestBed.createComponent(DotLanguageSelectorComponent);
-        component = fixture.componentInstance;
-        de = fixture.debugElement;
+        fixtureHost = DOTTestBed.createComponent(TestHostComponent);
+        deHost = fixtureHost.debugElement;
+        // componentHost = fixtureHost.componentInstance;
+        de = deHost.query(By.css('dot-language-selector'));
+        component = de.componentInstance;
+
+        dotLanguagesService = testbed.get(DotLanguagesService);
     });
 
     it('should have icon', () => {
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
         const icon = de.query(By.css('dot-icon'));
         expect(icon.attributes.name).toBe('language');
         expect(icon.attributes.big).toBeDefined();
     });
 
     it('should have label', () => {
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
         const label = de.query(By.css('label')).nativeElement;
         expect(label.textContent).toBe('Language');
     });
 
     it('should load languages in the dropdown', () => {
-        fixture.detectChanges();
+        fixtureHost.detectChanges();
         const decoratedLanguage = {
             ...mockDotLanguage,
             language: `${mockDotLanguage.language} (${mockDotLanguage.countryCode})`
         };
-        expect(component.languagesOptions).toEqual([decoratedLanguage]);
+        expect(component.options).toEqual([decoratedLanguage]);
     });
 
     it('should have right attributes on dropdown', () => {
@@ -83,9 +104,27 @@ describe('DotLanguageSelectorComponent', () => {
         expect(component.selected.emit).toHaveBeenCalledWith(mockDotLanguage);
     });
 
-    it('shoudl set fixed width to dropdown', () => {
-        fixture.detectChanges();
+    it('should set fixed width to dropdown', () => {
+        fixtureHost.detectChanges();
         const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
         expect(pDropDown.style).toEqual({ width: '120px' });
+    });
+
+    describe('disabled', () => {
+        it('should set disable when no lang options present', () => {
+            spyOn(dotLanguagesService, 'get').and.returnValue(of([]));
+
+            fixtureHost.detectChanges();
+
+            expect(dotLanguagesService.get).toHaveBeenCalledTimes(1);
+            const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
+            expect(pDropDown.componentInstance.disabled).toBe(true);
+        });
+
+        it('should add class to the host when disabled', () => {
+            spyOn(dotLanguagesService, 'get').and.returnValue(of([]));
+            fixtureHost.detectChanges();
+            expect(de.nativeElement.classList.contains('disabled')).toBe(true);
+        });
     });
 });

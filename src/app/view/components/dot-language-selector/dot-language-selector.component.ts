@@ -1,4 +1,13 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    HostBinding,
+    SimpleChanges,
+    OnChanges
+} from '@angular/core';
 import { take, map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 
@@ -11,13 +20,13 @@ import { DotMessageService } from '@services/dot-messages-service';
     templateUrl: './dot-language-selector.component.html',
     styleUrls: ['./dot-language-selector.component.scss']
 })
-export class DotLanguageSelectorComponent implements OnInit {
+export class DotLanguageSelectorComponent implements OnInit, OnChanges {
     @Input() value: DotLanguage;
     @Input() contentInode: string;
-
     @Output() selected = new EventEmitter<DotLanguage>();
+    @HostBinding('class.disabled') disabled: boolean;
 
-    languagesOptions: DotLanguage[];
+    options: DotLanguage[] = [];
     label$: Observable<string>;
 
     constructor(
@@ -26,21 +35,17 @@ export class DotLanguageSelectorComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        this.label$ = this.dotMessageService
-            .getMessages(['editpage.viewas.label.language'])
-            .pipe(
-                map(
-                    (messages: { [key: string]: string }) =>
-                        messages['editpage.viewas.label.language']
-                )
-            );
+        this.label$ = this.dotMessageService.getMessages(['editpage.viewas.label.language']).pipe(
+            map((messages: { [key: string]: string }) => messages['editpage.viewas.label.language'])
+        );
 
-        this.dotLanguagesService
-            .get(this.contentInode)
-            .pipe(take(1))
-            .subscribe((languages: DotLanguage[]) => {
-                this.languagesOptions = this.decorateLabels(languages);
-            });
+        this.loadOptions();
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes.contentInode && !changes.contentInode.firstChange) {
+            this.loadOptions();
+        }
     }
 
     /**
@@ -54,7 +59,27 @@ export class DotLanguageSelectorComponent implements OnInit {
     private decorateLabels(languages: DotLanguage[]): DotLanguage[] {
         return languages.map((language: DotLanguage) => {
             const countryCodeLabel = language.countryCode ? ` (${language.countryCode})` : '';
-            return { ...language, language: `${language.language}${countryCodeLabel}` };
+
+            return {
+                ...language,
+                language: `${language.language}${countryCodeLabel}`
+            };
         });
+    }
+
+    private loadOptions(): void {
+        this.dotLanguagesService
+            .get(this.contentInode)
+            .pipe(take(1))
+            .subscribe(
+                (languages: DotLanguage[]) => {
+                    console.log('languages', languages);
+                    this.options = this.decorateLabels(languages);
+                    this.disabled = this.options.length === 0;
+                },
+                () => {
+                    this.disabled = true;
+                }
+            );
     }
 }

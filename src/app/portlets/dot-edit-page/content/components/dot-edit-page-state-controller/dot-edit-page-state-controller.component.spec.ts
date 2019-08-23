@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser';
-import { Component, Input, DebugElement } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { async, ComponentFixture } from '@angular/core/testing';
 
 import { DOTTestBed } from '@tests/dot-test-bed';
@@ -36,12 +36,12 @@ const mockDotMessageService = new MockDotMessageService({
     `
 })
 class TestHostComponent {
-    @Input() pageState: DotRenderedPageState = mockDotRenderedPageState;
+    pageState: DotRenderedPageState = mockDotRenderedPageState;
 }
 
 describe('DotEditPageStateControllerComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
-    // let componentHost: TestHostComponent;
+    let componentHost: TestHostComponent;
     // let component: DotEditPageStateControllerComponent;
     let de: DebugElement;
     let deHost: DebugElement;
@@ -80,40 +80,95 @@ describe('DotEditPageStateControllerComponent', () => {
     beforeEach(() => {
         fixtureHost = DOTTestBed.createComponent(TestHostComponent);
         deHost = fixtureHost.debugElement;
-        // componentHost = fixtureHost.componentInstance;
+        componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-edit-page-state-controller'));
         // component = de.componentInstance;
-        fixtureHost.detectChanges();
     });
 
     describe('elements', () => {
-        it('should have mode selector', () => {
-            const selectButton = de.query(By.css('p-selectButton')).componentInstance;
+        describe('default', () => {
+            beforeEach(() => {
+                fixtureHost.detectChanges();
+            });
+            it('should have mode selector', () => {
+                const selectButton = de.query(By.css('p-selectButton')).componentInstance;
 
-            fixtureHost.whenRenderingDone().then(() => {
-                expect(selectButton).toBeDefined();
-                expect(selectButton.options).toEqual([
-                    { label: 'Edit', value: 'EDIT_MODE', disabled: false },
-                    { label: 'Preview', value: 'PREVIEW_MODE', disabled: false },
-                    { label: 'Live', value: 'ADMIN_MODE', disabled: false }
-                ]);
-                expect(selectButton.value).toBe(DotPageMode.PREVIEW);
+                fixtureHost.whenRenderingDone().then(() => {
+                    expect(selectButton).toBeDefined();
+                    expect(selectButton.options).toEqual([
+                        { label: 'Edit', value: 'EDIT_MODE', disabled: false },
+                        { label: 'Preview', value: 'PREVIEW_MODE', disabled: false },
+                        { label: 'Live', value: 'ADMIN_MODE', disabled: false }
+                    ]);
+                    expect(selectButton.value).toBe(DotPageMode.PREVIEW);
+                });
+            });
+
+            it('should have locker', () => {
+                const lockerDe = de.query(By.css('p-inputSwitch'));
+                const locker = lockerDe.componentInstance;
+                fixtureHost.whenRenderingDone().then(() => {
+                    expect(lockerDe.classes.warn).toBe(false, 'warn class');
+                    expect(locker.checked).toBe(true, 'checked');
+                    expect(locker.disabled).toBe(false, 'disabled');
+                });
+            });
+
+            it('should have lock info', () => {
+                const message = de.query(By.css('dot-edit-page-lock-info')).componentInstance;
+                expect(message.pageState).toEqual(mockDotRenderedPageState);
             });
         });
 
-        it('should have locker', () => {
-            const lockerDe = de.query(By.css('p-inputSwitch'));
-            const locker = lockerDe.componentInstance;
-            fixtureHost.whenRenderingDone().then(() => {
-                expect(lockerDe.classes.warn).toBe(false, 'warn class');
-                expect(locker.checked).toBe(true, 'checked');
-                expect(locker.disabled).toBe(false, 'disabled');
-            });
-        });
+        describe('disable mode selector option', () => {
+            it('should disable preview', () => {
+                componentHost.pageState.page.canRead = false;
+                fixtureHost.detectChanges();
+                const selectButton = de.query(By.css('p-selectButton')).componentInstance;
 
-        it('should have lock info', () => {
-            const message = de.query(By.css('dot-edit-page-lock-info')).componentInstance;
-            expect(message.pageState).toEqual(mockDotRenderedPageState);
+                fixtureHost.whenRenderingDone().then(() => {
+                    expect(selectButton).toBeDefined();
+                    expect(selectButton.options[1]).toEqual({
+                        label: 'Preview',
+                        value: 'PREVIEW_MODE',
+                        disabled: true
+                    });
+                    expect(selectButton.value).toBe(DotPageMode.PREVIEW);
+                });
+            });
+
+            it('should disable edit', () => {
+                componentHost.pageState.page.canEdit = false;
+                componentHost.pageState.page.canLock = false;
+                fixtureHost.detectChanges();
+                const selectButton = de.query(By.css('p-selectButton')).componentInstance;
+
+                fixtureHost.whenRenderingDone().then(() => {
+                    expect(selectButton).toBeDefined();
+                    expect(selectButton.options[0]).toEqual({
+                        label: 'Edit',
+                        value: 'EDIT_MODE',
+                        disabled: true
+                    });
+                    expect(selectButton.value).toBe(DotPageMode.PREVIEW);
+                });
+            });
+
+            it('should disable live', () => {
+                componentHost.pageState.page.liveInode = null;
+                fixtureHost.detectChanges();
+                const selectButton = de.query(By.css('p-selectButton')).componentInstance;
+
+                fixtureHost.whenRenderingDone().then(() => {
+                    expect(selectButton).toBeDefined();
+                    expect(selectButton.options[2]).toEqual({
+                        label: 'Live',
+                        value: 'ADMIN_MODE',
+                        disabled: true
+                    });
+                    expect(selectButton.value).toBe(DotPageMode.PREVIEW);
+                });
+            });
         });
     });
 });
