@@ -26,7 +26,7 @@ then
 fi
 
 NOW=$(date +"%y-%m-%d")
-export GOOGLE_STORAGE_JOB_FOLDER="cicd-246518-tests/${NOW}/${BUILD_HASH}/integration/${databaseType}"
+export GOOGLE_STORAGE_JOB_FOLDER="cicd-246518-tests/${NOW}/${BUILD_HASH}/${databaseType}"
 
 echo ""
 echo "================================================================================"
