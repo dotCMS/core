@@ -2,10 +2,10 @@ NOW=$(date +"%y-%m-%d")
 BASE_GOOGLE_URL="https://storage.googleapis.com/"
 
 if [[ "${TEST_TYPE}" == "unit"  ]]; then
-  GOOGLE_STORAGE_JOB_FOLDER="cicd-246518-tests/${NOW}/${TRAVIS_COMMIT}/unit"
+  GOOGLE_STORAGE_JOB_FOLDER="cicd-246518-tests/${NOW}/${TRAVIS_COMMIT_SHORT}/unit"
   reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/index.html"
 else
-  GOOGLE_STORAGE_JOB_FOLDER="cicd-246518-tests/${NOW}/${TRAVIS_COMMIT}/integration/${DB_TYPE}"
+  GOOGLE_STORAGE_JOB_FOLDER="cicd-246518-tests/${NOW}/${TRAVIS_COMMIT_SHORT}/integration/${DB_TYPE}"
   reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/integrationTest/index.html"
 fi
 
