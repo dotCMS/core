@@ -393,7 +393,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     private void addConstantsToMap() {
 
-      if(!map.containsKey(CONTSTANTS_ADDED)) {
+      if(!map.containsKey(CONTSTANTS_ADDED) && UtilMethods.isSet(getContentTypeId())) {
         ContentType type=getContentType();
         if(type==null)return;
         for(com.dotcms.contenttype.model.field.Field constant : type.fields(ConstantField.class)) {
