@@ -51,7 +51,7 @@ COPY setup/ROOT/ /build/src/core/dotCMS/src/
 VOLUME /db
 VOLUME /custom/output
 
-COPY setup/build-src/publish.sh /build/storage.sh
+COPY setup/build-src/storage.sh /build/storage.sh
 RUN chmod 500 /build/storage.sh
 
 COPY setup/build-src/github_status.sh /build/github_status.sh
