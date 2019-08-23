@@ -80,6 +80,9 @@ export class SearchableDropdownComponent
     @Input()
     multiple: boolean;
 
+    @Input()
+    disabled = false;
+    
     @Output()
     change: EventEmitter<any> = new EventEmitter();
 
@@ -114,7 +117,6 @@ export class SearchableDropdownComponent
     label: string;
     externalSelectTemplate: TemplateRef<any>;
     externalItemListTemplate: TemplateRef<any>;
-    disabled = false;
 
     constructor(private dotMessageService: DotMessageService) {}
 

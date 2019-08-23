@@ -12,13 +12,13 @@ interface DotPageState {
     mode: DotPageMode;
 }
 
-export class DotRenderedPageState {
+export class DotPageRenderState extends DotPageRender {
     private _state: DotPageState;
 
     constructor(private _user: User, private dotRenderedPage: DotPageRender) {
+        super(dotRenderedPage);
         const locked = !!dotRenderedPage.page.lockedBy;
         const lockedByAnotherUser = locked ? dotRenderedPage.page.lockedBy !== _user.userId : false;
-
 
         this._state = {
             locked: locked,
@@ -63,7 +63,7 @@ export class DotRenderedPageState {
         return this._user;
     }
 
-    set dotRenderedPageState(dotRenderedPageState: DotRenderedPageState) {
+    set dotRenderedPageState(dotRenderedPageState: DotPageRender) {
         this.dotRenderedPage = dotRenderedPageState;
     }
 }

@@ -2,7 +2,7 @@ import { DotLayoutColumn } from './../../shared/models/dot-layout-column.model';
 import { DotLayoutRow } from './../../shared/models/dot-layout-row.model';
 import { Subject } from 'rxjs/internal/Subject';
 import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/dot-edit-layout.service';
-import { DotRenderedPageState } from './../../shared/models/dot-rendered-page-state.model';
+import { DotPageRenderState } from './../../shared/models/dot-rendered-page-state.model';
 import { DotAlertConfirmService } from './../../../../api/services/dot-alert-confirm/dot-alert-confirm.service';
 import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Component, OnInit, ViewChild, ElementRef, Input, OnDestroy } from '@angular/core';
@@ -38,7 +38,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
     @Input()
     editTemplate = false;
     @Input()
-    pageState: DotRenderedPageState;
+    pageState: DotPageRenderState;
 
     form: FormGroup;
     initialFormValue: any;
@@ -181,7 +181,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
                         this.dotMessageService.get('dot.common.message.saved')
                     );
                     this.setupLayout(
-                        new DotRenderedPageState(this.loginService.auth.user, updatedPage)
+                        new DotPageRenderState(this.loginService.auth.user, updatedPage)
                     );
                 },
                 (err: ResponseView) => {
@@ -225,9 +225,9 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
         this.themeDialogVisibility = false;
     }
 
-    private setupLayout(pageState?: DotRenderedPageState): void {
+    private setupLayout(pageState?: DotPageRenderState): void {
         if (pageState) {
-            this.pageState.dotRenderedPageState = pageState;
+            this.pageState = pageState;
         }
         this.templateContainersCacheService.set(this.pageState.containers);
         this.initForm();

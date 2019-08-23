@@ -8,7 +8,7 @@ import { mockUser } from '@tests/login-service.mock';
 
 import { DotEditPageLockInfoComponent } from './dot-edit-page-lock-info.component';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
+import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 
 const messageServiceMock = new MockDotMessageService({
@@ -41,7 +41,7 @@ describe('DotEditPageLockInfoComponent', () => {
 
     describe('default', () => {
         beforeEach(() => {
-            component.pageState = new DotRenderedPageState(
+            component.pageState = new DotPageRenderState(
                 mockUser,
                 JSON.parse(
                     JSON.stringify({
@@ -70,7 +70,7 @@ describe('DotEditPageLockInfoComponent', () => {
             let lockedMessage: DebugElement;
 
             beforeEach(() => {
-                component.pageState = new DotRenderedPageState(
+                component.pageState = new DotPageRenderState(
                     mockUser,
                     JSON.parse(
                         JSON.stringify({
@@ -113,7 +113,7 @@ describe('DotEditPageLockInfoComponent', () => {
 
         describe('permissions', () => {
             beforeEach(() => {
-                component.pageState = new DotRenderedPageState(
+                component.pageState = new DotPageRenderState(
                     mockUser,
                     JSON.parse(
                         JSON.stringify({

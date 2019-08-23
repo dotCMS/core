@@ -73,7 +73,6 @@ export class DotLanguageSelectorComponent implements OnInit, OnChanges {
             .pipe(take(1))
             .subscribe(
                 (languages: DotLanguage[]) => {
-                    console.log('languages', languages);
                     this.options = this.decorateLabels(languages);
                     this.disabled = this.options.length === 0;
                 },

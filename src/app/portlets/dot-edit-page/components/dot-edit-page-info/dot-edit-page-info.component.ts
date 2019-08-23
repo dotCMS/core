@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, ElementRef, ViewChild, Inject } from '@angular/core';
 
-import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
+import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.model';
 import { DotMessageService } from '@services/dot-messages-service';
 import { SiteService } from 'dotcms-js';
 import { Observable } from 'rxjs';
@@ -21,7 +21,7 @@ import { LOCATION_TOKEN } from 'src/app/providers';
     styleUrls: ['./dot-edit-page-info.component.scss']
 })
 export class DotEditPageInfoComponent implements OnInit {
-    @Input() pageState: DotRenderedPageState;
+    @Input() pageState: DotPageRenderState;
 
     @ViewChild('lockedPageMessage') lockedPageMessage: ElementRef;
 

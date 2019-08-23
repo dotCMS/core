@@ -12,8 +12,9 @@ import { LoginServiceMock, mockUser } from './../../../../../test/login-service.
 import { RouterTestingModule } from '@angular/router/testing';
 import { async } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
-import { DotRenderedPageState } from '../../models/dot-rendered-page-state.model';
+import { DotPageRenderState } from '../../models/dot-rendered-page-state.model';
 import { mockResponseView } from '../../../../../test/response-view.mock';
+import { DotPageRender } from '../../models';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'
@@ -70,21 +71,21 @@ describe('DotEditPageResolver', () => {
 
         it('should return a DotRenderedPageState valid object', () => {
             spyOn(dotPageStateService, 'get').and.returnValue(
-                observableOf(new DotRenderedPageState(mockUser, mockDotRenderedPage))
+                observableOf(new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage)))
             );
 
             resolver.resolve(route).subscribe((res) => {
-                expect(res).toEqual(new DotRenderedPageState(mockUser, mockDotRenderedPage));
+                expect(res).toEqual(new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage)));
             });
         });
 
         it('should return a DotRenderedPageState valid object when layout is null', () => {
-            const mockDotRenderedPageState: DotRenderedPageState = new DotRenderedPageState(
+            const mockDotRenderedPageState: DotPageRenderState = new DotPageRenderState(
                 mockUser,
-                {
+                new DotPageRender({
                     ...mockDotRenderedPage,
                     layout: null
-                }
+                })
             );
             spyOn(dotPageStateService, 'get').and.returnValue(
                 observableOf(mockDotRenderedPageState)
@@ -156,24 +157,26 @@ describe('DotEditPageResolver', () => {
 
         it('should return a DotRenderedPageState valid object', () => {
             spyOn(dotPageStateService, 'get').and.returnValue(
-                observableOf(new DotRenderedPageState(mockUser, mockDotRenderedPage))
+                observableOf(new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage)))
             );
 
             resolver.resolve(route).subscribe((res) => {
-                expect(res).toEqual(new DotRenderedPageState(mockUser, mockDotRenderedPage));
+                expect(res).toEqual(new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage)));
             });
         });
 
         it('should trigger 403 error when try to go to layout because user canEdit page', () => {
             spyOn(dotPageStateService, 'get').and.returnValue(
                 observableOf(
-                    new DotRenderedPageState(mockUser, {
-                        ...mockDotRenderedPage,
-                        page: {
-                            ...mockDotRenderedPage.page,
-                            canEdit: false
-                        }
-                    })
+                    new DotPageRenderState(mockUser,
+                        new DotPageRender({
+                            ...mockDotRenderedPage,
+                            page: {
+                                ...mockDotRenderedPage.page,
+                                canEdit: false
+                            }
+                        })
+                    )
                 )
             );
 
@@ -189,10 +192,12 @@ describe('DotEditPageResolver', () => {
         it('should trigger 403 error when try to go to layout because layout is null', () => {
             spyOn(dotPageStateService, 'get').and.returnValue(
                 observableOf(
-                    new DotRenderedPageState(mockUser, {
-                        ...mockDotRenderedPage,
-                        layout: null
-                    })
+                    new DotPageRenderState(mockUser,
+                        new DotPageRender({
+                            ...mockDotRenderedPage,
+                            layout: null
+                        })
+                    )
                 )
             );
 
@@ -208,9 +213,9 @@ describe('DotEditPageResolver', () => {
     });
 
     describe('with dotRenderedPageState', () => {
-        const renderedPageState: DotRenderedPageState = new DotRenderedPageState(
+        const renderedPageState: DotPageRenderState = new DotPageRenderState(
             mockUser,
-            mockDotRenderedPage
+            new DotPageRender(mockDotRenderedPage)
         );
 
         beforeEach(() => {

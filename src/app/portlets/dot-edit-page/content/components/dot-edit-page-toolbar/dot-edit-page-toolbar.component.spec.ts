@@ -12,11 +12,11 @@ import { DotPageStateService } from '../../services/dot-page-state/dot-page-stat
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
+import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
+import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { CommonModule } from '@angular/common';
 import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-toolbar/dot-edit-toolbar.module';
 import { FormsModule } from '@angular/forms';
-import { DotPageMode } from '@portlets/dot-edit-page/shared/models';
 import { Observable, of } from 'rxjs';
 import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
@@ -34,7 +34,7 @@ import { LoginServiceMock } from '@tests/login-service.mock';
     `
 })
 class TestHostComponent {
-    @Input() pageState: DotRenderedPageState = mockDotRenderedPageState;
+    @Input() pageState: DotPageRenderState = mockDotRenderedPageState;
 }
 
 @Injectable()

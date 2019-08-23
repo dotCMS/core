@@ -26,7 +26,7 @@ import { getEditPageCss } from '../../shared/iframe-edit-mode.css';
 import { GOOGLE_FONTS } from '../html/iframe-edit-mode.js';
 import { MODEL_VAR_NAME } from '../html/iframe-edit-mode.js';
 import { DotCMSContentType } from 'dotcms-models';
-import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
+import { DotPageRenderState } from '../../../shared/models/dot-rendered-page-state.model';
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
 import {
     DotContentletEventRelocate,
@@ -100,7 +100,7 @@ export class DotEditContentHtmlService {
      * @returns Promise<boolean>
      * @memberof DotEditContentHtmlService
      */
-    renderPage(pageState: DotRenderedPageState, iframeEl: ElementRef): Promise<boolean> {
+    renderPage(pageState: DotPageRenderState, iframeEl: ElementRef): Promise<boolean> {
         this.remoteRendered = pageState.page.remoteRendered;
         return new Promise((resolve, _reject) => {
             this.iframe = iframeEl;
@@ -127,7 +127,7 @@ export class DotEditContentHtmlService {
      * @param ElementRef iframeEl
      * @memberof DotEditContentHtmlService
      */
-    initEditMode(pageState: DotRenderedPageState, iframeEl: ElementRef): void {
+    initEditMode(pageState: DotPageRenderState, iframeEl: ElementRef): void {
         this.renderPage(pageState, iframeEl).then(() => {
             this.setEditMode();
         });
@@ -606,7 +606,7 @@ export class DotEditContentHtmlService {
             },
             // When a user select a content from the search jsp
             select: (contentlet: DotPageContent) => {
-                this.renderAddedContentlet(contentlet, PageModelChangeEventType.EDIT_CONTENT);
+                this.renderAddedContentlet(contentlet, PageModelChangeEventType.ADD_CONTENT);
                 this.iframeActions$.next({
                     name: 'select'
                 });
@@ -629,7 +629,7 @@ export class DotEditContentHtmlService {
         return target.dataset.dotObject === 'edit-content' && target.tagName === 'BUTTON';
     }
 
-    private updateHtml(pageState: DotRenderedPageState): string {
+    private updateHtml(pageState: DotPageRenderState): string {
         const fakeHtml = document.createElement('html');
         fakeHtml.innerHTML = pageState.html;
 
@@ -653,7 +653,7 @@ export class DotEditContentHtmlService {
         return base;
     }
 
-    private loadCodeIntoIframe(pageState: DotRenderedPageState): void {
+    private loadCodeIntoIframe(pageState: DotPageRenderState): void {
         const doc = this.getEditPageDocument();
         doc.open();
         doc.write(this.updateHtml(pageState));

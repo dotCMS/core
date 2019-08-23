@@ -13,7 +13,7 @@ import {
 } from '@components/_common/searchable-dropdown/component';
 import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
 import { take } from 'rxjs/operators';
-import { DotRenderedPageState, DotPageMode } from '@portlets/dot-edit-page/shared/models';
+import { DotPageRenderState, DotPageMode } from '@portlets/dot-edit-page/shared/models';
 
 /**
  * It is dropdown of personas, it handle pagination and global search
@@ -28,6 +28,8 @@ import { DotRenderedPageState, DotPageMode } from '@portlets/dot-edit-page/share
     templateUrl: 'dot-persona-selector.component.html'
 })
 export class DotPersonaSelectorComponent implements OnInit {
+    @Input() disabled: boolean;
+    
     @Output()
     selected: EventEmitter<DotPersona> = new EventEmitter();
 
@@ -45,7 +47,7 @@ export class DotPersonaSelectorComponent implements OnInit {
     value: DotPersona;
     addAction: (item: DotPersona) => void;
 
-    private _pageState: DotRenderedPageState;
+    private _pageState: DotPageRenderState;
 
     constructor(public paginationService: PaginatorService) {}
 
@@ -57,7 +59,7 @@ export class DotPersonaSelectorComponent implements OnInit {
     }
 
     @Input('pageState')
-    set pageState(value: DotRenderedPageState) {
+    set pageState(value: DotPageRenderState) {
         this._pageState = value;
         this.paginationService.url = `v1/page/${this.pageState.page.identifier}/personas`;
         this.isEditMode = this.pageState.state.mode === DotPageMode.EDIT;
@@ -65,7 +67,7 @@ export class DotPersonaSelectorComponent implements OnInit {
         this.reloadPersonasListCurrentPage();
     }
 
-    get pageState(): DotRenderedPageState {
+    get pageState(): DotPageRenderState {
         return this._pageState;
     }
 

@@ -4,7 +4,7 @@ import { take } from 'rxjs/operators';
 
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotRenderedPageState, DotPageMode } from '@portlets/dot-edit-page/shared/models';
+import { DotPageRenderState, DotPageMode } from '@portlets/dot-edit-page/shared/models';
 
 @Component({
     selector: 'dot-edit-page-toolbar',
@@ -13,7 +13,7 @@ import { DotRenderedPageState, DotPageMode } from '@portlets/dot-edit-page/share
 })
 export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     @Input()
-    pageState: DotRenderedPageState;
+    pageState: DotPageRenderState;
 
     @Output()
     cancel = new EventEmitter<boolean>();

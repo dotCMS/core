@@ -45,7 +45,7 @@ describe('PageViewService', () => {
             expect(this.lastConnection.request.url).toContain(
                 'v1/page/test38923-82393842-23823/layout'
             );
-            expect(result).toEqual(mockResponse.entity);
+            expect(result.params).toEqual(mockResponse.entity);
         })
     );
 });

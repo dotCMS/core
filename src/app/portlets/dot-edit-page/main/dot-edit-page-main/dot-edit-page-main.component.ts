@@ -3,7 +3,7 @@ import { Observable, Subject, merge } from 'rxjs';
 import { take, pluck, takeUntil } from 'rxjs/operators';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
+import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
@@ -15,7 +15,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
     styleUrls: ['./dot-edit-page-main.component.scss']
 })
 export class DotEditPageMainComponent implements OnInit, OnDestroy {
-    pageState$: Observable<DotRenderedPageState>;
+    pageState$: Observable<DotPageRenderState>;
     private pageUrl: string;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly customEventsHandler;
@@ -71,7 +71,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
 
     private subscribeIframeCloseAction(): void {
         this.dotContentletEditorService.close$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.pageState$.pipe(take(1)).subscribe((pageState: DotRenderedPageState) => {
+            this.pageState$.pipe(take(1)).subscribe((pageState: DotPageRenderState) => {
                 if (this.pageUrl !== this.route.snapshot.queryParams.url) {
                     this.dotRouterService.goToEditPage(
                         this.pageUrl,

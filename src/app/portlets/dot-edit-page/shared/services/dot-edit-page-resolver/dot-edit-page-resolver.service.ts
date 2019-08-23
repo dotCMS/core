@@ -7,7 +7,7 @@ import { ResponseView, HttpCode } from 'dotcms-js';
 import { take, switchMap, tap, catchError, map } from 'rxjs/operators';
 
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotRenderedPageState } from '../../models/dot-rendered-page-state.model';
+import { DotPageRenderState } from '../../models/dot-rendered-page-state.model';
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 import {
     DotHttpErrorManagerService,
@@ -23,14 +23,14 @@ import { DotPageRenderOptions } from '@services/dot-page-render/dot-page-render.
  * @implements {Resolve<DotRenderedPageState>}
  */
 @Injectable()
-export class DotEditPageResolver implements Resolve<DotRenderedPageState> {
+export class DotEditPageResolver implements Resolve<DotPageRenderState> {
     constructor(
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotPageStateService: DotPageStateService,
         private dotRouterService: DotRouterService
     ) {}
 
-    resolve(route: ActivatedRouteSnapshot): Observable<DotRenderedPageState> {
+    resolve(route: ActivatedRouteSnapshot): Observable<DotPageRenderState> {
         const data = this.dotPageStateService.getInternalNavigationState();
 
         if (data) {
@@ -48,7 +48,7 @@ export class DotEditPageResolver implements Resolve<DotRenderedPageState> {
             };
             return this.dotPageStateService.requestPage(options).pipe(
                 take(1),
-                switchMap((dotRenderedPageState: DotRenderedPageState) => {
+                switchMap((dotRenderedPageState: DotPageRenderState) => {
                     const currentSection = route.children[0].url[0].path;
                     const isLayout = currentSection === 'layout';
 
@@ -66,8 +66,8 @@ export class DotEditPageResolver implements Resolve<DotRenderedPageState> {
     }
 
     private checkUserCanGoToLayout(
-        dotRenderedPageState: DotRenderedPageState
-    ): Observable<DotRenderedPageState> {
+        dotRenderedPageState: DotPageRenderState
+    ): Observable<DotPageRenderState> {
         if (!dotRenderedPageState.page.canEdit) {
             return observableThrowError(
                 new ResponseView(

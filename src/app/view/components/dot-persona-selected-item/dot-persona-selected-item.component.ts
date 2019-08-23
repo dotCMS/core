@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, HostBinding } from '@angular/core';
 import { DotPersona } from '@models/dot-persona/dot-persona.model';
 import { DotMessageService } from '@services/dot-messages-service';
 import { take } from 'rxjs/operators';
@@ -15,6 +15,13 @@ export class DotPersonaSelectedItemComponent implements OnInit {
     @Input()
     isEditMode = false;
 
+    @Input()
+    @HostBinding('class.disabled')
+    disabled: boolean;
+
+    @Output()
+    selected = new EventEmitter<MouseEvent>();
+
     messages: { [key: string]: string } = {};
 
     constructor(private dotMessageService: DotMessageService) {}
@@ -24,7 +31,8 @@ export class DotPersonaSelectedItemComponent implements OnInit {
             .getMessages([
                 'modes.persona.selector.title.preview',
                 'modes.persona.selector.title.edit',
-                'modes.persona.no.persona'
+                'modes.persona.no.persona',
+                'editpage.personalization.content.add.message'
             ])
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {

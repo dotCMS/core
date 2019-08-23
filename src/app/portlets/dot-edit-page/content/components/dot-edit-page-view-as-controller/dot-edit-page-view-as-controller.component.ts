@@ -9,7 +9,7 @@ import { DotPageStateService } from '../../services/dot-page-state/dot-page-stat
 import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize.service';
 import { take } from 'rxjs/operators';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotRenderedPageState, DotPageMode } from '@portlets/dot-edit-page/shared/models';
+import { DotPageRenderState, DotPageMode } from '@portlets/dot-edit-page/shared/models';
 import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
 
 @Component({
@@ -24,13 +24,13 @@ export class DotEditPageViewAsControllerComponent implements OnInit {
     messages: { [key: string]: string } = {};
 
     @Input()
-    pageState: DotRenderedPageState;
+    pageState: DotPageRenderState;
 
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
         private dotLicenseService: DotLicenseService,
-        private dotPageStateService: DotPageStateService,
+        public dotPageStateService: DotPageStateService,
         private dotPersonalizeService: DotPersonalizeService
     ) {}
 

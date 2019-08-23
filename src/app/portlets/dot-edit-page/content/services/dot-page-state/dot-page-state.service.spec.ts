@@ -9,12 +9,13 @@ import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-
 import { DotPageStateService } from './dot-page-state.service';
 import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
 import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
-import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
+import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { DotPageRender } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { mockDotRenderedPage, mockDotPage } from '../../../../../test/dot-page-render.mock';
 import { mockUser } from '../../../../../test/login-service.mock';
 import * as _ from 'lodash';
+import { mockDotPersona } from '@tests/dot-persona.mock';
 
 describe('DotPageStateService', () => {
     let service: DotPageStateService;
@@ -166,11 +167,13 @@ describe('DotPageStateService', () => {
 
     describe('reload page state', () => {
         it('should emit reload evt with DotRenderedPageState', () => {
-            const renderedPage = new DotRenderedPageState(mockUser, {
-                ...mockDotRenderedPage
-            });
+            const renderedPage = new DotPageRenderState(mockUser,
+                new DotPageRender({
+                    ...mockDotRenderedPage
+                })
+            );
             spyOn(service, 'get').and.returnValue(observableOf(renderedPage));
-            service.state$.subscribe((page: DotRenderedPageState) => {
+            service.state$.subscribe((page: DotPageRenderState) => {
                 expect(page).toBe(renderedPage);
             });
 
@@ -420,6 +423,102 @@ describe('DotPageStateService', () => {
                     })
                 )
             );
+        });
+
+        describe('haveContent event', () => {
+            describe('selected persona is not default', () => {
+
+                it('should trigger haceContent as true', () => {
+                    const renderedPage = new DotPageRenderState(mockUser,
+                        new DotPageRender({
+                            ...mockDotRenderedPage
+                        })
+                    );
+                    service.setLocalState(renderedPage);
+
+                    const subscribeCallback = jasmine.createSpy('spy');
+                    service.haveContent$.subscribe(subscribeCallback);
+
+                    expect(subscribeCallback).toHaveBeenCalledWith(true);
+
+                    service.contentRemoved();
+
+                    expect(subscribeCallback).toHaveBeenCalledWith(false);
+                    expect(subscribeCallback).toHaveBeenCalledTimes(2);
+                });
+
+                it('should trigger haceContent as false', () => {
+                    const renderedPage = new DotPageRenderState(mockUser,
+                        new DotPageRender({
+                            ...mockDotRenderedPage,
+                            ...{
+                                numberContents: 0
+                            }
+                        })
+                    );
+                    service.setLocalState(renderedPage);
+
+                    const subscribeCallback = jasmine.createSpy('spy');
+                    service.haveContent$.subscribe(subscribeCallback);
+
+                    expect(subscribeCallback).toHaveBeenCalledWith(false);
+
+                    service.contentAdded();
+                    expect(subscribeCallback).toHaveBeenCalledWith(true);
+                    expect(subscribeCallback).toHaveBeenCalledTimes(2);
+                });
+            });
+
+            describe('selected persona is not default', () => {
+                it('should trigger haceContent as false', () => {
+                    const renderedPage = new DotPageRenderState(mockUser,
+                        new DotPageRender({
+                            ...mockDotRenderedPage,
+                            ...{
+                                viewAs: {
+                                    ...mockDotRenderedPage.viewAs,
+                                    persona: mockDotPersona
+                                }
+                            }
+                        })
+                    );
+                    service.setLocalState(renderedPage);
+
+                    const subscribeCallback = jasmine.createSpy('spy');
+                    service.haveContent$.subscribe(subscribeCallback);
+
+                    expect(subscribeCallback).toHaveBeenCalledWith(false);
+
+                    service.contentRemoved();
+                    expect(subscribeCallback).toHaveBeenCalledTimes(1);
+                });
+
+                it('should trigger haceContent as true', () => {
+                    const renderedPage = new DotPageRenderState(mockUser,
+                        new DotPageRender({
+                            ...mockDotRenderedPage,
+                            ...{
+                                viewAs: {
+                                    ...mockDotRenderedPage.viewAs,
+                                    persona: mockDotPersona
+                                }
+                            },
+                            ...{
+                                numberContents: 0
+                            }
+                        })
+                    );
+                    service.setLocalState(renderedPage);
+
+                    const subscribeCallback = jasmine.createSpy('spy');
+                    service.haveContent$.subscribe(subscribeCallback);
+
+                    expect(subscribeCallback).toHaveBeenCalledWith(false);
+
+                    service.contentAdded();
+                    expect(subscribeCallback).toHaveBeenCalledTimes(1);
+                });
+            });
         });
     });
 });

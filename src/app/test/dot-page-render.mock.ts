@@ -102,12 +102,13 @@ export const mockDotTemplateLayout: DotTemplate = {
     title: 'anonymous_layout_1511798005268'
 };
 
-export const mockDotRenderedPage: DotPageRender = {
+export const mockDotRenderedPage: DotPageRender.Parameters = {
     containers: mockDotContainers,
     layout: mockDotLayout,
     page: mockDotPage,
     template: mockDotTemplate,
     canCreateTemplate: true,
+    numberContents: 1,
     viewAs: {
         language: mockDotLanguage.id,
         mode: DotPageMode.PREVIEW

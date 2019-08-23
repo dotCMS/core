@@ -2,7 +2,7 @@ import { map, pluck } from 'rxjs/operators';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
-import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-state.model';
+import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.model';
 
 @Component({
     selector: 'dot-edit-layout',
@@ -11,7 +11,7 @@ import { DotRenderedPageState } from '../../shared/models/dot-rendered-page-stat
 })
 export class DotEditLayoutComponent implements OnInit {
     isAdvancedTemplate: Observable<boolean>;
-    pageState: Observable<DotRenderedPageState>;
+    pageState: Observable<DotPageRenderState>;
 
     constructor(private route: ActivatedRoute) {}
 
@@ -20,7 +20,7 @@ export class DotEditLayoutComponent implements OnInit {
 
         this.isAdvancedTemplate = this.pageState.pipe(
             map(
-                (dotRenderedPageState: DotRenderedPageState) =>
+                (dotRenderedPageState: DotPageRenderState) =>
                     dotRenderedPageState.template && !dotRenderedPageState.template.drawed
             )
         );

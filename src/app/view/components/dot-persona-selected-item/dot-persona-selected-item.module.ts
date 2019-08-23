@@ -5,9 +5,17 @@ import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.com
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/primeng';
 
 @NgModule({
-    imports: [CommonModule, FormsModule, DotIconModule, DotAvatarModule, ButtonModule],
+    imports: [
+        CommonModule,
+        FormsModule,
+        DotIconModule,
+        DotAvatarModule,
+        ButtonModule,
+        TooltipModule
+    ],
     declarations: [DotPersonaSelectedItemComponent],
     exports: [DotPersonaSelectedItemComponent]
 })

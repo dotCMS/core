@@ -25,16 +25,21 @@ import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { of } from 'rxjs';
 import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
+import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
+import { DotPageRender } from '@portlets/dot-edit-page/shared/models';
+import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
+import { DotPageStateServiceMock } from '@tests/dot-page-state.service.mock';
+import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize.service';
+import { DotPersonalizeServiceMock } from '@tests/dot-personalize-service.mock';
 
 @Component({
     selector: 'dot-test-host',
-    template: `<dot-edit-content-view-as-toolbar [pageState]="pageState"></dot-edit-content-view-as-toolbar>`
+    template: `<dot-edit-page-view-as-controller [pageState]="pageState"></dot-edit-page-view-as-controller>`
 })
 class DotTestHostComponent implements OnInit {
     @Input()
-    pageState: DotRenderedPageState;
+    pageState: DotPageRenderState;
 
     ngOnInit() {}
 }
@@ -48,6 +53,10 @@ class MockDotPersonaSelectorComponent {
     pageId: string;
     @Input()
     value: DotPersona;
+    @Input() disabled: boolean;
+    @Input()
+    pageState: DotPageRenderState;
+
     @Output()
     selected = new EventEmitter<DotPersona>();
 }
@@ -76,6 +85,7 @@ class MockDotLanguageSelectorComponent {
     @Output()
     selected = new EventEmitter<DotLanguage>();
 }
+
 
 const messageServiceMock = new MockDotMessageService({
     'editpage.viewas.previewing': 'Previewing'
@@ -123,6 +133,14 @@ describe('DotEditPageViewAsControllerComponent', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
+                },
+                {
+                    provide: DotPageStateService,
+                    useClass: DotPageStateServiceMock
+                },
+                {
+                    provide: DotPersonalizeService,
+                    useClass: DotPersonalizeServiceMock
                 }
             ]
         });
@@ -131,7 +149,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
     beforeEach(() => {
         fixtureHost = DOTTestBed.createComponent(DotTestHostComponent);
         componentHost = fixtureHost.componentInstance;
-        de = fixtureHost.debugElement.query(By.css('dot-edit-content-view-as-toolbar'));
+        de = fixtureHost.debugElement.query(By.css('dot-edit-page-view-as-controller'));
         component = de.componentInstance;
         dotLicenseService = de.injector.get(DotLicenseService);
     });
@@ -141,7 +159,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
             spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
             // spyOn(component.changeViewAs, 'emit');
 
-            componentHost.pageState = new DotRenderedPageState(
+            componentHost.pageState = new DotPageRenderState(
                 mockUser,
                 JSON.parse(JSON.stringify(mockDotRenderedPage))
             );
@@ -165,7 +183,7 @@ describe('DotEditPageViewAsControllerComponent', () => {
             spyOn(component, 'changeLanguageHandler').and.callThrough();
             // spyOn(component.changeViewAs, 'emit');
 
-            componentHost.pageState = new DotRenderedPageState(
+            componentHost.pageState = new DotPageRenderState(
                 mockUser,
                 JSON.parse(JSON.stringify(mockDotRenderedPage))
             );
@@ -179,6 +197,26 @@ describe('DotEditPageViewAsControllerComponent', () => {
 
         it('should have persona selector', () => {
             expect(personaSelector).not.toBeNull();
+        });
+
+        it('should persona selector be enabled', () => {
+            expect(personaSelector.disabled).toBe(false);
+        });
+
+        it('should persona selector be disabled after haveContent is set to false', () => {
+            const dotPageStateService: DotPageStateService = de.injector.get(DotPageStateService);
+            dotPageStateService.haveContent$.next(false);
+
+            fixtureHost.detectChanges();
+            expect(personaSelector.disabled).toBe(true);
+        });
+
+        it('should persona selector be enabled after haveContent is set to true', () => {
+            const dotPageStateService: DotPageStateService = de.injector.get(DotPageStateService);
+            dotPageStateService.haveContent$.next(true);
+
+            fixtureHost.detectChanges();
+            expect(personaSelector.disabled).toBe(false);
         });
 
         it('should emit changes in personas', () => {
@@ -235,23 +273,28 @@ describe('DotEditPageViewAsControllerComponent', () => {
         });
 
         it('should propagate the values to the selector components on init', () => {
-            componentHost.pageState = new DotRenderedPageState(mockUser, {
-                ...mockDotRenderedPage,
-                viewAs: mockDotEditPageViewAs
-            });
+            componentHost.pageState = new DotPageRenderState(mockUser,
+                new DotPageRender({
+                    ...mockDotRenderedPage,
+                    viewAs: mockDotEditPageViewAs
+                })
+            );
             fixtureHost.detectChanges();
 
             // expect(languageSelector.value).toEqual(mockDotPersona);
             expect(deviceSelector.value).toEqual(mockDotEditPageViewAs.device);
-            expect(personaSelector.value).toEqual(mockDotEditPageViewAs.persona);
+
+            // expect(personaSelector.value).toEqual(mockDotEditPageViewAs.persona);
             // expect(personaSelector.pageId).toEqual(mockDotRenderedPage.page.identifier);
         });
 
         it('should show device information', () => {
-            componentHost.pageState = new DotRenderedPageState(mockUser, {
-                ...mockDotRenderedPage,
-                viewAs: mockDotEditPageViewAs
-            });
+            componentHost.pageState = new DotPageRenderState(mockUser,
+                new DotPageRender({
+                    ...mockDotRenderedPage,
+                    viewAs: mockDotEditPageViewAs
+                })
+            );
             fixtureHost.detectChanges();
             const label = de.query(By.css('.device-info__label'));
             const content = de.query(By.css('.device-info__content'));

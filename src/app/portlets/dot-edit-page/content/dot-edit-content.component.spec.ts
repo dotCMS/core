@@ -23,7 +23,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
+import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
 import { LoginServiceMock, mockUser } from '../../../test/login-service.mock';
@@ -216,7 +216,7 @@ describe('DotEditContentComponent', () => {
         dotPageStateService = de.injector.get(DotPageStateService);
         dotRouterService = de.injector.get(DotRouterService);
         toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
-        toolbarComponent = toolbarElement.componentInstance;
+        // toolbarComponent = toolbarElement.componentInstance;
         route = de.injector.get(ActivatedRoute);
     });
 
@@ -356,7 +356,7 @@ describe('DotEditContentComponent', () => {
     });
 
     describe('reload', () => {
-        const mockRenderedPageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
+        const mockRenderedPageState = new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage));
 
         beforeEach(() => {
             // component.pageState = null;
@@ -900,7 +900,7 @@ describe('DotEditContentComponent', () => {
         describe('listen load-edit-mode-page event', () => {
             beforeEach(() => {
                 route.parent.parent.data = observableOf({
-                    content: new DotRenderedPageState(mockUser, mockDotRenderedPage)
+                    content: new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage))
                 });
 
                 spyOn(dotEditContentHtmlService, 'renderPage');
@@ -1078,6 +1078,33 @@ describe('DotEditContentComponent', () => {
             expect(component.reload).not.toHaveBeenCalled();
             expect(dotEditPageService.save).toHaveBeenCalledTimes(2);
             expect(dotEditContentHtmlService.setContaintersSameHeight).toHaveBeenCalledTimes(2);
+        }));
+
+        it('should call the updatePageStateHaveContent after a model change happens', fakeAsync(() => {
+            route.parent.parent.data = observableOf({
+                content: {
+                    ...mockDotRenderedPage,
+                    page: {
+                        ...mockDotRenderedPage.page,
+                        canLock: true
+                    },
+                    state: {
+                        locked: true,
+                        mode: DotPageMode.EDIT
+                    }
+                }
+            });
+
+            spyOn(dotPageStateService, 'updatePageStateHaveContent').and.callFake(() => {});
+
+            waitForDetectChanges(fixture);
+
+            dotEditContentHtmlService.pageModel$.next({
+                model: model,
+                type: PageModelChangeEventType.ADD_CONTENT
+            });
+
+            expect(dotPageStateService.updatePageStateHaveContent).toHaveBeenCalled();
         }));
 
         it('should call the save endpoint and reload the iframe after a model change happens and page is remote rendered', fakeAsync(() => {

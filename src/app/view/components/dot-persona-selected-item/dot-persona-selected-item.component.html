@@ -1,22 +1,30 @@
-<dot-avatar
-    [label]="persona?.name || messages['modes.persona.no.persona']"
-    [showDot]="persona?.personalized || false"
-    [size]="32"
-    [url]="persona?.photo || ''"
-></dot-avatar>
-<div class="dot-persona-selector__label-container">
-    <span
-        class="dot-persona-selector__label"
-        [ngClass]="{ 'dot-persona-selector__label--edit': isEditMode }"
-    >
-        {{
-            isEditMode
-                ? messages['modes.persona.selector.title.edit']
-                : messages['modes.persona.selector.title.preview']
-        }}
-    </span>
-    <span class="dot-persona-selector__name">{{
-        persona?.name || messages['modes.persona.no.persona']
-    }}</span>
+<div
+    class="dot-persona-selector__container"
+    [pTooltip]="disabled ? messages['editpage.personalization.content.add.message'] : null"
+    [tooltipPosition]="disabled ? 'bottom' : null"
+>
+
+    <dot-avatar
+        [label]="persona?.name || messages['modes.persona.no.persona']"
+        [showDot]="persona?.personalized || false"
+        [size]="32"
+        [url]="persona?.photo || ''"
+    ></dot-avatar>
+    <div class="dot-persona-selector__label-container">
+        <span
+            class="dot-persona-selector__label"
+            [ngClass]="{ 'dot-persona-selector__label--edit': isEditMode }"
+        >
+            {{
+                isEditMode
+                    ? messages['modes.persona.selector.title.edit']
+                    : messages['modes.persona.selector.title.preview']
+            }}
+        </span>
+        <span class="dot-persona-selector__name">{{
+            persona?.name || messages['modes.persona.no.persona']
+        }}</span>
+
+    </div>
+    <dot-icon name="arrow_drop_down"></dot-icon>
 </div>
-<dot-icon name="arrow_drop_down"></dot-icon>

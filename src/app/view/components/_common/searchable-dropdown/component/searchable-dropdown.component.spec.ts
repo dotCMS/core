@@ -26,7 +26,8 @@ import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-ico
                     [totalRecords] = "totalRecords"
                     [valuePropertyName] = "valuePropertyName"
                     [optionsWidth] = "optionsWidth"
-                    [width] = "width" >
+                    [width] = "width"
+                    [disabled] = "disabled" >
                </dot-searchable-dropdown>`
 })
 class HostTestComponent {
@@ -67,6 +68,9 @@ class HostTestComponent {
 
     @Input()
     multiple: boolean;
+
+    @Input()
+    disabled: boolean;
 }
 
 describe('SearchableDropdownComponent', () => {
@@ -120,6 +124,13 @@ describe('SearchableDropdownComponent', () => {
 
         mainButton = de.query(By.css('button'));
         mainButton.triggerEventHandler('click', {});
+    });
+
+    it('should disabled', () => {
+        comp.disabled = true;
+        hostFixture.detectChanges();
+
+        expect(mainButton.componentInstance.disabled).toBe(true);
     });
 
     it('should renderer the pagination links', () => {

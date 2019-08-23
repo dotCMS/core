@@ -14,7 +14,7 @@ import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 import { DotMessageService } from '@services/dot-messages-service';
-import { DotRenderedPageState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
+import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { LOCATION_TOKEN } from 'src/app/providers';
 
 const messageServiceMock = new MockDotMessageService({
@@ -63,7 +63,7 @@ describe('DotEditPageInfoComponent', () => {
             spyOnProperty(siteService, 'currentSite', 'get').and.returnValue({
                 name: 'demo.dotcms.com'
             });
-            component.pageState = new DotRenderedPageState(
+            component.pageState = new DotPageRenderState(
                 mockUser,
                 JSON.parse(JSON.stringify(mockDotRenderedPage))
             );

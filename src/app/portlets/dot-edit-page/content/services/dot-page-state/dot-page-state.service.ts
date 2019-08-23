@@ -1,8 +1,8 @@
-import { of, Observable, Subject } from 'rxjs';
+import { of, Observable, Subject, BehaviorSubject } from 'rxjs';
 
 import { pluck, take, map, catchError } from 'rxjs/operators';
 import { LoginService, User, ResponseView } from 'dotcms-js';
-import { DotRenderedPageState } from '../../../shared/models/dot-rendered-page-state.model';
+import { DotPageRenderState } from '../../../shared/models/dot-rendered-page-state.model';
 import {
     DotPageRenderService,
     DotPageRenderOptions
@@ -17,11 +17,13 @@ import {
     DotHttpErrorHandled
 } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { PageModelChangeEvent, PageModelChangeEventType } from '../dot-edit-content-html/models';
 
 @Injectable()
 export class DotPageStateService {
-    state$: Subject<DotRenderedPageState> = new Subject<DotRenderedPageState>();
-    private currentState: DotRenderedPageState;
+    state$: Subject<DotPageRenderState> = new Subject<DotPageRenderState>();
+    haveContent$ = new BehaviorSubject<boolean>(false);
+    private currentState: DotPageRenderState;
 
     private isInternalNavigation = false;
 
@@ -44,7 +46,7 @@ export class DotPageStateService {
             options.url = this.currentState.page.pageURI;
         }
 
-        this.requestPage(options).subscribe((pageState: DotRenderedPageState) => {
+        this.requestPage(options).subscribe((pageState: DotPageRenderState) => {
             this.setState(pageState);
         });
     }
@@ -52,10 +54,10 @@ export class DotPageStateService {
     /**
      * Get the current state if it was set from internal navigation
      *
-     * @returns {DotRenderedPageState}
+     * @returns {DotPageRenderState}
      * @memberof DotPageStateService
      */
-    getInternalNavigationState(): DotRenderedPageState {
+    getInternalNavigationState(): DotPageRenderState {
         if (this.isInternalNavigation) {
             this.isInternalNavigation = false;
             return this.currentState;
@@ -79,10 +81,10 @@ export class DotPageStateService {
      * Request an new page state and set the local internal state
      *
      * @param {DotPageRenderOptions} options
-     * @returns {Observable<DotRenderedPageState>}
+     * @returns {Observable<DotPageRenderState>}
      * @memberof DotPageStateService
      */
-    requestPage(options: DotPageRenderOptions): Observable<DotRenderedPageState> {
+    requestPage(options: DotPageRenderOptions): Observable<DotPageRenderState> {
         return this.dotPageRenderService.get(options).pipe(
             catchError((err: ResponseView) => {
                 this.handleSetPageStateFailed(err);
@@ -91,8 +93,8 @@ export class DotPageStateService {
             take(1),
             map((page: DotPageRender) => {
                 if (page) {
-                    const pageState = new DotRenderedPageState(this.getCurrentUser(), page);
-                    this.currentState = pageState;
+                    const pageState = new DotPageRenderState(this.getCurrentUser(), page);
+                    this.setCurrentState(pageState);
                     return pageState;
                 }
 
@@ -118,11 +120,11 @@ export class DotPageStateService {
     /**
      * Set the page state from internal navigation
      *
-     * @param {DotRenderedPageState} state
+     * @param {DotPageRenderState} state
      * @memberof DotPageStateService
      */
-    setInternalNavigationState(state: DotRenderedPageState): void {
-        this.currentState = state;
+    setInternalNavigationState(state: DotPageRenderState): void {
+        this.setCurrentState(state);
         this.isInternalNavigation = true;
     }
 
@@ -158,11 +160,11 @@ export class DotPageStateService {
     /**
      * Overwrite the local state and emit it
      *
-     * @param {DotRenderedPageState} state
+     * @param {DotPageRenderState} state
      * @memberof DotPageStateService
      */
-    setLocalState(state: DotRenderedPageState): void {
-        this.currentState = state;
+    setLocalState(state: DotPageRenderState): void {
+        this.setCurrentState(state);
         this.state$.next(state);
     }
 
@@ -179,6 +181,48 @@ export class DotPageStateService {
                 persona
             }
         });
+    }
+
+    /**
+     * Call to notify that a content was add into the page
+     */
+    contentAdded(): void {
+        this.currentState.numberContents++;
+
+        if (this.currentState.numberContents === 1 && !this.selectedIsDefaultPersona()) {
+            this.haveContent$.next(true);
+        }
+    }
+
+    /**
+     * Call to notify that a content was remove from the page
+     */
+    contentRemoved(): void {
+        this.currentState.numberContents--;
+
+        if (this.currentState.numberContents === 0 && !this.selectedIsDefaultPersona()) {
+            this.haveContent$.next(false);
+        }
+    }
+
+    public updatePageStateHaveContent(event: PageModelChangeEvent) {
+        if (event.type === PageModelChangeEventType.ADD_CONTENT) {
+            this.contentAdded();
+        } else if (event.type === PageModelChangeEventType.REMOVE_CONTENT) {
+            this.contentRemoved();
+        }
+    }
+
+    private setCurrentState(newState: DotPageRenderState): void {
+        this.currentState = newState;
+
+        if (!this.selectedIsDefaultPersona()) {
+            this.haveContent$.next(this.currentState.numberContents > 0);
+        }
+    }
+
+    private selectedIsDefaultPersona(): boolean {
+        return !!this.currentState.viewAs.persona;
     }
 
     private getCurrentUser(): User {
@@ -208,7 +252,7 @@ export class DotPageStateService {
             });
     }
 
-    private setState(state: DotRenderedPageState): void {
+    private setState(state: DotPageRenderState): void {
         this.state$.next(state);
     }
 }
