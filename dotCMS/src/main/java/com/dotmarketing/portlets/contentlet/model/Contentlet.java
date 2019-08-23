@@ -351,7 +351,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @return
      */
     public String getContentTypeId() {
-      return (String) map.get(STRUCTURE_INODE_KEY);
+      return UtilMethods.isSet(map.get(STRUCTURE_INODE_KEY)) ?( String)  map.get(STRUCTURE_INODE_KEY) : null;
     }
 
     /**
@@ -1499,7 +1499,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	@JsonIgnore
 	public ContentType getContentType() {
-
+	  if(getContentTypeId()==null) return null;
 		try {
 			final ContentType foundContentType =
 					APILocator.getContentTypeAPI(APILocator.systemUser())
