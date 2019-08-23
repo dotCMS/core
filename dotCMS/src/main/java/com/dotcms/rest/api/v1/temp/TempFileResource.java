@@ -22,6 +22,7 @@ import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.server.JSONP;
 
+import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -39,19 +40,19 @@ import io.vavr.control.Try;
 @Path("/v1/temp")
 public class TempFileResource {
 
-    private final WebResource webResource;
+
     private final TempFileAPI tempApi;
 
     /**
      * Default constructor.
      */
     public TempFileResource() {
-        this(new WebResource(), APILocator.getTempFileAPI());
+        this( APILocator.getTempFileAPI());
     }
 
     @VisibleForTesting
-    TempFileResource(final WebResource webResource, final TempFileAPI tempApi) {
-        this.webResource = webResource;
+    TempFileResource(final TempFileAPI tempApi) {
+
         this.tempApi = tempApi;
     }
 
@@ -69,8 +70,9 @@ public class TempFileResource {
             final boolean allowAnonToUseTempFiles = !Config
                     .getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
 
-            this.webResource
-                    .init(false, request, allowAnonToUseTempFiles);
+            new WebResource.InitBuilder(request, response)
+              .requiredAnonAccess(AnonymousAccess.WRITE).init();
+
 
 
 
@@ -115,20 +117,16 @@ public class TempFileResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JSON})
-    public final Response copyTempFromUrl(@Context final HttpServletRequest request,
+    public final Response copyTempFromUrl(@Context final HttpServletRequest request,@Context final HttpServletResponse response,
             final RemoteUrlForm form) {
 
         try {
 
             verifyTempResourceEnabled();
 
-            final boolean allowAnonToUseTempFiles = !Config
-                    .getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
-            final InitDataObject initDataObject = this.webResource
-                    .init(false, request, allowAnonToUseTempFiles);
+            new WebResource.InitBuilder(request, response)
+            .requiredAnonAccess(AnonymousAccess.WRITE).init();
 
-            final User user = initDataObject.getUser();
-            final String uniqueKey = request.getSession().getId();
 
             if (!new SecurityUtils().validateReferer(request)) {
                 throw new BadRequestException("Invalid Origin or referer");

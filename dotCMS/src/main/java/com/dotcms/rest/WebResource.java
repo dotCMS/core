@@ -760,8 +760,14 @@ public  class WebResource {
         private AnonymousAccess anonAccess=AnonymousAccess.NONE;
         
         public InitBuilder() {
-            this(new WebResource());
-            //requiredRolesSet.add(Role.DOTCMS_BACK_END_USER);
+          this(new WebResource());
+
+        }
+
+        public InitBuilder(HttpServletRequest request, HttpServletResponse response) {
+            this();
+            this.request=request;
+            this.response=response;
         }
 
         @VisibleForTesting

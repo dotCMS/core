@@ -239,7 +239,7 @@ public class TempFileResourceTest {
     final RemoteUrlForm form = new RemoteUrlForm(
         "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif", fileName2, null);
 
-    final Response jsonResponse = resource.copyTempFromUrl(request, form);
+    final Response jsonResponse = resource.copyTempFromUrl(request,new MockHttpResponse(), form);
     final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
     final DotTempFile dotTempFile2 = dotTempFiles.get("tempFiles").get(0);
 
