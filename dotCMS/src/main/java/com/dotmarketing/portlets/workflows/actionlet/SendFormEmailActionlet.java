@@ -104,29 +104,37 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
     context.put("formMap", getFormMap(processor));
     VelocityEval velocity = new VelocityEval(context);
     
-
-    final String toEmail = velocity.eval(params.get(TO_EMAIL).getValue());
-    final String fromEmail = velocity.eval(params.get(FROM_EMAIL).getOrDefault(company.getEmailAddress()));
-    final String fromName = velocity.eval(params.get(FROM_NAME).getOrDefault("dotCMS"));
-    final String emailSubject = velocity.eval(params.get(EMAIL_SUBJECT).getValue());
     final String condition = velocity.eval(params.get(CONDITION).getValue());
-    final String emailTemplate = velocity.eval(params.get(EMAIL_TEMPLATE).getValue());
-    final String bcc = velocity.eval(params.get(BCC).getValue());
-
+    
     if (UtilMethods.isSet(condition) && condition.indexOf("false") > -1) {
       Logger.info(this.getClass(), processor.getAction().getName() + " email condition contains false, skipping email send");
       return;
     }
+    
+    
+    if (UtilMethods.isSet(condition) && condition.trim().indexOf("debug") ==0) {
+      CacheLocator.getVeloctyResourceCache().clearCache();
+    }
+    final String toEmail = velocity.eval(params.get(TO_EMAIL).getValue());
+    final String fromEmail = velocity.eval(params.get(FROM_EMAIL).getOrDefault(company.getEmailAddress()));
+    final String fromName = velocity.eval(params.get(FROM_NAME).getOrDefault("dotCMS"));
+    final String emailSubject = velocity.eval(params.get(EMAIL_SUBJECT).getValue());
+    final String emailTemplate = velocity.eval(params.get(EMAIL_TEMPLATE).getValue());
+    final String bcc = velocity.eval(params.get(BCC).getValue());
 
+
+    // if we are in debug, just write the file out
     if (UtilMethods.isSet(condition) && condition.trim().indexOf("debug") ==0) {
       try(OutputStream out = new FileOutputStream(new File("./debugging-form-email.html"))){
         IOUtils.write(emailTemplate, out);
       } catch (Exception e) {
         e.printStackTrace();
       }
-      //processor.abort();
-      //return;
+      processor.abort();
+      return;
     }
+    
+    
     final Mailer mail = new Mailer();
     mail.setToEmail(toEmail);
     mail.setFromEmail(fromEmail);
@@ -197,9 +205,14 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
     if(contentlet.getModUser()==null) {
       contentlet.setModUser(Try.of(()-> processor.getUser().getUserId()).getOrElse(UserAPI.CMS_ANON_USER_ID));
     }
+
+    final Company company = APILocator.getCompanyAPI().getDefaultCompany();
+    
+    
+    
     final ContentType contentType = contentlet.getContentType();
     final Map<String,Object> printableMap = Try.of(()->ContentletUtil.getContentPrintableMap(processor.getUser(), contentlet)).getOrElse(contentlet.getMap());
-    final Host host =  resolveHost(contentlet);    
+
     for(final Field field : contentType.fields()) {
       if(ignoreFields.contains(field.variable()))continue;
       Object obj = contentlet.get(field.variable());
@@ -207,7 +220,7 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
       if(field instanceof BinaryField ) {
         map.remove(field.name());
         if(UtilMethods.isSet(contentlet.getInode())) {
-          map.put(field.name(), "http://" + host.getHostname() + printableMap.get(field.variable() + "Version"));
+          map.put(field.name(), company.getPortalURL() + printableMap.get(field.variable() + "Version"));
         }
         continue;
       }
@@ -215,6 +228,8 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
       map.put(field.name(), printableMap.get(field.variable()));
 
     }
+    
+
     return map;
 
   }

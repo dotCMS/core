@@ -18,9 +18,7 @@
                                <tbody>
                                    <tr>
                                        <td  valign="middle" width="100%" style="background:#eeeeee;width:100%;padding:20px;min-width:100%;color:#ffffff">
-                                          
                                           <img style="font-size: 18px; color: #ffffff; font-style: italic; font-weight: bold; height: 24; width: 128px;" alt="dotCMS" src="https://dotcms.com/application/themes/dotcms/img/dotcms.png" width="128" height="24" />
-
                                        </td>
                                    </tr>
                                </tbody>
@@ -47,6 +45,22 @@
                                                    <h3 style="font-size:14px;;margin:0;text-align:center">
                                                        Workflow: &quot;$!{actionName}&quot;<br>$!{stepName} ⟶ $!{nextStepName}
                                                    </h3>
+                                                   
+                                                   
+                                                   #if($!{linkToContent})
+                                                      <br>&nbsp;
+                                                      <table border="0" cellspacing="0" cellpadding="0" width="170px">
+                                                        <tr>
+                                                          <td bgcolor="#2a2941" style="padding: 8px; -webkit-border-radius:3px; border-radius:3px" align="center">
+                                                             <a href="$linkToContent" target="dotCMSWindow" style="font-size: 14px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #ffffff; text-decoration: none;">View in dotCMS</a>
+                                                             </td>
+                                                        </tr>
+                                                      </table>
+                                                   #end
+                                                   
+                                                   
+                                                   
+                                                   
                                                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size:0;height:30px;width:100%;min-width:100%;line-height:0">
                                                        <tbody>
                                                            <tr>

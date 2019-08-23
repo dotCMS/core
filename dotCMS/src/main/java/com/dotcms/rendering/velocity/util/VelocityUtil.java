@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.*;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.SystemProperties;
@@ -266,6 +267,9 @@ public class VelocityUtil {
     
     final HttpServletResponse responseProxy = new BaseResponse().response();
 
+
+    
+    
     Context context = getWebContext(VelocityUtil.getBasicContext(), requestProxy, responseProxy);
     context.put("host", host);
     context.put("contentType", contentType);
@@ -282,6 +286,17 @@ public class VelocityUtil {
     context.put("nextStepId", processor.getNextStep().getId());
     context.put("nextStepName", processor.getNextStep().getName());
     context.put("ipAddress", requestProxy.getRemoteAddr());
+    
+    // set the link to the contentlet
+    if(UtilMethods.isSet(contentlet.getInode())) {
+      final Company company = APILocator.getCompanyAPI().getDefaultCompany();
+      if(UtilMethods.isSet(contentlet.getInode())) {
+        context.put("linkToContent", company.getPortalURL() + "/dotAdmin/#/c/content/" + contentlet.getInode());
+      }
+    }
+    
+    
+    
     
     if (UtilMethods.isSet(processor.getTask())) {
       context.put("workflowTask", processor.getTask());
