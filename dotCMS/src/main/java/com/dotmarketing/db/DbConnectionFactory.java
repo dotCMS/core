@@ -104,6 +104,9 @@ public class DbConnectionFactory {
                     try {
                         final InitialContext ctx = new InitialContext();
                         defaultDataSource = (DataSource) JNDIUtil.lookup(ctx, Constants.DATABASE_DEFAULT_DATASOURCE);
+                    } catch(NoInitialContextException nce) {
+
+                      throw new DotRuntimeException(Constants.DATABASE_DEFAULT_DATASOURCE + " : " + nce.getMessage());
                     } catch (Exception e) {
                         Logger.error(DbConnectionFactory.class,
                                 "---------- DBConnectionFactory: error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE,
