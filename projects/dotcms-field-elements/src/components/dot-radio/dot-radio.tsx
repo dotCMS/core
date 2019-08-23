@@ -102,6 +102,7 @@ export class DotRadioComponent {
                         tabIndex={this.hint ? 0 : null}
                         role="radiogroup">
                         {this._options.map((item: DotOption) => {
+                            item.value = item.value.trim();
                             return (
                                 <label>
                                     <input

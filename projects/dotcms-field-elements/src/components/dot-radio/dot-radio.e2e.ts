@@ -193,12 +193,15 @@ describe('dot-radio', () => {
         });
 
         describe('options', () => {
-            it('should render options', async () => {
-                const value = 'a|1,b|2,c|3';
+            it('should render options and trim values', async () => {
+                const value = 'a|1 ,b|2,c|3 ';
                 element.setProperty('options', value);
                 await page.waitForChanges();
                 const optionElements = await getOptions(page);
                 expect(optionElements.length).toBe(3);
+                expect(optionElements[0].getAttribute('value')).toBe('1');
+                expect(optionElements[1].getAttribute('value')).toBe('2');
+                expect(optionElements[2].getAttribute('value')).toBe('3');
             });
 
             it('should not render options', async () => {
