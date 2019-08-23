@@ -7,10 +7,10 @@ then
 fi
 
 # Examples
-# https://storage.googleapis.com/cicd-246518-tests/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/mysql/reports/html/integrationTest/index.html
-# https://storage.googleapis.com/cicd-246518-tests/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/mysql/logs/dotcms.log
-# https://storage.googleapis.com/cicd-246518-tests/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/unit/reports/html/index.html
-# https://storage.googleapis.com/cicd-246518-tests/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/unit/logs/dotcms.log
+# https://storage.googleapis.com/cicd-246518-tests/branch-name/mysql/reports/html/integrationTest/index.html
+# https://storage.googleapis.com/cicd-246518-tests/branch-name/mysql/logs/dotcms.log
+# https://storage.googleapis.com/cicd-246518-tests/branch-name/unit/reports/html/index.html
+# https://storage.googleapis.com/cicd-246518-tests/branch-name/unit/logs/dotcms.log
 if [ "$PULL_REQUEST" != "false" ];
 then
 
