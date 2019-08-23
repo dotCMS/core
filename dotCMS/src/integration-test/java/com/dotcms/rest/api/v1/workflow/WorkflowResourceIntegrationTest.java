@@ -979,12 +979,12 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         // Create a content sample
         contentlet = new Contentlet();
         // instruct the content with its own type
-        contentlet.setStructureInode(contentType.inode());
+        contentlet.setContentTypeId(contentType.inode());
         contentlet.setHost(host.getIdentifier());
         contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
 
         contentlet.setStringProperty(REQUIRED_TEXT_FIELD_NAME,"anyValue");
-        contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
 
         // Save the content
         contentlet = contentletAPI.checkin(contentlet, systemUser, false);
