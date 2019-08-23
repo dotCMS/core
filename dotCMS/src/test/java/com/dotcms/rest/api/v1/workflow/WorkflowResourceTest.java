@@ -81,7 +81,7 @@ public class WorkflowResourceTest extends UnitTestBase {
         final WorkflowHelper workflowHelper = mock(WorkflowHelper.class);
         final ContentHelper contentHelper = mock(ContentHelper.class);
         final SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
-                SystemActionApiFireCommandFactory.getInstance();
+                mock(SystemActionApiFireCommandFactory.class);
         final WebResource webResource = mock(WebResource.class);
 
         if(throwWorkflowAPIException == 0) {

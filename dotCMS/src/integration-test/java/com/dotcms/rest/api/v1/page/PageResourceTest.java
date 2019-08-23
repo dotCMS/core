@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.rest.*;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
@@ -25,11 +27,9 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -53,6 +53,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 /**
  * {@link PageResource} test
@@ -101,6 +102,7 @@ public class PageResourceTest {
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
 
         when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
 
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         host = new SiteDataGen().name(hostName).nextPersisted();
@@ -292,6 +294,7 @@ public class PageResourceTest {
                 .map((ContainerRaw containerRaw) -> containerRaw.getContainer().getIdentifier())
                 .collect(Collectors.toList());
 
+        assertEquals(pageView.getNumberContents(), 0);
         assertTrue(containerIds.contains(localContainer1.getIdentifier()));
         assertTrue(containerIds.contains(localContainer1.getIdentifier()));
         assertFalse(containerIds.contains(container1.getIdentifier()));
@@ -312,5 +315,77 @@ public class PageResourceTest {
             }
             assertEquals(contentlets.size(), 1);
         }
+
+    }
+
+    /**
+     * Should remove visitors and persona from session
+     *
+     */
+    @Test
+    public void testRemoveVisitorAndPersona() throws DotDataException, DotSecurityException {
+        final String personaId = "1";
+        final String languageId = "1";
+        final String deviceInode = "3";
+
+        final String mode = "PREVIEW_MODE";
+        pageResource.render(request, response, pagePath, mode, personaId, languageId, deviceInode);
+        pageResource.render(request, response, pagePath, null, null, languageId, null);
+
+        verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
+        verify(session).removeAttribute(WebKeys.VISITOR);
+    }
+
+    /**
+     * Should return haveContent equals to true for a page with MultiTree linked
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testRenderWithContent() throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container localContainer = new ContainerDataGen().withStructure(structure,"").friendlyName("container-1-friendly-name").title("container-1-title").nextPersisted();
+
+        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
+                .withContainer(localContainer.getIdentifier())
+                .next();
+
+        final Template newTemplate = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .withContainer(localContainer.getIdentifier()
+                ).nextPersisted();
+        APILocator.getVersionableAPI().setWorking(newTemplate);
+        APILocator.getVersionableAPI().setLive(newTemplate);
+
+        final Contentlet checkout = APILocator.getContentletAPIImpl().checkout(pageAsset.getInode(), systemUser, false);
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate.getIdentifier());
+
+        APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
+        final Contentlet contentlet = contentletDataGen.setProperty("title", "title")
+                .setProperty("body", "body").languageId(1).nextPersisted();
+
+
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(), localContainer.getIdentifier(), contentlet.getIdentifier(), "1", 1);
+        multiTreeAPI.saveMultiTree(multiTree);
+
+        final Response response = pageResource
+                .loadJson(request, this.response, pagePath, "PREVIEW_MODE", null,
+                        "1", null);
+
+        RestUtilTest.verifySuccessResponse(response);
+
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertEquals(pageView.getNumberContents(), 1);
+
     }
 }

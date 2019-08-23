@@ -58,7 +58,7 @@ public class PaginationUtilTest {
         items.add(new PaginationUtilModeTest("testing"));
         items.setTotalResults(totalRecords);
 
-        when( req.getRequestURL() ).thenReturn( baseURL );
+        when( req.getRequestURI() ).thenReturn( baseURL.toString() );
 
         final Map<String, Object> params = map(
                 Paginator.DEFAULT_FILTER_PARAM_NAME, filter,
@@ -100,7 +100,7 @@ public class PaginationUtilTest {
         items.add(new PaginationUtilModeTest("testing"));
         items.setTotalResults(totalRecords);
 
-        when( req.getRequestURL() ).thenReturn( baseURL );
+        when( req.getRequestURI() ).thenReturn( baseURL.toString() );
 
         final Map<String, Object> params = map(
                 "type", list("A", "B"),
@@ -144,7 +144,7 @@ public class PaginationUtilTest {
         items.add(new PaginationUtilModeTest("testing"));
         items.setTotalResults(totalRecords);
 
-        when( req.getRequestURL() ).thenReturn( baseURL );
+        when( req.getRequestURI() ).thenReturn( baseURL.toString() );
 
         final Map<String, Object> params = map(
                 Paginator.DEFAULT_FILTER_PARAM_NAME, "",
@@ -177,7 +177,7 @@ public class PaginationUtilTest {
         final int offset = (page - 1) * perPage;
         final StringBuffer baseURL = new StringBuffer("/baseURL");
 
-        when( req.getRequestURL() ).thenReturn( baseURL );
+        when( req.getRequestURI() ).thenReturn( baseURL.toString() );
 
         final Map<String, Object> params = map(
                 Paginator.DEFAULT_FILTER_PARAM_NAME, "",
