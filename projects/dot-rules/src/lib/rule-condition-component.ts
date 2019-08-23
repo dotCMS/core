@@ -82,20 +82,20 @@ export class ConditionComponent implements OnInit {
     constructor(private _resources: I18nService, private loggerService: LoggerService) { }
 
     ngOnInit(): void {
-        this.typeDropdown = {
-            options: Object.keys(this.conditionTypes).map(key => {
-                const type = this.conditionTypes[key];
-                return {
-                    label: type._opt.label,
-                    value: type._opt.value
-                };
-            }),
-            placeholder: this._resources.get(
-                'api.sites.ruleengine.rules.inputs.condition.type.placeholder'
-            )
-        };
-
-
+        setTimeout(() => {
+            this.typeDropdown = {
+                options: Object.keys(this.conditionTypes).map(key => {
+                    const type = this.conditionTypes[key];
+                        return {
+                            label: type._opt.label,
+                            value: type._opt.value
+                        };
+                }),
+                placeholder: this._resources.get(
+                    'api.sites.ruleengine.rules.inputs.condition.type.placeholder'
+                )
+            };
+        }, 0);
     }
 
     ngOnChanges(change): void {

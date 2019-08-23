@@ -13,31 +13,40 @@ import { LoggerService } from 'dotcms-js';
 
 @Component({
     selector: 'rule-action',
-    template: `<div *ngIf="typeDropdown != null" flex layout="row" class="cw-rule-action cw-entry">
-  <div flex="25" layout="row" class="cw-row-start-area">
-    <cw-input-dropdown
-      flex
-      class="cw-type-dropdown"
-      [value]="action.type?.key"
-      [options]="typeDropdown.options"
-      placeholder="{{actionTypePlaceholder}}"
-      (onDropDownChange)="onTypeChange($event)">
-
-    </cw-input-dropdown>
-  </div>
-  <cw-serverside-condition flex="75"
-                           class="cw-condition-component"
-                           [componentInstance]="action"
-                           (parameterValueChange)="onParameterValueChange($event)">
-  </cw-serverside-condition>
-  <div class="cw-btn-group cw-delete-btn">
-    <div class="ui basic icon buttons">
-      <button class="ui button" aria-label="Delete Action" (click)="onDeleteRuleActionClicked()" [disabled]="!action.isPersisted()">
-        <i class="trash icon"></i>
-      </button>
-    </div>
-  </div>
-</div>`
+    template: `
+        <div *ngIf="typeDropdown != null" flex layout="row" class="cw-rule-action cw-entry">
+            <div flex="25" layout="row" class="cw-row-start-area">
+                <cw-input-dropdown
+                    flex
+                    class="cw-type-dropdown"
+                    [value]="action.type?.key"
+                    [options]="typeDropdown.options"
+                    placeholder="{{ actionTypePlaceholder }}"
+                    (onDropDownChange)="onTypeChange($event)"
+                >
+                </cw-input-dropdown>
+            </div>
+            <cw-serverside-condition
+                flex="75"
+                class="cw-condition-component"
+                [componentInstance]="action"
+                (parameterValueChange)="onParameterValueChange($event)"
+            >
+            </cw-serverside-condition>
+            <div class="cw-btn-group cw-delete-btn">
+                <div class="ui basic icon buttons">
+                    <button
+                        class="ui button"
+                        aria-label="Delete Action"
+                        (click)="onDeleteRuleActionClicked()"
+                        [disabled]="!action.isPersisted()"
+                    >
+                        <i class="trash icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `
 })
 export class RuleActionComponent implements OnInit {
     @Input() action: ActionModel;
@@ -65,16 +74,19 @@ export class RuleActionComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.typeDropdown = {
-            options: Object.keys(this.ruleActionTypes).map(key => {
-                const type = this.ruleActionTypes[key];
-                return {
-                    label: type._opt.label,
-                    value: type._opt.value
-                };
-            })
-        };
+        setTimeout(() => {
+            this.typeDropdown = {
+                options: Object.keys(this.ruleActionTypes).map((key) => {
+                    const type = this.ruleActionTypes[key];
+                    return {
+                        label: type._opt.label,
+                        value: type._opt.value
+                    };
+                })
+            };
+        }, 0);
     }
+
     onTypeChange(type: string): void {
         this.loggerService.info('RuleActionComponent', 'onTypeChange', type);
         this.updateRuleActionType.emit({
