@@ -25,6 +25,7 @@ import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -39,6 +40,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -393,7 +395,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     private void addConstantsToMap() {
 
-      if(!map.containsKey(CONTSTANTS_ADDED) && UtilMethods.isSet(getContentTypeId())) {
+      if(!map.containsKey(CONTSTANTS_ADDED) && UtilMethods.isSet(getContentTypeId()) && DbConnectionFactory.dbAvailable()) {
         ContentType type=getContentType();
         if(type==null)return;
         for(com.dotcms.contenttype.model.field.Field constant : type.fields(ConstantField.class)) {
