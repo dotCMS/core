@@ -104,8 +104,7 @@ public class SendFormEmailActionlet extends WorkFlowActionlet {
     context.put("formMap", getFormMap(processor));
     VelocityEval velocity = new VelocityEval(context);
     
-    
-    CacheLocator.getVeloctyResourceCache().clearCache();
+
     final String toEmail = velocity.eval(params.get(TO_EMAIL).getValue());
     final String fromEmail = velocity.eval(params.get(FROM_EMAIL).getOrDefault(company.getEmailAddress()));
     final String fromName = velocity.eval(params.get(FROM_NAME).getOrDefault("dotCMS"));
