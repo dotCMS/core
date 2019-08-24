@@ -26,13 +26,11 @@ echo -e "\e[36m=================================================================
 echo -e "\e[36m==========================================================================================================================\e[0m"
 echo -e "\e[1;36m                                                REPORTING\e[0m"
 echo
-echo -e "\e[31m   ${reportsCommitIndexURL}\e[0m"
-echo
 echo -e "\e[31m   ${reportsBranchIndexURL}\e[0m"
-echo
-echo -e "\e[31m   ${logCommitURL}\e[0m"
-echo
 echo -e "\e[31m   ${logBranchURL}\e[0m"
+echo
+echo -e "\e[31m   ${reportsCommitIndexURL}\e[0m"
+echo -e "\e[31m   ${logCommitURL}\e[0m"
 echo
 if [ "$TRAVIS_PULL_REQUEST" != "false" ];
 then
