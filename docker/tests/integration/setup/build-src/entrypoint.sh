@@ -7,8 +7,8 @@ mkdir -p /custom/output/logs
 mkdir -p /custom/output/reports/html
 #mkdir -p /custom/output/reports/xml
 
-export GOOGLE_STORAGE_JOB_COMMIT_FOLDER="cicd-246518-tests/${BUILD_HASH}/"
-export GOOGLE_STORAGE_JOB_BRANCH_FOLDER="cicd-246518-tests/${BUILD_ID}/"
+export GOOGLE_STORAGE_JOB_COMMIT_FOLDER="cicd-246518-tests/${BUILD_HASH}"
+export GOOGLE_STORAGE_JOB_BRANCH_FOLDER="cicd-246518-tests/${BUILD_ID}"
 
 if [[ "${1}" == "integration" || -z "${1}" ]]; then
 
