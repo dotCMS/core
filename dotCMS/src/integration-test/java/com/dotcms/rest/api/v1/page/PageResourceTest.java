@@ -16,6 +16,7 @@ import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
@@ -153,6 +154,7 @@ public class PageResourceTest {
         multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
         multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
 
+        persona.setIndexPolicy(IndexPolicy.WAIT_FOR);
         APILocator.getContentletAPI().publish(persona, user, false);
 
         when(request.getRequestURI()).thenReturn("/index");

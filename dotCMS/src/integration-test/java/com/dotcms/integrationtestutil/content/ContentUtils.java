@@ -131,6 +131,8 @@ public class ContentUtils {
         contentletAPI.setContentletProperty(checkoutContentlet, asOldField(fields.get(KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR)),
                 newValue);
 
+        checkoutContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        checkoutContentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         return contentletAPI.checkin(checkoutContentlet, user, Boolean.FALSE);
     }
 

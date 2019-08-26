@@ -479,7 +479,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.setSQL("SELECT * FROM workflow_task WHERE webasset = ?");
 		db.addParam(webAsset);
 
-		List<WorkflowTask> tasksToClearFromCache = this
+		final List<WorkflowTask> tasksToClearFromCache = this
 				.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
 
 		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ?)")
@@ -501,7 +501,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	@Override
 	public void deleteWorkflowTaskByContentletIdAndLanguage(final String webAsset, final long languageId) throws DotDataException {
 
-		List<WorkflowTask> tasksToClearFromCache = this
+		final List<WorkflowTask> tasksToClearFromCache = this
 				.convertListToObjects(new DotConnect()
 						.setSQL("SELECT * FROM workflow_task WHERE webasset = ? and language_id=?")
 						.addParam(webAsset)
@@ -526,6 +526,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	@Override
 	public void deleteWorkflowTaskByLanguage(final Language language) throws DotDataException {
 
+		final List<WorkflowTask> tasksToClearFromCache = this
+				.convertListToObjects(new DotConnect()
+						.setSQL("SELECT * FROM workflow_task WHERE language_id=?")
+						.addParam(language.getId()).loadObjectResults(), WorkflowTask.class);
+
 		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where language_id=?)")
 				.addParam(language.getId()).loadResult();
 
@@ -537,6 +542,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		new DotConnect().setSQL("delete from workflow_task where language_id=?")
 				.addParam(language.getId()).loadResult();
+
+		tasksToClearFromCache.forEach(cache::remove);
 	}
 
 	@Override

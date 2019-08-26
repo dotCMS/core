@@ -2438,6 +2438,9 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(1, contentletAPI.indexCount(
                     "+live:false +identifier:" + c.getIdentifier() + " +inode:" + c.getInode(),
                     user, respectFrontendRoles));
+            assertEquals(0, contentletAPI.indexCount(
+                    "+live:true +identifier:" + c.getIdentifier() + " +inode:" + c.getInode(),
+                    user, respectFrontendRoles));
         }
 
         HibernateUtil.startTransaction();
