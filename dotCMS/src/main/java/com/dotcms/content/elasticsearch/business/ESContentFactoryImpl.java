@@ -962,46 +962,44 @@ public class ESContentFactoryImpl extends ContentletFactory {
 		return findContentletByIdentifier(identifier.getId(), false, languageId);
 	}
 
-	@Override
-	protected List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException, DotStateException, DotSecurityException {
+  @Override
+  protected List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException, DotStateException, DotSecurityException {
 
-	  final HashMap<String, Contentlet> conMap = new HashMap<>();
+    final HashMap<String, Contentlet> conMap = new HashMap<>();
     for (String i : inodes) {
-        Contentlet c = contentletCache.get(i);
-        if(c != null && InodeUtils.isSet(c.getInode())){
-          conMap.put(c.getInode(), c);
-        } 
-    }
-    if(conMap.size()!=inodes.size()){
-      
-      List<String> missingCons = new ArrayList<>(CollectionUtils.subtract(inodes, conMap.keySet()));
-          
-      
-      final String contentletBase = "select {contentlet.*} from contentlet join inode contentlet_1_ "
-              + "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
-
-      for(int init=0; init < missingCons.size(); init+=200) {
-          int end = Math.min(init + 200, missingCons.size());
-
-          HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-          final StringBuilder hql = new StringBuilder()
-                  .append(contentletBase)
-                  .append(StringUtils.join(missingCons.subList(init, end), "','"))
-                  .append("') order by contentlet.mod_date DESC");
-
-          hu.setSQLQuery(hql.toString());
-
-          List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
-          for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
-              Contentlet con = convertFatContentletToContentlet(fatty);
-              conMap.put(con.getInode(), con);
-              contentletCache.add(con.getInode(), con);
-          }
-          HibernateUtil.getSession().clear();
+      Contentlet c = contentletCache.get(i);
+      if (c != null && InodeUtils.isSet(c.getInode())) {
+        conMap.put(c.getInode(), c);
       }
     }
-    return inodes.stream().map(inode->conMap.get(inode)).filter(Objects::nonNull).collect(Collectors.toList());
-	}
+    
+    if (conMap.size() != inodes.size()) {
+      List<String> missingCons = new ArrayList<>(CollectionUtils.subtract(inodes, conMap.keySet()));
+
+      final String contentletBase = "select {contentlet.*} from contentlet join inode contentlet_1_ "
+          + "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
+
+      for (int init = 0; init < missingCons.size(); init += 200) {
+        int end = Math.min(init + 200, missingCons.size());
+
+        HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
+        final StringBuilder hql = new StringBuilder().append(contentletBase).append(StringUtils.join(missingCons.subList(init, end), "','"))
+            .append("') order by contentlet.mod_date DESC");
+
+        hu.setSQLQuery(hql.toString());
+
+        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties = hu.list();
+        for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
+          Contentlet con = convertFatContentletToContentlet(fatty);
+          conMap.put(con.getInode(), con);
+          contentletCache.add(con.getInode(), con);
+        }
+        HibernateUtil.getSession().clear();
+      }
+    }
+    
+    return inodes.stream().map(inode -> conMap.get(inode)).filter(Objects::nonNull).collect(Collectors.toList());
+  }
 
 	/**
 	 *
