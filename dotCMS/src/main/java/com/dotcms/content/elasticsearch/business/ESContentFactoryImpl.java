@@ -69,14 +69,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
@@ -957,48 +963,44 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected List<Contentlet> findContentlets(List<String> inodes) throws DotDataException, DotStateException, DotSecurityException {
+	protected List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException, DotStateException, DotSecurityException {
 
-	    ArrayList<Contentlet> result = new ArrayList<Contentlet>();
-        ArrayList<String> inodesNotFound = new ArrayList<String>();
-        for (String i : inodes) {
-            Contentlet c = contentletCache.get(i);
-            if(c != null && InodeUtils.isSet(c.getInode())){
-                result.add(c);
-            } else {
-                inodesNotFound.add(i);
-            }
-        }
-        if(inodesNotFound.isEmpty()){
-            return result;
-        }
+	  final HashMap<String, Contentlet> conMap = new HashMap<>();
+    for (String i : inodes) {
+        Contentlet c = contentletCache.get(i);
+        if(c != null && InodeUtils.isSet(c.getInode())){
+          conMap.put(c.getInode(), c);
+        } 
+    }
+    if(conMap.size()!=inodes.size()){
+      
+      List<String> missingCons = new ArrayList<>(CollectionUtils.subtract(inodes, conMap.keySet()));
+          
+      
+      final String contentletBase = "select {contentlet.*} from contentlet join inode contentlet_1_ "
+              + "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
 
+      for(int init=0; init < missingCons.size(); init+=200) {
+          int end = Math.min(init + 200, missingCons.size());
 
+          HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
+          final StringBuilder hql = new StringBuilder()
+                  .append(contentletBase)
+                  .append(StringUtils.join(missingCons.subList(init, end), "','"))
+                  .append("') order by contentlet.mod_date DESC");
 
-        final String contentletBase = "select {contentlet.*} from contentlet join inode contentlet_1_ "
-                + "on contentlet_1_.inode = contentlet.inode and contentlet_1_.type = 'contentlet' where  contentlet.inode in ('";
+          hu.setSQLQuery(hql.toString());
 
-        for(int init=0; init < inodesNotFound.size(); init+=200) {
-            int end = Math.min(init + 200, inodesNotFound.size());
-
-            HibernateUtil hu = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-            final StringBuilder hql = new StringBuilder()
-                    .append(contentletBase)
-                    .append(StringUtils.join(inodesNotFound.subList(init, end), "','"))
-                    .append("') order by contentlet.mod_date DESC");
-
-            hu.setSQLQuery(hql.toString());
-
-            List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
-            for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
-                Contentlet con = convertFatContentletToContentlet(fatty);
-                result.add(con);
-                contentletCache.add(con.getInode(), con);
-            }
-            HibernateUtil.getSession().clear();
-        }
-
-        return result;
+          List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
+          for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
+              Contentlet con = convertFatContentletToContentlet(fatty);
+              conMap.put(con.getInode(), con);
+              contentletCache.add(con.getInode(), con);
+          }
+          HibernateUtil.getSession().clear();
+      }
+    }
+    return inodes.stream().map(inode->conMap.get(inode)).filter(Objects::nonNull).collect(Collectors.toList());
 	}
 
 	/**
