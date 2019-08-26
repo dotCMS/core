@@ -8,14 +8,14 @@ import java.sql.Connection;
  */
 public class DotJobConnectionWrapper extends DotConnectionWrapper {
 
-    private final boolean isNewConnection;
+    private final boolean newConnection;
 
-    public DotJobConnectionWrapper(boolean isNewConnection, Connection conn) {
+    public DotJobConnectionWrapper(final boolean newConnection, Connection conn) {
         super(conn);
-        this.isNewConnection = isNewConnection;
+        this.newConnection = newConnection;
     }
 
     public boolean isNewConnection() {
-        return isNewConnection;
+        return newConnection;
     }
 }
