@@ -37,9 +37,12 @@ public class WebResourceIntegrationTest {
 
     response = new MockHttpResponse().response();
 
-    backEndUser = new UserDataGen().roles(APILocator.getRoleAPI().loadRoleByKey(Role.DOTCMS_BACK_END_USER)).nextPersisted();
+    backEndUser = new UserDataGen().nextPersisted();
+    frontEndUser = new UserDataGen().nextPersisted();
+    
+    APILocator.getRoleAPI().addRoleToUser(Role.DOTCMS_BACK_END_USER, backEndUser);
+    APILocator.getRoleAPI().addRoleToUser(Role.DOTCMS_BACK_END_USER, frontEndUser);
 
-    frontEndUser = new UserDataGen().roles(APILocator.getRoleAPI().loadRoleByKey(Role.DOTCMS_FRONT_END_USER)).nextPersisted();
     cmsAnon = APILocator.getUserAPI().getAnonymousUser();
   }
 
