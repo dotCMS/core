@@ -97,12 +97,17 @@ public interface LanguageVariableAPI {
      */
     public default String getLanguageVariable(final String key, final long languageId, final User user) {
 
-        return this.getLanguageVariable(key, languageId, user, true);
+        return this.getLanguageVariable(key, languageId, user, true, false);
     }
 
-    default String getLanguageVariable(final String key, final long languageId, final User user, final boolean live) {
+    default String getLanguageVariable(
+            final String key,
+            final long languageId,
+            final User user,
+            final boolean live,
+            final boolean respectFrontendRoles) {
 
-        return this.get(key, languageId, user, live, Boolean.FALSE);
+        return this.get(key, languageId, user, live, respectFrontendRoles);
     }
 
     /**

@@ -8,8 +8,7 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.*;
 
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 import static com.dotcms.util.CollectionsUtils.map;
@@ -23,7 +22,10 @@ import com.dotcms.integrationtestutil.content.ContentUtils;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -84,4 +86,52 @@ public class FieldUtilTest {
 
         assertEquals(languageVariableValue, fieldMap.get("name"));
     }
+
+    @Test
+    public void testSetFieldInternationalizationWithAnonymousUser() throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.systemUser();
+        final ContentType languageVariableContentType = ContentTypeDataGen.createLanguageVariableContentType();
+        ContentType formContentType = null;
+
+        final String fieldName = String.format("test%d", new Date().getTime());
+
+        formContentType = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.FORM)
+                .fields(
+                        CollectionsUtils.list(
+                                ImmutableRowField.builder()
+                                        .name("roe")
+                                        .sortOrder(5)
+                                        .build(),
+                                ImmutableColumnField.builder()
+                                        .name("column")
+                                        .sortOrder(6)
+                                        .build(),
+                                ImmutableTextField.builder()
+                                        .name(fieldName)
+                                        .sortOrder(7)
+                                        .build()
+                        )
+                )
+                .nextPersisted();
+
+        final String key = String.format("%s.%s.name", formContentType.variable(), fieldName);
+        final String languageVariableValue = "test";
+        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final boolean live = true;
+
+        final Contentlet content = ContentUtils.createTestKeyValueContent(key, languageVariableValue, languageId, languageVariableContentType, systemUser);
+        PermissionUtilTest.addAnonymousUser(content);
+
+        final ContentTypeInternationalization contentTypeInternationalization =
+                new ContentTypeInternationalization(languageId, live, null);
+
+        final Map<String, Object> fieldMap = map("name", fieldName, "variable", fieldName);
+        FieldUtil.setFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
+
+        assertEquals(languageVariableValue, fieldMap.get("name"));
+    }
+
+
 }
