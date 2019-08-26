@@ -22,9 +22,10 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.liferay.portal.NoSuchReleaseException;
 import com.liferay.portal.SystemException;
-import com.liferay.portal.util.HibernateUtil;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -44,6 +45,7 @@ public class ReleasePersistence extends BasePersistence {
 		return new com.liferay.portal.model.Release(releaseId);
 	}
 
+	@WrapInTransaction
 	protected com.liferay.portal.model.Release remove(String releaseId)
 		throws NoSuchReleaseException, SystemException {
 		Session session = null;
@@ -68,11 +70,9 @@ public class ReleasePersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@WrapInTransaction
 	protected com.liferay.portal.model.Release update(
 		com.liferay.portal.model.Release release) throws SystemException {
 		Session session = null;
@@ -120,11 +120,9 @@ public class ReleasePersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected com.liferay.portal.model.Release findByPrimaryKey(
 		String releaseId) throws NoSuchReleaseException, SystemException {
 		com.liferay.portal.model.Release release = ReleasePool.get(releaseId);
@@ -149,11 +147,9 @@ public class ReleasePersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
-		finally {
-			HibernateUtil.closeSession(session);
-		}
 	}
 
+	@CloseDBIfOpened
 	protected List findAll() throws SystemException {
 		Session session = null;
 
@@ -176,9 +172,6 @@ public class ReleasePersistence extends BasePersistence {
 		}
 		catch (HibernateException he) {
 			throw new SystemException(he);
-		}
-		finally {
-			HibernateUtil.closeSession(session);
 		}
 	}
 }
