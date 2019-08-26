@@ -356,7 +356,6 @@ public class TempFileAPI {
     uniqList.add(request.getHeader("User-Agent"));
     uniqList.add(request.getHeader("Host"));
     uniqList.add(request.getHeader("Accept-Language"));
-
     uniqList.add(request.getHeader("Accept-Encoding"));
     uniqList.add(request.getHeader("X-Forwarded-For"));
     uniqList.add(request.getRemoteHost());
@@ -372,7 +371,7 @@ public class TempFileAPI {
     }
     
     uniqList.removeIf(Objects::isNull);
-    if(uniqList.isEmpty()) {
+    if(uniqList.size() < 4) {
       throw new DotRuntimeException("Invalid request - no unique identifiers passed in");
     }
     
