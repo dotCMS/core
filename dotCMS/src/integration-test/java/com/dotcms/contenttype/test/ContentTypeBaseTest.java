@@ -251,20 +251,7 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 
 	
 	
-	
-  @Test
-  public void test_get_fields_by_type() throws Exception{
 
-    ContentType testType = new ContentTypeDataGen().baseContentType(BaseContentType.FORM).nextPersisted();
-
-    assertThat("a form has four fields",testType.fields().size()==4);
-    assertThat("Filtering fields by immutable type", testType.fields(ImmutableConstantField.class).size()==3);
-    assertThat("Filtering fields by field type",testType.fields(ConstantField.class).size()==3);
-    assertThat("Filtering fields by immutable type",testType.fields(HostFolderField.class).size()==1);
-    assertThat("Filtering fields by field type",testType.fields(ImmutableHostFolderField.class).size()==1);
-  }
-	
-	
 	
 	
 	
