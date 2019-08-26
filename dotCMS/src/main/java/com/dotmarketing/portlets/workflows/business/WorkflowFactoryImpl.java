@@ -139,7 +139,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	private List convertListToObjects(List<Map<String, Object>> rs, Class clazz) throws DotDataException {
+	private <T> List<T> convertListToObjects(List<Map<String, Object>> rs, Class<T> clazz) throws DotDataException {
 		final List ret = new ArrayList();
 		try {
 			for (final Map<String, Object> map : rs) {
@@ -473,6 +473,13 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	@Override
 	public void deleteWorkflowTaskByContentletIdAnyLanguage(final String webAsset) throws DotDataException {
 
+		final DotConnect db = new DotConnect();
+		db.setSQL("SELECT * FROM workflow_task WHERE webasset = ?");
+		db.addParam(webAsset);
+
+		List<WorkflowTask> tasksToClearFromCache = this
+				.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
+
 		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ?)")
 				.addParam(webAsset).loadResult();
 
@@ -484,10 +491,19 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		new DotConnect().setSQL("delete from workflow_task where webasset = ?")
 				.addParam(webAsset).loadResult();
+
+		tasksToClearFromCache.forEach(cache::remove);
+
 	}
 
 	@Override
 	public void deleteWorkflowTaskByContentletIdAndLanguage(final String webAsset, final long languageId) throws DotDataException {
+
+		List<WorkflowTask> tasksToClearFromCache = this
+				.convertListToObjects(new DotConnect()
+						.setSQL("SELECT * FROM workflow_task WHERE webasset = ? and language_id=?")
+						.addParam(webAsset)
+						.addParam(languageId).loadObjectResults(), WorkflowTask.class);
 
 		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ? and language_id=?)")
 				.addParam(webAsset).addParam(languageId).loadResult();
@@ -500,6 +516,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		new DotConnect().setSQL("delete from workflow_task where webasset = ? and language_id=?")
 				.addParam(webAsset).addParam(languageId).loadResult();
+
+		tasksToClearFromCache.forEach(cache::remove);
+
 	}
 
 	@Override
