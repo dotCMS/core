@@ -181,7 +181,7 @@ describe('SearchableDropdownComponent', () => {
         const overlay = de.query(By.css('.ui-overlaypanel'));
         const pdataview = de.query(By.css('.ui-dataview')).componentInstance;
         tick(100);
-        expect(comp.cssClass).toContain('paginator');
+        expect(comp.cssClass).toContain('searchable-dropdown paginator');
         expect(overlay.componentInstance.styleClass).toBe('testClass');
         expect(pdataview.style).toEqual({ width: '650px' });
     }));
