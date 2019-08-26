@@ -18,24 +18,19 @@ import { filter } from 'rxjs/operators';
     styleUrls: ['./dot-dialog.component.scss']
 })
 export class DotDialogComponent implements OnChanges {
-    @ViewChild('dialog')
-    dialog: ElementRef;
+    @ViewChild('dialog') dialog: ElementRef;
 
     @Input()
     @HostBinding('class.active')
     visible: boolean;
 
-    @Input()
-    header = '';
+    @Input() header = '';
 
-    @Input()
-    actions: DotDialogActions;
+    @Input() actions: DotDialogActions;
 
-    @Input()
-    closeable = true;
+    @Input() closeable = true;
 
-    @Input()
-    cssClass: string;
+    @Input() cssClass: string;
 
     @Input()
     contentStyle: {
@@ -47,25 +42,22 @@ export class DotDialogComponent implements OnChanges {
         [key: string]: string;
     };
 
-    @Input()
-    width: string;
+    @Input() width: string;
 
-    @Input()
-    height: string;
+    @Input() height: string;
 
-    @Input()
-    hideButtons: boolean;
+    @Input() hideButtons: boolean;
 
-    @Output()
-    hide: EventEmitter<any> = new EventEmitter();
+    @Input() appendToBody = false;
+
+    @Output() hide: EventEmitter<any> = new EventEmitter();
 
     @Output()
     beforeClose: EventEmitter<{
         close: () => void;
     }> = new EventEmitter();
 
-    @Output()
-    visibleChange: EventEmitter<any> = new EventEmitter();
+    @Output() visibleChange: EventEmitter<any> = new EventEmitter();
 
     isContentScrolled: boolean;
 
@@ -76,6 +68,7 @@ export class DotDialogComponent implements OnChanges {
     ngOnChanges(changes: SimpleChanges) {
         if (changes.visible && changes.visible.currentValue) {
             this.bindEvents();
+            this.appendContainer();
         }
     }
 
@@ -186,6 +179,12 @@ export class DotDialogComponent implements OnChanges {
         this.subscription.forEach((sub: Subscription) => {
             sub.unsubscribe();
         });
+    }
+
+    private appendContainer() {
+        if (this.appendToBody) {
+            document.body.appendChild(this.el.nativeElement);
+        }
     }
 }
 

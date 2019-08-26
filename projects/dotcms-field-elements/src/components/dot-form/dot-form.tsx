@@ -1,10 +1,10 @@
 import { Component, Element, Listen, Prop, State, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
 
-import { DotFieldStatus, DotTempFile } from '../../models';
+import { DotFieldStatus } from '../../models';
 import { fieldCustomProcess, getFieldsFromLayout } from './utils';
 import { getClassNames, getOriginalStatus, updateStatus } from '../../utils';
-import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField } from 'dotcms-models';
+import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField, DotCMSTempFile } from 'dotcms-models';
 import { DotUploadService } from './services/dot-upload.service';
 import { DotHttpErrorResponse } from '../../models/dot-http-error-response.model';
 import { DotBinaryFileComponent } from '../dot-binary-file/dot-binary-file';
@@ -60,7 +60,7 @@ export class DotFormComponent {
         const { name, value } = event.detail;
         const process = fieldCustomProcess[tagName];
         if (tagName === 'DOT-BINARY-FILE' && value) {
-            this.uploadFile(event).then((tempFile: DotTempFile) => {
+            this.uploadFile(event).then((tempFile: DotCMSTempFile) => {
                 this.value[name] = tempFile.id;
             });
         } else {
@@ -218,14 +218,14 @@ export class DotFormComponent {
             );
     }
 
-    private uploadFile(event: CustomEvent): Promise<DotTempFile> {
+    private uploadFile(event: CustomEvent): Promise<DotCMSTempFile> {
         const uploadService = new DotUploadService();
         const value = event.detail.value;
         const binary: DotBinaryFileComponent = (event.target as unknown) as DotBinaryFileComponent;
         this.uploadFileInProgress = true;
         return uploadService
             .uploadFile(value)
-            .then((tempFile: DotTempFile) => {
+            .then((tempFile: DotCMSTempFile) => {
                 this.errorMessage = '';
                 binary.previewImageUrl = tempFile.thumbnailUrl;
                 binary.previewImageName = tempFile.fileName;

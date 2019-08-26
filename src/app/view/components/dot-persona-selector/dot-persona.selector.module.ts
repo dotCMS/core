@@ -11,6 +11,7 @@ import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-i
 import { PaginatorService } from '@services/paginator';
 import { DotPersonasService } from '@services/dot-personas/dot-personas.service';
 import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize.service';
+import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.module';
 
 @NgModule({
     declarations: [DotPersonaSelectorComponent],
@@ -24,7 +25,8 @@ import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize
         DotIconModule,
         DotAvatarModule,
         ButtonModule,
-        SharedModule
+        SharedModule,
+        DotAddPersonaDialogModule
     ],
     providers: [PaginatorService, DotPersonasService, DotPersonalizeService]
 })

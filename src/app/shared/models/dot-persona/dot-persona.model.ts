@@ -1,33 +1,13 @@
-export interface DotPersona {
-    archived: boolean;
-    baseType: string;
-    contentType: string;
+import { DotCMSContentlet } from 'dotcms-models';
+
+export interface DotPersona extends DotCMSContentlet {
     description?: string;
-    folder: string;
-    hasTitleImage: boolean;
-    host: string;
     hostFolder?: string;
-    hostName: string;
-    identifier: string;
-    inode: string;
     keyTag: string;
-    languageId: number;
-    live: boolean;
-    locked: boolean;
-    modDate: number;
-    modUser: string;
-    modUserName: string;
     name: string;
-    owner?: string;
     personalized: boolean;
     photo?: string;
     photoContentAsset?: string;
     photoVersion?: string;
-    sortOrder: number;
-    stInode: string;
     tags?: string;
-    title: string;
-    titleImage: string;
-    url?: string;
-    working: boolean;
 }

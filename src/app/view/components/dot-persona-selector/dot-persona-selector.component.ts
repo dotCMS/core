@@ -1,11 +1,4 @@
-import {
-    Component,
-    ViewChild,
-    Output,
-    EventEmitter,
-    Input,
-    OnInit
-} from '@angular/core';
+import { Component, ViewChild, Output, EventEmitter, Input, OnInit } from '@angular/core';
 import { PaginatorService } from '@services/paginator';
 import {
     SearchableDropdownComponent,
@@ -14,6 +7,7 @@ import {
 import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
 import { take } from 'rxjs/operators';
 import { DotPageRenderState, DotPageMode } from '@portlets/dot-edit-page/shared/models';
+import {DotAddPersonaDialogComponent} from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
 
 /**
  * It is dropdown of personas, it handle pagination and global search
@@ -29,15 +23,13 @@ import { DotPageRenderState, DotPageMode } from '@portlets/dot-edit-page/shared/
 })
 export class DotPersonaSelectorComponent implements OnInit {
     @Input() disabled: boolean;
-    
-    @Output()
-    selected: EventEmitter<DotPersona> = new EventEmitter();
 
-    @Output()
-    delete: EventEmitter<DotPersona> = new EventEmitter();
+    @Output() selected: EventEmitter<DotPersona> = new EventEmitter();
 
-    @ViewChild('searchableDropdown')
-    searchableDropdown: SearchableDropdownComponent;
+    @Output() delete: EventEmitter<DotPersona> = new EventEmitter();
+
+    @ViewChild('searchableDropdown') searchableDropdown: SearchableDropdownComponent;
+    @ViewChild('personaDialog') personaDialog: DotAddPersonaDialogComponent;
 
     isEditMode = false;
     messagesKey: { [key: string]: string } = {};
@@ -53,7 +45,8 @@ export class DotPersonaSelectorComponent implements OnInit {
 
     ngOnInit(): void {
         this.addAction = () => {
-            // TODO Implement + action
+            this.searchableDropdown.toggleOverlayPanel();
+            this.personaDialog.visible = true;
         };
         this.paginationService.paginationPerPage = this.paginationPerPage;
     }
@@ -126,6 +119,17 @@ export class DotPersonaSelectorComponent implements OnInit {
         this.personas = this.personas.map((currentPersona: DotPersona) => {
             return currentPersona.identifier === persona.identifier ? persona : currentPersona;
         });
+    }
+
+    /**
+     * Propagate the new persona and refresh the persona list
+     *
+     * @param {DotPersona} persona
+     * @memberof DotPersonaSelectorComponent
+     */
+    handleNewPersona(persona: DotPersona): void {
+        this.personaChange(persona);
+        this.getPersonasList();
     }
 
     private getPersonasList(filter = '', offset = 0): void {

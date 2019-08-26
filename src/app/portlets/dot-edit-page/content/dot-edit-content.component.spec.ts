@@ -654,7 +654,6 @@ describe('DotEditContentComponent', () => {
             );
         }));
     });
-
     describe('handle switch site', () => {
         beforeEach(fakeAsync(() => {
             // component.pageState = null;

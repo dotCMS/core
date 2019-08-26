@@ -57,6 +57,11 @@
         }
     }
 
+    &.ui-fileupload-choose {
+        display: inline-flex;
+        align-items: center;
+    }
+
     &[tiny] {
         height: $button-tiny-height;
 

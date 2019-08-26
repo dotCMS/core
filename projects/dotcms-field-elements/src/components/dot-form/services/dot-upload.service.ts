@@ -1,4 +1,4 @@
-import { DotTempFile } from '../../../models';
+import { DotCMSTempFile } from 'dotcms-models';
 import { DotHttpErrorResponse } from '../../../models/dot-http-error-response.model';
 
 export class DotUploadService {
@@ -12,7 +12,7 @@ export class DotUploadService {
      *
      * @memberof DotUploadService
      */
-    uploadFile(file: string | File): Promise<DotTempFile> {
+    uploadFile(file: string | File): Promise<DotCMSTempFile> {
         if (typeof file === 'string') {
             return this.uploadFileByURL(file);
         } else {
@@ -20,7 +20,7 @@ export class DotUploadService {
         }
     }
 
-    private uploadFileByURL(url: string): Promise<DotTempFile> {
+    private uploadFileByURL(url: string): Promise<DotCMSTempFile> {
         const UPLOAD_FILE_FROM_URL = '/api/v1/temp/byUrl';
         return fetch(UPLOAD_FILE_FROM_URL, {
             method: 'POST',
@@ -44,7 +44,7 @@ export class DotUploadService {
         });
     }
 
-    private uploadBinaryFile(file: File): Promise<DotTempFile> {
+    private uploadBinaryFile(file: File): Promise<DotCMSTempFile> {
         const UPLOAD_FILE = '/api/v1/temp';
 
         const formData = new FormData();

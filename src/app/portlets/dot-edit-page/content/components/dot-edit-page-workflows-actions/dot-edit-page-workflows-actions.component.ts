@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { MenuItem } from 'primeng/primeng';
 import { DotCMSWorkflowAction } from 'dotcms-models';
-import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
+import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotPage } from '../../../shared/models/dot-page.model';
@@ -35,7 +35,7 @@ export class DotEditPageWorkflowsActionsComponent implements OnInit, OnChanges {
     actions: Observable<MenuItem[]>;
 
     constructor(
-        private workflowsService: DotWorkflowService,
+        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
         private dotWorkflowsActionsService: DotWorkflowsActionsService,
         private dotMessageService: DotMessageService,
         private httpErrorManagerService: DotHttpErrorManagerService,
@@ -69,8 +69,8 @@ export class DotEditPageWorkflowsActionsComponent implements OnInit, OnChanges {
                 label: workflow.name,
                 command: () => {
                     const currentMenuActions = this.actions;
-                    this.actions = this.workflowsService
-                        .fireWorkflowAction(this.page.workingInode, workflow.id)
+                    this.actions = this.dotWorkflowActionsFireService
+                        .fireTo(this.page.workingInode, workflow.id)
                         .pipe(
                             pluck('inode'),
                             tap(() => {

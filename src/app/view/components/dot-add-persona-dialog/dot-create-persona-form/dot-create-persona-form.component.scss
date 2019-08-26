@@ -1,0 +1,13 @@
+@import "variables";
+
+p-fileupload {
+    margin-top: $basic-padding;
+    display: block;
+}
+
+.form__file-detail {
+    margin-top: $basic-padding;
+    span {
+        margin-right: $basic-padding;
+    }
+}

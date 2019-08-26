@@ -31,6 +31,7 @@ const dispatchKeydownEvent = (key: string) => {
             [header]="header"
             [(visible)]="show"
             [closeable]="closeable"
+            [appendToBody]="appendToBody"
             [hideButtons]="hideButtons">
             <b>Dialog content</b>
         </dot-dialog>
@@ -43,6 +44,7 @@ class TestHostComponent {
     closeable = false;
     actions: DotDialogActions;
     hideButtons =  false;
+    appendToBody = false;
 }
 
 @Component({
@@ -101,6 +103,10 @@ describe('DotDialogComponent', () => {
             it('should not show close button', () => {
                 const close: DebugElement = de.query(By.css('dot-icon-button'));
                 expect(close === null).toBe(true);
+            });
+
+            it('should set appendToBody to false', () => {
+                expect(component.appendToBody).toBe(false);
             });
         });
 
@@ -173,6 +179,16 @@ describe('DotDialogComponent', () => {
             it('should show footer', () => {
                 const footer: DebugElement = de.query(By.css('.dialog__footer'));
                 expect(footer === null).toBe(false);
+            });
+
+            it('should append component to body', () => {
+                hostComponent.show = false;
+                hostComponent.appendToBody = true;
+                hostFixture.detectChanges();
+                hostComponent.show = true;
+                hostFixture.detectChanges();
+
+                expect(de.nativeElement.parentNode).toBe(document.body);
             });
 
             it('should add CSS class', () => {

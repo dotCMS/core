@@ -1,0 +1,42 @@
+<form [formGroup]="form" >
+    <div class="form__group">
+        <label for="content-type-form-host" class="form__label">{{messagesKey['modes.persona.host']}}</label>
+        <dot-site-selector-field
+            id="content-type-form-host"
+            formControlName="hostFolder"
+            [system]="true"
+        ></dot-site-selector-field>
+    </div>
+
+    <div class="form__group">
+        <label for="persona-name" class="form__label">{{messagesKey['modes.persona.name']}}</label>
+        <input id="persona-name" dotAutofocus type="text" (change)="setKeyTag()" formControlName="name" name="name" pInputText />
+        <dot-field-validation-message
+            [message]="messagesKey['modes.persona.name.error.required']"
+            [field]="form.get('name')">
+        </dot-field-validation-message>
+    </div>
+
+    <div class="form__group">
+        <label for="persona-keyTag" class="form__label">{{messagesKey['modes.persona.key.tag']}}</label>
+        <input id="persona-keyTag" type="text" formControlName="keyTag" name="keyTag" pInputText />
+    </div>
+
+    <div class="form__group">
+        <label for="persona-image" class="form__label">{{messagesKey['modes.persona.upload.file']}}</label>
+        <p-fileUpload  *ngIf="!imageName"
+                       id="persona-image"
+                       [chooseLabel]="messagesKey['dot.common.choose']"
+                       url="/api/v1/temp"
+                       accept="image/*"
+                       (onUpload)="onFileUpload($event)"
+                       (onBeforeUpload)="isValid.emit(false)"
+                       auto="true"
+                       mode="basic">
+        </p-fileUpload>
+        <div class="form__file-detail" *ngIf="imageName" >
+            <span>{{imageName}}</span>
+            <button tiny pButton secondary [label]="messagesKey['dot.common.remove']" (click)="removeImage()"></button>
+        </div>
+    </div>
+</form>

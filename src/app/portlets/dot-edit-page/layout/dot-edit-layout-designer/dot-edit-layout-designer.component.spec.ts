@@ -31,12 +31,9 @@ import { DotTheme } from '@portlets/dot-edit-page/shared/models/dot-theme.model'
 import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/dot-edit-layout.service';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-<<<<<<< HEAD
 import { DotPageRender } from '@portlets/dot-edit-page/shared/models';
-=======
 import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-toolbar/dot-edit-toolbar.module';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
->>>>>>> origin/master
 
 @Component({
     selector: 'dot-template-addtional-actions-menu',
@@ -322,7 +319,7 @@ describe('DotEditLayoutDesignerComponent', () => {
         let themeSelector: MockDotThemeSelectorComponent;
         let themeButton;
         beforeEach(() => {
-            component.pageState = new DotPageRenderState(mockUser, 
+            component.pageState = new DotPageRenderState(mockUser,
                 new DotPageRender({
                     ...mockDotRenderedPage,
                     template: { ...mockDotTemplate, theme: '123' },
@@ -482,7 +479,7 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         describe('should show', () => {
             beforeEach(() => {
-                component.pageState = new DotPageRenderState(mockUser, 
+                component.pageState = new DotPageRenderState(mockUser,
                     new DotPageRender({
                         ...mockDotRenderedPage,
                         template: {
@@ -514,7 +511,7 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         describe('not show', () => {
            it('when user can\'t edit the template and set layout mode', () => {
-                component.pageState = new DotPageRenderState(mockUser, 
+                component.pageState = new DotPageRenderState(mockUser,
                     new DotPageRender({
                         ...mockDotRenderedPage,
                         template: {
@@ -530,7 +527,7 @@ describe('DotEditLayoutDesignerComponent', () => {
             });
 
             it('when page have a layout and set layout mode', () => {
-                component.pageState = new DotPageRenderState(mockUser, 
+                component.pageState = new DotPageRenderState(mockUser,
                     new DotPageRender({
                         ...mockDotRenderedPage,
                         template: {
@@ -545,7 +542,7 @@ describe('DotEditLayoutDesignerComponent', () => {
             });
 
             it('when editTemplate is false by default', () => {
-                component.pageState = new DotPageRenderState(mockUser, 
+                component.pageState = new DotPageRenderState(mockUser,
                     new DotPageRender({
                         ...mockDotRenderedPage,
                         template: {
@@ -564,7 +561,7 @@ describe('DotEditLayoutDesignerComponent', () => {
 
     describe('edit layout No sidebars', () => {
         beforeEach(() => {
-            component.pageState = new DotPageRenderState(mockUser, 
+            component.pageState = new DotPageRenderState(mockUser,
                 new DotPageRender({
                     ...mockDotRenderedPage,
                     template: { ...mockDotTemplate, theme: '123' },

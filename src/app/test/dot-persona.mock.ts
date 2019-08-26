@@ -15,7 +15,7 @@ export const mockDotPersona: DotPersona = {
     languageId: 1,
     live: false,
     locked: false,
-    modDate: 0,
+    modDate: '0',
     modUser: 'system',
     modUserName: 'system user system user',
     name: 'Global Investor',
@@ -26,4 +26,6 @@ export const mockDotPersona: DotPersona = {
     title: 'Default Visitor',
     titleImage: 'TITLE_IMAGE_NOT_FOUND',
     working: false,
+    owner: 'me',
+    url: '/root'
 };
