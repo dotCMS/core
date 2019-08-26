@@ -7,7 +7,7 @@ import {
 import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
 import { take } from 'rxjs/operators';
 import { DotPageRenderState, DotPageMode } from '@portlets/dot-edit-page/shared/models';
-import {DotAddPersonaDialogComponent} from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
+import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
 
 /**
  * It is dropdown of personas, it handle pagination and global search
@@ -31,13 +31,14 @@ export class DotPersonaSelectorComponent implements OnInit {
     @ViewChild('searchableDropdown') searchableDropdown: SearchableDropdownComponent;
     @ViewChild('personaDialog') personaDialog: DotAddPersonaDialogComponent;
 
+    addAction: (item: DotPersona) => void;
+    canDespersonalize = false;
     isEditMode = false;
     messagesKey: { [key: string]: string } = {};
     paginationPerPage = 5;
     personas: DotPersona[];
     totalRecords: number;
     value: DotPersona;
-    addAction: (item: DotPersona) => void;
 
     private _pageState: DotPageRenderState;
 
@@ -57,6 +58,7 @@ export class DotPersonaSelectorComponent implements OnInit {
         this.paginationService.url = `v1/page/${this.pageState.page.identifier}/personas`;
         this.isEditMode = this.pageState.state.mode === DotPageMode.EDIT;
         this.value = this.pageState.viewAs && this.pageState.viewAs.persona;
+        this.canDespersonalize = this.pageState.page.canEdit || this.pageState.page.canLock;
         this.reloadPersonasListCurrentPage();
     }
 

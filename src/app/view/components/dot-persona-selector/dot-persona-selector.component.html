@@ -22,6 +22,7 @@
     </ng-template>
     <ng-template let-personaData="item" pTemplate="listItem">
         <dot-persona-selector-option
+            [canDespersonalize]="canDespersonalize"
             [persona]="value && value.identifier === personaData.identifier ? value : personaData"
             [selected]="value && value.identifier === personaData.identifier"
             (change)="personaChange($event)"
@@ -30,4 +31,7 @@
     </ng-template>
 </dot-searchable-dropdown>
 
-<dot-add-persona-dialog #personaDialog (createdPersona)="handleNewPersona($event)" ></dot-add-persona-dialog>
+<dot-add-persona-dialog
+    #personaDialog
+    (createdPersona)="handleNewPersona($event)"
+></dot-add-persona-dialog>

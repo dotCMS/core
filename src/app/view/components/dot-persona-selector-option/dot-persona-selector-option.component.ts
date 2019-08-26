@@ -11,6 +11,9 @@ import { Observable } from 'rxjs';
 })
 export class DotPersonaSelectorOptionComponent implements OnInit {
     @Input()
+    canDespersonalize = true;
+
+    @Input()
     persona: DotPersona;
 
     @Input()
@@ -27,21 +30,10 @@ export class DotPersonaSelectorOptionComponent implements OnInit {
     constructor(private dotMessageService: DotMessageService) {}
 
     ngOnInit() {
-        /*
-            Looks like because we're passing this as a template the requets to get
-            the message key is not happening as expected, setTimeout hack it to work.
-        */
-        setTimeout(() => {
-            this.deleteLabel$ = this.dotMessageService
-                .getMessages(['modes.persona.personalized'])
-                .pipe(
-                    take(1),
-                    map(
-                        (messages: { [key: string]: string }) =>
-                            messages['modes.persona.personalized']
-                    )
-                );
-        }, 10);
+        this.deleteLabel$ = this.dotMessageService.getMessages(['modes.persona.personalized']).pipe(
+            take(1),
+            map((messages: { [key: string]: string }) => messages['modes.persona.personalized'])
+        );
     }
 
     @HostListener('click', ['$event'])

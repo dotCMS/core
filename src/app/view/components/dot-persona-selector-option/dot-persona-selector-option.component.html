@@ -18,10 +18,10 @@
 
 <button
     (click)="deletePersonalized($event)"
-    *ngIf="persona.personalized"
+    *ngIf="canDespersonalize && persona.personalized"
     icon="fa fa-times"
     iconPos="right"
-    label="{{deleteLabel$ | async}}"
+    label="{{ deleteLabel$ | async }}"
     pButton
     secondary
     tiny
