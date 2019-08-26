@@ -110,6 +110,13 @@ public class TempFileAPI {
     return new DotTempFile(tempFileId, tempFile);
   }
 
+  /**
+   * This method takes a request and based upon it it returns the max file size that can be
+   * uploaded, based on the user uploading.  Anonymous users can have smaller file size limitations
+   * than authenticated users.  A return of -1 means unlimited.
+   * @param request
+   * @return
+   */
   @VisibleForTesting
   public long maxFileSize(final HttpServletRequest request) {
     
@@ -117,8 +124,8 @@ public class TempFileAPI {
     final long requestedMax = Try.of(()->Long.parseLong(request.getParameter("maxFileLength"))).getOrElse(-1l);
     final long systemMax =  Config.getLongProperty(TEMP_RESOURCE_MAX_FILE_SIZE, -1l);
     final long anonMax =  Config.getLongProperty(TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS, -1l);
-
-    final boolean isAnon = UserAPI.CMS_ANON_USER_ID.equals(PortalUtil.getUserId(request));
+    final boolean isAnon = PortalUtil.getUserId(request) == null || UserAPI.CMS_ANON_USER_ID.equals(PortalUtil.getUserId(request));
+    
     List<Long> longs = (isAnon) ? Lists.newArrayList(requestedMax,systemMax,anonMax) : Lists.newArrayList(requestedMax,systemMax);
     longs.removeIf(i-> i < 0);
     Collections.sort(longs); 
