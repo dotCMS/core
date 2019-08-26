@@ -349,7 +349,7 @@ public  class WebResource {
         if(user.equals(userAPI.getAnonymousUserNoThrow())){
           if(builder.anonAccess.ordinal()>AnonymousAccess.systemSetting().ordinal()) {
             throw new SecurityException(
-                String.format("REST_API_ALLOW_ANONYMOUS permission exceeded - system set to %s but %s was required", AnonymousAccess.systemSetting().name(), builder.anonAccess.name()),
+                String.format(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS +  " permission exceeded - system set to %s but %s was required", AnonymousAccess.systemSetting().name(), builder.anonAccess.name()),
                 Response.Status.UNAUTHORIZED);
           }
         } 
