@@ -60,11 +60,12 @@ export class DotAutocompleteComponent {
     render() {
         return (
             <input
-                id={this.id}
-                placeholder={this.placeholder || null}
+                autoComplete="off"
                 disabled={this.disabled || null}
+                id={this.id}
                 onBlur={(event: FocusEvent) => this.handleBlur(event)}
                 onKeyDown={(event: KeyboardEvent) => this.handleKeyDown(event)}
+                placeholder={this.placeholder || null}
             />
         );
     }

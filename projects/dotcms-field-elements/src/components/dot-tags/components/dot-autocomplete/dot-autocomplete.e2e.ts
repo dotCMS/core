@@ -63,6 +63,13 @@ describe('dot-autocomplete', () => {
             });
         });
 
+        describe('autoComplete', () => {
+            it('should render', async () => {
+                const input = await getInput();
+                expect(input.getAttribute('autocomplete')).toBe('off');
+            });
+        });
+
         describe('threshold', () => {
             let input: E2EElement;
 

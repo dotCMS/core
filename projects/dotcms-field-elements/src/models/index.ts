@@ -4,4 +4,3 @@ export * from './dot-field-status.model';
 export * from './dot-html-tag.model';
 export * from './dot-key-value-field.model';
 export * from './dot-binary-message-error.model';
-export * from './dot-temp-file.model';

@@ -18,7 +18,7 @@
         "test.watch": "stencil test --spec --e2e --watchAll"
     },
     "dependencies": {
-        "dotcms-models": "^0.0.3",
+        "dotcms-models": "^0.0.7",
         "@tarekraafat/autocomplete.js": "^4.0.0",
         "flatpickr": "^4.5.7",
         "stencil-fragment": "^1.0.1"
