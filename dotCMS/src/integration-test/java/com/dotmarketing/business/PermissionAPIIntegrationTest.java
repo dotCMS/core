@@ -1,5 +1,10 @@
 package com.dotmarketing.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -27,15 +32,12 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * This class tests the creation, copy, update, verification and setting of
@@ -219,9 +221,9 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     		type = contentTypeAPI.save(type, null, null);
 
     		try {
-    			// Check no permissions exists over test content-type
+    			//Should be inherited from system-host if no individual permissions had been added.
     			List<Permission> permissions = permissionAPI.getPermissions(type);
-    			assertTrue(permissions.isEmpty());
+    			assertFalse(permissions.isEmpty());
 
     			// Assign 5 different permissions over test host (to be inherited to test content-type)
     			final Role role = roleAPI.loadCMSAnonymousRole();
