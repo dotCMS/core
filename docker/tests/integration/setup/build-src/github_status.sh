@@ -7,29 +7,29 @@ then
 fi
 
 # Examples
-# https://storage.googleapis.com/cicd-246518-tests/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/integration/mysql/reports/html/integrationTest/index.html
-# https://storage.googleapis.com/cicd-246518-tests/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/integration/mysql/logs/dotcms.log
-# https://storage.googleapis.com/cicd-246518-tests/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/unit/reports/html/index.html
-# https://storage.googleapis.com/cicd-246518-tests/19-08-13/0253ef83cdfecf5c370fd59ebf80491551b4e0a0/unit/logs/dotcms.log
+# https://storage.googleapis.com/cicd-246518-tests/branch-name/mysql/reports/html/integrationTest/index.html
+# https://storage.googleapis.com/cicd-246518-tests/branch-name/mysql/logs/dotcms.log
+# https://storage.googleapis.com/cicd-246518-tests/branch-name/unit/reports/html/index.html
+# https://storage.googleapis.com/cicd-246518-tests/branch-name/unit/logs/dotcms.log
 if [ "$PULL_REQUEST" != "false" ];
 then
 
   BASE_GOOGLE_URL="https://storage.googleapis.com/"
 
   if [[ "${TEST_TYPE}" == "unit"  ]]; then
-    reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/index.html"
+    reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/reports/html/index.html"
     statusesContext="Travis CI - [Unit tests]"
   else
-    reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/integrationTest/index.html"
+    reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/reports/html/integrationTest/index.html"
     statusesContext="Travis CI - [${databaseType}]"
   fi
 
-  logURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/logs/dotcms.log"
+  logURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/logs/dotcms.log"
 
 #  echo ""
 #  echo "================================================================================"
 #  echo "================================================================================"
-#  echo "  >>>   Storage folder for job: [${GOOGLE_STORAGE_JOB_FOLDER}]"
+#  echo "  >>>   Storage folder for job: [${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}]"
 #  echo "  >>>   Reports URL for job: [${reportsIndexURL}]"
 #  echo "  >>>   Log URL for job: [${logURL}]"
 #  echo "  >>>   GITHUB pull request: [https://github.com/dotCMS/core/pull/${PULL_REQUEST}]"
