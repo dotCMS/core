@@ -3289,6 +3289,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String title    = contentletIn.getTitle();
             final String actionId = workflowActionOpt.get().getId();
 
+            // if the default action is in the avalable actions for the content.
+            if (!isDefaultActionOnAvailableActions(contentletIn, user, workflowAPI, actionId)) {
+                return Optional.empty();
+            }
+
             Logger.info(this, () -> "The contentlet: " + contentletIn.getIdentifier() + " hasn't action id set"
                     + " using the default action: " + actionId);
 
@@ -3313,6 +3318,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         return Optional.empty();
+    }
+
+    private boolean isDefaultActionOnAvailableActions(final Contentlet contentletIn,
+                                                      final User user,
+                                                      final WorkflowAPI workflowAPI,
+                                                      final String actionId) throws DotDataException, DotSecurityException {
+        final List<WorkflowAction> workflowActions = workflowAPI.findAvailableActions(contentletIn, user);
+        if (UtilMethods.isSet(workflowActions) &&
+                workflowActions.stream().anyMatch(workflowAction -> actionId.equals(workflowAction.getId()))) {
+
+            return true;
+        }
+
+        Logger.info(this, () -> "The contentlet: " + contentletIn.getIdentifier()
+                + " has the action: " + actionId + " but the this is not an available action for it");
+        return false;
     }
 
     private Optional<Contentlet> validateWorkflowStateOrRunAsWorkflow(final Contentlet contentletIn, final ContentletRelationships contentRelationships,
@@ -3340,6 +3361,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final String title = contentletIn.getTitle();
             final String actionId = workflowActionOpt.get().getId();
+
+            // if the default action is in the avalable actions for the content.
+            if (!isDefaultActionOnAvailableActions(contentletIn, user, workflowAPI, actionId)) {
+                return Optional.empty();
+            }
+
             Logger.info(this, () -> "The contentlet: " + title + " hasn't action id set"
                     + " using the default action: " + actionId);
 

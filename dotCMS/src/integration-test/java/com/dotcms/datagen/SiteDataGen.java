@@ -39,6 +39,7 @@ public class SiteDataGen extends AbstractDataGen<Host> {
             if (publish) {
                 newSite.setIndexPolicy(IndexPolicy.WAIT_FOR);
                 newSite.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+                newSite.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
                 APILocator.getHostAPI().publish(newSite, user, false);
             }
 

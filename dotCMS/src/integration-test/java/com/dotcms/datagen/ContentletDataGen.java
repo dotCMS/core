@@ -251,6 +251,8 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
     public static Contentlet checkin(Contentlet contentlet) {
         try{
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             return contentletAPI.checkin(contentlet, user, false);
         } catch (DotContentletStateException | IllegalArgumentException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
@@ -259,6 +261,8 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
     public static Contentlet checkin(final Contentlet contentlet, final List<Category> categories) {
         try{
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             return contentletAPI.checkin(contentlet, user, false, categories);
         } catch (DotContentletStateException | IllegalArgumentException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
@@ -269,6 +273,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         try {
             contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             contentletAPI.publish(contentlet, user, false);
         } catch (Exception e) {
             throw new RuntimeException(e);
