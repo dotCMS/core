@@ -5,8 +5,8 @@ then
     echo "Running unit tests with extra parameters [${EXTRA_PARAMS}]"
 fi
 
-NOW=$(date +"%y-%m-%d")
-export GOOGLE_STORAGE_JOB_FOLDER="cicd-246518-tests/${NOW}/${BUILD_HASH}/unit"
+export GOOGLE_STORAGE_JOB_COMMIT_FOLDER="${GOOGLE_STORAGE_JOB_COMMIT_FOLDER}/unit"
+export GOOGLE_STORAGE_JOB_BRANCH_FOLDER="${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/unit"
 
 echo ""
 echo "================================================================================"
@@ -15,7 +15,8 @@ echo "  >>>   TEST PARAMETERS: ${EXTRA_PARAMS}"
 echo "  >>>   BUILD FROM: ${BUILD_FROM}"
 echo "  >>>   BUILD ID: ${BUILD_ID}"
 echo "  >>>   GIT HASH: ${BUILD_HASH}"
-echo "  >>>   GOOGLE_STORAGE_JOB_FOLDER: ${GOOGLE_STORAGE_JOB_FOLDER}"
+echo "  >>>   GOOGLE_STORAGE_JOB_COMMIT_FOLDER: ${GOOGLE_STORAGE_JOB_COMMIT_FOLDER}"
+echo "  >>>   GOOGLE_STORAGE_JOB_BRANCH_FOLDER: ${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}"
 echo "================================================================================"
 echo "================================================================================"
 echo ""
@@ -48,7 +49,7 @@ if [ ! -z "${EXPORT_REPORTS}" ]
 then
   if $EXPORT_REPORTS ;
   then
-    bash /build/publish.sh
+    bash /build/storage.sh
     ignoring_return_value=$?
   fi
 fi

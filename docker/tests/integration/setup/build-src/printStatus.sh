@@ -1,20 +1,25 @@
 BASE_GOOGLE_URL="https://storage.googleapis.com/"
 
 if [[ "${TEST_TYPE}" == "unit"  ]]; then
-  reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/index.html"
+  reportsCommitIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_COMMIT_FOLDER}/reports/html/index.html"
+  reportsBranchIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/reports/html/index.html"
 else
-  reportsIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/reports/html/integrationTest/index.html"
+  reportsCommitIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_COMMIT_FOLDER}/reports/html/integrationTest/index.html"
+  reportsBranchIndexURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/reports/html/integrationTest/index.html"
 fi
-logURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_FOLDER}/logs/dotcms.log"
+logCommitURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_COMMIT_FOLDER}/logs/dotcms.log"
+logBranchURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/logs/dotcms.log"
 
 echo ""
 echo -e "\e[36m==========================================================================================================================\e[0m"
 echo -e "\e[36m==========================================================================================================================\e[0m"
 echo -e "\e[1;36m                                                REPORTING\e[0m"
 echo
-echo -e "\e[31m   ${reportsIndexURL}\e[0m"
+echo -e "\e[31m   ${reportsBranchIndexURL}\e[0m"
+echo -e "\e[31m   ${logBranchURL}\e[0m"
 echo
-echo -e "\e[31m   ${logURL}\e[0m"
+echo -e "\e[31m   ${reportsCommitIndexURL}\e[0m"
+echo -e "\e[31m   ${logCommitURL}\e[0m"
 echo
 if [ "$PULL_REQUEST" != "false" ];
 then

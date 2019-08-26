@@ -33,7 +33,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.HibernateUtil;
 import com.liferay.util.dao.hibernate.OrderByComparator;
 import java.util.ArrayList;
 import java.util.Iterator;

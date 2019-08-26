@@ -1103,7 +1103,7 @@ public class TestDataUtils {
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
                         .fields(fields)
-                        .workflowId(workflowIds)
+                        .workflowId(collectedWorkflowIds)
                         .nextPersisted();
             }
         } catch (Exception e) {
