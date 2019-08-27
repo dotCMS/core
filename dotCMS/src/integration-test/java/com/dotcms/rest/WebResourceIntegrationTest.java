@@ -24,7 +24,6 @@ public class WebResourceIntegrationTest {
 
 
   private HttpServletResponse response;
-
   private User frontEndUser = null;
   private User backEndUser = null;
   private User cmsAnon = null;
