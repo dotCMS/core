@@ -227,7 +227,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
 
         //Delete the contentles
         for ( Contentlet contentlet : contentlets ) {
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(contentlet.getIdentifier(), APILocator.systemUser());
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, APILocator.systemUser());
             contentletAPI.archive(contentlet,user, false);
             contentletAPI.delete( contentlet, user, false );
             contentlets.remove(contentlet);

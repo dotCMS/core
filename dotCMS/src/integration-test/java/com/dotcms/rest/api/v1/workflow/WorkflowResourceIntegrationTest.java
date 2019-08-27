@@ -849,7 +849,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                final List<Contentlet> contentlets = samples.get(ct);
                if(UtilMethods.isSet(contentlets)){
                    final Contentlet contentlet = contentlets.get(0);
-                   workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet.getIdentifier(), adminUser);
+                   workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, adminUser);
                    contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet);
                    final List<WorkflowStep> steps = workflowAPI.findStepsByContentlet(contentlet);
@@ -990,7 +990,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
 
         contentlet.setStringProperty(REQUIRED_TEXT_FIELD_NAME,"anyValue");
-        contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
 
         // Save the content
         contentlet = contentletAPI.checkin(contentlet, systemUser, false);
@@ -1048,9 +1048,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             try {
 
-                workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet.getIdentifier(), APILocator.systemUser());
-                contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
-                APILocator.getContentletIndexAPI().addContentToIndex(contentlet);
+                workflowAPI.deleteWorkflowTaskByContentlet(contentlet, contentlet.getLanguageId(), APILocator.systemUser());
+
                 //  Now Test BulkActions
                 final BulkActionForm form1 = new BulkActionForm(
                         Collections.singletonList(inode), null
