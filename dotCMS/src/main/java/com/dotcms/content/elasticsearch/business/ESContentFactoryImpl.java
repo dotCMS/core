@@ -559,7 +559,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
          First thing to do is to clean up the trees for the given Contentles
          */
         final int maxRecords = 500;
-        List<String> inodes = new ArrayList<String>();
+        List<String> inodes = new ArrayList<>();
 
         for ( Contentlet contentlet : contentlets ) {
             inodes.add("'" + contentlet.getInode() + "'");
@@ -583,10 +583,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             // delete workflow task for contentlet
             final WorkFlowFactory workFlowFactory = FactoryLocator.getWorkFlowFactory();
-            final WorkflowTask workflowTask       = workFlowFactory.findTaskByContentlet(con);
-            if ( null != workflowTask && InodeUtils.isSet(workflowTask.getInode() ) ) {
-                workFlowFactory.deleteWorkflowTask(workflowTask);
-            }
+            workFlowFactory.deleteWorkflowTaskByContentletIdAndLanguage(
+                    con.getIdentifier(), con.getLanguageId());
 
             //Remove the tag references to this Contentlet
             APILocator.getTagAPI().deleteTagInodesByInode(con.getInode());

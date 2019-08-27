@@ -1207,7 +1207,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet.setHost(defaultHost.getIdentifier());
             testContentlet.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet = contentletAPI.checkin(testContentlet, user, false);
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet.getIdentifier(), user);
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet, user);
 
             //Adding permissions to the just created contentlet
             List<Permission> permissions = new ArrayList<>();
@@ -1332,7 +1332,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet1.setHost(defaultHost.getIdentifier());
             testContentlet1.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet1 = contentletAPI.checkin(testContentlet1, user, false);
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet1.getIdentifier(), user);
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet1, user);
 
             final Role role = APILocator.getRoleAPI().getUserRole(billIntranet);
             //Adding permissions to the just created contentlet
@@ -1352,14 +1352,14 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet1Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
             testContentlet1Checkout.setIndexPolicy(IndexPolicy.FORCE);
             testContentlet2 = contentletAPI.checkin(testContentlet1Checkout, user, false);
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet2.getIdentifier(), user);
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet2, user);
 
             // top version
             testContentlet2Checkout = contentletAPI.checkout(testContentlet2.getInode(), user, false);
             testContentlet2Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
             testContentlet2Checkout.setIndexPolicy(IndexPolicy.FORCE);
             testContentletTop = contentletAPI.checkin(testContentlet2Checkout, user, false);
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet2Checkout.getIdentifier(), user);
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet2Checkout, user);
 
             // expected behavior
             List<WorkflowAction> foundActions = APILocator.getWorkflowAPI().findAvailableActions(testContentletTop, billIntranet);

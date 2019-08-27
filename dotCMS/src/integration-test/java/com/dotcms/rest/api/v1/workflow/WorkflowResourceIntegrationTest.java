@@ -984,7 +984,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
 
         contentlet.setStringProperty(REQUIRED_TEXT_FIELD_NAME,"anyValue");
-        contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet.setIndexPolicy(IndexPolicy.FORCE);
 
         // Save the content
         contentlet = contentletAPI.checkin(contentlet, systemUser, false);
@@ -1042,7 +1042,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             try {
 
-                workflowAPI.deleteWorkflowTaskByContentletId(contentlet.getIdentifier(), contentlet.getLanguageId(), APILocator.systemUser());
+                workflowAPI.deleteWorkflowTaskByContentlet(contentlet, contentlet.getLanguageId(), APILocator.systemUser());
                 //  Now Test BulkActions
                 final BulkActionForm form1 = new BulkActionForm(
                         Collections.singletonList(inode), null
