@@ -442,7 +442,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             return;
         }
 
-        Logger.info(this, "Indexing: " + parentContenlet.getIdentifier() + ", includeDependencies: " + includeDependencies);
+        Logger.info(this, "Indexing: " + parentContenlet.getIdentifier()
+                + ", includeDependencies: " + includeDependencies +
+                ", policy: " + parentContenlet.getIndexPolicy());
 
         // parentContenlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
         final List<Contentlet> contentToIndex =

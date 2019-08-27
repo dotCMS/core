@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Config;
@@ -95,7 +96,7 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
 
                 if (null != identifier && UtilMethods.isSet(identifier.getId())) {
 
-                    final List<WorkflowAction> workflowActions = APILocator.getWorkflowAPI()
+                    final List<WorkflowAction> workflowActions = APILocator.getWorkflowAPI() // todo: see if what you need is the first step of all schemes or if this is ok
                             .findAvailableDefaultActionsByContentType(contentlet.getContentType(), user);
 
                     if (UtilMethods.isSet(workflowActions)) {
@@ -104,7 +105,7 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
                                 createWorkflowTask(contentlet, user, workflowActions));
                     } else {
 
-                        setToFirstSystemWorkflowStep(contentlet, user);
+                        setToFirstWorkflowStep(contentlet, user);
                     }
                 }
             }
@@ -142,10 +143,16 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
         return null != contentlet && null != contentlet.getTitle()? contentlet.getTitle().trim(): "unknown";
     }
 
-    private static void setToFirstSystemWorkflowStep(final Contentlet contentlet, final User user) throws DotDataException {
+    private static void setToFirstWorkflowStep(final Contentlet contentlet, final User user) throws DotDataException {
 
-        final WorkflowStep workflowStep = APILocator.getWorkflowAPI()
-                .findFirstStep(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID).get();
-        APILocator.getWorkflowAPI().saveWorkflowTask(createWorkflowTask(contentlet, user, workflowStep));
+        final List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().
+                findSchemesForContentType(contentlet.getContentType());
+
+        if (UtilMethods.isSet(schemes)) {
+            final WorkflowScheme workflowScheme = schemes.get(0);
+            final WorkflowStep workflowStep = APILocator.getWorkflowAPI()
+                    .findFirstStep(workflowScheme.getId()).get();
+            APILocator.getWorkflowAPI().saveWorkflowTask(createWorkflowTask(contentlet, user, workflowStep));
+        }
     }
 } // E:O:F:UnassignedWorkflowContentletCheckinListener.

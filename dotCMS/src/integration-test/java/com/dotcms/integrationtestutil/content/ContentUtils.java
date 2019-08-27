@@ -87,8 +87,10 @@ public class ContentUtils {
         contentletAPI.setContentletProperty(contentlet, asOldField(fields.get(KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR)),
                 value);
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         contentlet = contentletAPI.checkin(contentlet, user, Boolean.FALSE);
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         contentletAPI.publish(contentlet, user, Boolean.FALSE);
 
         return contentlet;
@@ -129,6 +131,8 @@ public class ContentUtils {
         contentletAPI.setContentletProperty(checkoutContentlet, asOldField(fields.get(KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR)),
                 newValue);
 
+        checkoutContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        checkoutContentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         return contentletAPI.checkin(checkoutContentlet, user, Boolean.FALSE);
     }
 

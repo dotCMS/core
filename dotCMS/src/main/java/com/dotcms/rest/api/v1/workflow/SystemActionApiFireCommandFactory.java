@@ -53,9 +53,9 @@ public class SystemActionApiFireCommandFactory {
 
         final SystemActionApiFireCommand saveFireCommand = new SaveSystemActionApiFireCommandImpl();
         this.commandMap.put(NEW,  saveFireCommand);
-        /*this.commandMap.put(EDIT, saveFireCommand);
+        this.commandMap.put(EDIT, saveFireCommand);
         this.commandMap.put(PUBLISH,   new PublishSystemActionApiFireCommandImpl());
-        this.commandMap.put(UNPUBLISH, new UnPublishSystemActionApiFireCommandImpl());
+        /*this.commandMap.put(UNPUBLISH, new UnPublishSystemActionApiFireCommandImpl());
         this.commandMap.put(ARCHIVE,   new ArchiveSystemActionApiFireCommandImpl());
         this.commandMap.put(UNARCHIVE, new UnArchiveSystemActionApiFireCommandImpl());
         this.commandMap.put(DELETE,    new DeleteSystemActionApiFireCommandImpl());
@@ -97,6 +97,17 @@ public class SystemActionApiFireCommandFactory {
     }
 
     /**
+     * Gets the SystemActionApiFireCommand associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+     * This method returns just the command to call it as a fallback
+     * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+     * @return Optional of SystemActionApiFireCommand
+     */
+    public Optional<SystemActionApiFireCommand> get(final WorkflowAPI.SystemAction systemAction) {
+
+        return Optional.ofNullable(this.commandMap.get(systemAction));
+    }
+
+    /**
      * Implements a {@link SystemActionApiFireCommand} that does a checkin to cover the NEW and EDIT system action
      */
     private class SaveSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
@@ -122,6 +133,34 @@ public class SystemActionApiFireCommandFactory {
             }
 
             return contentletAPI.checkin(contentlet, dependencies);
+        }
+    }
+
+    private class PublishSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
+
+        @Override
+        public Contentlet fire(final Contentlet contentlet, final ContentletDependencies dependencies)
+                throws DotDataException, DotSecurityException {
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", was fired by default action: " + dependencies.getWorkflowActionId() +
+                    ", however this action has not any publish content actionlet, so the publish api call is being triggered as part of the request");
+
+            if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
+                contentlet.setActionId(dependencies.getWorkflowActionId());
+            }
+
+            if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
+                contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, dependencies.getWorkflowActionComments());
+            }
+
+            if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
+                contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
+            }
+
+            contentletAPI.publish(contentlet, dependencies.getModUser(), dependencies.isRespectAnonymousPermissions());
+
+            return contentlet;
         }
     }
 }
