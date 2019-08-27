@@ -223,15 +223,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private saveContent(event: PageModelChangeEvent): void {
-        this.dotGlobalMessageService.loading(
-            this.dotMessageService.get('dot.common.message.saving')
-        );
         this.saveToPage(event.model)
             .pipe(filter(() => this.shouldReload(event.type)))
             .subscribe(() => {
-                this.dotGlobalMessageService.success(
-                    this.dotMessageService.get('dot.common.message.saved')
-                );
                 if (
                     event.type !== PageModelChangeEventType.MOVE_CONTENT &&
                     this.pageStateInternal.page.remoteRendered
@@ -455,7 +449,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 takeUntil(this.destroy$)
             )
             .subscribe((event: PageModelChangeEvent) => {
-                console.log('updatePageStateHaveContent');
                 this.dotPageStateService.updatePageStateHaveContent(event);
 
                 this.ngZone.run(() => {
