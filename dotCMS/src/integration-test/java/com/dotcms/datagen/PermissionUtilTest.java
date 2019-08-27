@@ -7,9 +7,8 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.liferay.portal.model.User;
 
-public class PermissionUtilTest {
+public final class PermissionUtilTest {
 
     private PermissionUtilTest(){}
 
