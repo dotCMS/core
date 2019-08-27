@@ -1461,7 +1461,7 @@ public class ImportUtil {
 
         if (workflowActionSaveOpt.isPresent()) {
 
-            if (workflowAPI.hasSaveActionlet(workflowActionSaveOpt.get())) {
+            if (workflowActionSaveOpt.get().hasSaveActionlet()) {
 
                 Logger.debug(ImportUtil.class,
                         ()-> "Importing a contentlet with the save action: "
@@ -1471,7 +1471,7 @@ public class ImportUtil {
                                 .workflowActionId(workflowActionSaveOpt.get().getId())
                                 .relationships(contentletRelationships).categories(new ArrayList<>(categoryList))
                                 .permissions(contentTypePermissions).modUser(user).build());
-                return live && !workflowAPI.hasPublishActionlet(workflowActionSaveOpt.get())?
+                return live && !workflowActionSaveOpt.get().hasPublishActionlet()?
                         runWorkflowPublishIfCould(contentletRelationships,
                                 categoryList, contentTypePermissions, user, savedContent):
                         savedContent;
@@ -1507,7 +1507,7 @@ public class ImportUtil {
 
         if (workflowActionPublishOpt.isPresent()) {
 
-            if (workflowAPI.hasPublishActionlet(workflowActionPublishOpt.get())) {
+            if (workflowActionPublishOpt.get().hasPublishActionlet()) {
 
                 Logger.debug(ImportUtil.class,
                         () -> "Importing a contentlet with the publish action: "

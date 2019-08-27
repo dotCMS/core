@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
@@ -347,35 +348,15 @@ public class WorkflowCacheImpl extends WorkflowCache {
 	 */
 
 	@Override
-	public Map<String, Object> findSystemActionByIdentifier(final String identifier) {
-
-		if (UtilMethods.isSet(identifier)) {
-
-			try {
-				return (Map<String, Object>) cache.get(SYSTEM_ACTION_KEY_MAIN+identifier, SYSTEM_ACTION_GROUP);
-			} catch (DotCacheException e) {
-				Logger.debug(WorkflowCacheImpl.class,e.getMessage(),e);
-			}
-		}
-
-		return null;
-	}
-
-	@Override
 	public Map<String, Object> findSystemActionByContentType(final String systemActionName, final String variable) {
 
 		Map<String, Object> mappingRow = null;
 
 		try {
-			final String systemMappingId = (String)this.cache.get(
+
+			mappingRow = (Map<String, Object>)this.cache.get(
 					SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_CONTENTTYPE.name()
 							+ StringUtils.join(new String[]{systemActionName, variable}, StringPool.COMMA), SYSTEM_ACTION_GROUP);
-
-			if (UtilMethods.isSet(systemMappingId)) {
-
-				mappingRow = this.findSystemActionByIdentifier(systemMappingId);
-
-			}
 		} catch (DotCacheException e) {
 			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
 		}
@@ -389,18 +370,8 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		List<Map<String, Object>> mappingRows = null;
 
 		try {
-			final List<String> systemMappingIds = (List<String>)this.cache.get(
+			mappingRows = (List<Map<String, Object>>)this.cache.get(
 					SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name()+variable, SYSTEM_ACTION_GROUP);
-
-			if (UtilMethods.isSet(systemMappingIds)) {
-
-				mappingRows = new ArrayList<>();
-				for (final String mappingId : systemMappingIds) {
-
-					final Map<String, Object> row = this.findSystemActionByIdentifier(mappingId);
-					mappingRows.add(row);
-				}
-			}
 		} catch (DotCacheException e) {
 			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
 		}
@@ -414,18 +385,9 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		List<Map<String, Object>> mappingRows = null;
 
 		try {
-			final List<String> systemMappingIds = (List<String>)this.cache.get(
+
+			mappingRows = (List<Map<String, Object>>)this.cache.get(
 					SystemActionMappingReferenceCache.TYPE.SCHEME.name()+schemeId, SYSTEM_ACTION_GROUP);
-
-			if (UtilMethods.isSet(systemMappingIds)) {
-
-				mappingRows = new ArrayList<>();
-				for (final String mappingId : systemMappingIds) {
-
-					final Map<String, Object> row = this.findSystemActionByIdentifier(mappingId);
-					mappingRows.add(row);
-				}
-			}
 		} catch (DotCacheException e) {
 			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
 		}
@@ -439,18 +401,8 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		List<Map<String, Object>> mappingRows = null;
 
 		try {
-			final List<String> systemMappingIds = (List<String>)this.cache.get(
+			mappingRows = (List<Map<String, Object>>)this.cache.get(
 					SystemActionMappingReferenceCache.TYPE.WORKFLOW.name()+workflowActionId, SYSTEM_ACTION_GROUP);
-
-			if (UtilMethods.isSet(systemMappingIds)) {
-
-				mappingRows = new ArrayList<>();
-				for (final String mappingId : systemMappingIds) {
-
-					final Map<String, Object> row = this.findSystemActionByIdentifier(mappingId);
-					mappingRows.add(row);
-				}
-			}
 		} catch (DotCacheException e) {
 			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
 		}
@@ -464,19 +416,10 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		List<Map<String, Object>> mappingRows = null;
 
 		try {
-			final List<String> systemMappingIds = (List<String>)this.cache.get(
+			mappingRows = (List<Map<String, Object>>)this.cache.get(
 					SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_SCHEMES.name()
 							+ CollectionsUtils.join(StringPool.COMMA, systemActionName, schemeIdList), SYSTEM_ACTION_GROUP);
 
-			if (UtilMethods.isSet(systemMappingIds)) {
-
-				mappingRows = new ArrayList<>();
-				for (final String mappingId : systemMappingIds) {
-
-					final Map<String, Object> row = this.findSystemActionByIdentifier(mappingId);
-					mappingRows.add(row);
-				}
-			}
 		} catch (DotCacheException e) {
 			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
 		}
@@ -484,131 +427,40 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		return mappingRows;
 	}
 
-	@Override
-	public void addSystemActionByIdentifier(final String identifier, final Map<String, Object> systemActionMap) {
-
-		if(UtilMethods.isSet(identifier) && UtilMethods.isSet(systemActionMap)) {
-
-			cache.put(SYSTEM_ACTION_KEY_MAIN+identifier, systemActionMap, SYSTEM_ACTION_GROUP);
-		}
-	}
 
 	@Override
 	public void addSystemActionBySystemActionNameAndContentTypeVariable(final String systemActionName,
 																		final String variable,
 																		final Map<String, Object> mappingRow) {
 
-		try {
-
-			final String mappingIdentifier = (String)mappingRow.get("id");
-			this.addSystemActionByIdentifier(mappingIdentifier, mappingRow);
-			this.addSystemActionReference(mappingIdentifier, new SystemActionMappingReferenceCache.Builder()
-					.systemActionByContentType(systemActionName, variable).build());
-
-			this.cache.put(
-			SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_CONTENTTYPE.name()
-					+ StringUtils.join(new String[]{systemActionName, variable}, StringPool.COMMA), mappingIdentifier, SYSTEM_ACTION_GROUP);
-
-		} catch (DotCacheException e) {
-			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
-		}
-	}
-
-	private void addSystemActionReference (final String mappingIdentifier, final SystemActionMappingReferenceCache referenceCache) throws DotCacheException {
-
-		final String reverseReferenceKey = SYSTEM_ACTION_KEY_REFERENCES + mappingIdentifier;
-		List<SystemActionMappingReferenceCache> referenceCaches =
-				(List<SystemActionMappingReferenceCache>)this.cache.get(reverseReferenceKey, SYSTEM_ACTION_GROUP);
-		if (!UtilMethods.isSet(referenceCaches)) {
-			referenceCaches = new ArrayList<>();
-		}
-		referenceCaches.add(referenceCache);
-		this.cache.put(reverseReferenceKey, referenceCaches, SYSTEM_ACTION_GROUP);
+		this.cache.put(
+				SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_CONTENTTYPE.name()
+						+ StringUtils.join(new String[]{systemActionName, variable}, StringPool.COMMA),
+				mappingRow, SYSTEM_ACTION_GROUP);
 	}
 
 	@Override
 	public void addSystemActionsByWorkflowAction(final String workflowActionId, final List<Map<String, Object>> results) {
 
-		try {
-
-			final ImmutableList.Builder<String> systemActionMappingIdentifierListBuilder =
-					new ImmutableList.Builder<>();
-
-			// adding one by one
-			for (final Map<String, Object> mappingRow : results) {
-
-				final String mappingIdentifier = (String)mappingRow.get("id");
-				this.addSystemActionByIdentifier(mappingIdentifier, mappingRow);
-
-				// adding scheme reverse reference to the row
-				this.addSystemActionReference(mappingIdentifier, new SystemActionMappingReferenceCache.Builder()
-						.workflowId(workflowActionId).build());
-			}
-
-			// now the reference id list for this search criteria
-			this.cache.put(
-					SystemActionMappingReferenceCache.TYPE.WORKFLOW.name()	+ workflowActionId,
-							systemActionMappingIdentifierListBuilder.build(), SYSTEM_ACTION_GROUP);
-		} catch (DotCacheException e) {
-			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
-		}
+		this.cache.put(
+				SystemActionMappingReferenceCache.TYPE.WORKFLOW.name()	+ workflowActionId,
+				results, SYSTEM_ACTION_GROUP);
 	}
 
 	@Override
 	public void addSystemActionsByContentType(final String variable, final List<Map<String, Object>> results) {
 
-		try {
-
-			final ImmutableList.Builder<String> systemActionMappingIdentifierListBuilder =
-					new ImmutableList.Builder<>();
-
-			// adding one by one
-			for (final Map<String, Object> mappingRow : results) {
-
-				final String mappingIdentifier = (String)mappingRow.get("id");
-				this.addSystemActionByIdentifier(mappingIdentifier, mappingRow);
-
-				// adding scheme reverse reference to the row
-				this.addSystemActionReference(mappingIdentifier, new SystemActionMappingReferenceCache.Builder()
-						.contentTypeVar(variable).build());
-			}
-
-			// now the reference id list for this search criteria
-			this.cache.put(
-					SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name() + variable,
-						 systemActionMappingIdentifierListBuilder.build(), SYSTEM_ACTION_GROUP);
-		} catch (DotCacheException e) {
-			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
-		}
+		this.cache.put(
+				SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name() + variable,
+				results, SYSTEM_ACTION_GROUP);
 	}
 
 	@Override
 	public void addSystemActionsByScheme(final String schemeId, final List<Map<String, Object>> results) {
 
-		try {
-
-			final ImmutableList.Builder<String> systemActionMappingIdentifierListBuilder =
-					new ImmutableList.Builder<>();
-
-			// adding one by one
-			for (final Map<String, Object> mappingRow : results) {
-
-				final String mappingIdentifier = (String)mappingRow.get("id");
-				this.addSystemActionByIdentifier(mappingIdentifier, mappingRow);
-
-				// adding scheme reverse reference to the row
-				this.addSystemActionReference(mappingIdentifier,
-						new SystemActionMappingReferenceCache.Builder()
-						.schemeId(schemeId).build());
-			}
-
-			// now the reference id list for this search criteria
-			this.cache.put(
-					SystemActionMappingReferenceCache.TYPE.SCHEME.name() + schemeId,
-							systemActionMappingIdentifierListBuilder.build(), SYSTEM_ACTION_GROUP);
-		} catch (DotCacheException e) {
-			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
-		}
+		this.cache.put(
+				SystemActionMappingReferenceCache.TYPE.SCHEME.name() + schemeId,
+				results, SYSTEM_ACTION_GROUP);
 	}
 
 	@Override
@@ -616,172 +468,67 @@ public class WorkflowCacheImpl extends WorkflowCache {
 															   final List<String> schemeIdList,
 															   final List<Map<String, Object>> results) {
 
-		try {
-
-			final ImmutableList.Builder<String> systemActionMappingIdentifierListBuilder =
-								new ImmutableList.Builder<>();
-
-			// adding one by one
-			for (final Map<String, Object> mappingRow : results) {
-
-				final String mappingIdentifier = (String)mappingRow.get("id");
-				this.addSystemActionByIdentifier(mappingIdentifier, mappingRow);
-
-				// adding scheme reverse reference to the row
-				this.addSystemActionReference(mappingIdentifier, new SystemActionMappingReferenceCache.Builder()
-						.systemActionBySchemeIds(systemActionName, schemeIdList).build());
-			}
-
-			// now the reference id list for this search criteria
-			this.cache.put(SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_SCHEMES.name()
-					+ CollectionsUtils.join(StringPool.COMMA, systemActionName, schemeIdList),
-					systemActionMappingIdentifierListBuilder.build(), SYSTEM_ACTION_GROUP);
-		} catch (DotCacheException e) {
-			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
-		}
-	}
-
-	@Override
-	public void removeSystemActionByIdentifier(final String identifier) {
-
-		try {
-
-			final List<SystemActionMappingReferenceCache> referenceCaches =
-					(List<SystemActionMappingReferenceCache>)this.cache.get(SYSTEM_ACTION_KEY_REFERENCES+identifier, SYSTEM_ACTION_GROUP);
-
-			if (UtilMethods.isSet(referenceCaches)) {
-				// remove all keys where the system action mapping is being referrer.
-				removeSystemActionReferences (referenceCaches);
-			}
-
-			cache.remove(SYSTEM_ACTION_KEY_REFERENCES + identifier, SYSTEM_ACTION_GROUP);
-			cache.remove(SYSTEM_ACTION_KEY_MAIN       + identifier, SYSTEM_ACTION_GROUP);
-		} catch (DotCacheException e) {
-			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
-		}
+		this.cache.put(SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_SCHEMES.name()
+						+ CollectionsUtils.join(StringPool.COMMA, systemActionName, schemeIdList),
+						results, SYSTEM_ACTION_GROUP);
 	}
 
 	@Override
 	public void removeSystemActionsByWorkflowAction(final String workflowActionId) {
 
-		try {
-
-			// removing by just workflow id
-			final String workflowReferenceId      = SystemActionMappingReferenceCache.TYPE.WORKFLOW.name()+workflowActionId;
-			final List<String> systemActionIdList = (List<String>)this.cache.get(workflowReferenceId, SYSTEM_ACTION_GROUP);
-			if (UtilMethods.isSet(systemActionIdList)) {
-
-				for (final String systemActionMappingIdentifier : systemActionIdList) {
-
-					cache.remove(SYSTEM_ACTION_KEY_MAIN + systemActionMappingIdentifier, SYSTEM_ACTION_GROUP);
-				}
-			}
-
-			this.cache.remove(workflowReferenceId, SYSTEM_ACTION_GROUP);
-		} catch (DotCacheException e) {
-			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
-		}
+		// removing by just workflow id
+		this.cache.remove(SystemActionMappingReferenceCache.TYPE.WORKFLOW.name()+workflowActionId, SYSTEM_ACTION_GROUP);
 	}
 
 	@Override
 	public void removeSystemActionsByScheme(final String schemeId) {
 
-		try {
+		// removing just by scheme
+		final String schemeReferenceId      = SystemActionMappingReferenceCache.TYPE.SCHEME.name()+schemeId;
+		this.cache.remove(schemeReferenceId, SYSTEM_ACTION_GROUP);
 
-			// removing just by scheme
-			final String schemeReferenceId      = SystemActionMappingReferenceCache.TYPE.SCHEME.name()+schemeId;
-			List<String> systemActionIdList = (List<String>)this.cache.get(schemeReferenceId, SYSTEM_ACTION_GROUP);
-			if (UtilMethods.isSet(systemActionIdList)) {
+		// removing system action + scheme
+		for (final WorkflowAPI.SystemAction systemAction : WorkflowAPI.SystemAction.values()) {
 
-				for (final String systemActionMappingIdentifier : systemActionIdList) {
-
-					cache.remove(SYSTEM_ACTION_KEY_MAIN + systemActionMappingIdentifier, SYSTEM_ACTION_GROUP);
-				}
-			}
-
-			this.cache.remove(schemeReferenceId, SYSTEM_ACTION_GROUP);
-
-			// removing system action + scheme
-			for (final WorkflowAPI.SystemAction systemAction : WorkflowAPI.SystemAction.values()) {
-
-				final String actionSchemeReferenceId = SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_SCHEMES.name() +
-						StringUtils.join(new String[] {systemAction.name(), schemeId}, StringPool.COMMA);
-				systemActionIdList = (List<String>) this.cache.get(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
-				if (UtilMethods.isSet(systemActionIdList)) {
-
-					for (final String systemActionMappingIdentifier : systemActionIdList) {
-
-						cache.remove(SYSTEM_ACTION_KEY_MAIN + systemActionMappingIdentifier, SYSTEM_ACTION_GROUP);
-					}
-				}
-
-				this.cache.remove(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
-			}
-		} catch (DotCacheException e) {
-			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+			final String actionSchemeReferenceId = SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_SCHEMES.name() +
+					StringUtils.join(new String[] {systemAction.name(), schemeId}, StringPool.COMMA);
+			this.cache.remove(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
 		}
 	}
 
 	@Override
 	public void removeSystemActionsByContentType(final String variable) {
 
-		try {
+		// removing just by content type
+		final String schemeReferenceId        = SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name()+variable;
+		this.cache.remove(schemeReferenceId, SYSTEM_ACTION_GROUP);
 
-			// removing just by content type
-			final String schemeReferenceId        = SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name()+variable;
-			final List<String> systemActionIdList = (List<String>)this.cache.get(schemeReferenceId, SYSTEM_ACTION_GROUP);
-			if (UtilMethods.isSet(systemActionIdList)) {
+		// removing system action + scheme
+		for (final WorkflowAPI.SystemAction systemAction : WorkflowAPI.SystemAction.values()) {
 
-				for (final String systemActionMappingIdentifier : systemActionIdList) {
-
-					cache.remove(SYSTEM_ACTION_KEY_MAIN + systemActionMappingIdentifier, SYSTEM_ACTION_GROUP);
-				}
-			}
-
-			this.cache.remove(schemeReferenceId, SYSTEM_ACTION_GROUP);
-
-			// removing system action + scheme
-			for (final WorkflowAPI.SystemAction systemAction : WorkflowAPI.SystemAction.values()) {
-
-				final String actionSchemeReferenceId = SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_CONTENTTYPE.name() +
-						StringUtils.join(new String[] {systemAction.name(), variable}, StringPool.COMMA);
-				final String mappingIdentifier = (String) this.cache.get(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
-				if (UtilMethods.isSet(mappingIdentifier)) {
-
-					cache.remove(SYSTEM_ACTION_KEY_MAIN + mappingIdentifier, SYSTEM_ACTION_GROUP);
-				}
-
-				this.cache.remove(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
-			}
-		} catch (DotCacheException e) {
-			Logger.debug(WorkflowCacheImpl.class,e.getMessage(), e);
+			final String actionSchemeReferenceId = SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_CONTENTTYPE.name() +
+					StringUtils.join(new String[] {systemAction.name(), variable}, StringPool.COMMA);
+			this.cache.remove(actionSchemeReferenceId, SYSTEM_ACTION_GROUP);
 		}
 	}
 
-	private void removeSystemActionReferences(final List<SystemActionMappingReferenceCache> referenceCaches) {
+	@Override
+	public void removeSystemActionWorkflowActionMapping(final SystemActionWorkflowActionMapping mapping) {
 
-		for (final SystemActionMappingReferenceCache referenceCache : referenceCaches) {
+		final WorkflowAPI.SystemAction systemAction = mapping.getSystemAction();
+		final WorkflowAction workflowAction         = mapping.getWorkflowAction();
 
-			final SystemActionMappingReferenceCache.TYPE type = referenceCache.getType();
-			switch (type) {
+		if (null != workflowAction && null != workflowAction.getId()) {
+			this.removeSystemActionsByWorkflowAction(workflowAction.getId());
+		}
 
-				case SCHEME:
-					this.cache.remove(SystemActionMappingReferenceCache.TYPE.SCHEME.name()+referenceCache.getKey(),      SYSTEM_ACTION_GROUP);
-					break;
-				case CONTENTTYPE:
-					this.cache.remove(SystemActionMappingReferenceCache.TYPE.CONTENTTYPE.name()+referenceCache.getKey(), SYSTEM_ACTION_GROUP);
-					break;
-				case WORKFLOW:
-					this.cache.remove(SystemActionMappingReferenceCache.TYPE.WORKFLOW.name()+referenceCache.getKey(),    SYSTEM_ACTION_GROUP);
-					break;
-				case SYSTEMACTION_CONTENTTYPE:
-					this.cache.remove(SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_CONTENTTYPE.name()
-							+ StringUtils.join(referenceCache.getKeys(), StringPool.COMMA), SYSTEM_ACTION_GROUP);
-					break;
-				case SYSTEMACTION_SCHEMES:
-					this.cache.remove(SystemActionMappingReferenceCache.TYPE.SYSTEMACTION_SCHEMES.name()
-							+ StringUtils.join(referenceCache.getKeys(), StringPool.COMMA), SYSTEM_ACTION_GROUP);
-					break;
+		if (null != mapping.getOwner()) {
+			if (mapping.isOwnerScheme()) {
+
+				this.removeSystemActionsByScheme(WorkflowScheme.class.cast(mapping.getOwner()).getId());
+			} else { // Content Type
+
+				this.removeSystemActionsByContentType(ContentType.class.cast(mapping.getOwner()).variable());
 			}
 		}
 	}

@@ -10,9 +10,12 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.tag.business.TagAPI;
@@ -47,6 +50,11 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         if (null == demoHost) {
             demoHost = new SiteDataGen().nextPersisted();
         }
+
+        
+        APILocator.getPermissionAPI().setDefaultCMSAnonymousPermissions(demoHost);
+        
+        
     }
 
     private static List<String> tagsKnownNamesSystemHost =
@@ -68,7 +76,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         if (null == demoHost) {
             demoHost = new SiteDataGen().nextPersisted();
         }
-
+        APILocator.getPermissionAPI().setDefaultCMSAnonymousPermissions(demoHost);
         final String DEMO_HOST_IDENTIFIER = demoHost.getIdentifier();
 
         // tag name provided, demo site id provided, should return tags filtered by name and host
@@ -139,7 +147,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
 
             final TagResource tagResource = new TagResource(tagAPI, webResource);
             final Map<String, RestTag> returnedTags =
-                    tagResource.list(request, testCase.getTagName(), testCase.getSiteOrFolderId());
+                    tagResource.list(request,new MockHttpResponse(), testCase.getTagName(), testCase.getSiteOrFolderId());
 
             final List<String> returnedTagsNames = returnedTags.values().stream()
                     .map((tag) -> tag.label).collect(Collectors.toList());

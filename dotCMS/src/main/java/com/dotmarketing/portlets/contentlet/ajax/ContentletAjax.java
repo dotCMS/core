@@ -547,7 +547,13 @@ public class ContentletAjax {
 		}
 
 		// Building search params and lucene query
-		StringBuffer luceneQuery = new StringBuffer();
+		StringBuffer luceneQuery = new StringBuffer("-contentType:forms ");
+		
+    if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+      luceneQuery.append(" -baseType:" + BaseContentType.PERSONA.getType() + " ");
+      luceneQuery.append(" -basetype:" + BaseContentType.FORM.getType() + " ");
+    }
+		
 		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
 		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
@@ -606,9 +612,7 @@ public class ContentletAjax {
 		    luceneQuery.append("-contentType:Host ");
 		    luceneQuery.append("-baseType:3 ");
 		}
-		if (LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) {
-			luceneQuery.append("-contentType:Persona ");
-		}
+
 		// Stores (database name,type description) pairs to catch certain field types.
 		List<Field> targetFields = new ArrayList<Field>();
 

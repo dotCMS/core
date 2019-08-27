@@ -208,6 +208,9 @@ public class HostAPITest {
         //Getting the default host
         Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, false);
         defaultHost.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        if (!defaultHost.isLive()) {
+            APILocator.getHostAPI().publish(defaultHost, user, false);
+        }
 
         //Create a new test host
         final String newHostName = "test" + System.currentTimeMillis() + ".dotcms.com";

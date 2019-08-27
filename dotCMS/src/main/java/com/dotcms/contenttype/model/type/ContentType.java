@@ -20,6 +20,9 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
+
+import io.vavr.control.Try;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.elasticsearch.common.Nullable;
@@ -180,7 +183,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public List<Field> fields(final Class<? extends Field> clazz) {
     return this.fields()
     .stream()
-    .filter(field -> clazz.isInstance(field))
+    .filter(field -> Try.of(()->field.getClass().asSubclass(clazz)!=null).getOrElse(false))
     .collect(Collectors.toList());
   }
 

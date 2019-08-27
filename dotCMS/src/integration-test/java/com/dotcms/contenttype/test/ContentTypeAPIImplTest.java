@@ -12,13 +12,17 @@ import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.field.ImmutableDateField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.OnePerContentType;
@@ -47,6 +51,7 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -1755,5 +1760,18 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
      
    }
 	
-	
+     
+     @Test
+     public void test_get_fields_by_type() throws Exception{
+
+       ContentType testType = new ContentTypeDataGen().baseContentType(BaseContentType.FORM).nextPersisted();
+
+       assertThat("a form has four fields",testType.fields().size()==3);
+       assertThat("Filtering fields by immutable type", testType.fields(ImmutableConstantField.class).size()==2);
+       assertThat("Filtering fields by field type",testType.fields(ConstantField.class).size()==2);
+       assertThat("Filtering fields by immutable type",testType.fields(HostFolderField.class).size()==1);
+       assertThat("Filtering fields by field type",testType.fields(ImmutableHostFolderField.class).size()==1);
+     }
+     
+     
 }

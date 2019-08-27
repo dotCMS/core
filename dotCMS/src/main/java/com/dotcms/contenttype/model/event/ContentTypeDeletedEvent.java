@@ -1,7 +1,8 @@
 package com.dotcms.contenttype.model.event;
 
 public class ContentTypeDeletedEvent {
-    private String contentTypeVar;
+
+    private final String contentTypeVar;
 
     public ContentTypeDeletedEvent(final String contentTypeVar) {
         this.contentTypeVar = contentTypeVar;

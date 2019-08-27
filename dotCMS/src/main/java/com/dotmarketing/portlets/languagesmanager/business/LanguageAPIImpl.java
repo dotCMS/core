@@ -2,8 +2,12 @@ package com.dotmarketing.portlets.languagesmanager.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
@@ -54,6 +58,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	private HttpServletRequest request; // todo: this should be decouple from the api
 	private LanguageFactory factory;
 	private LanguageVariableAPI languageVariableAPI;
+	private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 	
 	/**
 	 * Inits the service with the user {@link ViewContext}
@@ -76,7 +81,17 @@ public class LanguageAPIImpl implements LanguageAPI {
 	public void deleteLanguage(final Language language) {
 
         this.factory.deleteLanguage(language);
-        Logger.debug(this, "deleteLanguage");
+        Logger.debug(this, ()-> "DeleteLanguage: " + language);
+
+		try {
+			HibernateUtil.addCommitListener(()-> {
+
+				localSystemEventsAPI.asyncNotify(new LanguageDeletedEvent(language));
+			});
+		} catch (DotHibernateException e) {
+
+			Logger.error(this, e.getMessage(), e);
+		}
 	}
 
     @Override

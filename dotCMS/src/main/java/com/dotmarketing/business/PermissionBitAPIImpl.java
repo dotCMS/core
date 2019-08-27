@@ -440,8 +440,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public void setDefaultCMSAnonymousPermissions(Permissionable permissionable) throws DotDataException{
 		Role cmsAnonymousRole;
 		try {
-			cmsAnonymousRole = APILocator.getRoleAPI().loadRoleByKey(Config
-					.getStringProperty("CMS_ANONYMOUS_ROLE"));
+			cmsAnonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
@@ -488,7 +487,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public void setDefaultCMSAdminPermissions (Permissionable permissionable) throws DotDataException {
 		Role cmsAdminRole;
 		try {
-			cmsAdminRole = APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE"));
+			cmsAdminRole = APILocator.getRoleAPI().loadCMSAdminRole();
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);

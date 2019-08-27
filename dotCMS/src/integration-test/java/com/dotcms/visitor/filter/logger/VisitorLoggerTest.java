@@ -65,7 +65,7 @@ public class VisitorLoggerTest {
             mockObjects(mockRequest);
             VisitorLogger.log(mockRequest, mockResponse);
             Thread.sleep(3000);
-            Assert.assertTrue(UtilMethods.isSet(mockedAppender.message));
+            Assert.assertTrue(!mockedAppender.message.isEmpty());
         } finally{
             if (logger !=null && mockedAppender!=null){
                 logger.removeAppender(mockedAppender);

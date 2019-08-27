@@ -31,15 +31,8 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.StructureDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
@@ -64,6 +57,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -433,7 +427,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             final ContentType contentTypeSaved = contentTypeAPI.save(type, fields);
 
-            final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+            final WorkflowScheme systemWorkflow = TestWorkflowUtils.getDocumentWorkflow("TestWF"+System.currentTimeMillis());
             workflowAPI.saveSchemeIdsForContentType(contentTypeSaved, CollectionsUtils.set(systemWorkflow.getId()));
             final List<WorkflowScheme> contentTypeSchemes = workflowAPI.findSchemesForContentType(contentTypeSaved);
             Assert.assertNotNull(contentTypeSchemes);
@@ -461,8 +455,9 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentletToDestroy = contentlet1;
 
             //4) check the contentlet is on the step unpublish
-            final WorkflowStep unpublishStep = workflowAPI.findStepByContentlet(contentlet1);
-            Assert.assertEquals (SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID, unpublishStep.getId());
+            final WorkflowStep firstStep  = workflowAPI.findFirstStep(systemWorkflow.getId()).get();
+            final WorkflowStep currentStep = workflowAPI.findStepByContentlet(contentlet1);
+            Assert.assertEquals (firstStep.getId(), currentStep.getId());
         } finally {
 
             if (null != contentletToDestroy) {
@@ -2443,16 +2438,22 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(1, contentletAPI.indexCount(
                     "+live:false +identifier:" + c.getIdentifier() + " +inode:" + c.getInode(),
                     user, respectFrontendRoles));
+            assertEquals(0, contentletAPI.indexCount(
+                    "+live:true +identifier:" + c.getIdentifier() + " +inode:" + c.getInode(),
+                    user, respectFrontendRoles));
         }
 
         HibernateUtil.startTransaction();
+        boolean isNewConn = !DbConnectionFactory.connectionExists();
         try {
             for (Contentlet c : origCons) {
                 Contentlet newContentlet = new Contentlet(c);
                 newContentlet.setInode("");
                 newContentlet.setIndexPolicy(IndexPolicy.DEFER);
                 newContentlet.setStringProperty("title", c.getStringProperty("title") + " new");
+                newContentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
                 newContentlet = contentletAPI.checkin(newContentlet, user, respectFrontendRoles);
+                newContentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
                 contentletAPI.publish(newContentlet, user, respectFrontendRoles);
                 assertTrue(newContentlet.isLive());
             }
@@ -2460,7 +2461,9 @@ public class ContentletAPITest extends ContentletBaseTest {
         } catch (DotDataException e) {
             HibernateUtil.rollbackTransaction();
         } finally {
-            HibernateUtil.closeSession();
+            if (isNewConn) {
+                HibernateUtil.closeSession();
+            }
         }
 
         for (Contentlet c : origCons) {
@@ -4497,9 +4500,9 @@ public class ContentletAPITest extends ContentletBaseTest {
             throws DotDataException, DotSecurityException {
         String contentTypeName = "contentTypeTxtField" + System.currentTimeMillis();
         ContentType contentType = null;
-        try{
+        try {
             contentType = createContentType(contentTypeName, BaseContentType.CONTENT);
-            com.dotcms.contenttype.model.field.Field field =  ImmutableTextField.builder()
+            com.dotcms.contenttype.model.field.Field field = ImmutableTextField.builder()
                     .name("Text Unique")
                     .contentTypeId(contentType.id())
                     .dataType(DataTypes.TEXT)
@@ -4511,8 +4514,9 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet = new Contentlet();
             contentlet.setContentTypeId(contentType.inode());
             contentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
-            contentlet.setStringProperty(field.variable(),testCase.fieldValue1);
+            contentlet.setStringProperty(field.variable(), testCase.fieldValue1);
             contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             contentlet = contentletAPI.checkin(contentlet, user, false);
             contentlet = contentletAPI.find(contentlet.getInode(), user, false);
 
@@ -4520,19 +4524,26 @@ public class ContentletAPITest extends ContentletBaseTest {
             Contentlet contentlet2 = new Contentlet();
             contentlet2.setContentTypeId(contentType.inode());
             contentlet2.setLanguageId(spanishLanguage.getId());
-            contentlet2.setStringProperty(field.variable(),testCase.fieldValue1);
+            contentlet2.setStringProperty(field.variable(), testCase.fieldValue1);
             contentlet2.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet2.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             contentlet2 = contentletAPI.checkin(contentlet2, user, false);
 
             //Contentlet in English (throws the error)
             Contentlet contentlet3 = new Contentlet();
             contentlet3.setContentTypeId(contentType.inode());
             contentlet3.setLanguageId(languageAPI.getDefaultLanguage().getId());
-            contentlet3.setStringProperty(field.variable(),testCase.fieldValue1.toLowerCase());
+            contentlet3.setStringProperty(field.variable(), testCase.fieldValue1.toLowerCase());
             contentlet3.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet3.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             contentlet3 = contentletAPI.checkin(contentlet3, user, false);
+        } catch(Exception e) {
 
+            if (ExceptionUtil.causedBy(e, DotContentletValidationException.class)) {
+                throw new DotContentletValidationException(e.getMessage());
+            }
 
+            fail(e.getMessage());
         }finally{
             if(contentType != null) contentTypeAPI.delete(contentType);
         }
@@ -4795,6 +4806,14 @@ public class ContentletAPITest extends ContentletBaseTest {
                     null, user,false);
 
             fail("Should throw a constrain exception for an unexisting id");
+        } catch (Exception e) {
+
+            if (e instanceof DotHibernateException || ExceptionUtil.causedBy(e, DotHibernateException.class)) {
+
+                throw new DotHibernateException(e.getMessage());
+            }
+
+            fail("The exception catch should: DotHibernateException and is: " + e.getClass() );
         } finally {
             if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier()) && UtilMethods.isSet(newsContent.getInode())) {
                 contentletAPI.destroy(newsContent, user, false);
@@ -4807,7 +4826,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      *
      */
     @Test
-    public void testCheckin_Non_Existing_Identifier_With_Not_Validate_Success()
+        public void testCheckin_Non_Existing_Identifier_With_Not_Validate_Success()
             throws DotDataException, DotSecurityException {
         Contentlet newsContent = null;
 
@@ -4819,6 +4838,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             newsContent.setIdentifier(identifier);
             newsContent.setInode(UUIDGenerator.generateUuid());
             newsContent.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+            newsContent.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
 
             final List<Category> categories = getACoupleOfCategories();
 
@@ -4829,8 +4849,12 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals (newsContentReturned.getIdentifier(), identifier);
             newsContent = newsContentReturned;
         }  finally {
-            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
-                contentletAPI.destroy(newsContent, user, false);
+            try {
+                if (newsContent != null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                    contentletAPI.destroy(newsContent, user, false);
+                }
+            }catch (Exception e) {
+                // quiet
             }
         }
     }

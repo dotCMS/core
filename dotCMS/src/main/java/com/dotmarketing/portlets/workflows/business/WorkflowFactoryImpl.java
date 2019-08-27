@@ -4,7 +4,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.business.APILocator;
@@ -19,6 +18,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -26,6 +26,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import org.apache.commons.beanutils.BeanUtils;
 
@@ -45,6 +46,7 @@ import java.util.stream.Collectors;
 
 public class WorkflowFactoryImpl implements WorkFlowFactory {
 
+	public static final int PARTITION_IN_SIZE = 100;
 	private final WorkflowCache cache;
 	private final WorkflowSQL   sql;
 
@@ -477,7 +479,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.setSQL("SELECT * FROM workflow_task WHERE webasset = ?");
 		db.addParam(webAsset);
 
-		List<WorkflowTask> tasksToClearFromCache = this
+		final List<WorkflowTask> tasksToClearFromCache = this
 				.convertListToObjects(db.loadObjectResults(), WorkflowTask.class);
 
 		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where webasset = ?)")
@@ -499,7 +501,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	@Override
 	public void deleteWorkflowTaskByContentletIdAndLanguage(final String webAsset, final long languageId) throws DotDataException {
 
-		List<WorkflowTask> tasksToClearFromCache = this
+		final List<WorkflowTask> tasksToClearFromCache = this
 				.convertListToObjects(new DotConnect()
 						.setSQL("SELECT * FROM workflow_task WHERE webasset = ? and language_id=?")
 						.addParam(webAsset)
@@ -519,6 +521,29 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		tasksToClearFromCache.forEach(cache::remove);
 
+	}
+
+	@Override
+	public void deleteWorkflowTaskByLanguage(final Language language) throws DotDataException {
+
+		final List<WorkflowTask> tasksToClearFromCache = this
+				.convertListToObjects(new DotConnect()
+						.setSQL("SELECT * FROM workflow_task WHERE language_id=?")
+						.addParam(language.getId()).loadObjectResults(), WorkflowTask.class);
+
+		new DotConnect().setSQL("delete from workflow_comment where workflowtask_id   in (select id from workflow_task where language_id=?)")
+				.addParam(language.getId()).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_history where workflowtask_id   in (select id from workflow_task where language_id=?)")
+				.addParam(language.getId()).loadResult();
+
+		new DotConnect().setSQL("delete from workflowtask_files where workflowtask_id in (select id from workflow_task where language_id=?)")
+				.addParam(language.getId()).loadResult();
+
+		new DotConnect().setSQL("delete from workflow_task where language_id=?")
+				.addParam(language.getId()).loadResult();
+
+		tasksToClearFromCache.forEach(cache::remove);
 	}
 
 	@Override
@@ -689,13 +714,38 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		db.setSQL(sql.SELECT_ACTION_CLASS_PARAMS_BY_ACTIONCLASS);
 		db.addParam(actionClass.getId());
 		final List<WorkflowActionClassParameter> list = (List<WorkflowActionClassParameter>) this.convertListToObjects(db.loadObjectResults(), WorkflowActionClassParameter.class);
-		final Map<String, WorkflowActionClassParameter> map = new LinkedHashMap<String, WorkflowActionClassParameter>();
+		final Map<String, WorkflowActionClassParameter> map = loadDefaultActionClassParams(actionClass);
 		for (final WorkflowActionClassParameter param : list) {
 			map.put(param.getKey(), param);
 		}
 
+
 		return map;
 
+	}
+  /**
+   * When an actionlet is added, we do not add the default values to the db.
+   * 
+   * you need to make sure that the default values of the actionlet are
+   * persisted, otherwise if you try to use it, it will throw an NPE
+   */
+	private Map<String, WorkflowActionClassParameter> loadDefaultActionClassParams(final WorkflowActionClass actionClass){
+	  
+	  final Map<String, WorkflowActionClassParameter> map = new LinkedHashMap<String, WorkflowActionClassParameter>();
+
+	  if(actionClass!=null && actionClass.getActionlet()!=null && actionClass.getActionlet().getParameters()!=null) {
+      for(WorkflowActionletParameter param :actionClass.getActionlet().getParameters()) {
+        WorkflowActionClassParameter instanceParam  =  new WorkflowActionClassParameter();
+        instanceParam.setActionClassId(actionClass.getId());
+        instanceParam.setKey(param.getKey());
+        instanceParam.setValue(param.getDefaultValue());
+        map.put(param.getKey(), instanceParam);
+      }
+	  }
+    return map;
+    
+	  
+	  
 	}
 
 	@Override
@@ -1166,10 +1216,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			results = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING)
 						.addParam(contentType.variable())
 						.loadObjectResults();
-			if (UtilMethods.isSet(results)) {
 
-				this.cache.addSystemActionsByContentType(contentType.variable(), results);
-			}
+			this.cache.addSystemActionsByContentType(contentType.variable(),
+					UtilMethods.isSet(results)?results:Collections.emptyList());
 		}
 
 		return results;
@@ -1197,6 +1246,21 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		if (!notFoundContentTypes.isEmpty()) {
 
+			findSystemActionsMapByContentType(mappingMapBuilder, selectQueryTemplate, notFoundContentTypes);
+		}
+
+		return mappingMapBuilder.build();
+	}
+
+	private void findSystemActionsMapByContentType(final ImmutableMap.Builder<String, List<Map<String, Object>>> mappingMapBuilder,
+												   final String selectQueryTemplate,
+												   final Set<String> notFoundContentTypesSet) throws DotDataException {
+
+		final List<List<String>> notFoundContentTypesListOfList = Lists.partition
+				(new ArrayList<>(notFoundContentTypesSet), 100); // select in does not support more than 100
+
+		for (final List<String> notFoundContentTypes: notFoundContentTypesListOfList) {
+
 			final DotConnect dotConnect = new DotConnect()
 					.setSQL(String.format(selectQueryTemplate, this.createQueryIn(notFoundContentTypes)));
 
@@ -1210,15 +1274,21 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 				for (final Map<String, Object> rowMap : mappingRows) {
 
-					final String variable = (String)rowMap.get("scheme_or_content_type");
+					final String variable = (String) rowMap.get("scheme_or_content_type");
 					dbMappingMap.computeIfAbsent(variable, key -> new ArrayList<>()).add(rowMap);
+				}
+
+				for (final Map.Entry<String, List<Map<String, Object>>> contentTypeResultsEntry : dbMappingMap.entrySet()) {
+
+					final String variable = contentTypeResultsEntry.getKey();
+					final List<Map<String, Object>> results = contentTypeResultsEntry.getValue();
+					this.cache.addSystemActionsByContentType(variable,
+							UtilMethods.isSet(results)?results:Collections.emptyList());
 				}
 
 				mappingMapBuilder.putAll(dbMappingMap);
 			}
 		}
-
-		return mappingMapBuilder.build();
 	}
 
 	/**
@@ -1236,10 +1306,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					.setSQL(sql.SELECT_SYSTEM_ACTION_BY_SCHEME_OR_CONTENT_TYPE_MAPPING)
 					.addParam(workflowScheme.getId())
 					.loadObjectResults();
-			if (UtilMethods.isSet(results)) {
 
-				this.cache.addSystemActionsByScheme(workflowScheme.getId(), results);
-			}
+			this.cache.addSystemActionsByScheme(workflowScheme.getId(),
+					UtilMethods.isSet(results)?results:Collections.emptyList());
 		}
 
 		return results;
@@ -1255,10 +1324,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					.setSQL(sql.SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION)
 					.addParam(workflowAction.getId())
 					.loadObjectResults();
-			if (UtilMethods.isSet(results)) {
 
-				this.cache.addSystemActionsByWorkflowAction(workflowAction.getId(), results);
-			}
+			this.cache.addSystemActionsByWorkflowAction(workflowAction.getId(),
+					UtilMethods.isSet(results)?results:Collections.emptyList());
 		}
 
 		return results;
@@ -1286,9 +1354,11 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			if (UtilMethods.isSet(rows)) {
 
 				mappingRow = rows.get(0);
-				this.cache.addSystemActionBySystemActionNameAndContentTypeVariable(
-						systemAction.name(), contentType.variable(), mappingRow);
 			}
+
+			this.cache.addSystemActionBySystemActionNameAndContentTypeVariable(
+					systemAction.name(), contentType.variable(),
+					UtilMethods.isSet(mappingRow)?mappingRow:Collections.emptyMap());
 		}
 
 		return mappingRow;
@@ -1298,30 +1368,39 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	 * Finds the list of {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
 	 * and {@link List} of {@link WorkflowScheme}'s
 	 * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
-	 * @param schemes      {@link List} of {@link WorkflowScheme}'s
+	 * @param schemesList  {@link List} of {@link WorkflowScheme}'s
 	 * @return List<Map<String, Object>>
 	 */
 	@Override
-	public List<Map<String, Object>> findSystemActionsBySchemes(final WorkflowAPI.SystemAction systemAction, final List<WorkflowScheme> schemes) throws DotDataException {
+	public List<Map<String, Object>> findSystemActionsBySchemes(final WorkflowAPI.SystemAction systemAction, final List<WorkflowScheme> schemesList) throws DotDataException {
 
-		final List<String> schemeIdList   = schemes.stream().map(WorkflowScheme::getId).collect(Collectors.toList());
+		final List<String> schemeIdList   = schemesList.stream().map(WorkflowScheme::getId).collect(Collectors.toList());
 		List<Map<String, Object>> results = this.cache.findSystemActionsBySchemes(systemAction.name(), schemeIdList);
 
 		if (null == results) {
 
-			if (UtilMethods.isSet(schemes)) {
+			if (UtilMethods.isSet(schemesList)) {
 
-				final DotConnect dotConnect = new DotConnect()
-						.setSQL(String.format(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES, this.createQueryIn(schemes)))
-						.addParam(systemAction.name());
+				final List<List<WorkflowScheme>> schemeListOfList =
+						Lists.partition(schemesList, PARTITION_IN_SIZE); // select in does not support more than 100.
+				results = new ArrayList<>();
 
-				for (final WorkflowScheme scheme : schemes) {
+				for (final List<WorkflowScheme> schemes : schemeListOfList) {
 
-					dotConnect.addParam(scheme.getId());
+					final DotConnect dotConnect = new DotConnect()
+							.setSQL(String.format(sql.SELECT_SYSTEM_ACTION_BY_SYSTEM_ACTION_AND_SCHEMES, this.createQueryIn(schemes)))
+							.addParam(systemAction.name());
+
+					for (final WorkflowScheme scheme : schemes) {
+
+						dotConnect.addParam(scheme.getId());
+					}
+
+					results.addAll(dotConnect.loadObjectResults());
 				}
 
-				results = dotConnect.loadObjectResults();
 				if (UtilMethods.isSet(results)) {
+
 					this.cache.addSystemActionsBySystemActionNameAndSchemeIds(
 							systemAction.name(), schemeIdList, results);
 				}
@@ -1334,19 +1413,10 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	@Override
 	public Map<String, Object> findSystemActionByIdentifier(final String identifier) throws DotDataException {
 
-		Map<String, Object> systemActionMap = cache.findSystemActionByIdentifier(identifier);
-
-		if (null == systemActionMap) {
-
-			final List<Map<String, Object>> rows = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_IDENTIFIER)
-					.addParam(identifier)
-					.loadObjectResults();
-			systemActionMap = UtilMethods.isSet(rows) ? rows.get(0) : Collections.emptyMap();
-
-			this.cache.addSystemActionByIdentifier(identifier, systemActionMap);
-		}
-
-		return systemActionMap;
+		final List<Map<String, Object>> rows = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_IDENTIFIER)
+				.addParam(identifier)
+				.loadObjectResults();
+		return UtilMethods.isSet(rows) ? rows.get(0) : Collections.emptyMap();
 	}
 
 	@Override
@@ -1356,7 +1426,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				.addParam(mapping.getIdentifier())
 				.loadResult();
 
-		this.cache.removeSystemActionByIdentifier(mapping.getIdentifier());
+		this.cache.removeSystemActionWorkflowActionMapping(mapping);
 
 		return true; //  todo: if rows affected 0 -> false
 	}
@@ -1424,9 +1494,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 					.addParam(ownerKey)
 					.addParam(existingId)
 					.loadResult();
-
-			this.cache.removeSystemActionByIdentifier(existingId);
 		}
+
+		this.cache.removeSystemActionWorkflowActionMapping(mapping);
 
 		return toReturn;
 	}
@@ -1640,6 +1710,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			db.addParam(actionClass.getOrder());
 			db.addParam(actionClass.getClazz());
 			db.loadResult();
+			
+
+			
 		} else {
 			db.setSQL(sql.UPDATE_ACTION_CLASS);
 			db.addParam(actionClass.getActionId());

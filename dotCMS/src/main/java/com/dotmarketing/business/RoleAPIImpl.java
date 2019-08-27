@@ -191,7 +191,8 @@ public class RoleAPIImpl implements RoleAPI {
 	@WrapInTransaction
 	@Override
 	public void addRoleToUser(final Role role, final User user) throws DotDataException, DotStateException {
-		final Role currentRole = loadRoleById(role.getId());
+		if(role==null || user==null)return;
+	  final Role currentRole = loadRoleById(role.getId());
 		if(!currentRole.isEditUsers()){
 			throw new DotStateException("Cannot alter users on this role.  Name:" + role.getName() + ", id:" + role.getId());
 		}
@@ -266,7 +267,7 @@ public class RoleAPIImpl implements RoleAPI {
 	@Override
 	public Role loadCMSAnonymousRole() throws DotDataException {
 		if(CMS_ANON == null){
-			CMS_ANON =  roleFactory.loadRoleByKey(Config.getStringProperty("CMS_ANONYMOUS_ROLE"));
+			CMS_ANON =  roleFactory.loadRoleByKey(Role.CMS_ANONYMOUS_ROLE);
 		}
 		return CMS_ANON;
 	}
@@ -275,7 +276,7 @@ public class RoleAPIImpl implements RoleAPI {
 	@Override
 	public Role loadCMSOwnerRole() throws DotDataException {
 		if(CMS_OWNER == null){
-			CMS_OWNER =  roleFactory.loadRoleByKey(Config.getStringProperty("CMS_OWNER_ROLE"));
+			CMS_OWNER =  roleFactory.loadRoleByKey(Role.CMS_OWNER_ROLE);
 		}
 		return CMS_OWNER;
 	}
@@ -293,7 +294,7 @@ public class RoleAPIImpl implements RoleAPI {
 	@Override
 	public Role loadCMSAdminRole() throws DotDataException {
 		if(CMS_ADMIN == null){
-			CMS_ADMIN = roleFactory.loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE"));
+			CMS_ADMIN = roleFactory.loadRoleByKey(Role.CMS_ADMINISTRATOR_ROLE);
 		}
 		return CMS_ADMIN;		
 	}
