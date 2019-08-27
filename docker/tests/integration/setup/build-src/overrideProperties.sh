@@ -51,4 +51,6 @@ http.cors.enabled: false
 # http.host: localhost
 
 cluster.routing.allocation.disk.threshold_enabled: false
+
+node.max_local_storage_nodes: 6
 " >> $dotCMSFolder/src/main/webapp/WEB-INF/elasticsearch/config/elasticsearch-override.yml

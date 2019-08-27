@@ -9,6 +9,11 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.util.Config;
 import com.liferay.util.SystemProperties;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.mockito.Mockito;
 
@@ -35,7 +40,65 @@ public class IntegrationTestInitService {
     }
 
     public void init() throws Exception {
+
         if (!initCompleted.get()) {
+
+            final String threadName = Thread.currentThread().getName();
+
+            if ("Test worker".equalsIgnoreCase(threadName)) { // Called made from gradle
+
+                RandomAccessFile randomAccessFile = new RandomAccessFile("blockingTests.txt", "rw");
+                FileChannel fc = randomAccessFile.getChannel();
+
+                try {
+                    if (fc.size() > 0) {
+                        internalInit();
+                    } else {
+                        try (FileLock fileLock = fc
+                                .lock()) {//We just need one initial lock for the db creation
+
+                            internalInit();
+
+                            if (fc.size() == 0) {
+                                writeToFile(fc);
+                            }
+
+                        }
+                    }
+
+                } finally {
+                    CloseUtils.closeQuietly(fc, randomAccessFile);
+                }
+            } else {
+                internalInit();
+            }
+
+        }
+
+    }
+
+    private void internalInit() throws Exception {
+
+        if (!initCompleted.get()) {
+
+            // FIXME: DELETE!!!
+            // FIXME: DELETE!!!
+            System.out.println();
+            System.out.println(
+                    "-------------------------------------------------------------");
+            System.out.println(
+                    "-------------------------------------------------------------");
+            System.out.println(initCompleted.get());
+            System.out.println(">>>> " + Thread.currentThread().getName());
+            System.out.println(">>>> " + Thread.currentThread().getId());
+            System.out.println(
+                    "-------------------------------------------------------------");
+            System.out.println(
+                    "-------------------------------------------------------------");
+            System.out.println();
+            // FIXME: DELETE!!!
+            // FIXME: DELETE!!!
+
             TestingJndiDatasource.init();
             ConfigTestHelper._setupFakeTestingContext();
 
@@ -58,9 +121,20 @@ public class IntegrationTestInitService {
         }
     }
 
+    private void writeToFile(FileChannel fc) throws IOException {
+        final String data = String.valueOf(System.currentTimeMillis());
+        ByteBuffer buffer = ByteBuffer.wrap(data.getBytes());
+        buffer.put(data.getBytes());
+        buffer.flip();
+        while (buffer.hasRemaining()) {
+            fc.write(buffer);
+        }
+    }
+
     public void mockStrutsActionModule() {
         ModuleConfigFactory factoryObject = ModuleConfigFactory.createFactory();
         ModuleConfig config = factoryObject.createModuleConfig("");
         Mockito.when(Config.CONTEXT.getAttribute(Globals.MODULE_KEY)).thenReturn(config);
     }
+
 }
