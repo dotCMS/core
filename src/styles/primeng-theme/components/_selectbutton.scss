@@ -11,6 +11,7 @@
         $selectbutton-normal-shadow
     );
     height: 48px;
+    white-space: nowrap;
 
     [secondary] & {
         box-shadow: none;
