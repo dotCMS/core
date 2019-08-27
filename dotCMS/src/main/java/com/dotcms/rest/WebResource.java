@@ -507,7 +507,9 @@ public  class WebResource {
           user = this.getAnonymousUser();
         }
 
+
         if( UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
+
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
         } 
 

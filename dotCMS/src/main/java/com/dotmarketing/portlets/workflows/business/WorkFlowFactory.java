@@ -6,6 +6,7 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -460,4 +461,10 @@ public interface WorkFlowFactory {
 	 * @throws DotDataException
 	 */
 	Map<String, List<Map<String, Object>>> findSystemActionsMapByContentType(List<ContentType> contentTypes) throws DotDataException;
+
+	/**
+	 * Deletes the workflow tasks associated to a language
+	 * @param language {@link Language}
+	 */
+    void deleteWorkflowTaskByLanguage(Language language) throws DotDataException;
 }

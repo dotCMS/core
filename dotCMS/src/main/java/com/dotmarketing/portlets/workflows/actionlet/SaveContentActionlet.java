@@ -66,6 +66,7 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 
 				final String inode = checkoutContentlet.getInode();
 				this.contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
+				setIndexPolicy(contentlet, checkoutContentlet);
 				checkoutContentlet.setInode(inode);
 			}
 
@@ -74,6 +75,8 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			final Contentlet contentletNew = (null != processor.getContentletDependencies())?
 					this.contentletAPI.checkin(checkoutContentlet, processor.getContentletDependencies()):
 					this.contentletAPI.checkin(checkoutContentlet, processor.getUser(), false);
+
+			setIndexPolicy(contentlet, contentletNew);
 
 			processor.setContentlet(contentletNew);
 
@@ -84,6 +87,12 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new  WorkflowActionFailureException(e.getMessage(),e);
 		}
+	}
+
+	private void setIndexPolicy (final Contentlet originContentlet, final Contentlet newContentlet) {
+
+		newContentlet.setIndexPolicy(originContentlet.getIndexPolicy());
+		newContentlet.setIndexPolicyDependencies(originContentlet.getIndexPolicyDependencies());
 	}
 
 	private boolean isNew(final Contentlet contentlet) {

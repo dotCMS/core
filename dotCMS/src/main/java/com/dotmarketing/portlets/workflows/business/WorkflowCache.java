@@ -69,26 +69,6 @@ public abstract class WorkflowCache implements Cachable {
 	abstract protected boolean is404(Contentlet contentlet);
 
 	/**
-	 * Finds the system action by identifier on the cache
-	 * @param identifier {@link String}
-	 * @return Map
-	 */
-	public abstract Map<String, Object> findSystemActionByIdentifier(String identifier);
-
-	/**
-	 * Adds the system action by identifier to the cache
-	 * @param identifier {@link String}
-	 * @param systemActionMap {@link Map}
-	 */
-	public abstract void addSystemActionByIdentifier(String identifier, Map<String, Object> systemActionMap);
-
-	/**
-	 * Removes a system action by identifier
-	 * @param identifier {@link String}
-	 */
-	public abstract void removeSystemActionByIdentifier(String identifier);
-
-	/**
 	 * Removes system actions referrer by workflow action id
 	 * @param workflowActionId {@link String}
 	 */
@@ -180,5 +160,9 @@ public abstract class WorkflowCache implements Cachable {
 	 */
 	public abstract void addSystemActionsByContentType(String variable, List<Map<String, Object>> results);
 
-
+	/**
+	 * Remove all related caches to the mapping
+	 * @param mapping SystemActionWorkflowActionMapping
+	 */
+	public abstract void removeSystemActionWorkflowActionMapping(SystemActionWorkflowActionMapping mapping);
 }

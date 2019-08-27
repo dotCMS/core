@@ -182,13 +182,14 @@ public class Role implements Serializable,Comparable<Role> {
 	}
 	
 	@Override
-	public boolean equals(Object other) {
-		if (!(other instanceof Role)) {
+	public boolean equals(final Object other) {
+
+		if (null == other || !(other instanceof Role)) {
+
 			return false;
 		}
 
-		Role castOther = (Role) other;
-		
+		final Role castOther = (Role) other;
 		return (this.getId().equalsIgnoreCase(castOther.getId()));
 	}
 
