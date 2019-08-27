@@ -13,7 +13,9 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.tag.business.TagAPI;
@@ -48,6 +50,11 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         if (null == demoHost) {
             demoHost = new SiteDataGen().nextPersisted();
         }
+
+        
+        APILocator.getPermissionAPI().setDefaultCMSAnonymousPermissions(demoHost);
+        
+        
     }
 
     private static List<String> tagsKnownNamesSystemHost =
@@ -69,7 +76,7 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         if (null == demoHost) {
             demoHost = new SiteDataGen().nextPersisted();
         }
-
+        APILocator.getPermissionAPI().setDefaultCMSAnonymousPermissions(demoHost);
         final String DEMO_HOST_IDENTIFIER = demoHost.getIdentifier();
 
         // tag name provided, demo site id provided, should return tags filtered by name and host

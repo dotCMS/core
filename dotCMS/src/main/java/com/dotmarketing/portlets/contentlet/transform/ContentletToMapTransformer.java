@@ -31,7 +31,6 @@ public class ContentletToMapTransformer {
     static final Set<String> privateInternalProperties = ImmutableSet
             .of(Contentlet.NULL_PROPERTIES, 
                 Contentlet.DISABLE_WORKFLOW,
-                Contentlet.CONTSTANTS_ADDED,
                     Contentlet.DONT_VALIDATE_ME,
                     Contentlet.LAST_REVIEW_KEY,
                     Contentlet.REVIEW_INTERNAL_KEY, 

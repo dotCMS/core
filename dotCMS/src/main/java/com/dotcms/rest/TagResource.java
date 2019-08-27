@@ -77,13 +77,15 @@ public class TagResource {
         List<Tag> tags;
 
         try {
-            final Host host = APILocator.getHostAPI().find(siteOrFolderId, user, false);
+            final boolean frontEndRequest = user.isFrontendUser();
+            final Host host = APILocator.getHostAPI().find(siteOrFolderId, user, frontEndRequest);
             String internalSiteOrFolderId = siteOrFolderId;
+
 
             if ((!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode()))
                     && UtilMethods.isSet(siteOrFolderId)) {
                 internalSiteOrFolderId = APILocator.getFolderAPI()
-                        .find(siteOrFolderId, user, false).getHostId();
+                        .find(siteOrFolderId, user, frontEndRequest).getHostId();
             }
 
             tags = APILocator.getTagAPI().getSuggestedTag(tagName, internalSiteOrFolderId);

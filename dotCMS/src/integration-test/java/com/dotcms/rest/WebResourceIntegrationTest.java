@@ -13,6 +13,7 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
@@ -121,16 +122,27 @@ public class WebResourceIntegrationTest {
 
   }
   
-  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  @Test
   public void disallow_front_end_access_server_if_only_allowBackendUser() throws Exception {
     Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "None");
-    final InitDataObject initDataObject = new WebResource.InitBuilder()
-        .allowBackendUser(true)
-        .requestAndResponse(frontEndRequest(), response)
-        .init();
+    Exception exception = null;
+    try {
+    
+      final InitDataObject initDataObject = new WebResource.InitBuilder()
+          .allowBackendUser(true)
+          .requestAndResponse(frontEndRequest(), response)
+          .init();
 
+    }catch(Exception e) {
+      exception=e;
+    }
+    
+    assertTrue("we MUST have an exception", exception!=null);
+    assertTrue("we need a SecurityException, got a " + exception, exception instanceof SecurityException);
     
   }
+  
+  
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_backEnd_access_server_if_only_allowFrontEndUser() throws Exception {
     Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "None");

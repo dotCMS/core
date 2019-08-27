@@ -109,7 +109,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
 	public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
     public static final String DOT_NAME_KEY = "__DOTNAME__";
-    public final static String CONTSTANTS_ADDED="CONTSTANTS_ADDED";
+
     public static final String TITLE_IMAGE_KEY="titleImage";
 
     public static final String URL_MAP_FOR_CONTENT_KEY = "URL_MAP_FOR_CONTENT";
@@ -238,9 +238,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
    * @param map
    */
   public Contentlet(final Map<String, Object> mapIn) {
-
+    this();
     mapIn.values().removeIf(Objects::isNull);
-    this.map = new ContentletHashMap();
     this.map.putAll(mapIn);
     this.indexPolicy = IndexPolicy.DEFER;
   }
@@ -256,19 +255,20 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 	}
 
-    /**
-     * Default class constructor.
-     */
-    public Contentlet() {
-		setInode("");
-		setIdentifier("");
-		setLanguageId(0);
-		setContentTypeId("");
-		setSortOrder(0);
-		setDisabledWysiwyg(new ArrayList<>());
-		this.indexPolicy = IndexPolicy.DEFER;
-		getWritableNullProperties();
-	}
+  /**
+   * Default class constructor.
+   */
+  public Contentlet() {
+    this.map = new ContentletHashMap();
+    setInode("");
+    setIdentifier("");
+    setLanguageId(0);
+    setContentTypeId("");
+    setSortOrder(0);
+    setDisabledWysiwyg(new ArrayList<>());
+    this.indexPolicy = IndexPolicy.DEFER;
+    getWritableNullProperties();
+  }
 
     @Override
     public String getName() {
@@ -393,15 +393,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @return
      */
 
+    private transient boolean CONTSTANTS_ADDED=false;
     private void addConstantsToMap() {
 
-      if(!map.containsKey(CONTSTANTS_ADDED) && UtilMethods.isSet(getContentTypeId()) && DbConnectionFactory.dbAvailable()) {
+      if(!CONTSTANTS_ADDED && UtilMethods.isSet(getContentTypeId()) && DbConnectionFactory.dbAvailable()) {
         ContentType type=getContentType();
         if(type==null)return;
         for(com.dotcms.contenttype.model.field.Field constant : type.fields(ConstantField.class)) {
           map.put(constant.variable(), constant.values());
         }
-        map.put(CONTSTANTS_ADDED, true);
+        CONTSTANTS_ADDED= true;
       }
     }
     /**

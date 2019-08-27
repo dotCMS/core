@@ -72,7 +72,9 @@ public class TempFileAPI {
     
     
     final User user = PortalUtil.getUser(request);
+
     final String sessionId = (request.getSession(false)!=null) ? request.getSession().getId() : null;
+
     final String requestFingerprint = this.getRequestFingerprint(request);
     
     
@@ -372,14 +374,11 @@ public class TempFileAPI {
     final String incomingReferer = (request.getHeader("Origin")!=null) ? request.getHeader("Origin") :  request.getHeader("referer");
     uniqList.add(new SecurityUtils().hostFromUrl(incomingReferer));
 
-    uniqList.add(PortalUtil.getUserId(request));
-    if(request.getSession(false)!=null) {
-      uniqList.add(request.getSession().getId());
-    }
     
     uniqList.removeIf(Objects::isNull);
     if(uniqList.size() < 4) {
-      throw new DotRuntimeException("Invalid request - no unique identifiers passed in");
+      Logger.warn(this.getClass(),"request does not have enough params to create a valid fingerprint");
+      uniqList.add(UUIDGenerator.generateUuid());
     }
     
     final String fingerPrint = String.join(" , ", uniqList);
