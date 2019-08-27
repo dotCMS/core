@@ -12,7 +12,6 @@
     <dot-language-selector
         (selected)="changeLanguageHandler($event)"
         [value]="pageState.viewAs.language"
-        [contentInode]="pageState.page.inode"
     ></dot-language-selector>
 
     <ng-template [ngIf]="isEnterpriseLicense">
@@ -33,6 +32,5 @@
     <dot-language-selector
         (selected)="changeLanguageHandler($event)"
         [value]="pageState.viewAs.language"
-        [contentInode]="pageState.page.inode"
     ></dot-language-selector>
 </ng-template>

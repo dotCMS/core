@@ -250,10 +250,6 @@ describe('DotEditPageViewAsControllerComponent', () => {
             expect(languageSelector).not.toBeNull();
         });
 
-        it('should set contentInode in Language selector', () => {
-            expect(languageSelector.contentInode).toEqual('2');
-        });
-
         it('should emit changes in Language', () => {
             const testlanguage: DotLanguage = {
                 id: 2,

@@ -22,7 +22,6 @@ import { DotMessageService } from '@services/dot-messages-service';
 })
 export class DotLanguageSelectorComponent implements OnInit, OnChanges {
     @Input() value: DotLanguage;
-    @Input() contentInode: string;
     @Output() selected = new EventEmitter<DotLanguage>();
     @HostBinding('class.disabled') disabled: boolean;
 
@@ -69,7 +68,7 @@ export class DotLanguageSelectorComponent implements OnInit, OnChanges {
 
     private loadOptions(): void {
         this.dotLanguagesService
-            .get(this.contentInode)
+            .get()
             .pipe(take(1))
             .subscribe(
                 (languages: DotLanguage[]) => {
