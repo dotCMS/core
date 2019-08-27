@@ -391,6 +391,16 @@ integrationTest {
 
     doFirst
             {
+
+                println "***************************************************"
+                println "***************************************************"
+                println "***************************************************"
+                println "Runtime.runtime.availableProcessors().intdiv(2) ?: 1"
+                println Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+                println "***************************************************"
+                println "***************************************************"
+                println "***************************************************"
+
                 if (project.hasProperty('databaseType')){
                     systemProperty "databaseType", "$databaseType"
                 }
