@@ -1,8 +1,5 @@
 package com.dotmarketing.startup.runalways;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -10,12 +7,21 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.WebKeys;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 public class Task00030ClusterInitialize implements StartupTask {
 
     @Override
     public boolean forceRun() {
-    		Connection con = null;
+
+        //This basically means the cluster-node has already been started. Potentially by another class-loader
+    	if( null != System.getProperty(WebKeys.DOTCMS_STARTUP_TIME_ES)){
+    	   return false;
+    	}
+
+    	Connection con = null;
 		try {
 			con = DbConnectionFactory.getDataSource("jdbc/dotCMSPool").getConnection();
 		} catch (SQLException e1) {
@@ -23,7 +29,7 @@ public class Task00030ClusterInitialize implements StartupTask {
 			return false;
 		}
 	    	try {
-	    		
+
 	    		DotConnect dc=new DotConnect();
 	    		dc.setSQL("select * from sitelic");
 	    		dc.loadResult(con);
@@ -42,7 +48,7 @@ public class Task00030ClusterInitialize implements StartupTask {
 
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
-        ClusterFactory.initialize();
+            ClusterFactory.initialize();
     }
 
 }
