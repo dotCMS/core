@@ -26,16 +26,14 @@ import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.MOD_
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.TITLE;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.URL_MAP;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKING;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_DESCRIPTION_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.*;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_METADATA_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SHOW_ON_MENU_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SORT_ORDER_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_TITLE_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FormContentType.FORM_EMAIL_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FormContentType.FORM_RETURN_PAGE_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FormContentType.FORM_TITLE_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FormContentType.*;
 import static com.dotcms.contenttype.model.type.KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR;
 import static com.dotcms.contenttype.model.type.PageContentType.PAGE_CACHE_TTL_FIELD_VAR;
@@ -182,9 +180,8 @@ public enum InterfaceType {
         interfaceTypes.put("KEY_VALUE", createInterfaceType(KEY_VALUE_INTERFACE_NAME, keyValueFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> formFields = new HashMap<>(contentFields);
-        formFields.put(FORM_TITLE_FIELD_VAR, new TypeFetcher(GraphQLString));
+        formFields.put(FORM_SUCCESS_CALLBACK, new TypeFetcher(GraphQLString));
         formFields.put(FORM_EMAIL_FIELD_VAR, new TypeFetcher(GraphQLString));
-        formFields.put(FORM_RETURN_PAGE_FIELD_VAR, new TypeFetcher(GraphQLString));
 
         interfaceTypes.put("FORM", createInterfaceType(FORM_INTERFACE_NAME, formFields, new ContentResolver()));
     }

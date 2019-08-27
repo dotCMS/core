@@ -29,9 +29,13 @@ public class ContentletToMapTransformer {
 
     //This set contains all the properties that we want to prevent from making it into the final contentlet or transformed map.
     static final Set<String> privateInternalProperties = ImmutableSet
-            .of(Contentlet.NULL_PROPERTIES, Contentlet.DISABLE_WORKFLOW,
-                    Contentlet.DONT_VALIDATE_ME, Contentlet.LAST_REVIEW_KEY,
-                    Contentlet.REVIEW_INTERNAL_KEY, Contentlet.DISABLED_WYSIWYG_KEY, Contentlet.DOT_NAME_KEY
+            .of(Contentlet.NULL_PROPERTIES, 
+                Contentlet.DISABLE_WORKFLOW,
+                    Contentlet.DONT_VALIDATE_ME,
+                    Contentlet.LAST_REVIEW_KEY,
+                    Contentlet.REVIEW_INTERNAL_KEY, 
+                    Contentlet.DISABLED_WYSIWYG_KEY,
+                    Contentlet.DOT_NAME_KEY
             );
 
     private final ContentHelper contentHelper;

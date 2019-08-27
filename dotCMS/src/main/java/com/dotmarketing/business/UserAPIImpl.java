@@ -211,28 +211,39 @@ public class UserAPIImpl implements UserAPI {
     }
     
 	@WrapInTransaction
-	private User _getAnonymousUser() throws DotDataException {
+	private synchronized User _getAnonymousUser() throws DotDataException {
+	  if(this.anonUser!=null) {
+	    return this.anonUser;
+	  }
 		User user = null;
 		try {
 			user = userFactory.loadUserById(CMS_ANON_USER_ID);
 		} catch (DotDataException e) {
 			user = createUser(CMS_ANON_USER_ID, "anonymous@dotcmsfakeemail.org");
 			user.setUserId(CMS_ANON_USER_ID);
-			user.setFirstName("anonymous user");
+      user.setFirstName("Anonymous");
+      user.setLastName("User");
 			user.setCreateDate(new java.util.Date());
 			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
 			userFactory.saveUser(user);
-			com.dotmarketing.business.APILocator.getRoleAPI().addRoleToUser(com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_ANONYMOUS_ROLE")).getId(), user);
 		} catch (NoSuchUserException e) {
-			user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
+			user = createUser(CMS_ANON_USER_ID, "anonymous@dotcmsfakeemail.org");
 			user.setUserId(CMS_ANON_USER_ID);
-			user.setFirstName("anonymous user");
+			user.setFirstName("Anonymous");
+			user.setLastName("User");
 			user.setCreateDate(new java.util.Date());
 			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
 			userFactory.saveUser(user);
-			com.dotmarketing.business.APILocator.getRoleAPI().addRoleToUser(com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), user);
 		}
-		return user;
+		
+		// Assure CMS ANON has the anon role and the Front End User Role
+		Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
+		if(cmsAnon!=null) {
+		  APILocator.getRoleAPI().addRoleToUser(cmsAnon, user);
+		}
+    APILocator.getRoleAPI().addRoleToUser(Role.DOTCMS_FRONT_END_USER, user);
+    this.anonUser=user;
+    return this.anonUser;
 	}
 
 	@CloseDBIfOpened
