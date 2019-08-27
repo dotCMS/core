@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
@@ -57,6 +58,7 @@ import org.elasticsearch.search.query.QueryPhaseExecutionException;
 import org.osgi.framework.BundleContext;
 
 import javax.annotation.Nullable;
+import javax.ws.rs.HEAD;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -197,6 +199,23 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			Logger.error(this, "Can not delete the system mapping actions associated to the content type: "
 					+ contentTypeDeletedEvent.getContentTypeVar() + ", msg: " + e.getMessage(), e);
+		}
+	}
+
+	@Subscriber
+	@WrapInTransaction
+	public void onLanguageDeletedEvent (final LanguageDeletedEvent languageDeletedEvent) {
+
+		try {
+
+			Logger.debug(this, ()-> "Deleting workflow tasks associated to the language: "
+					+ languageDeletedEvent.getLanguage() );
+
+			this.workFlowFactory.deleteWorkflowTaskByLanguage(languageDeletedEvent.getLanguage());
+		} catch (DotDataException e) {
+
+			Logger.error(this, "Can not delete the workflow tasks associated to the language: "
+					+ languageDeletedEvent.getLanguage() + ", msg: " + e.getMessage(), e);
 		}
 	}
 
@@ -1560,6 +1579,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 		}
 
+		if (null != workflowAction) {
+			this.fillActionInfo(workflowAction, this.workFlowFactory.findActionClasses(workflowAction));
+		}
+
 		return workflowAction;
 	}
 
@@ -1580,6 +1603,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 		}
+
+		if (null != workflowAction) {
+			this.fillActionInfo(workflowAction, this.workFlowFactory.findActionClasses(workflowAction));
+		}
+
 		return workflowAction;
 	}
 
@@ -2136,11 +2164,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				if (UtilMethods.isSet(processor.getContentlet()) && processor.getContentlet().needsReindex()) {
 
+					Logger.info(this, "Needs reindex, adding the contentlet to the index at the end of the workflow execution");
 				    final Contentlet content = processor.getContentlet();
-				    content.setIndexPolicy(IndexPolicy.WAIT_FOR);
+				    final IndexPolicy indexPolicy = content.getIndexPolicy()==IndexPolicy.FORCE?IndexPolicy.FORCE:IndexPolicy.WAIT_FOR;
+				    content.setIndexPolicy(indexPolicy);
 				    final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
 					final boolean includeDependencies = null != threadContext && threadContext.isIncludeDependencies();
 					this.contentletIndexAPI.addContentToIndex(content, includeDependencies);
+					Logger.info(this, "Added contentlet to the index at the end of the workflow execution, dependencies: " + includeDependencies);
 				}
 			}
 		} catch(Exception e) {
@@ -2827,6 +2858,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if (null != processor.getContentlet()) {
 			processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.FALSE);
+		} else {
+
+			Logger.info(this, "The Contentlet: " + (null != contentlet? contentlet.getIdentifier():"Unknown") +
+					"the action: " + (null != contentlet? contentlet.getActionId():"Unknown") + " was not executed");
 		}
 
 		return processor.getContentlet();
@@ -3604,7 +3639,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
         final List<WorkflowScheme> schemes   = this.findSchemesForContentType(contentType);
 
-        final List<Map<String, Object>> mappingRows =
+        final List<Map<String, Object>> mappingRows = // todo: double check if the system workflow is the first we pick
                 this.workFlowFactory.findSystemActionsBySchemes(systemAction, schemes);
 
 		return UtilMethods.isSet(mappingRows)?

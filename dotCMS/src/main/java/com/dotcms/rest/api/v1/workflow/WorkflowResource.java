@@ -1414,6 +1414,14 @@ public class WorkflowResource {
                 return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
             } else {
 
+                final Optional<SystemActionApiFireCommand> fireCommandOpt =
+                        this.systemActionApiFireCommandProvider.get(systemAction);
+
+                if (fireCommandOpt.isPresent()) {
+
+                    return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, null, fireCommandOpt);
+                }
+
                 final ContentType contentType = contentlet.getContentType();
                 throw new DoesNotExistException("For the contentType: " + (null != contentType?contentType.variable():"unknown") +
                         " systemAction = " + systemAction);
@@ -1532,6 +1540,14 @@ public class WorkflowResource {
 
                 return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
             } else {
+
+                final Optional<SystemActionApiFireCommand> fireCommandOpt =
+                        this.systemActionApiFireCommandProvider.get(systemAction);
+
+                if (fireCommandOpt.isPresent()) {
+
+                    return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, null, fireCommandOpt);
+                }
 
                 final ContentType contentType = contentlet.getContentType();
                 throw new DoesNotExistException("For the contentType: " + (null != contentType?contentType.variable():"unknown") +

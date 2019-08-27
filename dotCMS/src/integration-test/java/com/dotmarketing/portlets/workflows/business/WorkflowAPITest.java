@@ -18,7 +18,8 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.*;
+import com.dotcms.rest.api.v1.workflow.WorkflowTestUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -28,6 +29,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -38,6 +40,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
@@ -50,6 +54,7 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -583,6 +588,97 @@ public class WorkflowAPITest extends IntegrationTestBase {
     }
 
     @Test()
+    public void onLanguageDeletedEvent_Test() throws DotDataException, DotSecurityException {
+
+        Language frenchLanguage = null;
+        Contentlet contentlet = null;
+
+        try {
+            frenchLanguage = new LanguageDataGen()
+                    .country("French")
+                    .countryCode("FR")
+                    .languageCode("fr")
+                    .languageName("French").nextPersisted();
+
+            final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+            final String unicodeText = "Numéro de téléphone";
+
+            final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
+            contentlet = contentletDataGen.setProperty("title", "TestContent")
+                    .setProperty("body", unicodeText ).languageId(frenchLanguage.getId()).nextPersisted();
+            final WorkflowStep workflowStep           = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
+
+            final WorkflowTask workflowTask = workflowAPI.createWorkflowTask
+                    (contentlet, user, workflowStep, "test", "test");
+            workflowAPI.saveWorkflowTask(workflowTask);
+
+            Optional<WorkflowStep> currentStepOpt = workflowAPI.findCurrentStep(contentlet);
+            assertTrue(currentStepOpt.isPresent());
+            assertEquals(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID, currentStepOpt.get().getId());
+            APILocator.getLocalSystemEventsAPI().notify(new LanguageDeletedEvent(frenchLanguage));
+            frenchLanguage = null;
+
+            final List<Map<String, Object>>  results = new DotConnect().setSQL("select * from workflow_task where id = ?")
+                    .addParam(workflowTask.getId()).loadObjectResults();
+            assertFalse(UtilMethods.isSet(results));
+            final List<WorkflowHistory> histories = workflowAPI.findWorkflowHistory(workflowTask);
+            assertFalse(UtilMethods.isSet(histories));
+        } finally {
+
+            if (null != frenchLanguage) {
+                LanguageDataGen.remove(frenchLanguage);
+            }
+        }
+    }
+
+    @Test()
+    public void findActionMappedBySystemActionContentlet_Test() throws DotDataException, DotSecurityException {
+
+        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+        final String unicodeText = "Numéro de téléphone";
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
+        Contentlet contentlet = contentletDataGen.setProperty("title", "TestContent")
+                .setProperty("body", unicodeText ).languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId()).nextPersisted();
+
+        Optional<WorkflowAction> workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.NEW, user);
+
+        assertTrue(workflowActionOpt.isPresent());
+        assertEquals(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, workflowActionOpt.get().getId());
+
+        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.EDIT, user);
+
+        assertTrue(workflowActionOpt.isPresent());
+        assertEquals(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, workflowActionOpt.get().getId());
+
+        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.PUBLISH, user);
+
+        assertTrue(workflowActionOpt.isPresent());
+        assertEquals(SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID, workflowActionOpt.get().getId());
+
+        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.UNPUBLISH, user);
+
+        assertTrue(workflowActionOpt.isPresent());
+        assertEquals(SystemWorkflowConstants.WORKFLOW_UNPUBLISH_ACTION_ID, workflowActionOpt.get().getId());
+
+        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.ARCHIVE, user);
+
+        assertTrue(workflowActionOpt.isPresent());
+        assertEquals(SystemWorkflowConstants.WORKFLOW_ARCHIVE_ACTION_ID, workflowActionOpt.get().getId());
+
+        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
+                (contentlet, WorkflowAPI.SystemAction.DELETE, user);
+
+        assertTrue(workflowActionOpt.isPresent());
+        assertEquals(SystemWorkflowConstants.WORKFLOW_DELETE_ACTION_ID, workflowActionOpt.get().getId());
+    }
+
+    @Test()
     public void mapSystemActionToWorkflowActionForContentType_Test() throws DotDataException, DotSecurityException {
 
         final WorkflowAction saveAction =
@@ -705,28 +801,29 @@ public class WorkflowAPITest extends IntegrationTestBase {
     @Test()
     public void mapSystemActionToWorkflowActionForWorkflowScheme_Test() throws DotDataException, DotSecurityException {
 
-        final WorkflowAction saveAction =
-                workflowAPI.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, APILocator.systemUser());
+        final WorkflowScheme myWorkflow = TestWorkflowUtils.getDocumentWorkflow("Workflow"+System.currentTimeMillis());
 
-        workflowAPI.saveSchemeIdsForContentType(contentType, CollectionsUtils.set(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID));
-        workflowAPI.saveSchemeIdsForContentType(contentType2, CollectionsUtils.set(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID));
-        final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+        workflowAPI.saveSchemeIdsForContentType(contentType,  CollectionsUtils.set(myWorkflow.getId()));
+        workflowAPI.saveSchemeIdsForContentType(contentType2, CollectionsUtils.set(myWorkflow.getId()));
+
+        final WorkflowAction firstAction =
+            workflowAPI.findActions(workflowAPI.findFirstStep(myWorkflow.getId()).get(), user).stream().findFirst().get();
         final SystemActionWorkflowActionMapping mapping =
                 workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme
-                        (WorkflowAPI.SystemAction.NEW, saveAction, systemWorkflow);
+                        (WorkflowAPI.SystemAction.NEW, firstAction, myWorkflow);
 
         assertNotNull(mapping);
         assertEquals(WorkflowAPI.SystemAction.NEW, mapping.getSystemAction());
-        assertEquals(saveAction,  mapping.getWorkflowAction());
-        assertEquals(systemWorkflow, mapping.getOwner());
+        assertEquals(firstAction,  mapping.getWorkflowAction());
+        assertEquals(myWorkflow, mapping.getOwner());
 
         final List<SystemActionWorkflowActionMapping> systemActionsByScheme = workflowAPI.findSystemActionsByScheme
-                (systemWorkflow, APILocator.systemUser());
+                (myWorkflow, APILocator.systemUser());
 
         assertNotNull(systemActionsByScheme);
         assertTrue(UtilMethods.isSet(systemActionsByScheme));
         assertTrue(systemActionsByScheme.stream().anyMatch(systemMapping ->
-                systemMapping.getSystemAction() == WorkflowAPI.SystemAction.NEW && systemMapping.getWorkflowAction().equals(saveAction)));
+                systemMapping.getSystemAction() == WorkflowAPI.SystemAction.NEW && systemMapping.getWorkflowAction().equals(firstAction)));
 
         final Contentlet contentlet = new Contentlet();
         contentlet.setContentType(contentType2); // content type without default actions
@@ -734,7 +831,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
                 (contentlet, WorkflowAPI.SystemAction.NEW, APILocator.systemUser());
 
         assertTrue(newAction.isPresent());
-        assertEquals(saveAction, newAction.get());
+        assertEquals(firstAction, newAction.get());
 
         for (final SystemActionWorkflowActionMapping systemActionWorkflowActionMapping: systemActionsByScheme) {
 
@@ -742,7 +839,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
         }
 
         final List<SystemActionWorkflowActionMapping> systemActionsBySchemeDeleted = workflowAPI.findSystemActionsByScheme
-                (systemWorkflow, APILocator.systemUser());
+                (myWorkflow, APILocator.systemUser());
 
         assertFalse(UtilMethods.isSet(systemActionsBySchemeDeleted));
     }

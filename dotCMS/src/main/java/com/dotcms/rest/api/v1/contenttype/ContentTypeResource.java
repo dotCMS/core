@@ -116,7 +116,7 @@ public class ContentTypeResource implements Serializable {
 
 				final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>>  tuple2 =
 						this.saveContentTypeAndDependencies(type, initData.getUser(), workflowsIds,
-							form.getSystemActions(), APILocator.getContentTypeAPI(user, true));
+							form.getSystemActions(), APILocator.getContentTypeAPI(user, true), true);
 				final ContentType contentTypeSaved = tuple2._1;
 
 				ImmutableMap<Object, Object> responseMap = ImmutableMap.builder()
@@ -189,7 +189,7 @@ public class ContentTypeResource implements Serializable {
 				} else {
 
 					final Tuple2<ContentType, List<SystemActionWorkflowActionMapping>> tuple2 = this.saveContentTypeAndDependencies(contentType, user,
-							new HashSet<>(form.getWorkflowsIds()), form.getSystemActions(), contentTypeAPI);
+							new HashSet<>(form.getWorkflowsIds()), form.getSystemActions(), contentTypeAPI, false);
 					final ImmutableMap.Builder<Object, Object> builderMap =
 							ImmutableMap.builder()
 							.putAll(new JsonContentTypeTransformer(tuple2._1).mapObject())
@@ -224,7 +224,8 @@ public class ContentTypeResource implements Serializable {
 																								   final User user,
 																								   final Set<String> workflowsIds,
 																								   final List<Tuple2<WorkflowAPI.SystemAction,String>> systemActionMappings,
-																								   final ContentTypeAPI contentTypeAPI) throws DotSecurityException, DotDataException {
+																								   final ContentTypeAPI contentTypeAPI,
+																								   final boolean isNew) throws DotSecurityException, DotDataException {
 
 		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings = new ArrayList<>();
 		final ContentType contentTypeSaved = contentTypeAPI.save(contentType);
@@ -246,16 +247,18 @@ public class ContentTypeResource implements Serializable {
 							.contentTypeVariable(contentTypeSaved.variable()).build(), user));
 				} else if (UtilMethods.isSet(systemAction)) {
 
-					Logger.warn(this, "Deleting the system action: " + systemAction +
-							", for content type: " + contentTypeSaved.variable());
+					if (!isNew) {
+						Logger.warn(this, "Deleting the system action: " + systemAction +
+								", for content type: " + contentTypeSaved.variable());
 
-					final SystemActionWorkflowActionMapping mappingDeleted =
-							this.workflowHelper.deleteSystemAction(systemAction, contentTypeSaved, user);
+						final SystemActionWorkflowActionMapping mappingDeleted =
+								this.workflowHelper.deleteSystemAction(systemAction, contentTypeSaved, user);
 
-					Logger.warn(this, "Deleted the system action mapping: " + mappingDeleted);
+						Logger.warn(this, "Deleted the system action mapping: " + mappingDeleted);
+					}
 				} else {
 
-					throw new IllegalArgumentException("On SYstem Action Mappings, a system action has been sent null or empty");
+					throw new IllegalArgumentException("On System Action Mappings, a system action has been sent null or empty");
 				}
 			}
 		}

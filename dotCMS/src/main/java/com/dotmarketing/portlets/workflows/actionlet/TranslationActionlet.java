@@ -34,6 +34,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
+import javax.ws.rs.HEAD;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -209,7 +210,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
 
         if (workflowActionSaveOpt.isPresent()) {
 
-            final boolean hasSave     = workflowAPI.get().hasSaveActionlet(workflowActionSaveOpt.get());
+            final boolean hasSave     = workflowActionSaveOpt.get().hasSaveActionlet();
             final boolean noRecursive = !this.hasTranslationActionlet(workflowActionSaveOpt.get());
 
             if (hasSave && noRecursive) {
@@ -222,7 +223,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
                         .relationships(contentletRelationships).categories(categories)
                         .permissions(permissions).modUser(user).build());
 
-                return live && !workflowAPI.get().hasPublishActionlet(workflowActionSaveOpt.get())?
+                return live && !workflowActionSaveOpt.get().hasPublishActionlet()?
                         runWorkflowPublishIfCould(contentletAPI, contentletRelationships,
                                 categories, permissions, user, saveTranslatedContent):
                         saveTranslatedContent;
@@ -251,7 +252,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
 
             final boolean noRecursive = !this.hasTranslationActionlet(workflowActionPublishOpt.get());
 
-            if (workflowAPI.get().hasPublishActionlet(workflowActionPublishOpt.get()) && noRecursive) {
+            if (workflowActionPublishOpt.get().hasPublishActionlet() && noRecursive) {
 
                 Logger.debug(this, () -> "Translating a contentlet with the publish action: "
                         + workflowActionPublishOpt.get().getName());

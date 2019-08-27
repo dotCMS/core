@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 
+@Actionlet(unarchive = true)
 public class UnarchiveContentActionlet extends WorkFlowActionlet {
 
 

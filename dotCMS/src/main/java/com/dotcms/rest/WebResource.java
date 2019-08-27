@@ -500,9 +500,9 @@ public  class WebResource {
         }
 
         if(
-            (user == null || UserAPI.CMS_ANON_USER_ID.equals(user.getUserId())) && 
-            (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser) 
-          ) {
+                (user == null || UserAPI.CMS_ANON_USER_ID.equals(user.getUserId())) &&
+                        (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser)
+        ) {
 
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
         } else if(user == null) {
