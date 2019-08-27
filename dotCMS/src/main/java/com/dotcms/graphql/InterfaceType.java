@@ -182,7 +182,6 @@ public enum InterfaceType {
         final Map<String, TypeFetcher> formFields = new HashMap<>(contentFields);
         formFields.put(FORM_SUCCESS_CALLBACK, new TypeFetcher(GraphQLString));
         formFields.put(FORM_EMAIL_FIELD_VAR, new TypeFetcher(GraphQLString));
-        formFields.put(FORM_HOST_FIELD_VAR, new TypeFetcher(GraphQLString));
 
         interfaceTypes.put("FORM", createInterfaceType(FORM_INTERFACE_NAME, formFields, new ContentResolver()));
     }
