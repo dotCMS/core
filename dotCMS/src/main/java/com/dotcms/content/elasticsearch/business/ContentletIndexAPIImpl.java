@@ -204,6 +204,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             IndiciesInfo info = new IndiciesInfo();
             info.working = workingIndex;
             info.live = liveIndex;
+
+            IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
+
+            if (oldInfo != null && oldInfo.site_search != null){
+                info.site_search = oldInfo.site_search;
+            }
             APILocator.getIndiciesAPI().point(info);
 
             return timeStamp;
@@ -221,7 +227,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * the new re-indexed content available and then work on the conflicting contents, which can be
      * either fixed or removed from the database.
      * </p>
-     * 
+     *
      * @throws SQLException An error occurred when interacting with the database.
      * @throws DotDataException The process to switch to the new failed.
      * @throws InterruptedException The established pauses to switch to the new index failed.
@@ -237,12 +243,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             ReindexThread.unpause();
         }
     }
-    
+
     /**
      * Switches the current index structure to the new re-indexed data. This method also allows users to
      * switch to the new re-indexed data even if there are still remaining contents in the
      * {@code dist_reindex_journal} table.
-     * 
+     *
      * @param forceSwitch - If {@code true}, the new index will be used, even if there are contents that
      *        could not be processed. Otherwise, set to {@code false} and the index switch will only
      *        happen if ALL contents were re-indexed.
@@ -266,11 +272,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
     }
-    
+
     /**
      * creates new working and live indexes with reading aliases pointing to old index and write aliases
      * pointing to both old and new indexes
-     * 
+     *
      * @return the timestamp string used as suffix for indices
      * @throws DotDataException
      * @throws ElasticsearchException
@@ -295,6 +301,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 newinfo.live = info.live;
                 newinfo.reindex_working = workingIndex;
                 newinfo.reindex_live = liveIndex;
+                newinfo.site_search = info.site_search;
                 APILocator.getIndiciesAPI().point(newinfo);
 
                 return timeStamp;
@@ -319,13 +326,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     /**
      * This will drop old index and will point read aliases to new index. This method should be called
      * after call to {@link #fullReindexStart()}
-     * 
+     *
      * @return
      */
     @CloseDBIfOpened
     public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch) {
-      
-      
+
+
         if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 15)*1000) {
           Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
           ThreadUtils.sleep(3000);
@@ -384,10 +391,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         return 0;
     }
-    
-    
-    
-    
+
+
+
+
   @Override
   public Optional<String> reindexTimeElapsed() {
     try {
@@ -456,11 +463,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         addContentToIndex(contentToIndex);
 
     }
-    
+
     /**
      * Stops the full re-indexation process. This means clearing up the content queue and the reindex
      * journal.
-     * 
+     *
      * @throws DotDataException
      */
     @Override
@@ -977,6 +984,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             IndiciesInfo newinfo = new IndiciesInfo();
             newinfo.working = info.working;
             newinfo.live = info.live;
+            newinfo.site_search = info.site_search;
             APILocator.getIndiciesAPI().point(newinfo);
 
             esIndexApi.moveIndexBackToCluster(rew);
