@@ -4,6 +4,7 @@ import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.rest.*;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.IntegrationTestInitService;
@@ -88,6 +89,7 @@ public class PageResourceTest {
         request  = mock(HttpServletRequest.class);
         response  = mock(HttpServletResponse.class);
 
+        final ModuleConfig moduleConfig     = mock(ModuleConfig.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         user = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
 
@@ -110,6 +112,7 @@ public class PageResourceTest {
         APILocator.getVersionableAPI().setWorking(host);
         APILocator.getVersionableAPI().setLive(host);
         when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
+        when(request.getAttribute("com.dotcms.repackage.org.apache.struts.action.MODULE")).thenReturn(moduleConfig);
 
         Folder aboutUs = APILocator.getFolderAPI().findFolderByPath(String.format("/%s/",folderName), host, APILocator.systemUser(), false);
         if(null == aboutUs || !UtilMethods.isSet(aboutUs.getIdentifier())) {
