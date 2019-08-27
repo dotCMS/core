@@ -10,11 +10,15 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import io.vavr.control.Try;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -142,11 +146,11 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     public Contentlet next(){
 
         final Contentlet contentlet = new Contentlet();
-        contentlet.setFolder(folder.getInode());
-        contentlet.setHost(host.getIdentifier());
-        contentlet.setLanguageId(languageId);
+        contentlet.setFolder(folder ==null ? Folder.SYSTEM_FOLDER : folder.getInode());
+        contentlet.setHost(host == null ? Host.SYSTEM_HOST : host.getIdentifier());
+        contentlet.setLanguageId(languageId==0 ? APILocator.getLanguageAPI().getDefaultLanguage().getId()  : languageId);
         contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        contentlet.setContentTypeId(contentTypeId);
+        contentlet.setContentTypeId(Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeId).id()).getOrNull());
         for(Entry<String, Object> element:properties.entrySet()){
             contentlet.setProperty(element.getKey(), element.getValue());
         }
