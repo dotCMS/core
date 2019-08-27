@@ -31,7 +31,6 @@ import {
     PageModelChangeEventType
 } from './services/dot-edit-content-html/models';
 
-
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
  *
@@ -224,14 +223,18 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private saveContent(event: PageModelChangeEvent): void {
         this.saveToPage(event.model)
-            .pipe(filter(() => this.shouldReload(event.type)))
+            .pipe(
+                tap(() => {
+                    if (this.shouldSetContainersHeight()) {
+                        this.dotEditContentHtmlService.setContaintersSameHeight(
+                            this.pageStateInternal.layout
+                        );
+                    }
+                }),
+                filter(() => this.shouldReload(event.type))
+            )
             .subscribe(() => {
-                if (
-                    event.type !== PageModelChangeEventType.MOVE_CONTENT &&
-                    this.pageStateInternal.page.remoteRendered
-                ) {
-                    this.reload();
-                }
+                this.reload();
             });
     }
 
@@ -309,18 +312,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             }
         });
     }
-
-    // private errorHandler(err: ResponseView): Observable<DotRenderedPageState> {
-    //     this.dotHttpErrorManagerService
-    //         .handle(err)
-    //         .pipe(takeUntil(this.destroy$))
-    //         .subscribe((res: DotHttpErrorHandled) => {
-    //             if (!res.redirected) {
-    //                 this.dotRouterService.goToSiteBrowser();
-    //             }
-    //         });
-    //     return observableEmpty();
-    // }
 
     private getMessages(): void {
         this.dotMessageService
@@ -450,16 +441,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             )
             .subscribe((event: PageModelChangeEvent) => {
                 this.dotPageStateService.updatePageStateHaveContent(event);
-
-                this.ngZone.run(() => {
-                    this.saveContent(event);
-
-                    if (this.shouldSetContainersHeight()) {
-                        this.dotEditContentHtmlService.setContaintersSameHeight(
-                            this.pageStateInternal.layout
-                        );
-                    }
-                });
+                this.saveContent(event);
             });
     }
 

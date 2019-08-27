@@ -142,9 +142,7 @@ export class DotEditContentHtmlService {
     removeContentlet(container: DotPageContainer, content: DotPageContent): void {
         const doc = this.getEditPageDocument();
         const selector = [
-            `div[data-dot-object="container"][data-dot-identifier="${
-                container.identifier
-            }"][data-dot-uuid="${container.uuid}"] `,
+            `div[data-dot-object="container"][data-dot-identifier="${container.identifier}"][data-dot-uuid="${container.uuid}"] `,
             `div[data-dot-object="contentlet"][data-dot-inode="${content.inode}"]`
         ].join('');
         const contenletEl = doc.querySelector(selector);
@@ -204,9 +202,7 @@ export class DotEditContentHtmlService {
     renderAddedContentlet(contentlet: DotPageContent, eventType: PageModelChangeEventType): void {
         const doc = this.getEditPageDocument();
         const containerEl: HTMLElement = doc.querySelector(
-            `div[data-dot-object="container"][data-dot-identifier="${
-                this.currentContainer.identifier
-            }"][data-dot-uuid="${this.currentContainer.uuid}"]`
+            `div[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${this.currentContainer.uuid}"]`
         );
 
         const contentletPlaceholder = this.getContentletPlaceholder();
@@ -313,14 +309,16 @@ export class DotEditContentHtmlService {
         try {
             const containersLayoutIds = this.getContainersLayoutIds(pageLayout);
             const containerDomElements = this.getContainerDomElements(containersLayoutIds);
-            containerDomElements.forEach((containerRow: Array<HTMLElement>) => {
-                if (containerRow.length > 1) {
+            containerDomElements.forEach((row: Array<HTMLElement>) => {
+                if (row.length > 1) {
                     let maxHeight = 0;
-                    containerRow.forEach((container: HTMLElement) => {
+                    row.forEach((container: HTMLElement) => {
+                        container.style.height = 'auto';
+
                         maxHeight =
                             maxHeight < container.offsetHeight ? container.offsetHeight : maxHeight;
                     });
-                    containerRow.forEach((container: HTMLElement) => {
+                    row.forEach((container: HTMLElement) => {
                         container.style.height = `${maxHeight}px`;
                     });
                 }
