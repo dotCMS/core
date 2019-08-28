@@ -232,6 +232,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
                 if (contentletToCleanUp.isLive()) {
                     contentletAPI.unpublish(contentletToCleanUp, systemUser, false);
                 }
+                workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentletToCleanUp, systemUser);
                 contentletAPI.archive(contentletToCleanUp, systemUser, false);
                 contentletAPI.delete(contentletToCleanUp, systemUser, false);
             }
@@ -284,6 +285,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
                 contentlet2.isLive());
 
         // Cleanup
+        workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet2, systemUser);
         contentletAPI.archive(contentlet2, systemUser, false);
         contentletAPI.delete(contentlet2, systemUser, false);
     }
@@ -326,6 +328,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         }
 
         // Cleanup
+        workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet1, systemUser);
         contentletAPI.archive(contentlet1, systemUser, false);
         contentletAPI.delete(contentlet1, systemUser, false);
 
