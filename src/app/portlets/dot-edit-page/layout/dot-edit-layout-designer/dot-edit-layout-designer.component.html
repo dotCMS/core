@@ -12,8 +12,8 @@
     </div>
 
     <div class="main-toolbar-right">
+        <dot-global-message></dot-global-message>
         <form [formGroup]="form" (ngSubmit)="saveLayout()" novalidate>
-            <dot-global-message></dot-global-message>
             <input
                 #templateName
                 pInputText
