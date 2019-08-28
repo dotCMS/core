@@ -42,6 +42,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
@@ -303,6 +304,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             // Remove contentlets so they can be regenerated from the bundle
             for (final Contentlet contentlet : contentlets) {
+                contentlet.setIndexPolicy(IndexPolicy.FORCE);
                 contentletAPI.archive(contentlet, adminUser, false);
                 contentletAPI.delete(contentlet, adminUser, false);
             }
