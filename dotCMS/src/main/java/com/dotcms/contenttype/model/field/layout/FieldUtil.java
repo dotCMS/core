@@ -249,7 +249,7 @@ public class FieldUtil {
         for (final String propertyName : fieldMap.keySet()) {
             final String key = String.format("%s.%s.%s", contentType.variable(), fieldMap.get("variable"), propertyName);
             final String i18nValue = APILocator.getLanguageVariableAPI().getLanguageVariable(
-                    key, languageId, user, live);
+                    key, languageId, user, live, user == null);
 
             if (!i18nValue.equals(key) && !i18nValue.equals(fieldMap.get(propertyName).toString())) {
                 fieldMap.put(propertyName, i18nValue);
