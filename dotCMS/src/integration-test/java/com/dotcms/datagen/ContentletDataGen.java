@@ -266,6 +266,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     public static Contentlet checkin(final Contentlet contentlet, final List<Category> categories) {
         try{
             contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
             contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             return contentletAPI.checkin(contentlet, user, false, categories);
         } catch (DotContentletStateException | IllegalArgumentException | DotDataException | DotSecurityException e) {
