@@ -1,5 +1,22 @@
 package com.dotcms.graphql.business;
 
+import static com.dotcms.graphql.InterfaceType.CONTENT_INTERFACE_NAME;
+import static com.dotcms.graphql.InterfaceType.FILE_INTERFACE_NAME;
+import static com.dotcms.graphql.InterfaceType.FORM_INTERFACE_NAME;
+import static com.dotcms.graphql.InterfaceType.KEY_VALUE_INTERFACE_NAME;
+import static com.dotcms.graphql.InterfaceType.PAGE_INTERFACE_NAME;
+import static com.dotcms.graphql.InterfaceType.PERSONA_INTERFACE_NAME;
+import static com.dotcms.graphql.InterfaceType.VANITY_URL_INTERFACE_NAME;
+import static com.dotcms.graphql.InterfaceType.WIDGET_INTERFACE_NAME;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
+import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -27,58 +44,32 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
-import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.structure.model.ContentletRelationships;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.function.BiFunction;
-
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
-
-import static com.dotcms.graphql.InterfaceType.CONTENT_INTERFACE_NAME;
-import static com.dotcms.graphql.InterfaceType.FILE_INTERFACE_NAME;
-import static com.dotcms.graphql.InterfaceType.FORM_INTERFACE_NAME;
-import static com.dotcms.graphql.InterfaceType.KEY_VALUE_INTERFACE_NAME;
-import static com.dotcms.graphql.InterfaceType.PAGE_INTERFACE_NAME;
-import static com.dotcms.graphql.InterfaceType.PERSONA_INTERFACE_NAME;
-import static com.dotcms.graphql.InterfaceType.VANITY_URL_INTERFACE_NAME;
-import static com.dotcms.graphql.InterfaceType.WIDGET_INTERFACE_NAME;
-import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY;
-import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
-import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
-import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.function.BiFunction;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class GraphqlAPITest {
@@ -456,7 +447,7 @@ public class GraphqlAPITest {
             new TypeTestCase.Builder()
                 .baseType(BaseContentType.CONTENT)
                 .contentTypeName("newContentContentType"+time)
-                .setFieldVarName("testFieldVar"+time)
+                .setFieldVarName("testFieldVar"+timez)
                 .setFieldType(ImmutableBinaryField.class)
                 .setFieldRequired(true)
                 .build(),
