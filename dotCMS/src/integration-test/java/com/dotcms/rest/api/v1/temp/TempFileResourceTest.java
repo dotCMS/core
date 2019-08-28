@@ -1,10 +1,5 @@
 package com.dotcms.rest.api.v1.temp;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -62,6 +57,8 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.*;
+
 @RunWith(DataProviderRunner.class)
 public class TempFileResourceTest {
 
@@ -102,9 +99,14 @@ public class TempFileResourceTest {
     Config.setProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true);
     Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_AGE_SECONDS, 1800);
   }
-  
-  
-  
+
+
+
+  private static HttpServletRequest mockRequest(String host) {
+    return new MockSessionRequest(
+            new MockHeaderRequest(new MockHttpRequest(host, "/api/v1/tempResource").request(), "Origin", host)
+                    .addHeader("Host", host).request());
+  }
   
   private static HttpServletRequest mockRequest() {
     return new MockSessionRequest(
@@ -174,6 +176,11 @@ public class TempFileResourceTest {
 
   }
 
+  /**
+   * This test will creates a temporal file.
+   * then will request this temporal with a new request, which means not same finger print b/c the host will be diff, so should return an empty file.
+   * Then an user is set to the request and it works b/c is the same user.
+   */
   @Test
   public void test_tempResourceAPI_who_can_use_via_userID(){
     resetTempResourceConfig();
@@ -186,7 +193,7 @@ public class TempFileResourceTest {
     final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName,request);
 
     // CANNOT get the file again because we have a new session ID in the new mock request
-    Optional<DotTempFile> file = new TempFileAPI().getTempFile(mockRequest(), dotTempFile.id);
+    Optional<DotTempFile> file = new TempFileAPI().getTempFile(mockRequest("anotherHost"), dotTempFile.id);
     assertFalse(file.isPresent());
 
     request.setAttribute(WebKeys.USER, user);
@@ -233,9 +240,9 @@ public class TempFileResourceTest {
 
     final MultiPart multipartEntity = new FormDataMultiPart()
             .bodyPart(filePart1);
-
     Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1, (FormDataMultiPart) multipartEntity);
     assertEquals(Status.UNAUTHORIZED.getStatusCode(), jsonResponse.getStatus());
+
 
     Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
     jsonResponse = resource.uploadTempResourceMulti(request, response, -1, (FormDataMultiPart) multipartEntity);

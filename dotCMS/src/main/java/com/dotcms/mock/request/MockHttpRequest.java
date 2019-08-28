@@ -26,6 +26,7 @@ public class MockHttpRequest implements MockRequest {
         Mockito.when(mockReq.getServerName()).thenReturn(hostname);
         Mockito.when(mockReq.getRemoteAddr()).thenReturn("127.0.0.1");
         Mockito.when(mockReq.getRemoteHost()).thenReturn("127.0.0.1");
+        Mockito.when(mockReq.getHeader("Host")).thenReturn(hostname);
         request = new MockHeaderRequest(new MockSessionRequest(new MockAttributeRequest(mockReq)));
     }
 
