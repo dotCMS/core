@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.exception.DotDataException;
@@ -47,6 +48,7 @@ public class LayoutDataGen extends AbstractDataGen<Layout> {
         return layout;
     }
 
+    @WrapInTransaction
     @Override
     public Layout persist(Layout object) {
         try {

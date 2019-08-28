@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -79,6 +80,7 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
         return ImmutableSet.copyOf(structures);
     }
 
+    @WrapInTransaction
     @Override
     public FileAssetContainer persist(FileAssetContainer object) {
         structures.clear();
