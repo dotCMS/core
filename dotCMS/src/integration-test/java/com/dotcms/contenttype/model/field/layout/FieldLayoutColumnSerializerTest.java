@@ -1,8 +1,5 @@
 package com.dotcms.contenttype.model.field.layout;
 
-import com.dotcms.contenttype.model.field.*;
-import com.dotcms.contenttype.model.type.BaseContentType;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -11,7 +8,7 @@ import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableColumnField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
-
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
@@ -28,13 +25,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@PrepareForTest(FieldUtil.class)
-@RunWith(PowerMockRunner.class)
 public class FieldLayoutColumnSerializerTest {
 
     @BeforeClass
@@ -122,8 +113,6 @@ public class FieldLayoutColumnSerializerTest {
         final JsonFieldTransformer jsonFieldTransformer = new JsonFieldTransformer(fields.get(0));
         final Map<String, Object> fieldMap = jsonFieldTransformer.mapObject();
 
-        PowerMockito.mockStatic(FieldUtil.class);
-
         final FieldLayoutColumnSerializer fieldLayoutColumnSerializer = new FieldLayoutColumnSerializer();
         fieldLayoutColumnSerializer.serialize(fieldLayoutColumn, jsonGenerator, serializerProvider);
 
@@ -139,7 +128,6 @@ public class FieldLayoutColumnSerializerTest {
         verify(jsonGenerator).writeEndObject();
         verify(jsonGenerator).flush();
 
-        PowerMockito.verifyStatic();
         FieldUtil.setFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
     }
 }
