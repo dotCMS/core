@@ -447,7 +447,7 @@ public class GraphqlAPITest {
             new TypeTestCase.Builder()
                 .baseType(BaseContentType.CONTENT)
                 .contentTypeName("newContentContentType"+time)
-                .setFieldVarName("testFieldVar"+timez)
+                .setFieldVarName("testFieldVar"+time)
                 .setFieldType(ImmutableBinaryField.class)
                 .setFieldRequired(true)
                 .build(),
