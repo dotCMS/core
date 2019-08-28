@@ -1153,55 +1153,59 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@WrapInTransaction
-	public void deleteWorkflowTaskByContentletIdAnyLanguage(final String webAsset, final User user) throws DotDataException {
+	public void deleteWorkflowTaskByContentletIdAnyLanguage(final Contentlet contentlet, final User user) throws DotDataException {
 
 		SecurityLogger.logInfo(this.getClass(),
-				"The Removing Workflow Tasks with the webasset:" + webAsset);
+				"The Removing Workflow Tasks with the contentlet:" + contentlet);
 
-		this.workFlowFactory.deleteWorkflowTaskByContentletIdAnyLanguage(webAsset);
+		if(contentlet==null || !UtilMethods.isSet(contentlet.getIdentifier())) {
+			return;
+		}
+
+		this.workFlowFactory.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet.getIdentifier());
 
 		try {
-			if (UtilMethods.isSet(webAsset)) {
-				HibernateUtil.addCommitListener(() -> {
-					try {
-						this.reindexQueueAPI.addIdentifierReindex(webAsset);
-					} catch (DotDataException e) {
-						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
-					}
-				});
-			}
+			HibernateUtil.addCommitListener(() -> {
+				try {
+					this.contentletIndexAPI.addContentToIndex(contentlet);
+				} catch (DotDataException e) {
+					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+				}
+			});
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 		}
 
-		SecurityLogger.logInfo(this.getClass(), ()-> "The Removed the tasks with the webasset" + webAsset
-				+ " has been deleted by the user: " + user.getUserId());
+		SecurityLogger.logInfo(this.getClass(), ()-> "The Removed the tasks with the contentlet"
+				+ contentlet + " has been deleted by the user: " + user.getUserId());
 	}
 
 	@Override
 	@WrapInTransaction
-	public void deleteWorkflowTaskByContentletId(final String webAsset, final long languageId, final User user) throws DotDataException {
+	public void deleteWorkflowTaskByContentlet(final Contentlet contentlet, final long languageId, final User user) throws DotDataException {
 
 		SecurityLogger.logInfo(this.getClass(),
-				"The Removing Workflow Tasks with the webasset:" + webAsset);
+				"The Removing Workflow Tasks with the contentlet:" + contentlet.getIdentifier());
 
-		this.workFlowFactory.deleteWorkflowTaskByContentletIdAndLanguage(webAsset, languageId);
+		if(contentlet==null || !UtilMethods.isSet(contentlet.getIdentifier())) {
+			return;
+		}
+
+		this.workFlowFactory.deleteWorkflowTaskByContentletIdAndLanguage(contentlet.getIdentifier(), languageId);
 
 		try {
-			if (UtilMethods.isSet(webAsset)) {
-				HibernateUtil.addCommitListener(() -> {
-					try {
-						this.reindexQueueAPI.addIdentifierReindex(webAsset);
-					} catch (DotDataException e) {
-						Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
-					}
-				});
-			}
+			HibernateUtil.addCommitListener(() -> {
+				try {
+					this.contentletIndexAPI.addContentToIndex(contentlet);
+				} catch (DotDataException e) {
+					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+				}
+			});
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 		}
 
-		SecurityLogger.logInfo(this.getClass(), ()-> "The Removed the tasks with the webasset" + webAsset
+		SecurityLogger.logInfo(this.getClass(), ()-> "The Removed the tasks with the contentlet" + contentlet
 				+ " has been deleted by the user: " + user.getUserId());
 	}
 

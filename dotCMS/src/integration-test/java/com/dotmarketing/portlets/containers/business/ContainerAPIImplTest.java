@@ -78,10 +78,9 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     public void getContentTypesInContainer() throws DotDataException, DotSecurityException {
         Container container = null;
         Host host = new SiteDataGen().nextPersisted();
-        User user = TestUserUtils.getBillIntranetUser(host);
 
-        Permission permissionWrite = new Permission(host.getPermissionId(),
-                TestUserUtils.getOrCreateIntranetRole(host).getId(),
+        final Permission permissionWrite = new Permission(host.getPermissionId(),
+                        TestUserUtils.getOrCreateIntranetRole(host).getId(),
                 PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_READ);
         APILocator.getPermissionAPI().save(permissionWrite, host, APILocator.systemUser(), false);
 

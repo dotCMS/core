@@ -76,7 +76,7 @@ gcloud auth activate-service-account --key-file="${credentialsFile}"
 gsutil -m -q cp -a public-read -r ${outputFolder} ${buckedProtocol}${GOOGLE_STORAGE_JOB_COMMIT_FOLDER}
 
 # When the bucket has the branch name we need to clean up the bucket first
-gsutil rm ${buckedProtocol}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/**
+gsutil -m -q rm ${buckedProtocol}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/**
 gsutil -m -q cp -a public-read -r ${outputFolder} ${buckedProtocol}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}
 
 bash /build/github_status.sh

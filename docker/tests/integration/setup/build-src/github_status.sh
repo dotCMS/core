@@ -1,9 +1,11 @@
 #! /bin/sh
 
 GITHUB_STATUS="failure"
+GITHUB_DESCRIPTION="Tests FAILED"
 if [ ${CURRENT_JOB_BUILD_STATUS} == 0 ]
 then
   GITHUB_STATUS="success"
+  GITHUB_DESCRIPTION="Tests executed SUCCESSFULLY"
 fi
 
 # Examples
@@ -24,7 +26,7 @@ then
     statusesContext="Travis CI - [${databaseType}]"
   fi
 
-  logURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/logs/dotcms.log"
+#  logURL="${BASE_GOOGLE_URL}${GOOGLE_STORAGE_JOB_BRANCH_FOLDER}/logs/dotcms.log"
 
 #  echo ""
 #  echo "================================================================================"
@@ -60,7 +62,7 @@ then
   --request POST \
   --data "{
     \"state\": \"${GITHUB_STATUS}\",
-    \"description\": \"Log: ${logURL}\",
+    \"description\": \"${GITHUB_DESCRIPTION}\",
     \"target_url\": \"${reportsIndexURL}\",
     \"context\": \"${statusesContext}\"
   }" \

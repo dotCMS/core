@@ -258,6 +258,8 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
                         .nextPersisted();
             }
 
+            PermissionUtilTest.addAnonymousUser(languageVariableContentType);
+
             return languageVariableContentType;
         } catch (DotSecurityException | DotDataException e) {
             throw new DotRuntimeException(e);

@@ -281,7 +281,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         try {
 
             String languageVariable = languageVariableAPI
-                    .getLanguageVariable(key, englishLanguage.getId(), systemUser, true);
+                    .getLanguageVariable(key, englishLanguage.getId(), systemUser, true, false);
 
             Assert.assertNotNull(languageVariable);
             Assert.assertNotEquals(key, languageVariable);
@@ -313,7 +313,7 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         try {
 
             String languageVariable = languageVariableAPI
-                    .getLanguageVariable(key, englishLanguage.getId(), systemUser, false);
+                    .getLanguageVariable(key, englishLanguage.getId(), systemUser, false, false);
 
             Assert.assertNotNull(languageVariable);
             Assert.assertNotEquals(key, languageVariable);
