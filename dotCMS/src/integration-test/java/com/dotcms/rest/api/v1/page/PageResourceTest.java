@@ -8,6 +8,7 @@ import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.rest.*;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -40,6 +41,9 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -48,6 +52,7 @@ import javax.ws.rs.core.Response;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -85,6 +90,9 @@ public class PageResourceTest {
 
     @Before
     public void init() throws DotSecurityException, DotDataException {
+
+        // Collection to store attributes keys/values
+        final Map<String, Object> attributes = new ConcurrentHashMap<>();
         session = mock(HttpSession.class);
         request  = mock(HttpServletRequest.class);
         response  = mock(HttpServletResponse.class);
@@ -104,15 +112,30 @@ public class PageResourceTest {
         when(initDataObject.getUser()).thenReturn(user);
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
 
+        when(request.getRequestURI()).thenReturn("/test");
         when(request.getSession()).thenReturn(session);
         when(request.getSession(false)).thenReturn(session);
+        when(request.getSession(true)).thenReturn(session);
+        when(session.getAttribute("clickstream")).thenReturn(new Clickstream());
 
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         host = new SiteDataGen().name(hostName).nextPersisted();
         APILocator.getVersionableAPI().setWorking(host);
         APILocator.getVersionableAPI().setLive(host);
         when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
+        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
         when(request.getAttribute("com.dotcms.repackage.org.apache.struts.action.MODULE")).thenReturn(moduleConfig);
+        // Mock setAttribute
+        Mockito.doAnswer((InvocationOnMock invocation)-> {
+
+                String key = invocation.getArgumentAt(0, String.class);
+                Object value = invocation.getArgumentAt(1, Object.class);
+                if (null != key && null != value) {
+                    attributes.put(key, value);
+                }
+                return null;
+        }).when(request).setAttribute(Mockito.anyString(), Mockito.anyObject());
+
 
         Folder aboutUs = APILocator.getFolderAPI().findFolderByPath(String.format("/%s/",folderName), host, APILocator.systemUser(), false);
         if(null == aboutUs || !UtilMethods.isSet(aboutUs.getIdentifier())) {

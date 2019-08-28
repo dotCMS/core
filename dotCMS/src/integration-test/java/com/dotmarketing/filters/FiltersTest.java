@@ -52,6 +52,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
+
+import org.apache.felix.framework.OSGIUtil;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -72,6 +74,7 @@ public class FiltersTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
+        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
         Mockito.when(Config.CONTEXT.getRealPath(startsWith("/"))).thenAnswer(new Answer<String>() {
             @Override
             public String answer(InvocationOnMock invocation) throws Throwable {
