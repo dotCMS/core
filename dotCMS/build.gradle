@@ -111,6 +111,7 @@ idea {
 
         name = 'dotCMS'
         contentRoot = file('..')
+        excludeDirs += file('../docker/tests/integration/output')
         excludeDirs += file('build')
         excludeDirs += file('.idea')
         excludeDirs += file('.gradle')
