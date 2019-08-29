@@ -4,7 +4,7 @@ import Fragment from 'stencil-fragment';
 import { DotFieldStatus } from '../../models';
 import { fieldCustomProcess, getFieldsFromLayout } from './utils';
 import { getClassNames, getOriginalStatus, updateStatus } from '../../utils';
-import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField, DotCMSTempFile } from 'dotcms-models';
+import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField, DotCMSTempFile, DotCMSContentlet } from 'dotcms-models';
 import { DotUploadService } from './services/dot-upload.service';
 import { DotHttpErrorResponse } from '../../models/dot-http-error-response.model';
 import { DotBinaryFileComponent } from '../dot-binary-file/dot-binary-file';
@@ -156,26 +156,32 @@ export class DotFormComponent {
                 }
             })
         })
-        .then(async (response: Response) => {
-            if (response.status !== 200) {
-                const error: DotHttpErrorResponse = {
-                    message: await response.text(),
-                    status: response.status
-                };
-                throw error;
-            }
-            this.runSuccessCallback();
-        })
-        .catch(({ message, status }: DotHttpErrorResponse) => {
-            this.errorMessage = message || fallbackErrorMessages[status];
-        });
+            .then(async (response: Response) => {
+                if (response.status !== 200) {
+                    const error: DotHttpErrorResponse = {
+                        message: await response.text(),
+                        status: response.status
+                    };
+                    throw error;
+                }
+                return response.json();
+            })
+            .then((jsonResponse) => {
+                const contentlet = jsonResponse.entity;
+                this.runSuccessCallback(contentlet);
+            })
+            .catch(({ message, status }: DotHttpErrorResponse) => {
+                this.errorMessage = message || fallbackErrorMessages[status];
+            });
     }
 
-    private runSuccessCallback(): void {
+    private runSuccessCallback(contentlet: DotCMSContentlet): void {
         const successCallback = this.getSuccessCallback();
         if (successCallback) {
-            // tslint:disable-next-line:no-eval
-            eval(successCallback);
+            return function() {
+                // tslint:disable-next-line:no-eval
+                return eval(successCallback);
+            }.call({ contentlet });
         }
     }
 
