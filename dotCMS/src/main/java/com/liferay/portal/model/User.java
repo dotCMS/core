@@ -24,6 +24,7 @@ package com.liferay.portal.model;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import java.lang.reflect.InvocationTargetException;
@@ -42,6 +43,8 @@ import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
+
+import io.vavr.control.Try;
 
 /**
  * <a href="User.java.html"><b><i>View Source</i></b></a>
@@ -300,22 +303,42 @@ public class User extends UserModel implements Recipient {
         setModified(true);
     }
 
-    public boolean isBackendUser(){
-		try {
-			return(APILocator.getRoleAPI().doesUserHaveRole(this,APILocator.getRoleAPI().loadRoleByKey(Role.DOTCMS_BACK_END_USER)));
-		} catch (DotDataException e) {
-			throw new DotRuntimeException(e);
-		}
-	}
 
-	public boolean isFrontendUser(){
-		try {
-			return(APILocator.getRoleAPI().doesUserHaveRole(this,APILocator.getRoleAPI().loadRoleByKey(Role.DOTCMS_FRONT_END_USER)));
-		} catch (DotDataException e) {
-			throw new DotRuntimeException(e);
-		}
-	}
+  public boolean isBackendUser() {
 
+    return Try.of(() -> {
+      if (UserAPI.CMS_ANON_USER_ID.equals(this.getUserId())) {
+        return false;
+      }
+      return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadBackEndUserRole()));
+
+    }).getOrElse(false);
+
+  }
+
+  public boolean isFrontendUser() {
+
+    return Try.of(() -> {
+      if (UserAPI.CMS_ANON_USER_ID.equals(this.getUserId())) {
+        return true;
+      }
+      return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadFrontEndUserRole()));
+
+    }).getOrElse(false);
+
+  }
+
+	
+  public boolean hasConsoleAccess() {
+    return Try.of(() -> {
+      if (UserAPI.CMS_ANON_USER_ID.equals(this.getUserId())) {
+        return false;
+      }
+      return isActive() && isBackendUser() && !APILocator.getLayoutAPI().loadLayoutsForUser(this).isEmpty();
+
+    }).getOrElse(false);
+
+  }
 
     public Map<String, Object> toMap() throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         Map<String, Object> map = new HashMap<String, Object>();
@@ -348,8 +371,9 @@ public class User extends UserModel implements Recipient {
         map.put("passwordReset", isPasswordReset());
         map.put("userId", getUserId());
         map.put("backendUser", isBackendUser());
-		map.put("frontendUser", isFrontendUser());
-		map.put("id", getUserId());
+        map.put("frontendUser", isFrontendUser());
+        map.put("hasConsoleAccess", hasConsoleAccess());
+        map.put("id", getUserId());
         map.put("type", UserAjax.USER_TYPE_VALUE);
 
 

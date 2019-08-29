@@ -96,6 +96,15 @@
 				<input dojoType="dijit.form.TextBox" onkeyup="filterUsers()" trim="true" name="usersFilter" id="usersFilter" placeholder="<%= LanguageUtil.get(pageContext, "Filter") %>:" />
 				<button dojoType="dijit.form.Button" onclick="clearUserFilter()" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Clear") %></button>
 			</div>
+         
+            <div style="text-align: center;padding:10px;">
+                <label for="showAllUsers"><input type="radio" onchange="filterUsers()" dojoType="dijit.form.RadioButton" value="all" checked="true" name="showUsers" id="showAllUsers"> <%= LanguageUtil.get(pageContext, "All") %> </label>&nbsp; &nbsp;
+                <label for="showFrontEndUsers"><input type="radio" onchange="filterUsers()" dojoType="dijit.form.RadioButton" value="frontEnd" name="showUsers" id="showFrontEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.frontend") %> </label>&nbsp; &nbsp;
+                <label for="showBackEndUsers"><input type="radio" onchange="filterUsers()" dojoType="dijit.form.RadioButton" value="backEnd" name="showUsers" id="showBackEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.backend") %> </label>
+            </div>
+         
+         
+         
 			<div id="usersGrid"></div>
 			<div id="loadingUsers"><img src="/html/js/dojo/custom-build/dojox/widget/Standby/images/loading.gif"></div>
 			<div class="clear"></div>
@@ -131,77 +140,128 @@
 					<img src="/html/images/icons/processing.gif" />
 				</div>
 			</div>
+<style>
 
+.userInfoBox {
+    float: left;
+    width: 600px;
+    margin: 10px;
+}   
+
+.userInfoBox table tr{
+ height:60px;
+}
+</style>
 			<div id="userProfileTabs" class="view-users__profile-tabs">
 				<!-- START User Tabs -->
 				<div dojoType="dijit.layout.TabContainer" id="userTabsContainer" class="view-users__profile-tabs-container">
 					<!-- START User Detail Tab -->
 					<div dojoType="dijit.layout.ContentPane" id="userDetailsTab" title="<%= LanguageUtil.get(pageContext, "User-Details") %>">
 
-							<h3 id="fullUserName" class="fullUserName"></h3>
+						<h3 id="fullUserName" class="fullUserName"></h3>
 
-							<div class="form-horizontal view-user__form">
-								<form id="userInfoForm" dojoType="dijit.form.Form">
-									<input type="hidden" name="userPasswordChanged" value="false"/>
-									<dl>
-										<% if(authByEmail) { %>
-											<dt id="userIdLabel"><%= LanguageUtil.get(pageContext, "User-ID") %>: <input type="hidden" id="userId" name="userId" value=""/></dt>
-											<dd id="userIdValue"></dd>
-										<% } else {%>
-											<dt id="userIdLabel"><%= LanguageUtil.get(pageContext, "User-ID") %>:</dt>
-											<dd id="userIdValue"><input id="userId" type="text" onkeyup="userInfoChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" disabled="disabled" /></dd>
-										<% } %>
-									</dl>
-									<dl>
-										<dt><%= LanguageUtil.get(pageContext, "First-Name") %>:</dt>
-										<dd><input id="firstName" type="text" onkeyup="userInfoChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-									</dl>
-									<dl>
-										<dt><%= LanguageUtil.get(pageContext, "Last-Name") %>:</dt>
-										<dd><input id="lastName" type="text" onkeyup="userInfoChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-									</dl>
-									<dl>
-										<dt><%= LanguageUtil.get(pageContext, "Email-Address") %>:</dt>
-										<dd><input id="emailAddress" type="text" onkeyup="userEmailChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-									</dl>
-									<dl>
-										<dt><%= LanguageUtil.get(pageContext, "Password") %>:</dt>
-										<dd><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off" /></dd>
-									</dl>
-									<dl>
-										<dt><%= LanguageUtil.get(pageContext, "Password-Again") %>:</dt>
-										<dd><input id="passwordCheck" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off"/></dd>
-									</dl>
-                                    <dl>
-                                        <dt><%= LanguageUtil.get(pageContext, "Last-Login") %>:</dt>
-                                        <dd style="padding:9px 16px" id="lastLogin"  ></dd>
-                                    </dl>
-									
-									
-                                    <dl>
-                                        <dt><%= LanguageUtil.get(pageContext, "Failed-Login-Attempts") %>:</dt>
-                                        <dd style="padding:9px 16px" id="loginAttempts"  ></dd>
-                                    </dl>
-								</form>
-							</div>
-							<div class="buttonRow view-user__buttonRow">
-								<%if(hasAdminRole){ %>
-									<button dojoType="dijit.form.Button" onclick="showDeleteUserBox()" type="button" class="dijitButtonDanger" id="deleteButton"><%= LanguageUtil.get(pageContext, "Delete") %></button>
-								<%} %>
-								<button dojoType="dijit.form.Button" onclick="saveUserDetails()" type="button"><%= LanguageUtil.get(pageContext, "Save") %></button>
-							</div>
-							<%if(hasAdminRole){ %>
-							<div id="deleteUserDialog" title="<%= LanguageUtil.get(pageContext, "delete-User") %>" dojoType="dijit.Dialog" style="display: none; width:300px;">
-								<span style="vertical-align:middle;"><%= LanguageUtil.get(pageContext, "select-a-user-to-replace-current-user-entries-on-db") %>:</span>
-								<div dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></div>
-								<select id="deleteUsersFilter" name="deleteUsersFilter" dojoType="dijit.form.FilteringSelect" store="usersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
-								<div class="clear"></div>
-								<div class="buttonRow">
-									<button dojoType="dijit.form.Button" onclick="deleteUser()" type="button" class="dijitButtonDanger"><%= LanguageUtil.get(pageContext, "Delete") %></button>
-									<button dojoType="dijit.form.Button" onclick="cancelDeleteUser()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
-								</div>
-							</div>
-							<%} %>
+                        <div>
+                            
+                                <div class="userInfoBox">
+                                  <form id="userInfoForm" dojoType="dijit.form.Form">
+                                  <input type="hidden" name="userPasswordChanged" value="false"/>
+                                   <div style="font-size:16pt;margin:10px;"><%= LanguageUtil.get(pageContext, "User-Details") %></div>
+                                   <table class="listingTable" style="border:1px solid #eeeeee">
+                                      <tr>
+                                          <% if(authByEmail) { %>
+                                              <th  style="width:30%" id="userIdLabel"><%= LanguageUtil.get(pageContext, "User-ID") %>: <input type="hidden" id="userId" name="userId" value=""/></th>
+                                              <td  id="userIdValue"></td>
+                                          <% } else {%>
+                                              <th  style="width:30%" id="userIdLabel"><%= LanguageUtil.get(pageContext, "User-ID") %>:</th>
+                                              <td  id="userIdValue"><input id="userId" type="text" onkeyup="userInfoChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" disabled="disabled" /></td>
+                                          <% } %>
+                                      </tr>
+                                      <tr>
+                                          <th><%= LanguageUtil.get(pageContext, "First-Name") %>:</th>
+                                          <td><input id="firstName" type="text" onkeyup="userInfoChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></td>
+                                      </tr>
+                                      <tr>
+                                          <th><%= LanguageUtil.get(pageContext, "Last-Name") %>:</th>
+                                          <td><input id="lastName" type="text" onkeyup="userInfoChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></td>
+                                      </tr>
+                                      <tr>
+                                          <th><%= LanguageUtil.get(pageContext, "Email-Address") %>:</th>
+                                          <td><input id="emailAddress" type="text" onkeyup="userEmailChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></td>
+                                      </tr>
+                                      <tr>
+                                          <th><%= LanguageUtil.get(pageContext, "Password") %>:</th>
+                                          <td><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off" /></td>
+                                      </tr>
+                                      <tr>
+                                          <th><%= LanguageUtil.get(pageContext, "Password-Again") %>:</th>
+                                          <td><input id="passwordCheck" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off"/></td>
+                                      </tr>
+                                    <tr>
+                                        <th><%= LanguageUtil.get(pageContext, "Last-Login") %>:</th>
+                                        <td id="lastLogin"  ></td>
+                                    </tr>
+                                    <tr>
+                                        <th><%= LanguageUtil.get(pageContext, "Failed-Login-Attempts") %>:</th>
+                                        <td id="loginAttempts"></td>
+                                    </tr>
+                                    
+                                    <tr style="text-align: center;border-bottom:0px;">
+                                       <td colspan="2" style="text-align: center;border-bottom:0px;">
+                                        <%if(hasAdminRole){ %>
+                                            <button dojoType="dijit.form.Button" onclick="showDeleteUserBox()" type="button" class="dijitButtonDanger" id="deleteButton"><%= LanguageUtil.get(pageContext, "Delete") %></button> &nbsp; &nbsp;
+                                        <%} %>
+                                        <button dojoType="dijit.form.Button" onclick="saveUserDetails()" type="button"><%= LanguageUtil.get(pageContext, "Save") %></button>
+                                    </tr>
+                                 </table>
+                                </form>
+                             </div>
+                             
+                            <div class="userInfoBox">
+                            <div style="font-size:16pt;margin:10px;"><%= LanguageUtil.get(pageContext, "user.detail.access") %></div>
+                            <table class="listingTable" style="border:1px solid #eeeeee" >
+                                <tr>
+                                    <th style="width:30%;min-height:60px;"><%= LanguageUtil.get(pageContext, "Active") %>:</th>
+                                    <td><input id="userActive" type="checkbox" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox" /></td>
+                                </tr>
+                            
+                                <tr>
+                                    <th style="width:30%;min-height:60px;">CMS Admin:</th>
+                                    <td><input type="checkbox" id="adminRoleCheck" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox"></td>
+                                </tr>
+                                <tr>
+                                    <th><%= LanguageUtil.get(pageContext, "user.detail.frontend.user") %>:</th>
+                                    <td><input type="checkbox" id="frontEndRoleCheck" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox"></td>
+                                </tr>
+                                <tr>
+                                    <th><%= LanguageUtil.get(pageContext, "user.detail.backend.user") %>:</th>
+                                    <td><input type="checkbox" id="backEndRoleCheck" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox"></td>
+                                </tr>
+                                <tr>
+                                    <th><%= LanguageUtil.get(pageContext, "user.detail.has.layouts") %>:</th>
+                                    <td id="canLoginToConsole" style="font-weight:bold"></td>
+                                </tr>
+                            </table>
+                            </div>
+                            
+                            
+                            
+                     
+                     
+                     
+						</div>
+		
+						<%if(hasAdminRole){ %>
+      						<div id="deleteUserDialog" title="<%= LanguageUtil.get(pageContext, "delete-User") %>" dojoType="dijit.Dialog" style="display: none; width:300px;">
+      							<span style="vertical-align:middle;"><%= LanguageUtil.get(pageContext, "select-a-user-to-replace-current-user-entries-on-db") %>:</span>
+      							<div dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></div>
+      							<select id="deleteUsersFilter" name="deleteUsersFilter" dojoType="dijit.form.FilteringSelect" store="usersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
+      							<div class="clear"></div>
+      							<div class="buttonRow">
+      								<button dojoType="dijit.form.Button" onclick="deleteUser()" type="button" class="dijitButtonDanger"><%= LanguageUtil.get(pageContext, "Delete") %></button>
+      								<button dojoType="dijit.form.Button" onclick="cancelDeleteUser()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
+      							</div>
+      						</div>
+						<%} %>
 					</div>
 					<!-- END User Detail Tab -->
 
@@ -209,45 +269,44 @@
                     <div dojoType="dijit.layout.ContentPane" id="userAdditionalInfoTab" title="<%= LanguageUtil.get(pageContext, "Additional-Info") %>" class="view-users__additional-info">
 
                         <h3 id="fullUserName" class="fullUserName"></h3>
-
-                        <div class="form-horizontal view-user__form" id="additionalUserInfoFormWrapper">
+                        <div class="userInfoBox">
                             <form id="userAdditionalInfoForm" dojoType="dijit.form.Form">
-                                <dl>
-                                    <dt><%= LanguageUtil.get(pageContext, "Active") %>:</dt>
-                                    <dd><input id="userActive" type="checkbox" onkeyup="userInfoChanged()" checked="checked" dojoType="dijit.form.CheckBox" /></dd>
-                                </dl>
-                                <dl>
-                                    <dt><%= LanguageUtil.get(pageContext, "Prefix") %>:</dt>
-                                    <dd><input id="prefix" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
-                                </dl>
-                                <dl>
-                                    <dt><%= LanguageUtil.get(pageContext, "Suffix") %>:</dt>
-                                    <dd><input id="suffix" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
-                                </dl>
-                                <dl>
-                                    <dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
-                                    <dd><input id=title type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
-                                </dl>
-                                <dl>
-                                    <dt><%= LanguageUtil.get(pageContext, "Company") %>:</dt>
-                                    <dd><input id="company" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
-                                </dl>
-                                <dl>
-                                    <dt><%= LanguageUtil.get(pageContext, "Website") %>:</dt>
-                                    <dd><input id="website" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
-                                </dl>
+                            <table class="listingTable" style="border:1px solid #eeeeee">
+
+                                <tr>
+                                    <th><%= LanguageUtil.get(pageContext, "Prefix") %>:</th>
+                                    <td><input id="prefix" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></td>
+                                </tr>
+                                <tr>
+                                    <th><%= LanguageUtil.get(pageContext, "Suffix") %>:</th>
+                                    <td><input id="suffix" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></td>
+                                </tr>
+                                <tr>
+                                    <th><%= LanguageUtil.get(pageContext, "Title") %>:</th>
+                                    <td><input id=title type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></td>
+                                </tr>
+                                <tr>
+                                    <th><%= LanguageUtil.get(pageContext, "Company") %>:</th>
+                                    <td><input id="company" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></td>
+                                </tr>
+                                <tr>
+                                    <th><%= LanguageUtil.get(pageContext, "Website") %>:</th>
+                                    <td><input id="website" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></td>
+                                </tr>
                                 <% for (int i = 1; i <= additionalVariablesCount; i++) { %>
-                                    <dl>
-                                        <dt id="var<%=i%>Label"><%=additionalVariableLabels[i]%>:</dt>
-                                        <dd id="var<%=i%>Value"><input id="var<%=i%>" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></dd>
-                                    </dl>
+                                    <tr>
+                                        <th id="var<%=i%>Label"><%=additionalVariableLabels[i]%>:</th>
+                                        <td id="var<%=i%>Value"><input id="var<%=i%>" type="text" onkeyup="userInfoChanged()" value="" dojoType="dijit.form.TextBox" /></td>
+                                    </tr>
                                 <% } %>
+                               </table>
                             </form>
+                           <div style="text-align: center;">
+                               <button dojoType="dijit.form.Button" onclick="saveUserAdditionalInfo()" type="button"><%= LanguageUtil.get(pageContext, "Save") %></button>
+                           </div>
                         </div>
 
-                        <div class="buttonRow">
-                            <button dojoType="dijit.form.Button" onclick="saveUserAdditionalInfo()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Save") %></button>
-                        </div>
+   
 
                     </div>
                     <!-- END Additional Info Tab -->

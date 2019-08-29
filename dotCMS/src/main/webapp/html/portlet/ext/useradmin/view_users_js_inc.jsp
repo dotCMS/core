@@ -195,7 +195,7 @@
 
 		//Executed in a delayed fashion to allow the user type more keystrokes
 		//before loading the server
-		filterUsersHandler = setTimeout('filterUsersDelayed()', 700);
+		filterUsersHandler = setTimeout('filterUsersDelayed()', 300);
 	}
 
 	//Executed after the user has typed some characters to filter users
@@ -203,12 +203,22 @@
 		dojo.byId('loadingUsers').style.display = '';
 		dojo.byId('usersGrid').style.display = 'none';
 		var value = dijit.byId('usersFilter').attr('value');
-		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: value, includeDefault: false }, dojo.hitch(this, getUsersListCallback));
+		
+		var showUsers = dijit.byId("showAllUsers").checked 
+		  ? "all"
+		  : dijit.byId("showFrontEndUsers").checked 
+		    ? "frontEnd"
+		    : "backEnd";
+
+		
+		
+		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: value, includeDefault: false, showUsers: showUsers }, dojo.hitch(this, getUsersListCallback));
 	}
 
 	//Event handler for clearing the users filter
 	function clearUserFilter () {
-		dojo.byId('loadingUsers').style.display = '';
+	    dijit.byId("showAllUsers").attr('checked',true);
+	    dojo.byId('loadingUsers').style.display = '';
 		dojo.byId('usersGrid').style.display = 'none';
 		dijit.byId('usersFilter').attr('value', '');
 		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: '', includeDefault: false }, dojo.hitch(this, getUsersListCallback));
@@ -233,13 +243,37 @@
 		UserAjax.getUserById(userId, editUserCallback);
 	}
 
+	
+	
+	function changeUserAccess(evt){
+	    
+	    if(!currentUser) return;
+
+	    
+	    UserAjax.assignUserAccess({"userid": currentUser.id, "access":evt.id, "granted":evt.checked},assignUserAccessCallback);
+	
+        
+        
+	}
+	
+	
+	function assignUserAccessCallback(data){
+	    
+	    dojo.byId("canLoginToConsole").innerHTML=data.user.hasConsoleAccess
+	   
+	    console.log("data", data)	    
+	
+	
+	}
+	
+	
 	//Gathering the user info from the server and setting up the right hand side
 	//of user info
 	function editUserCallback(user) {
 
 		//Global user variable
 		currentUser = user;
-
+        dijit.byId('userActive').attr("checked", user.active);
 		//SEtting user info form
 		if(!authByEmail) {
 			dijit.byId('userId').attr('value', user.id);
@@ -272,11 +306,17 @@
 		if(deleteButton != null){
 			deleteButton.parentNode.parentNode.show();
 		}
+
+        dojo.byId("canLoginToConsole").innerHTML=user.hasConsoleAccess
+		
+		
+		
+		
 		
 		initStructures();
 		loadUserRolesTree(currentUser.id);
 		buildRolesTree();
-		dijit.byId('userTabsContainer').selectChild(dijit.byId('userRolesTab'));
+		//dijit.byId('userTabsContainer').selectChild(dijit.byId('userRolesTab'));
 	}
 
 	//Setting up tab actions
@@ -545,7 +585,24 @@
 	    if(userRolesSelect && userRolesSelect instanceof dijit.form.MultiSelect) {
 	    	userRolesSelect.destroyRecursive(false);
 	    }
-
+	    dijit.byId("frontEndRoleCheck").attr('checked',false);
+	    dijit.byId("backEndRoleCheck").attr('checked',false);
+	    dijit.byId("adminRoleCheck").attr('checked',false);
+	    for(i=0;i<roles.length;i++){
+	        if("DOTCMS_FRONT_END_USER" == roles[i].roleKey){
+	            dijit.byId("frontEndRoleCheck").attr('checked',true);
+	        }
+            if("DOTCMS_BACK_END_USER" == roles[i].roleKey){
+                dijit.byId("backEndRoleCheck").attr('checked',true);
+            }
+            if("CMS Administrator" == roles[i].roleKey){
+                dijit.byId("adminRoleCheck").attr('checked',true);
+            }
+	        
+	    }
+	    
+	    
+	    
 		dojo.destroy("userRolesSelect");
 	    dojo.create('select',{id:'userRolesSelect'},'userRolesSelectWrapper');
 

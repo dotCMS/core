@@ -386,25 +386,52 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		return getCountUsersByNameOrEmailOrUserID(filter, true, true);
 	}
 
+	
+	 @Override
+	  public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault)  throws DotDataException {
+	   return getCountUsersByNameOrEmailOrUserID(filter, true, true, "all");
+	 }
+	
+	
 	@Override
-	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault)
+	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault, String roleId)
 			throws DotDataException {
-		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
-		filter = SQLUtil.sanitizeParameter(filter);
-		StringBuilder query = new StringBuilder("SELECT COUNT(*) AS count FROM user_ WHERE ");
-		query.append("(LOWER(userid) LIKE '%").append(filter).append("%' ");
-		query.append("OR LOWER(firstName) LIKE '%").append(filter).append("%' ");
-		query.append("OR LOWER(lastName) LIKE '%").append(filter).append("%' ");
-		query.append("OR LOWER(emailAddress) LIKE '%").append(filter).append("%' ");
-		query.append("OR ").append(DotConnect.concat(new String[] { "LOWER(firstName)", "' '", "LOWER(lastName)" }))
-				.append(" LIKE '%").append(filter).append("%') ");
-		query.append((!includeAnonymous) ? "AND userid <> 'anonymous' " : " ");
-		query.append((!includeDefault) ? "AND userid <> 'dotcms.org.default' " : " ");
-		query.append("AND userid <> 'system' ");
-		query.append("AND delete_in_progress = ");
-		query.append(DbConnectionFactory.getDBFalse());
-		DotConnect dotConnect = new DotConnect();
-		dotConnect.setSQL(query.toString());
+    filter = (UtilMethods.isSet(filter) ? "%" + filter.toLowerCase() + "%" :null);
+
+		
+    DotConnect dotConnect = new DotConnect();
+    StringBuilder sql = new StringBuilder("select count(*) as count from user_ ");
+    if(roleId!=null) {
+      sql.append(", users_cms_roles ");
+    }
+    
+    sql.append(" where 1=1 ");
+    if(filter!=null) {
+      sql.append(" AND (lower(userid) like ? or lower(firstName) like ? or lower(lastName) like ? or lower(emailAddress) like ?) ");
+    }
+    sql.append(" AND userid <> 'system' ");
+    sql.append(((!includeAnonymous) ? "AND userid <> 'anonymous'" : " "));
+    sql.append(((!includeDefault) ? "AND userid <> 'dotcms.org.default'" : " "));
+    sql.append(" AND delete_in_progress = ");
+    sql.append(DbConnectionFactory.getDBFalse());
+    if(roleId!=null) {
+      sql.append(" AND role_id = ? " );
+      sql.append(" AND users_cms_roles.user_id=user_.userid " );
+      
+    }
+
+
+    dotConnect.setSQL(sql.toString());
+    if(filter!=null) {
+      dotConnect.addParam(filter);
+      dotConnect.addParam(filter);
+      dotConnect.addParam(filter);
+      dotConnect.addParam(filter);
+    }
+    if(roleId!=null) {
+      dotConnect.addParam(roleId);
+    }
+    
 		return dotConnect.getInt("count");
 	}
 
@@ -417,38 +444,59 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
 		return getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, true);
 	}
-
+  @Override
+  protected List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
+      int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
+    return getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault, null);
+    
+  }
 	@Override
 	protected List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
-			int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
+			int pageSize, boolean includeAnonymous, boolean includeDefault, String roleId) throws DotDataException {
+	  
+
 		List<User> users = new ArrayList<>(pageSize);
-		DotConnect dotConnect = new DotConnect();
+		
 		if (page == 0) {
 			page = 1;
 		}
 		int bottom = ((page - 1) * pageSize);
 		int top = (page * pageSize);
-		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
-		filter = SQLUtil.sanitizeParameter(filter);
-		StringBuilder sql = new StringBuilder("select userid from user_ where (lower(userid) like '%");
-		sql.append(filter);
-		sql.append("%' or lower(firstName) like '%");
-		sql.append(filter);
-		sql.append("%' or lower(lastName) like '%");
-		sql.append(filter);
-		sql.append("%' or lower(emailAddress) like '%");
-		sql.append(filter);
-		sql.append("%'  or ");
-		sql.append(DotConnect.concat(new String[]{"lower(firstName)", "' '", "lower(lastName)"}));
-		sql.append(" like '%");
-		sql.append(filter);
-		sql.append("%') AND userid <> 'system' ");
-		sql.append(((!includeAnonymous) ? "AND userid <> 'anonymous'" : " "));
-		sql.append(((!includeDefault) ? "AND userid <> 'dotcms.org.default'" : " "));
+		filter = (UtilMethods.isSet(filter) ? "%" + filter.toLowerCase() + "%" :null);
+		
+		DotConnect dotConnect = new DotConnect();
+		StringBuilder sql = new StringBuilder("select userid from user_ ");
+		if(roleId!=null) {
+		  sql.append(", users_cms_roles ");
+		}
+		
+		sql.append(" where 1=1 ");
+		if(filter!=null) {
+		  sql.append(" AND (lower(userid) like ? or lower(firstName) like ? or lower(lastName) like ? or lower(emailAddress) like ?) ");
+		}
+		sql.append(" AND userid <> 'system' ");
+		sql.append(((!includeAnonymous) ? " AND userid <> 'anonymous'" : " "));
+		sql.append(((!includeDefault) ? " AND userid <> 'dotcms.org.default'" : " "));
 		sql.append(" AND delete_in_progress = ");
 		sql.append(DbConnectionFactory.getDBFalse());
+		if(roleId!=null) {
+		  sql.append(" AND role_id = ? " );
+		  sql.append(" AND users_cms_roles.user_id=user_.userid " );
+		}
+
 		sql.append(" order by firstName asc,lastname asc");
 		dotConnect.setSQL(sql.toString());
+		if(filter!=null) {
+		  dotConnect.addParam(filter);
+		  dotConnect.addParam(filter);
+		  dotConnect.addParam(filter);
+		  dotConnect.addParam(filter);
+		}
+		if(roleId!=null) {
+		  dotConnect.addParam(roleId);
+		}
+		
+		
 		dotConnect.setMaxRows(top);
 		List<?> results = dotConnect.getResults();
 		int lenght = results.size();
@@ -465,6 +513,12 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		}
 		return users;
 	}
+	
+
+	
+	
+	
+	
 
 	@Override
 	protected List<User> getUnDeletedUsers() throws DotDataException {

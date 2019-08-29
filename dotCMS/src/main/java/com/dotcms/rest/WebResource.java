@@ -363,10 +363,18 @@ public  class WebResource {
                     .getOrElse(false));
 
             if(!hasARequiredRole) {
+              if(builder.requiredRolesSet.contains(Role.DOTCMS_BACK_END_USER) ) {
+                  APILocator.getLoginServiceAPI().doLogout(builder.request, builder.response);
+                
+              }
+              
               throw new SecurityException(
                   String.format("User lacks one of the required role %s", builder.requiredRolesSet.toString()),
                   Response.Status.UNAUTHORIZED);
             }
+            
+
+            
         }
         
 
