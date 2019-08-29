@@ -129,7 +129,8 @@ public class MenuResource implements Serializable {
 
 			res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
     } catch (Exception e) {
-      throw new ForbiddenException(e);
+      res = ExceptionMapperUtil.createResponse(new ForbiddenException(e), Response.Status.INTERNAL_SERVER_ERROR);
+
     }
 
 		return res; //menus;
