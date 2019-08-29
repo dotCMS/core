@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -32,6 +33,7 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         return site;
     }
 
+    @WrapInTransaction
     public Host persist(final Host site, boolean publish) {
         try {
 

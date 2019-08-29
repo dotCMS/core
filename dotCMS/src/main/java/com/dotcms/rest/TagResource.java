@@ -30,6 +30,7 @@ import org.glassfish.jersey.server.JSONP;
 public class TagResource {
 
 	private final TagAPI tagAPI;
+	private final WebResource webResource;
 
     @SuppressWarnings("unused")
     public TagResource() {
@@ -39,6 +40,7 @@ public class TagResource {
     @VisibleForTesting
     protected TagResource(TagAPI tagAPI, WebResource webResource) {
         this.tagAPI = tagAPI;
+        this.webResource = webResource;
 
     }
 
@@ -51,7 +53,7 @@ public class TagResource {
             @QueryParam("siteId") final String siteId) {
 
 
-      final InitDataObject initDataObject = new WebResource.InitBuilder()
+      final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
       .requiredAnonAccess(AnonymousAccess.READ)
       .requestAndResponse(request, response)
       .init();

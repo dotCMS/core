@@ -101,6 +101,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
                 .checkout(fileAssetContentlet.getInode(), user, false);
         contentlet.getMap().put(FileAssetAPI.FILE_NAME_FIELD, newExpectedIdentifierName);
         contentlet.setInode(null);
+
         contentlet = APILocator.getContentletAPI().checkin(contentlet, user, false);
         final FileAsset fileAsset = fileAssetAPI.fromContentlet(contentlet);
 
@@ -120,9 +121,9 @@ public class FileAssetAPITest extends IntegrationTestBase {
         final String recoveredRealPath = fileAssetAPI
                 .getRealAssetPath(recoveredFileAsset.getInode(),
                         recoveredFileAsset.getUnderlyingFileName());
-        assertEquals(
+        assertTrue(
                 "Even tough the logical file name has changed the physical file name should remain the same.",
-                savedFile.getPath(), recoveredRealPath);
+                recoveredRealPath.endsWith(savedFile.getName()));
 
 
     }

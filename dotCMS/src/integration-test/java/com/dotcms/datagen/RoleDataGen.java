@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.Role;
@@ -89,6 +90,7 @@ public class RoleDataGen extends AbstractDataGen<Role> {
         return role;
     }
 
+    @WrapInTransaction
     @Override
     public Role persist(final Role role) {
         try {
@@ -116,6 +118,7 @@ public class RoleDataGen extends AbstractDataGen<Role> {
         remove(role, true);
     }
 
+    @WrapInTransaction
     public static void remove(final Role role, final Boolean failSilently) {
 
         try {

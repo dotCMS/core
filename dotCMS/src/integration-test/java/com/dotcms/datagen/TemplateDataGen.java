@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotmarketing.business.APILocator;
@@ -207,6 +208,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         return template;
     }
 
+    @WrapInTransaction
     @Override
     public Template persist(Template template) {
 
@@ -246,6 +248,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         }
     }
 
+    @WrapInTransaction
     public static void remove(Template template) {
         try {
             templateAPI.delete(template, user, false);

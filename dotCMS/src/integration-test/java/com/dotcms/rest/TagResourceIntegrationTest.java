@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -141,13 +142,14 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
             final WebResource webResource = mock(WebResource.class);
             final InitDataObject dataObject = mock(InitDataObject.class);
             when(dataObject.getUser()).thenReturn(APILocator.systemUser());
-            when(webResource.init(anyString(), anyBoolean(), any(HttpServletRequest.class),
-                    anyBoolean(), anyObject()))
+
+            when(webResource.init(any(InitBuilder.class)))
                     .thenReturn(dataObject);
 
             final TagResource tagResource = new TagResource(tagAPI, webResource);
             final Map<String, RestTag> returnedTags =
-                    tagResource.list(request,new MockHttpResponse(), testCase.getTagName(), testCase.getSiteOrFolderId());
+                    tagResource.list(request, new MockHttpResponse(), testCase.getTagName(),
+                            testCase.getSiteOrFolderId());
 
             final List<String> returnedTagsNames = returnedTags.values().stream()
                     .map((tag) -> tag.label).collect(Collectors.toList());

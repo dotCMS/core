@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -115,6 +116,7 @@ public class StructureDataGen extends AbstractDataGen<Structure> {
         return s;
     }
 
+    @WrapInTransaction
     @Override
     public Structure persist(Structure object) {
         try {
@@ -126,6 +128,7 @@ public class StructureDataGen extends AbstractDataGen<Structure> {
         return object;
     }
 
+    @WrapInTransaction
     public static void remove(Structure object) {
         try {
             StructureFactory.deleteStructure(object);
