@@ -65,6 +65,7 @@ import graphql.schema.GraphQLSchema;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Random;
 import java.util.function.BiFunction;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -73,6 +74,8 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class GraphqlAPITest {
+
+    private static CustomRandom random = new CustomRandom();
 
     @BeforeClass
     public static void prepare() throws Exception{
@@ -86,203 +89,203 @@ public class GraphqlAPITest {
 
         return new TypeTestCase[]{
 
-            // CREATE TYPE CASES
-            new TypeTestCase.Builder()
-                .operations(Collections.singletonList(GraphqlAPITest::createType))
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                .expectedGraphQLInterfaceToInherit(CONTENT_INTERFACE_NAME)
-                .assertions(
-                    Arrays.asList(
-                        GraphqlAPITest::assertTypeCreated,
-                        GraphqlAPITest::assertTypeInheritFromInterface
-                    )
-                )
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(Collections.singletonList(GraphqlAPITest::createType))
-                .baseType(BaseContentType.WIDGET)
-                    .contentTypeName("newWidgetContentType" + System.currentTimeMillis())
-                .expectedGraphQLInterfaceToInherit(WIDGET_INTERFACE_NAME)
-                .assertions(
-                    Arrays.asList(
-                        GraphqlAPITest::assertTypeCreated,
-                        GraphqlAPITest::assertTypeInheritFromInterface
-                    )
-                )
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(Collections.singletonList(GraphqlAPITest::createType))
-                .baseType(BaseContentType.FORM)
-                .expectedGraphQLInterfaceToInherit(FORM_INTERFACE_NAME)
-                    .contentTypeName("newFormContentType" + System.currentTimeMillis())
-                .assertions(
-                    Arrays.asList(
-                        GraphqlAPITest::assertTypeCreated,
-                        GraphqlAPITest::assertTypeInheritFromInterface
-                    )
-                )
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(Collections.singletonList(GraphqlAPITest::createType))
-                .baseType(BaseContentType.FILEASSET)
-                .expectedGraphQLInterfaceToInherit(FILE_INTERFACE_NAME)
-                    .contentTypeName("newFileContentType" + System.currentTimeMillis())
-                .assertions(
-                    Arrays.asList(
-                        GraphqlAPITest::assertTypeCreated,
-                        GraphqlAPITest::assertTypeInheritFromInterface
-                    )
-                )
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(Collections.singletonList(GraphqlAPITest::createType))
-                .baseType(BaseContentType.HTMLPAGE)
-                .expectedGraphQLInterfaceToInherit(PAGE_INTERFACE_NAME)
-                    .contentTypeName("newPageContentType" + System.currentTimeMillis())
-                .assertions(
-                    Arrays.asList(
-                        GraphqlAPITest::assertTypeCreated,
-                        GraphqlAPITest::assertTypeInheritFromInterface
-                    )
-                )
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(Collections.singletonList(GraphqlAPITest::createType))
-                .baseType(BaseContentType.PERSONA)
-                .expectedGraphQLInterfaceToInherit(PERSONA_INTERFACE_NAME)
-                    .contentTypeName("newPersonaContentType" + System.currentTimeMillis())
-                .assertions(
-                    Arrays.asList(
-                        GraphqlAPITest::assertTypeCreated,
-                        GraphqlAPITest::assertTypeInheritFromInterface
-                    )
-                )
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(Collections.singletonList(GraphqlAPITest::createType))
-                .baseType(BaseContentType.VANITY_URL)
-                .expectedGraphQLInterfaceToInherit(VANITY_URL_INTERFACE_NAME)
-                    .contentTypeName("newVanityURLContentType" + System.currentTimeMillis())
-                .assertions(
-                    Arrays.asList(
-                        GraphqlAPITest::assertTypeCreated,
-                        GraphqlAPITest::assertTypeInheritFromInterface
-                    )
-                )
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(Collections.singletonList(GraphqlAPITest::createType))
-                .baseType(BaseContentType.KEY_VALUE)
-                .expectedGraphQLInterfaceToInherit(KEY_VALUE_INTERFACE_NAME)
-                    .contentTypeName("newKeyValueContentType" + System.currentTimeMillis())
-                .assertions(
-                    Arrays.asList(
-                        GraphqlAPITest::assertTypeCreated,
-                        GraphqlAPITest::assertTypeInheritFromInterface
-                    )
-                )
-                .build(),
+                // CREATE TYPE CASES
+                new TypeTestCase.Builder()
+                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .expectedGraphQLInterfaceToInherit(CONTENT_INTERFACE_NAME)
+                        .assertions(
+                                Arrays.asList(
+                                        GraphqlAPITest::assertTypeCreated,
+                                        GraphqlAPITest::assertTypeInheritFromInterface
+                                )
+                        )
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .baseType(BaseContentType.WIDGET)
+                        .contentTypeName("newWidgetContentType" + random.nextPositive())
+                        .expectedGraphQLInterfaceToInherit(WIDGET_INTERFACE_NAME)
+                        .assertions(
+                                Arrays.asList(
+                                        GraphqlAPITest::assertTypeCreated,
+                                        GraphqlAPITest::assertTypeInheritFromInterface
+                                )
+                        )
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .baseType(BaseContentType.FORM)
+                        .expectedGraphQLInterfaceToInherit(FORM_INTERFACE_NAME)
+                        .contentTypeName("newFormContentType" + random.nextPositive())
+                        .assertions(
+                                Arrays.asList(
+                                        GraphqlAPITest::assertTypeCreated,
+                                        GraphqlAPITest::assertTypeInheritFromInterface
+                                )
+                        )
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .baseType(BaseContentType.FILEASSET)
+                        .expectedGraphQLInterfaceToInherit(FILE_INTERFACE_NAME)
+                        .contentTypeName("newFileContentType" + random.nextPositive())
+                        .assertions(
+                                Arrays.asList(
+                                        GraphqlAPITest::assertTypeCreated,
+                                        GraphqlAPITest::assertTypeInheritFromInterface
+                                )
+                        )
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .baseType(BaseContentType.HTMLPAGE)
+                        .expectedGraphQLInterfaceToInherit(PAGE_INTERFACE_NAME)
+                        .contentTypeName("newPageContentType" + random.nextPositive())
+                        .assertions(
+                                Arrays.asList(
+                                        GraphqlAPITest::assertTypeCreated,
+                                        GraphqlAPITest::assertTypeInheritFromInterface
+                                )
+                        )
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .baseType(BaseContentType.PERSONA)
+                        .expectedGraphQLInterfaceToInherit(PERSONA_INTERFACE_NAME)
+                        .contentTypeName("newPersonaContentType" + random.nextPositive())
+                        .assertions(
+                                Arrays.asList(
+                                        GraphqlAPITest::assertTypeCreated,
+                                        GraphqlAPITest::assertTypeInheritFromInterface
+                                )
+                        )
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .baseType(BaseContentType.VANITY_URL)
+                        .expectedGraphQLInterfaceToInherit(VANITY_URL_INTERFACE_NAME)
+                        .contentTypeName("newVanityURLContentType" + random.nextPositive())
+                        .assertions(
+                                Arrays.asList(
+                                        GraphqlAPITest::assertTypeCreated,
+                                        GraphqlAPITest::assertTypeInheritFromInterface
+                                )
+                        )
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(Collections.singletonList(GraphqlAPITest::createType))
+                        .baseType(BaseContentType.KEY_VALUE)
+                        .expectedGraphQLInterfaceToInherit(KEY_VALUE_INTERFACE_NAME)
+                        .contentTypeName("newKeyValueContentType" + random.nextPositive())
+                        .assertions(
+                                Arrays.asList(
+                                        GraphqlAPITest::assertTypeCreated,
+                                        GraphqlAPITest::assertTypeInheritFromInterface
+                                )
+                        )
+                        .build(),
 
-            // DELETE TYPE CASES
+                // DELETE TYPE CASES
 
-            new TypeTestCase.Builder()
-                .operations(
-                    Arrays.asList(
-                        GraphqlAPITest::createType,
-                        GraphqlAPITest::deleteType
-                    )
-                )
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                .expectedGraphQLInterfaceToInherit(CONTENT_INTERFACE_NAME)
-                .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
-                .build(),
+                new TypeTestCase.Builder()
+                        .operations(
+                                Arrays.asList(
+                                        GraphqlAPITest::createType,
+                                        GraphqlAPITest::deleteType
+                                )
+                        )
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .expectedGraphQLInterfaceToInherit(CONTENT_INTERFACE_NAME)
+                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .operations(
-                    Arrays.asList(
-                        GraphqlAPITest::createType,
-                        GraphqlAPITest::deleteType
-                    )
-                )
-                .baseType(BaseContentType.WIDGET)
-                    .contentTypeName("newWidgetContentType" + System.currentTimeMillis())
-                .expectedGraphQLInterfaceToInherit(WIDGET_INTERFACE_NAME)
-                .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(
-                    Arrays.asList(
-                        GraphqlAPITest::createType,
-                        GraphqlAPITest::deleteType
-                    )
-                )
-                .baseType(BaseContentType.FORM)
-                .expectedGraphQLInterfaceToInherit(FORM_INTERFACE_NAME)
-                    .contentTypeName("newFormContentType" + System.currentTimeMillis())
-                .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(
-                    Arrays.asList(
-                        GraphqlAPITest::createType,
-                        GraphqlAPITest::deleteType
-                    )
-                )
-                .baseType(BaseContentType.FILEASSET)
-                .expectedGraphQLInterfaceToInherit(FILE_INTERFACE_NAME)
-                    .contentTypeName("newFileContentType" + System.currentTimeMillis())
-                .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(
-                    Arrays.asList(
-                        GraphqlAPITest::createType,
-                        GraphqlAPITest::deleteType
-                    )
-                )
-                .baseType(BaseContentType.HTMLPAGE)
-                .expectedGraphQLInterfaceToInherit(PAGE_INTERFACE_NAME)
-                    .contentTypeName("newPageContentType" + System.currentTimeMillis())
-                .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(
-                    Arrays.asList(
-                        GraphqlAPITest::createType,
-                        GraphqlAPITest::deleteType
-                    )
-                )
-                .baseType(BaseContentType.PERSONA)
-                .expectedGraphQLInterfaceToInherit(PERSONA_INTERFACE_NAME)
-                    .contentTypeName("newPersonaContentType" + System.currentTimeMillis())
-                .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(
-                    Arrays.asList(
-                        GraphqlAPITest::createType,
-                        GraphqlAPITest::deleteType
-                    )
-                )
-                .baseType(BaseContentType.VANITY_URL)
-                .expectedGraphQLInterfaceToInherit(VANITY_URL_INTERFACE_NAME)
-                    .contentTypeName("newVanityURLContentType" + System.currentTimeMillis())
-                .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
-                .build(),
-            new TypeTestCase.Builder()
-                .operations(
-                    Arrays.asList(
-                        GraphqlAPITest::createType,
-                        GraphqlAPITest::deleteType
-                    )
-                )
-                .baseType(BaseContentType.KEY_VALUE)
-                .expectedGraphQLInterfaceToInherit(KEY_VALUE_INTERFACE_NAME)
-                    .contentTypeName("newKeyValueContentType" + System.currentTimeMillis())
-                .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
-                .build(),
+                new TypeTestCase.Builder()
+                        .operations(
+                                Arrays.asList(
+                                        GraphqlAPITest::createType,
+                                        GraphqlAPITest::deleteType
+                                )
+                        )
+                        .baseType(BaseContentType.WIDGET)
+                        .contentTypeName("newWidgetContentType" + random.nextPositive())
+                        .expectedGraphQLInterfaceToInherit(WIDGET_INTERFACE_NAME)
+                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(
+                                Arrays.asList(
+                                        GraphqlAPITest::createType,
+                                        GraphqlAPITest::deleteType
+                                )
+                        )
+                        .baseType(BaseContentType.FORM)
+                        .expectedGraphQLInterfaceToInherit(FORM_INTERFACE_NAME)
+                        .contentTypeName("newFormContentType" + random.nextPositive())
+                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(
+                                Arrays.asList(
+                                        GraphqlAPITest::createType,
+                                        GraphqlAPITest::deleteType
+                                )
+                        )
+                        .baseType(BaseContentType.FILEASSET)
+                        .expectedGraphQLInterfaceToInherit(FILE_INTERFACE_NAME)
+                        .contentTypeName("newFileContentType" + random.nextPositive())
+                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(
+                                Arrays.asList(
+                                        GraphqlAPITest::createType,
+                                        GraphqlAPITest::deleteType
+                                )
+                        )
+                        .baseType(BaseContentType.HTMLPAGE)
+                        .expectedGraphQLInterfaceToInherit(PAGE_INTERFACE_NAME)
+                        .contentTypeName("newPageContentType" + random.nextPositive())
+                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(
+                                Arrays.asList(
+                                        GraphqlAPITest::createType,
+                                        GraphqlAPITest::deleteType
+                                )
+                        )
+                        .baseType(BaseContentType.PERSONA)
+                        .expectedGraphQLInterfaceToInherit(PERSONA_INTERFACE_NAME)
+                        .contentTypeName("newPersonaContentType" + random.nextPositive())
+                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(
+                                Arrays.asList(
+                                        GraphqlAPITest::createType,
+                                        GraphqlAPITest::deleteType
+                                )
+                        )
+                        .baseType(BaseContentType.VANITY_URL)
+                        .expectedGraphQLInterfaceToInherit(VANITY_URL_INTERFACE_NAME)
+                        .contentTypeName("newVanityURLContentType" + random.nextPositive())
+                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .build(),
+                new TypeTestCase.Builder()
+                        .operations(
+                                Arrays.asList(
+                                        GraphqlAPITest::createType,
+                                        GraphqlAPITest::deleteType
+                                )
+                        )
+                        .baseType(BaseContentType.KEY_VALUE)
+                        .expectedGraphQLInterfaceToInherit(KEY_VALUE_INTERFACE_NAME)
+                        .contentTypeName("newKeyValueContentType" + random.nextPositive())
+                        .assertions(Collections.singletonList(GraphqlAPITest::assertTypeDeleted))
+                        .build(),
 
 
         };
@@ -294,160 +297,160 @@ public class GraphqlAPITest {
 
         return new TypeTestCase[]{
 
-            // test each field type with required FALSE
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableBinaryField.class)
-                .setFieldRequired(false)
-                .build(),
+                // test each field type with required FALSE
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableBinaryField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableCategoryField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableCategoryField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableImageField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableImageField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableFileField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableFileField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableKeyValueField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableKeyValueField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableHostFolderField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableHostFolderField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableCheckboxField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableCheckboxField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableConstantField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableConstantField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableCustomField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableCustomField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableDateField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableDateField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableMultiSelectField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableMultiSelectField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableRadioField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableRadioField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableSelectField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableSelectField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableTagField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableTagField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableTextAreaField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableTextAreaField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableTextField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableTextField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableTimeField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableTimeField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableWysiwygField.class)
-                .setFieldRequired(false)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableWysiwygField.class)
+                        .setFieldRequired(false)
+                        .build(),
 
-            // test field with required TRUE
+                // test field with required TRUE
 
-            new TypeTestCase.Builder()
-                .baseType(BaseContentType.CONTENT)
-                    .contentTypeName("newContentContentType" + System.currentTimeMillis())
-                    .setFieldVarName("testFieldVar" + System.currentTimeMillis())
-                .setFieldType(ImmutableBinaryField.class)
-                .setFieldRequired(true)
-                .build(),
+                new TypeTestCase.Builder()
+                        .baseType(BaseContentType.CONTENT)
+                        .contentTypeName("newContentContentType" + random.nextPositive())
+                        .setFieldVarName("testFieldVar" + random.nextPositive())
+                        .setFieldType(ImmutableBinaryField.class)
+                        .setFieldRequired(true)
+                        .build(),
 
 
         };
@@ -457,7 +460,7 @@ public class GraphqlAPITest {
     @UseDataProvider("typeTestCases")
     @Test
     public void testGetSchema_ContentTypeOperations(final TypeTestCase testCase)
-        throws DotDataException, DotSecurityException {
+            throws DotDataException, DotSecurityException {
 
         ContentType contentType = null;
 
@@ -483,7 +486,7 @@ public class GraphqlAPITest {
     @UseDataProvider("fieldTestCases")
     @Test
     public void testGetSchema_FieldOperations(final TypeTestCase testCase) throws DotDataException,
-        DotSecurityException {
+            DotSecurityException {
 
         // create type
         ContentType contentType = createType(testCase.contentTypeName, testCase.baseType);
@@ -517,11 +520,11 @@ public class GraphqlAPITest {
 
     @Test
     public void testGetSchema_WhenFieldDeleted_ShouldNotBeAvailableInSchema() throws DotDataException,
-        DotSecurityException {
+            DotSecurityException {
 
         // create type
-        final String contentTypeName = "testType" + System.currentTimeMillis();
-        final String fieldVarName = "testFieldVar" + System.currentTimeMillis();
+        final String contentTypeName = "testType" + random.nextPositive();
+        final String fieldVarName = "testFieldVar" + random.nextPositive();
         ContentType contentType = createType(contentTypeName, BaseContentType.CONTENT);
         final Field field = createField(contentType, fieldVarName,
                 ImmutableTextField.class, false);
@@ -570,7 +573,6 @@ public class GraphqlAPITest {
                     parentContentType.id(), childContentType.variable(),
                     String.valueOf(cardinality.ordinal()));
 
-
             final String fullFieldVar =
                     parentContentType.variable() + StringPool.PERIOD + relFieldFromParentToChild.variable();
 
@@ -594,7 +596,6 @@ public class GraphqlAPITest {
                 assertTrue(outputTypeFromParentToChild instanceof GraphQLList);
                 assertEquals(childContentType.variable(), ((GraphQLList)outputTypeFromParentToChild).getWrappedType().getName());
             }
-
 
             final GraphQLFieldDefinition fieldDefinitionFromChildToParent =
                     schema.getObjectType(childContentType.variable())
@@ -625,18 +626,18 @@ public class GraphqlAPITest {
 
     private ContentType createAndSaveSimpleContentType(final String name) throws DotSecurityException, DotDataException {
         return APILocator.getContentTypeAPI(APILocator.systemUser())
-            .save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
-            FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
-            .owner(APILocator.systemUser().getUserId()).build());
+                .save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                        FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+                        .owner(APILocator.systemUser().getUserId()).build());
     }
 
     private Field createAndSaveRelationshipField(final String relationshipName, final String parentTypeId,
-                                                           final String childTypeVar, final String cardinality)
-        throws DotSecurityException, DotDataException {
+            final String childTypeVar, final String cardinality)
+            throws DotSecurityException, DotDataException {
 
         final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
-            .contentTypeId(parentTypeId).values(cardinality)
-            .relationType(childTypeVar).build();
+                .contentTypeId(parentTypeId).values(cardinality)
+                .relationType(childTypeVar).build();
 
         //One side of the relationship is set parentContentType --> childContentType
         return APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
@@ -671,13 +672,13 @@ public class GraphqlAPITest {
     }
 
     private Field createField(final ContentType contentType, final String fieldVarName, final Class<? extends Field> fieldType,
-                              final boolean fieldRequired) {
+            final boolean fieldRequired) {
         try {
             final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
             final FieldBuilder fieldBuilder = getFieldBuilder(fieldType);
             final Field field =  fieldBuilder.contentTypeId(contentType.id())
                     .name(fieldVarName).variable(fieldVarName)
-                .required(fieldRequired).build();
+                    .required(fieldRequired).build();
             return fieldAPI.save(field, APILocator.systemUser());
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -685,37 +686,39 @@ public class GraphqlAPITest {
     }
 
     private static ContentTypeBuilder getContentTypeBuilder(BaseContentType baseType)
-        throws ClassNotFoundException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+            throws ClassNotFoundException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         final String packageName = baseType.immutableClass().getPackage().getName();
         final Class
-            immutableClass =
-            Class.forName(packageName + ".Immutable" + baseType.immutableClass().getSimpleName());
+                immutableClass =
+                Class.forName(
+                        packageName + ".Immutable" + baseType.immutableClass().getSimpleName());
 
         return (ContentTypeBuilder) immutableClass.getMethod("builder").invoke(null);
     }
 
     private static FieldBuilder getFieldBuilder(final Class<? extends Field> fieldType)
-        throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         return (FieldBuilder) fieldType.getMethod("builder").invoke(null);
     }
 
     private static void assertTypeCreated(final TypeTestCase.AssertionParams assertionParams) {
         assertNotNull("GraphQL Type: "+assertionParams.typeName+" exists",
-            assertionParams.schema.getType(assertionParams.typeName));
+                assertionParams.schema.getType(assertionParams.typeName));
     }
 
     private static void assertTypeDeleted(final TypeTestCase.AssertionParams assertionParams) {
         Assert.assertNull("GraphQL Type: "+assertionParams.typeName+" does NOT exist",
-            assertionParams.schema.getType(assertionParams.typeName));
+                assertionParams.schema.getType(assertionParams.typeName));
     }
 
     private static void assertTypeInheritFromInterface(final TypeTestCase.AssertionParams assertionParams) {
         final GraphQLObjectType graphQLObjectType = assertionParams.schema.getObjectType(assertionParams.typeName);
 
         assertTrue("GraphQL Type:"+assertionParams.typeName+" inherits from:"+assertionParams.expectedInterfaceName,
-            graphQLObjectType.getInterfaces().stream().anyMatch(
-            (interfaceType)-> interfaceType.getName().toLowerCase().equals(assertionParams.expectedInterfaceName.toLowerCase())
-        ));
+                graphQLObjectType.getInterfaces().stream().anyMatch(
+                        (interfaceType) -> interfaceType.getName().toLowerCase()
+                                .equals(assertionParams.expectedInterfaceName.toLowerCase())
+                ));
     }
 
     private boolean isOneEndingCardinality(final RELATIONSHIP_CARDINALITY cardinality) {
@@ -724,6 +727,13 @@ public class GraphqlAPITest {
 
     private boolean isManyStartingCardinality(final RELATIONSHIP_CARDINALITY cardinality) {
         return cardinality.equals(MANY_TO_ONE) || cardinality.equals(MANY_TO_MANY);
+    }
+
+    static class CustomRandom extends Random {
+
+        int nextPositive() {
+            return next(Integer.SIZE - 1);
+        }
     }
 
 }
