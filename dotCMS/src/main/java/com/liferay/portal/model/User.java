@@ -331,7 +331,7 @@ public class User extends UserModel implements Recipient {
 	
   public boolean hasConsoleAccess() {
     return Try.of(() -> {
-      if (UserAPI.CMS_ANON_USER_ID.equals(this.getUserId())) {
+      if (UserAPI.CMS_ANON_USER_ID.equals(this.getUserId()) || UserAPI.SYSTEM_USER_ID.equals(this.getUserId()) ) {
         return false;
       }
       return isActive() && isBackendUser() && !APILocator.getLayoutAPI().loadLayoutsForUser(this).isEmpty();
