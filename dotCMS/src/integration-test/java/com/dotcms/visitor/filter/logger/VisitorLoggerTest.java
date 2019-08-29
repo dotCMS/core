@@ -32,10 +32,9 @@ import org.junit.Test;
 
 public class VisitorLoggerTest {
 
-    public static List<String> whiteListedHeader;
-    public static List<String> whiteListedParams;
+    private static List<String> whiteListedHeader;
+    private static List<String> whiteListedParams;
 
-    private static MockedAppender mockedAppender;
     private static Logger logger;
 
     @BeforeClass
@@ -48,14 +47,15 @@ public class VisitorLoggerTest {
 
         whiteListedParams = Arrays.asList(
                 Config.getStringProperty("WHITELISTED_PARAMS", "").toLowerCase().split(","));
-
-        mockedAppender = new MockedAppender();
     }
 
     @Test
     public void testLog() throws Exception {
 
+        MockedAppender mockedAppender = new MockedAppender();
+
         try{
+
             logger = (Logger) LogManager.getLogger(VisitorLogger.class);
             logger.addAppender(mockedAppender);
             logger.setLevel(Level.INFO);
