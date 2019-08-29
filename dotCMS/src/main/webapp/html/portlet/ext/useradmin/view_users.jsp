@@ -239,8 +239,12 @@
                                        <td><input type="checkbox" id="backEndRoleCheck" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox"></td>
                                    </tr>
                                    <tr>
-                                       <th><%= LanguageUtil.get(pageContext, "user.detail.has.layouts") %>:</th>
-                                       <td id="canLoginToConsole" style="font-weight:bold"></td>
+                                       <th><%= LanguageUtil.get(pageContext, "user.detail.can.login") %>:</span></th>
+                                       <td>
+                                       <span id="explainCanLogin" style="border-bottom:1px dotted blue">
+                                        <span id="canLoginToConsole" style="font-weight:bold"></span>
+                                       </span>
+                                       </td>
                                    </tr>
                                </table>
                             </div>

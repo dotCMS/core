@@ -1911,5 +1911,13 @@
 		return roleNode;
 	}
 
-
+	require(["dojo/ready", "dijit/Tooltip"], function(ready, Tooltip){
+	    ready(function(){
+	        new Tooltip({
+	            connectId: ["explainCanLogin"],
+	            label: "<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "user.detail.can.login.note")) %>"
+	        });
+	    });
+	});
+	
 </script>

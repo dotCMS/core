@@ -103,8 +103,11 @@ public class AuthenticationResource implements Serializable {
 
         try {
 
-            authenticated =
-                    this.loginService.doActionLogin(userId,
+            authenticated = authenticationForm.isBackEndLogin() 
+                ? this.loginService.doBackEndLogin(userId,
+                    authenticationForm.getPassword(),
+                    authenticationForm.isRememberMe(), request, response)
+                : this.loginService.doActionLogin(userId,
                             authenticationForm.getPassword(),
                             authenticationForm.isRememberMe(), request, response);
 

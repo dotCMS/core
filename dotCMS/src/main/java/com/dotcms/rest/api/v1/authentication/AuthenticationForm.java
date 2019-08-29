@@ -47,7 +47,7 @@ public class AuthenticationForm extends Validated {
     public String getLanguage() {
         return language;
     }
-    public boolean getBackEndLogin() {
+    public boolean isBackEndLogin() {
       return backEndLogin;
   }
     private AuthenticationForm(Builder builder) {
