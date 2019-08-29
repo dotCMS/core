@@ -282,6 +282,9 @@
 			dojo.byId('userIdValue').innerHTML = user.id;
 			dojo.byId('userId').value = user.id;
 		}
+		
+		dojo.byId('fullUserName').style.display = '';
+		dojo.byId('userAccessBox').style.display = '';
 		dojo.byId('userIdLabel').style.display = '';
 		dojo.byId('userIdValue').style.display = '';
 		dijit.byId('firstName').attr('value', user.firstName);
@@ -365,7 +368,9 @@
 	var newUser = false;
 	function addUser() {
         currentUser = null;
-
+        dojo.byId('userAccessBox').style.display = 'none';
+        dojo.byId('fullUserName').style.display = 'none';
+        
 		//Clearing the form to enter a new user
 		if(!authByEmail) {
 			dojo.byId('userIdLabel').style.display = '';
@@ -1061,6 +1066,7 @@
 	//Callback from the server after successful save
 	function saveRolesCallback () {
 		showDotCMSSystemMessage(userRolesSaved);
+		editUser(currentUser.id);
 	}
 
 	//Utility functions

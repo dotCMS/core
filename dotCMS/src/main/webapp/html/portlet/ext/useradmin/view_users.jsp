@@ -202,7 +202,7 @@
                                         <td id="lastLogin"  ></td>
                                     </tr>
                                     <tr>
-                                        <th><%= LanguageUtil.get(pageContext, "Failed-Login-Attempts") %>:</th>
+                                        <th><%= LanguageUtil.get(pageContext, "user.detail.failed.logins") %>:</th>
                                         <td id="loginAttempts"></td>
                                     </tr>
                                     
@@ -217,32 +217,32 @@
                                 </form>
                              </div>
                              
-                            <div class="userInfoBox">
-                            <div style="font-size:12pt;margin:10px;"><%= LanguageUtil.get(pageContext, "user.detail.access") %></div>
-                            <table class="listingTable" style="border:1px solid #eeeeee" >
-                                <tr>
-                                    <th style="width:30%;min-height:60px;"><%= LanguageUtil.get(pageContext, "Active") %>:</th>
-                                    <td><input id="userActive" type="checkbox" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox" /></td>
-                                </tr>
-                                <%if(hasAdminRole){ %>
-                                <tr>
-                                    <th style="width:30%;min-height:60px;">CMS Admin:</th>
-                                    <td><input type="checkbox" id="adminRoleCheck" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox"></td>
-                                </tr>
-                                <%} %>
-                                <tr>
-                                    <th><%= LanguageUtil.get(pageContext, "user.detail.frontend.user") %>:</th>
-                                    <td><input type="checkbox" id="frontEndRoleCheck" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox"></td>
-                                </tr>
-                                <tr>
-                                    <th><%= LanguageUtil.get(pageContext, "user.detail.backend.user") %>:</th>
-                                    <td><input type="checkbox" id="backEndRoleCheck" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox"></td>
-                                </tr>
-                                <tr>
-                                    <th><%= LanguageUtil.get(pageContext, "user.detail.has.layouts") %>:</th>
-                                    <td id="canLoginToConsole" style="font-weight:bold"></td>
-                                </tr>
-                            </table>
+                            <div class="userInfoBox" id="userAccessBox">
+                               <div style="font-size:12pt;margin:10px;"><%= LanguageUtil.get(pageContext, "user.detail.access") %></div>
+                               <table class="listingTable" style="border:1px solid #eeeeee" >
+                                   <tr>
+                                       <th style="width:30%;min-height:60px;"><%= LanguageUtil.get(pageContext, "Active") %>:</th>
+                                       <td><input id="userActive" type="checkbox" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox" /></td>
+                                   </tr>
+                                   <%if(hasAdminRole){ %>
+                                   <tr>
+                                       <th style="width:30%;min-height:60px;">CMS Admin:</th>
+                                       <td><input type="checkbox" id="adminRoleCheck" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox"></td>
+                                   </tr>
+                                   <%} %>
+                                   <tr>
+                                       <th><%= LanguageUtil.get(pageContext, "user.detail.frontend.user") %>:</th>
+                                       <td><input type="checkbox" id="frontEndRoleCheck" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox"></td>
+                                   </tr>
+                                   <tr>
+                                       <th><%= LanguageUtil.get(pageContext, "user.detail.backend.user") %>:</th>
+                                       <td><input type="checkbox" id="backEndRoleCheck" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox"></td>
+                                   </tr>
+                                   <tr>
+                                       <th><%= LanguageUtil.get(pageContext, "user.detail.has.layouts") %>:</th>
+                                       <td id="canLoginToConsole" style="font-weight:bold"></td>
+                                   </tr>
+                               </table>
                             </div>
                             
                             
@@ -253,11 +253,13 @@
 						</div>
 		
 						<%if(hasAdminRole){ %>
-      						<div id="deleteUserDialog" title="<%= LanguageUtil.get(pageContext, "delete-User") %>" dojoType="dijit.Dialog" style="display: none; width:300px;">
+      						<div id="deleteUserDialog" title="<%= LanguageUtil.get(pageContext, "delete-User") %>" dojoType="dijit.Dialog" style="display: none; width:400px;">
       							<span style="vertical-align:middle;"><%= LanguageUtil.get(pageContext, "select-a-user-to-replace-current-user-entries-on-db") %>:</span>
       							<div dojoType="dotcms.dojo.data.UsersReadStore" jsId="usersStore" includeRoles="false"></div>
-      							<select id="deleteUsersFilter" name="deleteUsersFilter" dojoType="dijit.form.FilteringSelect" store="usersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
-      							<div class="clear"></div>
+      							<div style="text-align:center;padding:20px;">
+                                    <select id="deleteUsersFilter" name="deleteUsersFilter" dojoType="dijit.form.FilteringSelect" store="usersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
+      							</div>
+                           <div class="clear"></div>
       							<div class="buttonRow">
       								<button dojoType="dijit.form.Button" onclick="deleteUser()" type="button" class="dijitButtonDanger"><%= LanguageUtil.get(pageContext, "Delete") %></button>
       								<button dojoType="dijit.form.Button" onclick="cancelDeleteUser()" type="button" iconClass="saveIcon"><%= LanguageUtil.get(pageContext, "Cancel") %></button>
