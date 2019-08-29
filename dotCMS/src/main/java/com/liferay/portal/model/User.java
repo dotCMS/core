@@ -22,11 +22,6 @@
 
 package com.liferay.portal.model;
 
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,8 +30,9 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.bouncycastle.jcajce.provider.asymmetric.rsa.DigestSignatureSpi.MD5;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
