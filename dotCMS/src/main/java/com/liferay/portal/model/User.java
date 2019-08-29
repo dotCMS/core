@@ -34,6 +34,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
+import org.apache.commons.codec.digest.DigestUtils;
+import org.bouncycastle.jcajce.provider.asymmetric.rsa.DigestSignatureSpi.MD5;
+
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -375,7 +378,7 @@ public class User extends UserModel implements Recipient {
         map.put("hasConsoleAccess", hasConsoleAccess());
         map.put("id", getUserId());
         map.put("type", UserAjax.USER_TYPE_VALUE);
-
+        map.put("gravitar", DigestUtils.md5Hex(this.getEmailAddress().toLowerCase()).toString());
 
         return map;
     }

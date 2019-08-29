@@ -283,6 +283,9 @@
 			dojo.byId('userId').value = user.id;
 		}
 		
+	    var myChar = (user.firstName && user.firstName.length>0) ? user.firstName.substring(0,1).toUpperCase() : "?";
+		dojo.byId('gravatarText').innerHTML=myChar;
+		dojo.byId('gravatarImage').style.backgroundImage ="url('https://www.gravatar.com/avatar/" +user.gravitar + "?d=blank')";
 		dojo.byId('fullUserName').style.display = '';
 		dojo.byId('userAccessBox').style.display = '';
 		dojo.byId('userIdLabel').style.display = '';
@@ -348,7 +351,6 @@
 				break;
 			case 'userAdditionalInfoTab':
 				loadUserAdditionalInfo(currentUser);
-				loadUserAddresses(userId);
 				break;
 			case 'marketingInfoTab':
 				loadMarketingInfo(userId);
@@ -1162,194 +1164,7 @@
 		return branches;
 	}
 
-	//Additional information tab functions
 
-	var addressesData = {
-		identifier: 'addressId',
-		label: 'address',
-		items: [  ]
-	};
-
-	var userAddressesStore = new dojo.data.ItemFileReadStore({data: addressesData});
-
-	var userAddressesGridLayout = [[{
-            field: 'description',
-            name: nameColumn,
-            width: '20%'
-        },{
-            field: 'address',
-            name: addressColumn,
-            width: '70%',
-			get: addressCell,
-			formatter: addressCellFormatter
-        },{
-            field: 'addressId',
-            name: ' ',
-            width: '5%',
-			get: addressActionsCell,
-			formatter: addressActionsCellFormatter
-        }
-	]];
-
-	//Initializing addresses
-
-	function loadUserAddresses(userId) {
-		if(!userId && currentUser!=null) userId = currentUser.id;
-		UserAjax.loadUserAddresses(userId, loadUserAddressesCallback);
-	}
-
-	function loadUserAddressesCallback(addresses){
-		var addressesGrid = dijit.byId('userAddressesGrid');
-		addressesData.items = [];
-		addresses.forEach(function (newAddress) {
-			newAddress.address = newAddress.street1 + "<br/>" + newAddress.street2 + "<br/>" + newAddress.city + ", " +
-				newAddress.state + " " + newAddress.zip + "<br/>" + newAddress.country;
-			addressesData.items.push(newAddress);
-		});
-		if(addressesData.items.length == 0) {
-			var empty = { addressId: '0', description: 'None', address: '', street1: '', street2: '', city: '', state: '', zip: '', country: '', phone: '', fax: '', cell: '' };
-			addressesData.items.push(empty);
-		}
- 		var addressesStore = new dojo.data.ItemFileReadStore({data: addressesData });
-		addressesGrid.setStore(addressesStore);
-		addressesGrid.render();
-	}
-
-	function addressCellFormatter (item) {
-		if(!item || !item.street1)
-			return item;
-		var addressHTML = item.street1;
-		if(item.street2 && item.street2 != '')
-			 addressHTML += ' ' + item.street2;
-		if(item.city && item.city != '')
-			 addressHTML += ', ' + item.city;
-		if(item.state && item.state != '')
-			 addressHTML += ', ' + item.state;
-		if(item.zip && item.zip != '')
-			 addressHTML += ' ' + item.zip;
-		if(item.country && item.country != '')
-			 addressHTML += ' ' + item.country;
-		if(item.phone && item.phone != '')
-			 addressHTML += '<br/><b>' + phone + ':</b> ' + item.phone;
-		if(item.fax && item.fax != '')
-			 addressHTML += '<br/><b>' + fax + ':</b> ' + item.fax;
-		if(item.cell && item.cell != '')
-			 addressHTML += '<br/><b>' + cell + ':</b> ' + item.cell;
-
-		return addressHTML;
-	}
-
-	function addressCell(rowid, item) {
-		if(!item || !item.street1)
-			return item;
-		return item;
-	}
-
-
-	function addressActionsCellFormatter (item) {
-		if(!item || !item.addressId || item.addressId == '0')
-			return '';
-		var addressHTML =
-			'<span class="editIcon" onclick="editAddress(\'' + item.addressId + '\')"></span>\
-			 <span class="deleteIcon" onclick="deleteAddress(\'' + item.addressId + '\')"></span>';
-
-
-		return addressHTML;
-	}
-
-	function addressActionsCell(rowid, item) {
-		if(!item)
-			return item;
-		return item;
-	}
-
-	function addAddress () {
-		dijit.byId('addressForm').reset();
-		dojo.byId('addressId').value = '';
-		dijit.byId('addressDialog').show();
-	}
-
-	function editAddress (addressId) {
-		dijit.byId('addressForm').reset();
-		dojo.byId('addressId').value = addressId;
-
-		var selectedAddress;
-		for (var i = 0; i < addressesData.items.length; i++){
-			if(addressesData.items[i].addressId == addressId) {
-				selectedAddress = addressesData.items[i];
-				break;
-			}
-		};
-
-		dijit.byId('addressDescription').attr('value', selectedAddress.description);
-		dijit.byId('addressStreet1').attr('value', selectedAddress.street1);
-		dijit.byId('addressStreet2').attr('value', selectedAddress.street2);
-		dijit.byId('addressCity').attr('value', selectedAddress.city);
-		dijit.byId('addressState').attr('value', selectedAddress.state);
-		dijit.byId('addressZip').attr('value', selectedAddress.zip);
-		dijit.byId('addressCountry').attr('value', selectedAddress.country);
-		dijit.byId('addressPhone').attr('value', selectedAddress.phone);
-		dijit.byId('addressFax').attr('value', selectedAddress.fax);
-		dijit.byId('addressCell').attr('value', selectedAddress.cell);
-
-		dijit.byId('addressDialog').show();
-	}
-
-	function saveAddress(){
-		if(currentUser == null)
-			return;
-		if(!dijit.byId('addressForm').validate())
-			return;
-		var id = dojo.byId('addressId').value;
-		var desc = dijit.byId('addressDescription').attr('value');
-		var street1 = dijit.byId('addressStreet1').attr('value');
-		var street2 = dijit.byId('addressStreet2').attr('value');
-		var city = dijit.byId('addressCity').attr('value');
-		var state = dijit.byId('addressState').attr('value');
-		var zip = dijit.byId('addressZip').attr('value');
-		var country = dijit.byId('addressCountry').attr('value');
-		var phone = dijit.byId('addressPhone').attr('value');
-		var fax = dijit.byId('addressFax').attr('value');
-		var cell = dijit.byId('addressCell').attr('value');
-
-		dwr.engine.setErrorHandler(errorHandler);
-
-		if(id== '')
-			UserAjax.addNewUserAddress(currentUser.id, desc, street1, street2, city, state, zip, country, phone, fax, cell, saveAddressCallback);
-		else
-			UserAjax.saveUserAddress(currentUser.id, id, desc, street1, street2, city, state, zip, country, phone, fax, cell, saveAddressCallback);
-	}
-
-	function errorHandler(message, exception) {
-		if (message == 'com.liferay.portal.AddressPhoneException')
-			alert(invalidAddresPhoneMsg);
-		else if (message == 'com.liferay.portal.AddressFaxException')
-			alert(invalidAddresFaxMsg);
-		else if (message == 'com.liferay.portal.AddressCellException')
-			alert(invalidAddresCellMsg);
-	}
-
-	function saveAddressCallback (newAddress) {
-		showDotCMSSystemMessage(addressSaved);
-		loadUserAddresses();
-		dijit.byId('addressDialog').hide();
-	}
-
-	function cancelSaveAddress () {
-		dijit.byId('addressDialog').hide();
-	}
-
-	function deleteAddress(addressId){
-		if(confirm(removeAddressConfirmation))
-			UserAjax.deleteAddress(currentUser.id, addressId, deleteAddressCallback);
-
-	}
-
-	function deleteAddressCallback(addressId) {
-		showDotCMSSystemMessage(addressDeleted);
-		loadUserAddresses();
-		dijit.byId('addressDialog').hide();
-	}
 
 	//User additional info
 

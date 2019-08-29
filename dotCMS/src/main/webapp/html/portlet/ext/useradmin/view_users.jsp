@@ -152,14 +152,39 @@
 .userInfoBox table tr{
  height:60px;
 }
+.gravitarThingy{
+    display: flex; 
+   position:absolute;
+   top:0px;
+   right:0px;
+   border-radius: 50%;
+   background-size: cover;
+   width:50px;
+   height:50px;
+   font-size: 24px;
+   text-align:center;
+   color:white;
+   font-weight: bold;
+}
 </style>
-			<div id="userProfileTabs" class="view-users__profile-tabs">
+
+			<div id="userProfileTabs" class="view-users__profile-tabs" >
 				<!-- START User Tabs -->
 				<div dojoType="dijit.layout.TabContainer" id="userTabsContainer" class="view-users__profile-tabs-container">
 					<!-- START User Detail Tab -->
 					<div dojoType="dijit.layout.ContentPane" id="userDetailsTab" title="<%= LanguageUtil.get(pageContext, "User-Details") %>">
-
-						<h3 id="fullUserName" class="fullUserName"></h3>
+                        <div style="position:relative;border:0px solid green;height:60px;width:85%">
+                        
+                                <div style="position:absolute;width:400px;top:0px;left:0px;"><h3 id="fullUserName" class="fullUserName"></h3></div>
+                                
+                                <div class="gravitarThingy" style="background-color:<%=APILocator.getCompanyAPI().getDefaultCompany().getStreet() %>;">
+                                <p id="gravatarText" style="margin:auto;"></p> 
+                                
+                                </div>
+                                <div id="gravatarImage" class="gravitarThingy" style="z-index:100"></div>
+                                 
+                         </div>
+                            
 
                         <div>
                             
