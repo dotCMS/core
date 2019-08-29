@@ -73,7 +73,6 @@ public class PublisherTest extends IntegrationTestBase {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
-        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
 
         when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
                 .thenReturn(new MultiMessageResources( MultiMessageResourcesFactory.createFactory(),""));
