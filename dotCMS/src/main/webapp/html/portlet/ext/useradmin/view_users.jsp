@@ -144,7 +144,7 @@
 
 .userInfoBox {
     float: left;
-    min-width: 400px;
+    min-width: 450px;
     margin: 10px;
     width:40%;
 }   
