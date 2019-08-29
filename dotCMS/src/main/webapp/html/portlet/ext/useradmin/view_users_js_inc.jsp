@@ -240,6 +240,9 @@
 			return;
 		dojo.byId('userProfileTabs').style.display = 'none';
 		dojo.byId('loadingUserProfile').style.display = '';
+	    dojo.byId('gravatarTextHolder').display='none';
+	    dojo.byId('gravatarImage').display='none';
+	    dojo.byId('gravatarImage').style.backgroundImage ="url('/html/images/shim.gif')";
 		UserAjax.getUserById(userId, editUserCallback);
 	}
 
@@ -283,9 +286,25 @@
 			dojo.byId('userId').value = user.id;
 		}
 		
+		
 	    var myChar = (user.firstName && user.firstName.length>0) ? user.firstName.substring(0,1).toUpperCase() : "?";
-		dojo.byId('gravatarText').innerHTML=myChar;
-		dojo.byId('gravatarImage').style.backgroundImage ="url('https://www.gravatar.com/avatar/" +user.gravitar + "?d=blank')";
+	    dojo.byId('gravatarTextHolder').style.display='none';
+	    dojo.byId('gravatarImage').style.display='none';
+	    var img = new Image();
+	    img.src = 'https://www.gravatar.com/avatar/" +user.gravitar + "?d=blank';
+	    img.onload = function () {
+	        dojo.byId('gravatarImage').style.backgroundImage ="url('https://www.gravatar.com/avatar/" +user.gravitar + "?d=blank')";
+	        dojo.byId('gravatarText').innerHTML=myChar;
+	        dojo.byId('gravatarImage').style.display='';
+	        dojo.byId('gravatarTextHolder').style.display='';
+	        
+	    }
+	    
+	    
+
+	    
+
+		
 		dojo.byId('fullUserName').style.display = '';
 		dojo.byId('userAccessBox').style.display = '';
 		dojo.byId('userIdLabel').style.display = '';

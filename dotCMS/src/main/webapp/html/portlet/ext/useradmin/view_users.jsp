@@ -174,15 +174,11 @@
 					<!-- START User Detail Tab -->
 					<div dojoType="dijit.layout.ContentPane" id="userDetailsTab" title="<%= LanguageUtil.get(pageContext, "User-Details") %>">
                         <div style="position:relative;border:0px solid green;height:60px;width:85%">
-                        
                                 <div style="position:absolute;width:400px;top:0px;left:0px;"><h3 id="fullUserName" class="fullUserName"></h3></div>
-                                
-                                <div class="gravitarThingy" style="background-color:<%=APILocator.getCompanyAPI().getDefaultCompany().getStreet() %>;">
-                                <p id="gravatarText" style="margin:auto;"></p> 
-                                
+                                <div class="gravitarThingy" id="gravatarTextHolder" style="background-color:<%=APILocator.getCompanyAPI().getDefaultCompany().getStreet() %>;">
+                                    <p id="gravatarText" style="margin:auto;"></p> 
                                 </div>
                                 <div id="gravatarImage" class="gravitarThingy" style="z-index:100"></div>
-                                 
                          </div>
                             
 
@@ -300,8 +296,9 @@
 
                     <!-- START Additional Info Tab -->
                     <div dojoType="dijit.layout.ContentPane" id="userAdditionalInfoTab" title="<%= LanguageUtil.get(pageContext, "Additional-Info") %>" class="view-users__additional-info">
-
-                        <h3 id="fullUserName" class="fullUserName"></h3>
+                        <div style="position:relative;border:0px solid green;height:60px;width:85%">
+                            <h3 id="fullUserName" class="fullUserName"></h3>
+                        </div>
                         <div class="userInfoBox">
                             <form id="userAdditionalInfoForm" dojoType="dijit.form.Form">
                             <table class="listingTable" style="border:1px solid #eeeeee">
