@@ -144,8 +144,9 @@
 
 .userInfoBox {
     float: left;
-    width: 600px;
+    min-width: 400px;
     margin: 10px;
+    width:40%;
 }   
 
 .userInfoBox table tr{
@@ -165,7 +166,7 @@
                                 <div class="userInfoBox">
                                   <form id="userInfoForm" dojoType="dijit.form.Form">
                                   <input type="hidden" name="userPasswordChanged" value="false"/>
-                                   <div style="font-size:16pt;margin:10px;"><%= LanguageUtil.get(pageContext, "User-Details") %></div>
+                                   <div style="font-size:12pt;margin:10px;"><%= LanguageUtil.get(pageContext, "User-Details") %></div>
                                    <table class="listingTable" style="border:1px solid #eeeeee">
                                       <tr>
                                           <% if(authByEmail) { %>
@@ -217,17 +218,18 @@
                              </div>
                              
                             <div class="userInfoBox">
-                            <div style="font-size:16pt;margin:10px;"><%= LanguageUtil.get(pageContext, "user.detail.access") %></div>
+                            <div style="font-size:12pt;margin:10px;"><%= LanguageUtil.get(pageContext, "user.detail.access") %></div>
                             <table class="listingTable" style="border:1px solid #eeeeee" >
                                 <tr>
                                     <th style="width:30%;min-height:60px;"><%= LanguageUtil.get(pageContext, "Active") %>:</th>
                                     <td><input id="userActive" type="checkbox" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox" /></td>
                                 </tr>
-                            
+                                <%if(hasAdminRole){ %>
                                 <tr>
                                     <th style="width:30%;min-height:60px;">CMS Admin:</th>
                                     <td><input type="checkbox" id="adminRoleCheck" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox"></td>
                                 </tr>
+                                <%} %>
                                 <tr>
                                     <th><%= LanguageUtil.get(pageContext, "user.detail.frontend.user") %>:</th>
                                     <td><input type="checkbox" id="frontEndRoleCheck" onclick="changeUserAccess(this)" value="true" dojoType="dijit.form.CheckBox"></td>

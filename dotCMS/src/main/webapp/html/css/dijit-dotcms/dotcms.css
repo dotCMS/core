@@ -11275,11 +11275,10 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .fullUserName {
-  border-bottom: solid 1px #ECEDEE;
-  font-size: 18px;
-  font-weight: normal;
-  margin-bottom: 24px;
-  padding-bottom: 8px;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  padding-bottom: 0px;
 }
 
 .view-users .view-users__users-list .dojoxGridRow:nth-child(even) {
