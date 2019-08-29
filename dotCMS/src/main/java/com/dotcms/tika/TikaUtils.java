@@ -63,15 +63,28 @@ public class TikaUtils {
         if (osgiInitialized) {
 
             //Search for the TikaServiceBuilder service instance expose through OSGI
-            TikaServiceBuilder tikaServiceBuilder = OSGIUtil.getInstance()
-                    .getService(TikaServiceBuilder.class,
-                            OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA);
-            if (null == tikaServiceBuilder) {
+            TikaServiceBuilder tikaServiceBuilder = null;
+            try {
+                tikaServiceBuilder = OSGIUtil.getInstance()
+                        .getService(TikaServiceBuilder.class,
+                                OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA);
 
+                if (null == tikaServiceBuilder) {
+
+                    Logger.error(this.getClass(),
+                            String.format("OSGI Service [%s] not found for bundle [%s]",
+                                    TikaServiceBuilder.class,
+                                    OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA));
+                }
+            } catch (Exception e) {
                 Logger.error(this.getClass(),
-                        String.format("OSGI Service [%s] not found for bundle [%s]",
+                        String.format("Failure retrieving OSGI Service [%s] in bundle [%s]",
                                 TikaServiceBuilder.class,
-                                OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA));
+                                OSGIConstants.BUNDLE_NAME_DOTCMS_TIKA),
+                        e);
+            }
+
+            if (null == tikaServiceBuilder) {
                 osgiInitialized = false;
                 return;
             }

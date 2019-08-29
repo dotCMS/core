@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
@@ -48,6 +49,7 @@ public class WorkflowActionClassDataGen extends AbstractDataGen<WorkflowActionCl
         return workflowActionClass;
     }
 
+    @WrapInTransaction
     @Override
     public WorkflowActionClass persist(final WorkflowActionClass workflowActionClass) {
         try {
@@ -69,6 +71,7 @@ public class WorkflowActionClassDataGen extends AbstractDataGen<WorkflowActionCl
         return persist(next());
     }
 
+    @WrapInTransaction
     public static void remove(final WorkflowActionClass workflowActionClass) {
         try {
             APILocator.getWorkflowAPI()

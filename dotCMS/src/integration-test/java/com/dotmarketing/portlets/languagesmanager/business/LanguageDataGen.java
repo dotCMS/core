@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import com.dotcms.business.WrapInTransaction;
 import org.apache.commons.lang.RandomStringUtils;
 
 import com.dotcms.datagen.AbstractDataGen;
@@ -22,6 +23,7 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
     return lan;
   }
 
+  @WrapInTransaction
   @Override
   public Language persist(final Language language) {
     APILocator.getLanguageAPI().saveLanguage(language);
