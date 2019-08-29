@@ -363,18 +363,10 @@ public  class WebResource {
                     .getOrElse(false));
 
             if(!hasARequiredRole) {
-              if(builder.requiredRolesSet.contains(Role.DOTCMS_BACK_END_USER) ) {
-                  APILocator.getLoginServiceAPI().doLogout(builder.request, builder.response);
-                
-              }
-              
               throw new SecurityException(
                   String.format("User lacks one of the required role %s", builder.requiredRolesSet.toString()),
                   Response.Status.UNAUTHORIZED);
             }
-            
-
-            
         }
         
 
@@ -874,7 +866,7 @@ public  class WebResource {
             try {
                 return webResource.init(this);
             } catch (final Exception e) {
-                 Logger.warnAndDebug(WebResource.class,"initDataObject error : " + e.getMessage(),e);
+                 Logger.error(WebResource.class,"Error building an initDataObject",e);
                  throw e;
             }
         }
