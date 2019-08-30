@@ -25,6 +25,15 @@ before_install:
   - chmod +x travis/submit.sh
   - chmod +x travis/integration.sh
   - chmod +x travis/unit.sh
+# Commit message format
+# [travis]
+# [travis unit]
+# [travis postgres]
+# [travis mysql]
+# [travis oracle]
+# [travis mssql]
+# [travis mysql] [travis mssql]
+# [travis oracle] [travis mssql] [travis postgres]
 
 # https://docs.travis-ci.com/user/conditions-v1
 # https://docs.travis-ci.com/user/conditional-builds-stages-jobs/
