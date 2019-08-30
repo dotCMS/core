@@ -1,3 +1,31 @@
+<dot-edit-toolbar>
+    <div class="main-toolbar-left">
+        <div class="content-type__title">
+            <header>
+                <h4>{{ contentType.name }}</h4>
+                <dot-api-link href="api/v1/contenttype/id/{{contentType.id}}"></dot-api-link>
+            </header>
+        </div>
+
+        <div class="content-type__info" >
+            {{ i18nMessages['contenttypes.content.variable'] }}:
+            <dot-copy-button [copy]="contentType.variable" [label]="contentType.variable"></dot-copy-button>
+            <span class="content-type__dot-separator">•</span>
+            {{ i18nMessages['contenttypes.form.identifier'] }}: {{ contentType.id }}
+        </div>
+    </div>
+    <div class="main-toolbar-right">
+        <button
+            type="button"
+            pButton
+            secondary
+            label="{{ i18nMessages['contenttypes.action.edit'] }}"
+            (click)="openEditDialog.next()"
+            icon="fa fa-edit"
+            id="form-edit-button">
+        </button>
+    </div>
+</dot-edit-toolbar>
 <p-tabView>
     <p-tabPanel class="content-type__properties" header="{{ i18nMessages['contenttypes.tab.fields.header'] }}">
         <div class="content-type__fields-layout" id="content-type-form-layout">
@@ -5,21 +33,27 @@
                 <ng-content></ng-content>
             </div>
             <div class="content-type__fields-sidebar">
+                <p-splitButton
+                    icon="pi pi-plus"
+                    label="{{ i18nMessages['contenttypes.dropzone.rows.add'] }}"
+                    (onClick)="fireAddRowEvent();"
+                    [model]="actions">
+                </p-splitButton>
                 <dot-content-types-fields-list></dot-content-types-fields-list>
             </div>
         </div>
     </p-tabPanel>
-    <p-tabPanel class="content-type__relationships" header="{{ i18nMessages['contenttypes.tab.relationship.header'] }}" *ngIf="contentTypeId" [cache]="false">
+    <p-tabPanel class="content-type__relationships" header="{{ i18nMessages['contenttypes.tab.relationship.header'] }}" *ngIf="contentType" [cache]="false">
         <ng-template pTemplate="content">
             <dot-iframe [src]="relationshipURL"></dot-iframe>
         </ng-template>
     </p-tabPanel>
-    <p-tabPanel class="content-type__permissions" header="{{ i18nMessages['contenttypes.tab.permissions.header'] }}" *ngIf="contentTypeId" [cache]="false">
+    <p-tabPanel class="content-type__permissions" header="{{ i18nMessages['contenttypes.tab.permissions.header'] }}" *ngIf="contentType" [cache]="false">
         <ng-template pTemplate="content">
             <dot-iframe [src]="permissionURL"></dot-iframe>
         </ng-template>
     </p-tabPanel>
-    <p-tabPanel class="content-type__push_history" header="{{ i18nMessages['contenttypes.tab.publisher.push.history.header'] }}" *ngIf="contentTypeId" [cache]="false">
+    <p-tabPanel class="content-type__push_history" header="{{ i18nMessages['contenttypes.tab.publisher.push.history.header'] }}" *ngIf="contentType" [cache]="false">
         <ng-template pTemplate="content">
             <dot-iframe [src]="pushHistoryURL"></dot-iframe>
         </ng-template>

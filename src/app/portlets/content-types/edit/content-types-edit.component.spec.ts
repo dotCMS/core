@@ -33,9 +33,7 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { MenuItem } from 'primeng/primeng';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotEditContentTypeCacheService } from '../fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
-import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { SiteServiceMock } from 'src/app/test/site-service.mock';
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import * as _ from 'lodash';
 import {
     dotcmsContentTypeFieldBasicMock,
@@ -47,14 +45,10 @@ import {
     template: ''
 })
 class TestContentTypeFieldsDropZoneComponent {
-    @Input()
-    layout: DotCMSContentTypeLayoutRow[];
-    @Input()
-    loading: boolean;
-    @Output()
-    saveFields = new EventEmitter<DotCMSContentTypeField[]>();
-    @Output()
-    removeFields = new EventEmitter<DotCMSContentTypeField[]>();
+    @Input() layout: DotCMSContentTypeLayoutRow[];
+    @Input() loading: boolean;
+    @Output() saveFields = new EventEmitter<DotCMSContentTypeField[]>();
+    @Output() removeFields = new EventEmitter<DotCMSContentTypeField[]>();
 
     cancelLastDragAndDrop(): void {}
 }
@@ -64,8 +58,8 @@ class TestContentTypeFieldsDropZoneComponent {
     template: '<ng-content></ng-content>'
 })
 class TestContentTypeLayoutComponent {
-    @Input()
-    contentTypeId: string;
+    @Input() contentType: DotCMSContentType;
+    @Output() openEditDialog: EventEmitter<any> = new EventEmitter();
 }
 
 @Component({
@@ -73,13 +67,10 @@ class TestContentTypeLayoutComponent {
     template: ''
 })
 class TestContentTypesFormComponent {
-    @Input()
-    data: any;
-    @Input()
-    layout: DotCMSContentTypeField[];
+    @Input() data: DotCMSContentType;
+    @Input() layout: DotCMSContentTypeField[];
     // tslint:disable-next-line:no-output-on-prefix
-    @Output()
-    onSubmit: EventEmitter<any> = new EventEmitter();
+    @Output() onSubmit: EventEmitter<any> = new EventEmitter();
 
     resetForm = jasmine.createSpy('resetForm');
 
@@ -91,12 +82,9 @@ class TestContentTypesFormComponent {
     template: ''
 })
 export class TestDotMenuComponent {
-    @Input()
-    icon: string;
-    @Input()
-    float: boolean;
-    @Input()
-    model: MenuItem[];
+    @Input() icon: string;
+    @Input() float: boolean;
+    @Input() model: MenuItem[];
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -113,7 +101,7 @@ const messageServiceMock = new MockDotMessageService({
     'contenttypes.dropzone.rows.tab_divider': 'Add tab'
 });
 
-const getConfig = (route) => {
+const getConfig = route => {
     return {
         declarations: [
             ContentTypesEditComponent,
@@ -132,9 +120,7 @@ const getConfig = (route) => {
             BrowserAnimationsModule,
             DotIconModule,
             DotIconButtonModule,
-            DotDialogModule,
-            DotApiLinkModule,
-            DotCopyButtonModule
+            DotDialogModule
         ],
         providers: [
             {
@@ -179,30 +165,32 @@ let dialog: DebugElement;
 
 describe('ContentTypesEditComponent', () => {
     describe('create mode', () => {
-        beforeEach(async(() => {
-            testHotKeysMock = new TestHotkeysMock();
-            const configCreateMode = getConfig({
-                contentType: {
-                    baseType: 'CONTENT'
-                }
-            });
+        beforeEach(
+            async(() => {
+                testHotKeysMock = new TestHotkeysMock();
+                const configCreateMode = getConfig({
+                    contentType: {
+                        baseType: 'CONTENT'
+                    }
+                });
 
-            DOTTestBed.configureTestingModule(configCreateMode);
+                DOTTestBed.configureTestingModule(configCreateMode);
 
-            fixture = DOTTestBed.createComponent(ContentTypesEditComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
+                fixture = DOTTestBed.createComponent(ContentTypesEditComponent);
+                comp = fixture.componentInstance;
+                de = fixture.debugElement;
 
-            crudService = de.injector.get(CrudService);
-            location = de.injector.get(Location);
-            dotRouterService = de.injector.get(DotRouterService);
-            dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
+                crudService = de.injector.get(CrudService);
+                location = de.injector.get(Location);
+                dotRouterService = de.injector.get(DotRouterService);
+                dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
 
-            fixture.detectChanges();
-            dialog = de.query(By.css('dot-dialog'));
+                fixture.detectChanges();
+                dialog = de.query(By.css('dot-dialog'));
 
-            spyOn(comp, 'onDialogHide').and.callThrough();
-        }));
+                spyOn(comp, 'onDialogHide').and.callThrough();
+            })
+        );
 
         it('should have dialog opened by default & has css base-type class', () => {
             expect(dialog).not.toBeNull();
@@ -435,47 +423,35 @@ describe('ContentTypesEditComponent', () => {
     });
 
     describe('edit mode', () => {
-        beforeEach(async(() => {
-            DOTTestBed.configureTestingModule(configEditMode);
+        beforeEach(
+            async(() => {
+                DOTTestBed.configureTestingModule(configEditMode);
 
-            fixture = DOTTestBed.createComponent(ContentTypesEditComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
+                fixture = DOTTestBed.createComponent(ContentTypesEditComponent);
+                comp = fixture.componentInstance;
+                de = fixture.debugElement;
 
-            crudService = fixture.debugElement.injector.get(CrudService);
-            location = fixture.debugElement.injector.get(Location);
-            dotRouterService = fixture.debugElement.injector.get(DotRouterService);
-            dotHttpErrorManagerService = fixture.debugElement.injector.get(
-                DotHttpErrorManagerService
-            );
+                crudService = fixture.debugElement.injector.get(CrudService);
+                location = fixture.debugElement.injector.get(Location);
+                dotRouterService = fixture.debugElement.injector.get(DotRouterService);
+                dotHttpErrorManagerService = fixture.debugElement.injector.get(
+                    DotHttpErrorManagerService
+                );
 
-            fixture.detectChanges();
+                fixture.detectChanges();
 
-            spyOn(comp, 'onDialogHide').and.callThrough();
-        }));
+                spyOn(comp, 'onDialogHide').and.callThrough();
+            })
+        );
 
         const clickEditButton = () => {
-            const editButton: DebugElement = fixture.debugElement.query(
-                By.css('#form-edit-button')
-            );
-            editButton.nativeNode.click();
+            const contentTypeLayout = de.query(By.css('dot-content-type-layout'));
+            contentTypeLayout.componentInstance.openEditDialog.next();
             fixture.detectChanges();
             dialog = de.query(By.css('dot-dialog'));
         };
 
-        it('should have api link component', () => {
-            expect(de.query(By.css('dot-api-link')).componentInstance.link).toBe(
-                '/api/v1/contenttype/id/1234567890'
-            );
-        });
-
-        it('should have copy variable button', () => {
-            expect(de.query(By.css('dot-copy-button')).componentInstance.copy).toBe(
-                'helloVariable'
-            );
-        });
-
-        it('should set data, fields and cache', () => {
+        it('should set data, fields and  cache', () => {
             expect(comp.data).toBe(fakeContentType);
             expect(comp.layout).toBe(fakeContentType.layout);
 
@@ -491,15 +467,6 @@ describe('ContentTypesEditComponent', () => {
         it('should have dot-content-type-fields-drop-zone', () => {
             const contentTypeForm = de.query(By.css('dot-content-type-fields-drop-zone'));
             expect(contentTypeForm === null).toBe(false);
-        });
-
-        it('should have edit button', () => {
-            const editButton: DebugElement = fixture.debugElement.query(
-                By.css('#form-edit-button')
-            );
-            expect(editButton.nativeElement.textContent).toBe('Edit');
-            expect(editButton.nativeElement.disabled).toBe(false);
-            expect(editButton).toBeTruthy();
         });
 
         it('should have edit content type title', () => {
@@ -649,7 +616,7 @@ describe('ContentTypesEditComponent', () => {
 
         it('should update fields on dropzone event when creating a new row and move a existing field', () => {
             const fieldsReturnByServer: DotCMSContentTypeField[] = currentFieldsInServer.map(
-                (field) => {
+                field => {
                     const newfield = Object.assign({}, field);
 
                     if (!newfield.id) {

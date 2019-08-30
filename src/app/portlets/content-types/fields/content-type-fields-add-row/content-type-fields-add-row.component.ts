@@ -33,20 +33,16 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     i18nMessages = {};
     actions: MenuItem[];
 
-    @Input()
-    columns: number[] = [1, 2, 3, 4];
-    @Input()
-    disabled = false;
+    @Input() columns: number[] = [1, 2, 3, 4];
+    @Input() disabled = false;
     @Input()
     toolTips: string[] = [
         'contenttypes.content.single_column',
         'contenttypes.content.many_columns',
         'contenttypes.content.add_column_title'
     ];
-    @Output()
-    selectColums: EventEmitter<number> = new EventEmitter<number>();
-    @ViewChild('colContainer')
-    colContainerElem: ElementRef;
+    @Output() selectColums: EventEmitter<number> = new EventEmitter<number>();
+    @ViewChild('colContainer') colContainerElem: ElementRef;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -146,13 +142,10 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      */
     setKeyboardEvent(key: string | string[], keyEvent): any {
         this.hotkeysService.add(
-            new Hotkey(
-                key,
-                (_event: KeyboardEvent): boolean => {
-                    keyEvent();
-                    return false;
-                }
-            )
+            new Hotkey(key, (_event: KeyboardEvent): boolean => {
+                keyEvent();
+                return false;
+            })
         );
     }
 
@@ -196,10 +189,13 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
             'contenttypes.dropzone.rows.tab_divider'
         ];
 
-        this.dotMessageService.getMessages(i18nKeys).pipe(take(1)).subscribe((res) => {
-            this.i18nMessages = res;
-            this.loadActions();
-        });
+        this.dotMessageService
+            .getMessages(i18nKeys)
+            .pipe(take(1))
+            .subscribe(res => {
+                this.i18nMessages = res;
+                this.loadActions();
+            });
     }
 
     private loadActions(): void {

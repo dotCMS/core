@@ -9,6 +9,49 @@ $top-height: ($toolbar-height + $tabview-nav-height);
         .ui-tabview-nav {
             position: relative;
             z-index: 1;
+            background-color: $gray-bg;
+        }
+
+        .content-type__fields-sidebar {
+            p-splitbutton {
+                border-bottom: solid 1px $gray-light;
+                height: 48px;
+
+                .ui-splitbutton {
+                    display: flex;
+                    height: 48px;
+                    border: 0;
+                    background: transparent;
+                    cursor: pointer;
+                    border-radius: 0;
+
+                    .ui-button.ui-button-icon-only span.pi-caret-down,
+                    span {
+                        color: $black;
+                        font-weight: normal;
+                    }
+
+                    span.ui-button-icon-left {
+                        color: $gray;
+                    }
+
+                    .ui-button-text-icon-left .ui-button-text {
+                        padding-left: 50px;
+                    }
+
+                    button {
+                        height: 48px;
+                    }
+                }
+            }
+
+            p-splitbutton:hover{
+                background-color: $gray-bg;
+
+                span.ui-button-icon-left {
+                    color: $black;
+                }
+            }
         }
     }
 
@@ -50,5 +93,44 @@ $top-height: ($toolbar-height + $tabview-nav-height);
 
     .content-type-fields-row {
         background-color: $white;
+    }
+
+    dot-api-link {
+        margin-left: $basic-padding * 2;
+    }
+
+    .content-type__title {
+        font-size: $font-size-large;
+        display: flex;
+        flex-flow: column wrap;
+
+        header {
+            display: flex;
+            align-items: center;
+        }
+
+        h4 {
+            margin: 0;
+            color: $black;
+            font-weight: normal;
+        }
+    }
+
+    .content-type__dot-separator {
+        font-size: $font-size-x-large;
+        margin: 0 4px;
+        vertical-align: middle;
+    }
+
+    .content-type__info {
+        align-items: center;
+        color: $gray;
+        display: flex;
+        font-size: $font-size-small;
+        margin-left: $basic-padding * 3;
+
+        dot-copy-button {
+            margin-left: $basic-padding / 4;
+        }
     }
 }

@@ -50,7 +50,6 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     dialogCloseable = false;
     data: DotCMSContentType;
     dialogActions: DotDialogActions;
-    editButtonLbl: string;
     layout: DotCMSContentTypeLayoutRow[];
     messagesKey: { [key: string]: string } = {};
     show: boolean;

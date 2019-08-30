@@ -75,6 +75,7 @@ import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
 import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
+import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-toolbar/dot-edit-toolbar.module';
 
 @NgModule({
     declarations: [
@@ -152,7 +153,8 @@ import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-
         TabViewModule,
         DotFieldHelperModule,
         DotMaxlengthModule,
-        DotWorkflowsActionsSelectorFieldModule
+        DotWorkflowsActionsSelectorFieldModule,
+        DotEditToolbarModule
     ],
     providers: [
         ContentTypeEditResolver,
