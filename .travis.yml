@@ -26,7 +26,7 @@ before_install:
   - chmod +x travis/integration.sh
   - chmod +x travis/unit.sh
 # Commit message format
-# [travis]
+# [travis] -> executes all dbs and unit tests
 # [travis unit]
 # [travis postgres]
 # [travis mysql]
