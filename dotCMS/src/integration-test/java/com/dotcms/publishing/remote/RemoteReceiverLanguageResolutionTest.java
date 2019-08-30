@@ -97,8 +97,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
                 .thenReturn(new MultiMessageResources( MultiMessageResourcesFactory.createFactory(),""));
 
-        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
-
         LicenseTestUtil.getLicense();
 
         contentletAPI = APILocator.getContentletAPI();

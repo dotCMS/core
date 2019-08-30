@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.tag.model.Tag;
@@ -47,6 +48,7 @@ public class TagDataGen extends AbstractDataGen<Tag> {
         return tag;
     }
 
+    @WrapInTransaction
     @Override
     public Tag persist(final Tag tag) {
 

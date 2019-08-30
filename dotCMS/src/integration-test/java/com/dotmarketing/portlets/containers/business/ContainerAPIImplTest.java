@@ -54,7 +54,6 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
     }
 
     

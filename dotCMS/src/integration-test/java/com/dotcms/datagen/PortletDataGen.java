@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UUIDGenerator;
@@ -64,6 +65,7 @@ public class PortletDataGen extends AbstractDataGen<Portlet> {
     return portlet;
   }
 
+  @WrapInTransaction
   @Override
   public Portlet persist(final Portlet portlet) {
     try {

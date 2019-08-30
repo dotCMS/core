@@ -2,6 +2,7 @@ package com.dotcms.datagen;
 
 import java.util.Date;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -120,6 +121,7 @@ public class LinkDataGen extends AbstractDataGen<Link> {
         return link;
     }
 
+    @WrapInTransaction
     @Override
     public Link persist(final Link link) {
         try {

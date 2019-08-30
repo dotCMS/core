@@ -74,7 +74,6 @@ public class FiltersTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
-        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
         Mockito.when(Config.CONTEXT.getRealPath(startsWith("/"))).thenAnswer(new Answer<String>() {
             @Override
             public String answer(InvocationOnMock invocation) throws Throwable {

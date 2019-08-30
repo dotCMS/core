@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -104,6 +105,7 @@ public class WorkflowActionDataGen extends AbstractDataGen<WorkflowAction> {
         return workflowAction;
     }
 
+    @WrapInTransaction
     @Override
     public WorkflowAction persist(final WorkflowAction workflowAction) {
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
@@ -129,6 +131,7 @@ public class WorkflowActionDataGen extends AbstractDataGen<WorkflowAction> {
         return persist(next());
     }
 
+    @WrapInTransaction
     public static void remove(final WorkflowAction workflowAction) {
         try {
             APILocator.getWorkflowAPI().deleteAction(workflowAction, APILocator.systemUser());

@@ -2,15 +2,6 @@ package com.dotcms.cluster.business;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.util.IntegrationTestInitService;
@@ -19,6 +10,13 @@ import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.util.FileUtil;
+import java.io.File;
+import java.io.FileFilter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class ServerAPIImplTest {
 
@@ -35,6 +33,9 @@ public class ServerAPIImplTest {
                 APILocator.getFileAssetAPI().getRealAssetsRootPath() + java.io.File.separator
                         + "server");
 
+        if (!servers.exists()) {
+            servers.mkdirs();
+        }
         FileUtil.listFilesRecursively(servers, new FileFilter() {
             @Override
             public boolean accept(File pathname) {

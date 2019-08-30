@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.beans.Host;
@@ -244,6 +245,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * instance
      * @return Contentlet instance created from existing one
      */
+    @WrapInTransaction
     public static Contentlet checkout(Contentlet contentletBase) {
         try {
             return APILocator.getContentletAPI().checkout(
@@ -253,6 +255,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         }
     }
 
+    @WrapInTransaction
     public static Contentlet checkin(Contentlet contentlet) {
         try{
             contentlet.setIndexPolicy(IndexPolicy.FORCE);
@@ -263,9 +266,11 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         }
     }
 
+    @WrapInTransaction
     public static Contentlet checkin(final Contentlet contentlet, final List<Category> categories) {
         try{
             contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
             contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             return contentletAPI.checkin(contentlet, user, false, categories);
         } catch (DotContentletStateException | IllegalArgumentException | DotDataException | DotSecurityException e) {
@@ -273,6 +278,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         }
     }
 
+    @WrapInTransaction
     public static Contentlet publish(Contentlet contentlet) {
         try {
             contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
@@ -290,6 +296,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * Archives a given {@link Contentlet} instance
      * @param contentlet to be archived
      */
+    @WrapInTransaction
     public static void archive(Contentlet contentlet) {
         try{
             contentletAPI.archive(contentlet, APILocator.systemUser(), false);
@@ -303,6 +310,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * Deletes a given {@link Contentlet} instance
      * @param contentlet to be deleted
      */
+    @WrapInTransaction
     public static void delete(Contentlet contentlet) {
         try{
             contentletAPI.delete(contentlet, APILocator.systemUser(), false);
@@ -315,6 +323,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * Archives and deletes a given {@link Contentlet} instance
      * @param contentlet to be removed
      */
+    @WrapInTransaction
     public static void remove(Contentlet contentlet) {
         try{
             APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, APILocator.systemUser());
@@ -329,6 +338,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         destroy(contentlet, true);
     }
 
+    @WrapInTransaction
     public static void destroy(final Contentlet contentlet, final Boolean failSilently) {
 
         if (null != contentlet) {
