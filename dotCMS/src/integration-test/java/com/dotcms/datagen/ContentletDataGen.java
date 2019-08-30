@@ -326,9 +326,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     @WrapInTransaction
     public static void remove(Contentlet contentlet) {
         try{
-            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, APILocator.systemUser());
-            archive(contentlet);
-            delete(contentlet);
+            destroy(contentlet, true);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

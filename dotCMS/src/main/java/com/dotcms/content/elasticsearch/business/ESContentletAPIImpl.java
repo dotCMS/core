@@ -1715,6 +1715,63 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return destroyContentlets(contentlets, user, respectFrontendRoles);
     }
 
+    private void forceUnpublishArchive (final Contentlet contentlet, final User user)
+            throws DotSecurityException, DotDataException {
+
+        // Force unpublishing and archiving the contentlet
+        try{
+            if (contentlet.isLive()) {
+                unpublish(contentlet, user, 0);
+            }
+            if (!contentlet.isArchived()) {
+                archive(contentlet, user, false, true);
+            }
+        }
+        // make destroy more robust if we cannot find ContentletVersionInfo
+        // keep going
+        catch(DotStateException e){
+            Logger.debug(this, e.getMessage());
+        }
+    }
+
+    private void deleteRelationships(final Contentlet contentlet, final User user, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+
+        final List<Relationship> relationships =
+                FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
+        // Remove related contents
+        for (Relationship relationship : relationships) {
+            deleteRelatedContent(contentlet, relationship, user, respectFrontendRoles);
+        }
+    }
+
+    private void deleteMultitrees(final Contentlet contentlet, final User user) throws DotDataException, DotSecurityException {
+
+        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTreesByChild(contentlet.getIdentifier());
+
+        for (final MultiTree multiTree : multiTrees) {
+
+            final Identifier pageIdentifier = APILocator.getIdentifierAPI().find(multiTree.getHtmlPage());
+            if (pageIdentifier != null && UtilMethods.isSet(pageIdentifier.getInode())) {
+
+                try {
+
+                    final IHTMLPage page = loadPageByIdentifier(pageIdentifier.getId(),
+                            false, contentlet.getLanguageId(), user, false);
+                    if (page != null && UtilMethods.isSet(page.getIdentifier())) {
+
+                        new PageLoader().invalidate(page);
+                    }
+                } catch(DotStateException dcse) {
+
+                    Logger.warn(this.getClass(), "Page with id:" +pageIdentifier.getId() +" does not exist" );
+                }
+            }
+
+            APILocator.getMultiTreeAPI().deleteMultiTree(multiTree);
+        }
+    }
+
     /**
      * Completely destroys the given list of {@link Contentlet} objects
      * (versions, relationships, associated contents, binary files) in all of
@@ -1735,124 +1792,66 @@ public class ESContentletAPIImpl implements ContentletAPI {
      *             The specified user does not have the required permissions to
      *             perform this action.
      */
-    private boolean destroyContentlets(List<Contentlet> contentlets, User user, boolean respectFrontendRoles)
+    private boolean destroyContentlets(final List<Contentlet> contentlets, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
+
         boolean noErrors = true;
-        List<Contentlet> contentletsVersion = new ArrayList<Contentlet>();
+        final List<Contentlet> contentletsVersion = new ArrayList<>();
         // Log contentlet identifiers that we are going to destroy
-        HashSet<String> l = new HashSet<String>();
-        for (Contentlet contentlet : contentlets) {
+        AdminLogger.log(this.getClass(), "destroy",
+                "User trying to destroy the following contents: " +
+                        contentlets.stream().map(Contentlet::getIdentifier).collect(Collectors.toSet()), user);
+        final Iterator<Contentlet> contentletIterator = contentlets.iterator();
+        while (contentletIterator.hasNext()) {
 
-            l.add(contentlet.getIdentifier());
-        }
-        AdminLogger.log(this.getClass(), "destroy", "User trying to destroy the following contents: " + l.toString(), user);
-        Iterator<Contentlet> itr = contentlets.iterator();
-        while (itr.hasNext()) {
-            Contentlet con = itr.next();
-            con.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
+            final Contentlet contentlet = contentletIterator.next();
+            contentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
 
-            // Force unpublishing and archiving the contentlet
-            try{
-                if (con.isLive()) {
-                    unpublish(con, user, 0);
-                }
-                if (!con.isArchived()) {
-                    archive(con, user, false, true);
-                }
-            }
-            // make destroy more robust if we cannot find ContentletVersionInfo
-            // keep going
-            catch(DotStateException e){
-                Logger.debug(this, e.getMessage());
-            }
+            this.forceUnpublishArchive(contentlet, user);
+            APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
+
             // Remove Rules with this contentlet as Parent.
             try {
-                APILocator.getRulesAPI().deleteRulesByParent(con, user, respectFrontendRoles);
+                APILocator.getRulesAPI().deleteRulesByParent(contentlet, user, respectFrontendRoles);
             } catch (InvalidLicenseException ilexp) {
                 Logger.warn(this, "An enterprise license is required to delete rules under pages.");
             }
             // Remove category associations
-            categoryAPI.removeChildren(con, APILocator.getUserAPI().getSystemUser(), true);
-            categoryAPI.removeParents(con, APILocator.getUserAPI().getSystemUser(), true);
-            List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(con.getStructure());
-            // Remove related contents
-            for (Relationship relationship : rels) {
-                deleteRelatedContent(con, relationship, user, respectFrontendRoles);
-            }
-            contentletsVersion.addAll(findAllVersions(APILocator.getIdentifierAPI().find(con.getIdentifier()), user,
+            categoryAPI.removeChildren(contentlet, APILocator.getUserAPI().getSystemUser(), true);
+            categoryAPI.removeParents(contentlet, APILocator.getUserAPI().getSystemUser(), true);
+
+            this.deleteRelationships(contentlet, user, respectFrontendRoles);
+
+            contentletsVersion.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentlet.getIdentifier()), user,
                     respectFrontendRoles));
-            contentletsVersion.forEach(contentletLanguage -> contentletLanguage.setIndexPolicy(con.getIndexPolicy()));
+            contentletsVersion.forEach(contentletLanguage -> contentletLanguage.setIndexPolicy(contentlet.getIndexPolicy()));
             // Remove page contents (if the content is a Content Page)
-            List<MultiTree> mts = APILocator.getMultiTreeAPI().getMultiTreesByChild(con.getIdentifier());
-
-            for (MultiTree mt : mts) {
-                Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
-                if (pageIdent != null && UtilMethods.isSet(pageIdent.getInode())) {
-                    try {
-                    IHTMLPage page = loadPageByIdentifier(pageIdent.getId(), false, con.getLanguageId(), user, false);
-                    if (page != null && UtilMethods.isSet(page.getIdentifier()))
-                        new PageLoader().invalidate(page);
-                    }
-                    catch(DotStateException dcse) {
-                        Logger.warn(this.getClass(), "Page with id:" +pageIdent.getId() +" does not exist" );
-                    }
-                }
-                APILocator.getMultiTreeAPI().deleteMultiTree(mt);
-            }
-            logContentletActivity(con, "Content Destroyed", user);
+            this.deleteMultitrees(contentlet, user);
+            logContentletActivity(contentlet, "Content Destroyed", user);
         }
-        if (contentlets.size() > 0) {
-            XStream _xstream = new XStream(new DomDriver());
-            File backupFolder = new File(backupPath);
-            if (!backupFolder.exists()) {
-                backupFolder.mkdirs();
-            }
-            for (Contentlet cont : contentlets) {
-                Structure st = cont.getStructure();
-                List<Field> fields = st.getFields();
-                List<File> filelist = new ArrayList<File>();
 
-                File file = null;
-                for (Field field : fields) {
-                    if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
-                        try {
-                            file = getBinaryFile(cont.getInode(), field.getVelocityVarName(), user);
-                        } catch (Exception ex) {
-                            Logger.debug(this, ex.getMessage(), ex);
-                        }
-                        if (file != null) {
-                            filelist.add(file);
+        this.backupDestroyedContentlets(contentlets, user);
 
-                        }
-                    }
-                }
-                
-               File papa =  new File(backupPath + File.separator
-                    + cont.getIdentifier());
-               papa.mkdirs();
-                  File _writingwbin = new File(papa,  cont.getIdentifier().toString()  + ".xml");
-
-                  try (BufferedOutputStream _bout = new BufferedOutputStream(Files.newOutputStream(_writingwbin.toPath()))) {
-                    _xstream.toXML(cont, _bout);
-                    for(File f : filelist){
-                      File child = new File(papa, f.getName());
-                      FileUtil.move(f,child );
-                    }
-                  } catch (IOException e) {
-                      Logger.error(this,
-                              "Error processing the file for contentlet with Identifier: " + cont.getIdentifier(), e);
-                  }
-            }
-        }
         // Delete all the versions of the contentlets to delete
         contentFactory.delete(contentletsVersion);
         // Remove the contentlets from the Elastic index and cache
-        for (Contentlet contentlet : contentletsVersion) {
+        for (final Contentlet contentlet : contentletsVersion) {
+
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
         }
-        deleteBinaryFiles(contentletsVersion, null);
-        for (Contentlet contentlet : contentlets) {
+
+        this.deleteBinaryFiles(contentletsVersion, null);
+        this.deleteElementFromPublishQueueTable(contentlets);
+
+        return noErrors;
+    }
+
+    private void deleteElementFromPublishQueueTable(final List<Contentlet> contentlets) {
+
+        for (final Contentlet contentlet : contentlets) {
+
             try {
+
                 PublisherAPI.getInstance().deleteElementFromPublishQueueTable(contentlet.getIdentifier());
             } catch (DotPublisherException e) {
                 Logger.error(getClass(),
@@ -1862,8 +1861,65 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         e);
             }
         }
-        return noErrors;
     }
+
+    private void backupDestroyedContentlets(final List<Contentlet> contentlets, final User user) {
+
+        if (contentlets.size() > 0) {
+
+            final XStream xstream = new XStream(new DomDriver());
+            final File backupFolder = new File(backupPath);
+            if (!backupFolder.exists()) {
+
+                backupFolder.mkdirs();
+            }
+
+            for (final Contentlet contentlet : contentlets) {
+
+                final Structure structure = contentlet.getStructure();
+                final List<Field> fields  = structure.getFields();
+                final List<File> filelist = new ArrayList<>();
+
+                File file = null;
+                for (final Field field : fields) {
+
+                    if (field.getFieldType().equals(FieldType.BINARY.toString())) {
+                        try {
+
+                            file = getBinaryFile(contentlet.getInode(), field.getVelocityVarName(), user);
+                        } catch (Exception ex) {
+                            Logger.debug(this, ex.getMessage(), ex);
+                        }
+
+                        if (file != null) {
+
+                            filelist.add(file);
+                        }
+                    }
+                }
+
+               final File filePath =  new File(backupPath + File.separator
+                    + contentlet.getIdentifier());
+               filePath.mkdirs();
+
+               final File _writingwbin = new File(filePath,  contentlet.getIdentifier().toString()  + ".xml");
+
+               try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream
+                      (Files.newOutputStream(_writingwbin.toPath()))) {
+
+                   xstream.toXML(contentlet, bufferedOutputStream);
+                   for(final File fileChild : filelist) {
+
+                       final File child = new File(filePath, fileChild.getName());
+                       FileUtil.move(fileChild,child );
+                   }
+               } catch (IOException e) {
+                   Logger.error(this,
+                          "Error processing the file for contentlet with Identifier: " + contentlet.getIdentifier(), e);
+               }
+            }
+        }
+    } // backupDestroyedContentlets.
 
     /**
      * Deletes the specified list of {@link Contentlet} objects ONLY in the

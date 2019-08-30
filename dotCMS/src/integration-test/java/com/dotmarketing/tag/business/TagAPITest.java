@@ -360,8 +360,9 @@ public class TagAPITest extends IntegrationTestBase {
 		TagInode tInode2 = tagAPI.getTagInode(tag2.getTagId(), tagInode2.getInode(),WIKI_TAG_VARNAME);
 		assertTrue(UtilMethods.isSet(tInode2.getInode()) && tInode2.getInode().equals(tagInode2.getInode()) && tInode2.getTagId().equals(tag2.getTagId()));
 
-		conAPI.archive(contentAsset,testUser,false);
-		conAPI.delete(contentAsset,testUser,false	);
+		/*conAPI.archive(contentAsset,testUser,false);
+		conAPI.delete(contentAsset,testUser,false	);*/
+		conAPI.destroy(contentAsset, testUser, false);
 	}
 
 	/**
@@ -401,8 +402,9 @@ public class TagAPITest extends IntegrationTestBase {
 		}
 		assertTrue(existTagInode);
 
-		conAPI.archive(contentAsset,testUser,false);
-		conAPI.delete(contentAsset,testUser,false	);
+		/*conAPI.archive(contentAsset,testUser,false);
+		conAPI.delete(contentAsset,testUser,false	);*/
+		conAPI.destroy(contentAsset, testUser, false);
 	}
 
 	/**
@@ -442,8 +444,9 @@ public class TagAPITest extends IntegrationTestBase {
 		assertTrue(existTagInode);
 
 
-		conAPI.archive(contentAsset,testUser,false);
-		conAPI.delete(contentAsset,testUser,false	);
+		/*conAPI.archive(contentAsset,testUser,false);
+		conAPI.delete(contentAsset,testUser,false	);*/
+		conAPI.destroy(contentAsset, testUser, false);
 	}
 
 	/**
@@ -481,8 +484,9 @@ public class TagAPITest extends IntegrationTestBase {
 		assertTrue(tagInode.getInode().equals(tagInode2.getInode()));
 
 
-		conAPI.archive(contentAsset,testUser,false);
-		conAPI.delete(contentAsset,testUser,false	);
+		/*conAPI.archive(contentAsset,testUser,false);
+		conAPI.delete(contentAsset,testUser,false	);*/
+		conAPI.destroy(contentAsset, testUser, false);
 	}
 
 	/**
@@ -539,8 +543,9 @@ public class TagAPITest extends IntegrationTestBase {
 		assertNotNull(tag3);
 
 
-		conAPI.archive(contentAsset,testUser,false);
-		conAPI.delete(contentAsset,testUser,false	);
+		/*conAPI.archive(contentAsset,testUser,false);
+		conAPI.delete(contentAsset,testUser,false	);*/
+		conAPI.destroy(contentAsset, testUser, false);
 	}
 
 	/**
@@ -579,8 +584,9 @@ public class TagAPITest extends IntegrationTestBase {
 		assertNull(tag);
 
 
-		conAPI.archive(contentAsset,testUser,false);
-		conAPI.delete(contentAsset,testUser,false	);
+		/*conAPI.archive(contentAsset,testUser,false);
+		conAPI.delete(contentAsset,testUser,false	);*/
+		conAPI.destroy(contentAsset, testUser, false);
 	}
 
 	/**
@@ -734,8 +740,9 @@ public class TagAPITest extends IntegrationTestBase {
 		assertTrue(tags.contains(tag2));
 
 
-		conAPI.archive(contentAsset,testUser,false);
-		conAPI.delete(contentAsset,testUser,false	);
+		/*conAPI.archive(contentAsset,testUser,false);
+		conAPI.delete(contentAsset,testUser,false	);*/
+		conAPI.destroy(contentAsset, testUser, false);
 	}
 
 	/**
@@ -814,8 +821,9 @@ public class TagAPITest extends IntegrationTestBase {
 		assertTrue(tag.getTagName().equals(othertags));
 
 
-		conAPI.archive(persona,testUser,false);
-		conAPI.delete(persona,testUser,false	);
+		/*conAPI.archive(persona,testUser,false);
+		conAPI.delete(persona,testUser,false	);*/
+		conAPI.destroy(persona, testUser, false);
 	}
 
 	/**
@@ -929,8 +937,9 @@ public class TagAPITest extends IntegrationTestBase {
 		assertEquals( cachedTags, foundTags );
 
 
-		conAPI.archive(contentAsset,testUser,false);
-		conAPI.delete(contentAsset,testUser,false	);
+		/*conAPI.archive(contentAsset,testUser,false);
+		conAPI.delete(contentAsset,testUser,false	);*/
+		conAPI.destroy(contentAsset, testUser, false);
 	}
 
 	private Tag saveTag (final String tagName) throws DotDataException {

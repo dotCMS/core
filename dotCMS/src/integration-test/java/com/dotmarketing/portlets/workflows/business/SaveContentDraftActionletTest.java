@@ -109,14 +109,16 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
 
             if (null != SaveContentDraftActionletTest.contentlet) {
 
-                SaveContentDraftActionletTest.contentletAPI.archive(SaveContentDraftActionletTest.contentlet, APILocator.systemUser(), false);
-                SaveContentDraftActionletTest.contentletAPI.delete(SaveContentDraftActionletTest.contentlet, APILocator.systemUser(), false);
+                /*SaveContentDraftActionletTest.contentletAPI.archive(SaveContentDraftActionletTest.contentlet, APILocator.systemUser(), false);
+                SaveContentDraftActionletTest.contentletAPI.delete(SaveContentDraftActionletTest.contentlet, APILocator.systemUser(), false);*/
+                SaveContentDraftActionletTest.contentletAPI.destroy(SaveContentDraftActionletTest.contentlet, APILocator.systemUser(), false);
             }
 
             if (null != SaveContentDraftActionletTest.contentlet2) {
 
-                SaveContentDraftActionletTest.contentletAPI.archive(SaveContentDraftActionletTest.contentlet2, APILocator.systemUser(), false);
-                SaveContentDraftActionletTest.contentletAPI.delete(SaveContentDraftActionletTest.contentlet2, APILocator.systemUser(), false);
+                /*SaveContentDraftActionletTest.contentletAPI.archive(SaveContentDraftActionletTest.contentlet2, APILocator.systemUser(), false);
+                SaveContentDraftActionletTest.contentletAPI.delete(SaveContentDraftActionletTest.contentlet2, APILocator.systemUser(), false);*/
+                SaveContentDraftActionletTest.contentletAPI.destroy(SaveContentDraftActionletTest.contentlet2, APILocator.systemUser(), false);
             }
         } finally {
 

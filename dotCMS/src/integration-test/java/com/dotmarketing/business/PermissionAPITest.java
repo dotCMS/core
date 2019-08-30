@@ -583,8 +583,12 @@ public class PermissionAPITest extends IntegrationTestBase {
             assertTrue(permissionAPI.findParentPermissionable(cc).equals(folderA));
         }
         finally {
-            APILocator.getHostAPI().archive(hh, sysuser, false);
-            APILocator.getHostAPI().delete(hh, sysuser, false);
+            try {
+                APILocator.getHostAPI().archive(hh, sysuser, false);
+                APILocator.getHostAPI().delete(hh, sysuser, false);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -657,14 +661,21 @@ public class PermissionAPITest extends IntegrationTestBase {
             assertTrue(found2);
         }
         finally {
-            if(cont1!=null)
-                APILocator.getContentletAPI().archive(cont1, sysuser, false);
-                APILocator.getContentletAPI().delete(cont1, sysuser, false);
-            if (s != null) {
-            	APILocator.getStructureAPI().delete(s, sysuser);
+            try {
+
+                if (cont1 != null) {
+                /*APILocator.getContentletAPI().archive(cont1, sysuser, false);
+                APILocator.getContentletAPI().delete(cont1, sysuser, false);*/
+                    APILocator.getContentletAPI().destroy(cont1, sysuser, false);
+                }
+                if (s != null) {
+                    APILocator.getStructureAPI().delete(s, sysuser);
+                }
+                APILocator.getHostAPI().archive(hh, sysuser, false);
+                APILocator.getHostAPI().delete(hh, sysuser, false);
+            }catch (Exception e) {
+                e.printStackTrace();
             }
-            APILocator.getHostAPI().archive(hh, sysuser, false);
-            APILocator.getHostAPI().delete(hh, sysuser, false);
         }
     }
 
@@ -976,11 +987,15 @@ public class PermissionAPITest extends IntegrationTestBase {
 
 
         } finally {
-            roleAPI.delete(childRole);
-            roleAPI.delete(childSiblingRole);
-            roleAPI.delete(parentRole);
-            APILocator.getHostAPI().archive(testSite, systemUser, false);
-            APILocator.getHostAPI().delete(testSite, systemUser, false);
+            try {
+                roleAPI.delete(childRole);
+                roleAPI.delete(childSiblingRole);
+                roleAPI.delete(parentRole);
+                APILocator.getHostAPI().archive(testSite, systemUser, false);
+                APILocator.getHostAPI().delete(testSite, systemUser, false);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
     }

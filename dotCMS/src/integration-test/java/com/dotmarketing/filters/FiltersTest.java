@@ -249,24 +249,29 @@ public class FiltersTest {
             // cleanup
             try {
                 if (vanityUrl1 != null) {
-                    contentletAPI.archive(vanityUrl1, user, false);
-                    contentletAPI.delete(vanityUrl1, user, false);
+                    /*contentletAPI.archive(vanityUrl1, user, false);
+                    contentletAPI.delete(vanityUrl1, user, false);*/
+                    contentletAPI.destroy(vanityUrl1, user, false);
                 }
                 if (vanityUrl2 != null) {
-                    contentletAPI.archive(vanityUrl2, user, false);
-                    contentletAPI.delete(vanityUrl2, user, false);
+                    /*contentletAPI.archive(vanityUrl2, user, false);
+                    contentletAPI.delete(vanityUrl2, user, false);*/
+                    contentletAPI.destroy(vanityUrl2, user, false);
                 }
                 if (vanityUrl3 != null) {
-                    contentletAPI.archive(vanityUrl3, user, false);
-                    contentletAPI.delete(vanityUrl3, user, false);
+                    /*contentletAPI.archive(vanityUrl3, user, false);
+                    contentletAPI.delete(vanityUrl3, user, false);*/
+                    contentletAPI.destroy(vanityUrl3, user, false);
                 }
                 if (vanityUrl4 != null) {
-                    contentletAPI.archive(vanityUrl4, user, false);
-                    contentletAPI.delete(vanityUrl4, user, false);
+                    /*contentletAPI.archive(vanityUrl4, user, false);
+                    contentletAPI.delete(vanityUrl4, user, false);*/
+                    contentletAPI.destroy(vanityUrl4, user, false);
                 }
                 if (vanityUrl5 != null) {
-                    contentletAPI.archive(vanityUrl5, user, false);
-                    contentletAPI.delete(vanityUrl5, user, false);
+                    /*contentletAPI.archive(vanityUrl5, user, false);
+                    contentletAPI.delete(vanityUrl5, user, false);*/
+                    contentletAPI.destroy(vanityUrl5, user, false);
                 }
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error cleaning up Vanity Url Links");
@@ -344,8 +349,9 @@ public class FiltersTest {
             try {
                 //Delete the test Vanity URL
                 if(vanityURLContentlet != null) {
-                    contentletAPI.archive(vanityURLContentlet, user, false);
-                    contentletAPI.delete(vanityURLContentlet, user, false);
+                    /*contentletAPI.archive(vanityURLContentlet, user, false);
+                    contentletAPI.delete(vanityURLContentlet, user, false);*/
+                    contentletAPI.destroy(vanityURLContentlet, user, false);
                 }
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error deleting Vanity URL");
@@ -430,8 +436,9 @@ public class FiltersTest {
             try {
                 //Delete the test Vanity URL
                 if(vanityURLContentlet != null) {
-                    contentletAPI.archive(vanityURLContentlet, user, false);
-                    contentletAPI.delete(vanityURLContentlet, user, false);
+                    /*contentletAPI.archive(vanityURLContentlet, user, false);
+                    contentletAPI.delete(vanityURLContentlet, user, false);*/
+                    contentletAPI.destroy(vanityURLContentlet, user, false);
                 }
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error deleting Vanity URL");

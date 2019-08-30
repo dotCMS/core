@@ -554,7 +554,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                 try {
                     contentTypeAPI.delete(contentType);
                 } catch (Exception e) {
-                    fail(e.getMessage());
+                    e.getMessage();
                 }
             }
         });

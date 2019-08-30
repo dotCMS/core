@@ -642,8 +642,9 @@ public class UserAPITest extends IntegrationTestBase {
 		assertEquals(replacementUser.getUserId(), hostVariable.getLastModifierId());
 
 		APILocator.getContentTypeAPI(systemUser).delete(new StructureTransformer(st).from());
-		conAPI.archive(contentAsset,systemUser,false);
-		conAPI.delete(contentAsset,systemUser,false);
+		/*conAPI.archive(contentAsset,systemUser,false);
+		conAPI.delete(contentAsset,systemUser,false);*/
+		conAPI.destroy(contentAsset, systemUser, false);
 	}
 
 	private void waitForDeleteCompletedNotification(User userToDelete) throws DotDataException, InterruptedException {

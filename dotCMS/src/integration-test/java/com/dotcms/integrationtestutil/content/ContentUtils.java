@@ -39,12 +39,16 @@ public class ContentUtils {
      */
     public static void deleteContentlets(final User user, final Contentlet... contentlets)
                     throws DotContentletStateException, DotDataException, DotSecurityException {
-        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         for (Contentlet contentlet : contentlets) {
             if (null != contentlet) {
-                contentletAPI.unpublish(contentlet, user, Boolean.FALSE);
-                contentletAPI.archive(contentlet, user, Boolean.FALSE);
-                contentletAPI.delete(contentlet, user, Boolean.FALSE);
+                //contentletAPI.unpublish(contentlet, user, Boolean.FALSE);
+                //contentletAPI.archive(contentlet, user, Boolean.FALSE);
+                //contentletAPI.delete(contentlet, user, Boolean.FALSE);
+                try {
+                    APILocator.getContentletAPI().destroy(contentlet, user, false );
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

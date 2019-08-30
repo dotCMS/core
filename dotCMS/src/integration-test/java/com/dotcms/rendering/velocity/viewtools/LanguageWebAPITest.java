@@ -145,20 +145,28 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 	public static void cleanUpData() throws Exception {
 		ContentletAPI contentletAPI = APILocator.getContentletAPI();
 		User user = APILocator.systemUser();
-		if(keyValueContentlet != null){
-			APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(keyValueContentlet, APILocator.systemUser());
+		try {
+			if (keyValueContentlet != null) {
+			/*APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(keyValueContentlet, APILocator.systemUser());
 			contentletAPI.archive(keyValueContentlet,user, false);
-			contentletAPI.delete(keyValueContentlet,user, false);
-		}
-		if(keyValueContentlet1 != null) {
-			APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(keyValueContentlet1, APILocator.systemUser());
+			contentletAPI.delete(keyValueContentlet,user, false);*/
+				contentletAPI.destroy(keyValueContentlet, user, false);
+			}
+			if (keyValueContentlet1 != null) {
+			/*APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(keyValueContentlet1, APILocator.systemUser());
 			contentletAPI.archive(keyValueContentlet1,user, false);
-			contentletAPI.delete(keyValueContentlet1,user, false);
-		}
-		if(keyValueContentlet2 != null){
-			APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(keyValueContentlet2, APILocator.systemUser());
+			contentletAPI.delete(keyValueContentlet1,user, false);*/
+				contentletAPI.destroy(keyValueContentlet1, user, false);
+			}
+			if (keyValueContentlet2 != null) {
+			/*APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(keyValueContentlet2, APILocator.systemUser());
 			contentletAPI.archive(keyValueContentlet2,user, false);
-			contentletAPI.delete(keyValueContentlet2,user, false);
+			contentletAPI.delete(keyValueContentlet2,user, false);*/
+
+				contentletAPI.destroy(keyValueContentlet2, user, false);
+			}
+		}catch (Exception e) {
+			e.printStackTrace();
 		}
 		APILocator.getLanguageAPI().deleteLanguage(spanishNoCountryLanguage);
 		APILocator.getLanguageAPI().deleteLanguage(spanishCostaRicaLanguage);

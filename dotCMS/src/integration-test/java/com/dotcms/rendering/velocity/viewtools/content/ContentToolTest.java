@@ -280,15 +280,17 @@ public class ContentToolTest extends IntegrationTestBase {
             assertEquals(childContentlet.getIdentifier(),result.get(0).getContentObject().getIdentifier());
 
         } finally {
+            try {
 
-            //clean up environment
-            if (parentContentType != null && parentContentType.id() != null) {
-                contentTypeAPI.delete(parentContentType);
-            }
+                //clean up environment
+                if (parentContentType != null && parentContentType.id() != null) {
+                    contentTypeAPI.delete(parentContentType);
+                }
 
-            if (childContentType != null && childContentType.id() != null) {
-                contentTypeAPI.delete(childContentType);
-            }
+                if (childContentType != null && childContentType.id() != null) {
+                    contentTypeAPI.delete(childContentType);
+                }
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 
@@ -399,13 +401,17 @@ public class ContentToolTest extends IntegrationTestBase {
 
         } finally {
 
-            //clean up environment
-            if (parentContentType != null && parentContentType.id() != null) {
-                contentTypeAPI.delete(parentContentType);
-            }
+            try {
+                //clean up environment
+                if (parentContentType != null && parentContentType.id() != null) {
+                    contentTypeAPI.delete(parentContentType);
+                }
 
-            if (childContentType != null && childContentType.id() != null) {
-                contentTypeAPI.delete(childContentType);
+                if (childContentType != null && childContentType.id() != null) {
+                    contentTypeAPI.delete(childContentType);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
