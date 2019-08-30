@@ -45,39 +45,21 @@ jobs:
     - stage: build image
       script: bash travis/submit.sh
     - stage: unit tests
-      if: |
-      commit_message !~ [travis postgres] \
-      AND commit_message !~ [travis mysql] \
-      AND commit_message !~ [travis oracle] \
-      AND commit_message !~ [travis mssql]
       script: bash travis/unit.sh
     - stage: integration tests
-      if: |
-      commit_message !~ [travis mysql] \
-      AND commit_message !~ [travis oracle] \
-      AND commit_message !~ [travis mssql]
       env: DB_TYPE=postgres
       name: postgres
       script: bash travis/integration.sh
     - script: bash travis/integration.sh
-      if: |
-      type != pull_request \
-      OR commit_message =~ [travis] \
-      OR commit_message =~ [travis mysql]
+      if: type != pull_request OR commit_message =~ travis
       env: DB_TYPE=mysql
       name: mysql
     - script: bash travis/integration.sh
-      if: |
-      type != pull_request \
-      OR commit_message =~ [travis] \
-      OR commit_message =~ [travis oracle]
+      if: type != pull_request OR commit_message =~ travis
       env: DB_TYPE=oracle
       name: oracle
     - script: bash travis/integration.sh
-      if: |
-      type != pull_request \
-      OR commit_message =~ [travis] \
-      OR commit_message =~ [travis mssql]
+      if: type != pull_request OR commit_message =~ travis
       env: DB_TYPE=mssql
       name: mssql
 
