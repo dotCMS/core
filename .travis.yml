@@ -33,11 +33,7 @@ if: >-
   OR branch = master
   OR branch =~ ^release-
   OR branch =~ ^test-
-  OR commit_message =~ \\[travis\\]
-  OR commit_message =~ \\[travis postgres\\]
-  OR commit_message =~ \\[travis mysql\\]
-  OR commit_message =~ \\[travis oracle\\]
-  OR commit_message =~ \\[travis mssql\\]
+  OR commit_message =~ [travis]
 
 # https://docs.travis-ci.com/user/build-stages
 jobs:
