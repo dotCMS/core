@@ -97,6 +97,8 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
                 .thenReturn(new MultiMessageResources( MultiMessageResourcesFactory.createFactory(),""));
 
+        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
+
         LicenseTestUtil.getLicense();
 
         contentletAPI = APILocator.getContentletAPI();
@@ -224,8 +226,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         } finally {
 
             for (final Contentlet contentlet : contentlets) {
-                contentletAPI.archive(contentlet, adminUser, false);
-                contentletAPI.delete(contentlet, adminUser, false);
+                contentletAPI.destroy(contentlet, adminUser, false);
             }
 
             for (final Language language : languages) {
@@ -263,9 +264,13 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
         final List<Contentlet> contentlets = new ArrayList<>();
         for (final Language dupeLanguage : savedDupeLanguages) {
-            final Contentlet contentlet = contentletDataGen.host(host).setProperty("title","lang is "+dupeLanguage.toString()).languageId(dupeLanguage.getId()).nextPersisted();
+            final Contentlet contentlet = contentletDataGen.host(host)
+                    .setProperty("title","lang is "+dupeLanguage.toString())
+                    .languageId(dupeLanguage.getId()).nextPersisted();
             assetIds.add(contentlet.getIdentifier());
             contentlets.add(contentlet);
+            Logger.info(RemoteReceiverLanguageResolutionTest.class,
+                    ()->"identifier to bundle: "+ contentlet.getIdentifier());
         }
 
         List<Contentlet> publishedContentlets = Collections.emptyList();
@@ -339,8 +344,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             // Remove contentlets pushed
             for (final Contentlet contentlet : publishedContentlets) {
-                contentletAPI.archive(contentlet, adminUser, false);
-                contentletAPI.delete(contentlet, adminUser, false);
+                contentletAPI.destroy(contentlet, adminUser, false);
             }
 
             //Cleanup pushed langs
@@ -357,6 +361,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             }
 
         }
+        System.out.println("lol forcing a change!");
 
     }
 
@@ -497,10 +502,10 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                             "en"
                                     + languagesSuffix)); //Should have been created with the original ids that they originally had.
             final boolean newLanguagesMatch = publishedContentlets.stream().
-              filter(contentlet -> savedLanguagesNowDeletedIds.contains(contentlet.getLanguageId())).allMatch(contentlet ->  {
+                    filter(contentlet -> savedLanguagesNowDeletedIds.contains(contentlet.getLanguageId())).allMatch(contentlet ->  {
                 final Language lang = languageAPI.getLanguage(contentlet.getLanguageId());
                 return expectedNewLangs.contains(lang.getLanguageCode());
-              } );
+            } );
 
             assertTrue("new Languages created are not a match.", newLanguagesMatch);
 
@@ -508,8 +513,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             // Remove contentlets pushed
             for (final Contentlet contentlet : publishedContentlets) {
-                contentletAPI.archive(contentlet, adminUser, false);
-                contentletAPI.delete(contentlet, adminUser, false);
+                contentletAPI.destroy(contentlet, adminUser, false);
             }
 
             for (final Language language : savedNewLanguages) {
