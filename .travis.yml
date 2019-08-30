@@ -33,7 +33,7 @@ if: >-
   OR branch = master
   OR branch =~ ^release-
   OR branch =~ ^test-
-  OR commit_message =~ /(\[travis\]|\[travis postgres\]|\[travis mysql\]|\[travis oracle\]|\[travis mssql\])/
+  OR commit_message =~ /(\[travis\]|\[travis postgres\]|\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/
 
 # https://docs.travis-ci.com/user/build-stages
 jobs:
@@ -41,13 +41,13 @@ jobs:
     - stage: build image
       script: bash travis/submit.sh
     - stage: unit tests
-      if: commit_message !~ /(\[travis postgres\]|\[travis mysql\]|\[travis oracle\]|\[travis mssql\])/
+      if: commit_message !~ /(\[travis postgres\]|\[travis mysql\]|\[travis oracle\]|\[travis mssql\])/ OR commit_message =~ /(\[travis\]|\[travis unit\])/
       script: bash travis/unit.sh
     - stage: integration tests
       name: init
     - script: bash travis/integration.sh
       if: >-
-        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\])/
+        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
       env: DB_TYPE=postgres
       name: postgres
     - script: bash travis/integration.sh
