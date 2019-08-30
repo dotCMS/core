@@ -26,6 +26,7 @@ import {
 import { DotCMSContentType } from 'dotcms-models';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
+import { ActivatedRoute } from '@angular/router';
 
 @Injectable()
 class MockDotContentTypeService {
@@ -91,6 +92,7 @@ describe('ContentTypesPortletComponent', () => {
     let fixture: ComponentFixture<ContentTypesPortletComponent>;
     let de: DebugElement;
     let crudService: CrudService;
+    let router: ActivatedRoute;
     let dotContentletService: DotContentTypeService;
     let pushPublishService: PushPublishService;
     let dotLicenseService: DotLicenseService;
@@ -107,7 +109,10 @@ describe('ContentTypesPortletComponent', () => {
             mod_date: 'Last Edit Date',
             'contenttypes.action.delete': 'Delete',
             'contenttypes.content.push_publish': 'Push Publish',
-            'contenttypes.content.add_to_bundle': 'Add to bundle'
+            'contenttypes.content.add_to_bundle': 'Add to bundle',
+            'contenttypes.content.form': 'Form',
+            'contenttypes.content.widget': 'Widget',
+            'contenttypes.content.content': 'Content'
         });
 
         DOTTestBed.configureTestingModule({
@@ -140,6 +145,7 @@ describe('ContentTypesPortletComponent', () => {
         fixture = DOTTestBed.createComponent(ContentTypesPortletComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
+        router = de.injector.get(ActivatedRoute);
         crudService = fixture.debugElement.injector.get(CrudService);
         dotContentletService = fixture.debugElement.injector.get(DotContentTypeService);
         pushPublishService = fixture.debugElement.injector.get(PushPublishService);
@@ -315,6 +321,7 @@ describe('ContentTypesPortletComponent', () => {
     });
 
     it('should emit changes in base types selector', () => {
+        fixture.detectChanges();
         baseTypesSelector = de.query(By.css('dot-base-type-selector')).componentInstance;
         spyOn(comp, 'changeBaseTypeSelector');
         baseTypesSelector.selected.emit('test');
@@ -379,6 +386,28 @@ describe('ContentTypesPortletComponent', () => {
             fixed: false,
             defaultType: true
         });
-         expect(shouldShow).toBeFalsy();
+        expect(shouldShow).toBeFalsy();
     });
+
+    describe('filterBy', () => {
+
+        beforeEach(() => {
+            router.data = observableOf({
+                filterBy: 'Form'
+            });
+            fixture.detectChanges();
+        });
+
+        it('should not display base types selector', () => {
+            const dotBaseTypeSelector = de.query(By.css('dot-base-type-selector'));
+            expect(dotBaseTypeSelector).toBeNull();
+        });
+
+        it('should set filterBy params', () => {
+            expect(comp.filterBy).toBe('Form');
+            expect(comp.listing.paginatorService.extraParams.get('type')).toBe('Form');
+            expect(comp.actionHeaderOptions.primary.model.length).toBe(1);
+        });
+    });
+
 });

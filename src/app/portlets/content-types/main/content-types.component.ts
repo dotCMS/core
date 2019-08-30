@@ -1,6 +1,6 @@
 import { forkJoin as observableForkJoin } from 'rxjs';
 
-import { map, take } from 'rxjs/operators';
+import { map, take, pluck } from 'rxjs/operators';
 import { ListingDataTableComponent } from '@components/listing-data-table/listing-data-table.component';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { CrudService } from '@services/crud';
@@ -33,9 +33,9 @@ import { DotContentTypeService } from '@services/dot-content-type/dot-content-ty
     templateUrl: 'content-types.component.html'
 })
 export class ContentTypesPortletComponent implements OnInit {
-
     @ViewChild('listing')
     listing: ListingDataTableComponent;
+    filterBy: string;
     public contentTypeColumns: DataTableColumn[];
     public item: any;
     public actionHeaderOptions: ActionHeaderOptions;
@@ -81,22 +81,23 @@ export class ContentTypesPortletComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-
         observableForkJoin(
             this.dotMessageService.getMessages(this.i18nKeys),
             this.dotContentTypeService.getAllContentTypes(),
             this.dotLicenseService.isEnterprise(),
-            this.pushPublishService
-                .getEnvironments()
-                .pipe(
-                    map((environments: DotEnvironment[]) => !!environments.length),
-                    take(1)
-                )
-        ).subscribe((res) => {
-            const baseTypes: StructureTypeView[] = res[1];
+            this.pushPublishService.getEnvironments().pipe(
+                map((environments: DotEnvironment[]) => !!environments.length),
+                take(1)
+            ),
+            this.route.data.pipe(
+                pluck('filterBy'),
+                take(1)
+            )
+        ).subscribe(([_messages, contentTypes, isEnterprise, environments, filterBy]) => {
+            const baseTypes: StructureTypeView[] = contentTypes;
             const rowActionsMap = {
-                pushPublish: res[2] && res[3],
-                addToBundle: res[2]
+                pushPublish: isEnterprise && environments,
+                addToBundle: isEnterprise
             };
 
             this.actionHeaderOptions = {
@@ -107,6 +108,9 @@ export class ContentTypesPortletComponent implements OnInit {
 
             this.contentTypeColumns = this.setContentTypeColumns();
             this.rowActions = this.createRowActions(rowActionsMap);
+            if (filterBy) {
+                this.setFilterByContentType(filterBy.toString());
+            }
         });
     }
 
@@ -123,13 +127,21 @@ export class ContentTypesPortletComponent implements OnInit {
         this.listing.loadFirstPage();
     }
 
+    private setFilterByContentType(contentType: string) {
+        this.filterBy = contentType;
+        this.listing.paginatorService.setExtraParams('type', this.filterBy);
+        this.actionHeaderOptions.primary.model = this.actionHeaderOptions.primary.model.filter(
+            (item: ButtonModel) => item.label === this.filterBy
+        );
+    }
+
     private getPublishActions(pushPublish: boolean, addToBundle: boolean): DotDataTableAction[] {
         const actions: DotDataTableAction[] = [];
         /*
             Only show Push Publish action if DotCMS instance have the appropriate license and there are
             push publish environments created.
         */
-       if (pushPublish) {
+        if (pushPublish) {
             actions.push({
                 menuItem: {
                     label: this.dotMessageService.get('contenttypes.content.push_publish'),
@@ -161,9 +173,8 @@ export class ContentTypesPortletComponent implements OnInit {
                 command: (item) => this.removeConfirmation(item),
                 icon: 'delete'
             },
-            shouldShow: (item) =>  !item.fixed && !item.defaultType
+            shouldShow: (item) => !item.fixed && !item.defaultType
         });
-
 
         /*
             If we have more than one action it means that we'll show the contextual menu and we don't want icons there
@@ -250,12 +261,19 @@ export class ContentTypesPortletComponent implements OnInit {
     }
 
     private removeContentType(item): void {
-        this.crudService.delete(`v1/contenttype/id`, item.id).pipe(take(1)).subscribe(
-            () => {
-                this.listing.loadCurrentPage();
-            },
-            (error) => this.httpErrorManagerService.handle(error).pipe(take(1)).subscribe()
-        );
+        this.crudService
+            .delete(`v1/contenttype/id`, item.id)
+            .pipe(take(1))
+            .subscribe(
+                () => {
+                    this.listing.loadCurrentPage();
+                },
+                (error) =>
+                    this.httpErrorManagerService
+                        .handle(error)
+                        .pipe(take(1))
+                        .subscribe()
+            );
     }
 
     private pushPublishContentType(item: any) {
