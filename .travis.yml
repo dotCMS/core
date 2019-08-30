@@ -47,7 +47,7 @@ jobs:
       name: init
     - script: bash travis/integration.sh
       if: >-
-        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
+        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
       env: DB_TYPE=postgres
       name: postgres
     - script: bash travis/integration.sh
