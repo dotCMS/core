@@ -41,9 +41,6 @@ public class ContentUtils {
                     throws DotContentletStateException, DotDataException, DotSecurityException {
         for (Contentlet contentlet : contentlets) {
             if (null != contentlet) {
-                //contentletAPI.unpublish(contentlet, user, Boolean.FALSE);
-                //contentletAPI.archive(contentlet, user, Boolean.FALSE);
-                //contentletAPI.delete(contentlet, user, Boolean.FALSE);
                 try {
                     APILocator.getContentletAPI().destroy(contentlet, user, false );
                 } catch (Exception e) {

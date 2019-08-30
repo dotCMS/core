@@ -161,8 +161,6 @@ public class ContentletAjaxTest {
 		result = (Map<String,Object>)results.get(3);
 		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
 		contentlet = APILocator.getContentletAPI().find(String.valueOf(result.get("inode")),systemUser,false);
-		/*APILocator.getContentletAPI().archive(contentlet,systemUser,false);
-		APILocator.getContentletAPI().delete(contentlet,systemUser,false);*/
 		APILocator.getContentletAPI().destroy(contentlet, systemUser, false);
 	}
 

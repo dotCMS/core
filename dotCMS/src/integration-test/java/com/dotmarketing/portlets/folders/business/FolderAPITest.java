@@ -236,13 +236,6 @@ public class FolderAPITest {//24 contentlets
 		Assert.assertEquals(3, pages.size());
 		Assert.assertTrue(pages.stream().anyMatch(page -> page.getName().equals(page0Name)));
 
-		/*contentletAPI.archive(contentAsset1,user,false);
-		contentletAPI.archive(contentAsset2,user,false);
-		contentletAPI.archive(contentAsset4,user,false);
-		contentletAPI.delete(contentAsset1,user,false);
-		contentletAPI.delete(contentAsset2,user,false);
-		contentletAPI.delete(contentAsset4,user,false);*/
-
 		contentletAPI.destroy(contentAsset1, user, false);
 		contentletAPI.destroy(contentAsset2, user, false);
 		contentletAPI.destroy(contentAsset4, user, false);
@@ -447,17 +440,6 @@ public class FolderAPITest {//24 contentlets
 
 		final List<MultiTree> mt= APILocator.getMultiTreeAPI().getMultiTrees(pages.get(0).getIdentifier());
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset2.getIdentifier()) );
-
-		/*contentletAPI.archive(contentAsset1,user,false);
-		contentletAPI.archive(contentAsset2,user,false);
-		contentletAPI.archive(contentAsset3,user,false);
-		contentletAPI.archive(contentAsset4,user,false);
-		contentletAPI.archive(contentAsset5,user,false);
-		contentletAPI.delete(contentAsset1,user,false);
-		contentletAPI.delete(contentAsset2,user,false);
-		contentletAPI.delete(contentAsset3,user,false);
-		contentletAPI.delete(contentAsset4,user,false);
-		contentletAPI.delete(contentAsset5,user,false);*/
 
 		contentletAPI.destroy(contentAsset1, user, false);
 		contentletAPI.destroy(contentAsset2, user, false);
@@ -734,43 +716,20 @@ public class FolderAPITest {//24 contentlets
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset8.getIdentifier()) );
 
 		for(Contentlet contentlet : folderAPI.getLiveContent(newftest1,user,false)){
-			/*contentletAPI.archive(contentlet,user,false);
-			contentletAPI.delete(contentlet,user,false);*/
+
 			contentletAPI.destroy(contentlet, user, false);
 		}
 
 		for(Contentlet contentlet : folderAPI.getLiveContent(newftest2,user,false)){
-			/*contentletAPI.archive(contentlet,user,false);
-			contentletAPI.delete(contentlet,user,false);*/
+
 			contentletAPI.destroy(contentlet, user, false);
 		}
 
 		for(Contentlet contentlet : folderAPI.getLiveContent(newftest3,user,false)){
-			/*contentletAPI.archive(contentlet,user,false);
-			contentletAPI.delete(contentlet,user,false);*/
+
 			contentletAPI.destroy(contentlet, user, false);
 		}
 
-		/*contentletAPI.archive(contentAsset1,user,false);
-		contentletAPI.archive(contentAsset2,user,false);
-		contentletAPI.archive(contentAsset3,user,false);
-		contentletAPI.archive(contentAsset4,user,false);
-		contentletAPI.archive(contentAsset5,user,false);
-		contentletAPI.archive(contentAsset6,user,false);
-		contentletAPI.archive(contentAsset7,user,false);
-		contentletAPI.archive(contentAsset8,user,false);
-		contentletAPI.archive(contentAsset1Copy,user,false);
-
-
-		contentletAPI.delete(contentAsset1,user,false);
-		contentletAPI.delete(contentAsset2,user,false);
-		contentletAPI.delete(contentAsset3,user,false);
-		contentletAPI.delete(contentAsset4,user,false);
-		contentletAPI.delete(contentAsset5,user,false);
-		contentletAPI.delete(contentAsset6,user,false);
-		contentletAPI.delete(contentAsset7,user,false);
-		contentletAPI.delete(contentAsset8,user,false);
-		contentletAPI.delete(contentAsset1Copy,user,false);*/
 
 		contentletAPI.destroy(contentAsset1, user, false);
 		contentletAPI.destroy(contentAsset2, user, false);
@@ -1116,8 +1075,7 @@ public class FolderAPITest {//24 contentlets
 		} finally {
 
 			if (contentAsset != null && contentAsset.getInode() != null) {
-				/*contentletAPI.archive(contentAsset, user, false);
-				contentletAPI.delete(contentAsset, user, false);*/
+
 				contentletAPI.destroy(contentAsset, user, false);
 			}
 

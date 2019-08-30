@@ -1364,8 +1364,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
         assertEquals( copyContentlet.getHost(), contentlet.getHost() );
 
-        /*contentletAPI.archive(copyContentlet, user, false);
-        contentletAPI.delete(copyContentlet, user, false);*/
         try {
             contentletAPI.destroy(copyContentlet, user, false);
         } catch (Exception e) {
@@ -1401,8 +1399,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
         assertEquals( copyContentlet.get("junitTestWysiwyg"), contentlet.get("junitTestWysiwyg") );
 
-        /*contentletAPI.archive(copyContentlet, user, false);
-        contentletAPI.delete(copyContentlet, user, false);*/
         contentletAPI.destroy(copyContentlet, user, false);
     }
 
@@ -1432,8 +1428,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
         assertEquals( copyContentlet.getHost(), contentlet.getHost() );
 
-        /*contentletAPI.archive( copyContentlet, user, false );
-        contentletAPI.delete( copyContentlet, user, false );*/
         try {
             contentletAPI.destroy(copyContentlet, user, false);
         }catch (Exception e) {
@@ -1469,8 +1463,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
         assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
 
-        /*contentletAPI.archive( copyContentlet, user, false );
-        contentletAPI.delete( copyContentlet, user, false );*/
         try {
             contentletAPI.destroy(copyContentlet, user, false);
         }catch (Exception e) {
@@ -1548,17 +1540,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         //FileAssetAPI.renameFile no longer renames the binary - so skipping assert
         //assertEquals("hello20.txt",copy2.getBinary(FileAssetAPI.BINARY_FIELD).getName());
         assertEquals("this is the content of the file", FileUtils.readFileToString(copy2.getBinary(FileAssetAPI.BINARY_FIELD)));
-
-        /*contentletAPI.archive(file,user,false);
-        contentletAPI.delete(file,user,false);
-        contentletAPI.archive(copy,user,false);
-        contentletAPI.delete(copy,user,false);
-        contentletAPI.archive(copy2,user,false);
-        contentletAPI.delete(copy2,user,false);
-        contentletAPI.archive(host1,user,false);
-        contentletAPI.delete(host1,user,false);
-        contentletAPI.archive(host2,user,false);
-        contentletAPI.delete(host2,user,false);*/
 
         try {
             contentletAPI.destroy(file, user, false);
@@ -4088,8 +4069,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             try {
                 //Delete Contentlet.
                 if (contentlet != null) {
-                    /*contentletAPI.archive(contentlet, user, false);
-                    contentletAPI.delete(contentlet, user, false);*/
+
                     contentletAPI.destroy(contentlet, user, false);
                 }
                 //Deleting Fields.
@@ -4390,18 +4370,15 @@ public class ContentletAPITest extends ContentletBaseTest {
                 }
                 // Delete Contentlet.
                 if (contentletA != null) {
-                    /*contentletAPI.archive(contentletA, user, false);
-                    contentletAPI.delete(contentletA, user, false);*/
+
                     contentletAPI.destroy(contentletA, user, false);
                 }
                 if (contentletB != null) {
-                    /*contentletAPI.archive(contentletB, user, false);
-                    contentletAPI.delete(contentletB, user, false);*/
+
                     contentletAPI.destroy(contentletA, user, false);
                 }
                 if (contentletC != null) {
-                    /*contentletAPI.archive(contentletC, user, false);
-                    contentletAPI.delete(contentletC, user, false);*/
+
                     contentletAPI.destroy(contentletA, user, false);
                 }
                 // Deleting Fields.

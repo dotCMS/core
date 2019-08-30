@@ -237,8 +237,7 @@ public class ContentletUtilTest extends IntegrationTestBase {
 
             //Delete Contentlet.
             if ( contentlet != null ){
-                /*contentletAPI.archive( contentlet, user, false );
-                contentletAPI.delete( contentlet, user, false );*/
+
                 contentletAPI.destroy(contentlet, user, false);
             }
 
@@ -298,8 +297,7 @@ public class ContentletUtilTest extends IntegrationTestBase {
             assertFalse(contentPrintableMap.containsKey("path"));
         } finally {
             if (UtilMethods.isSet(contentlet.getInode())) {
-                /*contentletAPI.archive(contentlet, user, false);
-                contentletAPI.delete(contentlet, user, false);*/
+
                 contentletAPI.destroy(contentlet, user, false);
             }
 

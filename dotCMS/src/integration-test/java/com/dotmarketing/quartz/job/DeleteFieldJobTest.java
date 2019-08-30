@@ -503,7 +503,6 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             }
             if (contentlet != null) {
                 try {
-                    //contentletAPI.delete(contentlet, systemUser, true);
                     contentletAPI.destroy(contentlet, systemUser, false);
                 } catch (Exception e1) {
                     // Do nothing

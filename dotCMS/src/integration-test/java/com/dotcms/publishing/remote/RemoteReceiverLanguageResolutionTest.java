@@ -226,8 +226,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         } finally {
 
             for (final Contentlet contentlet : contentlets) {
-                //contentletAPI.archive(contentlet, adminUser, false);
-                //contentletAPI.delete(contentlet, adminUser, false);
                 contentletAPI.destroy(contentlet, adminUser, false );
             }
 
@@ -306,8 +304,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             // Remove contentlets so they can be regenerated from the bundle
             for (final Contentlet contentlet : contentlets) {
                 contentlet.setIndexPolicy(IndexPolicy.FORCE);
-                //contentletAPI.archive(contentlet, adminUser, false);
-                //contentletAPI.delete(contentlet, adminUser, false);
                 contentletAPI.destroy(contentlet, adminUser, false );
             }
 
@@ -344,10 +340,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             try {
                 // Remove contentlets pushed
                 for (final Contentlet contentlet : publishedContentlets) {
-
-                /*APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, adminUser);
-                contentletAPI.archive(contentlet, adminUser, false);
-                contentletAPI.delete(contentlet, adminUser, false);*/
                     contentletAPI.destroy(contentlet, adminUser, false);
                 }
 
@@ -434,9 +426,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             // Remove contentlets so they can be regenerated from the bundle
             for (final Contentlet contentlet : contentlets) {
-                /*APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, adminUser);
-                contentletAPI.archive(contentlet, adminUser, false);
-                contentletAPI.delete(contentlet, adminUser, false);*/
+
                 contentletAPI.destroy(contentlet, adminUser, false );
             }
 
@@ -521,8 +511,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             try {
                 // Remove contentlets pushed
                 for (final Contentlet contentlet : publishedContentlets) {
-                    //contentletAPI.archive(contentlet, adminUser, false);
-                    //contentletAPI.delete(contentlet, adminUser, false);
                     contentletAPI.destroy(contentlet, adminUser, false );
                 }
 

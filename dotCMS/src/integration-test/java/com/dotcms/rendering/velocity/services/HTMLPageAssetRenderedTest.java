@@ -235,10 +235,6 @@ public class HTMLPageAssetRenderedTest {
             contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
             contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-
-            /*contentletAPI.unpublish(contentlet,systemUser,false);
-            contentletAPI.archive(contentlet,systemUser,false);
-            contentletAPI.delete(contentlet,systemUser,false);*/
             contentletAPI.destroy(contentlet, systemUser, false );
         }
 

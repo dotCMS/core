@@ -331,8 +331,7 @@ public class CategoryAPITest extends IntegrationTestBase {
         } finally{
             try {
                 if (UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getIdentifier())) {
-                /*contentletAPI.archive(contentlet, user, false);
-                contentletAPI.delete(contentlet, user, false);*/
+
                     contentletAPI.destroy(contentlet, user, false);
                 }
 

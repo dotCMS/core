@@ -664,8 +664,7 @@ public class PermissionAPITest extends IntegrationTestBase {
             try {
 
                 if (cont1 != null) {
-                /*APILocator.getContentletAPI().archive(cont1, sysuser, false);
-                APILocator.getContentletAPI().delete(cont1, sysuser, false);*/
+
                     APILocator.getContentletAPI().destroy(cont1, sysuser, false);
                 }
                 if (s != null) {

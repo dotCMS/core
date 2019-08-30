@@ -91,8 +91,6 @@ public class WorkflowFactoryTest extends BaseWorkflowIntegrationTest {
 
             if (null != WorkflowFactoryTest.contentlet) {
 
-                /*WorkflowFactoryTest.contentletAPI.archive(WorkflowFactoryTest.contentlet, APILocator.systemUser(), false);
-                WorkflowFactoryTest.contentletAPI.delete(WorkflowFactoryTest.contentlet, APILocator.systemUser(), false);*/
                 WorkflowFactoryTest.contentletAPI.destroy(WorkflowFactoryTest.contentlet, APILocator.systemUser(), false);
             }
         } finally {

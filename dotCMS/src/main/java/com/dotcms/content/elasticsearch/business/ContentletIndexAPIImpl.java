@@ -714,6 +714,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         try {
             isWorking = contentlet.isWorking();
         }catch (Exception e) {
+            Logger.debug(this, e.getMessage(), e);
+            Logger.warn(this, e.getMessage(), e);
             isWorking = false;
         }
 
@@ -727,6 +729,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         try {
             isLive = contentlet.isLive();
         }catch (Exception e) {
+            Logger.debug(this, e.getMessage(), e);
+            Logger.warn(this, e.getMessage(), e);
             isLive = false;
         }
 

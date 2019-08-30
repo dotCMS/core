@@ -229,12 +229,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         } finally {
             // Cleanup
             if (null != contentletToCleanUp) {
-                /*if (contentletToCleanUp.isLive()) {
-                    contentletAPI.unpublish(contentletToCleanUp, systemUser, false);
-                }
-                workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentletToCleanUp, systemUser);
-                contentletAPI.archive(contentletToCleanUp, systemUser, false);
-                contentletAPI.delete(contentletToCleanUp, systemUser, false);*/
+
                 contentletAPI.destroy(contentletToCleanUp, systemUser, false);
             }
         }
@@ -286,9 +281,6 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
                 contentlet2.isLive());
 
         // Cleanup
-        /*workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet2, systemUser);
-        contentletAPI.archive(contentlet2, systemUser, false);
-        contentletAPI.delete(contentlet2, systemUser, false);*/
         contentletAPI.destroy(contentlet2, systemUser, false);
     }
 
@@ -330,9 +322,6 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         }
 
         // Cleanup
-        /*workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet1, systemUser);
-        contentletAPI.archive(contentlet1, systemUser, false);
-        contentletAPI.delete(contentlet1, systemUser, false);*/
         contentletAPI.destroy(contentlet1, systemUser, false);
 
         Assert.assertTrue(
