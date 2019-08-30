@@ -39,6 +39,7 @@ before_install:
 # https://docs.travis-ci.com/user/conditional-builds-stages-jobs/
 if: >-
   type = pull_request
+  OR type = api
   OR branch = master
   OR branch =~ ^release-
   OR branch =~ ^test-
