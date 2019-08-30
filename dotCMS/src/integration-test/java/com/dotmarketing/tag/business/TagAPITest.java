@@ -914,7 +914,7 @@ public class TagAPITest extends IntegrationTestBase {
 		cachedTags = tagCache.getByHost(defaultHostId);
 		assertNotNull( cachedTags );
 		assertEquals( cachedTags, foundTags );
-
+   
 		conAPI.destroy(contentAsset, testUser, false);
 	}
 
