@@ -55,6 +55,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
                 this.loadActions();
             });
     }
+
     ngOnChanges(changes): void {
         if (changes.contentType.currentValue) {
             this.dotMenuService
@@ -72,6 +73,10 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
         }
     }
 
+    fireAddRowEvent(): void {
+        this.dotEventsService.notify('add-row');
+    }
+
     private loadActions(): void {
         this.actions = [
             {
@@ -87,9 +92,5 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
                 }
             }
         ];
-    }
-
-    private fireAddRowEvent(): void {
-        this.dotEventsService.notify('add-row');
     }
 }
