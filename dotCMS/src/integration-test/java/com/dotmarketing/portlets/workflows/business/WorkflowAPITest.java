@@ -1144,10 +1144,9 @@ public class WorkflowAPITest extends IntegrationTestBase {
             // workflowScheme2Step2.getId(), true, workflowScheme2Step1.getId(),
             assertEquals(workflowScheme2Step2.getName(), steps.get(0).getName());
         } finally {
-            contentletAPI.archive(c1, user, false);
-            contentletAPI.delete(c1, user, false);
-            contentletAPI.archive(c2, user, false);
-            contentletAPI.delete(c2, user, false);
+
+            contentletAPI.destroy(c1, user, false);
+            contentletAPI.destroy(c2, user, false);
         }
 
     }
@@ -1266,8 +1265,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertTrue(workflowScheme3Step2.getId().equals(task.getStatus()));
 
         } finally {
-            contentletAPI.archive(c1, user, false);
-            contentletAPI.delete(c1, user, false);
+            contentletAPI.destroy(c1, user, false);
         }
     }
 
@@ -1387,8 +1385,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertEquals(foundActions.size(), 5);
 
         } finally {
-            contentletAPI.archive(testContentlet, user, false);
-            contentletAPI.delete(testContentlet, user, false);
+            contentletAPI.destroy(testContentlet, user, false);
         }
 
     }
@@ -1472,8 +1469,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
         } finally {
             try {
                 final Contentlet contentletToDelete = contentletAPI.findContentletByIdentifierAnyLanguage(testContentletTop.getIdentifier());
-                contentletAPI.archive(contentletToDelete, user, false);
-                contentletAPI.delete(contentletToDelete, user, false);
+
+                contentletAPI.destroy(contentletToDelete, user, false);
             } catch (Exception e) {}
         }
     }
@@ -1558,8 +1555,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             }
 
         } finally {
-            contentletAPI.archive(testContentlet, user, false);
-            contentletAPI.delete(testContentlet, user, false);
+            contentletAPI.destroy(testContentlet, user, false);
         }
 
     }
@@ -1626,8 +1622,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             assertEquals(action.getName(), workflowScheme5Step1Action1.getName());
 
         } finally {
-            contentletAPI.archive(testContentlet, user, false);
-            contentletAPI.delete(testContentlet, user, false);
+            contentletAPI.destroy(testContentlet, user, false);
         }
 
     }
@@ -3658,8 +3653,12 @@ public class WorkflowAPITest extends IntegrationTestBase {
             }
 
         } finally {
-            contentletAPI.archive(c1, user, false);
-            contentletAPI.delete(c1, user, false);
+            try {
+
+                contentletAPI.destroy(c1, user, false);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
     }

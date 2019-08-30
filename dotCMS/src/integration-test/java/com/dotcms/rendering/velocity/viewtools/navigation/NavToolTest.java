@@ -217,14 +217,10 @@ public class NavToolTest extends IntegrationTestBase{
         }finally {
             //Now remove all the pages that we created for this tests.
             if(fileAssetShown!=null) {
-                APILocator.getContentletAPI().unpublish(fileAssetShown, user, false);
-                APILocator.getContentletAPI().archive(fileAssetShown, user, false);
-                APILocator.getContentletAPI().delete(fileAssetShown, user, false);
+                APILocator.getContentletAPI().destroy(fileAssetShown, user, false );
             }
             if(fileAssetNotShown!=null) {
-                APILocator.getContentletAPI().unpublish(fileAssetNotShown, user, false);
-                APILocator.getContentletAPI().archive(fileAssetNotShown, user, false);
-                APILocator.getContentletAPI().delete(fileAssetNotShown, user, false);
+                APILocator.getContentletAPI().destroy(fileAssetNotShown, user, false );
             }
         }
 

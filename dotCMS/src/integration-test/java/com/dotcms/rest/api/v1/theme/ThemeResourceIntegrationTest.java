@@ -271,8 +271,12 @@ public class ThemeResourceIntegrationTest {
             assertNull(entity.get(THEME_THUMBNAIL_KEY));
 
         } finally {
-            if (destinationFolder != null && destinationFolder.getInode()!= null){
-                folderAPI.delete(destinationFolder, user, false);
+            try {
+                if (destinationFolder != null && destinationFolder.getInode() != null) {
+                    folderAPI.delete(destinationFolder, user, false);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

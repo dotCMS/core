@@ -494,8 +494,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             //Validations
             assertTrue( result == null || result.isEmpty() );
         } finally {
-            APILocator.getContentletAPI().archive( testContentlet, user, false );
-            APILocator.getContentletAPI().delete( testContentlet, user, false );
+            try {
+                APILocator.getContentletAPI().destroy(testContentlet, user, false );
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             APILocator.getContentTypeAPI(user).delete(new StructureTransformer(testStructure).from());
         }
     }
@@ -549,8 +552,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             assertTrue(result.isEmpty());
 
         } finally {
-            APILocator.getContentletAPI().archive( testContentlet, user, false );
-            APILocator.getContentletAPI().delete( testContentlet, user, false );
+            try {
+                APILocator.getContentletAPI().destroy(testContentlet, user, false );
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             APILocator.getContentTypeAPI(user).delete(new StructureTransformer(testStructure).from());
         }
     }
@@ -701,8 +707,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         } finally {
             //And finally remove the index
             APILocator.getContentTypeAPI(user).delete(new StructureTransformer(testStructure).from());
-            APILocator.getContentletAPI().archive(testHtmlPage,user,false);
-            APILocator.getContentletAPI().delete(testHtmlPage,user,false);
+            try {
+                APILocator.getContentletAPI().destroy(testContentlet, user, false);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             siteSearchAPI.deleteFromIndex( indexName, docId );
         }
     }

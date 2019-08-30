@@ -9,6 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -24,6 +25,7 @@ import com.liferay.portal.model.User;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 
 import java.io.ByteArrayOutputStream;
@@ -105,13 +107,25 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
 
     } // runNoLicense.
 
+    @Before
+    public void beforeBase ()  {
+
+        this.initConnection();
+    }
 
     @After
-    public void after () throws SQLException, DotHibernateException, HibernateException {
+    public void after ()  {
 
         //Closing the session
-        HibernateUtil.getSession().connection().close();
-        HibernateUtil.getSession().close();
+        try {
+            HibernateUtil.closeAndCommitTransaction();
+            if (null != HibernateUtil.getSession()) {
+                HibernateUtil.getSession().connection().close();
+                HibernateUtil.getSession().close();
+            }
+        } catch (Exception e) {} finally {
+            DbConnectionFactory.closeSilently();
+        }
     }
 
     /**
@@ -196,19 +210,29 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
      * Util method to delete all the categories.
      */
     public void cleanCategories(List<Category> categoriesToDelete) {
-        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-        final User systemUser = APILocator.systemUser();
+        try {
+            final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+            final User systemUser = APILocator.systemUser();
 
-        for (Category category : categoriesToDelete) {
-            if (category != null && UtilMethods.isSet(category.getInode())) {
-                try {
-                    categoryAPI.delete(category, systemUser, false);
-                } catch (DotDataException | DotSecurityException e) {
-                    Assert.fail("Can't delete Category: " + category.getCategoryName() + ", with id:"
+            for (Category category : categoriesToDelete) {
+                if (category != null && UtilMethods.isSet(category.getInode())) {
+                    try {
+                        categoryAPI.delete(category, systemUser, false);
+                    } catch (DotDataException | DotSecurityException e) {
+                        Assert.fail("Can't delete Category: " + category.getCategoryName() + ", with id:"
                                 + category.getInode() + ", Exception: " + e.getMessage());
+                    }
                 }
             }
+        }catch (Exception e) {
+
         }
     }
 
+    protected void initConnection() {
+
+        if (DbConnectionFactory.connectionExists()) {
+            DbConnectionFactory.closeSilently(); // start always we a new one
+        }
+    }
 }

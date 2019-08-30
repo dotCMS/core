@@ -91,9 +91,11 @@ public class ContentletCheckInTest extends ContentletBaseTest{
                   .isEmpty());
 
       }finally{
-          if (folder1 != null) {
-              folderAPI.delete(folder1, user, false);
-          }
+          try {
+              if (folder1 != null) {
+                  folderAPI.delete(folder1, user, false);
+              }
+          }catch (Exception e) { e.printStackTrace(); }
       }
   }
 
@@ -144,11 +146,15 @@ public class ContentletCheckInTest extends ContentletBaseTest{
 
 
         }finally {
-            if(parentContentType != null){
-                contentTypeAPI.delete(parentContentType);
-            }
-            if(childContentType != null){
-                contentTypeAPI.delete(childContentType);
+            try {
+                if (parentContentType != null) {
+                    contentTypeAPI.delete(parentContentType);
+                }
+                if (childContentType != null) {
+                    contentTypeAPI.delete(childContentType);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

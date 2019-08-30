@@ -1185,8 +1185,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             } finally {
 
                 if (contentlet != null) {
-                    contentletAPI.archive(contentlet, systemUser, false);
-                    contentletAPI.delete(contentlet, systemUser, false);
+                    contentletAPI.destroy(contentlet, systemUser, false );
                 }
                 if (contentType != null) {
                     contentTypeAPI.delete(contentType);
@@ -1437,8 +1436,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
              }finally {
                 if(null != brandNewContentlet){
-                     contentletAPI.archive(brandNewContentlet, APILocator.systemUser(), false);
-                     contentletAPI.delete(brandNewContentlet, APILocator.systemUser(), false);
+                    contentletAPI.destroy(brandNewContentlet, APILocator.systemUser(), false );
                 }
             }
 
@@ -1584,8 +1582,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 assertEquals(identifier, brandNewContentlet.getIdentifier());
             } finally {
                 if(null != brandNewContentlet){
-                    contentletAPI.archive(brandNewContentlet, APILocator.systemUser(), false);
-                    contentletAPI.delete(brandNewContentlet, APILocator.systemUser(), false);
+                    contentletAPI.destroy(brandNewContentlet, APILocator.systemUser(), false );
                 }
             }
 
@@ -1728,8 +1725,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
             }finally {
                 if(null != brandNewContentlet){
-                    contentletAPI.archive(brandNewContentlet, APILocator.systemUser(), false);
-                    contentletAPI.delete(brandNewContentlet, APILocator.systemUser(), false);
+                    contentletAPI.destroy(brandNewContentlet, APILocator.systemUser(), false );
                 }
             }
 
