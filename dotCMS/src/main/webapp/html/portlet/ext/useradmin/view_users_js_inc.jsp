@@ -185,7 +185,7 @@
 	var filterUsersHandler;
 
 	//Event handler then the user types to filter users
-	function filterUsers() {
+	function filterUsers(btn) {
 
 		//Canceling any other delayed request of filtering in case
 		// the user typed more
@@ -195,22 +195,30 @@
 
 		//Executed in a delayed fashion to allow the user type more keystrokes
 		//before loading the server
-		filterUsersHandler = setTimeout('filterUsersDelayed()', 300);
+		filterUsersHandler = setTimeout(filterUsersDelayed(btn), 300);
 	}
 
 	//Executed after the user has typed some characters to filter users
-	function filterUsersDelayed(){
+	function filterUsersDelayed(btn){
 		dojo.byId('loadingUsers').style.display = '';
 		dojo.byId('usersGrid').style.display = 'none';
 		var value = dijit.byId('usersFilter').attr('value');
+		var showUsers = "all";
 		
-		var showUsers = dijit.byId("showAllUsers").checked 
-		  ? "all"
-		  : dijit.byId("showFrontEndUsers").checked 
-		    ? "frontEnd"
-		    : "backEnd";
+		if(btn.id=="showFrontEndUsers"){
+		    dijit.byId("showAllUsers").attr('checked',false);
+		    dijit.byId("showBackEndUsers").attr('checked',false);
+		    showUsers="frontEnd";
+		}else if(btn.id=="showBackEndUsers"){
+	          dijit.byId("showAllUsers").attr('checked',false);
+	          dijit.byId("showFrontEndUsers").attr('checked',false);
+	          showUsers="backEnd";
+		}else{
+            dijit.byId("showBackEndUsers").attr('checked',false);
+            dijit.byId("showFrontEndUsers").attr('checked',false);
+		}
+		
 
-		
 		
 		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: value, includeDefault: false, showUsers: showUsers }, dojo.hitch(this, getUsersListCallback));
 	}

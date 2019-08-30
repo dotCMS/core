@@ -97,10 +97,10 @@
 				<button dojoType="dijit.form.Button" onclick="clearUserFilter()" type="button" class="dijitButtonFlat"><%= LanguageUtil.get(pageContext, "Clear") %></button>
 			</div>
          
-            <div style="text-align: center;padding:10px;">
-                <label for="showAllUsers"><input type="radio" onchange="filterUsers()" dojoType="dijit.form.RadioButton" value="all" checked="true" name="showUsers" id="showAllUsers"> <%= LanguageUtil.get(pageContext, "All") %> </label>&nbsp; &nbsp;
-                <label for="showFrontEndUsers"><input type="radio" onchange="filterUsers()" dojoType="dijit.form.RadioButton" value="frontEnd" name="showUsers" id="showFrontEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.frontend") %> </label>&nbsp; &nbsp;
-                <label for="showBackEndUsers"><input type="radio" onchange="filterUsers()" dojoType="dijit.form.RadioButton" value="backEnd" name="showUsers" id="showBackEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.backend") %> </label>
+            <div style="padding:10px;margin:auto;width:80%;">
+                <label for="showAllUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.CheckBox" value="all" checked="true" name="showUsers" id="showAllUsers"> <%= LanguageUtil.get(pageContext, "All") %> </label>&nbsp; &nbsp;
+                <label for="showFrontEndUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.CheckBox" value="frontEnd" name="showUsers" id="showFrontEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.frontend") %> </label>&nbsp; &nbsp;
+                <label for="showBackEndUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.CheckBox" value="backEnd" name="showUsers" id="showBackEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.backend") %> </label>
             </div>
          
          
@@ -173,7 +173,7 @@
 				<div dojoType="dijit.layout.TabContainer" id="userTabsContainer" class="view-users__profile-tabs-container">
 					<!-- START User Detail Tab -->
 					<div dojoType="dijit.layout.ContentPane" id="userDetailsTab" title="<%= LanguageUtil.get(pageContext, "User-Details") %>">
-                        <div style="position:relative;border:0px solid green;height:60px;width:85%">
+                        <div style="position:relative;border:0px solid green;height:60px;width:80%">
                                 <div style="position:absolute;width:400px;top:0px;left:0px;"><h3 id="fullUserName" class="fullUserName"></h3></div>
                                 <div class="gravitarThingy" id="gravatarTextHolder" style="background-color:<%=APILocator.getCompanyAPI().getDefaultCompany().getStreet() %>;">
                                     <p id="gravatarText" style="margin:auto;"></p> 
