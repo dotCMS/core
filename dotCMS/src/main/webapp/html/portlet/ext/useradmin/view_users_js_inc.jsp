@@ -204,16 +204,19 @@
 		dojo.byId('usersGrid').style.display = 'none';
 		var value = dijit.byId('usersFilter').attr('value');
 		var showUsers = "all";
-		
-		if(btn.id=="showFrontEndUsers"){
+		var myId = (btn && btn.id) ? btn.id : "all"
+		if(myId =="showFrontEndUsers"){
+		    dijit.byId("showFrontEndUsers").attr('checked',true);
 		    dijit.byId("showAllUsers").attr('checked',false);
 		    dijit.byId("showBackEndUsers").attr('checked',false);
 		    showUsers="frontEnd";
-		}else if(btn.id=="showBackEndUsers"){
+		}else if(myId =="showBackEndUsers"){
+		      dijit.byId("showBackEndUsers").attr('checked',true);
 	          dijit.byId("showAllUsers").attr('checked',false);
 	          dijit.byId("showFrontEndUsers").attr('checked',false);
 	          showUsers="backEnd";
 		}else{
+		    dijit.byId("showAllUsers").attr('checked',true);
             dijit.byId("showBackEndUsers").attr('checked',false);
             dijit.byId("showFrontEndUsers").attr('checked',false);
 		}
