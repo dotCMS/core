@@ -1,8 +1,16 @@
-import { Component, Input, OnChanges, SimpleChanges, forwardRef, OnInit } from '@angular/core';
+import {
+    Component,
+    Input,
+    OnChanges,
+    SimpleChanges,
+    forwardRef,
+    OnInit,
+    ViewChild
+} from '@angular/core';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { SelectItemGroup } from 'primeng/primeng';
+import { map, tap } from 'rxjs/operators';
+import { SelectItemGroup, SelectItem, Dropdown } from 'primeng/primeng';
 
 import { DotCMSWorkflowAction, DotCMSWorkflow } from 'dotcms-models';
 import { DotMessageService } from '@services/dot-messages-service';
@@ -27,6 +35,7 @@ interface DropdownEvent {
 })
 export class DotWorkflowsActionsSelectorFieldComponent
     implements ControlValueAccessor, OnChanges, OnInit {
+    @ViewChild('dropdown') dropdown: Dropdown;
     @Input() workflows: DotCMSWorkflow[];
 
     actions$: Observable<SelectItemGroup[]>;
@@ -41,11 +50,22 @@ export class DotWorkflowsActionsSelectorFieldComponent
 
     ngOnInit() {
         this.placeholder$ = this.getPlaceholder();
-        this.actions$ = this.dotWorkflowsActionsSelectorFieldService.get();
+        this.actions$ = this.dotWorkflowsActionsSelectorFieldService.get().pipe(
+            tap((actions: SelectItemGroup[]) => {
+                const actionsIds = this.getActionsIds(actions);
+
+                if (actionsIds.length && !actionsIds.includes(this.value)) {
+                    this.dropdown.clear(null);
+                }
+            })
+        );
+        this.dotWorkflowsActionsSelectorFieldService.load(this.workflows);
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        this.dotWorkflowsActionsSelectorFieldService.load(changes.workflows.currentValue);
+        if (!changes.workflows.firstChange) {
+            this.dotWorkflowsActionsSelectorFieldService.load(changes.workflows.currentValue);
+        }
     }
 
     /**
@@ -92,6 +112,12 @@ export class DotWorkflowsActionsSelectorFieldComponent
         if (value) {
             this.value = value;
         }
+    }
+
+    private getActionsIds(actions: SelectItemGroup[]): string[] {
+        return actions.reduce((acc: string[], { items }: SelectItemGroup) => {
+            return [...acc, ...items.map((item: SelectItem) => item.value)];
+        }, []);
     }
 
     private getPlaceholder(): Observable<string> {

@@ -1,5 +1,7 @@
-<p-dropdown *ngIf="actions$ | async as actions"
+<p-dropdown
+    #dropdown
     (onChange)="handleChange($event)"
+    *ngIf="actions$ | async as actions"
     [(ngModel)]="value"
     [autoDisplayFirst]="false"
     [disabled]="disabled || actions.length === 0"

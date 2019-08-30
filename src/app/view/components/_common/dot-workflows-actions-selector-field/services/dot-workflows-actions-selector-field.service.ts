@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { map, take, catchError } from 'rxjs/operators';
 
 import { SelectItemGroup, SelectItem } from 'primeng/primeng';
@@ -11,7 +11,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 
 @Injectable()
 export class DotWorkflowsActionsSelectorFieldService {
-    private data$: Subject<SelectItemGroup[]> = new Subject();
+    private data$: BehaviorSubject<SelectItemGroup[]> = new BehaviorSubject([]);
 
     constructor(
         private dotWorkflowsActionsService: DotWorkflowsActionsService,
