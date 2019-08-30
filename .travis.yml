@@ -44,10 +44,10 @@ jobs:
       if: commit_message !~ /(\[travis postgres\]|\[travis mysql\]|\[travis oracle\]|\[travis mssql\])/
       script: bash travis/unit.sh
     - stage: integration tests
+    - script: bash travis/integration.sh
       if: commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\])/
       env: DB_TYPE=postgres
       name: postgres
-      script: bash travis/integration.sh
     - script: bash travis/integration.sh
       if: type != pull_request OR commit_message =~ /(\[travis\]|\[travis mysql\])/
       env: DB_TYPE=mysql
