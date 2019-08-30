@@ -28,6 +28,7 @@ import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.MultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -434,9 +435,31 @@ public class TempFileResourceTest {
     }
   }
 
+  @Test
+  public void test_TempResource_uploadFileByURL_success(){
+    HttpServletRequest request = mockRequest();
+    final String fileName = "test.png";
+    final String url = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Bocas2.jpg/250px-Bocas2.jpg";
 
-  
-  
+    final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url,fileName,null);
+
+    final Response jsonResponse = resource.copyTempFromUrl(request,response,remoteUrlForm);
+
+    Assert.assertEquals(Status.OK.getStatusCode(),jsonResponse.getStatus());
+  }
+
+  @Test
+  public void test_TempResource_uploadFileByURL_UrlNotSent_BadRequest(){
+    HttpServletRequest request = mockRequest();
+    final String fileName = "test.png";
+    final String url = "";
+
+    final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url,fileName,null);
+
+    final Response jsonResponse = resource.copyTempFromUrl(request,response,remoteUrlForm);
+
+    Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),jsonResponse.getStatus());
+  }
   
   
   

@@ -108,7 +108,7 @@ public class TempFileAPI {
       throw new DotRuntimeException("Invalid file upload");
     }
     createTempPermissionFile(tempFolder, allowList);
-
+    SecurityLogger.logInfo(this.getClass(),"Temp File Created with id: " + tempFileId + ", uploaded by userId: " + user.getUserId());
     return new DotTempFile(tempFileId, tempFile);
   }
 
