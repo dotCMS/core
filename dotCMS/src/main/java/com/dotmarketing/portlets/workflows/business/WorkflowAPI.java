@@ -1051,7 +1051,17 @@ public interface WorkflowAPI {
 		ARCHIVE,
 		UNARCHIVE,
 		DELETE,
-		DESTROY
+		DESTROY;
+
+		/**
+		 * Prefer this over valueOf(String..) since mySQL sends lowercased vals
+		 * @param value
+		 * @return
+		 */
+		public static SystemAction fromString(final String value){
+		   return valueOf(value.toUpperCase());
+		}
+
 	}
 
 }
