@@ -31,7 +31,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTableTest {
 
             if (!task05165CreateContentTypeWorkflowActionMappingTable.forceRun()) {
 
-                this.removeContentTypeWorkflowActionMappingTable();
+                this.removeContentTypeWorkflowActionMappingTable(dbType);
             }
 
             if (task05165CreateContentTypeWorkflowActionMappingTable.forceRun()) {
@@ -49,9 +49,12 @@ public class Task05165CreateContentTypeWorkflowActionMappingTableTest {
     }
 
     @WrapInTransaction
-    private void removeContentTypeWorkflowActionMappingTable() throws SQLException {
-
-        new DotConnect().executeStatement("DROP INDEX idx_workflow_action_mappings");
+    private void removeContentTypeWorkflowActionMappingTable(final DbType dbType) throws SQLException {
+        if(dbType == DbType.MYSQL){
+            new DotConnect().executeStatement("ALTER TABLE workflow_action_mappings DROP INDEX idx_workflow_action_mappings");
+        } else {
+          new DotConnect().executeStatement("DROP INDEX idx_workflow_action_mappings");
+        }
         new DotConnect().executeStatement("DROP TABLE workflow_action_mappings");
     }
 
