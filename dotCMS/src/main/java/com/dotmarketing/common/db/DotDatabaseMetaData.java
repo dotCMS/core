@@ -470,7 +470,7 @@ public class DotDatabaseMetaData {
 
         if (DbConnectionFactory.isMySql()) {
             // Drop column constraints
-            this.dropColumnMySQLDependencies(connection, tableName, columnName);
+            //this.dropColumnMySQLDependencies(connection, tableName, columnName);
         } else if (DbConnectionFactory.isMsSql()) {
             this.dropColumnMSSQLDependencies(connection, tableName, columnName);
         }
