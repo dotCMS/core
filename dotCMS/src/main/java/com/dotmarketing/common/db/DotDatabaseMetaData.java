@@ -465,12 +465,12 @@ public class DotDatabaseMetaData {
      * @param tableName {@link String}
      * @param columnName {@link String}
      * @throws SQLException
-     */ // todo: do a test
+     */ 
     public void dropColumn(final Connection connection, final String tableName, final String columnName) throws SQLException {
 
         if (DbConnectionFactory.isMySql()) {
             // Drop column constraints
-            //this.dropColumnMySQLDependencies(connection, tableName, columnName);
+            this.dropColumnMySQLDependencies(connection, tableName, columnName);
         } else if (DbConnectionFactory.isMsSql()) {
             this.dropColumnMSSQLDependencies(connection, tableName, columnName);
         }
