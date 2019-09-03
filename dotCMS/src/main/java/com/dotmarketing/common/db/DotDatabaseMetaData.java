@@ -475,7 +475,7 @@ public class DotDatabaseMetaData {
         }
 
         // Drop the column:
-        connection.createStatement().executeUpdate("ALTER TABLE `" + tableName + "` DROP COLUMN `" + columnName + "`"); // Drop the column
+        connection.createStatement().executeUpdate("ALTER TABLE " + tableName + " DROP COLUMN " + columnName); // Drop the column
     }
 
     private void dropColumnMySQLDependencies(final Connection connection, final String tableName, final String columnName) throws SQLException {
@@ -507,23 +507,30 @@ public class DotDatabaseMetaData {
 
     private void dropColumnMsSQLDependencies(final Connection connection, final String tableName, final String columnName) throws SQLException {
 
-        try (final ResultSet resultSet =  connection.getMetaData().getColumns
-                (connection.getCatalog(), null, tableName, null)) {
+        try (final Statement statement = connection.createStatement()) {
+            try (final ResultSet resultSet = statement.executeQuery("SELECT default_constraints.name FROM sys.all_columns INNER JOIN sys.tables\n" +
+                    "        ON all_columns.object_id = tables.object_id\n" +
+                    "        INNER JOIN sys.schemas\n" +
+                    "        ON tables.schema_id = schemas.schema_id\n" +
+                    "        INNER JOIN sys.default_constraints\n" +
+                    "        ON all_columns.default_object_id = default_constraints.object_id\n" +
+                    "WHERE tables.name = '" + tableName + "' AND all_columns.name = '" + columnName + "'")) {
 
-            // Iterates over the foreign foreignKey columns
-            while (resultSet.next()) {
+                // Iterates over the foreign foreignKey columns
+                while (resultSet.next()) {
 
-                int columnCount = resultSet.getMetaData().getColumnCount();
-                System.out.println("New Column");
-                for (int i = 1; i <= columnCount; ++i) {
+                    int columnCount = resultSet.getMetaData().getColumnCount();
+                    System.out.println("New Column");
+                    for (int i = 1; i <= columnCount; ++i) {
 
-                    System.out.println("Name: " + resultSet.getMetaData().getCatalogName(i) + " : " +
-                                    resultSet.getMetaData().getColumnName(i) + " : " +
-                                    resultSet.getMetaData().getColumnType(i) + " : " +
-                            resultSet.getMetaData().getColumnLabel(i) + " : " +
-                            resultSet.getString(i));
+                        System.out.println("Name: " + resultSet.getMetaData().getCatalogName(i) + " : " +
+                                resultSet.getMetaData().getColumnName(i) + " : " +
+                                resultSet.getMetaData().getColumnType(i) + " : " +
+                                resultSet.getMetaData().getColumnLabel(i) + " : " +
+                                resultSet.getString(i));
+                    }
+
                 }
-
             }
         }
     }
