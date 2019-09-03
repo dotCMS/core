@@ -5,6 +5,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.DbType;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import java.sql.*;
@@ -471,7 +472,7 @@ public class DotDatabaseMetaData {
             // Drop column constraints
             this.dropColumnMySQLDependencies(connection, tableName, columnName);
         } else if (DbConnectionFactory.isMsSql()) {
-            this.dropColumnMsSQLDependencies(connection, tableName, columnName);
+            this.dropColumnMSSQLDependencies(connection, tableName, columnName);
         }
 
         // Drop the column:
@@ -486,26 +487,35 @@ public class DotDatabaseMetaData {
 
             while (resultSet.next()) {
                 final String constraintName = resultSet.getString("CONSTRAINT_NAME");
-                try (final Statement statement = connection.createStatement()) {
-                    statement.executeUpdate("ALTER TABLE `" + tableName + "` DROP FOREIGN KEY`" + constraintName + "`"); // Drop the foreign key constraint
-                }
+                this.executeDropConstraint(connection, tableName, constraintName);
             }
         }
 
         // Drop column indexes
         try (final ResultSet resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
-                .executeQuery("SHOW INDEX FROM `" + tableName + "` where column_name = '" + columnName + "'")) {
+                .executeQuery("SHOW INDEX FROM " + tableName + " where column_name = '" + columnName + "'")) {
 
             while (resultSet.next()) {
                 final String keyName = resultSet.getString("Key_name");
-                try (final Statement statement = connection.createStatement()) {
-                    statement.executeUpdate("ALTER TABLE `" + tableName + "` DROP INDEX `" + keyName + "`"); // Drop the index
-                }
+                this.dropIndex(tableName, keyName);
             }
         }
     }
 
-    private void dropColumnMsSQLDependencies(final Connection connection, final String tableName, final String columnName) throws SQLException {
+    private void dropColumnMSSQLDependencies(final Connection connection, final String tableName, final String columnName) throws SQLException {
+
+        final List<String>  constraints = getColumnConstraintsMSSQL(connection, tableName, columnName);
+        if (UtilMethods.isSet(constraints)) {
+
+            for (final String constraintName : constraints) {
+                this.executeDropConstraint(connection, tableName, constraintName);
+            }
+        }
+    }
+
+    private List<String> getColumnConstraintsMSSQL (final Connection connection, final String tableName, final String columnName) throws SQLException {
+
+        final List<String>  constraints = new ArrayList<>();
 
         try (final Statement statement = connection.createStatement()) {
             try (final ResultSet resultSet = statement.executeQuery("SELECT default_constraints.name FROM sys.all_columns INNER JOIN sys.tables\n" +
@@ -516,23 +526,14 @@ public class DotDatabaseMetaData {
                     "        ON all_columns.default_object_id = default_constraints.object_id\n" +
                     "WHERE tables.name = '" + tableName + "' AND all_columns.name = '" + columnName + "'")) {
 
-                // Iterates over the foreign foreignKey columns
                 while (resultSet.next()) {
 
-                    int columnCount = resultSet.getMetaData().getColumnCount();
-                    System.out.println("New Column");
-                    for (int i = 1; i <= columnCount; ++i) {
-
-                        System.out.println("Name: " + resultSet.getMetaData().getCatalogName(i) + " : " +
-                                resultSet.getMetaData().getColumnName(i) + " : " +
-                                resultSet.getMetaData().getColumnType(i) + " : " +
-                                resultSet.getMetaData().getColumnLabel(i) + " : " +
-                                resultSet.getString(i));
-                    }
-
+                    constraints.add(resultSet.getString(1));
                 }
             }
         }
+
+        return constraints;
     }
 
     public void dropIndex(final String tableName, final String indexName) throws SQLException {
