@@ -460,11 +460,6 @@ public class TempFileResourceTest {
 
     Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),jsonResponse.getStatus());
   }
-  
-  
-  
-  
-  
 
   @Test
   @UseDataProvider("testCasesChangeFingerPrint")
@@ -544,8 +539,19 @@ public class TempFileResourceTest {
             new Tuple5<String,String,Long,Long,Long>(UserAPI.CMS_ANON_USER_ID,"5", 10L, 20L, 5L),
     };
   }
-  
-  
+
+  @Test
+  public void test_TempResource_uploadFileByURL_URLDoesNotExists_returnBadRequest(){
+    HttpServletRequest request = mockRequest();
+    final String fileName = "test.png";
+    final String url = "https://upload.wikimedia.org/this/not/exists/Bocas2.jpg";
+
+    final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url,fileName,null);
+
+    final Response jsonResponse = resource.copyTempFromUrl(request,response,remoteUrlForm);
+
+    Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),jsonResponse.getStatus());
+  }
   
   
   
