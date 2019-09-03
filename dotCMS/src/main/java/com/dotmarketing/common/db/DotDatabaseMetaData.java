@@ -516,7 +516,7 @@ public class DotDatabaseMetaData {
                 int columnCount = resultSet.getMetaData().getColumnCount();
                 for (int i = 1; i <= columnCount; ++i) {
 
-                    System.out.println("Column: " + resultSet.getString(i));
+                    System.out.println("Column: " + resultSet.getMetaData().getCatalogName(i) + " : " + resultSet.getString(i));
                 }
 
             }
