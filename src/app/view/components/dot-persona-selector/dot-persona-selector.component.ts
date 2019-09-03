@@ -41,13 +41,14 @@ export class DotPersonaSelectorComponent implements OnInit {
     value: DotPersona;
 
     private _pageState: DotPageRenderState;
-
+    private personaSeachQuery: string;
     constructor(public paginationService: PaginatorService) {}
 
     ngOnInit(): void {
         this.addAction = () => {
             this.searchableDropdown.toggleOverlayPanel();
             this.personaDialog.visible = true;
+            this.personaDialog.personaName = this.personas.length ? '' : this.personaSeachQuery;
         };
         this.paginationService.paginationPerPage = this.paginationPerPage;
     }
@@ -73,7 +74,8 @@ export class DotPersonaSelectorComponent implements OnInit {
      * @memberof DotPersonaSelectorComponent
      */
     handleFilterChange(filter: string): void {
-        this.getPersonasList(filter);
+        this.personaSeachQuery = filter.trim();
+        this.getPersonasList(this.personaSeachQuery);
     }
 
     /**

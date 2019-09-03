@@ -16,8 +16,8 @@ import { SiteService } from 'dotcms-js';
 
 const FROM_INITIAL_VALUE = {
     hostFolder: mockSites[0].identifier,
-    keyTag: null,
-    name: null,
+    keyTag: '',
+    name: '',
     photo: null
 };
 
@@ -60,125 +60,154 @@ describe('DotCreatePersonaFormComponent', () => {
 
         fixture = TestBed.createComponent(DotCreatePersonaFormComponent);
         component = fixture.componentInstance;
-        fixture.detectChanges();
     });
 
-    it('should load labels correctly', () => {
-        const hostLabel: DebugElement = fixture.debugElement.query(
-            By.css('label[for="content-type-form-host"]')
-        );
-        const nameLabel: DebugElement = fixture.debugElement.query(
-            By.css('label[for="persona-name"]')
-        );
-        const keyTagLabel: DebugElement = fixture.debugElement.query(
-            By.css('label[for="persona-keyTag"]')
-        );
-        const imageLabel: DebugElement = fixture.debugElement.query(
-            By.css('label[for="persona-image"]')
-        );
-        const validationMessage: DebugElement = fixture.debugElement.query(
-            By.css('dot-field-validation-message')
-        );
-        const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
-        expect(hostLabel.nativeElement.innerText).toEqual('Host');
-        expect(nameLabel.nativeElement.innerText).toEqual('Name');
-        expect(keyTagLabel.nativeElement.innerText).toEqual('Key Tag');
-        expect(imageLabel.nativeElement.innerText).toEqual('Upload File');
-        expect(validationMessage.componentInstance.message).toEqual('Name is required');
-        expect(fileUpload.componentInstance.chooseLabel).toEqual('Choose');
-    });
-
-    it('should be invalid by default', () => {
-        expect(component.form.valid).toBe(false);
-    });
-
-    it('should set initial value of the form on load', () => {
-        expect(component.form.getRawValue()).toEqual(FROM_INITIAL_VALUE);
-    });
-
-    it('should update the dot-site-selector-field value when set the form hostFolder value', () => {
-        const siteSelectorField: DebugElement = fixture.debugElement.query(
-            By.css('dot-site-selector-field')
-        );
-        component.form.get('hostFolder').setValue(mockSites[0].identifier);
-        fixture.detectChanges();
-        expect(siteSelectorField.componentInstance.value).toEqual(mockSites[0].identifier);
-    });
-
-    it('should update input name when set form name', () => {
-        const nameInput: DebugElement = fixture.debugElement.query(By.css('#persona-name'));
-        component.form.get('name').setValue('John');
-        fixture.detectChanges();
-        expect(nameInput.nativeElement.value).toEqual('John');
-    });
-
-    it('should set Key Tag camel case based on the name value', () => {
-        const nameInput: DebugElement = fixture.debugElement.query(By.css('#persona-name'));
-        const keyTagInput: DebugElement = fixture.debugElement.query(By.css('#persona-keyTag'));
-        component.form.get('name').setValue('John Doe');
-        nameInput.triggerEventHandler('change', {});
-        fixture.detectChanges();
-        expect(keyTagInput.nativeElement.value).toEqual('johnDoe');
-    });
-
-    it('should set the p-fileUpload with the correctly attributes', () => {
-        const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
-
-        expect(fileUpload.componentInstance.url).toEqual('/api/v1/temp');
-        expect(fileUpload.componentInstance.accept).toEqual('image/*');
-        expect(fileUpload.componentInstance.auto).toEqual('true');
-        expect(fileUpload.componentInstance.mode).toEqual('basic');
-    });
-
-    it('should emit isValid to false when the file upload starts', () => {
-        const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
-        spyOn(component.isValid, 'emit');
-        fileUpload.triggerEventHandler('onBeforeUpload', {});
-        fixture.detectChanges();
-        expect(component.isValid.emit).toHaveBeenCalledWith(false);
-    });
-
-    it('should set the photo id and imageName after image upload', () => {
-        const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
-        fileUpload.triggerEventHandler('onUpload', mockFileUploadResponse);
-        fixture.detectChanges();
-        expect(component.form.get('photo').value).toEqual('temp-file_123');
-        expect(component.imageName).toEqual(mockFileUploadResponse.files[0].name);
-    });
-
-    it('should clear photo form value and imageName when remove image', () => {
-        component.form.get('photo').setValue('test');
-        component.imageName = 'test';
-        fixture.detectChanges();
-
-        const removeButton: DebugElement = fixture.debugElement.query(By.css('button'));
-        removeButton.triggerEventHandler('click', {});
-        expect(removeButton.nativeElement.innerText).toBe('REMOVE');
-        expect(component.form.get('photo').value).toEqual('');
-        expect(component.imageName).toEqual(null);
-    });
-
-    it('should emit if form is valid after changes', () => {
-        spyOn(component.isValid, 'emit');
-        component.form.setValue({
-            photo: 'test',
-            name: 'test',
-            keyTag: 'test',
-            hostFolder: 'test'
+    describe('without name set', () => {
+        beforeEach(() => {
+            fixture.detectChanges();
         });
-        expect(component.isValid.emit).toHaveBeenCalledWith(true);
+
+        it('should load labels correctly', () => {
+            const hostLabel: DebugElement = fixture.debugElement.query(
+                By.css('label[for="content-type-form-host"]')
+            );
+            const nameLabel: DebugElement = fixture.debugElement.query(
+                By.css('label[for="persona-name"]')
+            );
+            const keyTagLabel: DebugElement = fixture.debugElement.query(
+                By.css('label[for="persona-keyTag"]')
+            );
+            const imageLabel: DebugElement = fixture.debugElement.query(
+                By.css('label[for="persona-image"]')
+            );
+            const validationMessage: DebugElement = fixture.debugElement.query(
+                By.css('dot-field-validation-message')
+            );
+            const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
+            expect(hostLabel.nativeElement.innerText).toEqual('Host');
+            expect(nameLabel.nativeElement.innerText).toEqual('Name');
+            expect(keyTagLabel.nativeElement.innerText).toEqual('Key Tag');
+            expect(imageLabel.nativeElement.innerText).toEqual('Upload File');
+            expect(validationMessage.componentInstance.message).toEqual('Name is required');
+            expect(fileUpload.componentInstance.chooseLabel).toEqual('Choose');
+        });
+
+        it('should be invalid by default', () => {
+            expect(component.form.valid).toBe(false);
+        });
+
+        it('should set initial value of the form on load', () => {
+            expect(component.form.getRawValue()).toEqual(FROM_INITIAL_VALUE);
+        });
+
+        it('should update the dot-site-selector-field value when set the form hostFolder value', () => {
+            const siteSelectorField: DebugElement = fixture.debugElement.query(
+                By.css('dot-site-selector-field')
+            );
+            component.form.get('hostFolder').setValue(mockSites[0].identifier);
+            fixture.detectChanges();
+            expect(siteSelectorField.componentInstance.value).toEqual(mockSites[0].identifier);
+        });
+
+        it('should update input name when set form name', () => {
+            const nameInput: DebugElement = fixture.debugElement.query(By.css('#persona-name'));
+            component.form.get('name').setValue('John');
+            fixture.detectChanges();
+            expect(nameInput.nativeElement.value).toEqual('John');
+        });
+
+        it('should set Key Tag camel case based on the name value', () => {
+            const nameInput: DebugElement = fixture.debugElement.query(By.css('#persona-name'));
+            const keyTagInput: DebugElement = fixture.debugElement.query(By.css('#persona-keyTag'));
+            component.form.get('name').setValue('John Doe');
+            nameInput.triggerEventHandler('change', {});
+            fixture.detectChanges();
+            expect(keyTagInput.nativeElement.value).toEqual('johnDoe');
+        });
+
+        it('should set the p-fileUpload with the correctly attributes', () => {
+            const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
+
+            expect(fileUpload.componentInstance.url).toEqual('/api/v1/temp');
+            expect(fileUpload.componentInstance.accept).toEqual('image/*,.webp');
+            expect(fileUpload.componentInstance.auto).toEqual('true');
+            expect(fileUpload.componentInstance.mode).toEqual('basic');
+        });
+
+        it('should emit isValid to false when the file upload starts', () => {
+            const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
+            spyOn(component.isValid, 'emit');
+            fileUpload.triggerEventHandler('onBeforeUpload', {});
+            fixture.detectChanges();
+            expect(component.isValid.emit).toHaveBeenCalledWith(false);
+        });
+
+        it('should set the photo id and imageName after image upload', () => {
+            const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
+            fileUpload.triggerEventHandler('onUpload', mockFileUploadResponse);
+            fixture.detectChanges();
+            expect(component.form.get('photo').value).toEqual('temp-file_123');
+            expect(component.imageName).toEqual(mockFileUploadResponse.files[0].name);
+        });
+
+        it('should clear photo form value and imageName when remove image', () => {
+            component.form.get('photo').setValue('test');
+            component.imageName = 'test';
+            fixture.detectChanges();
+
+            const removeButton: DebugElement = fixture.debugElement.query(By.css('button'));
+            removeButton.triggerEventHandler('click', {});
+            expect(removeButton.nativeElement.innerText).toBe('REMOVE');
+            expect(component.form.get('photo').value).toEqual('');
+            expect(component.imageName).toEqual(null);
+        });
+
+        it('should emit if form is valid after changes', () => {
+            spyOn(component.isValid, 'emit');
+            component.form.setValue({
+                photo: 'test',
+                name: 'test',
+                keyTag: 'test',
+                hostFolder: 'test'
+            });
+            expect(component.isValid.emit).toHaveBeenCalledWith(true);
+        });
+
+        it('should emit if form is invalid after changes', () => {
+            spyOn(component.isValid, 'emit');
+            component.form.get('photo').setValue('test');
+            expect(component.isValid.emit).toHaveBeenCalledWith(false);
+        });
+
+        it('should reset from to initial value and clear imageName', () => {
+            component.form.reset();
+            component.resetForm();
+            expect(component.form.getRawValue()).toEqual({
+                ...FROM_INITIAL_VALUE,
+                name: null,
+                keyTag: null
+            });
+            expect(component.imageName).toEqual(null);
+        });
     });
 
-    it('should emit if form is invalid after changes', () => {
-        spyOn(component.isValid, 'emit');
-        component.form.get('photo').setValue('test');
-        expect(component.isValid.emit).toHaveBeenCalledWith(false);
-    });
+    describe('with name set', () => {
+        beforeEach(() => {
+            component.personaName = 'Test B';
+            fixture.detectChanges();
+        });
 
-    it('should reset from to initial value and clear imageName', () => {
-        component.form.reset();
-        component.resetForm();
-        expect(component.form.getRawValue()).toEqual(FROM_INITIAL_VALUE);
-        expect(component.imageName).toEqual(null);
+        it('should be valid on load', () => {
+            expect(component.form.valid).toBe(true);
+        });
+
+        it('should sey name if passed on initial load', () => {
+            expect(component.form.getRawValue()).toEqual({
+                hostFolder: mockSites[0].identifier,
+                keyTag: 'testB',
+                name: 'Test B',
+                photo: null
+            });
+        });
     });
 });

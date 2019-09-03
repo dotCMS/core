@@ -17,6 +17,7 @@ const PERSONA_CONTENT_TYPE = 'persona';
 })
 export class DotAddPersonaDialogComponent implements OnInit {
     @Input() visible = false;
+    @Input() personaName: string;
     @Output() createdPersona: EventEmitter<DotPersona> = new EventEmitter();
     @ViewChild('personaForm') personaForm: DotCreatePersonaFormComponent;
 

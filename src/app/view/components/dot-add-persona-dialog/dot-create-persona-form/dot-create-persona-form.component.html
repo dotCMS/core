@@ -28,7 +28,7 @@
                        id="persona-image"
                        [chooseLabel]="messagesKey['dot.common.choose']"
                        url="/api/v1/temp"
-                       accept="image/*"
+                       accept="image/*,.webp"
                        (onUpload)="onFileUpload($event)"
                        (onBeforeUpload)="isValid.emit(false)"
                        auto="true"

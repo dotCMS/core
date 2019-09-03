@@ -4,5 +4,5 @@
             [actions]="dialogActions"
             [appendToBody]="true"
             (hide)="closeDialog()">
-    <dot-create-persona-form #personaForm (isValid)="handlerFormValidState($event)" ></dot-create-persona-form>
+    <dot-create-persona-form #personaForm (isValid)="handlerFormValidState($event)" [personaName]="personaName" ></dot-create-persona-form>
 </dot-dialog>
