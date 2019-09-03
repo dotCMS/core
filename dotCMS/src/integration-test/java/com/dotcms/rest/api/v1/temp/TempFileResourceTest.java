@@ -5,12 +5,10 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
-import io.vavr.Tuple4;
 import io.vavr.Tuple5;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -28,7 +26,6 @@ import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.MultiPart;
 import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -445,7 +442,7 @@ public class TempFileResourceTest {
 
     final Response jsonResponse = resource.copyTempFromUrl(request,response,remoteUrlForm);
 
-    Assert.assertEquals(Status.OK.getStatusCode(),jsonResponse.getStatus());
+    assertEquals(Status.OK.getStatusCode(),jsonResponse.getStatus());
   }
 
   @Test
@@ -458,7 +455,7 @@ public class TempFileResourceTest {
 
     final Response jsonResponse = resource.copyTempFromUrl(request,response,remoteUrlForm);
 
-    Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),jsonResponse.getStatus());
+    assertEquals(Status.BAD_REQUEST.getStatusCode(),jsonResponse.getStatus());
   }
 
   @Test
@@ -550,7 +547,7 @@ public class TempFileResourceTest {
 
     final Response jsonResponse = resource.copyTempFromUrl(request,response,remoteUrlForm);
 
-    Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),jsonResponse.getStatus());
+    assertEquals(Status.BAD_REQUEST.getStatusCode(),jsonResponse.getStatus());
   }
   
   
