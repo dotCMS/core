@@ -2078,7 +2078,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void test_getAllRelationships_checkOrdering_selfRelatedContentType() throws DotSecurityException, DotDataException{
         ContentType parentContentType = null;
-        try{
+ 
             parentContentType = createContentType("parentContentType",BaseContentType.CONTENT);
 
             //Create Relationship Field and Text Fields
@@ -2124,10 +2124,6 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(contentletChild3,cRelationships.getRelationshipsRecords().get(1).getRecords().get(0));
             assertEquals(contentletChild1,cRelationships.getRelationshipsRecords().get(1).getRecords().get(1));
             assertEquals(contentletChild2,cRelationships.getRelationshipsRecords().get(1).getRecords().get(2));
-        }finally {
-            if(parentContentType != null){
-                contentTypeAPI.delete(parentContentType);
-            }
         }
     }
 
@@ -2158,7 +2154,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     public void getAllRelationships () throws DotSecurityException, DotDataException {
 
         Relationship testRelationship = null;
-        try {
+
             //Getting a known contentlet
             Contentlet contentlet = contentlets.iterator().next();
 
@@ -2174,11 +2170,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertTrue(contentletRelationships.getRelationshipsRecords() != null
                     && !contentletRelationships.getRelationshipsRecords().isEmpty());
 
-        }finally{
-            if (testRelationship != null && testRelationship.getInode() != null) {
-                relationshipAPI.delete(testRelationship);
-            }
-        }
+
     }
 
     @Test
@@ -2267,7 +2259,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         Structure testStructure       = null;
         Relationship testRelationship = null;
-        try {
+
             //First lets create a test structure
             testStructure = createStructure(
                     "JUnit Test Structure_" + String.valueOf(new Date().getTime()),
@@ -2300,15 +2292,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertNotNull(contentletRelationships);
             assertTrue(contentletRelationships.getRelationshipsRecords() != null
                     && !contentletRelationships.getRelationshipsRecords().isEmpty());
-        }finally{
-            if (testRelationship != null && testRelationship.getInode() != null) {
-                relationshipAPI.delete(testRelationship);
-            }
 
-            if (testStructure != null && testStructure.getInode() != null){
-                APILocator.getStructureAPI().delete(testStructure, user);
-            }
-        }
 
     }
 
@@ -2356,7 +2340,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull( forAllLanguages );
         assertTrue( !forAllLanguages.isEmpty() );
         assertEquals(list.size(), forAllLanguages.size());
-        APILocator.getContentTypeAPI(user).delete(new StructureTransformer(st).from());
+
     }
 
     /**
@@ -2538,13 +2522,13 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(), "contentlet");
 
-        APILocator.getStructureAPI().delete(testStructure, user);
+
     }
 
     @Test
     public void delete_GivenUnarchivedContentAndDontValidateMeInTrue_ShouldDeleteSuccessfully () throws Exception {
         Structure testStructure = null;
-        try {
+
             testStructure = createStructure("JUnit Test Structure_" + String.valueOf(new Date().getTime()), "junit_test_structure_" + String.valueOf(new Date().getTime()));
             final Contentlet newContentlet = createContentlet(testStructure, null, false);
             newContentlet.setStringProperty(Contentlet.DONT_VALIDATE_ME, "anarchy");
@@ -2553,9 +2537,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertTrue( !UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(foundContentlet.getInode()) );
 
             AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(), "contentlet");
-        } finally {
-            APILocator.getStructureAPI().delete(testStructure, user);
-        }
+
     }
 
     /**
@@ -2604,7 +2586,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertTrue( foundContentlets == null || foundContentlets.isEmpty() );
-        APILocator.getStructureAPI().delete(testStructure, user);
+
     }
 
     /**
