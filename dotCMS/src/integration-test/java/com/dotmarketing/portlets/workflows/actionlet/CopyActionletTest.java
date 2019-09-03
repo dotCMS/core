@@ -225,8 +225,7 @@ public class CopyActionletTest extends BaseWorkflowIntegrationTest {
         }finally {
              for(final Contentlet copy : originalAndCopyMap.values()){
                 try{
-                  contentletAPI.archive(copy, systemUser, false);
-                  contentletAPI.delete(copy, systemUser, false);
+                  contentletAPI.destroy(copy, systemUser, false);
                 }catch(Exception e){
                     Logger.error(this,"Error performing clean-up.", e);
                 }

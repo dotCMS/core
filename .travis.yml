@@ -26,14 +26,25 @@ before_install:
   - chmod +x travis/integration.sh
   - chmod +x travis/unit.sh
 
+# Commit message format
+# [travis] -> executes all dbs and unit tests
+# [travis unit]
+# [travis postgres]
+# [travis mysql]
+# [travis oracle]
+# [travis mssql]
+# [travis mysql] [travis mssql]
+# [travis oracle] [travis mssql] [travis postgres]
+
 # https://docs.travis-ci.com/user/conditions-v1
 # https://docs.travis-ci.com/user/conditional-builds-stages-jobs/
 if: >-
   type = pull_request
+  OR type = api
   OR branch = master
   OR branch =~ ^release-
   OR branch =~ ^test-
-  OR commit_message =~ travis
+  OR commit_message =~ /(\[travis\]|\[travis postgres\]|\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/
 
 # https://docs.travis-ci.com/user/build-stages
 jobs:
@@ -41,21 +52,31 @@ jobs:
     - stage: build image
       script: bash travis/submit.sh
     - stage: unit tests
+      if: commit_message !~ /(\[travis postgres\]|\[travis mysql\]|\[travis oracle\]|\[travis mssql\])/ OR commit_message =~ /(\[travis\]|\[travis unit\])/
       script: bash travis/unit.sh
     - stage: integration tests
+      name: init
+    - script: bash travis/integration.sh
+      if: >-
+        commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
       env: DB_TYPE=postgres
       name: postgres
-      script: bash travis/integration.sh
     - script: bash travis/integration.sh
-      if: type != pull_request OR commit_message =~ travis
+      if: >-
+        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
+        OR commit_message =~ /(\[travis\]|\[travis mysql\])/
       env: DB_TYPE=mysql
       name: mysql
     - script: bash travis/integration.sh
-      if: type != pull_request OR commit_message =~ travis
+      if: >-
+        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
+        OR commit_message =~ /(\[travis\]|\[travis oracle\])/
       env: DB_TYPE=oracle
       name: oracle
     - script: bash travis/integration.sh
-      if: type != pull_request OR commit_message =~ travis
+      if: >-
+        (type != pull_request AND (branch = master OR branch =~ ^release- OR branch =~ ^test-))
+        OR commit_message =~ /(\[travis\]|\[travis mssql\])/
       env: DB_TYPE=mssql
       name: mssql
 

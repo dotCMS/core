@@ -53,7 +53,6 @@ public class ReindexThreadTest {
     public static void prepare() throws Exception {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
         contentletAPI = APILocator.getContentletAPI();
         user = APILocator.systemUser();
 

@@ -97,8 +97,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
                 .thenReturn(new MultiMessageResources( MultiMessageResourcesFactory.createFactory(),""));
 
-        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
-
         LicenseTestUtil.getLicense();
 
         contentletAPI = APILocator.getContentletAPI();
@@ -226,8 +224,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         } finally {
 
             for (final Contentlet contentlet : contentlets) {
-                contentletAPI.archive(contentlet, adminUser, false);
-                contentletAPI.delete(contentlet, adminUser, false);
+                contentletAPI.destroy(contentlet, adminUser, false );
             }
 
             for (final Language language : languages) {
@@ -305,8 +302,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             // Remove contentlets so they can be regenerated from the bundle
             for (final Contentlet contentlet : contentlets) {
                 contentlet.setIndexPolicy(IndexPolicy.FORCE);
-                contentletAPI.archive(contentlet, adminUser, false);
-                contentletAPI.delete(contentlet, adminUser, false);
+                contentletAPI.destroy(contentlet, adminUser, false );
             }
 
             // We have now added dupe Languages.
@@ -339,23 +335,26 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
         } finally {
 
-            // Remove contentlets pushed
-            for (final Contentlet contentlet : publishedContentlets) {
-                contentletAPI.archive(contentlet, adminUser, false);
-                contentletAPI.delete(contentlet, adminUser, false);
-            }
+            try {
+                // Remove contentlets pushed
+                for (final Contentlet contentlet : publishedContentlets) {
+                    contentletAPI.destroy(contentlet, adminUser, false);
+                }
 
-            //Cleanup pushed langs
-            for (final Language language : savedDupeLanguages) {
-                languageAPI.deleteLanguage(language);
-            }
+                //Cleanup pushed langs
+                for (final Language language : savedDupeLanguages) {
+                    languageAPI.deleteLanguage(language);
+                }
 
-            if (null != bundle && null != endpoint && null != environment) {
-                cleanBundleEndpointEnv(bundle, endpoint, environment);
-            }
+                if (null != bundle && null != endpoint && null != environment) {
+                    cleanBundleEndpointEnv(bundle, endpoint, environment);
+                }
 
-            if (null != file) {
-                file.delete();
+                if (null != file) {
+                    file.delete();
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
 
         }
@@ -425,9 +424,8 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             // Remove contentlets so they can be regenerated from the bundle
             for (final Contentlet contentlet : contentlets) {
-                APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, adminUser);
-                contentletAPI.archive(contentlet, adminUser, false);
-                contentletAPI.delete(contentlet, adminUser, false);
+
+                contentletAPI.destroy(contentlet, adminUser, false );
             }
 
             final List<Long>savedLanguagesNowDeletedIds = new ArrayList<>();
@@ -508,29 +506,32 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
         } finally {
 
-            // Remove contentlets pushed
-            for (final Contentlet contentlet : publishedContentlets) {
-                contentletAPI.archive(contentlet, adminUser, false);
-                contentletAPI.delete(contentlet, adminUser, false);
-            }
+            try {
+                // Remove contentlets pushed
+                for (final Contentlet contentlet : publishedContentlets) {
+                    contentletAPI.destroy(contentlet, adminUser, false );
+                }
 
-            for (final Language language : savedNewLanguages) {
-                final Language persistedLang = languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode());
-                if(UtilMethods.isSet(persistedLang) && persistedLang.getId() > 0 ){
-                    try {
-                        languageAPI.deleteLanguage(persistedLang);
-                    } catch (Exception e) {
-                        // Do nothing...
+                for (final Language language : savedNewLanguages) {
+                    final Language persistedLang = languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode());
+                    if(UtilMethods.isSet(persistedLang) && persistedLang.getId() > 0 ){
+                        try {
+                            languageAPI.deleteLanguage(persistedLang);
+                        } catch (Exception e) {
+                            // Do nothing...
+                        }
                     }
                 }
-            }
 
-            if (null != bundle && null != endpoint && null != environment) {
-                cleanBundleEndpointEnv(bundle, endpoint, environment);
-            }
+                if (null != bundle && null != endpoint && null != environment) {
+                    cleanBundleEndpointEnv(bundle, endpoint, environment);
+                }
 
-            if (null != file) {
-                file.delete();
+                if (null != file) {
+                    file.delete();
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
 
         }

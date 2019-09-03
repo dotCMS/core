@@ -345,19 +345,22 @@ public class IdentifierFactoryTest {
 
         }finally {
 
-            if (null != root1) {
-                APILocator.getFolderAPI().delete(root1, user, false);
-            }
+            try {
+                if (null != root1) {
+                    APILocator.getFolderAPI().delete(root1, user, false);
+                }
 
-            if (null != root2) {
-                APILocator.getFolderAPI().delete(root2, user, false);
-            }
+                if (null != root2) {
+                    APILocator.getFolderAPI().delete(root2, user, false);
+                }
 
-            if (null != host2) {
-                APILocator.getHostAPI().archive(host2, user, false);
-                APILocator.getHostAPI().delete(host2, user, false);
+                if (null != host2) {
+                    APILocator.getHostAPI().archive(host2, user, false);
+                    APILocator.getHostAPI().delete(host2, user, false);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
-
         }
 
     }
