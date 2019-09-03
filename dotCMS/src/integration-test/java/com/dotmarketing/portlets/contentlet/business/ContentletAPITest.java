@@ -2124,7 +2124,7 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(contentletChild3,cRelationships.getRelationshipsRecords().get(1).getRecords().get(0));
             assertEquals(contentletChild1,cRelationships.getRelationshipsRecords().get(1).getRecords().get(1));
             assertEquals(contentletChild2,cRelationships.getRelationshipsRecords().get(1).getRecords().get(2));
-        }
+        
     }
 
     private com.dotcms.contenttype.model.field.Field createRelationshipField(final String fieldName, final String parentContentTypeID, final String childContentTypeVariable)
