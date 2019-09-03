@@ -329,23 +329,27 @@ public class CategoryAPITest extends IntegrationTestBase {
             assertNotNull(parents);
             assertTrue(parents.size() == 2);
         } finally{
-            if (UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getIdentifier())){
-                contentletAPI.archive(contentlet, user, false);
-                contentletAPI.delete(contentlet, user, false);
-            }
+            try {
+                if (UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getIdentifier())) {
 
-            if (UtilMethods.isSet(testStructure) && UtilMethods.isSet(testStructure.id())){
-                contentTypeApi.delete(new StructureTransformer(testStructure).from());
-            }
-
-            if (UtilMethods.isSet(categories)){
-                for (Category category: categories){
-                    categoryAPI.delete(category, user, false);
+                    contentletAPI.destroy(contentlet, user, false);
                 }
-            }
 
-            if (UtilMethods.isSet(parentCategory)){
-                categoryAPI.delete(parentCategory, user, false);
+                if (UtilMethods.isSet(testStructure) && UtilMethods.isSet(testStructure.id())) {
+                    contentTypeApi.delete(new StructureTransformer(testStructure).from());
+                }
+
+                if (UtilMethods.isSet(categories)) {
+                    for (Category category : categories) {
+                        categoryAPI.delete(category, user, false);
+                    }
+                }
+
+                if (UtilMethods.isSet(parentCategory)) {
+                    categoryAPI.delete(parentCategory, user, false);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
@@ -667,7 +671,7 @@ public class CategoryAPITest extends IntegrationTestBase {
                     categoryAPI.delete( parentCategory, user, false );
                 }
             } catch ( Exception e ){
-                fail( e.getMessage() );
+                e.printStackTrace();
             }
         }
     }
@@ -767,7 +771,7 @@ public class CategoryAPITest extends IntegrationTestBase {
                     categoryAPI.delete(category, user, false);
                 }
             } catch (Exception e) {
-                fail(e.getMessage());
+                e.printStackTrace();
             }
         }
     }
@@ -1028,13 +1032,17 @@ public class CategoryAPITest extends IntegrationTestBase {
 
         } finally {
 
-             for(final Category category:categoriesToDelete){
-                categoryAPI.delete(category, user, false);
-             }
+            try {
+                for (final Category category : categoriesToDelete) {
+                    categoryAPI.delete(category, user, false);
+                }
 
-             if(contentType != null){
-                 contentTypeApi.delete(contentType);
-             }
+                if (contentType != null) {
+                    contentTypeApi.delete(contentType);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
     }

@@ -2,6 +2,7 @@ package com.dotmarketing.common.db;
 
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.DbType;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
@@ -17,6 +18,7 @@ public class DotDatabaseMetaData {
 
     public static final String ALTER_TABLE = "ALTER TABLE ";
     public static final String DROP_FOREIGN_KEY = " DROP FOREIGN KEY ";
+    public static final String DROP_INDEX = " DROP INDEX ";
 
     /**
      * Find the foreign key on the table, with the primary keys and columns assigned.
@@ -455,5 +457,23 @@ public class DotDatabaseMetaData {
 
         return primaryKey;
     }
+
+    public void dropIndex(final String tableName, final String indexName) throws SQLException {
+        final DbType dbType = DbType.getDbType(DbConnectionFactory.getDBType());
+
+        if(dbType == DbType.MYSQL){
+            new DotConnect().executeStatement(String.format("%s %s %s %s",ALTER_TABLE,tableName,DROP_INDEX,indexName));
+            return;
+        }
+
+        if(dbType == DbType.MSSQL){
+            new DotConnect().executeStatement(String.format("%s %s.%s",DROP_INDEX, tableName, indexName));
+            return;
+        }
+
+        new DotConnect().executeStatement(String.format("%s %s",DROP_INDEX, indexName));
+
+    }
+
 } // E:O:F:DotDatabaseMetaData.
 

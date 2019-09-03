@@ -25,18 +25,16 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.DateUtil;
-import java.sql.Timestamp;
-import java.util.stream.Collectors;
-
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -178,12 +176,14 @@ public class RelationshipAPITest extends IntegrationTestBase {
             migrateRelationshipAndValidate(relationship, contentletParent, relationshipList);
 
         } finally {
-            if (parentContentType != null) {
-                contentTypeAPI.delete(parentContentType);
-            }
-            if (childContentType != null) {
-                contentTypeAPI.delete(childContentType);
-            }
+            try {
+                if (parentContentType != null) {
+                    contentTypeAPI.delete(parentContentType);
+                }
+                if (childContentType != null) {
+                    contentTypeAPI.delete(childContentType);
+                }
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 
@@ -221,9 +221,11 @@ public class RelationshipAPITest extends IntegrationTestBase {
             migrateRelationshipAndValidate(relationship, contentletParent, relationshipList);
 
         } finally {
-            if (parentContentType != null) {
-                contentTypeAPI.delete(parentContentType);
-            }
+            try {
+                if (parentContentType != null) {
+                    contentTypeAPI.delete(parentContentType);
+                }
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 

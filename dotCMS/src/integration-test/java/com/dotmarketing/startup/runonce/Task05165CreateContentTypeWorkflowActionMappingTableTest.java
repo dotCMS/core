@@ -3,6 +3,7 @@ package com.dotmarketing.startup.runonce;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.DbType;
 import com.dotmarketing.util.Logger;
@@ -50,8 +51,8 @@ public class Task05165CreateContentTypeWorkflowActionMappingTableTest {
 
     @WrapInTransaction
     private void removeContentTypeWorkflowActionMappingTable() throws SQLException {
-
-        new DotConnect().executeStatement("DROP INDEX idx_workflow_action_mappings");
+        final DotDatabaseMetaData metaData = new DotDatabaseMetaData();
+        metaData.dropIndex("workflow_action_mappings","idx_workflow_action_mappings");
         new DotConnect().executeStatement("DROP TABLE workflow_action_mappings");
     }
 

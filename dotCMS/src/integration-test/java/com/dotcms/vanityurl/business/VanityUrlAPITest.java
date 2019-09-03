@@ -115,8 +115,7 @@ public class VanityUrlAPITest {
         } finally {
             try {
                 if (contentlet1 != null) {
-                    contentletAPI.archive(contentlet1, user, false);
-                    contentletAPI.delete(contentlet1, user, false);
+                    contentletAPI.destroy(contentlet1, user, false );
                 }
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error cleaning up Vanity Url Links");
@@ -201,13 +200,11 @@ public class VanityUrlAPITest {
         } finally {
             try {
                 if (contentlet1 != null) {
-                    contentletAPI.archive(contentlet1, user, false);
-                    contentletAPI.delete(contentlet1, user, false);
+                    contentletAPI.destroy(contentlet1, user, false );
                 }
 
                 if (contentlet2 != null) {
-                    contentletAPI.archive(contentlet2, user, false);
-                    contentletAPI.delete(contentlet2, user, false);
+                    contentletAPI.destroy(contentlet2, user, false );
                 }
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error cleaning up Vanity Url Links");
@@ -254,8 +251,7 @@ public class VanityUrlAPITest {
         } finally {
             try {
                 if (contentlet1 != null) {
-                    contentletAPI.archive(contentlet1, user, false);
-                    contentletAPI.delete(contentlet1, user, false);
+                    contentletAPI.destroy(contentlet1, user, false );
                 }
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error cleaning up Vanity Url Links");
@@ -325,9 +321,8 @@ public class VanityUrlAPITest {
             Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL, vanityURLCached.getVanityUrlId());
             Assert.assertEquals("/testing"+currentTime, vanityURLCached.getUrl());
 
-        }finally{
-            contentletAPI.archive(vanityURLContentlet, user, false);
-            contentletAPI.delete(vanityURLContentlet, user, false);
+        } finally {
+            contentletAPI.destroy(vanityURLContentlet, user, false );
         }
     }
 
@@ -386,8 +381,7 @@ public class VanityUrlAPITest {
             Assert.assertEquals(301, vanityURLCached.getResponse());
 
         }finally{
-            contentletAPI.archive(vanityURLContentlet, user, false);
-            contentletAPI.delete(vanityURLContentlet, user, false);
+            contentletAPI.destroy(vanityURLContentlet, user, false );
         }
     }
 
@@ -449,8 +443,7 @@ public class VanityUrlAPITest {
                 assertEquals(expectedInvalidCodeMessage, e.getMessage());
             }
         } finally {
-            contentletAPI.archive(vanityURLContentlet, user, false);
-            contentletAPI.delete(vanityURLContentlet, user, false);
+            contentletAPI.destroy(vanityURLContentlet, user, false );
         }
     }
 
@@ -539,10 +532,13 @@ public class VanityUrlAPITest {
 
 
         }finally{
-            contentletAPI.archive(vanityURLContentletSpanish, user, false);
-            contentletAPI.archive(vanityURLContentletEnglish, user, false);
-            contentletAPI.delete(vanityURLContentletSpanish, user, false);
-            contentletAPI.delete(vanityURLContentletEnglish, user, false);
+
+            try {
+                contentletAPI.destroy(vanityURLContentletEnglish, user, false);
+                contentletAPI.destroy(vanityURLContentletSpanish, user, false);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -817,25 +813,17 @@ public class VanityUrlAPITest {
 
 
         } finally {
-            if (null != vanityURL) {
-                contentletAPI.archive(vanityURL, user, false);
-            }
-            if (null != vanityURL1) {
-                contentletAPI.archive(vanityURL1, user, false);
-            }
-            if (null != vanityURL2) {
-                contentletAPI.archive(vanityURL2, user, false);
-            }
 
             if (null != vanityURL) {
-                contentletAPI.delete(vanityURL, user, false);
+                contentletAPI.destroy(vanityURL, user, false);
             }
 
             if (null != vanityURL1) {
-                contentletAPI.delete(vanityURL1, user, false);
+                contentletAPI.destroy(vanityURL1, user, false);
             }
+
             if (null != vanityURL2) {
-                contentletAPI.delete(vanityURL2, user, false);
+                contentletAPI.destroy(vanityURL2, user, false);
             }
         }
     }
@@ -958,8 +946,8 @@ public class VanityUrlAPITest {
                     vanityURLCached.getVanityUrlId());
 
         } finally {
-            contentletAPI.archive(systemVanityURL, user, false);
-            contentletAPI.delete(systemVanityURL, user, false);
+
+            contentletAPI.destroy(systemVanityURL, user, false);
         }
     }
 
@@ -1175,11 +1163,9 @@ public class VanityUrlAPITest {
                     vanityURLCached.getVanityUrlId());
 
         } finally {
-            contentletAPI.archive(systemHostVanityURL, user, false);
-            contentletAPI.archive(defaultHostVanityURL, user, false);
 
-            contentletAPI.delete(systemHostVanityURL, user, false);
-            contentletAPI.delete(defaultHostVanityURL, user, false);
+            contentletAPI.destroy(systemHostVanityURL, user, false);
+            contentletAPI.destroy(defaultHostVanityURL, user, false);
         }
     }
 
@@ -1250,8 +1236,8 @@ public class VanityUrlAPITest {
             Assert.assertEquals(VanityUrlAPI.CACHE_404_VANITY_URL,
                     vanityURLCached.getVanityUrlId());
         } finally {
-            contentletAPI.archive(vanityURL, user, false);
-            contentletAPI.delete(vanityURL, user, false);
+
+            contentletAPI.destroy(vanityURL, user, false);
         }
     }
 
@@ -1391,8 +1377,8 @@ public class VanityUrlAPITest {
             checkPublished(vanityURL, vanityURI, requestedURL, vanityHostId);
 
         } finally {
-            contentletAPI.archive(vanityURL, user, false);
-            contentletAPI.delete(vanityURL, user, false);
+
+            contentletAPI.destroy(vanityURL, user, false);
         }
     }
 
@@ -1522,10 +1508,13 @@ public class VanityUrlAPITest {
 
 
         }finally{
-            contentletAPI.archive(vanityURLContentletDefaultHost, user, false);
-            contentletAPI.delete(vanityURLContentletDefaultHost, user, false);
-            contentletAPI.archive(vanityURLContentletAllSites, user, false);
-            contentletAPI.delete(vanityURLContentletAllSites, user, false);
+
+            try {
+                contentletAPI.destroy(vanityURLContentletDefaultHost, user, false);
+                contentletAPI.destroy(vanityURLContentletAllSites, user, false);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

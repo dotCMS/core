@@ -85,7 +85,6 @@ public class PublisherAPITest extends IntegrationTestBase {
 
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
         LicenseTestUtil.getLicense();
 
         hostAPI = APILocator.getHostAPI();
