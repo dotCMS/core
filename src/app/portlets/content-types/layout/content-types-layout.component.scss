@@ -9,6 +9,9 @@ $top-height: ($toolbar-height + $tabview-nav-height);
         .ui-tabview-nav {
             position: relative;
             z-index: 1;
+        }
+
+        > p-tabview > .ui-tabview > .ui-tabview-nav {
             background-color: $gray-bg;
         }
 
