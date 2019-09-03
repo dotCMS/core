@@ -467,16 +467,18 @@ public class DotDatabaseMetaData {
      */ // todo: do a test
     public void dropColumn(final Connection connection, final String tableName, final String columnName) throws SQLException {
 
-        if (DbConnectionFactory.isMsSql()) {
+        if (DbConnectionFactory.isMySql()) {
             // Drop column constraints
-            this.dropColumnMsDependencies(connection, tableName, columnName);
+            this.dropColumnMySQLDependencies(connection, tableName, columnName);
+        } else if (DbConnectionFactory.isMsSql()) {
+            this.dropColumnMsSQLDependencies(connection, tableName, columnName);
         }
 
         // Drop the column:
         connection.createStatement().executeUpdate("ALTER TABLE `" + tableName + "` DROP COLUMN `" + columnName + "`"); // Drop the column
     }
 
-    private void dropColumnMsDependencies(final Connection connection, final String tableName, final String columnName) throws SQLException {
+    private void dropColumnMySQLDependencies(final Connection connection, final String tableName, final String columnName) throws SQLException {
 
         try (final ResultSet resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
                 .executeQuery("select CONSTRAINT_NAME from INFORMATION_SCHEMA.KEY_COLUMN_USAGE where CONSTRAINT_SCHEMA = SCHEMA() and TABLE_NAME = '" +
@@ -499,6 +501,24 @@ public class DotDatabaseMetaData {
                 try (final Statement statement = connection.createStatement()) {
                     statement.executeUpdate("ALTER TABLE `" + tableName + "` DROP INDEX `" + keyName + "`"); // Drop the index
                 }
+            }
+        }
+    }
+
+    private void dropColumnMsSQLDependencies(final Connection connection, final String tableName, final String columnName) throws SQLException {
+
+        try (final ResultSet resultSet =  connection.getMetaData().getColumns
+                (connection.getCatalog(), null, tableName, null)) {
+
+            // Iterates over the foreign foreignKey columns
+            while (resultSet.next()) {
+
+                int columnCount = resultSet.getMetaData().getColumnCount();
+                for (int i = 1; i <= columnCount; ++i) {
+
+                    System.out.println("Column: " + resultSet.getString(i));
+                }
+
             }
         }
     }
