@@ -99,7 +99,7 @@ public class HostAPITest extends IntegrationTestBase  {
         final Host host = new SiteDataGen().nextPersisted();
 
         final DotConnect dc = new DotConnect();
-        final String query = "select inode.inode from inode left outer join template on template.inode = inode.inode where template.inode is null and inode.type='template';";
+        final String query = "select inode.inode from inode left outer join template on template.inode = inode.inode where template.inode is null and inode.type='template'";
 
         //Verifies that the environment is clean
         dc.setSQL(query);

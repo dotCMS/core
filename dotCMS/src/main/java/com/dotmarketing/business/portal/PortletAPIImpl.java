@@ -1,45 +1,44 @@
 package com.dotmarketing.business.portal;
 
 import static com.dotcms.util.CollectionsUtils.list;
+
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.PortletContext;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.CompanyUtils;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Portlet;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PropsUtil;
+import com.liferay.portlet.PortletConfigImpl;
+import com.liferay.portlet.PortletContextImpl;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import java.util.stream.Collectors;
 import javax.servlet.ServletContext;
-
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.repackage.javax.portlet.PortletConfig;
-import com.dotcms.repackage.javax.portlet.PortletContext;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.CompanyUtils;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.model.Portlet;
-import com.liferay.portal.model.User;
-import com.liferay.portal.util.PropsUtil;
-import com.liferay.portlet.PortletConfigImpl;
-import com.liferay.portlet.PortletContextImpl;
 
 public class PortletAPIImpl implements PortletAPI {
 
@@ -146,7 +145,7 @@ public class PortletAPIImpl implements PortletAPI {
         try {
             for (Language lang : APILocator.getLanguageAPI().getLanguages()) {
                 APILocator.getLanguageAPI()
-                        .saveLanguageKeys(lang, keys, ImmutableMap.of(), ImmutableSet.of());
+                        .saveLanguageKeys(lang, keys, new HashMap<>(), ImmutableSet.of());
             }
         } catch (DotDataException e) {
             Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
