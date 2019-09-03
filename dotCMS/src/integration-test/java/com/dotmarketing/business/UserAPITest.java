@@ -629,8 +629,7 @@ public class UserAPITest extends IntegrationTestBase {
 		hostVariable = hostVariableAPI.getVariablesForHost(host.getIdentifier(),replacementUser,false).get(0);
 		assertEquals(replacementUser.getUserId(), hostVariable.getLastModifierId());
 
-		APILocator.getContentTypeAPI(systemUser).delete(new StructureTransformer(st).from());
-		conAPI.destroy(contentAsset, systemUser, false);
+
 	}
 
 	private void waitForDeleteCompletedNotification(User userToDelete) throws DotDataException, InterruptedException {
@@ -709,7 +708,8 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), systemUser, false);}
+
+		}
 
 	@Test
 	public void testGetUsersByNameOrEmailOrUserIDDeleted() throws DotDataException, DotSecurityException {
@@ -728,7 +728,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -771,8 +771,7 @@ public class UserAPITest extends IntegrationTestBase {
 			fail("The user saved was not found in the retrieved list.");
 		}
 
-		//Clean up the created user
-		userAPI.delete(newUser, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -793,7 +792,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -814,7 +813,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -835,7 +834,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -856,7 +855,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -876,7 +875,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(count == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 
 	}
 
@@ -897,7 +896,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(count == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -917,7 +916,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(count == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -937,7 +936,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(count == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -1066,7 +1065,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(!users.contains(user.getUserId()));
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test

@@ -389,7 +389,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	
 	 @Override
 	  public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault)  throws DotDataException {
-	   return getCountUsersByNameOrEmailOrUserID(filter, true, true, "all");
+	   return getCountUsersByNameOrEmailOrUserID(filter, true, true, null);
 	 }
 	
 	
