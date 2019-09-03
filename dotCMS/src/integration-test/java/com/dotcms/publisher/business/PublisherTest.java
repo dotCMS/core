@@ -149,8 +149,8 @@ public class PublisherTest extends IntegrationTestBase {
             assertNotNull(bundleData.get(PublisherTestUtil.FILE));
 
             // Test content to be replaced using unique field match
-            APILocator.getContentletAPI().archive(contentlet, adminUser, false);
-            APILocator.getContentletAPI().delete(contentlet, adminUser, false);
+            APILocator.getContentletAPI().destroy(contentlet, adminUser, false );
+
             final Contentlet contentToReplace = new ContentletDataGen(testContentType.id())
                     .setProperty(TEST_TITLE, uniqueValue)
                     .setProperty(TEST_DESCRIPTION, "Other value").nextPersisted();
@@ -171,9 +171,7 @@ public class PublisherTest extends IntegrationTestBase {
         } finally {
 
             if (UtilMethods.isSet(resultContentlet)) {
-                APILocator.getContentletAPI().archive(resultContentlet, systemUser, false);
-                APILocator.getContentletAPI().delete(resultContentlet, systemUser, false);
-
+                APILocator.getContentletAPI().destroy(resultContentlet, systemUser, false );
             }
 
             if (UtilMethods.isSet(ppBean)) {

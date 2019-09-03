@@ -125,14 +125,16 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
             if (null != SaveContentActionletTest.contentlet) {
 
-                SaveContentActionletTest.contentletAPI.archive(SaveContentActionletTest.contentlet, APILocator.systemUser(), false);
-                SaveContentActionletTest.contentletAPI.delete(SaveContentActionletTest.contentlet, APILocator.systemUser(), false);
+                /*SaveContentActionletTest.contentletAPI.archive(SaveContentActionletTest.contentlet, APILocator.systemUser(), false);
+                SaveContentActionletTest.contentletAPI.delete(SaveContentActionletTest.contentlet, APILocator.systemUser(), false);*/
+                SaveContentActionletTest.contentletAPI.destroy(SaveContentActionletTest.contentlet, APILocator.systemUser(), false);
             }
 
             if (null != SaveContentActionletTest.contentlet2) {
 
-                SaveContentActionletTest.contentletAPI.archive(SaveContentActionletTest.contentlet2, APILocator.systemUser(), false);
-                SaveContentActionletTest.contentletAPI.delete(SaveContentActionletTest.contentlet2, APILocator.systemUser(), false);
+                /*SaveContentActionletTest.contentletAPI.archive(SaveContentActionletTest.contentlet2, APILocator.systemUser(), false);
+                SaveContentActionletTest.contentletAPI.delete(SaveContentActionletTest.contentlet2, APILocator.systemUser(), false);*/
+                SaveContentActionletTest.contentletAPI.destroy(SaveContentActionletTest.contentlet2, APILocator.systemUser(), false);
             }
         } finally {
 

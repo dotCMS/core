@@ -172,6 +172,8 @@ public class LinkCheckerAPITest extends IntegrationTestBase {
             APILocator.getHostAPI().delete(host, sysuser, false);
             APILocator.getHostAPI().archive(host2, sysuser, false);
             APILocator.getHostAPI().delete(host2, sysuser, false);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         finally {
             HibernateUtil.closeSession();
