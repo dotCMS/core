@@ -1,5 +1,6 @@
 package com.dotcms.http;
 
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -164,10 +165,17 @@ public class CircuitBreakerUrl {
                         try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
                             HttpResponse response = httpclient.execute(this.request);
                             this.response = response.getStatusLine().getStatusCode();
-                            if(this.response!=200) {
-                              throw new DotRuntimeException("got invalid response for url:" +this.proxyUrl + " response:" + response.getStatusLine());
+                            switch (this.response){
+                                case 200:
+                                    IOUtils.copy(response.getEntity().getContent(), out);
+                                    break;
+                                case 400:
+                                case 401:
+                                case 404:
+                                    throw new BadRequestException("got invalid response for url: " + this.proxyUrl + " response:" + this.response);
+                                default:
+                                    throw new DotRuntimeException("got invalid response for url: " + this.proxyUrl + " response:" + this.response);
                             }
-                            IOUtils.copy(response.getEntity().getContent(), out);
                         }
                     });
         } catch (FailsafeException ee) {
