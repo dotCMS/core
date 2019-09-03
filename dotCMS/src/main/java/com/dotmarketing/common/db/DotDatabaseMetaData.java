@@ -458,6 +458,51 @@ public class DotDatabaseMetaData {
         return primaryKey;
     }
 
+    /**
+     * Drops the column depending on the db
+     * @param connection {@link Connection}
+     * @param tableName {@link String}
+     * @param columnName {@link String}
+     * @throws SQLException
+     */ // todo: do a test
+    public void dropColumn(final Connection connection, final String tableName, final String columnName) throws SQLException {
+
+        if (DbConnectionFactory.isMsSql()) {
+            // Drop column constraints
+            this.dropColumnMsDependencies(connection, tableName, columnName);
+        }
+
+        // Drop the column:
+        connection.createStatement().executeUpdate("ALTER TABLE `" + tableName + "` DROP COLUMN `" + columnName + "`"); // Drop the column
+    }
+
+    private void dropColumnMsDependencies(final Connection connection, final String tableName, final String columnName) throws SQLException {
+
+        try (final ResultSet resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+                .executeQuery("select CONSTRAINT_NAME from INFORMATION_SCHEMA.KEY_COLUMN_USAGE where CONSTRAINT_SCHEMA = SCHEMA() and TABLE_NAME = '" +
+                        tableName + "' and COLUMN_NAME = '" + columnName + "'")) {
+
+            while (resultSet.next()) {
+                final String constraintName = resultSet.getString("CONSTRAINT_NAME");
+                try (final Statement statement = connection.createStatement()) {
+                    statement.executeUpdate("ALTER TABLE `" + tableName + "` DROP FOREIGN KEY`" + constraintName + "`"); // Drop the foreign key constraint
+                }
+            }
+        }
+
+        // Drop column indexes
+        try (final ResultSet resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+                .executeQuery("SHOW INDEX FROM `" + tableName + "` where column_name = '" + columnName + "'")) {
+
+            while (resultSet.next()) {
+                final String keyName = resultSet.getString("Key_name");
+                try (final Statement statement = connection.createStatement()) {
+                    statement.executeUpdate("ALTER TABLE `" + tableName + "` DROP INDEX `" + keyName + "`"); // Drop the index
+                }
+            }
+        }
+    }
+
     public void dropIndex(final String tableName, final String indexName) throws SQLException {
         final DbType dbType = DbType.getDbType(DbConnectionFactory.getDBType());
 
