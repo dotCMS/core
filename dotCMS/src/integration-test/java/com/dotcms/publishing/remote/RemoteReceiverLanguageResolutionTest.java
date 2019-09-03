@@ -424,7 +424,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
             // Remove contentlets so they can be regenerated from the bundle
             for (final Contentlet contentlet : contentlets) {
-
                 contentletAPI.destroy(contentlet, adminUser, false );
             }
 
