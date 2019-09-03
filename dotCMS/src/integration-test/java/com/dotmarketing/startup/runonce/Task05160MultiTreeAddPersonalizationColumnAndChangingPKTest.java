@@ -54,12 +54,6 @@ public class Task05160MultiTreeAddPersonalizationColumnAndChangingPKTest {
     @WrapInTransaction
     private void removePersonalizationColumnAndPK() throws SQLException, DotDataException {
 
-        if (DbConnectionFactory.isMsSql()) {
-
-            System.out.println("running alter table multi_tree alter column personalization drop default;");
-            new DotConnect().setSQL("alter table multi_tree alter column personalization drop default").loadResult();
-        }
-
         try (final Connection connection = DbConnectionFactory.getDataSource().getConnection()) {
 
             final PrimaryKey primaryKey = new DotDatabaseMetaData().dropPrimaryKey(connection, "multi_tree");
