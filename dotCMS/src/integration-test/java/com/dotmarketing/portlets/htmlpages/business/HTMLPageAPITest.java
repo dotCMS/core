@@ -86,7 +86,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
         HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
         page.setIndexPolicy(IndexPolicy.FORCE);
-        APILocator.getContentletIndexAPI().addContentToIndex(page, true, true);
+        APILocator.getContentletIndexAPI().addContentToIndex(page, true);
         boolean isIndexed = APILocator.getContentletAPI().isInodeIndexed( page.getInode() );
         assertTrue(isIndexed);
 
@@ -100,7 +100,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         folder=APILocator.getFolderAPI().createFolders(
                 "/test_junit/test_"+UUIDGenerator.generateUuid().replaceAll("-", "_"), host, sysuser, false);
 		HTMLPageAsset page2 = new HTMLPageDataGen(folder, template).inode(existingInode).identifier(existingIdentifier).nextPersisted();
-        APILocator.getContentletIndexAPI().addContentToIndex(page2, true, true);
+        APILocator.getContentletIndexAPI().addContentToIndex(page2, true);
         isIndexed = APILocator.getContentletAPI().isInodeIndexed( page2.getInode() );
         assertTrue(isIndexed);
         assertEquals(existingInode,page2.getInode());

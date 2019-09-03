@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import java.util.stream.Collectors;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -437,12 +438,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     @Override
-    public void addContentToIndex(final Contentlet content, final boolean deps) throws DotDataException {
-        addContentToIndex(content, deps, false);
-    }
-
-    @Override
-    public void addContentToIndex(final Contentlet parentContenlet, final boolean includeDependencies, final boolean indexBeforeCommit)
+    public void addContentToIndex(final Contentlet parentContenlet, final boolean includeDependencies)
             throws DotDataException {
 
         if (null == parentContenlet || !UtilMethods.isSet(parentContenlet.getIdentifier())) {
@@ -453,16 +449,23 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 + ", includeDependencies: " + includeDependencies +
                 ", policy: " + parentContenlet.getIndexPolicy());
 
-        // parentContenlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        final List<Contentlet> contentToIndex =
-                (includeDependencies) ? ImmutableList.<Contentlet>builder().add(parentContenlet).addAll(loadDeps(parentContenlet)).build()
-                        : ImmutableList.of(parentContenlet);
+        final List<Contentlet> contentToIndex = includeDependencies
+                ? ImmutableList.<Contentlet>builder()
+                .add(parentContenlet)
+                .addAll(
+                        loadDeps(parentContenlet)
+                                .stream()
+                                .peek((dep)-> dep.setIndexPolicy(IndexPolicy.DEFER))
+                                .collect(Collectors.toList()))
+                .build()
+                : ImmutableList.of(parentContenlet);
 
-        if (indexBeforeCommit == false && DbConnectionFactory.inTransaction()) {
+
+        if(parentContenlet.getIndexPolicy()==IndexPolicy.DEFER) {
             queueApi.addContentletsReindex(contentToIndex);
+        } else {
+            HibernateUtil.addCommitListener(() -> addContentToIndex(contentToIndex));
         }
-
-        addContentToIndex(contentToIndex);
 
     }
 
