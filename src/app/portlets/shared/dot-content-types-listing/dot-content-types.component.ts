@@ -1,14 +1,14 @@
-import { forkJoin as observableForkJoin } from 'rxjs';
+import { forkJoin } from 'rxjs';
 
 import { map, take, pluck } from 'rxjs/operators';
-import { ListingDataTableComponent } from '@components/listing-data-table/listing-data-table.component';
+import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { CrudService } from '@services/crud';
+import { DotCrudService } from '@services/dot-crud';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Component, OnInit, ViewChild } from '@angular/core';
 
 import { ActionHeaderOptions } from '@models/action-header';
-import { ContentTypesInfoService } from '@services/content-types-info';
+import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DataTableColumn } from '@models/data-table';
 import { DotMessageService } from '@services/dot-messages-service';
 import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
@@ -24,17 +24,17 @@ import { DotContentTypeService } from '@services/dot-content-type/dot-content-ty
  * List of Content Types
  * use: listing-data-table.component
  * @export
- * @class ContentTypesPortletComponent
+ * @class DotContentTypesPortletComponent
 
  */
 @Component({
     selector: 'dot-content-types',
-    styleUrls: ['./content-types.component.scss'],
-    templateUrl: 'content-types.component.html'
+    styleUrls: ['./dot-content-types.component.scss'],
+    templateUrl: 'dot-content-types.component.html'
 })
-export class ContentTypesPortletComponent implements OnInit {
+export class DotContentTypesPortletComponent implements OnInit {
     @ViewChild('listing')
-    listing: ListingDataTableComponent;
+    listing: DotListingDataTableComponent;
     filterBy: string;
     public contentTypeColumns: DataTableColumn[];
     public item: any;
@@ -68,8 +68,8 @@ export class ContentTypesPortletComponent implements OnInit {
     ];
 
     constructor(
-        private contentTypesInfoService: ContentTypesInfoService,
-        private crudService: CrudService,
+        private contentTypesInfoService: DotContentTypesInfoService,
+        private crudService: DotCrudService,
         private dotContentTypeService: DotContentTypeService,
         private dotDialogService: DotAlertConfirmService,
         private dotLicenseService: DotLicenseService,
@@ -81,7 +81,7 @@ export class ContentTypesPortletComponent implements OnInit {
     ) {}
 
     ngOnInit() {
-        observableForkJoin(
+        forkJoin(
             this.dotMessageService.getMessages(this.i18nKeys),
             this.dotContentTypeService.getAllContentTypes(),
             this.dotLicenseService.isEnterprise(),

@@ -9,11 +9,11 @@ import {
     DotCMSWorkflow
 } from 'dotcms-models';
 import { ContentTypesFormComponent } from '../form';
-import { CrudService } from '@services/crud';
+import { DotCrudService } from '@services/dot-crud';
 import { ContentTypeFieldsDropZoneComponent } from '../fields/index';
 import { FieldService } from '../fields/service';
 import { DotMessageService } from '@services/dot-messages-service';
-import { ContentTypesInfoService } from '@services/content-types-info';
+import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import {
     DotHttpErrorManagerService,
@@ -63,8 +63,8 @@ export class ContentTypesEditComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        private contentTypesInfoService: ContentTypesInfoService,
-        private crudService: CrudService,
+        private contentTypesInfoService: DotContentTypesInfoService,
+        private crudService: DotCrudService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotEventsService: DotEventsService,
         private dotRouterService: DotRouterService,

@@ -1,12 +1,12 @@
 import { ContentTypesEditComponent } from './edit';
-import { ContentTypesPortletComponent } from './main';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { ContentTypeEditResolver } from './edit/content-types-edit-resolver.service';
 
 const contentTypesRoutes: Routes = [
     {
-        component: ContentTypesPortletComponent,
+        loadChildren:
+            '@portlets/shared/dot-content-types-listing/dot-content-types-listing.module#DotContentTypesListingModule',
         path: ''
     },
     {

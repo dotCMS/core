@@ -1,11 +1,11 @@
-import { ContentTypesInfoService } from './content-types-info.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DotContentTypesInfoService } from './dot-content-types-info.service';
+import { DOTTestBed } from '@tests/dot-test-bed';
 
-describe('ContentTypesInfoService', () => {
+describe('DotContentTypesInfoService', () => {
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([ContentTypesInfoService]);
+        this.injector = DOTTestBed.resolveAndCreate([DotContentTypesInfoService]);
 
-        this.iconsService = this.injector.get(ContentTypesInfoService);
+        this.iconsService = this.injector.get(DotContentTypesInfoService);
     });
 
     it('should return a event_note for content', () => {

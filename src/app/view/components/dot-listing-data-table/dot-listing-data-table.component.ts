@@ -21,10 +21,10 @@ import { DotDataTableAction } from '@models/data-table/dot-data-table-action';
 @Component({
     providers: [PaginatorService],
     selector: 'dot-listing-data-table',
-    styleUrls: ['./listing-data-table.component.scss'],
-    templateUrl: 'listing-data-table.component.html'
+    styleUrls: ['./dot-listing-data-table.component.scss'],
+    templateUrl: 'dot-listing-data-table.component.html'
 })
-export class ListingDataTableComponent implements OnChanges, OnInit {
+export class DotListingDataTableComponent implements OnChanges, OnInit {
     @Input() columns: DataTableColumn[];
     @Input() url: string;
     @Input() actionHeaderOptions: ActionHeaderOptions;

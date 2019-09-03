@@ -1,14 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { ContentTypesEditComponent } from './edit';
 import { ContentTypesFormComponent } from './form';
-import { ContentTypesInfoService } from '@services/content-types-info';
+import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { ContentTypesLayoutComponent } from './layout';
-import { ContentTypesPortletComponent } from './main';
 import { ContentTypesRoutingModule } from './content-types-routing.module';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { FormatDateService } from '@services/format-date-service';
 import { DotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { ListingDataTableModule } from '@components/listing-data-table/listing-data-table.module';
+import { DotListingDataTableModule } from '@components/dot-listing-data-table/dot-listing-data-table.module';
 import { NgModule } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
@@ -65,7 +64,7 @@ import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflo
 import { DynamicFieldPropertyDirective } from './fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 import { IFrameModule } from '@components/_common/iframe';
 import { MdInputTextModule } from '@directives/md-inputtext/md-input-text.module';
-import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
+import { DotPushPublishContentTypesDialogModule } from '@components/_common/dot-push-publish-dialog/dot-push-publish-dialog.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotContentTypeFieldsVariablesModule } from './fields/dot-content-type-fields-variables/dot-content-type-fields-variables.module';
@@ -90,7 +89,6 @@ import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-tool
         ContentTypesFieldsListComponent,
         ContentTypesFormComponent,
         ContentTypesLayoutComponent,
-        ContentTypesPortletComponent,
         DataTypePropertyComponent,
         DefaultValuePropertyComponent,
         DynamicFieldPropertyDirective,
@@ -109,7 +107,6 @@ import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-tool
         RegexCheckPropertyComponent,
         ValuesPropertyComponent
     ],
-    exports: [ContentTypesPortletComponent],
     imports: [
         ButtonModule,
         CheckboxModule,
@@ -140,11 +137,11 @@ import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-tool
         FormsModule,
         IFrameModule,
         InputTextModule,
-        ListingDataTableModule,
+        DotListingDataTableModule,
         MdInputTextModule,
         MultiSelectModule,
         OverlayPanelModule,
-        PushPublishContentTypesDialogModule,
+        DotPushPublishContentTypesDialogModule,
         RadioButtonModule,
         ReactiveFormsModule,
         SearchableDropDownModule,
@@ -158,7 +155,7 @@ import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-tool
     ],
     providers: [
         ContentTypeEditResolver,
-        ContentTypesInfoService,
+        DotContentTypesInfoService,
         DotWorkflowService,
         DragulaService,
         FieldDragDropService,

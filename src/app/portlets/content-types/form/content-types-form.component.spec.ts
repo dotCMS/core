@@ -32,7 +32,7 @@ import { ContentTypesFormComponent } from './content-types-form.component';
 import { DotCMSSystemActionType, DotCMSContentTypeLayoutRow } from 'dotcms-models';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMessageService } from '@services/dot-messages-service';
-import { ContentTypesInfoService } from '@services/content-types-info';
+import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 // tslint:disable-next-line:max-line-length
 import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
@@ -184,7 +184,7 @@ describe('ContentTypesFormComponent', () => {
                 { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
                 DotcmsConfigService,
-                ContentTypesInfoService
+                DotContentTypesInfoService
             ]
         });
 

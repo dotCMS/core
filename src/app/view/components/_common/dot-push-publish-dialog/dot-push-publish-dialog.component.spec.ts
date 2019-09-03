@@ -4,7 +4,7 @@ import { DebugElement, Component } from '@angular/core';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
-import { PushPublishContentTypesDialogComponent } from './push-publish-dialog.component';
+import { DotPushPublishContentTypesDialogComponent } from './dot-push-publish-dialog.component';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@services/dot-messages-service';
@@ -30,8 +30,8 @@ class TestHostComponent {
     pushPublishIdentifier: string;
 }
 
-xdescribe('PushPublishContentTypesDialogComponent', () => {
-    let comp: PushPublishContentTypesDialogComponent;
+xdescribe('DotPushPublishContentTypesDialogComponent', () => {
+    let comp: DotPushPublishContentTypesDialogComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let pushPublishServiceMock: PushPublishServiceMock;
@@ -54,7 +54,7 @@ xdescribe('PushPublishContentTypesDialogComponent', () => {
         pushPublishServiceMock = new PushPublishServiceMock();
 
         DOTTestBed.configureTestingModule({
-            declarations: [PushPublishContentTypesDialogComponent, TestHostComponent],
+            declarations: [DotPushPublishContentTypesDialogComponent, TestHostComponent],
             imports: [
                 PushPublishEnvSelectorModule,
                 BrowserAnimationsModule,

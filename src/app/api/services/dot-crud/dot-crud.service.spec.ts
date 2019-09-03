@@ -1,14 +1,14 @@
 import { fakeAsync, tick } from '@angular/core/testing';
 import { Response, ResponseOptions, ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
-import { CrudService } from './';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DotCrudService } from '.';
+import { DOTTestBed } from '@tests/dot-test-bed';
 
 describe('CrudService', () => {
     beforeEach(() => {
-        this.injector = DOTTestBed.resolveAndCreate([CrudService]);
+        this.injector = DOTTestBed.resolveAndCreate([DotCrudService]);
 
-        this.crudService = this.injector.get(CrudService);
+        this.crudService = this.injector.get(DotCrudService);
         this.backend = this.injector.get(ConnectionBackend) as MockBackend;
         this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
     });

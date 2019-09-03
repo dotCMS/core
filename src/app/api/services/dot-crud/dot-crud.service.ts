@@ -10,7 +10,7 @@ import { RequestMethod } from '@angular/http';
  * @class CrudService
  */
 @Injectable()
-export class CrudService {
+export class DotCrudService {
     constructor(private coreWebService: CoreWebService) {}
 
     /**

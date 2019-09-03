@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { DotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 import { MultiSelectModule, InputSwitchModule } from 'primeng/primeng';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { ListingDataTableModule } from '@components/listing-data-table/listing-data-table.module';
+import { DotListingDataTableModule } from '@components/dot-listing-data-table/dot-listing-data-table.module';
 import { TableModule } from 'primeng/table';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
 import { DotPersonaSelectorModule } from '@components/dot-persona-selector/dot-persona.selector.module';
@@ -32,7 +32,7 @@ const routes: Routes = [
         MultiSelectModule,
         TableModule,
         InputSwitchModule,
-        ListingDataTableModule
+        DotListingDataTableModule
     ],
     declarations: [PatternLibraryComponent]
 })

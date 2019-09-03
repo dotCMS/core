@@ -17,10 +17,10 @@ import { Subject } from 'rxjs';
 
 @Component({
     selector: 'dot-push-publish-dialog',
-    styleUrls: ['./push-publish-dialog.component.scss'],
-    templateUrl: 'push-publish-dialog.component.html'
+    styleUrls: ['./dot-push-publish-dialog.component.scss'],
+    templateUrl: 'dot-push-publish-dialog.component.html'
 })
-export class PushPublishContentTypesDialogComponent implements OnInit, OnDestroy {
+export class DotPushPublishContentTypesDialogComponent implements OnInit, OnDestroy {
     dateFieldMinDate = new Date();
     dialogActions: DotDialogActions;
     dialogShow = false;

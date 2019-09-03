@@ -2,7 +2,7 @@ import { DotLargeMessageDisplayModule } from './view/components/dot-large-messag
 // CUSTOM MDOULES
 import { DotActionButtonModule } from './view/components/_common/dot-action-button/dot-action-button.module';
 import { DotFieldValidationMessageModule } from './view/components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { ListingDataTableModule } from './view/components/listing-data-table/listing-data-table.module';
+import { DotListingDataTableModule } from './view/components/dot-listing-data-table/dot-listing-data-table.module';
 import { DotSiteSelectorModule } from './view/components/_common/dot-site-selector/dot-site-selector.module';
 import { SearchableDropDownModule } from './view/components/_common/searchable-dropdown';
 import { IFrameModule } from './view/components/_common/iframe';
@@ -51,7 +51,7 @@ export const CUSTOM_MODULES = [
     DotMessageDisplayModule,
     DotFieldValidationMessageModule,
     IFrameModule,
-    ListingDataTableModule,
+    DotListingDataTableModule,
     SearchableDropDownModule,
     DotSiteSelectorModule,
     DotLargeMessageDisplayModule

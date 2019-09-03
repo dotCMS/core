@@ -2,8 +2,8 @@ import { throwError as observableThrowError, of as observableOf } from 'rxjs';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { ContentTypeEditResolver } from './content-types-edit-resolver.service';
 import { async } from '@angular/core/testing';
-import { ContentTypesInfoService } from '@services/content-types-info';
-import { CrudService } from '@services/crud';
+import { DotContentTypesInfoService } from '@services/dot-content-types-info';
+import { DotCrudService } from '@services/dot-crud';
 import { LoginService } from 'dotcms-js';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { LoginServiceMock } from '../../../test/login-service.mock';
@@ -23,7 +23,7 @@ const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnaps
 activatedRouteSnapshotMock.paramMap = {};
 
 describe('ContentTypeEditResolver', () => {
-    let crudService: CrudService;
+    let crudService: DotCrudService;
     let contentTypeEditResolver: ContentTypeEditResolver;
     let dotRouterService: DotRouterService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
@@ -32,9 +32,9 @@ describe('ContentTypeEditResolver', () => {
         const testbed = DOTTestBed.configureTestingModule({
             providers: [
                 ContentTypeEditResolver,
-                ContentTypesInfoService,
+                DotContentTypesInfoService,
                 DotHttpErrorManagerService,
-                { provide: CrudService, useClass: CrudServiceMock },
+                { provide: DotCrudService, useClass: CrudServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
                 {
                     provide: ActivatedRouteSnapshot,
@@ -43,7 +43,7 @@ describe('ContentTypeEditResolver', () => {
             ],
             imports: [RouterTestingModule]
         });
-        crudService = testbed.get(CrudService);
+        crudService = testbed.get(DotCrudService);
         contentTypeEditResolver = testbed.get(ContentTypeEditResolver);
         dotRouterService = testbed.get(DotRouterService);
         dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);

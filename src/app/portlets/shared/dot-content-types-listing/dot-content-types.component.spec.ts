@@ -1,20 +1,20 @@
 import { throwError as observableThrowError, of as observableOf, Observable } from 'rxjs';
-import { CrudService } from '@services/crud/crud.service';
+import { DotCrudService } from '@services/dot-crud/dot-crud.service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ListingDataTableModule } from '@components/listing-data-table/listing-data-table.module';
+import { DotListingDataTableModule } from '@components/dot-listing-data-table/dot-listing-data-table.module';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
-import { ContentTypesInfoService } from '@services/content-types-info';
-import { ContentTypesPortletComponent } from './content-types.component';
+import { DotContentTypesInfoService } from '@services/dot-content-types-info';
+import { DotContentTypesPortletComponent } from './dot-content-types.component';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { FormatDateService } from '@services/format-date-service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Injectable } from '@angular/core';
-import { PushPublishContentTypesDialogModule } from '@components/_common/push-publish-dialog/push-publish-dialog.module';
+import { DotPushPublishContentTypesDialogModule } from '@components/_common/dot-push-publish-dialog/dot-push-publish-dialog.module';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { SelectItem } from 'primeng/primeng';
@@ -87,11 +87,11 @@ class MockDotAddToBundleComponent {
     cancel = new EventEmitter<boolean>();
 }
 
-describe('ContentTypesPortletComponent', () => {
-    let comp: ContentTypesPortletComponent;
-    let fixture: ComponentFixture<ContentTypesPortletComponent>;
+describe('DotContentTypesPortletComponent', () => {
+    let comp: DotContentTypesPortletComponent;
+    let fixture: ComponentFixture<DotContentTypesPortletComponent>;
     let de: DebugElement;
-    let crudService: CrudService;
+    let crudService: DotCrudService;
     let router: ActivatedRoute;
     let dotContentletService: DotContentTypeService;
     let pushPublishService: PushPublishService;
@@ -117,21 +117,21 @@ describe('ContentTypesPortletComponent', () => {
 
         DOTTestBed.configureTestingModule({
             declarations: [
-                ContentTypesPortletComponent,
+                DotContentTypesPortletComponent,
                 MockDotBaseTypeSelectorComponent,
                 MockDotAddToBundleComponent
             ],
             imports: [
                 RouterTestingModule.withRoutes([
-                    { path: 'test', component: ContentTypesPortletComponent }
+                    { path: 'test', component: DotContentTypesPortletComponent }
                 ]),
                 BrowserAnimationsModule,
-                ListingDataTableModule,
-                PushPublishContentTypesDialogModule
+                DotListingDataTableModule,
+                DotPushPublishContentTypesDialogModule
             ],
             providers: [
-                ContentTypesInfoService,
-                CrudService,
+                DotContentTypesInfoService,
+                DotCrudService,
                 DotAlertConfirmService,
                 FormatDateService,
                 { provide: DotContentTypeService, useClass: MockDotContentTypeService },
@@ -142,11 +142,11 @@ describe('ContentTypesPortletComponent', () => {
             ]
         });
 
-        fixture = DOTTestBed.createComponent(ContentTypesPortletComponent);
+        fixture = DOTTestBed.createComponent(DotContentTypesPortletComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
         router = de.injector.get(ActivatedRoute);
-        crudService = fixture.debugElement.injector.get(CrudService);
+        crudService = fixture.debugElement.injector.get(DotCrudService);
         dotContentletService = fixture.debugElement.injector.get(DotContentTypeService);
         pushPublishService = fixture.debugElement.injector.get(PushPublishService);
         dotLicenseService = fixture.debugElement.injector.get(DotLicenseService);

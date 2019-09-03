@@ -2,11 +2,11 @@ import { Injectable } from '@angular/core';
 
 /**
  * Provide data for the content types items
- * @ContentTypesInfoService
+ * @DotContentTypesInfoService
  * @class CrudService
  */
 @Injectable()
-export class ContentTypesInfoService {
+export class DotContentTypesInfoService {
     private contentTypeInfoCollection = [
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
