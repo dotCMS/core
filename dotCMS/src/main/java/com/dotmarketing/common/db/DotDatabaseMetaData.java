@@ -514,9 +514,14 @@ public class DotDatabaseMetaData {
             while (resultSet.next()) {
 
                 int columnCount = resultSet.getMetaData().getColumnCount();
+                System.out.println("New Column");
                 for (int i = 1; i <= columnCount; ++i) {
 
-                    System.out.println("Column: " + resultSet.getMetaData().getCatalogName(i) + " : " + resultSet.getString(i));
+                    System.out.println("Name: " + resultSet.getMetaData().getCatalogName(i) + " : " +
+                                    resultSet.getMetaData().getColumnName(i) + " : " +
+                                    resultSet.getMetaData().getColumnType(i) + " : " +
+                            resultSet.getMetaData().getColumnLabel(i) + " : " +
+                            resultSet.getString(i));
                 }
 
             }
