@@ -307,5 +307,14 @@ public abstract class UserFactory {
      */
     protected abstract List<User> getUnDeletedUsers() throws DotDataException;
 
+  protected abstract List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous,
+      boolean includeDefault, String showUserType) throws DotDataException;
+
+  public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault, String showUserType)
+      throws DotDataException {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
 
 }

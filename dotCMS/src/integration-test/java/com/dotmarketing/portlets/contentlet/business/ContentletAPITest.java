@@ -2356,7 +2356,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull( forAllLanguages );
         assertTrue( !forAllLanguages.isEmpty() );
         assertEquals(list.size(), forAllLanguages.size());
-        APILocator.getContentTypeAPI(user).delete(new StructureTransformer(st).from());
+
     }
 
     /**

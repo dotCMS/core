@@ -41,6 +41,9 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.InstancePool;
+
+import io.vavr.control.Try;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Iterator;
@@ -219,6 +222,31 @@ public class LoginServiceAPIFactory implements Serializable {
             return LoginServiceAPI.super.isLoggedIn(req);
         }
 
+        
+        @CloseDBIfOpened
+        @Override
+        public boolean doBackEndLogin(String userId,
+                                     final String password,
+                                     final boolean rememberMe,
+                                     final HttpServletRequest request,
+                                     final HttpServletResponse response) throws Exception {
+        
+          final Company company= APILocator.getCompanyAPI().getDefaultCompany();
+          User user = Try.of(()-> 
+            Company.AUTH_TYPE_EA.equals(company.getAuthType()) 
+              ? APILocator.getUserAPI().loadByUserByEmail(userId, APILocator.systemUser(), false) 
+                  : APILocator.getUserAPI().loadUserById(userId) ).getOrElseThrow(()->new AuthException());
+                
+          if(!user.hasConsoleAccess()) {
+            Thread.sleep(2000);
+            SecurityLogger.logInfo(this.getClass(),"User " + user.getEmailAddress() + " / " + user.getUserId() +" login has failed. User does not have the Back End User Role or any layouts");
+            throw new AuthException();
+          }
+          
+          return doActionLogin(userId, password,rememberMe,request,response);
+        
+        }
+        
         @CloseDBIfOpened
         @Override
         public boolean doActionLogin(String userId,

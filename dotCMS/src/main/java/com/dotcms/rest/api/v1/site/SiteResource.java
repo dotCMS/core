@@ -96,11 +96,15 @@ public class SiteResource implements Serializable {
     public final Response currentSite(@Context final HttpServletRequest httpServletRequest,
                                       @Context final HttpServletResponse httpServletResponse) {
         Response response = null;
-        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
-        final User user = initData.getUser();
+
 
         try {
-
+          final User user = new WebResource.InitBuilder(this.webResource)
+              .requestAndResponse(httpServletRequest, httpServletResponse)
+              .allowBackendUser(true)
+              .rejectWhenNoUser(true)
+              .init().getUser();
+          
             Host currentSite = siteHelper.getCurrentSite(httpServletRequest, user);
             response = Response.ok( new ResponseEntityView(currentSite) ).build();
         } catch (Exception e) {
@@ -129,8 +133,11 @@ public class SiteResource implements Serializable {
     ) {
 
         Response response = null;
-        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
-        final User user = initData.getUser();
+        final User user = new WebResource.InitBuilder(this.webResource)
+            .requestAndResponse(httpServletRequest, httpServletResponse)
+            .allowBackendUser(true)
+            .rejectWhenNoUser(true)
+            .init().getUser();
 
         String filter = (null != filterParam && filterParam.endsWith(NO_FILTER))?
                 filterParam.substring(0, filterParam.length() - 1):
@@ -164,8 +171,11 @@ public class SiteResource implements Serializable {
     ) {
 
         Response response = null;
-        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null); // should logged in
-        final User user = initData.getUser();
+        final User user = new WebResource.InitBuilder(this.webResource)
+            .requestAndResponse(httpServletRequest, httpServletResponse)
+            .allowBackendUser(true)
+            .rejectWhenNoUser(true)
+            .init().getUser();
         boolean switchDone = false;
         Host hostFound = null;
 
@@ -214,8 +224,11 @@ public class SiteResource implements Serializable {
             @Context final HttpServletResponse response
     ) {
 
-        final InitDataObject initData = this.webResource.init(null, request, response, true, null); // should logged in
-        final User user = initData.getUser();
+      final User user = new WebResource.InitBuilder(this.webResource)
+          .requestAndResponse(request, response)
+          .allowBackendUser(true)
+          .rejectWhenNoUser(true)
+          .init().getUser();
 
         Logger.debug(this, "Switching to default host for user: " + user.getUserId());
 

@@ -133,6 +133,17 @@ public class Company extends CompanyModel {
 		return _company;
 	}
 
+	public String getBackgroundColor() {
+	  return _company.getSize();
+	}
+	
+	 public String getPrimaryColor() {
+	    return _company.getType();
+	  }
+	  public String getSecondaryColor() {
+      return _company.getStreet();
+    }
+	
 	public void protect() {
 		_company = (Company) this.clone();
 

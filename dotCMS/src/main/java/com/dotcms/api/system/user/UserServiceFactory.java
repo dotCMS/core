@@ -125,6 +125,7 @@ public class UserServiceFactory implements Serializable {
 			protected String inode;
 			protected int permissionType;
 			protected String filter;
+	    protected String roleId;
 			protected int start;
 			protected int limit;
 			protected boolean includeAnonymous;
@@ -168,7 +169,7 @@ public class UserServiceFactory implements Serializable {
 			 *            include in the query result.
 			 */
 			public UsersListTemplate(String inode, int permissionType, String filter, int start, int limit) {
-				this(inode, permissionType, filter, start, limit, false, true);
+				this(inode, permissionType, filter, start, limit, false, true, "all");
 			}
 
 			/**
@@ -199,7 +200,7 @@ public class UserServiceFactory implements Serializable {
 			 *            {@code false}.
 			 */
 			public UsersListTemplate(String inode, int permissionType, String filter, int start, int limit,
-					boolean includeAnonymous, boolean includeDefault) {
+					boolean includeAnonymous, boolean includeDefault, String roleId) {
 				this.inode = inode;
 				this.permissionType = permissionType;
 				this.filter = filter;
@@ -209,6 +210,7 @@ public class UserServiceFactory implements Serializable {
 				} else {
 					this.limit = 1;
 				}
+				this.roleId=roleId;
 				this.includeAnonymous = includeAnonymous;
 				this.includeDefault = includeDefault;
 			}
@@ -266,6 +268,18 @@ public class UserServiceFactory implements Serializable {
 			final int start = toInt("start", params, 0);
 			final int limit = toInt("limit", params, 100);
 			final String query = getMapValue(params, "query", StringUtils.EMPTY);
+			final String showUserType = params.getOrDefault("showUsers", "all");
+			
+	    String requiredRoleId=null;
+	    if("backEnd".equalsIgnoreCase(showUserType)) {
+	      requiredRoleId=APILocator.getRoleAPI().loadBackEndUserRole().getId();
+	    }else if("frontEnd".equalsIgnoreCase(showUserType)) {
+	      requiredRoleId=APILocator.getRoleAPI().loadFrontEndUserRole().getId();
+	    }
+	    
+			
+			
+			
 			final boolean includeAnonymous = toBoolean("includeAnonymous", params, false);
 			// Defaults to "true" for backwards compatibility
 			final boolean includeDefault = toBoolean("includeDefault", params, true);
@@ -273,7 +287,7 @@ public class UserServiceFactory implements Serializable {
 			if ((InodeUtils.isSet(assetInode) && !"0".equals(assetInode)) && (UtilMethods.isSet(permission) && !"0".equals(permission))) {
 				results = processUserListWithPermissionOnInode(assetInode, permission, query, start, limit);
 			} else {
-				results = processUserList(query, start, limit, includeAnonymous, includeDefault);
+				results = processUserList(query, start, limit, includeAnonymous, includeDefault, requiredRoleId);
 			}
 			return results;
 		}
@@ -426,15 +440,16 @@ public class UserServiceFactory implements Serializable {
 		 * @return A Map containing the user list and additional query
 		 *         information.
 		 */
-		private Map<String, Object> processUserList(String query, int start, int limit, boolean includeAnonymous,
-				boolean includeDefault) {
-			Map<String, Object> results = new UsersListTemplate("", 0, query, start, limit, includeAnonymous, includeDefault) {
+		private Map<String, Object> processUserList(String query, int start, int limit,boolean includeAnonymous,
+				boolean includeDefault, String roleId) {
+			Map<String, Object> results = new UsersListTemplate("", 0, query, start, limit, includeAnonymous, includeDefault,roleId) {
 
+			  
 				@Override
 				public int getUserCount() {
 					try {
 						return toInt(userAPI.getCountUsersByNameOrEmailOrUserID(this.filter, this.includeAnonymous,
-								this.includeDefault), 0);
+								this.includeDefault,roleId), 0);
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
 						return 0;
@@ -447,7 +462,7 @@ public class UserServiceFactory implements Serializable {
 						int page = (start / limit) + 1;
 						int pageSize = limit;
 						return userAPI.getUsersByNameOrEmailOrUserID(filter, page, pageSize, this.includeAnonymous,
-								this.includeDefault);
+								this.includeDefault,roleId);
 					} catch (DotDataException e) {
 						Logger.error(this, e.getMessage(), e);
 						return new ArrayList<User>();

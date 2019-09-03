@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -628,8 +629,7 @@ public class UserAPITest extends IntegrationTestBase {
 		hostVariable = hostVariableAPI.getVariablesForHost(host.getIdentifier(),replacementUser,false).get(0);
 		assertEquals(replacementUser.getUserId(), hostVariable.getLastModifierId());
 
-		APILocator.getContentTypeAPI(systemUser).delete(new StructureTransformer(st).from());
-		conAPI.destroy(contentAsset, systemUser, false);
+
 	}
 
 	private void waitForDeleteCompletedNotification(User userToDelete) throws DotDataException, InterruptedException {
@@ -708,7 +708,8 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), systemUser, false);}
+
+		}
 
 	@Test
 	public void testGetUsersByNameOrEmailOrUserIDDeleted() throws DotDataException, DotSecurityException {
@@ -727,7 +728,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -770,8 +771,7 @@ public class UserAPITest extends IntegrationTestBase {
 			fail("The user saved was not found in the retrieved list.");
 		}
 
-		//Clean up the created user
-		userAPI.delete(newUser, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -792,7 +792,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -813,7 +813,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -834,7 +834,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -855,7 +855,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -875,7 +875,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(count == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 
 	}
 
@@ -896,7 +896,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(count == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -916,7 +916,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(count == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -936,7 +936,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(count == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -949,6 +949,99 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(users.size() > 0);
 
 	}
+	
+	
+	
+	static List<User> frontEndUsers = null;
+  static List<User> backEndUsers = null;
+  static String uniqueUserKey = UUIDGenerator.shorty();
+	
+	private void loadEndUsers() throws DotStateException, DotDataException {
+	  if(frontEndUsers!=null) {
+	    return;
+	  }
+    UserAPI userAPI = APILocator.getUserAPI();
+    String unique = uniqueUserKey;
+    List<User> userList = new ArrayList<>();
+    
+    for (int i = 0; i < 10; i++) {
+      User user = new UserDataGen().firstName("frontend" + unique + i).nextPersisted();
+      roleAPI.addRoleToUser(roleAPI.loadFrontEndUserRole(), user);
+      userList.add(user);
+    }
+    frontEndUsers = userList;
+    userList = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      User user = new UserDataGen().firstName("backend" + unique + i).nextPersisted();
+      roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), user);
+      userList.add(user);
+    }
+    backEndUsers=userList;
+	  
+	  
+	}
+	
+	/***
+	 * this method tests that the count of users we get when searching users
+	 * by a text filter and role membership
+	 * returns proper values
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+  @Test
+  public void testUserApiGetCount() throws DotDataException, DotSecurityException {
+
+    loadEndUsers();
+
+    long frontEndCount =
+        userAPI.getCountUsersByNameOrEmailOrUserID("frontend" + uniqueUserKey, false, false, roleAPI.loadFrontEndUserRole().getId());
+    long backEndCount =
+        userAPI.getCountUsersByNameOrEmailOrUserID("backend" + uniqueUserKey, false, false, roleAPI.loadBackEndUserRole().getId());
+
+    assertTrue("should have 10 frontend users, got " + frontEndCount, frontEndCount == 10);
+
+    assertTrue("should have 10 backend users, got " + backEndCount, backEndCount == 10);
+    
+    long uniqueBackEndUser =
+        userAPI.getCountUsersByNameOrEmailOrUserID("backend" + uniqueUserKey + "5", false, false, roleAPI.loadBackEndUserRole().getId());
+
+    assertTrue("should have 1 matching user, got " + uniqueBackEndUser, uniqueBackEndUser == 1);
+    
+    
+  }
+	
+	
+  /***
+   * this method tests that the list of users we get when searching users
+   * by a text filter and role membership is correct - based on filter and the the role
+   * id passed in
+   * returns proper values
+   * @throws DotDataException
+   * @throws DotSecurityException
+   */
+  @Test
+  public void testUserApiFilterUsersByNameAndRole() throws DotDataException, DotSecurityException {
+
+    loadEndUsers();
+
+    List<User> frontEndUsers =
+        userAPI.getUsersByNameOrEmailOrUserID("frontend" + uniqueUserKey, 0,20,false, false, roleAPI.loadFrontEndUserRole().getId());
+    
+    List<User> backEndUsers =
+        userAPI.getUsersByNameOrEmailOrUserID("backend" + uniqueUserKey,  0,20,false, false, roleAPI.loadBackEndUserRole().getId());
+
+    assertTrue("should have 10 frontend users, got " + frontEndUsers.size(), frontEndUsers.size() == 10);
+
+    assertTrue("should have 10 backend users, got " + backEndUsers.size(), backEndUsers.size() == 10);
+    
+    List<User>  uniqueBackEndUser =
+        userAPI.getUsersByNameOrEmailOrUserID("backend" + uniqueUserKey + "5",  0,20, false, false, roleAPI.loadBackEndUserRole().getId());
+
+    assertTrue("should have 1 matching user, got " + uniqueBackEndUser.size(), uniqueBackEndUser.size() == 1);
+    
+    
+  }
+	
 
 	@Test
 	public void testGetUsersIdsByCreationDateDeleted() throws DotDataException, DotSecurityException {
@@ -972,7 +1065,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(!users.contains(user.getUserId()));
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
