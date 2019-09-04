@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
@@ -159,7 +160,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
 
     @Test
     public void Find_Actions_By_Step() throws Exception{
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme,1);
         final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme, adminRole.getId(), workflowSteps);
@@ -171,7 +172,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
 
     @Test
     public void Find_Actions_By_Step_NonExisting_Step() throws Exception{
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         final List<WorkflowStep> workflowSteps = addSteps(workflowResource, savedScheme,1);
         final List<WorkflowAction> actions = createWorkflowActions(workflowResource, savedScheme, adminRole.getId(), workflowSteps);
@@ -225,7 +226,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
 
     @Test
     public void Test_Update_Action_Expect404() throws Exception{
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
         final String adminRoleId = adminRole.getId();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Set<WorkflowState> states = WorkflowState.toSet(WorkflowState.values());
@@ -317,7 +318,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
 
     @Test
     public void Save_Action_Invalid_Ids_Expect_404() throws Exception{
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
         final Set<WorkflowState> states = WorkflowState.toSet(WorkflowState.values());
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowActionForm form = new WorkflowActionForm.Builder().schemeId("00").
@@ -340,7 +341,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
 
     @Test
     public void Update_Action_Invalid_Scheme() throws Exception{
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
         final Set<WorkflowState> states = WorkflowState.toSet(WorkflowState.values());
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final WorkflowActionForm form = new WorkflowActionForm.Builder().schemeId("00").

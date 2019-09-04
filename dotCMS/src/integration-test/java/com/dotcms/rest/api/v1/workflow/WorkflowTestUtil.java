@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.workflow.form.WorkflowActionForm;
@@ -256,7 +257,7 @@ public abstract class WorkflowTestUtil {
         workflowAction1.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED,
                 WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         workflowAction1.setNextStep(workflowStep2.getId());
-        workflowAction1.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
+        workflowAction1.setNextAssign(new RoleDataGen().key(ADMINISTRATOR).nextPersisted().getId());
         workflowAction1.setSchemeId(scheme.getId());
         workflowAction1.setName("save");
         workflowAction1.setOrder(0);
@@ -269,7 +270,7 @@ public abstract class WorkflowTestUtil {
         workflowAction2.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED,
                 WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         workflowAction2.setNextStep(workflowStep2.getId());
-        workflowAction2.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
+        workflowAction2.setNextAssign(new RoleDataGen().key(ADMINISTRATOR).nextPersisted().getId());
         workflowAction2.setSchemeId(scheme.getId());
         workflowAction2.setName("save/publish");
         workflowAction2.setOrder(1);
@@ -281,7 +282,7 @@ public abstract class WorkflowTestUtil {
         workflowAction3.setId(UUIDGenerator.generateUuid());
         workflowAction3.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED, WorkflowState.EDITING);
         workflowAction3.setNextStep(WorkflowAction.CURRENT_STEP);
-        workflowAction3.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
+        workflowAction3.setNextAssign(new RoleDataGen().key(ADMINISTRATOR).nextPersisted().getId());
         workflowAction3.setSchemeId(scheme.getId());
         workflowAction3.setName("finish");
         workflowAction3.setOrder(2);
