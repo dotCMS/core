@@ -44,6 +44,9 @@ public class ReindexAPITest extends IntegrationTestBase {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
         reindexQueueAPI = APILocator.getReindexQueueAPI();
+        
+        //wipe out any failed records
+        reindexQueueAPI.deleteReindexAndFailedRecords();
     }
 
     @Test
