@@ -83,16 +83,19 @@ public class MenuResource implements Serializable {
 	public Response getMenus(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) throws LanguageException, ClassNotFoundException
 	{
 
-		this.webResource.init(httpServletRequest, httpServletResponse, true);
 
 		Response res;
 		final Collection<Menu> menus = new ArrayList<Menu>();
-		final HttpSession session = httpServletRequest.getSession();
+
 
 		try {
 
-			final User user = this.userAPI
-					.loadUserById((String) session.getAttribute(WebKeys.USER_ID));
+	    final User user = new WebResource.InitBuilder(this.webResource)
+	    .requestAndResponse(httpServletRequest, httpServletResponse)
+	    .allowBackendUser(true)
+	    .rejectWhenNoUser(true)
+	    .init().getUser();
+	    
 			final List<Layout> layouts = this.layoutAPI.loadLayoutsForUser(user);
 			final MenuContext menuContext = new MenuContext(httpServletRequest, user);
 
@@ -121,12 +124,14 @@ public class MenuResource implements Serializable {
 			}
 
 			res = Response.ok(new ResponseEntityView(menus)).build(); // 200
-		} catch (DotSecurityException e) {
-			throw new ForbiddenException(e);
+
 		} catch (DotDataException | NoSuchUserException e) {
 
 			res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-		}
+    } catch (Exception e) {
+      res = ExceptionMapperUtil.createResponse(new ForbiddenException(e), Response.Status.INTERNAL_SERVER_ERROR);
+
+    }
 
 		return res; //menus;
 	} // getMenus.

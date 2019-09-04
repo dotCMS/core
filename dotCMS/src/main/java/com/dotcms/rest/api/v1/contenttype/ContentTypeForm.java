@@ -173,7 +173,7 @@ public class ContentTypeForm  {
                 while(keys.hasNext())  {
 
                     final String systemActionName = keys.next().toString();
-                    systemAction     = WorkflowAPI.SystemAction.valueOf(systemActionName);
+                    systemAction     = WorkflowAPI.SystemAction.fromString(systemActionName);
                     workflowActionId = systemActionWorkflowActionIdJSONObject.getString(systemActionName);
                     tuple2List.add(Tuple.of(systemAction, workflowActionId));
                 }

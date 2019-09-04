@@ -218,20 +218,24 @@ public class ContentletAPITest extends ContentletBaseTest {
             Assert.assertEquals (SystemWorkflowConstants.WORKFLOW_PUBLISHED_STEP_ID, unpublishStep.getId());
         } finally {
 
-            if (null != contentletToDestroy) {
-                try {
-                    this.contentletAPI.destroy(contentletToDestroy, user, false);
-                } catch (Exception e) {
-                    // quiet
+            try {
+                if (null != contentletToDestroy) {
+                    try {
+                        this.contentletAPI.destroy(contentletToDestroy, user, false);
+                    } catch (Exception e) {
+                        // quiet
+                    }
                 }
-            }
 
-            if (null != type) {
-                try {
-                    contentTypeAPI.delete(type);
-                } catch (Exception e) {
-                    // quiet
+                if (null != type) {
+                    try {
+                        contentTypeAPI.delete(type);
+                    } catch (Exception e) {
+                        // quiet
+                    }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -301,20 +305,24 @@ public class ContentletAPITest extends ContentletBaseTest {
             Assert.assertEquals (SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID, unpublishStep.getId());
         } finally {
 
-            if (null != contentletToDestroy) {
-                try {
-                    this.contentletAPI.destroy(contentletToDestroy, user, false);
-                } catch (Exception e) {
-                    // quiet
+            try {
+                if (null != contentletToDestroy) {
+                    try {
+                        this.contentletAPI.destroy(contentletToDestroy, user, false);
+                    } catch (Exception e) {
+                        // quiet
+                    }
                 }
-            }
 
-            if (null != type) {
-                try {
-                    contentTypeAPI.delete(type);
-                } catch (Exception e) {
-                    // quiet
+                if (null != type) {
+                    try {
+                        contentTypeAPI.delete(type);
+                    } catch (Exception e) {
+                        // quiet
+                    }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -383,20 +391,24 @@ public class ContentletAPITest extends ContentletBaseTest {
             Assert.assertEquals (SystemWorkflowConstants.WORKFLOW_UNPUBLISHED_STEP_ID, unpublishStep.getId());
         } finally {
 
-            if (null != contentletToDestroy) {
-                try {
-                    this.contentletAPI.destroy(contentletToDestroy, user, false);
-                } catch (Exception e) {
-                    // quiet
+            try {
+                if (null != contentletToDestroy) {
+                    try {
+                        this.contentletAPI.destroy(contentletToDestroy, user, false);
+                    } catch (Exception e) {
+                        // quiet
+                    }
                 }
-            }
 
-            if (null != type) {
-                try {
-                    contentTypeAPI.delete(type);
-                } catch (Exception e) {
-                    // quiet
+                if (null != type) {
+                    try {
+                        contentTypeAPI.delete(type);
+                    } catch (Exception e) {
+                        // quiet
+                    }
                 }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -460,20 +472,24 @@ public class ContentletAPITest extends ContentletBaseTest {
             Assert.assertEquals (firstStep.getId(), currentStep.getId());
         } finally {
 
-            if (null != contentletToDestroy) {
-                try {
-                    this.contentletAPI.destroy(contentletToDestroy, user, false);
-                } catch (Exception e) {
-                    // quiet
+            try {
+                if (null != contentletToDestroy) {
+                    try {
+                        this.contentletAPI.destroy(contentletToDestroy, user, false);
+                    } catch (Exception e) {
+                        // quiet
+                    }
                 }
-            }
 
-            if (null != type) {
-                try {
-                    contentTypeAPI.delete(type);
-                } catch (Exception e) {
-                    // quiet
+                if (null != type) {
+                    try {
+                        contentTypeAPI.delete(type);
+                    } catch (Exception e) {
+                        // quiet
+                    }
                 }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -556,21 +572,24 @@ public class ContentletAPITest extends ContentletBaseTest {
             Assert.assertFalse(new ShortyIdCache().get(shortyId.get().shortId).isPresent());
         } finally {
 
-
-            if (null != contentletToDestroy) {
-                try {
-                    this.contentletAPI.destroy(contentletToDestroy, user, false);
-                } catch (Exception e) {
-                    // quiet
+            try {
+                if (null != contentletToDestroy) {
+                    try {
+                        this.contentletAPI.destroy(contentletToDestroy, user, false);
+                    } catch (Exception e) {
+                        // quiet
+                    }
                 }
-            }
 
-            if (null != type) {
-                try {
-                    contentTypeAPI.delete(type);
-                } catch (Exception e) {
-                    // quiet
+                if (null != type) {
+                    try {
+                        contentTypeAPI.delete(type);
+                    } catch (Exception e) {
+                        // quiet
+                    }
                 }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -1345,8 +1364,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
         assertEquals( copyContentlet.getHost(), contentlet.getHost() );
 
-        contentletAPI.archive(copyContentlet, user, false);
-        contentletAPI.delete(copyContentlet, user, false);
+        try {
+            contentletAPI.destroy(copyContentlet, user, false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -1377,8 +1399,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
         assertEquals( copyContentlet.get("junitTestWysiwyg"), contentlet.get("junitTestWysiwyg") );
 
-        contentletAPI.archive(copyContentlet, user, false);
-        contentletAPI.delete(copyContentlet, user, false);
+        contentletAPI.destroy(copyContentlet, user, false);
     }
 
     /**
@@ -1407,8 +1428,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
         assertEquals( copyContentlet.getHost(), contentlet.getHost() );
 
-        contentletAPI.archive( copyContentlet, user, false );
-        contentletAPI.delete( copyContentlet, user, false );
+        try {
+            contentletAPI.destroy(copyContentlet, user, false);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -1439,8 +1463,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
         assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
 
-        contentletAPI.archive( copyContentlet, user, false );
-        contentletAPI.delete( copyContentlet, user, false );
+        try {
+            contentletAPI.destroy(copyContentlet, user, false);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
     @Test
@@ -1514,17 +1541,15 @@ public class ContentletAPITest extends ContentletBaseTest {
         //assertEquals("hello20.txt",copy2.getBinary(FileAssetAPI.BINARY_FIELD).getName());
         assertEquals("this is the content of the file", FileUtils.readFileToString(copy2.getBinary(FileAssetAPI.BINARY_FIELD)));
 
-        contentletAPI.archive(file,user,false);
-        contentletAPI.delete(file,user,false);
-        contentletAPI.archive(copy,user,false);
-        contentletAPI.delete(copy,user,false);
-        contentletAPI.archive(copy2,user,false);
-        contentletAPI.delete(copy2,user,false);
-        contentletAPI.archive(host1,user,false);
-        contentletAPI.delete(host1,user,false);
-        contentletAPI.archive(host2,user,false);
-        contentletAPI.delete(host2,user,false);
-        
+        try {
+            contentletAPI.destroy(file, user, false);
+            contentletAPI.destroy(copy, user, false);
+            contentletAPI.destroy(copy2, user, false);
+            contentletAPI.destroy(host1, user, false);
+            contentletAPI.destroy(host2, user, false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -2204,21 +2229,26 @@ public class ContentletAPITest extends ContentletBaseTest {
                 }
             }
         } finally {
-
-            //Clean up
-            if (parent != null) {
-                contentletAPI.archive(parent, user, false);
-                contentletAPI.delete(parent, user, false);
-            }
-            if (child != null) {
-                contentletAPI.archive(child, user, false);
-                contentletAPI.delete(child, user, false);
-            }
-            if (selfRelationship != null) {
-                relationshipAPI.delete(selfRelationship);
-            }
-            if (structure != null) {
-                APILocator.getStructureAPI().delete(structure, user);
+            try {
+                //Clean up
+                if (parent != null) {
+                /*contentletAPI.archive(parent, user, false);
+                contentletAPI.delete(parent, user, false);*/
+                    contentletAPI.destroy(parent, user, false);
+                }
+                if (child != null) {
+                /*contentletAPI.archive(child, user, false);
+                contentletAPI.delete(child, user, false);*/
+                    contentletAPI.destroy(child, user, false);
+                }
+                if (selfRelationship != null) {
+                    relationshipAPI.delete(selfRelationship);
+                }
+                if (structure != null) {
+                    APILocator.getStructureAPI().delete(structure, user);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
@@ -2326,7 +2356,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull( forAllLanguages );
         assertTrue( !forAllLanguages.isEmpty() );
         assertEquals(list.size(), forAllLanguages.size());
-        APILocator.getContentTypeAPI(user).delete(new StructureTransformer(st).from());
+
     }
 
     /**
@@ -2953,12 +2983,14 @@ public class ContentletAPITest extends ContentletBaseTest {
             foundContentlets = relationshipAPI.dbRelatedContent(testRelationship, baseContentlet, true);
             assertTrue(!UtilMethods.isSet(foundContentlets));
         } finally {
-            if (testRelationship != null && testRelationship.getInode() != null) {
-                relationshipAPI.delete(testRelationship);
-            }
-            if(testStructure!=null && testStructure != null) {
-                APILocator.getStructureAPI().delete(testStructure, user);
-            }
+            try {
+                if (testRelationship != null && testRelationship.getInode() != null) {
+                    relationshipAPI.delete(testRelationship);
+                }
+                if (testStructure != null && testStructure != null) {
+                    APILocator.getStructureAPI().delete(testStructure, user);
+                }
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 
@@ -3135,13 +3167,15 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals( tree.getRelationType(), testRelationship.getRelationTypeValue() );
 
         }finally {
-            if (testRelationship != null && testRelationship.getInode() != null){
-                relationshipAPI.delete(testRelationship);
-            }
+            try {
+                if (testRelationship != null && testRelationship.getInode() != null) {
+                    relationshipAPI.delete(testRelationship);
+                }
 
-            if (testStructure != null && testStructure.getInode() != null){
-                APILocator.getStructureAPI().delete(testStructure, user);
-            }
+                if (testStructure != null && testStructure.getInode() != null) {
+                    APILocator.getStructureAPI().delete(testStructure, user);
+                }
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 
@@ -3319,7 +3353,11 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(newInode, saved.getInode());
         assertEquals(identifier, saved.getIdentifier());
 
-        APILocator.getStructureAPI().delete(testStructure, user);
+        try {
+            APILocator.getStructureAPI().delete(testStructure, user);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -3456,10 +3494,14 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals("e",search.get(3).getStringProperty(field.getVelocityVarName()));
         assertEquals("f",search.get(4).getStringProperty(field.getVelocityVarName()));
 
-        contentletAPI.archive(list, user, false);
-        contentletAPI.delete(list, user, false);
-        FieldFactory.deleteField(field);
-        APILocator.getStructureAPI().delete(testStructure, user);
+        try {
+            contentletAPI.archive(list, user, false);
+            contentletAPI.delete(list, user, false);
+            FieldFactory.deleteField(field);
+            APILocator.getStructureAPI().delete(testStructure, user);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -3913,11 +3955,15 @@ public class ContentletAPITest extends ContentletBaseTest {
             Logger.error(this, "An error occurred during test_validateContentlet_contentWithTabDividerField", ex);
             throw ex;
         } finally {
-            // Delete field
-            FieldFactory.deleteField(tabDividerField);
+            try {
+                // Delete field
+                FieldFactory.deleteField(tabDividerField);
 
-            // Delete structure
-            APILocator.getStructureAPI().delete(testStructure, user);
+                // Delete structure
+                APILocator.getStructureAPI().delete(testStructure, user);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -4004,8 +4050,8 @@ public class ContentletAPITest extends ContentletBaseTest {
             try {
                 //Delete Contentlet.
                 if (contentlet != null) {
-                    contentletAPI.archive(contentlet, user, false);
-                    contentletAPI.delete(contentlet, user, false);
+
+                    contentletAPI.destroy(contentlet, user, false);
                 }
                 //Deleting Fields.
                 if (textField != null) {
@@ -4022,7 +4068,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                     contentTypeAPI.delete(contentType);
                 }
             } catch (Exception e) {
-                fail(e.getMessage());
+                e.printStackTrace();
             }
         }
 
@@ -4121,8 +4167,9 @@ public class ContentletAPITest extends ContentletBaseTest {
             try {
                 //Delete initial Contentlet.
                 if (initialContent != null) {
-                    contentletAPI.archive(initialContent, user, false);
-                    contentletAPI.delete(initialContent, user, false);
+                    /*contentletAPI.archive(initialContent, user, false);
+                    contentletAPI.delete(initialContent, user, false);*/
+                    contentletAPI.destroy(initialContent, user, false);
                 }
                 //Deleting Fields.
                 if (textField != null) {
@@ -4304,16 +4351,16 @@ public class ContentletAPITest extends ContentletBaseTest {
                 }
                 // Delete Contentlet.
                 if (contentletA != null) {
-                    contentletAPI.archive(contentletA, user, false);
-                    contentletAPI.delete(contentletA, user, false);
+
+                    contentletAPI.destroy(contentletA, user, false);
                 }
                 if (contentletB != null) {
-                    contentletAPI.archive(contentletB, user, false);
-                    contentletAPI.delete(contentletB, user, false);
+
+                    contentletAPI.destroy(contentletA, user, false);
                 }
                 if (contentletC != null) {
-                    contentletAPI.archive(contentletC, user, false);
-                    contentletAPI.delete(contentletC, user, false);
+
+                    contentletAPI.destroy(contentletA, user, false);
                 }
                 // Deleting Fields.
                 if (textField != null) {
@@ -4324,7 +4371,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                     contentTypeAPI.delete(contentType);
                 }
             } catch (Exception e) {
-                fail(e.getMessage());
+                e.printStackTrace();
             }
         }
     }
@@ -4616,8 +4663,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertTrue(existingCats.containsAll(categories));
         } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier())) {
-                contentletAPI.destroy(blogContent, user, false);
+            try {
+                if (blogContent != null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                    contentletAPI.destroy(blogContent, user, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -4655,8 +4706,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertTrue(existingCats.containsAll(categories));
         } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier()))  {
-                contentletAPI.destroy(blogContent, user, false);
+            try {
+                if (blogContent != null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                    contentletAPI.destroy(blogContent, user, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -4693,8 +4748,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertTrue(existingCats.containsAll(categories));
         } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier()))  {
-                contentletAPI.destroy(blogContent, user, false);
+            try {
+                if (blogContent != null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                    contentletAPI.destroy(blogContent, user, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -4731,8 +4790,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertTrue(existingCats.containsAll(categories));
         } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier()))  {
-                contentletAPI.destroy(blogContent, user, false);
+            try {
+                if (blogContent != null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                    contentletAPI.destroy(blogContent, user, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -4760,8 +4823,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertTrue(existingCats.containsAll(categories));
         } finally {
-            if(blogContent!=null && UtilMethods.isSet(blogContent.getIdentifier()))  {
-                contentletAPI.destroy(blogContent, user, false);
+            try {
+                if (blogContent != null && UtilMethods.isSet(blogContent.getIdentifier())) {
+                    contentletAPI.destroy(blogContent, user, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -4796,8 +4863,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             fail("The exception catch should: DotHibernateException and is: " + e.getClass() );
         } finally {
-            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier()) && UtilMethods.isSet(newsContent.getInode())) {
-                contentletAPI.destroy(newsContent, user, false);
+            try {
+                if (newsContent != null && UtilMethods.isSet(newsContent.getIdentifier()) && UtilMethods.isSet(newsContent.getInode())) {
+                    contentletAPI.destroy(newsContent, user, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -4874,8 +4945,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertFalse(UtilMethods.isSet(existingCats));
         } finally {
-            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
-                contentletAPI.destroy(newsContent, user, false);
+            try {
+                if (newsContent != null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                    contentletAPI.destroy(newsContent, user, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -4912,8 +4987,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertFalse(UtilMethods.isSet(existingCats));
         } finally {
-            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
-                contentletAPI.destroy(newsContent, user, false);
+            try {
+                if (newsContent != null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                    contentletAPI.destroy(newsContent, user, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -4952,8 +5031,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertFalse(UtilMethods.isSet(existingCats));
         } finally {
-            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
-                contentletAPI.destroy(newsContent, user, false);
+            try {
+                if (newsContent != null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                    contentletAPI.destroy(newsContent, user, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -4990,8 +5073,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertFalse(UtilMethods.isSet(existingCats));
         } finally {
-            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
-                contentletAPI.destroy(newsContent, user, false);
+            try {
+                if (newsContent != null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                    contentletAPI.destroy(newsContent, user, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -5019,8 +5106,12 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             assertFalse(UtilMethods.isSet(existingCats));
         } finally {
-            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
-                contentletAPI.destroy(newsContent, user, false);
+            try {
+                if (newsContent != null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                    contentletAPI.destroy(newsContent, user, false);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -5105,24 +5196,30 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertTrue(existingRelationships.containsAll(relatedContent));
         } finally {
 
-            if (InodeUtils.isSet(blogContent.getInode())) {
-                contentletAPI.archive(blogContent, user, false);
-                contentletAPI.delete(blogContent, user, false);
-            }
+            try {
+                if (InodeUtils.isSet(blogContent.getInode())) {
+                /*contentletAPI.archive(blogContent, user, false);
+                contentletAPI.delete(blogContent, user, false);*/
+                    contentletAPI.destroy(blogContent, user, false);
+                }
 
-            if(UtilMethods.isSet(relatedContent)) {
-                relatedContent.forEach(content -> {
-                    try {
-                        contentletAPI.archive(content, user, false);
-                        contentletAPI.delete(content, user, false);
-                    } catch (DotDataException | DotSecurityException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
+                if (UtilMethods.isSet(relatedContent)) {
+                    relatedContent.forEach(content -> {
+                        try {
+                        /*contentletAPI.archive(content, user, false);
+                        contentletAPI.delete(content, user, false);*/
+                            contentletAPI.destroy(content, user, false);
+                        } catch (DotDataException | DotSecurityException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
 
-            if (relationship != null && relationship.getInode() != null) {
-                relationshipAPI.delete(relationship);
+                if (relationship != null && relationship.getInode() != null) {
+                    relationshipAPI.delete(relationship);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -5412,8 +5509,12 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(checkedoutNewsContent.getStringProperty("tags"), "test");
 
         } finally {
-            if(newsContent!=null && UtilMethods.isSet(newsContent.getIdentifier())) {
-                contentletAPI.destroy(newsContent, user, false);
+            try {
+                if (newsContent != null && UtilMethods.isSet(newsContent.getIdentifier())) {
+                    contentletAPI.destroy(newsContent, user, false);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -5653,26 +5754,30 @@ public class ContentletAPITest extends ContentletBaseTest {
         } finally{
 
             //Clean up environment
-            contentletAPI.destroy(spanishPage, user, false);
+            try {
+                contentletAPI.destroy(spanishPage, user, false);
 
-            if (UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())){
-                FolderDataGen.remove(folder);
-            }
+                if (UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
+                    FolderDataGen.remove(folder);
+                }
 
-            if (UtilMethods.isSet(spanishTemplate) && UtilMethods.isSet(spanishTemplate.getInode())){
-                TemplateDataGen.remove(spanishTemplate);
-            }
+                if (UtilMethods.isSet(spanishTemplate) && UtilMethods.isSet(spanishTemplate.getInode())) {
+                    TemplateDataGen.remove(spanishTemplate);
+                }
 
-            if (UtilMethods.isSet(englishTemplate) && UtilMethods.isSet(englishTemplate.getInode())){
-                TemplateDataGen.remove(englishTemplate);
-            }
+                if (UtilMethods.isSet(englishTemplate) && UtilMethods.isSet(englishTemplate.getInode())) {
+                    TemplateDataGen.remove(englishTemplate);
+                }
 
-            if (UtilMethods.isSet(container) && UtilMethods.isSet(container.getInode())){
-                ContainerDataGen.remove(container);
-            }
+                if (UtilMethods.isSet(container) && UtilMethods.isSet(container.getInode())) {
+                    ContainerDataGen.remove(container);
+                }
 
-            if (UtilMethods.isSet(structure) && UtilMethods.isSet(structure.getInode())){
-                StructureDataGen.remove(structure);
+                if (UtilMethods.isSet(structure) && UtilMethods.isSet(structure.getInode())) {
+                    StructureDataGen.remove(structure);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
@@ -5736,27 +5841,31 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         } finally{
 
-            //Clean up environment
-            contentletAPI.destroy(result, user, false);
+            try {
+                //Clean up environment
+                contentletAPI.destroy(result, user, false);
 
-            if (UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())){
-                FolderDataGen.remove(folder);
-            }
+                if (UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
+                    FolderDataGen.remove(folder);
+                }
 
-            if (UtilMethods.isSet(spanishTemplate) && UtilMethods.isSet(spanishTemplate.getInode())){
-                TemplateDataGen.remove(spanishTemplate);
-            }
+                if (UtilMethods.isSet(spanishTemplate) && UtilMethods.isSet(spanishTemplate.getInode())) {
+                    TemplateDataGen.remove(spanishTemplate);
+                }
 
-            if (UtilMethods.isSet(englishTemplate) && UtilMethods.isSet(englishTemplate.getInode())){
-                TemplateDataGen.remove(englishTemplate);
-            }
+                if (UtilMethods.isSet(englishTemplate) && UtilMethods.isSet(englishTemplate.getInode())) {
+                    TemplateDataGen.remove(englishTemplate);
+                }
 
-            if (UtilMethods.isSet(container) && UtilMethods.isSet(container.getInode())){
-                ContainerDataGen.remove(container);
-            }
+                if (UtilMethods.isSet(container) && UtilMethods.isSet(container.getInode())) {
+                    ContainerDataGen.remove(container);
+                }
 
-            if (UtilMethods.isSet(structure) && UtilMethods.isSet(structure.getInode())){
-                StructureDataGen.remove(structure);
+                if (UtilMethods.isSet(structure) && UtilMethods.isSet(structure.getInode())) {
+                    StructureDataGen.remove(structure);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
 

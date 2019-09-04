@@ -507,4 +507,10 @@
         <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
     </portlet>
 
+    <portlet>
+        <portlet-name>form-builder</portlet-name>
+        <display-name>Form Builder</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
 </portlet-app>

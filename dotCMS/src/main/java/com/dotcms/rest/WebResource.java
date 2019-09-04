@@ -866,7 +866,7 @@ public  class WebResource {
             try {
                 return webResource.init(this);
             } catch (final Exception e) {
-                 Logger.error(WebResource.class,"Error building an initDataObject",e);
+                 Logger.warnAndDebug(WebResource.class,"InitDataObject Error: uri:" + request.getRequestURI() + " err:" + e.getMessage() ,e);
                  throw e;
             }
         }

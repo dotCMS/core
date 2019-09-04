@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -43,7 +44,7 @@ import org.junit.runner.RunWith;
  */
 
 @RunWith(DataProviderRunner.class)
-public class MapToContentletPopulatorTest {
+public class MapToContentletPopulatorTest extends IntegrationTestBase {
 
     private static ContentTypeAPI contentTypeAPI;
     private static FieldAPI fieldAPI;

@@ -1,5 +1,10 @@
 package com.dotcms.contenttype.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -26,19 +31,15 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.DateUtil;
-import java.sql.Timestamp;
-import java.util.stream.Collectors;
-
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
+import java.sql.Timestamp;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.*;
 
 public class RelationshipAPITest extends IntegrationTestBase {
 
@@ -178,12 +179,14 @@ public class RelationshipAPITest extends IntegrationTestBase {
             migrateRelationshipAndValidate(relationship, contentletParent, relationshipList);
 
         } finally {
-            if (parentContentType != null) {
-                contentTypeAPI.delete(parentContentType);
-            }
-            if (childContentType != null) {
-                contentTypeAPI.delete(childContentType);
-            }
+            try {
+                if (parentContentType != null) {
+                    contentTypeAPI.delete(parentContentType);
+                }
+                if (childContentType != null) {
+                    contentTypeAPI.delete(childContentType);
+                }
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 
@@ -221,9 +224,11 @@ public class RelationshipAPITest extends IntegrationTestBase {
             migrateRelationshipAndValidate(relationship, contentletParent, relationshipList);
 
         } finally {
-            if (parentContentType != null) {
-                contentTypeAPI.delete(parentContentType);
-            }
+            try {
+                if (parentContentType != null) {
+                    contentTypeAPI.delete(parentContentType);
+                }
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 
@@ -265,7 +270,9 @@ public class RelationshipAPITest extends IntegrationTestBase {
                 .collect(Collectors
                         .toMap(elem -> elem.get("identifier"), elem -> elem.get("version_ts")));
 
-        //Migrate Relationship
+        DateUtil.sleep(2000); //mySQL is extremely fast we must allow sometime to ensure the new version info will be saved in different instant.
+
+        // Migrate Relationship
         relationshipAPI.convertRelationshipToRelationshipField(relationship);
 
         //Check old relationship does not exists

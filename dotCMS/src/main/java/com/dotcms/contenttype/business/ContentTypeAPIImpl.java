@@ -479,17 +479,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     contentTypeToSave = this.contentTypeFactory.save(contentTypeToSave);
 
     if (oldType != null) {
-      final ContentType oldOldType = oldType;
-      if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
-        DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
-          IdentifierDateJob.triggerJobImmediately(oldOldType, user);
-        });
-      } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
-        DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
-          IdentifierDateJob.triggerJobImmediately(oldOldType, user);
-        });
-      }
-      perms.resetPermissionReferences(contentTypeToSave);
+
+        final ContentType oldOldType = oldType;
+        if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
+            IdentifierDateJob.triggerJobImmediately(oldOldType, user);
+        } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
+            IdentifierDateJob.triggerJobImmediately(oldOldType, user);
+        }
+        perms.resetPermissionReferences(contentTypeToSave);
     }
     ActivityLogger.logInfo(getClass(), "Save ContentType Action",
         "User " + user.getUserId() + "/" + user.getFullName() + " added ContentType " + contentTypeToSave.name()

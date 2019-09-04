@@ -4,9 +4,46 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
+import com.dotmarketing.common.reindex.ReindexEntry;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
+import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.ReindexRunnable;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
+import com.liferay.util.StringPool;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -26,7 +63,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-
 import java.util.stream.Collectors;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
@@ -47,47 +83,6 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryAction;
-
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.content.business.DotMappingException;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.reindex.ReindexEntry;
-import com.dotmarketing.common.reindex.ReindexQueueAPI;
-import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.db.ReindexRunnable;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ThreadUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
-import com.google.gson.Gson;
-import com.liferay.util.StringPool;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
-
-import io.vavr.control.Try;
-import org.elasticsearch.index.reindex.DeleteByQueryRequestBuilder;
 
 public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
@@ -694,7 +689,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             try {
 
-                if (Sneaky.sneak(() -> contentlet.isWorking())) {
+                if (this.isWorking(contentlet)) {
                     mapping = gson.toJson(mappingAPI.toMap(contentlet));
                     if (!forReindex || info.reindex_working == null) {
                         bulk.add(new IndexRequest(info.working, "content", id)
@@ -706,7 +701,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     }
                 }
 
-                if (Sneaky.sneak(() -> contentlet.isLive())) {
+                if (this.isLive(contentlet)) {
                     if (mapping == null) {
                         mapping = gson.toJson(mappingAPI.toMap(contentlet));
                     }
@@ -728,6 +723,36 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 throw ex;
             }
         }
+    }
+
+    private boolean isWorking (final Contentlet contentlet) {
+
+        boolean isWorking = false;
+
+        try {
+            isWorking = contentlet.isWorking();
+        }catch (Exception e) {
+            Logger.debug(this, e.getMessage(), e);
+            Logger.warn(this, e.getMessage(), e);
+            isWorking = false;
+        }
+
+        return isWorking;
+    }
+
+    private boolean isLive (final Contentlet contentlet) {
+
+        boolean isLive = false;
+
+        try {
+            isLive = contentlet.isLive();
+        }catch (Exception e) {
+            Logger.debug(this, e.getMessage(), e);
+            Logger.warn(this, e.getMessage(), e);
+            isLive = false;
+        }
+
+        return isLive;
     }
 
     @CloseDBIfOpened

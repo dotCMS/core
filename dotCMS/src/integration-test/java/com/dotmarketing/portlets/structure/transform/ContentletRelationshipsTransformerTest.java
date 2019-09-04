@@ -153,8 +153,12 @@ public class ContentletRelationshipsTransformerTest {
             assertTrue(relationshipsData.getRelationshipsRecords().get(0).isHasParent());
 
         }finally {
-            if (parentContentType != null) {
-                contentTypeAPI.delete(parentContentType);
+            try {
+                if (parentContentType != null) {
+                    contentTypeAPI.delete(parentContentType);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
