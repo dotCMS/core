@@ -1033,11 +1033,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		    .addParam(permissionableId)
 		    .loadResult();
 
-
+		
 		resetPermissionReferences(permissionable);
 
 		permissionCache.remove(permissionable.getPermissionId());
-
+		
 	}
 
 	/*
@@ -2873,8 +2873,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
       final PermissionableProxy pp = new PermissionableProxy();
       pp.setIdentifier(ref.getAssetId());
       dbDeletePermissionReferences(pp);
+      APILocator.getReindexQueueAPI().addIdentifierReindex(ref.getAssetId());
     }
     dbDeletePermissionReferences(permissionable);
+    APILocator.getReindexQueueAPI().addIdentifierReindex(permissionable.getPermissionId());
 	}
 
 	@Override
