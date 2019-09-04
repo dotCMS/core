@@ -18,7 +18,7 @@ const PORTLETS_ANGULAR = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'content-types-angular',
-        loadChildren: '@portlets/content-types/content-types.module#ContentTypesModule'
+        loadChildren: '@portlets/dot-content-types/dot-content-types.module#DotContentTypesModule'
     },
     {
         canActivate: [MenuGuardService],

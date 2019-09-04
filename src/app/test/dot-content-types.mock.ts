@@ -1,5 +1,5 @@
 import { DotCMSContentTypeField, DotCMSContentType, DotCMSContentTypeLayoutRow } from 'dotcms-models';
-import { EMPTY_FIELD } from '@portlets/content-types/fields/util/field-util';
+import { EMPTY_FIELD } from '@portlets/shared/dot-content-types-edit/components/fields/util/field-util';
 
 export const dotcmsContentTypeBasicMock: DotCMSContentType = {
     baseType: null,
