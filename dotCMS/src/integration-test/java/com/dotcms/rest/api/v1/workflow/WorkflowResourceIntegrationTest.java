@@ -214,7 +214,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             workflowAction1.setId(UUIDGenerator.generateUuid());
             workflowAction1.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
             workflowAction1.setNextStep(workflowStep2.getId());
-            workflowAction1.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
+            workflowAction1.setNextAssign(new RoleDataGen().key(ADMINISTRATOR).nextPersisted().getId());
             workflowAction1.setSchemeId(scheme.getId());
             workflowAction1.setName("save");
             workflowAction1.setOrder(0);
@@ -380,7 +380,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
     @Test
     public void testCreateSchemeThenAddStepsThenAddActions() throws Exception{
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole =  new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
@@ -508,7 +508,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     @SuppressWarnings("unchecked")
     @Test
     public void testSaveActionToStepThenFindActionsBySchemeThenFindByStep() throws Exception{
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole =  new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
@@ -549,7 +549,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     @SuppressWarnings("unchecked")
     @Test
     public void testFindActionsByStepThenDeleteThem() throws Exception{
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole =  new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
@@ -592,7 +592,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
     @Test
     public void testUpdateAction() throws Exception{
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole =  new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
@@ -639,7 +639,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     @SuppressWarnings("unchecked")
     @Test
     public void testDeleteScheme() throws Exception{
-        final Role adminRole = roleAPI.loadRoleByKey(ADMINISTRATOR);
+        final Role adminRole =  new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
         final String adminRoleId = adminRole.getId();
         final WorkflowScheme savedScheme = createScheme(workflowResource);
         assertNotNull(savedScheme);
@@ -849,6 +849,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                final List<Contentlet> contentlets = samples.get(ct);
                if(UtilMethods.isSet(contentlets)){
                    final Contentlet contentlet = contentlets.get(0);
+                   DateUtil.sleep(DateUtil.TWO_SECOND_MILLIS);
                    workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, adminUser);
                    contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
                    APILocator.getContentletIndexAPI().addContentToIndex(contentlet);
