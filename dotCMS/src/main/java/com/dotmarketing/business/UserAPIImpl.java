@@ -294,11 +294,17 @@ public class UserAPIImpl implements UserAPI {
 		return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous);
 	}
 
+  @Override
+  public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
+    // TODO Auto-generated method stub
+    return getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault, null);
+  }
+	
 	@CloseDBIfOpened
 	@Override
-	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault)
+	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault, String roleId)
 			throws DotDataException {
-		return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault);
+		return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault, roleId);
 	}
 
 	@CloseDBIfOpened
@@ -312,12 +318,18 @@ public class UserAPIImpl implements UserAPI {
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
 		return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous);
 	}
-
+	
+  @CloseDBIfOpened
+  @Override
+  public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous, String roleId) throws DotDataException {
+    return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous,false, roleId);
+  }
+  
 	@CloseDBIfOpened
 	@Override
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
-			int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
-		return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault);
+			int pageSize, boolean includeAnonymous, boolean includeDefault, String roleId) throws DotDataException {
+		return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault,roleId);
 	}
 
 	@WrapInTransaction

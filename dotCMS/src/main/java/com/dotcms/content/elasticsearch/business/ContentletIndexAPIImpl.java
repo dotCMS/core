@@ -1,5 +1,9 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
+import static com.dotmarketing.util.StringUtils.builder;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -28,13 +32,38 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -54,19 +83,6 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryAction;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.time.Duration;
-import java.util.*;
-
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
-import static com.dotmarketing.util.StringUtils.builder;
 
 public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
@@ -417,12 +433,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     @Override
-    public void addContentToIndex(final Contentlet content, final boolean deps) throws DotDataException {
-        addContentToIndex(content, deps, false);
-    }
-
-    @Override
-    public void addContentToIndex(final Contentlet parentContenlet, final boolean includeDependencies, final boolean indexBeforeCommit)
+    public void addContentToIndex(final Contentlet parentContenlet, final boolean includeDependencies)
             throws DotDataException {
 
         if (null == parentContenlet || !UtilMethods.isSet(parentContenlet.getIdentifier())) {
@@ -433,16 +444,23 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 + ", includeDependencies: " + includeDependencies +
                 ", policy: " + parentContenlet.getIndexPolicy());
 
-        // parentContenlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        final List<Contentlet> contentToIndex =
-                (includeDependencies) ? ImmutableList.<Contentlet>builder().add(parentContenlet).addAll(loadDeps(parentContenlet)).build()
-                        : ImmutableList.of(parentContenlet);
+        final List<Contentlet> contentToIndex = includeDependencies
+                ? ImmutableList.<Contentlet>builder()
+                .add(parentContenlet)
+                .addAll(
+                        loadDeps(parentContenlet)
+                                .stream()
+                                .peek((dep)-> dep.setIndexPolicy(IndexPolicy.DEFER))
+                                .collect(Collectors.toList()))
+                .build()
+                : ImmutableList.of(parentContenlet);
 
-        if (indexBeforeCommit == false && DbConnectionFactory.inTransaction()) {
+
+        if(parentContenlet.getIndexPolicy()==IndexPolicy.DEFER) {
             queueApi.addContentletsReindex(contentToIndex);
+        } else {
+            HibernateUtil.addCommitListener(() -> addContentToIndex(contentToIndex));
         }
-
-        addContentToIndex(contentToIndex);
 
     }
 

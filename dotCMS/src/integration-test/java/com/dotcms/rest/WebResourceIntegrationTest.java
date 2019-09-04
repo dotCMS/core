@@ -41,7 +41,7 @@ public class WebResourceIntegrationTest {
     frontEndUser = new UserDataGen().nextPersisted();
     
     APILocator.getRoleAPI().addRoleToUser(Role.DOTCMS_BACK_END_USER, backEndUser);
-    APILocator.getRoleAPI().addRoleToUser(Role.DOTCMS_BACK_END_USER, frontEndUser);
+    APILocator.getRoleAPI().addRoleToUser(Role.DOTCMS_FRONT_END_USER, frontEndUser);
 
     cmsAnon = APILocator.getUserAPI().getAnonymousUser();
   }

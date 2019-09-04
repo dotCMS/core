@@ -120,8 +120,6 @@ public interface ContentletIndexAPI {
 
     void addContentToIndex(Contentlet content, boolean deps) throws DotDataException;
 
-    void addContentToIndex(Contentlet parentContenlet, boolean includeDependencies, boolean indexBeforeCommit) throws DotDataException;
-
     BulkRequestBuilder createBulkRequest(List<Contentlet> contentToIndex) throws DotDataException;
 
     BulkRequestBuilder createBulkRequest();

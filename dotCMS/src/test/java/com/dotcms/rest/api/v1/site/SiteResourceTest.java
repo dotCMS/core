@@ -82,7 +82,8 @@ public class SiteResourceTest extends UnitTestBase {
         Config.CONTEXT = context;
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+        when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
+        when(initDataObject.getUser()).thenReturn(user);
         when(paginationUtil.getPage(request, user, "filter",1, count,
                 map("archive", false, "live", false, "system", false))).thenReturn(responseExpected);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
@@ -119,7 +120,8 @@ public class SiteResourceTest extends UnitTestBase {
 
         when(initDataObject.getUser()).thenReturn(user);
         // final InitDataObject initData = this.webResource.init(null, request, response, true, null); // should logged in
-        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+        when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
+
         when(hostAPI.findAll(user, true)).thenReturn(hosts);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
@@ -170,6 +172,7 @@ public class SiteResourceTest extends UnitTestBase {
         final WebResource webResource       = mock(WebResource.class);
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
+        
         final User user = new User();
         final Host host = getSite().get(0);
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
@@ -178,7 +181,7 @@ public class SiteResourceTest extends UnitTestBase {
         Map<String, Object> sessionAttributes = map(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock");
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+        when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
         when(hostAPI.find("48190c8c-42c4-46af-8d1a-0cd5db894798", user, Boolean.TRUE)).thenReturn(host);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
@@ -256,7 +259,7 @@ public class SiteResourceTest extends UnitTestBase {
                 .thenReturn( currentSite.getIdentifier() );
 
         final InitDataObject initDataObject = mock(InitDataObject.class);
-        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+        when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
 
         final SiteResource siteResource =

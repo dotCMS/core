@@ -384,5 +384,18 @@ public interface RoleAPI {
 	 * @throws DotDataException
 	 */
 	public List<Role> findWorkflowSpecialRoles() throws DotSecurityException, DotDataException;
+	/**
+	 * Returns the back end user role
+	 * @return
+	 * @throws DotDataException
+	 */
+	public Role loadBackEndUserRole() throws DotDataException;
+  
+  /**
+   * Returns the front end user role
+   * @return
+   * @throws DotDataException
+   */
+	public Role loadFrontEndUserRole() throws DotDataException;
 
 }

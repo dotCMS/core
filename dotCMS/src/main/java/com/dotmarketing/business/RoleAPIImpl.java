@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -12,6 +13,8 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.SystemProperties;
+
+import io.vavr.control.Try;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -168,6 +171,7 @@ public class RoleAPIImpl implements RoleAPI {
             for ( Layout l : layoutAPI.loadLayoutsForRole( role ) ) {
                 removeLayoutFromRole( l, role );
             }
+            SecurityLogger.logInfo(this.getClass(), "Deleting role:'" + role.getName() + "' " + role);
             roleFactory.delete( role );
 
         } catch ( Exception e ) {
@@ -196,6 +200,7 @@ public class RoleAPIImpl implements RoleAPI {
 		if(!currentRole.isEditUsers()){
 			throw new DotStateException("Cannot alter users on this role.  Name:" + role.getName() + ", id:" + role.getId());
 		}
+		SecurityLogger.logInfo(this.getClass(), "Adding role:'" + role.getName() + "' to user:" + user.getUserId() + " email:" + user.getEmailAddress());
 		roleFactory.addRoleToUser(role, user);
 	}
 	
@@ -232,8 +237,8 @@ public class RoleAPIImpl implements RoleAPI {
 		if(dupRole != null && !dupRole.getId().equals(role.getId()))
 			throw new DuplicateRoleException("A role with id = " + dupRole.getId() + " and name = " + dupRole.getName());
 			
-		
-		return roleFactory.save(role);
+		SecurityLogger.logInfo(this.getClass(), "Saving role:'" + role.getName() + "' " + role);
+    return roleFactory.save(role);
 	}
 
 	@WrapInTransaction
@@ -289,7 +294,22 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 		return LOGGEDIN_SITE_USER;
 	}
+	
+  @CloseDBIfOpened
+  @Override
+  public Role loadFrontEndUserRole() throws DotDataException {
 
+    return this.loadLoggedinSiteRole() ;
+  }
+	
+	
+  @CloseDBIfOpened
+  @Override
+  public Role loadBackEndUserRole() throws DotDataException {
+    return roleFactory.loadRoleByKey(Role.DOTCMS_BACK_END_USER);
+
+  }
+  
 	@CloseDBIfOpened
 	@Override
 	public Role loadCMSAdminRole() throws DotDataException {

@@ -285,7 +285,7 @@ public interface UserAPI {
 	 *             database.
 	 */
     public List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
-			int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException;
+			int pageSize, boolean includeAnonymous, boolean includeDefault, String roleId) throws DotDataException;
 
     /**
      * Save or update in db the user object
@@ -412,5 +412,20 @@ public interface UserAPI {
 	public List<User> getUnDeletedUsers() throws DotDataException;
 
     User getAnonymousUserNoThrow();
+
+  public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous, String roleId)
+        throws DotDataException;
+
+  /**
+   * Returns a list of users that
+   * @param filter
+   * @param includeAnonymous
+   * @param includeDefault
+   * @param roleId
+   * @return
+   * @throws DotDataException
+   */
+  public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault, String roleId)
+      throws DotDataException;
 
 }
