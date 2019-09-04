@@ -39,7 +39,7 @@
                     (onClick)="fireAddRowEvent();"
                     [model]="actions">
                 </p-splitButton>
-                <dot-content-types-fields-list></dot-content-types-fields-list>
+                <dot-content-types-fields-list [baseType]="contentType.baseType"></dot-content-types-fields-list>
             </div>
         </div>
     </p-tabPanel>

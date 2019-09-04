@@ -22,7 +22,9 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
     selector: 'dot-content-types-fields-list',
     template: ''
 })
-class TestContentTypeFieldsListComponent {}
+class TestContentTypeFieldsListComponent {
+    @Input() baseType: string;
+}
 
 @Component({
     selector: 'dot-content-type-fields-row-list',
@@ -68,7 +70,8 @@ const fakeContentType: DotCMSContentType = {
     ...dotcmsContentTypeBasicMock,
     id: '1234567890',
     name: 'name',
-    variable: 'helloVariable'
+    variable: 'helloVariable',
+    baseType: 'testBaseType'
 };
 
 describe('ContentTypesLayoutComponent', () => {
@@ -209,11 +212,12 @@ describe('ContentTypesLayoutComponent', () => {
                 expect(contentTypeFieldsSideBar).not.toBeNull();
             });
 
-            it('should have a field types list', () => {
+            it('should have a field types list with the correct params', () => {
                 const contentTypesFieldsList = this.pTabPanel.query(
                     By.css('dot-content-types-fields-list')
                 );
                 expect(contentTypesFieldsList).not.toBeNull();
+                expect(contentTypesFieldsList.componentInstance.baseType).toEqual('testBaseType');
             });
 
             // Hiding the rows list for 5.0
