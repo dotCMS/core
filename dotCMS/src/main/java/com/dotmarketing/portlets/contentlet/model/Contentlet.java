@@ -40,16 +40,13 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-
 import io.vavr.control.Try;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,6 +61,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
@@ -1462,14 +1460,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 
-	private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
+	private class ContentletHashMap extends ConcurrentSkipListMap<String, Object> {
 		 /**
 		 *
 		 */
 		private static final long serialVersionUID = 4108013044908549504L;
 
 		public ContentletHashMap() {
-			super();
+			super(String.CASE_INSENSITIVE_ORDER);
 		}
 
 		public Object put(final String key, final Object value) {
