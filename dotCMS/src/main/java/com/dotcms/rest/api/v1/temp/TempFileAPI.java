@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.temp;
 
+import com.dotcms.rest.exception.BadRequestException;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
@@ -22,7 +23,6 @@ import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -108,7 +108,7 @@ public class TempFileAPI {
       throw new DotRuntimeException("Invalid file upload");
     }
     createTempPermissionFile(tempFolder, allowList);
-
+    SecurityLogger.logInfo(this.getClass(),"Temp File Created with id: " + tempFileId + ", uploaded by userId: " + user.getUserId());
     return new DotTempFile(tempFileId, tempFile);
   }
 
@@ -182,41 +182,31 @@ public class TempFileAPI {
    * @return
    * @throws DotSecurityException
    */
-  public DotTempFile createTempFileFromUrl(final String incomingFileName,final HttpServletRequest request, final URL url, final int timeoutSeconds, final long maxLength)
-      throws DotSecurityException {
+  public DotTempFile createTempFileFromUrl(final String incomingFileName,
+          final HttpServletRequest request, final URL url, final int timeoutSeconds,
+          final long maxLength)
+          throws DotSecurityException, IOException {
 
-    if (!validUrl(url)) {
-      throw new DotSecurityException("Invalid url attempted for tempFile : " + url);
-    }
+      final String fileName = resolveFileName(incomingFileName, url);
 
+      final DotTempFile dotTempFile = createEmptyTempFile(fileName, request);
+      final File tempFile = dotTempFile.file;
 
+      final OutputStream out = new BoundedOutputStream(maxFileSize(request),
+              new FileOutputStream(tempFile));
 
-    final String fileName = resolveFileName(incomingFileName, url);
-
-    final DotTempFile dotTempFile = createEmptyTempFile(fileName, request);
-    final String tempFileId = dotTempFile.id;
-    final File tempFile = dotTempFile.file;
-
-    try (final OutputStream out = new BoundedOutputStream(maxFileSize(request),new FileOutputStream(tempFile))) {
-      
       final CircuitBreakerUrl urlGetter =
-          CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url.toString()).setTimeout(timeoutSeconds * 1000).build();
-      
+              CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url.toString())
+                      .setTimeout(timeoutSeconds * 1000).build();
+
       urlGetter.doOut(out);
-      
-      if (urlGetter.response() != 200) {
-        throw new DoesNotExistException("Url not found. Got a " + urlGetter.response());
-      }
-    } catch (Exception e) {
-      Logger.warnAndDebug(this.getClass(), "unable to save temp file:" + tempFileId, e);
-      throw new DotRuntimeException(e);
-    }
-    return dotTempFile;
+
+      return dotTempFile;
 
   }
 
-  private boolean validUrl(final URL url) {
-    return Try.of(() -> url.toString().toLowerCase().startsWith("http://") || url.toString().toLowerCase().startsWith("https://"))
+  public boolean validUrl(final String url) {
+    return Try.of(() -> url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://"))
         .getOrElse(false);
   }
 
