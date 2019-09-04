@@ -49,30 +49,30 @@ import org.junit.Test;
  */
 public class ContainerAPIImplTest extends IntegrationTestBase  {
 
-    private static final Host daHost = new SiteDataGen().nextPersisted();
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
     }
 
-    
+
     @Test
     public void test_containerapi_find_by_inode() throws DotDataException, DotSecurityException {
       String title = "myContainer" + System.currentTimeMillis();
+      final Host daHost = new SiteDataGen().nextPersisted();
       Container container =  new ContainerDataGen().site(daHost).title(title).nextPersisted();
-      
+
       assertNotNull(container);
       assertNotNull(container.getInode());
       Container containerFromDB = APILocator.getContainerAPI().find(container.getInode(), APILocator.systemUser(), false);
       assertEquals(containerFromDB.getTitle(), container.getTitle());
       assertEquals(containerFromDB.getInode(), container.getInode());
-      
+
       Container nullContainer = APILocator.getContainerAPI().find("nope", APILocator.systemUser(), false);
       assertNull(nullContainer);
 
     }
-    
+
     @Test
     public void getContentTypesInContainer() throws DotDataException, DotSecurityException {
         Container container = null;
@@ -118,7 +118,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     @Test
     public void test_get_container_by_folder_found() throws DotDataException, DotSecurityException {
         final String testContainer = "/test-get-container" + System.currentTimeMillis();
-
+        final Host daHost = new SiteDataGen().nextPersisted();
         final ContainerAsFileDataGen containerAsFileDataGen = new ContainerAsFileDataGen().host(
                 daHost).folderName(testContainer);
         containerAsFileDataGen.nextPersisted();
@@ -152,7 +152,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
 
     @Test(expected = NotFoundInDbException.class)
     public void test_find_container_not_found() throws DotDataException, DotSecurityException {
-
+        final Host daHost = new SiteDataGen().nextPersisted();
         final ContainerAPI containerAPI = APILocator.getContainerAPI();
         final FolderAPI folderAPI       = APILocator.getFolderAPI();
         final Folder    folder          = folderAPI.findFolderByPath
@@ -210,7 +210,7 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     @Test
     public void test_get_working_found() throws DotDataException, DotSecurityException {
         final String testContainer = "/test_get_working_found" + System.currentTimeMillis();
-
+        final Host daHost = new SiteDataGen().nextPersisted();
         new ContainerAsFileDataGen().host(daHost).folderName(testContainer).nextPersisted();
         final ContainerAPI containerAPI = APILocator.getContainerAPI();
         final FolderAPI folderAPI       = APILocator.getFolderAPI();
