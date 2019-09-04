@@ -140,6 +140,9 @@ public class TempFileResource {
             if(!UtilMethods.isSet(form.remoteUrl)){
                 throw new BadRequestException("No Url passed");
             }
+            if (!tempApi.validUrl(form.remoteUrl)) {
+                throw new BadRequestException("Invalid url attempted for tempFile : " + form.remoteUrl);
+            }
 
             final List<DotTempFile> tempFiles = new ArrayList<DotTempFile>();
             tempFiles.add(tempApi

@@ -187,9 +187,6 @@ public class TempFileAPI {
           final long maxLength)
           throws DotSecurityException, IOException {
 
-      if (!validUrl(url)) {
-          throw new BadRequestException("Invalid url attempted for tempFile : " + url);
-      }
       final String fileName = resolveFileName(incomingFileName, url);
 
       final DotTempFile dotTempFile = createEmptyTempFile(fileName, request);
@@ -208,8 +205,8 @@ public class TempFileAPI {
 
   }
 
-  private boolean validUrl(final URL url) {
-    return Try.of(() -> url.toString().toLowerCase().startsWith("http://") || url.toString().toLowerCase().startsWith("https://"))
+  public boolean validUrl(final String url) {
+    return Try.of(() -> url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://"))
         .getOrElse(false);
   }
 
