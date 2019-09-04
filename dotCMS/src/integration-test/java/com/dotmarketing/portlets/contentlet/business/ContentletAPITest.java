@@ -6511,4 +6511,14 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    @Test
+    public void testContentMapShouldBeCaseInsensitive(){
+        final Contentlet contentlet = new Contentlet();
+        contentlet.getMap().put("testKey", "dummy");
+        assertTrue(contentlet.getMap().containsKey("testKey"));
+        assertTrue(contentlet.getMap().containsKey("testkey"));
+        contentlet.getMap().put("TESTKEY", "replace dummy");
+        assertEquals(contentlet.getMap().get("testKey"), "replace dummy");
+    }
+
 }
