@@ -251,26 +251,53 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final HttpServletRequest request)
                 throws DotDataException, DotSecurityException {
 
+        final IHTMLPage htmlPageAsset = findPage(host, context, request);
+
+        checkPagePermission(context, htmlPageAsset);
+
+        return htmlPageAsset;
+    }
+
+    private void checkPagePermission(
+            final PageContext context,
+            final IHTMLPage htmlPageAsset) throws DotDataException, DotSecurityException {
+
+        if (context.getPageMode() == PageMode.EDIT_MODE) {
+            checkPermission(context, htmlPageAsset, PermissionLevel.EDIT);
+        } else {
+            checkPermission(context, htmlPageAsset, PermissionLevel.READ);
+        }
+    }
+
+    private void checkPermission(final PageContext context,
+                                 final IHTMLPage htmlPageAsset,
+                                 final PermissionLevel permissionLevel) throws DotDataException, DotSecurityException  {
+
+        final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(
+                htmlPageAsset,
+                permissionLevel.getType(),
+                context.getUser(),
+                context.getPageMode().respectAnonPerms);
+
+        if (!doesUserHavePermission) {
+            final String message = String.format("User: %s does not have permissions %s for object %s",
+                    context.getUser(),
+                    PermissionLevel.READ, htmlPageAsset);
+            throw new DotSecurityException(message);
+        }
+    }
+
+    private IHTMLPage findPage(
+            final Host host,
+            final PageContext context,
+            final HttpServletRequest request) throws DotSecurityException, DotDataException {
         final IHTMLPage htmlPageAsset = findPageByContext(host, context);
 
         if (htmlPageAsset == null){
             return getPageByUri(context.getPageMode(), host, findByURLMap(context, host, request));
-        } else  {
-            final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(
-                    htmlPageAsset,
-                    PermissionLevel.READ.getType(),
-                    context.getUser(),
-                    context.getPageMode().respectAnonPerms);
-
-            if (!doesUserHavePermission) {
-                final String message = String.format("User: %s does not have permissions %s for object %s",
-                        context.getUser(),
-                        PermissionLevel.READ, htmlPageAsset);
-                throw new DotSecurityException(message);
-            }
+        } else {
+            return htmlPageAsset;
         }
-
-        return htmlPageAsset;
     }
 
     private IHTMLPage findPageByContext(final Host host, final PageContext context)

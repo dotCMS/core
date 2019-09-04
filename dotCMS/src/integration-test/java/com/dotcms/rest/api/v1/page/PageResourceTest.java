@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
@@ -11,7 +10,10 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
@@ -20,17 +22,14 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageStatus;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONException;
@@ -82,6 +81,8 @@ public class PageResourceTest {
     private Container container1;
     private Container container2;
 
+    private InitDataObject initDataObject;
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -97,8 +98,9 @@ public class PageResourceTest {
         request  = mock(HttpServletRequest.class);
         response  = mock(HttpServletResponse.class);
 
+
         final ModuleConfig moduleConfig     = mock(ModuleConfig.class);
-        final InitDataObject initDataObject = mock(InitDataObject.class);
+        initDataObject = mock(InitDataObject.class);
         user = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
 
         final PageResourceHelper pageResourceHelper = mock(PageResourceHelper.class);
@@ -155,7 +157,41 @@ public class PageResourceTest {
         assertNotNull(pageAsset.getIdentifier());
     }
 
+    /**
+     * Should return about-us/index page
+     *
+     * @throws JSONException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void testPathParam()
+            throws DotSecurityException, DotDataException {
 
+        final SearchResponse searchResponse = mock(SearchResponse.class);
+        final List contentlets = list(pageAsset);
+        final ESSearchResults results = new ESSearchResults(searchResponse, contentlets);
+        final String query = String.format("{"
+                + "query: {"
+                + "query_string: {"
+                + "query: \"+basetype:5 +path:*%s*  languageid:1^10\""
+                + "}"
+                + "}"
+                + "}", pagePath.replace("/", "\\\\/"));
+
+
+        when(esapi.esSearch(query, false, user, false)).thenReturn(results);
+
+        final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), pagePath, false, true);
+        RestUtilTest.verifySuccessResponse(response);
+
+        final Collection contentLetsResponse = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertEquals(contentLetsResponse.size(), 1);
+
+        final Map responseMap = (Map) contentLetsResponse.iterator().next();
+        assertEquals(responseMap.get("identifier"), pageAsset.getIdentifier());
+        assertEquals(responseMap.get("inode"), pageAsset.getInode());
+    }
 
     /**
      * Should return at least one persona personalized
@@ -205,46 +241,6 @@ public class PageResourceTest {
 
 
     /**
-     * Should return about-us/index page
-     *
-     * @throws JSONException
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    @Test
-    public void testPathParam()
-            throws DotSecurityException, DotDataException {
-        final String path = pagePath;
-
-        final SearchResponse searchResponse = mock(SearchResponse.class);
-
-        final Contentlet contentlet = pageAsset;
-
-        final List contentlets = list(contentlet);
-        final ESSearchResults results = new ESSearchResults(searchResponse, contentlets);
-        final String query = String.format("{"
-                + "query: {"
-                + "query_string: {"
-                    + "query: \"+basetype:5 +path:*%s*  languageid:1^10\""
-                    + "}"
-                    + "}"
-                + "}", path.replace("/", "\\\\/"));
-
-
-        when(esapi.esSearch(query, false, user, false)).thenReturn(results);
-
-        final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
-        RestUtilTest.verifySuccessResponse(response);
-
-        final Collection contentLetsResponse = (Collection) ((ResponseEntityView) response.getEntity()).getEntity();
-        assertEquals(contentLetsResponse.size(), 1);
-
-        final Map responseMap = (Map) contentLetsResponse.iterator().next();
-        assertEquals(responseMap.get("identifier"), contentlet.getIdentifier());
-        assertEquals(responseMap.get("inode"), contentlet.getInode());
-    }
-
-    /**
      * Should return about-us/index page, when pass path with the host
      *
      * @throws JSONException
@@ -283,7 +279,7 @@ public class PageResourceTest {
     }
 
     /**
-     * Should return about-us/index page
+     * Should return the page without content
      *
      * @throws JSONException
      * @throws DotSecurityException
@@ -291,59 +287,19 @@ public class PageResourceTest {
      */
     @Test
     public void testRender() throws DotDataException, DotSecurityException {
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
 
-        final String pageUri =  pagePath;
-        final long languageId = 1;
+        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
 
-        final User systemUser = APILocator.getUserAPI().getSystemUser();
-        final HTMLPageAsset pageByPath = (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().getPageByPath(pageUri, host, languageId, false);
-
-        final Structure structure1 = new StructureDataGen().nextPersisted();
-        final Container localContainer1 = new ContainerDataGen().withStructure(structure1,"").friendlyName("container-1-friendly-name").title("container-1-title").nextPersisted();
-        final Structure structure2 = new StructureDataGen().nextPersisted();
-        final Container localContainer2 = new ContainerDataGen().withStructure(structure2,"").friendlyName("container-2-friendly-name").title("container-2-title").nextPersisted();
-        final Template newTemplate = new TemplateDataGen().withContainer(localContainer1.getIdentifier()).withContainer(localContainer2.getIdentifier()).nextPersisted();
-        APILocator.getVersionableAPI().setWorking(newTemplate);
-        APILocator.getVersionableAPI().setLive(newTemplate);
-
-        final Contentlet checkout = APILocator.getContentletAPIImpl().checkout(pageByPath.getInode(), systemUser, false);
-        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate.getIdentifier());
-
-        final Contentlet checkin = APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
         final Response response = pageResource
-                .loadJson(request, this.response, pageUri, null, null,
+                .render(request, this.response, page.getURI(), null, null,
                         String.valueOf(languageId), null);
-
         RestUtilTest.verifySuccessResponse(response);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
-        final Collection<? extends ContainerRaw> pageContainers = pageView.getContainers();
-        final List<String> containerIds = pageContainers.stream()
-                .map((ContainerRaw containerRaw) -> containerRaw.getContainer().getIdentifier())
-                .collect(Collectors.toList());
-
-        assertEquals(pageView.getNumberContents(), 0);
-        assertTrue(containerIds.contains(localContainer1.getIdentifier()));
-        assertTrue(containerIds.contains(localContainer1.getIdentifier()));
-        assertFalse(containerIds.contains(container1.getIdentifier()));
-        assertFalse(containerIds.contains(container2.getIdentifier()));
-
-        for (final ContainerRaw pageContainer : pageContainers) {
-            final Map<String, List<Map<String, Object>>> contentlets = pageContainer.getContentlets();
-            final Container container = pageContainer.getContainer();
-            final List<Structure> structures = APILocator.getContainerAPI().getStructuresInContainer(container);
-            if(container.getIdentifier().equals(localContainer1.getIdentifier())){
-                assertEquals(localContainer1.getTitle(),container.getTitle());
-                assertEquals(structures.size(),1);
-            } else if(container.getIdentifier().equals(localContainer2.getIdentifier())){
-                assertEquals(localContainer2.getTitle(),container.getTitle());
-                assertEquals(structures.size(),1);
-            } else {
-                fail("Unknown container with id "+container.getIdentifier());
-            }
-            assertEquals(contentlets.size(), 1);
-        }
-
+        PageRenderVerifier.verifyPageView(pageView, pageRenderTest, user);
     }
 
     /**
@@ -373,47 +329,257 @@ public class PageResourceTest {
     @Test
     public void testRenderWithContent() throws DotDataException, DotSecurityException {
 
-        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
 
-        final Structure structure = new StructureDataGen().nextPersisted();
-        final Container localContainer = new ContainerDataGen().withStructure(structure,"").friendlyName("container-1-friendly-name").title("container-1-title").nextPersisted();
+        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(1, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
 
-        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
-                .withContainer(localContainer.getIdentifier())
-                .next();
-
-        final Template newTemplate = new TemplateDataGen()
-                .drawedBody(templateLayout)
-                .withContainer(localContainer.getIdentifier()
-                ).nextPersisted();
-        APILocator.getVersionableAPI().setWorking(newTemplate);
-        APILocator.getVersionableAPI().setLive(newTemplate);
-
-        final Contentlet checkout = APILocator.getContentletAPIImpl().checkout(pageAsset.getInode(), systemUser, false);
-        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate.getIdentifier());
-
-        APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
-
-        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
-
-        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
-        final Contentlet contentlet = contentletDataGen.setProperty("title", "title")
-                .setProperty("body", "body").languageId(1).nextPersisted();
-
-
-        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
-        final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(), localContainer.getIdentifier(), contentlet.getIdentifier(), "1", 1);
-        multiTreeAPI.saveMultiTree(multiTree);
+        final Container container = pageRenderTest.getFirstContainer();
+        pageRenderTest.createContent(container);
 
         final Response response = pageResource
-                .loadJson(request, this.response, pagePath, "PREVIEW_MODE", null,
-                        "1", null);
-
+                .render(request, this.response, page.getURI(), null, null,
+                        String.valueOf(languageId), null);
         RestUtilTest.verifySuccessResponse(response);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
-        assertEquals(pageView.getNumberContents(), 1);
+        PageRenderVerifier.verifyPageView(pageView, pageRenderTest, user);
+    }
 
+    /**
+     * Should render page for limited user
+     *
+     * @throws JSONException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void testRenderLimitedUser() throws DotDataException, DotSecurityException {
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
+
+        final User limitedUser = createLimitedUser(page);
+
+        final Response response = pageResource
+                .render(request, this.response, page.getURI(), null, null,
+                        String.valueOf(languageId), null);
+        RestUtilTest.verifySuccessResponse(response);
+
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        PageRenderVerifier.verifyPageView(pageView, pageRenderTest, limitedUser);
+    }
+
+
+    /**
+     * Should return 403
+     *
+     * @throws JSONException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void testNotPermissionUser() throws DotDataException, DotSecurityException {
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
+
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen()
+                .roles(role)
+                .nextPersisted();
+
+        when(initDataObject.getUser()).thenReturn(user);
+
+        APILocator.getPermissionAPI().save(
+                new Permission(host.getPermissionId(),
+                        role.getId(),
+                        PermissionAPI.PERMISSION_READ),
+                host, APILocator.systemUser(), false);
+
+        pageResource.render(request, this.response, page.getURI(), null, null,
+                        String.valueOf(languageId), null);
+    }
+
+    /**
+     * Should return page with content in EDIT_MODE
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testRenderInEditMode() throws DotDataException, DotSecurityException {
+
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(1, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
+
+        final Container container = pageRenderTest.getFirstContainer();
+        pageRenderTest.createContent(container);
+
+        final Response response = pageResource
+                .render(request, this.response, page.getURI(), PageMode.EDIT_MODE.toString(), null,
+                        String.valueOf(languageId), null);
+        RestUtilTest.verifySuccessResponse(response);
+
+
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        PageRenderVerifier.verifyPageView(pageView, pageRenderTest, user);
+
+        assertEquals(PageMode.EDIT_MODE, pageView.getViewAs().getPageMode());
+    }
+
+    /**
+     * Should thorow DotSecurityException  when request a page in EDIT_MODE with a limited user
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void testRenderInEditModeLimitedUser() throws DotDataException, DotSecurityException {
+
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(1, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
+
+        final Container container = pageRenderTest.getFirstContainer();
+        pageRenderTest.createContent(container);
+
+        final User limitedUser = createLimitedUser(page);
+
+        pageResource.render(request, this.response, page.getURI(), PageMode.EDIT_MODE.toString(),
+                null, String.valueOf(languageId), null);
+    }
+
+    /**
+     * Should return the page in another language
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testRenderInAnotherLanguage() throws DotDataException, DotSecurityException {
+
+        final String languageId = "2";
+
+        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(1, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
+
+        final Container container = pageRenderTest.getFirstContainer();
+        pageRenderTest.createContent(container);
+
+        final Response response = pageResource
+                .render(request, this.response, page.getURI(), null, null,
+                        languageId, null);
+        RestUtilTest.verifySuccessResponse(response);
+
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        PageRenderVerifier.verifyPageView(pageView, pageRenderTest, user);
+    }
+
+    /***
+     * Should return page for default persona
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testRenderNotPersonalizationVersion() throws DotDataException, DotSecurityException {
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
+
+        final ContentType contentTypePersona = APILocator.getContentTypeAPI(APILocator.systemUser()).find("persona");
+        final Contentlet persona = new ContentletDataGen(contentTypePersona.id())
+                .setProperty("name", "name")
+                .setProperty("keyTag", "keyTag")
+                .host(host)
+                .languageId(1)
+                .nextPersisted();
+
+        when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
+
+        final Response response = pageResource
+                .render(request, this.response, page.getURI(), null, persona.getIdentifier(),
+                        String.valueOf(languageId), null);
+
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        PageRenderVerifier.verifyPageView(pageView, pageRenderTest, APILocator.systemUser());
+
+        assertNull(pageView.getViewAs().getPersona());
+    }
+
+    /***
+     * Should return page for a persona
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testRenderPersonalizationVersion() throws DotDataException, DotSecurityException {
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
+
+        final ContentType contentTypePersona = APILocator.getContentTypeAPI(APILocator.systemUser()).find("persona");
+        final Contentlet persona = new ContentletDataGen(contentTypePersona.id())
+                .setProperty("name", "name")
+                .setProperty("keyTag", "keyTag")
+                .host(host)
+                .languageId(1)
+                .nextPersisted();
+
+        final Container container = pageRenderTest.getFirstContainer();
+        pageRenderTest.createContent(container);
+
+        APILocator.getMultiTreeAPI().copyPersonalizationForPage(
+                page.getIdentifier(),
+                Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getIdentifier()
+            );
+
+        final Response response = pageResource
+                .render(request, this.response, page.getURI(), null, persona.getIdentifier(),
+                        String.valueOf(languageId), null);
+
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        PageRenderVerifier.verifyPageView(pageView, pageRenderTest, user);
+
+        assertNull(pageView.getViewAs().getPersona());
+    }
+
+    private User createLimitedUser(final HTMLPageAsset page) throws DotDataException, DotSecurityException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen()
+                .roles(role)
+                .nextPersisted();
+
+        when(initDataObject.getUser()).thenReturn(user);
+
+        APILocator.getPermissionAPI().save(
+                new Permission(page.getPermissionId(),
+                        role.getId(),
+                        PermissionAPI.PERMISSION_READ),
+                page, APILocator.systemUser(), false);
+
+        APILocator.getPermissionAPI().save(
+                new Permission(host.getPermissionId(),
+                        role.getId(),
+                        PermissionAPI.PERMISSION_READ),
+                host, APILocator.systemUser(), false);
+
+        return user;
     }
 }
