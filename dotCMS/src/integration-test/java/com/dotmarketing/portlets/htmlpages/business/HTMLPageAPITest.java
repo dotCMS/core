@@ -73,9 +73,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
     public void saveHTMLPage() throws Exception {
 
         Host host=APILocator.getHostAPI().findDefaultHost(sysuser, false);
-        String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-        
-        HibernateUtil.startTransaction();
+
         Template template=new Template();
         template.setTitle("a template "+UUIDGenerator.generateUuid());
         template.setBody("<html><body> I'm mostly empty </body></html>");
@@ -86,12 +84,9 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
         HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
         page.setIndexPolicy(IndexPolicy.FORCE);
-        APILocator.getContentletIndexAPI().addContentToIndex(page, true);
-        boolean isIndexed = APILocator.getContentletAPI().isInodeIndexed( page.getInode() );
-        assertTrue(isIndexed);
 
         List<IHTMLPage> pages = APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(folder, sysuser, true);
-        assertTrue(pages.size()==1);
+		assertEquals(1, pages.size());
 
         // now with existing inode/identifier
         String existingInode=UUIDGenerator.generateUuid();
@@ -100,14 +95,12 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         folder=APILocator.getFolderAPI().createFolders(
                 "/test_junit/test_"+UUIDGenerator.generateUuid().replaceAll("-", "_"), host, sysuser, false);
 		HTMLPageAsset page2 = new HTMLPageDataGen(folder, template).inode(existingInode).identifier(existingIdentifier).nextPersisted();
-        APILocator.getContentletIndexAPI().addContentToIndex(page2, true);
-        isIndexed = APILocator.getContentletAPI().isInodeIndexed( page2.getInode() );
-        assertTrue(isIndexed);
-        assertEquals(existingInode,page2.getInode());
+
+		assertEquals(existingInode,page2.getInode());
         assertEquals(existingIdentifier,page2.getIdentifier());
 
         pages = APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(folder, sysuser, false);
-        assertTrue(pages.size()==1);
+		assertEquals(1, pages.size());
         page2=(HTMLPageAsset) pages.get(0);
         assertEquals(existingInode,page2.getInode());
         assertEquals(existingIdentifier,page2.getIdentifier());
@@ -118,7 +111,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         page2.setInode(newInode);
         page2.setTitle("other title");
         Contentlet pageContentlet = APILocator.getContentletAPI().checkin(page2, sysuser, false);
-        HibernateUtil.closeAndCommitTransaction();
+
         assertEquals(newInode,pageContentlet.getInode());
         assertEquals(existingIdentifier,pageContentlet.getIdentifier());
         assertEquals("other title",pageContentlet.getTitle());
