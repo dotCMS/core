@@ -2876,7 +2876,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
       APILocator.getReindexQueueAPI().addIdentifierReindex(ref.getAssetId());
     }
     dbDeletePermissionReferences(permissionable);
-    APILocator.getReindexQueueAPI().addIdentifierReindex(permissionable.getPermissionId());
+    
+    
+    if(permissionable instanceof ContentType) {
+      APILocator.getReindexQueueAPI().addStructureReindexEntries(permissionable.getPermissionId());
+    }
+    else if(permissionable instanceof Contentlet) {
+      APILocator.getReindexQueueAPI().addIdentifierReindex(permissionable.getPermissionId());
+    }
 	}
 
 	@Override
