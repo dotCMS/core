@@ -1,18 +1,32 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_CACHE_TTL_FIELD_VAR;
+import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TEMPLATE_FIELD;
+import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.field.ImmutableColumnField;
+import com.dotcms.contenttype.model.field.ImmutableRowField;
+import com.dotcms.contenttype.model.field.ImmutableTagField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -40,6 +54,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -472,8 +487,8 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 				.checkout(cvi.getWorkingInode(), APILocator.systemUser(), true);
 		//Validations
 		assertNotNull(contentlet);
-		assertNotNull(contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD));
-		assertEquals(contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD), page.getPageUrl());
+		assertNotNull(contentlet.getStringProperty(URL_FIELD));
+		assertEquals(contentlet.getStringProperty(URL_FIELD), page.getPageUrl());
 
 		//Saving the content
 		contentlet.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
@@ -497,5 +512,51 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 		assertEquals(id.getAssetName(), page.getPageUrl());
         assertEquals(id.getId(), identifierId);
 	}
+
+    @Test
+    public void testGetHTMLPageAssetWithTagsShouldReturnTags()
+            throws Exception {
+        ContentType testContentType = null;
+        Template template = null;
+        try {
+            testContentType = new ContentTypeDataGen()
+                    .baseContentType(BaseContentType.HTMLPAGE)
+                    .fields(
+                            CollectionsUtils.list(
+                                    new FieldDataGen()
+                                            .name("Tags")
+                                            .velocityVarName("tags")
+                                            .defaultValue(null)
+                                            .type(TagField.class)
+                                            .next()
+                            )
+                    )
+                    .nextPersisted();
+
+            template = new TemplateDataGen().nextPersisted();
+
+            final Contentlet contentlet = new ContentletDataGen(testContentType.id())
+                    .setProperty("tags", "test").setProperty(TEMPLATE_FIELD, template.getInode())
+                    .setProperty(URL_FIELD, "myNewPage").setProperty("title", "myNewPage")
+                    .setProperty(PAGE_CACHE_TTL_FIELD_VAR, "0").nextPersisted();
+
+            HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(
+                    APILocator.getContentletAPI().find(contentlet.getInode(), sysuser, false));
+            assertNotNull(page);
+
+            List<Tag> tags = (List<Tag>) page.getMap().get("tags");
+            assertNotNull(tags);
+            assertFalse(tags.isEmpty());
+            assertEquals("test", tags.get(0).getTagName());
+        }finally {
+	        if (testContentType != null && testContentType.inode() != null) {
+                ContentTypeDataGen.remove(testContentType);
+            }
+
+	        if (template != null && template.getInode() != null){
+	           APILocator.getTemplateAPI().delete(template, sysuser, false);
+            }
+        }
+    }
 
 }
