@@ -226,7 +226,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             workflowAction2.setId(UUIDGenerator.generateUuid());
             workflowAction2.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED, WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
             workflowAction2.setNextStep(workflowStep2.getId());
-            workflowAction2.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
+            workflowAction2.setNextAssign(new RoleDataGen().key(ADMINISTRATOR).nextPersisted().getId());
             workflowAction2.setSchemeId(scheme.getId());
             workflowAction2.setName("save/publish");
             workflowAction2.setOrder(1);
