@@ -1224,8 +1224,6 @@ public class WorkflowResource {
                                               final FormDataMultiPart multipart) {
 
       final InitDataObject initDataObject = new WebResource.InitBuilder()
-          .allowBackendUser(true)
-          .allowFrontendUser(true)
           .requestAndResponse(request, new MockHttpResponse())
           .requiredAnonAccess(AnonymousAccess.WRITE)
           .init();
@@ -1279,8 +1277,6 @@ public class WorkflowResource {
                                      final FireActionByNameForm fireActionForm) {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
-          .allowBackendUser(true)
-          .allowFrontendUser(true)
           .requestAndResponse(request, new MockHttpResponse())
           .requiredAnonAccess(AnonymousAccess.WRITE)
           .init();
@@ -1397,8 +1393,6 @@ public class WorkflowResource {
                                      final FireActionForm fireActionForm) {
 
           final InitDataObject initDataObject = new WebResource.InitBuilder()
-          .allowBackendUser(true)
-          .allowFrontendUser(true)
           .requestAndResponse(request, response)
           .requiredAnonAccess(AnonymousAccess.WRITE)
           .init();
