@@ -292,7 +292,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * @throws IOException
 	 * @throws DotStateException
 	 */
-	@CloseDBIfOpened
+	@WrapInTransaction
 	public void copy(final Folder folderToCopy, final Folder newParentFolder,
 					 final User user, final boolean respectFrontEndPermissions) throws DotDataException,
 			DotSecurityException, DotStateException, IOException {
@@ -311,7 +311,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
-	@CloseDBIfOpened
+	@WrapInTransaction
 	public void copy(final Folder folderToCopy, final Host newParentHost,
 					 final User user, final boolean respectFrontEndPermissions) throws DotDataException,
 			DotSecurityException, DotStateException, IOException {
