@@ -31,6 +31,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.google.common.collect.ImmutableList;
 
@@ -126,7 +127,7 @@ public class ReindexAPITest extends IntegrationTestBase {
         ContentType type = new ContentTypeDataGen().nextPersisted();
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
         for (int i = 0; i < numberToTest; i++) {
-            new ContentletDataGen(type.id()).nextPersisted();
+            new ContentletDataGen(type.id()).setPolicy(IndexPolicy.DEFER).nextPersisted();
         }
 
         final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
@@ -169,24 +170,29 @@ public class ReindexAPITest extends IntegrationTestBase {
                 .nextPersisted();
         LocalTransaction.wrap(()->new DotConnect().setSQL("delete from dist_reindex_journal").loadResult());
 
-        try {
-            HibernateUtil.startTransaction();
+
+         
+        LocalTransaction.wrap(()->{
 
             final Contentlet contentlet = new ContentletDataGen(type.id()).setPolicy(IndexPolicy.DEFER)
                     .setProperty("title", "contentTest " + System.currentTimeMillis()).next();
             APILocator.getContentletAPI().checkin(contentlet, APILocator.systemUser(), false);
-
+            
             assertTrue(reindexQueueAPI.recordsInQueue() > 0);
 
-            try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
+            try {
+              
+                Connection conn = DbConnectionFactory.getDataSource().getConnection();
                 long records = reindexQueueAPI.recordsInQueue(conn);
                 assertEquals("other connections should not see the uncommited reindex records", 0, records);
 
+            }catch(Exception e) {
+              throw new DotRuntimeException(e);
             }
+            
+            assertTrue(reindexQueueAPI.recordsInQueue() > 0);
 
-        } finally {
-            HibernateUtil.closeAndCommitTransaction();
-        }
+        });
 
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
 
@@ -216,7 +222,7 @@ public class ReindexAPITest extends IntegrationTestBase {
 
         //Pausing reindex to avoid race condition when findContentToReindex is called (no content will be indexed)
 
-        final Contentlet contentlet = new ContentletDataGen(type.id())
+        final Contentlet contentlet = new ContentletDataGen(type.id()).setPolicy(IndexPolicy.DEFER)
                 .setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
 
         Map<String, ReindexEntry> reindexEntries;
