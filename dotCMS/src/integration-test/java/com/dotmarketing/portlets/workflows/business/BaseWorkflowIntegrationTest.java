@@ -5,10 +5,12 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -24,6 +26,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+
 /**
  * Utility class that provides useful methods to create and modify Workflows in dotCMS.
  *
@@ -31,6 +35,23 @@ import java.util.concurrent.ExecutionException;
  * @version 4.3.0
  */
 public class BaseWorkflowIntegrationTest extends IntegrationTestBase {
+
+    protected static Role roleAdmin () {
+
+        //Creating a test role
+        Role adminRole = null;
+        try {
+
+            adminRole = APILocator.getRoleAPI().loadRoleByKey(ADMINISTRATOR);
+            if (adminRole == null) {
+                adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
+            }
+        } catch (DotDataException e) {
+            e.printStackTrace();
+        }
+
+        return adminRole;
+    }
 
     /**
      * Creates a new scheme, with a new step, with a new action and action let.

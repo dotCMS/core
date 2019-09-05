@@ -28,6 +28,7 @@ import com.liferay.portal.model.User;
 
 import static org.junit.Assert.assertEquals;
 
+import com.liferay.portal.util.WebKeys;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -35,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -543,12 +545,14 @@ public class ShortyIdApiTest {
     }
     
     @Test
-    public void testTempShorties() throws DotSecurityException, FileNotFoundException, IOException {
+    public void testTempShorties() throws DotSecurityException, IOException {
 
         ShortyIdAPI api = APILocator.getShortyAPI();
         User systemUser = APILocator.systemUser();
         String testingFileName = "TESTING.PNG";
-        DotTempFile temp =  APILocator.getTempFileAPI().createEmptyTempFile(testingFileName, new MockHttpRequest("localhost", "/api/v1/tempResource").request() );
+        final HttpServletRequest request = new MockHttpRequest("localhost", "/api/v1/tempResource").request();
+        request.setAttribute(WebKeys.USER,systemUser);
+        DotTempFile temp =  APILocator.getTempFileAPI().createEmptyTempFile(testingFileName,request);
 
         new FileOutputStream(temp.file).close();
         assertEquals(temp.id, api.shortify(temp.id));
