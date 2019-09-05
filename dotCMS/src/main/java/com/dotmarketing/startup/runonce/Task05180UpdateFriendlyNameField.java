@@ -2,6 +2,7 @@ package com.dotmarketing.startup.runonce;
 
 import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.FRIENDLY_NAME_FIELD;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -14,8 +15,9 @@ import com.dotmarketing.util.Logger;
  */
 public class Task05180UpdateFriendlyNameField implements StartupTask {
 
-    private final String UPDATE_FIELD = "UPDATE field set velocity_var_name='" + FRIENDLY_NAME_FIELD
-            + "' where velocity_var_name='friendlyname'";
+    private final String UPDATE_FIELD = "update field set velocity_var_name='" + FRIENDLY_NAME_FIELD
+            + "' where velocity_var_name='friendlyname' and structure_inode in (select inode from structure where structuretype="
+            + BaseContentType.HTMLPAGE.getType() + ")";
 
     @Override
     public boolean forceRun() {
