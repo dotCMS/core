@@ -137,7 +137,7 @@ public class ContentletLoader implements DotLoader {
             sb.append("#set($isWidget= \"").append(false).append("\")");
         }
 
-        if (!type.variable().equals("forms")) {
+        if (!"forms".equals(type.variable())) {
             List<Field> fields = type.fields();
 
 
