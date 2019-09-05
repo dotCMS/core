@@ -1,0 +1,9 @@
+#set($hasForm = true)
+## random form id for js
+#set($formId = "form_" + $date.getSystemDate().getTime())
+
+<script src="/custom-elements/dotcmsfields.js"></script>
+<dot-form id="$formId" variable='$dotFormContentTypeVar'></dot-form>
+ <script type="text/javascript">
+     document.getElementById('$formId').layout = $structures.getLayoutAsJson($dotFormContentTypeVar);
+ </script>

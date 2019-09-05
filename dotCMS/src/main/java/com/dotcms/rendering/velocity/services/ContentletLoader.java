@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.services;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.FormContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -23,6 +24,9 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import io.vavr.control.Try;
+
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import java.io.IOException;
@@ -90,6 +94,16 @@ public class ContentletLoader implements DotLoader {
             .append("#set($ContentletTitle=\"")
             .append(UtilMethods.espaceForVelocity(conAPI.getName(content, APILocator.getUserAPI().getSystemUser(), true)))
             .append("\" )");
+        
+        // set content type variable name
+        sb.append("#set($dotContentType='")
+        .append(content.getContentType().id())
+        .append("' )");
+        sb.append("#set($dotContentTypeVar='")
+        .append(content.getContentType().variable())
+        .append("' )");
+        
+        
         String modDateStr = UtilMethods.dateToHTMLDate((Date) content.getModDate(), "yyyy-MM-dd H:mm:ss");
         sb.append("#set($ContentLastModDate= $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"")
             .append(modDateStr)
@@ -123,7 +137,7 @@ public class ContentletLoader implements DotLoader {
             sb.append("#set($isWidget= \"").append(false).append("\")");
         }
 
-        if (type.baseType() != BaseContentType.FORM) {
+        if (!type.variable().equals("forms")) {
             List<Field> fields = type.fields();
 
 
@@ -493,8 +507,18 @@ public class ContentletLoader implements DotLoader {
             sb.append(widgetCode);
             sb.append("#set($isForm= \"").append(false).append("\")");
         } else {
-            sb.append("#set($isForm= \"").append(true).append("\")");
-            sb.append("#set($formCode=").append("$velutil.mergeTemplate(\"/static/content/content_form_macro.vtl\")").append(")");
+            ContentType form = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(content.getStringProperty("formId"))).getOrNull();
+
+            if(form!=null) {
+              sb.append("#set($dotFormContentTypeVar='")
+              .append(form.variable())
+              .append("' )");
+        
+              sb.append("$velutil.mergeTemplate(\"/static/content/content_form.vtl\")");
+              sb.append("#set($dotFormContentTypeVar='')");
+
+
+            }
         }
 
         // This is code is repeated because the bug GETTYS-268, the content

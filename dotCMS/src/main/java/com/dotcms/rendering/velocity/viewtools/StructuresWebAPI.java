@@ -4,22 +4,14 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.contenttype.model.field.layout.FieldLayout;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.PageMode;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.vavr.control.Try;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.HiddenField;
+import com.dotcms.contenttype.model.field.layout.FieldLayout;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -29,17 +21,23 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.form.business.FormAPI;
-
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
 
 public class StructuresWebAPI implements ViewTool {
 
@@ -276,12 +274,12 @@ public class StructuresWebAPI implements ViewTool {
 	 * @param user
 	 * @return
 	 */
-	public String getLayoutAsJson(final Structure structure, final User user) {
+	public String getLayoutAsJson(final String idOrVar) {
 		try {
 			final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
-			final StructureTransformer transformer = new StructureTransformer(structure);
-			final ContentType contentType = transformer.from();
+
+			final ContentType contentType = APILocator.getContentTypeAPI(user).find(idOrVar);
 
 			final boolean live = (PageMode.get(Try.of(() -> HttpServletRequestThreadLocal.INSTANCE.getRequest()).getOrNull())).showLive;
 
