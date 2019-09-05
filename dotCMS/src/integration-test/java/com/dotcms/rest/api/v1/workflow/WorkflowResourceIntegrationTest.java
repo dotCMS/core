@@ -21,6 +21,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -1006,6 +1007,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     public void Test_Find_Bulk_Actions_Then_Fire_Bulk_Actions_On_Custom_Content_Type_Then_Verify_Workflow_Changed()
             throws Exception {
 
+        ReindexThread.pause();
+
         // Prep Workflows, they must have at least one action visible on the first step.
         final WorkflowScheme sysWorkflow = workflowAPI.findSchemeByName(SYSTEM_WORKFLOW);
         final List<WorkflowStep> sysSteps = workflowAPI.findSteps(sysWorkflow);
@@ -1203,6 +1206,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 action.setShowOn(docWorkflowShowOn.get(action.getId()));
                 workflowAPI.saveAction(action, null, adminUser);
             }
+
+            ReindexThread.unpause();
         }
     }
 
