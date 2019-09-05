@@ -160,7 +160,6 @@ public class ReindexAPITest extends IntegrationTestBase {
 
             final Contentlet contentlet = new ContentletDataGen(type.id()).setPolicy(IndexPolicy.DEFER)
                     .setProperty("title", "contentTest " + System.currentTimeMillis()).next();
-            contentlet.setIndexPolicy(IndexPolicy.DEFER);
             APILocator.getContentletAPI().checkin(contentlet, APILocator.systemUser(), false);
 
             assertTrue(reindexQueueAPI.recordsInQueue() > 0);
