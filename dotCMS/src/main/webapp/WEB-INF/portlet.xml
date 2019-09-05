@@ -258,17 +258,6 @@
     </portlet>
 
     <portlet>
-        <portlet-name>forms</portlet-name>
-        <display-name>Form Handler</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/formhandler/view_form</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-    </portlet>
-
-    <portlet>
         <portlet-name>users</portlet-name>
         <display-name>User Admin</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
@@ -508,8 +497,8 @@
     </portlet>
 
     <portlet>
-        <portlet-name>form-builder</portlet-name>
-        <display-name>Form Builder</display-name>
+        <portlet-name>forms</portlet-name>
+        <display-name>Forms</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
