@@ -13,6 +13,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.dotmarketing.db.LocalTransaction;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -151,12 +153,12 @@ public class ReindexAPITest extends IntegrationTestBase {
                 .fields(ImmutableList
                         .of(ImmutableTextField.builder().name("Title").variable("title").searchable(true).listed(true).build()))
                 .nextPersisted();
-        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+        LocalTransaction.wrap(()->new DotConnect().setSQL("delete from dist_reindex_journal").loadResult());
 
         try {
             HibernateUtil.startTransaction();
 
-            final Contentlet contentlet = new ContentletDataGen(type.id())
+            final Contentlet contentlet = new ContentletDataGen(type.id()).setPolicy(IndexPolicy.DEFER)
                     .setProperty("title", "contentTest " + System.currentTimeMillis()).next();
             APILocator.getContentletAPI().checkin(contentlet, APILocator.systemUser(), false);
 
@@ -164,7 +166,7 @@ public class ReindexAPITest extends IntegrationTestBase {
 
             try (Connection conn = DbConnectionFactory.getDataSource().getConnection()) {
                 long records = reindexQueueAPI.recordsInQueue(conn);
-                assertTrue("other connections should not see the uncommited reindex records", records == 0);
+                assertEquals("other connections should not see the uncommited reindex records", 0, records);
 
             }
 
@@ -196,11 +198,11 @@ public class ReindexAPITest extends IntegrationTestBase {
                                 .searchable(true).listed(true).build()))
                 .nextPersisted();
 
-        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+        LocalTransaction.wrap(()-> new DotConnect().setSQL("delete from dist_reindex_journal").loadResult());
 
         //Pausing reindex to avoid race condition when findContentToReindex is called (no content will be indexed)
         ReindexThread.pause();
-        final Contentlet contentlet = new ContentletDataGen(type.id())
+        final Contentlet contentlet = new ContentletDataGen(type.id()).setPolicy(IndexPolicy.DEFER)
                 .setProperty("title", "contentTest " + System.currentTimeMillis()).nextPersisted();
 
         Map<String, ReindexEntry> reindexEntries;
@@ -212,7 +214,8 @@ public class ReindexAPITest extends IntegrationTestBase {
             // it has been marked as failed and is available again for reindex
             ReindexQueueFactory.resetLastIdReindexed();
             reindexEntries = reindexQueueAPI.findContentToReindex();
-            assertTrue(reindexEntries.containsKey(contentlet.getIdentifier()));
+            assertTrue("The id: " + contentlet.getIdentifier() + " is not on: " + reindexEntries,
+                    reindexEntries.containsKey(contentlet.getIdentifier()));
             entry = reindexEntries.values().stream().findFirst().orElse(null);
             assertNotNull(entry);
             assertEquals(i, entry.errorCount());
