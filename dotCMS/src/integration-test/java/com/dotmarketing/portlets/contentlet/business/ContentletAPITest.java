@@ -30,8 +30,16 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
@@ -40,7 +48,6 @@ import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdCache;
@@ -95,7 +102,14 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -6510,15 +6524,4 @@ public class ContentletAPITest extends ContentletBaseTest {
             }
         }
     }
-
-    @Test
-    public void testContentMapShouldBeCaseInsensitive(){
-        final Contentlet contentlet = new Contentlet();
-        contentlet.getMap().put("testKey", "dummy");
-        assertTrue(contentlet.getMap().containsKey("testKey"));
-        assertTrue(contentlet.getMap().containsKey("testkey"));
-        contentlet.getMap().put("TESTKEY", "replace dummy");
-        assertEquals(contentlet.getMap().get("testKey"), "replace dummy");
-    }
-
 }
