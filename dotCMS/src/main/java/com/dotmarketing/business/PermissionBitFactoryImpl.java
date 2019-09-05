@@ -23,6 +23,7 @@ import com.dotmarketing.beans.PermissionType;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
@@ -1930,8 +1931,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
   private void dbDeletePermission(Permission p) {
 
+
     try {
       new DotConnect().setSQL("delete from permission where id=?").addParam(p.getId()).loadResult();
+
 
       if(p.isBitPermission()) {
         new DotConnect().setSQL("delete from permission where inode_id=? and roleid=? and permission=?").addParam(p.getInode()).addParam(p.getRoleId()).addParam(p.getPermission()).loadResult();
@@ -2832,39 +2835,37 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			(permissionable instanceof Contentlet && ((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"));
 	}
 
-	@Override
-	void resetChildrenPermissionReferences(Structure structure) throws DotDataException {
-	    ContentletAPI contAPI = APILocator.getContentletAPI();
-	    ContentletIndexAPI indexAPI=new ContentletIndexAPIImpl();
+  @Override
+  void resetChildrenPermissionReferences(final Structure structure) throws DotDataException {
+    ContentletAPI contAPI = APILocator.getContentletAPI();
 
-	    DotConnect dc = new DotConnect();
-		dc.setSQL(DELETE_CONTENT_REFERENCES_BY_CONTENTTYPE_SQL);
-		dc.addParam(structure.getPermissionId());
-		dc.loadResult();
+    try {
+      DotConnect dc = new DotConnect();
+      dc.setSQL(DELETE_CONTENT_REFERENCES_BY_CONTENTTYPE_SQL);
+      dc.addParam(structure.getPermissionId());
+      dc.loadResult();
 
-		final int limit=500;
-		int offset=0;
-		List<Contentlet> contentlets;
-		do {
-			String query="structurename:"+structure.getVelocityVarName();
-			try {
-			    contentlets=contAPI.search(query, limit, offset, "identifier", APILocator.getUserAPI().getSystemUser(), false);
-            } catch (DotSecurityException e) {
-                throw new RuntimeException(e);
-            }
+      final int limit = 500;
+      int offset = 0;
+      List<ContentletSearch> contentSearch;
+      do {
+        String query = "structurename:" + structure.getVelocityVarName();
+        try {
+          contentSearch = contAPI.searchIndex(query, limit, offset, "modDate", APILocator.getUserAPI().getSystemUser(), false);
+        } catch (DotSecurityException e) {
+          throw new RuntimeException(e);
+        }
 
-			BulkRequestBuilder bulk=new ESClient().getClient().prepareBulk();
-			for(Contentlet cont : contentlets) {
-			    permissionCache.remove(cont.getPermissionId());
-			    cont.setIndexPolicy(IndexPolicy.DEFER);
-			    indexAPI.addContentToIndex(cont, false);
-			}
-			if(bulk.numberOfActions()>0)
-			    bulk.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+        for (ContentletSearch cs : contentSearch) {
+          permissionCache.remove(cs.getIdentifier());
+        }
 
-			offset=offset+limit;
-		} while(contentlets.size()>0);
-	}
+        offset = offset + limit;
+      } while (contentSearch.size() > 0);
+    } finally {
+      APILocator.getReindexQueueAPI().addStructureReindexEntries(structure.getInode());
+    }
+  }
 
 	@Override
 	void resetPermissionReferences(Permissionable permissionable) throws DotDataException {

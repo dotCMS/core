@@ -13,8 +13,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -48,15 +50,17 @@ public class ReindexAPITest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
         reindexQueueAPI = APILocator.getReindexQueueAPI();
 
+
         //wipe out any failed records
         reindexQueueAPI.deleteReindexAndFailedRecords();
     }
+
+
 
     @AfterClass
     public static void restartReindexThread() throws Exception {
       ReindexThread.unpause();
     }
-
     @Test
     public void test_highestpriority_reindex_vs_normal_reindex() throws DotDataException {
 
@@ -132,16 +136,16 @@ public class ReindexAPITest extends IntegrationTestBase {
         final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
 
 
-
         Map<String, ReindexEntry> reindexEntries = reindexQueueAPI.findContentToReindex(numberToTest);
 
         assertTrue("should have " + numberToTest + " to reindex, only got" +  reindexEntries.size(),  reindexEntries.size()== numberToTest);
-
-
+        
+        
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
         reindexEntries = reindexQueueAPI.findContentToReindex();
         assertTrue("now we have none", reindexEntries.isEmpty());
-
+        
+        
 
         List<Field> newFields = new ArrayList<>();
         newFields.addAll(type.fields());
