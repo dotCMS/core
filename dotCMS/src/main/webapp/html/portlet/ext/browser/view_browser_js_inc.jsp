@@ -534,7 +534,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 '   <div style="font-weight: bold;padding: 10px 8px 10px 10px;font-size: 13px;background:#eee;">\n' +
                 '       <a onmouseover="this.className=\'underline\'" onmouseout="this.className=\'\'" id="' + hostId + '-TreeREF">\n' +
                 '		<i class="fa fa-globe" style="opacity:.6"></i>' +
-                '           ' + host.hostname + '\n' +
+                '           ' + host.hostName + '\n' +
                 '       </a>\n' +
                 '   </div>\n' +
                 '   <ul id="' + host.identifier + '-TreeChildrenUL"></ul>\n');
