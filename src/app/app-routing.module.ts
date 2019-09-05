@@ -23,8 +23,8 @@ const PORTLETS_ANGULAR = [
     {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        path: 'forms',
-        loadChildren: '@portlets/dot-forms/dot-forms.module#DotFormsModule',
+        path: 'form-builder',
+        loadChildren: '@portlets/dot-form-builder/dot-form-builder.module#DotFormBuilderModule',
         data: {
             filterBy: 'FORM'
         }

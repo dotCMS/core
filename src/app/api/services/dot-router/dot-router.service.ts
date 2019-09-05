@@ -84,8 +84,8 @@ export class DotRouterService {
         this.router.navigate(['/c/site-browser']);
     }
 
-    goToEditContentType(id: string): void {
-        this.router.navigate([`/content-types-angular/edit/${id}`]);
+    goToEditContentType(id: string, portlet: string): void {
+        this.router.navigate([`/${portlet}/edit/${id}`]);
     }
 
     goToURL(url: string): void {

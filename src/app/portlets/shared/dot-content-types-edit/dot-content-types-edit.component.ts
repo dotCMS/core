@@ -144,7 +144,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      */
     onDialogHide(): void {
         if (!this.isEditMode()) {
-            this.dotRouterService.gotoPortlet('/content-types-angular');
+            this.dotRouterService.gotoPortlet(`/${this.dotRouterService.currentPortlet.id}`);
         }
     }
 
@@ -338,7 +338,10 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 (contentType: DotCMSContentType) => {
                     this.data = contentType;
                     this.layout = this.data.layout;
-                    this.dotRouterService.goToEditContentType(this.data.id);
+                    this.dotRouterService.goToEditContentType(
+                        this.data.id,
+                        this.dotRouterService.currentPortlet.id
+                    );
                     this.show = false;
                 },
                 (err: ResponseView) => {
@@ -352,7 +355,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
             .handle(err)
             .pipe(take(1))
             .subscribe((_handled: DotHttpErrorHandled) => {
-                this.dotRouterService.gotoPortlet('/content-types-angular');
+                this.dotRouterService.gotoPortlet(`/${this.dotRouterService.currentPortlet.id}`);
             });
     }
 

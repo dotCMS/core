@@ -393,7 +393,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         beforeEach(() => {
             router.data = observableOf({
-                filterBy: 'Form'
+                filterBy: 'FORM'
             });
             fixture.detectChanges();
         });

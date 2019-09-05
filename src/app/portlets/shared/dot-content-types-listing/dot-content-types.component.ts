@@ -1,4 +1,5 @@
 import { forkJoin } from 'rxjs';
+import * as _ from 'lodash';
 
 import { map, take, pluck } from 'rxjs/operators';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
@@ -128,7 +129,7 @@ export class DotContentTypesPortletComponent implements OnInit {
     }
 
     private setFilterByContentType(contentType: string) {
-        this.filterBy = contentType;
+        this.filterBy = _.startCase(_.toLower(contentType));
         this.listing.paginatorService.setExtraParams('type', this.filterBy);
         this.actionHeaderOptions.primary.model = this.actionHeaderOptions.primary.model.filter(
             (item: ButtonModel) => item.label === this.filterBy

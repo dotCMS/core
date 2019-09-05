@@ -57,6 +57,12 @@ describe('DotRouterService', () => {
         expect(service.goToEditPage).toHaveBeenCalledWith('/about/us');
     });
 
+    it('should go to edit content type page', () => {
+        service.goToEditContentType('123', 'Form');
+
+        expect(router.navigate).toHaveBeenCalledWith(['/Form/edit/123']);
+    });
+
     it('should go to previousSavedURL', () => {
         service.previousSavedURL = 'test/fake';
         service.goToMain();

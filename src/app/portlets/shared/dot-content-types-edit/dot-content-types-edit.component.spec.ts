@@ -212,10 +212,11 @@ describe('DotContentTypesEditComponent', () => {
             const dialogCancelButton = dialog.query(By.css('.dialog__button-cancel')).nativeElement;
             dialogCancelButton.click();
             fixture.detectChanges();
+            const portlet = dotRouterService.currentPortlet.id;
 
             expect(comp.onDialogHide).toHaveBeenCalledTimes(1);
             expect(comp.show).toBe(false);
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular');
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith(`/${portlet}`);
         });
 
         it('should NOT have dot-content-type-layout', () => {
@@ -309,7 +310,7 @@ describe('DotContentTypesEditComponent', () => {
                 );
                 expect(comp.data).toEqual(responseContentType, 'set data with response');
                 expect(comp.layout).toEqual(responseContentType.layout, 'ser fields with response');
-                expect(dotRouterService.goToEditContentType).toHaveBeenCalledWith('123');
+                expect(dotRouterService.goToEditContentType).toHaveBeenCalledWith('123', dotRouterService.currentPortlet.id);
             });
 
             it('should handle error', () => {
@@ -317,7 +318,7 @@ describe('DotContentTypesEditComponent', () => {
                 spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
 
                 contentTypeForm.triggerEventHandler('onSubmit', mockContentType);
-                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular');
+                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith(`/${dotRouterService.currentPortlet.id}`);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });
 
@@ -765,7 +766,7 @@ describe('DotContentTypesEditComponent', () => {
 
                 contentTypeForm.triggerEventHandler('onSubmit', fakeContentType);
 
-                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/content-types-angular');
+                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith(`/${dotRouterService.currentPortlet.id}`);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });
         });
