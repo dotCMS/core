@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
+import java.sql.SQLException;
 
 /**
  * @author nollymar
@@ -26,13 +27,12 @@ public class Task05180UpdateFriendlyNameField implements StartupTask {
 
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
-
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);
-            DotConnect dc = new DotConnect();
-            dc.setSQL(UPDATE_FIELD);
-            dc.loadResult();
-        } catch (Exception e) {
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL(UPDATE_FIELD);
+            dotConnect.loadResult();
+        } catch (SQLException e) {
             Logger.error(this, e.getMessage(), e);
         }
     }
