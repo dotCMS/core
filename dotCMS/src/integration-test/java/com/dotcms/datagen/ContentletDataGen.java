@@ -42,6 +42,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     protected String modUser = UserAPI.SYSTEM_USER_ID;
     protected List<Category> categories;
     private boolean skipValidation = false;
+    private IndexPolicy policy = null;
 
     public ContentletDataGen(String contentTypeId) {
         this.contentTypeId = contentTypeId;
@@ -187,7 +188,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     @Override
     public Contentlet persist(Contentlet contentlet) {
-        return checkin(contentlet);
+        return checkin(contentlet, null != policy?policy:IndexPolicy.FORCE);
     }
 
     /**
@@ -257,8 +258,13 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
     @WrapInTransaction
     public static Contentlet checkin(Contentlet contentlet) {
+        return checkin(contentlet, IndexPolicy.FORCE);
+    }
+
+    @WrapInTransaction
+    public static Contentlet checkin(Contentlet contentlet, IndexPolicy policy) {
         try{
-            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet.setIndexPolicy(policy);
             contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             return contentletAPI.checkin(contentlet, user, false);
         } catch (DotContentletStateException | IllegalArgumentException | DotDataException | DotSecurityException e) {
@@ -352,4 +358,8 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         }
     }
 
+    public ContentletDataGen setPolicy(final IndexPolicy policy) {
+        this.policy = policy;
+        return this;
+    }
 }
