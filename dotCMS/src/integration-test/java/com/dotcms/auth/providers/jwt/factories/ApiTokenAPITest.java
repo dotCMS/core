@@ -276,6 +276,9 @@ public class ApiTokenAPITest {
 
         apiTokenAPI.revokeToken(savedToken, APILocator.systemUser());
 
+        // let's wait a bit so revoking time gets passed
+        DateUtil.sleep(1000);
+
         assertFalse("Optional will return empty b/c token is revoked", apiTokenAPI.fromJwt(jwt).isPresent());
 
     }
