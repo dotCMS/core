@@ -10,7 +10,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
