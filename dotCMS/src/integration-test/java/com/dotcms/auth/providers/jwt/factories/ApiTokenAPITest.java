@@ -9,6 +9,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
@@ -219,12 +220,8 @@ public class ApiTokenAPITest {
         // revoking
         apiTokenAPI.revokeToken(fatToken, APILocator.systemUser());
 
-        try {
-            // let's wait a bit so revoking time gets passed
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            Logger.error(this, "Error sleeping. Test will probably fail on mysql", e);
-        }
+        // let's wait a bit so revoking time gets passed
+        DateUtil.sleep(1000);
 
         // should be invalid
         issuedFromDb = apiTokenAPI.findApiToken(fatToken.id).get();
