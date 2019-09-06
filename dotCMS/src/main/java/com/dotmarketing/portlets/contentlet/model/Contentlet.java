@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -40,7 +41,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -778,7 +778,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public Map<String, Object> getMap() throws DotRuntimeException {
 	  addConstantsToMap();
-		return map;
+        try {
+            setTags();
+        } catch (DotDataException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+        return map;
 	}
 
 	/**
@@ -1346,9 +1352,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * Set the tags to the contentlet
      * @throws DotDataException
      */
+    @CloseDBIfOpened
 	public void setTags() throws DotDataException {
 
-		if (!this.loadedTags) {
+		if (!this.loadedTags && UtilMethods.isSet(getContentTypeId())) {
 
 			final boolean hasTagFields = this.getContentType().fields().stream().anyMatch(TagField.class::isInstance);
 
@@ -1363,7 +1370,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 						final String fieldVarName = foundTagInode.getFieldVarName();
 
 						// if the map does not have already this field on the map so populate it. we do not want to override the eventual user values.
-						if (!this.getMap().containsKey(fieldVarName)) {
+						if (!map.containsKey(fieldVarName)) {
 							StringBuilder contentletTagsBuilder = new StringBuilder();
 
 							if (UtilMethods.isSet(fieldVarName)) {

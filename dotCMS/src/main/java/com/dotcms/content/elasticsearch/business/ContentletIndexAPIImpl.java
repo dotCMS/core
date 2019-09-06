@@ -662,7 +662,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (contentToIndex != null && !contentToIndex.isEmpty()) {
             Logger.debug(this.getClass(),
                     "Indexing " + contentToIndex.size() + " contents, starting with identifier [ "
-                            + contentToIndex.get(0).getMap().get("identifier") + "]");
+                            + contentToIndex.get(0).getIdentifier() + "]");
         }
 
         // eliminate dups
