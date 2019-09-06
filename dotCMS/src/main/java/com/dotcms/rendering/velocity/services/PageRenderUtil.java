@@ -2,7 +2,6 @@ package com.dotcms.rendering.velocity.services;
 
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -10,10 +9,9 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -21,20 +19,18 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.factories.PersonalizedContentlet;
-import com.dotmarketing.portlets.containers.business.ContainerExceptionNotifier;
-import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
-import com.dotmarketing.portlets.containers.business.LiveContainerFinderByIdOrPathStrategyResolver;
-import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
+import com.dotmarketing.factories.MultiTreeAPIImpl;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageContent;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.personas.business.PersonaAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.model.IPersona;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.business.TagAPI;
@@ -44,10 +40,8 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
@@ -55,7 +49,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.*;
@@ -63,61 +56,22 @@ import static com.dotmarketing.business.PermissionAPI.*;
 /**
  * Util class for rendering a Page
  */
-public class PageRenderUtil implements Serializable {
+public final class PageRenderUtil implements Serializable {
 
     public static String CONTAINER_UUID_PREFIX = "uuid-";
     private static final long serialVersionUID = 1L;
 
-    private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-    private final MultiTreeAPI  multiTreeAPI  = APILocator.getMultiTreeAPI();
-    private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-    private final TagAPI        tagAPI        = APILocator.getTagAPI();
-    private final PersonaAPI    personaAPI    = APILocator.getPersonaAPI();
+    private static final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+    private static final MultiTreeAPI  multiTreeAPI  = APILocator.getMultiTreeAPI();
+    private static final TagAPI        tagAPI        = APILocator.getTagAPI();
 
-    final IHTMLPage htmlPage;
-    final User user;
-    final Map<String, Object> contextMap; // this is the velocity runtime context
-    final PageMode mode;
-    final List<Tag> pageFoundTags;
-    final StringBuilder widgetPreExecute;
-    final static String WIDGET_PRE_EXECUTE = "WIDGET_PRE_EXECUTE";
-    final List<ContainerRaw> containersRaw;
-    final long languageId;
-    final Host site;
+    private PageRenderUtil(){}
 
-
-    public PageRenderUtil(
-            final IHTMLPage htmlPage,
-            final User user,
+    private static Map<String, Object> populateContext(
             final PageMode mode,
-            final long languageId,
-            final Host site) throws DotSecurityException, DotDataException {
+            final IHTMLPage htmlPage,
+            final User user) throws DotDataException, DotSecurityException {
 
-        this.pageFoundTags = Lists.newArrayList();
-        this.htmlPage = htmlPage;
-        this.user = user;
-        this.mode = mode;
-        this.languageId=languageId;
-        this.widgetPreExecute = new StringBuilder();
-        this.contextMap = populateContext();
-        this.containersRaw = populateContainers();
-        this.site = null == site? APILocator.getHostAPI().findDefaultHost(user, mode.respectAnonPerms):site;
-
-    }
-
-    public PageRenderUtil(final IHTMLPage htmlPage, final User user, final PageMode mode, final long languageId)
-            throws DotSecurityException, DotDataException {
-        this(htmlPage, user, mode, languageId, null);
-
-    }
-
-    public PageRenderUtil(final IHTMLPage htmlPage, final User user, final PageMode mode)
-            throws DotSecurityException, DotDataException {
-        this(htmlPage,user, mode, htmlPage.getLanguageId(), null);
-    }
-
-
-    private Map<String, Object> populateContext() throws DotDataException, DotSecurityException {
         final Map<String, Object> ctxMap = Maps.newHashMap();
         ctxMap.put(mode.name(), Boolean.TRUE);
 
@@ -170,7 +124,6 @@ public class PageRenderUtil implements Serializable {
 
         ctxMap.put("EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate);
 
-
         ctxMap.put(ContainerLoader.SHOW_PRE_POST_LOOP, true);
         ctxMap.put("HTMLPAGE_INODE", htmlPage.getInode());
         ctxMap.put("HTMLPAGE_IDENTIFIER", htmlPage.getIdentifier());
@@ -192,98 +145,177 @@ public class PageRenderUtil implements Serializable {
         return ctxMap;
     }
 
-    private Container getLiveContainerById (final String containerId) throws DotSecurityException, DotDataException {
+    /**
+     * Return the Page's {@link ContainerRaw}
+     * @return
+     */
+    public static List<ContainerRaw> getContainersRaw(
+            final IHTMLPage htmlPage,
+            final IPersona persona,
+            final PageMode mode,
+            final long languageId,
+            final User user) throws DotDataException, DotSecurityException {
 
-        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerId);
-        final ContainerFinderByIdOrPathStrategy liveStrategy    = strategy.isPresent()?strategy.get():strategyResolver.getDefaultStrategy();
-        final Supplier<Host>                  resourceHostSupplier = ()-> this.site;
+        final String personaId = persona == null ? MultiTree.DOT_PERSONALIZATION_DEFAULT
+                : HTMLPageAssetRenderedBuilder.getPersonaTag(persona);
+        final PageContent pageContents = getPageContent(mode, htmlPage);
+        final List<ContainerRaw> raws = Lists.newArrayList();
 
+        for (final Container container: pageContents.getContainers()) {
 
-        Container container = null;
-        try {
+            final List<ContainerStructure> containerStructures = APILocator.getContainerAPI().getContainerStructures(container);
 
-            container =
-                    liveStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
-        } catch (NotFoundInDbException e) {
+            final Map<String, List<Map<String,Object>>> contentMaps = Maps.newLinkedHashMap();
 
-            container = null;
+            for (final String uniqueId : pageContents.getUUID(container.getIdentifier())) {
+                contentMaps.put(
+                        (uniqueId.startsWith(CONTAINER_UUID_PREFIX)) ? uniqueId : CONTAINER_UUID_PREFIX + uniqueId,
+                        getMap(pageContents.getContents(container, uniqueId, personaId, mode, languageId, user), user)
+                );
+            }
+
+            raws.add(new ContainerRaw(container, containerStructures, contentMaps));
         }
 
-        return container;
+        return raws;
     }
 
-    private Container getLiveContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
-
-        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
-
-        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
-    }
-
-    private Container getWorkingContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
-
-        final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
-
-        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
-    }
-
-    private Container geContainerById(final String containerIdOrPath, final User user, final Template template,
-                                      final Optional<ContainerFinderByIdOrPathStrategy> strategy,
-                                      final ContainerFinderByIdOrPathStrategy defaultContainerFinderByIdOrPathStrategy) throws NotFoundInDbException  {
-
-        final Supplier<Host> resourceHostSupplier                            =  Sneaky.sneaked(()->APILocator.getTemplateAPI().getTemplateHost(template));
-
-        return strategy.isPresent()?
-                strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier):
-                defaultContainerFinderByIdOrPathStrategy.apply(containerIdOrPath, user, false, resourceHostSupplier);
-    }
-
-    private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
+    private static PageContent getPageContent(
+            final PageMode mode,
+            final IHTMLPage htmlPage) throws DotDataException, DotSecurityException {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final boolean live =
                 request != null && request.getSession(false) != null && request.getSession().getAttribute("tm_date") != null ?
                         false :
                         mode.showLive;
-        final Table<String, String, Set<PersonalizedContentlet>> pageContents = this.multiTreeAPI.getPageMultiTrees(htmlPage, live);
-        final Set<String> personalizationsForPage = this.multiTreeAPI.getPersonalizationsForPage(htmlPage.getIdentifier());
-        final List<ContainerRaw> raws = Lists.newArrayList();
+        return multiTreeAPI.getPageMultiTrees(htmlPage, live);
+    }
 
-        for (final String containerId : pageContents.rowKeySet()) {
+    private static List<Map<String, Object>> getMap(final Collection<Contentlet> contents, final User user) throws DotDataException {
+        final List<Map<String, Object>> result = new ArrayList<>();
 
-            Container container = null;
-            final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                    WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
-            final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerId);
-            final ContainerFinderByIdOrPathStrategy workingStrategy    = strategy.isPresent()?strategy.get():strategyResolver.getDefaultStrategy();
-            final Supplier<Host>                  resourceHostSupplier = ()-> this.site;
-
+        for (final Contentlet contentlet : contents) {
             try {
-                if (live) {
+                final Map<String,Object> contentPrintableMap = ContentletUtil.getContentPrintableMap(user, contentlet);
+                contentPrintableMap.put("contentType", contentlet.getContentType().variable());
+                result.add(contentPrintableMap);
+            } catch (IOException e) {
+                throw new DotStateException(e);
+            }
+        }
 
-                    container = this.getLiveContainerById(containerId);
-                    if (null == container) {
-                        container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
-                    }
-                } else {
-                    container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
+        return result;
+    }
+
+    private static String getContainerUserId (final Container container) {
+
+        return container instanceof FileAssetContainer? FileAssetContainer.class.cast(container).getPath(): container.getIdentifier();
+    }
+
+    public static  List<Tag> getPageFoundTags(
+            final IHTMLPage htmlPage,
+            final PageMode mode,
+            final long languageId,
+            final User user) throws DotSecurityException, DotDataException {
+
+        final List<Tag> pageFoundTags = Lists.newArrayList();
+        final boolean accurateTags = Config.getBooleanProperty("ACCRUE_TAGS_IN_CONTENTS_ON_PAGE", false);
+
+        if (!accurateTags) {
+            return pageFoundTags;
+        }
+
+        final Collection<Contentlet> contents = getPageContent(mode, htmlPage).getContents(mode, languageId, user);
+
+        for (final Contentlet contentlet : contents) {
+            final List<Tag> contentletFoundTags = tagAPI.getTagsByInode(contentlet.getInode());
+
+            if (contentletFoundTags != null) {
+                pageFoundTags.addAll(contentletFoundTags);
+            }
+        }
+
+        return pageFoundTags;
+    }
+
+
+    final static String getWidgetPreExecute(
+            final IHTMLPage htmlPage,
+            final PageMode mode,
+            final User user) throws DotSecurityException, DotDataException {
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final StringBuilder widgetPreExecute = new StringBuilder();
+        final Collection<Contentlet> contents = getPageContent(mode, htmlPage).getContents(mode, defaultLanguage.getId(), user);
+
+        for (final Contentlet contentlet : contents) {
+            final ContentType type = contentlet.getContentType();
+            if (type.baseType() == BaseContentType.WIDGET) {
+                final com.dotcms.contenttype.model.field.Field field = type.fieldMap().get("widgetPreexecute");
+                if (field != null && UtilMethods.isSet(field.values())) {
+                    widgetPreExecute.append(field.values());
                 }
-            } catch (NotFoundInDbException | DotRuntimeException e) {
+            }
+        }
 
-                new ContainerExceptionNotifier(e, containerId).notifyUser();
-                container = null;
+        return widgetPreExecute.toString();
+    }
+
+    public static  Context addAll(
+            final IHTMLPage htmlPage,
+            final Context incoming,
+            final PageMode mode,
+            final User user) {
+        try {
+            final Map<String, Object> contextMap = getVelocityContext(htmlPage, mode, user);
+
+            for (String key : contextMap.keySet()) {
+                incoming.put(key, contextMap.get(key));
             }
 
-            if (container == null) {
-                continue;
+            return incoming;
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    /**
+     * Return the Velocity code to set the Page's variables as: contentletList, contentType,
+     * totalSize, etc.
+     *
+     * @return
+     */
+    public static String asString(
+            final IHTMLPage htmlPage,
+            final PageMode mode,
+            final User user
+    ) {
+        try {
+            final Map<String, Object> contextMap = getVelocityContext(htmlPage, mode, user);
+            final StringWriter s = new StringWriter();
+            for (String key : contextMap.keySet()) {
+                s.append("#set($").append(key).append("=").append(new StringifyObject(contextMap.get(key)).from()).append(')');
             }
-            
-            final List<ContainerStructure> containerStructures = APILocator.getContainerAPI().getContainerStructures(container);
+
+            return s.toString();
+        } catch (DotDataException | DotSecurityException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private static Map<String, Object> getVelocityContext(
+            final IHTMLPage htmlPage,
+            final PageMode mode,
+            final User user) throws DotDataException, DotSecurityException {
+
+        final Map<String, Object> contextMap = populateContext(mode, htmlPage, user);
+        final PageContent pageContents = getPageContent(mode, htmlPage);
+
+        for (final Container container : pageContents.getContainers()) {
+            final String userContainerId     = getContainerUserId(container);
+            contextMap.put("containerIdentifier" + VelocityUtil.escapeContextTokenIdentifier(userContainerId), container.getIdentifier());
+
             final boolean hasWritePermissionOnContainer = permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user, false)
                     && APILocator.getPortletAPI().hasContainerManagerRights(user);
             final boolean hasReadPermissionOnContainer = permissionAPI.doesUserHavePermission(container, PERMISSION_READ, user, false);
@@ -296,185 +328,53 @@ public class PageRenderUtil implements Serializable {
 
 
             final Map<String, List<Map<String,Object>>> contentMaps = Maps.newLinkedHashMap();
-            
-            for (final String uniqueId : pageContents.row(containerId).keySet()) {
 
-                if(ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
-                    continue;
-                }
-
-                // personalization -> contentlet id list
-                final Map<String, List<String>> contentIdListByPersonalizationMap = new HashMap<>();
-                final Set<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
-                final List<Contentlet> contentlets = personalizedContentletSet.stream().map(personalizedContentlet -> {
-                    try {
-
-                        // indexing
-                        final String contentletIdentifier = personalizedContentlet.getContentletId();
-                        final String personalization      = personalizedContentlet.getPersonalization();
-
-                        final Optional<Contentlet> contentletOpt = contentletAPI.findContentletByIdentifierOrFallback
-                                (personalizedContentlet.getContentletId(), mode.showLive, languageId, user, mode.respectAnonPerms);
-
-                        final Contentlet contentlet =  contentletOpt.isPresent()
-                                ? contentletOpt.get() : contentletAPI.findContentletByIdentifierAnyLanguage(personalizedContentlet.getContentletId());
-
-                        CollectionsUtils.computeSubValueIfAbsent(
-                                contentIdListByPersonalizationMap, personalization, contentletIdentifier,
-                                CollectionsUtils::add, (String key, String identifier)-> CollectionsUtils.list(identifier));
-
-                        return contentlet;
-                    } catch (final DotContentletStateException e) {
-                        // Expected behavior, DotContentletState Exception is used for flow control
-                        return null;
-                    } catch (Exception e) {
-                        throw new DotStateException(e);
-                    }
-                }).filter(Objects::nonNull).collect(Collectors.toList());
-
+            for (final String uniqueId : pageContents.getUUID(container.getIdentifier())) {
 
                 final List<Map<String, Object>> cListAsMaps = Lists.newArrayList();
-                for (final Contentlet contentlet : contentlets) {
+                final Collection<Contentlet> pageContentlets = pageContents.getContents(container, uniqueId, mode, user);
 
-                    try {
-                        final Map<String,Object> contentPrintableMap = ContentletUtil.getContentPrintableMap(user, contentlet);
-                        contentPrintableMap.put("contentType", contentlet.getContentType().variable());
-                        // contentPrintableMap.put("personalization", personalization); // todo: not sure if this will be needed by FOX
-                        cListAsMaps.add(contentPrintableMap);
-                    } catch (IOException e) {
-                        throw new DotStateException(e);
-                    }
+                for (final Contentlet contentlet : pageContentlets) {
 
                     contextMap.put("EDIT_CONTENT_PERMISSION" + contentlet.getIdentifier(),
                             permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
-                    final ContentType type = contentlet.getContentType();
-                    if (type.baseType() == BaseContentType.WIDGET) {
-                        final com.dotcms.contenttype.model.field.Field field = type.fieldMap().get("widgetPreexecute");
-                        if (field != null && UtilMethods.isSet(field.values())) {
-                            widgetPreExecute.append(field.values());
-                        }
-                    }
 
-                    // Check if we want to accrue the tags associated to each contentlet on
-                    // this page
-                    if (Config.getBooleanProperty("ACCRUE_TAGS_IN_CONTENTS_ON_PAGE", false)) {
+                    for (final String personalizationToken : pageContents.getPersonalizations(container, uniqueId)) {
+                        final String personalization  =  VelocityUtil.escapeContextTokenIdentifier(personalizationToken);
+                        final Collection<String> personalizationContentlets = getContentsId(
+                                mode, user, pageContents, container, uniqueId, personalizationToken);
 
-                        // Search for the tags associated to this contentlet inode
-                        final List<Tag> contentletFoundTags = this.tagAPI.getTagsByInode(contentlet.getInode());
-                        if (contentletFoundTags != null) {
-                            this.pageFoundTags.addAll(contentletFoundTags);
+                        contextMap.put("contentletList" + container.getIdentifier() + uniqueId + personalization, personalizationContentlets);
+
+                        if (ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId)) {
+                            contextMap.put("contentletList" + container.getIdentifier() + ContainerUUID.UUID_START_VALUE + personalization, personalizationContentlets);
+                        } else if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
+                            contextMap.put("contentletList" + container.getIdentifier() + ContainerUUID.UUID_LEGACY_VALUE + personalization, personalizationContentlets);
                         }
 
                     }
                 }
-                
+
                 contentMaps.put((uniqueId.startsWith(CONTAINER_UUID_PREFIX)) ? uniqueId : CONTAINER_UUID_PREFIX + uniqueId, cListAsMaps);
-                this.setContentletListPerPersonalization(uniqueId, container, contentIdListByPersonalizationMap, personalizationsForPage);
-                contextMap.put("totalSize" +  container.getIdentifier() + uniqueId, new Integer(contentlets.size())); // todo: not sure about this
+                contextMap.put("totalSize" +  container.getIdentifier() + uniqueId, new Integer(pageContentlets.size())); // todo: not sure about this
             }
-
-            raws.add(new ContainerRaw(container, containerStructures, contentMaps));
-        }
-        
-        return raws;
-    }
-
-    private void setContentletListPerPersonalization (final String uniqueId, final Container container,
-                                    final Map<String, List<String>> contentIdListByPersonalizationMap,
-                                    final Set<String> personalizationsForPage) {
-
-
-        final String containerIdentifier = container.getIdentifier();
-        final String userContainerId     = getContainerUserId(container);
-        contextMap.put("containerIdentifier" + VelocityUtil.escapeContextTokenIdentifier(userContainerId), containerIdentifier);
-
-        this.setDefaultOnPersonalization(contentIdListByPersonalizationMap, personalizationsForPage);
-
-        for (final String personalizationToken : contentIdListByPersonalizationMap.keySet()) {
-
-            setContentletList(uniqueId, contentIdListByPersonalizationMap, containerIdentifier, personalizationToken);
-        }
-    } // setContentletListPerPersonalization.
-
-    /*
-    * If there page is personalized to at least one persona, the rest of the existing container without this persona personalization needs to add an empty list
-    * since the user wants to avoid to show content on it.
-     */
-    private void setDefaultOnPersonalization (final Map<String, List<String>> contentIdListByPersonalizationMap,
-                                              final Set<String> personalizationsForPage) {
-
-        final boolean isPersonalized = personalizationsForPage.size() > 1; // if it is not only dot:default
-
-        if (isPersonalized) {
-
-            personalizationsForPage.forEach(personalization ->
-                    contentIdListByPersonalizationMap.putIfAbsent(personalization, Collections.emptyList()));
-        }
-    }
-    private void setContentletList(final String uniqueId,
-                                   final Map<String, List<String>> contentIdListByPersonalizationMap,
-                                   final String containerIdentifier,
-                                   final String personalizationToken) {
-
-        final String personalization  =  VelocityUtil.escapeContextTokenIdentifier(personalizationToken);
-        final String[] contentStrList = contentIdListByPersonalizationMap.get(personalizationToken).toArray(new String[0]);
-        contextMap.put("contentletList" + containerIdentifier + uniqueId + personalization, contentStrList);
-
-        if (ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId)) {
-            contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_START_VALUE + personalization, contentStrList);
-        } else if (ContainerUUID.UUID_START_VALUE.equals(uniqueId)) {
-            contextMap.put("contentletList" + containerIdentifier + ContainerUUID.UUID_LEGACY_VALUE + personalization, contentStrList);
-        }
-    }
-
-    private String getContainerUserId (final Container container) {
-
-        return container instanceof FileAssetContainer? FileAssetContainer.class.cast(container).getPath(): container.getIdentifier();
-    }
-
-    public List<Tag> getPageFoundTags() {
-        return this.pageFoundTags;
-    }
-
-
-    final String getWidgetPreExecute() {
-        return this.widgetPreExecute.toString();
-    }
-
-
-    public Context addAll(Context incoming) {
-
-        for (String key : this.contextMap.keySet()) {
-            incoming.put(key, this.contextMap.get(key));
         }
 
-        return incoming;
+        return contextMap;
     }
 
-    /**
-     * Return the Velocity code to set the Page's variables as: contentletList, contentType,
-     * totalSize, etc.
-     *
-     * @return
-     */
-    public String asString() {
+    private static List<String> getContentsId(PageMode mode, User user, PageContent pageContents, Container container, String uniqueId, String personalizationToken) {
+        return pageContents.getContents(container, uniqueId, personalizationToken, mode, user)
+            .stream()
+            .map(contentlet2 -> contentlet2.getIdentifier())
+            .collect(Collectors.toList());
+    }
 
-        final StringWriter s = new StringWriter();
-        for (String key : this.contextMap.keySet()) {
-            s.append("#set($").append(key).append("=").append(new StringifyObject(this.contextMap.get(key)).from()).append(')');
+    public static int getPersonalizationNumber(final IHTMLPage htmlPage) {
+        try {
+            return getPageContent(PageMode.PREVIEW_MODE, htmlPage).getPersonalizations().size();
+        } catch(DotSecurityException | DotDataException e) {
+            throw new DotRuntimeException(e);
         }
-
-        return s.toString();
-
     }
-
-    /**
-     * Return the Page's {@link ContainerRaw}
-     * @return
-     */
-    public List<ContainerRaw> getContainersRaw() {
-        return this.containersRaw;
-    }
-
-
 }

@@ -70,7 +70,7 @@ public class VelocityPreviewMode extends VelocityModeHandler {
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
 
-        new PageRenderUtil(htmlPage, user, PageMode.PREVIEW_MODE).addAll(context);
+        PageRenderUtil.addAll(htmlPage, context, PageMode.PREVIEW_MODE, user);
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
         request.setAttribute("velocityContext", context);

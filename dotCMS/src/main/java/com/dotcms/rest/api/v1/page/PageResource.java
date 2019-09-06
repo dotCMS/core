@@ -118,7 +118,7 @@ public class PageResource {
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/json/{uri: .*}")
-    public Response loadJson(@Context final HttpServletRequest request, 
+    public Response loadJson(@Context  final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("uri") final String uri,
             @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,

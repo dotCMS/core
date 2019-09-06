@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageContent;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -224,17 +225,17 @@ public class PageResourceHelper implements Serializable {
     @WrapInTransaction
     protected void updateMultiTrees(final IHTMLPage page, final PageForm pageForm) throws DotDataException, DotSecurityException {
 
-        final Table<String, String, Set<PersonalizedContentlet>> pageContents = multiTreeAPI.getPageMultiTrees(page, false);
+        final PageContent pageContent = multiTreeAPI.getPageMultiTrees(page, false);
         final String pageIdentifier = page.getIdentifier();
         APILocator.getMultiTreeAPI().deleteMultiTreeByParent(pageIdentifier);
         final List<MultiTree> multiTrees = new ArrayList<>();
 
-        for (final String containerId : pageContents.rowKeySet()) {
+        for (final Container container : pageContent.getContainers()) {
+            final String containerId = container.getIdentifier();
             int treeOrder = 0;
 
-            for (final String uniqueId : pageContents.row(containerId).keySet()) {
-                final Map<String, Set<PersonalizedContentlet>> row = pageContents.row(containerId);
-                final Set<PersonalizedContentlet> contents         = row.get(uniqueId);
+            for (final String uniqueId : pageContent.getUUID(containerId)) {
+                final Collection<PersonalizedContentlet> contents = pageContent.getPersonalizedContents(container, uniqueId);
 
                 if (!contents.isEmpty()) {
                     final String newUUID = getNewUUID(pageForm, containerId, uniqueId);

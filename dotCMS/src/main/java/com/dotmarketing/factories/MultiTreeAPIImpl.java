@@ -50,6 +50,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageContent;
 
 /**
  * This class provides utility routines to interact with the Multi-Tree structures in the system. A
@@ -720,204 +721,19 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     @CloseDBIfOpened
     @Override
-    public Table<String, String, Set<PersonalizedContentlet>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
+    public PageContent getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException {
 
         final String multiTreeCacheKey = page.getIdentifier();
-        final Optional<Table<String, String, Set<PersonalizedContentlet>>> pageContentsOpt =
+        final Optional<PageContent> pageContentsOpt =
                 CacheLocator.getMultiTreeCache().getPageMultiTrees(multiTreeCacheKey, liveMode);
-        
+
         if(pageContentsOpt.isPresent()) {
             return pageContentsOpt.get();
-        }
-
-        final Table<String, String, Set<PersonalizedContentlet>> pageContents = HashBasedTable.create();
-        final List<MultiTree> multiTrees    = this.getMultiTrees(page.getIdentifier());
-        final ContainerAPI    containerAPI  = APILocator.getContainerAPI();
-        final ContentletAPI   contentletAPI = APILocator.getContentletAPI();
-        final User systemUser = APILocator.systemUser();
-
-        for (final MultiTree multiTree : multiTrees) {
-
-            Container container   = null;
-            final String    containerId     = multiTree.getContainerAsID();
-            final String    personalization = multiTree.getPersonalization();
-
-            try {
-
-                container = liveMode?
-                        containerAPI.getLiveContainerById(containerId, systemUser, false):
-                        containerAPI.getWorkingContainerById(containerId, systemUser, false);
-
-                if (container == null && !liveMode) {
-                    continue;
-                }
-            } catch (NotFoundInDbException e) {
-
-                Logger.debug(this, e.getMessage(), e);
-                continue;
-            }
-
-            Contentlet contentlet = null;
-            try {
-                contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(multiTree.getContentlet());
-            } catch (DotDataException | DotSecurityException | DotContentletStateException e) {
-                Logger.debug(this.getClass(), "invalid contentlet on multitree:" + multiTree
-                        + ", msg: " + e.getMessage(), e);
-                Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);
-            }
-
-            if (contentlet != null) {
-
-                final Set<PersonalizedContentlet> myContents = pageContents.contains(containerId, multiTree.getRelationType())
-                        ? pageContents.get(containerId, multiTree.getRelationType())
-                        : new LinkedHashSet<>();
-
-                if (container != null && myContents.size() < container.getMaxContentlets()) {
-
-                    myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization));
-                }
-
-                pageContents.put(containerId, multiTree.getRelationType(), myContents);
-            }
-        }
-
-        this.addEmptyContainers(page, pageContents, liveMode);
-        
-        CacheLocator.getMultiTreeCache().putPageMultiTrees(multiTreeCacheKey, liveMode, pageContents);
-        return pageContents;
-    }
-
-    /**
-     * Returns the list of Containers from the drawn layout of a given Template.
-     *
-     * @param page The {@link IHTMLPage} object using the {@link Template} which holds the Containers.
-     *
-     * @return The list of {@link ContainerUUID} objects.
-     *
-     * @throws DotSecurityException The internal APIs are not allowed to return data for the specified user.
-     * @throws DotDataException     The information for the Template could not be accessed.
-     */
-    private List<ContainerUUID> getDrawedLayoutContainerUUIDs (final IHTMLPage page) throws DotSecurityException, DotDataException {
-
-        final TemplateLayout layout =
-                DotTemplateTool.themeLayout(page.getTemplateId(), APILocator.systemUser(), false);
-        return APILocator.getTemplateAPI().getContainersUUID(layout);
-    }
-
-    /**
-     * Traverses the {@link Template} from an HTML Page and retrieves the Containers that are currently empty, i.e.,
-     * Containers that have no content in them.
-     *
-     * @param page         The {@link IHTMLPage} object that will be inspected.
-     * @param pageContents The parts that make up the {@link IHTMLPage} object.
-     * @param liveMode     If set to {@code true}, only the live version of the Containers will be retrieved. If set to
-     *                     {@code} false, only the working version will be retrieved.
-     *
-     * @throws DotDataException     An error occurred qhen retrieving the required information from the data source.
-     * @throws DotSecurityException The internal APIs are not allowed to return data for the specified user.
-     */
-    private void addEmptyContainers(final IHTMLPage page,
-                                    final Table<String, String, Set<PersonalizedContentlet>> pageContents,
-                                    final boolean liveMode)
-            throws DotDataException, DotSecurityException {
-
-        try {
-
-            final List<ContainerUUID> containersUUID;
-            final Template template =
-                    APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-            try {
-                containersUUID = template.isDrawed()?
-                        this.getDrawedLayoutContainerUUIDs(page):
-                        APILocator.getTemplateAPI().getContainersUUIDFromDrawTemplateBody(template.getBody());
-            } catch (final Exception e) {
-                Logger.error(this, String.format("An error occurred when retrieving empty Containers from page with " +
-                        "ID '%s' in liveMode '%s': %s", page.getIdentifier(), liveMode, e.getMessage()), e);
-                return;
-            }
-
-            for (final ContainerUUID containerUUID : containersUUID) {
-
-                Container container = null;
-                try {
-                    // this read path or id.
-                    container = liveMode ? this.getLiveContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template):
-                            this.getWorkingContainerById(containerUUID.getIdentifier(), APILocator.systemUser(), template);
-
-                    if (container == null && !liveMode) {
-                        continue;
-                    }
-                } catch (final NotFoundInDbException| DotRuntimeException e) {
-                    Logger.debug(this, e.getMessage(), e);
-                    continue;
-                }
-
-                if (!doesPageContentsHaveContainer(pageContents, containerUUID, container)) {
-                    pageContents.put(container.getIdentifier(), containerUUID.getUUID(), new LinkedHashSet<>());
-                }
-            }
-        } catch (final RuntimeException e) {
-            Logger.error(this, String.format("An error occurred when retrieving empty Containers from page with ID " +
-                    "'%s' in liveMode '%s': %s", page.getIdentifier(), liveMode, e.getMessage()), e);
-        }
-    }
-
-    /**
-     * Check if a container with the same id or path (in case of {@link FileAssetContainer}), exist into pageContents.
-     * Also support legacy 'LEGACY_RELATION_TYPE' uuid value
-     *
-     * @param pageContents Table of the {@link MultiTree} into the page
-     * @param containerUUID container's UUID link with the page
-     * @param container container
-     * @return true in case of the containerUUId is contains in pageContents
-     */
-    private boolean doesPageContentsHaveContainer(
-            final Table<String, String, Set<PersonalizedContentlet>> pageContents,
-            final ContainerUUID containerUUID,
-            final Container container) {
-
-        if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
-            return true;
-        } else if (ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID())) {
-            boolean pageContenstContains = pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE);
-
-            if (!pageContenstContains && container instanceof FileAssetContainer) {
-                pageContenstContains = pageContents.contains(container.getIdentifier(), ContainerUUID.UUID_START_VALUE);
-            }
-
-            return pageContenstContains;
         } else {
-            return false;
+            final PageContent pageContents = new PageContent(page, liveMode);
+            CacheLocator.getMultiTreeCache().putPageMultiTrees(multiTreeCacheKey, liveMode, pageContents);
+            return pageContents;
         }
-    }
-
-    private Container getLiveContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
-
-        final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
-
-        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
-    }
-
-    private Container getWorkingContainerById(final String containerIdOrPath, final User user, final Template template) throws NotFoundInDbException {
-
-        final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
-
-        return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
-    }
-
-    private Container geContainerById(final String containerIdOrPath, final User user, final Template template,
-                                      final Optional<ContainerFinderByIdOrPathStrategy> strategy,
-                                      final ContainerFinderByIdOrPathStrategy defaultContainerFinderByIdOrPathStrategy) throws NotFoundInDbException  {
-
-        final Supplier<Host> resourceHostSupplier = Sneaky.sneaked(()->APILocator.getTemplateAPI().getTemplateHost(template));
-
-        return strategy.isPresent()?
-                strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier):
-                defaultContainerFinderByIdOrPathStrategy.apply(containerIdOrPath, user, false, resourceHostSupplier);
     }
 }

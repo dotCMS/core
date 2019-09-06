@@ -11,6 +11,7 @@ import com.google.common.collect.Table;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageContent;
 
 /**
  * API for {@link com.dotmarketing.beans.MultiTree}
@@ -79,7 +80,7 @@ public interface MultiTreeAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Table<String, String, Set<PersonalizedContentlet>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
+    PageContent getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException;
 
     /**

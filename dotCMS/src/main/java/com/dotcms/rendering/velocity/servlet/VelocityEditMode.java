@@ -63,7 +63,7 @@ public class VelocityEditMode extends VelocityModeHandler {
 
         long langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
         IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, langId, mode.showLive,user, mode.respectAnonPerms);
-        new PageRenderUtil(htmlPage, user, PageMode.EDIT_MODE).addAll(context);
+        PageRenderUtil.addAll(htmlPage, context, PageMode.EDIT_MODE, user);
 
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 

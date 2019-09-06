@@ -30,12 +30,6 @@ public class ContainerRenderedBuilder {
     final List<ContainerRaw> containerRaws;
 
 
-    public ContainerRenderedBuilder(final HTMLPageAsset page, final PageMode mode) throws DotDataException, DotSecurityException {
-        this(new PageRenderUtil(page, APILocator.systemUser(), mode).getContainersRaw(), null, mode);
-
-
-    }
-
     public ContainerRenderedBuilder(List<ContainerRaw> raws, final Context velocityContext, final PageMode mode) {
         this.containerRaws = raws;
         this.velocityContext = velocityContext;

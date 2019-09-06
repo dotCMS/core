@@ -42,6 +42,7 @@ public class PageView implements Serializable {
     private final boolean canCreateTemplate;
     private final boolean canEditTemplate;
     private int numberContents = 0;
+    private int personalizationNumber = 0;
 
     /**
      * Creates an instance of this class.
@@ -60,7 +61,8 @@ public class PageView implements Serializable {
              final TemplateLayout layout,
              final boolean canCreateTemplate,
              final boolean canEditTemplate,
-             final ViewAsPageStatus viewAs) {
+             final ViewAsPageStatus viewAs,
+             final int personalizationNumber) {
 
         this.site = site;
         this.template = template;
@@ -76,6 +78,8 @@ public class PageView implements Serializable {
         if (this.layout != null) {
             this.numberContents = getContentsNumber(containersMap);
         }
+
+        this.personalizationNumber = personalizationNumber;
     }
 
     private final int getContentsNumber(final Map<String, ContainerRaw> containersMap) {
@@ -185,5 +189,9 @@ public class PageView implements Serializable {
 
     public int getNumberContents() {
         return numberContents;
+    }
+
+    public int getPersonalizationNumber() {
+        return personalizationNumber;
     }
 }
