@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { HttpCode, LoggerService, LoginService, User } from 'dotcms-js';
+import { HttpCode, LoggerService, LoginService, User, DotLoginParams } from 'dotcms-js';
 import { DotLoginInformation, DotLoginLanguage } from '@models/dot-login';
 import { SelectItem } from 'primeng/api';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -42,7 +42,8 @@ export class DotLoginComponent implements OnInit, OnDestroy {
             login: ['', [Validators.required]],
             language: [''],
             password: ['', [Validators.required]],
-            rememberMe: false
+            rememberMe: false,
+            backEndLogin: true
         });
 
         this.loginInfo$ = this.loginPageStateService.get().pipe(
@@ -68,12 +69,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
         this.message = '';
 
         this.loginService
-            .loginUser(
-                this.loginForm.get('login').value,
-                this.loginForm.get('password').value,
-                this.loginForm.get('rememberMe').value,
-                this.loginForm.get('language').value
-            )
+            .loginUser(this.loginForm.value as DotLoginParams)
             .pipe(take(1))
             .subscribe(
                 (user: User) => {

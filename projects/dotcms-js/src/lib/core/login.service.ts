@@ -11,6 +11,14 @@ import { HttpCode } from './util/http-code';
 import { pluck, tap, map } from 'rxjs/operators';
 import { DotcmsEventsService } from './dotcms-events.service';
 
+export interface DotLoginParams {
+    login: string;
+    password: string;
+    rememberMe: boolean;
+    language: string;
+    backEndLogin: boolean;
+}
+
 /**
  * This Service get the server configuration to display in the login component
  * and execute the login and forgot password routines
@@ -176,12 +184,13 @@ export class LoginService {
      * @param language string with the language and country code, ex: en_US
      * @returns an array with the user if the user logged in successfully or the error message
      */
-    public loginUser(
-        login: string,
-        password: string,
-        rememberMe: boolean,
-        language: string
-    ): Observable<User> {
+    public loginUser({
+        login,
+        password,
+        rememberMe,
+        language,
+        backEndLogin
+    }: DotLoginParams): Observable<User> {
         this.setLanguage(language);
 
         return this.coreWebService
@@ -191,7 +200,8 @@ export class LoginService {
                     password: password,
                     rememberMe: rememberMe,
                     language: this.lang,
-                    country: this.country
+                    country: this.country,
+                    backEndLogin: backEndLogin
                 },
                 method: RequestMethod.Post,
                 url: this.urls.userAuth
