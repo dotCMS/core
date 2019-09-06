@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
+import com.dotcms.repackage.com.google.common.primitives.Ints;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -23,6 +24,7 @@ import com.dotmarketing.beans.PermissionType;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
@@ -60,8 +62,8 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -96,7 +98,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	;
 
 	//SQL Queries used to maintain permissions
-
 	/*
 	 * To load permissions either individual permissions or inherited permissions as well as inheritable permissions for a
 	 * given permissionable id
@@ -446,6 +447,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			"  FROM contentlet c " +
 			"  WHERE c.identifier = reference_id)	" +
 			")";
+
+	/**
+	 * Delete permission by Inode
+	 * Parameter
+	 * 1. inode
+	 */
+	private static final String DELETE_PERMISSION_BY_INODE = "delete from permission where inode_id=?";
 
     /*
      * To insert permission references to HTML pages under a parent folder hierarchy, it only insert the references if the page
@@ -1023,21 +1031,29 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	}
 
 	@Override
-	protected void removePermissions(Permissionable permissionable) throws DotDataException {
+	protected void removePermissions(final Permissionable permissionable) throws DotDataException {
+		removePermissions(Collections.singletonList(permissionable));
+	}
 
 
-		final String permissionableId = permissionable.getPermissionId();
+	protected void removePermissions(final List<Permissionable> permissionables) throws DotDataException{
 
-		new DotConnect()
-		    .setSQL("delete from permission where inode_id=?")
-		    .addParam(permissionableId)
-		    .loadResult();
+		final List<Params> paramsList = permissionables.stream()
+				.map(permissionable -> new Params(
+						permissionable.getPermissionId())
+				).collect(Collectors.toList());
 
-		
-		resetPermissionReferences(permissionable);
+		final List<Integer> batchResult =
+				Ints.asList(new DotConnect().executeBatch(DELETE_PERMISSION_BY_INODE, paramsList));
 
-		permissionCache.remove(permissionable.getPermissionId());
-		
+		Logger.debug(PermissionBitFactoryImpl.class,
+				() -> "removePermissions batch results: " + batchResult.stream().map(Object::toString)
+						.collect(Collectors.joining(",")));
+
+        for(final Permissionable permissionable:permissionables){
+		   resetPermissionReferences(permissionable);
+		   permissionCache.remove(permissionable.getPermissionId());
+		}
 	}
 
 	/*
@@ -1431,14 +1447,21 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * permissionable no longer provides the inheritable permissions that the children require
 	 * this happens when inheritable permissions have being removed from the given permissionable
 	 */
-	private void dbDeletePermissionReferences(Permissionable permissionable) throws DotDataException {
-    DotConnect dc = new DotConnect();
-    dc.setSQL(this.DELETE_PERMISSION_REFERENCE_SQL);
-    dc.addParam(permissionable.getPermissionId());
-    dc.addParam(permissionable.getPermissionId());
-    dc.loadResult();
-    permissionCache.remove(permissionable.getPermissionId());
-
+	private void dbDeletePermissionReferences(final List<Permissionable> permissionables)
+			throws DotDataException {
+		final DotConnect dotConnect = new DotConnect();
+		final List<Params> paramsList = permissionables.stream()
+				.map(permissionable -> new Params(
+				       permissionable.getPermissionId(), permissionable.getPermissionId())
+				).collect(Collectors.toList());
+		final List<Integer> batchResult = Ints
+				.asList(dotConnect.executeBatch(DELETE_PERMISSION_REFERENCE_SQL, paramsList));
+		for (final Permissionable permissionable : permissionables) {
+			permissionCache.remove(permissionable.getPermissionId());
+		}
+		Logger.debug(PermissionBitFactoryImpl.class,
+				() -> "dbDeletePermissionReferences batch results: " + batchResult.stream().map(Object::toString)
+						.collect(Collectors.joining(",")));
 	}
 
 
@@ -2533,9 +2556,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
 				throw new DotRuntimeException(e.getMessage(), e);
 			}
-			for(Category child : children) {
-				removePermissions(child);
-			}
+			removePermissions(new ArrayList<>(children));
 		}
 
 		if(isFolder || isHost || isContentType) {
@@ -2867,29 +2888,36 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	}
 
 	@Override
-	void resetPermissionReferences(Permissionable permissionable) throws DotDataException {
-    permissionCache.remove(permissionable.getPermissionId());
-    for(PermissionReference ref: loadAllPermissionReferencesTo(permissionable)) {
-      final PermissionableProxy pp = new PermissionableProxy();
-      pp.setIdentifier(ref.getAssetId());
-      dbDeletePermissionReferences(pp);
-      APILocator.getReindexQueueAPI().addIdentifierReindex(ref.getAssetId());
-    }
-    dbDeletePermissionReferences(permissionable);
-    
-    
-    if(permissionable instanceof ContentType) {
-      APILocator.getReindexQueueAPI().addStructureReindexEntries(permissionable.getPermissionId());
-    }
-    else if(permissionable instanceof Contentlet) {
-      APILocator.getReindexQueueAPI().addIdentifierReindex(permissionable.getPermissionId());
-    }
+	void resetPermissionReferences(final Permissionable permissionable) throws DotDataException {
+		permissionCache.remove(permissionable.getPermissionId());
+		final List<PermissionReference> references = loadAllPermissionReferencesTo(permissionable);
+		final List<Permissionable> proxies = references
+				.stream().map(reference -> {
+					PermissionableProxy proxy = new PermissionableProxy();
+					proxy.setIdentifier(reference.getAssetId());
+					return proxy;
+				}).collect(Collectors.toList());
+
+		dbDeletePermissionReferences(proxies);
+
+		for (final PermissionReference reference : references) {
+			APILocator.getReindexQueueAPI().addIdentifierReindex(reference.getAssetId());
+		}
+
+		dbDeletePermissionReferences(Collections.singletonList(permissionable));
+
+		if (permissionable instanceof ContentType) {
+			APILocator.getReindexQueueAPI()
+					.addStructureReindexEntries(permissionable.getPermissionId());
+		} else if (permissionable instanceof Contentlet) {
+			APILocator.getReindexQueueAPI().addIdentifierReindex(permissionable.getPermissionId());
+		}
 	}
 
 	@Override
 	void resetAllPermissionReferences() throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(this.DELETE_ALL_PERMISSION_REFERENCES_SQL);
+		dc.setSQL(DELETE_ALL_PERMISSION_REFERENCES_SQL);
 		dc.loadResult();
 		permissionCache.clearCache();
 
