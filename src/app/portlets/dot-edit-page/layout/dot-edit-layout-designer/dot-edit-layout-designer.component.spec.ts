@@ -32,16 +32,15 @@ import { DotEditLayoutService } from '@portlets/dot-edit-page/shared/services/do
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotPageRender } from '@portlets/dot-edit-page/shared/models';
-import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-toolbar/dot-edit-toolbar.module';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 
 @Component({
     selector: 'dot-template-addtional-actions-menu',
     template: ''
 })
 class MockAdditionalOptionsComponent {
-    @Input()
-    inode: '';
+    @Input() inode: '';
 }
 
 @Component({
@@ -49,8 +48,7 @@ class MockAdditionalOptionsComponent {
     template: ''
 })
 class MockDotLayoutPropertiesComponent {
-    @Input()
-    group: FormGroup;
+    @Input() group: FormGroup;
 }
 
 @Component({
@@ -58,8 +56,7 @@ class MockDotLayoutPropertiesComponent {
     template: ''
 })
 class MockDotLayoutDesignerComponent {
-    @Input()
-    group: FormGroup;
+    @Input() group: FormGroup;
 }
 
 @Component({
@@ -67,10 +64,8 @@ class MockDotLayoutDesignerComponent {
     template: ''
 })
 class MockDotThemeSelectorComponent {
-    @Input()
-    value: DotTheme;
-    @Output()
-    selected = new EventEmitter<DotTheme>();
+    @Input() value: DotTheme;
+    @Output() selected = new EventEmitter<DotTheme>();
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -102,7 +97,7 @@ const testConfigObject = {
         DotActionButtonModule,
         DotEditLayoutGridModule,
         DotEditPageInfoModule,
-        DotEditToolbarModule,
+        DotSecondaryToolbarModule,
         DotGlobalMessageModule,
         DotFieldValidationMessageModule,
         FormsModule,
@@ -139,8 +134,9 @@ describe('DotEditLayoutDesignerComponent', () => {
 
     describe('edit layout', () => {
         beforeEach(() => {
-            component.pageState = new DotPageRenderState(mockUser,
-                new DotPageRender ({
+            component.pageState = new DotPageRenderState(
+                mockUser,
+                new DotPageRender({
                     ...mockDotRenderedPage,
                     template: { ...mockDotTemplate, theme: '123' },
                     canCreateTemplate: false
@@ -149,15 +145,21 @@ describe('DotEditLayoutDesignerComponent', () => {
             fixture.detectChanges();
         });
 
-        it('should have dot-edit-toolbar with right content', () => {
-            const dotEditToolbar = fixture.debugElement.query(By.css('dot-edit-toolbar'));
-            const dotEditPageInfo = fixture.debugElement.query(By.css('dot-edit-toolbar .main-toolbar-left dot-edit-page-info'));
-            const dotTemplateActions = fixture.debugElement.query(By.css('dot-edit-toolbar .main-toolbar-right form'));
+        it('should have dot-secondary-toolbar with right content', () => {
+            const dotSecondaryToolbar = fixture.debugElement.query(By.css('dot-secondary-toolbar'));
+            const dotEditPageInfo = fixture.debugElement.query(
+                By.css('dot-secondary-toolbar .main-toolbar-left dot-edit-page-info')
+            );
+            const dotTemplateActions = fixture.debugElement.query(
+                By.css('dot-secondary-toolbar .main-toolbar-right form')
+            );
             const dotLayoutActions = fixture.debugElement.query(
-                By.css('dot-edit-toolbar .secondary-toolbar-right .dot-edit-layout__toolbar-action-themes')
+                By.css(
+                    'dot-secondary-toolbar .lower-toolbar-right .dot-edit-layout__toolbar-action-themes'
+                )
             );
 
-            expect(dotEditToolbar).not.toBeNull();
+            expect(dotSecondaryToolbar).not.toBeNull();
             expect(dotEditPageInfo).not.toBeNull();
             expect(dotTemplateActions).not.toBeNull();
             expect(dotLayoutActions).not.toBeNull();
@@ -267,7 +269,8 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         describe('can save as template', () => {
             beforeEach(() => {
-                component.pageState = new DotPageRenderState(mockUser,
+                component.pageState = new DotPageRenderState(
+                    mockUser,
                     new DotPageRender({
                         ...mockDotRenderedPage,
                         template: null,
@@ -319,7 +322,8 @@ describe('DotEditLayoutDesignerComponent', () => {
         let themeSelector: MockDotThemeSelectorComponent;
         let themeButton;
         beforeEach(() => {
-            component.pageState = new DotPageRenderState(mockUser,
+            component.pageState = new DotPageRenderState(
+                mockUser,
                 new DotPageRender({
                     ...mockDotRenderedPage,
                     template: { ...mockDotTemplate, theme: '123' },
@@ -374,7 +378,10 @@ describe('DotEditLayoutDesignerComponent', () => {
 
     describe('edit template', () => {
         beforeEach(() => {
-            component.pageState = new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage));
+            component.pageState = new DotPageRenderState(
+                mockUser,
+                new DotPageRender(mockDotRenderedPage)
+            );
             component.editTemplate = true;
             fixture.detectChanges();
         });
@@ -410,7 +417,10 @@ describe('DotEditLayoutDesignerComponent', () => {
 
     describe('containers model', () => {
         beforeEach(() => {
-            component.pageState = new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage));
+            component.pageState = new DotPageRenderState(
+                mockUser,
+                new DotPageRender(mockDotRenderedPage)
+            );
         });
 
         it('should have a sidebar containers', () => {
@@ -434,7 +444,10 @@ describe('DotEditLayoutDesignerComponent', () => {
         let saveButton: DebugElement;
 
         beforeEach(() => {
-            component.pageState = new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage));
+            component.pageState = new DotPageRenderState(
+                mockUser,
+                new DotPageRender(mockDotRenderedPage)
+            );
             fixture.detectChanges();
             saveButton = fixture.debugElement.query(By.css('.dot-edit-layout__toolbar-save'));
         });
@@ -479,7 +492,8 @@ describe('DotEditLayoutDesignerComponent', () => {
 
         describe('should show', () => {
             beforeEach(() => {
-                component.pageState = new DotPageRenderState(mockUser,
+                component.pageState = new DotPageRenderState(
+                    mockUser,
                     new DotPageRender({
                         ...mockDotRenderedPage,
                         template: {
@@ -510,8 +524,9 @@ describe('DotEditLayoutDesignerComponent', () => {
         });
 
         describe('not show', () => {
-           it('when user can\'t edit the template and set layout mode', () => {
-                component.pageState = new DotPageRenderState(mockUser,
+            it("when user can't edit the template and set layout mode", () => {
+                component.pageState = new DotPageRenderState(
+                    mockUser,
                     new DotPageRender({
                         ...mockDotRenderedPage,
                         template: {
@@ -527,7 +542,8 @@ describe('DotEditLayoutDesignerComponent', () => {
             });
 
             it('when page have a layout and set layout mode', () => {
-                component.pageState = new DotPageRenderState(mockUser,
+                component.pageState = new DotPageRenderState(
+                    mockUser,
                     new DotPageRender({
                         ...mockDotRenderedPage,
                         template: {
@@ -542,7 +558,8 @@ describe('DotEditLayoutDesignerComponent', () => {
             });
 
             it('when editTemplate is false by default', () => {
-                component.pageState = new DotPageRenderState(mockUser,
+                component.pageState = new DotPageRenderState(
+                    mockUser,
                     new DotPageRender({
                         ...mockDotRenderedPage,
                         template: {
@@ -561,7 +578,8 @@ describe('DotEditLayoutDesignerComponent', () => {
 
     describe('edit layout No sidebars', () => {
         beforeEach(() => {
-            component.pageState = new DotPageRenderState(mockUser,
+            component.pageState = new DotPageRenderState(
+                mockUser,
                 new DotPageRender({
                     ...mockDotRenderedPage,
                     template: { ...mockDotTemplate, theme: '123' },

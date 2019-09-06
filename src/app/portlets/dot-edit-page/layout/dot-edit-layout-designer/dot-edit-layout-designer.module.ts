@@ -27,8 +27,8 @@ import { DotContainerSelectorModule } from '@components/dot-container-selector/d
 import { DotEditPageInfoModule } from '../../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotThemeSelectorModule } from '../components/dot-theme-selector/dot-theme-selector.module';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
-import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-toolbar/dot-edit-toolbar.module';
 import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/content/components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 
 @NgModule({
     declarations: [DotEditLayoutDesignerComponent, DotLayoutDesignerComponent],
@@ -53,14 +53,10 @@ import { DotEditPageViewAsControllerModule } from '@portlets/dot-edit-page/conte
         ReactiveFormsModule,
         ToolbarModule,
         TooltipModule,
-        DotEditToolbarModule,
+        DotSecondaryToolbarModule,
         DotEditPageViewAsControllerModule
     ],
     exports: [DotEditLayoutDesignerComponent],
-    providers: [
-        DotEditLayoutService,
-        DotPageLayoutService,
-        TemplateContainersCacheService
-    ]
+    providers: [DotEditLayoutService, DotPageLayoutService, TemplateContainersCacheService]
 })
 export class DotEditLayoutDesignerModule {}

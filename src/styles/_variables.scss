@@ -55,12 +55,15 @@ $basic-speed: 150ms;
 // LAYOUT
 $basic-padding: 8px;
 $toolbar-height: 60px;
-$dot-edit-toolbar-height: 52px;
 $toolbar-background: $white;
 $toolbar-color: $black;
 $navigation-item-height: 48px;
 $navigation-width: 200px;
 $navigation-width-collased: 70px;
+
+//Dot Secondary Toolbar
+$dot-secondary-toolbar-height: 52px;
+$dot-secondary-toolbar-main-height: 70px;
 
 // GRIDS
 $gutter-width: $basic-padding * 4;

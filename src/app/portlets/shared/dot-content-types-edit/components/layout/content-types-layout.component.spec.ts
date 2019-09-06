@@ -10,13 +10,13 @@ import { By } from '@angular/platform-browser';
 import { DotMenuService } from '@services/dot-menu.service';
 import { FieldDragDropService } from '../fields/service';
 import { DotIconModule } from '@components/_common/dot-icon/dot-icon.module';
-import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-toolbar/dot-edit-toolbar.module';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DotCMSContentType } from 'dotcms-models';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 
 @Component({
     selector: 'dot-content-types-fields-list',
@@ -104,7 +104,7 @@ describe('ContentTypesLayoutComponent', () => {
             imports: [
                 TabViewModule,
                 DotIconModule,
-                DotEditToolbarModule,
+                DotSecondaryToolbarModule,
                 RouterTestingModule,
                 DotApiLinkModule,
                 DotCopyButtonModule
@@ -147,8 +147,8 @@ describe('ContentTypesLayoutComponent', () => {
             fixture.detectChanges();
         });
 
-        it('should have dot-edit-toolbar', () => {
-            expect(de.query(By.css('dot-edit-toolbar'))).toBeDefined();
+        it('should have dot-secondary-toolbar', () => {
+            expect(de.query(By.css('dot-secondary-toolbar'))).toBeDefined();
         });
 
         it('should have elements in the correct place', () => {

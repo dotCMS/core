@@ -2,33 +2,33 @@
 
 :host {
 
-    .dot-edit-toolbar__main,
-    .dot-edit-toolbar__secondary:empty {
+    .dot-secondary-toolbar__main,
+    .dot-secondary-toolbar__lower:empty {
         display: none;
     }
 
-    .dot-edit-toolbar__main {
+    .dot-secondary-toolbar__main {
         background-color: $white;
         border-bottom: solid 1px $gray-light;
         display: flex;
         padding: $basic-padding * 2;
     }
 
-    .dot-edit-toolbar__secondary {
+    .dot-secondary-toolbar__lower {
         display: flex;
-        height: $dot-edit-toolbar-height;
+        height: $dot-secondary-toolbar-height;
         padding: 0 $basic-padding * 2;
     }
 
     ::ng-deep {
         .main-toolbar-left,
-        .secondary-toolbar-left {
+        .lower-toolbar-left {
             display: flex;
             flex-grow: 1;
         }
 
         .main-toolbar-right,
-        .secondary-toolbar-right {
+        .lower-toolbar-right {
             align-items: center;
             display: flex;
         }

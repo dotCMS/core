@@ -44,7 +44,6 @@ import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMenuModule } from '@components/_common/dot-menu/dot-menu.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-toolbar/dot-edit-toolbar.module';
 import { IFrameModule } from '@components/_common/iframe';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
@@ -73,6 +72,7 @@ import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.modu
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { FormatDateService } from '@services/format-date-service';
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 
 @NgModule({
     declarations: [
@@ -122,7 +122,7 @@ import { FormatDateService } from '@services/format-date-service';
         DotCopyButtonModule,
         DotDialogModule,
         DotDirectivesModule,
-        DotEditToolbarModule,
+        DotSecondaryToolbarModule,
         DotFieldHelperModule,
         DotFieldValidationMessageModule,
         DotIconButtonModule,

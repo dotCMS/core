@@ -6,7 +6,7 @@
 >
 </dot-theme-selector>
 
-<dot-edit-toolbar>
+<dot-secondary-toolbar>
     <div class="main-toolbar-left">
         <dot-edit-page-info [pageState]="pageState"></dot-edit-page-info>
     </div>
@@ -54,8 +54,8 @@
         </form>
     </div>
 
-    <div class="secondary-toolbar-left"></div>
-    <div class="secondary-toolbar-right">
+    <div class="lower-toolbar-left"></div>
+    <div class="lower-toolbar-right">
         <div *ngIf="!currentTheme; then permission; else noPermission"></div>
         <ng-template #permission>
             <div
@@ -95,6 +95,6 @@
         <dot-layout-properties [group]="form.get('layout')"></dot-layout-properties>
         <dot-icon-button [size]="32" float icon="add" (click)="addGridBox()"></dot-icon-button>
     </div>
-</dot-edit-toolbar>
+</dot-secondary-toolbar>
 
 <dot-layout-designer [group]="form.get('layout')"></dot-layout-designer>

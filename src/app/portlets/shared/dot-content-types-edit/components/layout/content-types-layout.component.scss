@@ -2,7 +2,7 @@
 @import "variables";
 @import "primeng-theme/utils/theme-variables";
 
-$top-height: ($toolbar-height + $tabview-nav-height);
+$top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-main-height);
 
 :host {
     ::ng-deep {

@@ -15,7 +15,6 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { CommonModule } from '@angular/common';
-import { DotEditToolbarModule } from '@portlets/dot-edit-page/main/dot-edit-toolbar/dot-edit-toolbar.module';
 import { FormsModule } from '@angular/forms';
 import { Observable, of } from 'rxjs';
 import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
@@ -26,6 +25,7 @@ import { SiteService, LoginService } from 'dotcms-js';
 import { SiteServiceMock } from '@tests/site-service.mock';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { LoginServiceMock } from '@tests/login-service.mock';
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -52,46 +52,48 @@ describe('DotEditPageToolbarComponent', () => {
     let deHost: DebugElement;
     let dotLicenseService: DotLicenseService;
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotEditPageToolbarComponent],
-            imports: [
-                ButtonModule,
-                CommonModule,
-                CheckboxModule,
-                DotEditToolbarModule,
-                FormsModule,
-                ToolbarModule,
-                DotEditPageViewAsControllerModule,
-                DotEditPageStateControllerModule,
-                DotGlobalMessageModule,
-                DotEditPageInfoModule,
-                DotEditPageWorkflowsActionsModule
-            ],
-            providers: [
-                { provide: DotLicenseService, useClass: MockDotLicenseService },
-                {
-                    provide: DotMessageService,
-                    useValue: new MockDotMessageService({
-                        'dot.common.whats.changed': 'Whats',
-                        'dot.common.cancel': 'Cancel'
-                    })
-                },
-                {
-                    provide: DotPageStateService,
-                    useValue: {}
-                },
-                {
-                    provide: SiteService,
-                    useClass: SiteServiceMock
-                },
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                }
-            ]
-        });
-    }));
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [TestHostComponent, DotEditPageToolbarComponent],
+                imports: [
+                    ButtonModule,
+                    CommonModule,
+                    CheckboxModule,
+                    DotSecondaryToolbarModule,
+                    FormsModule,
+                    ToolbarModule,
+                    DotEditPageViewAsControllerModule,
+                    DotEditPageStateControllerModule,
+                    DotGlobalMessageModule,
+                    DotEditPageInfoModule,
+                    DotEditPageWorkflowsActionsModule
+                ],
+                providers: [
+                    { provide: DotLicenseService, useClass: MockDotLicenseService },
+                    {
+                        provide: DotMessageService,
+                        useValue: new MockDotMessageService({
+                            'dot.common.whats.changed': 'Whats',
+                            'dot.common.cancel': 'Cancel'
+                        })
+                    },
+                    {
+                        provide: DotPageStateService,
+                        useValue: {}
+                    },
+                    {
+                        provide: SiteService,
+                        useClass: SiteServiceMock
+                    },
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    }
+                ]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixtureHost = DOTTestBed.createComponent(TestHostComponent);
@@ -110,27 +112,29 @@ describe('DotEditPageToolbarComponent', () => {
         });
 
         it('should have elements placed correctly', () => {
-            const editToolbar = de.query(By.css('dot-edit-toolbar'));
+            const editToolbar = de.query(By.css('dot-secondary-toolbar'));
             const editPageInfo = de.query(
-                By.css('dot-edit-toolbar .main-toolbar-left dot-edit-page-info')
+                By.css('dot-secondary-toolbar .main-toolbar-left dot-edit-page-info')
             );
             const globalMessage = de.query(
-                By.css('dot-edit-toolbar .main-toolbar-right dot-global-message')
+                By.css('dot-secondary-toolbar .main-toolbar-right dot-global-message')
             );
             const editCancelBtn = de.query(
-                By.css('dot-edit-toolbar .main-toolbar-right .edit-page-toolbar__cancel')
+                By.css('dot-secondary-toolbar .main-toolbar-right .edit-page-toolbar__cancel')
             );
             const editWorkflowActions = de.query(
-                By.css('dot-edit-toolbar .main-toolbar-right dot-edit-page-workflows-actions')
+                By.css('dot-secondary-toolbar .main-toolbar-right dot-edit-page-workflows-actions')
             );
             const editStateController = de.query(
-                By.css('dot-edit-toolbar .secondary-toolbar-left dot-edit-page-state-controller')
+                By.css('dot-secondary-toolbar .lower-toolbar-left dot-edit-page-state-controller')
             );
             const whatsChangedCheck = de.query(
-                By.css('dot-edit-toolbar .secondary-toolbar-left .dot-edit__what-changed-button')
+                By.css('dot-secondary-toolbar .lower-toolbar-left .dot-edit__what-changed-button')
             );
             const editPageViewAs = de.query(
-                By.css('dot-edit-toolbar .secondary-toolbar-right dot-edit-page-view-as-controller')
+                By.css(
+                    'dot-secondary-toolbar .lower-toolbar-right dot-edit-page-view-as-controller'
+                )
             );
             expect(editToolbar).toBeDefined();
             expect(editPageInfo).toBeDefined();
@@ -204,7 +208,7 @@ describe('DotEditPageToolbarComponent', () => {
         });
     });
 
-    describe('what\'s change', () => {
+    describe("what's change", () => {
         describe('no license', () => {
             beforeEach(() => {
                 spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
@@ -222,7 +226,7 @@ describe('DotEditPageToolbarComponent', () => {
                 spyOn(component.whatschange, 'emit');
             });
 
-            it('should hide what\'s change selector', () => {
+            it("should hide what's change selector", () => {
                 componentHost.pageState.state.mode = DotPageMode.EDIT;
                 fixtureHost.detectChanges();
 
@@ -230,7 +234,7 @@ describe('DotEditPageToolbarComponent', () => {
                 expect(whatsChangedElem).toBeNull();
             });
 
-            it('should have what\'s change selector', () => {
+            it("should have what's change selector", () => {
                 componentHost.pageState.state.mode = DotPageMode.PREVIEW;
                 fixtureHost.detectChanges();
 
@@ -248,13 +252,13 @@ describe('DotEditPageToolbarComponent', () => {
                     whatsChangedElem = de.query(By.css('p-checkbox'));
                 });
 
-                it('should emit what\'s change in true', () => {
+                it("should emit what's change in true", () => {
                     whatsChangedElem.triggerEventHandler('onChange', true);
                     expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
                     expect(component.whatschange.emit).toHaveBeenCalledWith(true);
                 });
 
-                it('should emit what\'s change in false', () => {
+                it("should emit what's change in false", () => {
                     whatsChangedElem.triggerEventHandler('onChange', false);
                     expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
                     expect(component.whatschange.emit).toHaveBeenCalledWith(false);
