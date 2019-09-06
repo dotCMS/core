@@ -9,13 +9,9 @@ const routes: Routes = [
         path: ''
     },
     {
-        path: 'create',
-        redirectTo: ''
-    },
-    {
         loadChildren:
             '@portlets/shared/dot-content-types-edit/dot-content-types-edit.module#DotContentTypesEditModule',
-        path: 'create/:type',
+        path: 'create',
         resolve: {
             contentType: DotContentTypeEditResolver
         }
