@@ -33,6 +33,18 @@ export const shouldShowField = (field: DotCMSContentTypeField, fieldsToShow: str
 };
 
 /**
+ * Parse a string to JSON and returns the message text
+ * @param string message
+ * @returns string
+ */
+export const getErrorMessage = (message: string): string => {
+    const messageObj = JSON.parse(message);
+    return messageObj.errors.length && messageObj.errors[0].message
+        ? messageObj.errors[0].message
+        : message;
+};
+
+/**
  * Given a layout Object of fields, it returns a flat list of fields
  * @param DotCMSContentTypeLayoutRow[] layout
  * @returns DotCMSContentTypeField[]

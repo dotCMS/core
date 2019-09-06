@@ -2,9 +2,14 @@ import { Component, Element, Listen, Prop, State, Watch } from '@stencil/core';
 import Fragment from 'stencil-fragment';
 
 import { DotFieldStatus } from '../../models';
-import { fieldCustomProcess, getFieldsFromLayout } from './utils';
+import { fieldCustomProcess, getFieldsFromLayout, getErrorMessage } from './utils';
 import { getClassNames, getOriginalStatus, updateStatus } from '../../utils';
-import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField, DotCMSTempFile, DotCMSContentlet } from 'dotcms-models';
+import {
+    DotCMSContentTypeLayoutRow,
+    DotCMSContentTypeField,
+    DotCMSTempFile,
+    DotCMSContentlet
+} from 'dotcms-models';
 import { DotUploadService } from './services/dot-upload.service';
 import { DotHttpErrorResponse } from '../../models/dot-http-error-response.model';
 import { DotBinaryFileComponent } from '../dot-binary-file/dot-binary-file';
@@ -108,7 +113,6 @@ export class DotFormComponent {
     render() {
         return (
             <Fragment>
-                <dot-form-error-message>{this.errorMessage}</dot-form-error-message>
                 <form onSubmit={this.handleSubmit.bind(this)}>
                     {this.layout.map((row: DotCMSContentTypeLayoutRow) => (
                         <dot-form-row row={row} fields-to-show={this.fieldsToShow} />
@@ -125,6 +129,7 @@ export class DotFormComponent {
                         </button>
                     </div>
                 </form>
+                <dot-form-error-message>{this.errorMessage}</dot-form-error-message>
             </Fragment>
         );
     }
@@ -171,7 +176,7 @@ export class DotFormComponent {
                 this.runSuccessCallback(contentlet);
             })
             .catch(({ message, status }: DotHttpErrorResponse) => {
-                this.errorMessage = message || fallbackErrorMessages[status];
+                this.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
             });
     }
 
@@ -238,7 +243,7 @@ export class DotFormComponent {
             .catch(({ message, status }: DotHttpErrorResponse) => {
                 binary.clearValue();
                 this.uploadFileInProgress = false;
-                this.errorMessage = message || fallbackErrorMessages[status];
+                this.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
                 return null;
             });
     }

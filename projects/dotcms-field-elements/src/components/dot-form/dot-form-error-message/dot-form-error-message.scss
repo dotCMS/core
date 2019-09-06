@@ -1,5 +1,6 @@
 dot-form-error-message:not(:empty) {
-    color: indianred;
     border: solid 1px currentColor;
+    color: indianred;
+    display: block;
     padding: 0.5rem 0.75rem;
 }
