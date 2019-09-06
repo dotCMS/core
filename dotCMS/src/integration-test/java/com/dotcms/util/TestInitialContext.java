@@ -22,7 +22,7 @@ public class TestInitialContext extends InitialContext {
     private static TestInitialContext context;
 
     private TestInitialContext() throws NamingException {
-        String dbType = "postgres.";
+        String dbType = "mysql.";
 
         if (System.getProperty("databaseType")!=null){
             dbType = System.getProperty("databaseType") + ".";
@@ -44,7 +44,7 @@ public class TestInitialContext extends InitialContext {
         properties.setMaxIdle(Integer.parseInt(prop.getProperty(dbType + "db.max.idle")));
         properties.setMaxWait(60000);
         properties.setRemoveAbandoned(true);
-        properties.setRemoveAbandonedTimeout(10);
+        properties.setRemoveAbandonedTimeout(60);
         properties.setLogAbandoned(true);
         properties
                 .setJdbcInterceptors("org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer");
