@@ -28,8 +28,7 @@
     modal="modal"
     width="400"
 >
-    {{ dotAlertConfirmService.alertModel.message }}
-
+    <div [innerHTML]="dotAlertConfirmService.alertModel.message"></div>
     <p-footer>
         <button
             *ngIf="dotAlertConfirmService.alertModel.footerLabel.reject"

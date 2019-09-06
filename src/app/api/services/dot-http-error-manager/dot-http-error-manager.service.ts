@@ -58,7 +58,6 @@ export class DotHttpErrorManagerService {
                 if (err['bodyJsonObject'].error) {
                     result.forbidden = this.contentletIsForbidden(err['bodyJsonObject'].error);
                 }
-
                 return result;
             })
         );
@@ -87,9 +86,7 @@ export class DotHttpErrorManagerService {
         const code = response.status;
 
         return code === HttpCode.FORBIDDEN
-            ? this.isLicenseError(response)
-                ? this.handleLicense()
-                : this.handleForbidden()
+            ? this.isLicenseError(response) ? this.handleLicense() : this.handleForbidden()
             : this.errorHandlers[code](response);
     }
 
@@ -140,9 +137,11 @@ export class DotHttpErrorManagerService {
     }
 
     private handleBadRequestError(response: Response): boolean {
-
         this.dotDialogService.alert({
-            message: response.json()['message'] || this.dotMessageService.get('dot.common.http.error.400.message'),
+            message:
+                this.getErrorMessage(response) ||
+                response.json()['message'] ||
+                this.dotMessageService.get('dot.common.http.error.400.message'),
             header: this.dotMessageService.get('dot.common.http.error.400.header')
         });
         return false;
@@ -164,5 +163,9 @@ export class DotHttpErrorManagerService {
             return true;
         }
         return false;
+    }
+
+    private getErrorMessage(response: Response): string {
+        return response.json()['errors'] ? response.json()['errors'][0].message : null;
     }
 }

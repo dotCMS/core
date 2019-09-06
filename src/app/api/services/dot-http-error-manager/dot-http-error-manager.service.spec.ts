@@ -26,7 +26,7 @@ describe('DotHttpErrorManagerService', () => {
         'dot.common.http.error.400.header': '400 Header',
         'dot.common.http.error.400.message': '400 Message',
         'dot.common.http.error.204.header': '204 Header',
-        'dot.common.http.error.204.message': '204 Message',
+        'dot.common.http.error.204.message': '204 Message'
     });
 
     beforeEach(() => {
@@ -63,7 +63,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 401 error when user is login we use 403', () => {
         spyOn(dotDialogService, 'alert');
 
-        service.handle(mockResponseView(401)).subscribe((res) => {
+        service.handle(mockResponseView(401)).subscribe(res => {
             result = res;
         });
 
@@ -80,7 +80,7 @@ describe('DotHttpErrorManagerService', () => {
         loginService.auth.user = null;
         spyOn(dotDialogService, 'alert');
 
-        service.handle(mockResponseView(401)).subscribe((res) => {
+        service.handle(mockResponseView(401)).subscribe(res => {
             result = res;
         });
 
@@ -94,7 +94,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 403 error', () => {
         spyOn(dotDialogService, 'alert');
 
-        service.handle(mockResponseView(403)).subscribe((res) => {
+        service.handle(mockResponseView(403)).subscribe(res => {
             result = res;
         });
 
@@ -110,7 +110,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 500 error', () => {
         spyOn(dotDialogService, 'alert');
 
-        service.handle(mockResponseView(500)).subscribe((res) => {
+        service.handle(mockResponseView(500)).subscribe(res => {
             result = res;
         });
 
@@ -132,7 +132,7 @@ describe('DotHttpErrorManagerService', () => {
         const responseView: ResponseView = mockResponseView(403);
         responseView.response.headers = headers;
 
-        service.handle(responseView).subscribe((res) => {
+        service.handle(responseView).subscribe(res => {
             result = res;
         });
 
@@ -145,15 +145,15 @@ describe('DotHttpErrorManagerService', () => {
         });
     });
 
-    it('should handle 400 error', () => {
+    it('should handle 400 error on message', () => {
         spyOn(dotDialogService, 'alert');
 
-        let responseView: ResponseView = mockResponseView(400);
+        const responseView: ResponseView = mockResponseView(400);
         spyOn(responseView.response, 'json').and.returnValue({
             message: 'Error'
         });
 
-        service.handle(responseView).subscribe((res) => {
+        service.handle(responseView).subscribe(res => {
             result = res;
         });
 
@@ -166,10 +166,31 @@ describe('DotHttpErrorManagerService', () => {
         });
     });
 
+    it('should handle 400 error on errors[0]', () => {
+        spyOn(dotDialogService, 'alert');
+
+        const responseView: ResponseView = mockResponseView(400);
+        spyOn(responseView.response, 'json').and.returnValue({
+            errors: [{ message: 'Server Error' }]
+        });
+
+        service.handle(responseView).subscribe(res => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            message: 'Server Error',
+            header: '400 Header'
+        });
+    });
+
     it('should handle 400 error and show reponse message', () => {
         spyOn(dotDialogService, 'alert');
 
-        service.handle(mockResponseView(400)).subscribe((res) => {
+        service.handle(mockResponseView(400)).subscribe(res => {
             result = res;
         });
 
@@ -185,7 +206,7 @@ describe('DotHttpErrorManagerService', () => {
     it('should handle 204 error', () => {
         spyOn(dotDialogService, 'alert');
 
-        service.handle(mockResponseView(204)).subscribe((res) => {
+        service.handle(mockResponseView(204)).subscribe(res => {
             result = res;
         });
 
