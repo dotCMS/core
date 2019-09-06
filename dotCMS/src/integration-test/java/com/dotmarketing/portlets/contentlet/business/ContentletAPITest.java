@@ -5518,9 +5518,10 @@ public class ContentletAPITest extends ContentletBaseTest {
             Map<String, Object> innerMap = new HashMap<>(newsContent.getMap());
             newsContent = contentletAPI.checkin(newsContent, user,false);
             Contentlet checkedoutNewsContent = contentletAPI.checkout(newsContent.getInode(), user, false);
-            assertNull(checkedoutNewsContent.getStringProperty("tags"));
+            assertEquals(checkedoutNewsContent.getStringProperty("tags"), innerMap.get("tags"));
+            innerMap.put("tags", "newTag");
             contentletAPI.copyProperties(checkedoutNewsContent, innerMap);
-            assertEquals(checkedoutNewsContent.getStringProperty("tags"), "test");
+            assertEquals(checkedoutNewsContent.getStringProperty("tags"), "newTag");
 
         } finally {
             try {
