@@ -40,6 +40,10 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import eu.bitwalker.useragentutils.Browser;
+import eu.bitwalker.useragentutils.UserAgent;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,6 +60,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TimeZone;
 import javax.imageio.ImageIO;
@@ -370,7 +375,20 @@ public class BinaryExporterServlet extends HttpServlet {
         inputFile = APILocator.getTempFileAPI().getTempFile(req, shorty.longId).get().file;
       }
 			
-			
+      
+      if(Config.getBooleanProperty("webp.downgrade.to.jpeg.for.safari", true) && Browser.SAFARI == new UserAgent(req.getHeader("user-agent")).getBrowser()) {
+
+        if(params.containsKey("filter")) {
+          String[] val = params.get("filter");
+          params.put("filter", new String[] {val[0].replace("WebP","Jpeg")});
+          val = params.get("webp_q");
+          params.put("jpeg_q", val);
+        }
+        else if(inputFile.getName().toLowerCase().endsWith(".webp")){
+          
+          params.put("filter", new String[] {"Jpeg"});
+        }
+      }
 			
 			
 			//DOTCMS-5674
