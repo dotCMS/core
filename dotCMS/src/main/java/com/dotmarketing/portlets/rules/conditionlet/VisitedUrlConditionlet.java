@@ -8,6 +8,8 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.RE
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
 
 import com.dotcms.util.HttpRequestDataUtil;
+import com.dotmarketing.beans.Clickstream;
+import com.dotmarketing.beans.ClickstreamRequest;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -29,6 +31,7 @@ import com.liferay.portal.SystemException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -79,31 +82,18 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
             return false;
         }
 
-        HttpSession session = request.getSession(true);
 
-        // Get visited urls from session variable
-        Map<String, Set<String>> visitedUrls = (Map<String, Set<String>>) session
-                .getAttribute(RULES_CONDITIONLET_VISITEDURLS);
-        if (visitedUrls == null) {
-            visitedUrls = new HashMap<String, Set<String>>();
-        }
-
+        Clickstream clickstream = (Clickstream) request.getSession(true).getAttribute("clickstream");
+        
         // Get visited urls by host id from session variable
-        Set<String> visitedUrlsByHost = visitedUrls.get(hostId);
+        List<ClickstreamRequest> visitedUrlsByHost = clickstream.getClickstreamRequests();
         if (visitedUrlsByHost == null) {
-            visitedUrlsByHost = new LinkedHashSet<String>();
+           return false;
         }
 
         // Find match with visited urls
         boolean match = hasMatch(visitedUrlsByHost, index, instance);
 
-        // Add new url to session is not exist
-        final String uri = getUri(request);
-        if (StringUtils.isNotEmpty(uri) && !visitedUrlsByHost.contains(uri)) {
-            visitedUrlsByHost.add(uri);
-            visitedUrls.put(hostId, visitedUrlsByHost);
-            session.setAttribute(RULES_CONDITIONLET_VISITEDURLS, visitedUrls);
-        }
 
         return match;
     }
@@ -123,7 +113,7 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
      * @param instance
      * @return true is there is a match otherwise false
      */
-    private boolean hasMatch(Set<String> visitedUrlsByHost, String index, Instance instance) {
+    private boolean hasMatch(List<ClickstreamRequest> visitedUrlsByHost, String index, Instance instance) {
         final boolean comparisonIS_NOT = instance.comparisonValue.equalsIgnoreCase(IS_NOT.getId());
 
         // Variable must starts with true when IS_NOT comparison
@@ -131,11 +121,11 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
 
         String pattern = processUrl(instance.patternUrl, index, instance.comparison);
 
-        for (String url : visitedUrlsByHost) {
+        for (ClickstreamRequest clickRequest : visitedUrlsByHost) {
             if (comparisonIS_NOT) {
-                match &= instance.comparison.perform(url, pattern);
+                match &= instance.comparison.perform(clickRequest.getRequestURI(), pattern);
             } else {
-                match |= instance.comparison.perform(url, pattern);
+                match |= instance.comparison.perform(clickRequest.getRequestURI(), pattern);
             }
 
             if (!comparisonIS_NOT && match) {
