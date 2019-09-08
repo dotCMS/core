@@ -376,7 +376,7 @@ public class BinaryExporterServlet extends HttpServlet {
       }
 			
       
-      if(Config.getBooleanProperty("webp.downgrade.to.jpeg.for.safari", true) && Browser.SAFARI == new UserAgent(req.getHeader("user-agent")).getBrowser()) {
+      if(Config.getBooleanProperty("webp.unsupported.downgrade.to.jpeg", true) && Browser.SAFARI == new UserAgent(req.getHeader("user-agent")).getBrowser()) {
         if(params.containsKey("filter")) {
           String[] val = params.get("filter");
           params.put("filter", new String[] {val[0].replace("WebP","Jpeg")});
