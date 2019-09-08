@@ -243,7 +243,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     
   /**
    * This test makes sure that if you have a container that accepts 1 contentlet, then that container
-   * will take 1 contentlet for each persona and not just 1 contentlet for any persona See:
+   * will take 1 contentlet for each persona and not just 1 contentlet in total.  See:
    * https://github.com/dotCMS/core/issues/17181
    * 
    * @throws Exception
