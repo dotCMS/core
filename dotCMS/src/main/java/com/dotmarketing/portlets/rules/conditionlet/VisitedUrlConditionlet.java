@@ -84,12 +84,12 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
 
 
         Clickstream clickstream = (Clickstream) request.getSession(true).getAttribute("clickstream");
-        
+        if (clickstream == null || clickstream.getClickstreamRequests()==null) {
+          return false;
+       }
         // Get visited urls by host id from session variable
         List<ClickstreamRequest> visitedUrlsByHost = clickstream.getClickstreamRequests();
-        if (visitedUrlsByHost == null) {
-           return false;
-        }
+
 
         // Find match with visited urls
         boolean match = hasMatch(visitedUrlsByHost, index, instance);
