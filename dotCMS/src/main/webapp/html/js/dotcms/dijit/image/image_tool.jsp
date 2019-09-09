@@ -191,6 +191,7 @@
             <td class="rightCol"><select dojoType="dijit.form.Select" name="compression" id="compression"
                style="width: 70px; margin-left: 2.6px;" onchange="imageEditor.toggleCompression()" >
                   <option value="none" selected>none</option>
+                  <option value="auto">auto</option>
                   <option value="jpeg">jpeg</option>
                   <option value="webp">webp</option>
             </select></td>

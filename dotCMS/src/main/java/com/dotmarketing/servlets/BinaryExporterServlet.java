@@ -374,18 +374,22 @@ public class BinaryExporterServlet extends HttpServlet {
         }
         inputFile = APILocator.getTempFileAPI().getTempFile(req, shorty.longId).get().file;
       }
-			
+      
+      final String[] val = params.get("filter");
+      if(val!=null && val[0].contains("Quality")) {
+        if(Browser.SAFARI == new UserAgent(req.getHeader("user-agent")).getBrowser()){
+          params.put("filter", new String[] {val[0].replace("Quality","Jpeg")});
+          params.put("jpeg_q", params.get("quality_q"));
+        }else {
+          params.put("filter", new String[] {val[0].replace("Quality","WebP")});
+          params.put("webp_q", params.get("quality_q"));
+        }
+      }
+
+      
       
       if(Config.getBooleanProperty("webp.unsupported.downgrade.to.jpeg", true) && Browser.SAFARI == new UserAgent(req.getHeader("user-agent")).getBrowser()) {
-        if(params.containsKey("filter")) {
-          String[] val = params.get("filter");
-          params.put("filter", new String[] {val[0].replace("WebP","Jpeg")});
-          val = params.get("webp_q");
-          params.put("jpeg_q", val);
-        }
-        if(inputFile.getName().toLowerCase().endsWith(".webp")){
-          params.put("filter", new String[] {"Jpeg"});
-        }
+
       }
 			
 			
