@@ -10,6 +10,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageContent;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -193,48 +194,48 @@ public class MultiTreeAPITest extends IntegrationTestBase {
             //delete out any previous relation
             APILocator.getMultiTreeAPI().deleteMultiTree(multiTree);
             CacheLocator.getMultiTreeCache().clearCache();
-            Table<String, String, Set<PersonalizedContentlet>> trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-            
-            Table<String, String, Set<PersonalizedContentlet>> cachedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
 
-            Logger.info(this, "\n\n**** cachedTrees: " + cachedTrees);
+            PageContent pageContent = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            PageContent pageContentCached = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+
+            Logger.info(this, "\n\n**** cachedTrees: " + pageContentCached);
             // should be the same object coming from in memory cache
-            assert(trees==cachedTrees);
+            assert(pageContent == pageContentCached);
 
             CacheLocator.getMultiTreeCache().removePageMultiTrees(page.getIdentifier());
 
-            trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            pageContent = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
             
             // cache flush forced a cache reload, so different objects in memory
-            assert(trees!=cachedTrees);
+            assert(pageContent != pageContentCached);
             
             // but the objects should contain the same data
-            assert(trees.equals(cachedTrees));
+            assert(pageContent.equals(pageContentCached));
     
             // there is no container entry 
-            assert(!(cachedTrees.rowKeySet().contains(container.getIdentifier())));
+            assert(!(pageContentCached.getContainers().contains(container.getIdentifier())));
     
     
             // check cache flush on save
             APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
-            Table<String, String, Set<PersonalizedContentlet>> addedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-            assert(cachedTrees!=addedTrees);
+            final PageContent pageContentAdded = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+            assert(pageContentCached != pageContentAdded);
             
             // did we get a new object from the cache?
-            Assert.assertNotNull(cachedTrees);
-            Assert.assertNotNull(addedTrees);
-            Logger.info(this, "\n\n**** cachedTrees: " + cachedTrees);
-            Logger.info(this, "\n\n**** addedTrees: " + addedTrees);
-            assertNotEquals(cachedTrees, addedTrees);
-            assert(addedTrees.rowKeySet().contains(container.getIdentifier()));
+            Assert.assertNotNull(pageContentCached);
+            Assert.assertNotNull(pageContentAdded);
+            Logger.info(this, "\n\n**** cachedTrees: " + pageContentCached);
+            Logger.info(this, "\n\n**** addedTrees: " + pageContentAdded);
+            assertNotEquals(pageContentCached, pageContentAdded);
+            assert(pageContentAdded.getContainers().contains(container.getIdentifier()));
             
             // check cache flush on delete
             APILocator.getMultiTreeAPI().deleteMultiTree(multiTree );
-            Table<String, String, Set<PersonalizedContentlet>> deletedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-            
+            final PageContent pageContentDeleted = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+
             // did we get a new object from the cache?
-            assert(!(addedTrees.equals(deletedTrees)));
-            assert(!(deletedTrees.rowKeySet().contains(container.getIdentifier())));
+            assert(!(pageContentAdded.equals(pageContentDeleted)));
+            assert(!(pageContentDeleted.getContainers().contains(container.getIdentifier())));
             
         }
         finally {
