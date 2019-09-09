@@ -1,12 +1,14 @@
+#button-text {
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: $button-text-size;
+}
+
 #button-basic {
     height: $button-height;
     margin-right: 0;
     outline: none;
     transition: all $field-animation-speed ease-in;
-
-    .ui-button-text {
-        font-size: $button-text-size;
-    }
 }
 
 #button-main {
@@ -15,9 +17,7 @@
     }
 
     .ui-button-text {
-        font-weight: 500;
-        text-transform: uppercase;
-        font-size: $font-size-small;
+        @extend #button-text;
     }
 }
 
@@ -39,6 +39,18 @@
 
 #button-disabled {
     cursor: inherit;
+}
+
+.ui-link {
+    @extend #button-text;
+    @extend #button-basic;
+    @extend #button-main;
+    color: $white;
+    padding: 0 $button-padding;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: $border-radius;
+    line-height: $button-height;
 }
 
 .ui-button {

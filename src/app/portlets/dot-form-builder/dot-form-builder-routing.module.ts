@@ -1,12 +1,19 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { DotContentTypeEditResolver } from '@portlets/shared/dot-content-types-edit/dot-content-types-edit-resolver.service';
+import { DotFormResolver } from './resolvers/dot-form-resolver.service';
+import { DotFormBuilderComponent } from './dot-form-builder.component';
 
 const routes: Routes = [
     {
-        loadChildren:
-            '@portlets/shared/dot-content-types-listing/dot-content-types-listing.module#DotContentTypesListingModule',
-        path: ''
+        component: DotFormBuilderComponent,
+        path: '',
+        resolve: {
+            unlicensed: DotFormResolver
+        },
+        data: {
+            filterBy: 'FORM'
+        }
     },
     {
         loadChildren:

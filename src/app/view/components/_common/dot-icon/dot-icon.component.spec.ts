@@ -18,7 +18,6 @@ describe('DotIconComponent', () => {
         de = fixture.debugElement;
         comp = fixture.componentInstance;
         comp.name = 'test';
-
     });
 
     it('should have css classes based on attributes', () => {
@@ -26,5 +25,13 @@ describe('DotIconComponent', () => {
         const icon = de.query(By.css('i')).nativeElement;
         expect(icon.classList).toContain('material-icons');
         expect(icon.innerText).toBe(comp.name);
+        expect(icon.style.fontSize).toBe('');
+    });
+
+    it('should set inline font size', () => {
+        comp.size = 120;
+        fixture.detectChanges();
+        const icon = de.query(By.css('i')).nativeElement;
+        expect(icon.style.fontSize).toBe('120px');
     });
 });
