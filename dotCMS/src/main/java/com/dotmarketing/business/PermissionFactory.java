@@ -242,6 +242,12 @@ public abstract class PermissionFactory {
 	 */
 	abstract void removePermissions(Permissionable permissionable) throws DotDataException;
 
+	/**
+	 * This version of the method allows performing a delete in batch
+	 * @param permissionables
+	 * @throws DotDataException
+	 */
+	abstract void removePermissions(final List<Permissionable> permissionables) throws DotDataException;
 
 	/**
 	 * Removes all permissions associated to the given role
