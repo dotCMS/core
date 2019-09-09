@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -156,6 +157,7 @@ public class SystemActionApiFireCommandFactory {
 
     private class PublishSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
 
+        @WrapInTransaction
         @Override
         public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
                 throws DotDataException, DotSecurityException {
@@ -198,7 +200,6 @@ public class SystemActionApiFireCommandFactory {
                                                final ContentletDependencies dependencies,
                                                final String actionId, final User user) throws DotDataException, DotSecurityException {
 
-            final String autoAssignKey   = Contentlet.AUTO_ASSIGN_WORKFLOW;
             final String disableWorkflow = Contentlet.DISABLE_WORKFLOW;
             final boolean hasPublishActionlet  = UtilMethods.isSet(actionId)?
                 workflowAPI.findAction(actionId, user).hasPublishActionlet():false;
@@ -209,7 +210,6 @@ public class SystemActionApiFireCommandFactory {
                 Logger.info(this, "The contentlet : " + contentlet.getTitle()
                         + ", on the action id: " + actionId +
                         ", does not have publish, and has changes, so a checkin will be fired without assign to any step");
-                contentlet.setBoolProperty(autoAssignKey, false);
                 contentlet.setBoolProperty(disableWorkflow, true);
             }
 
@@ -218,10 +218,6 @@ public class SystemActionApiFireCommandFactory {
                     user, dependencies.isRespectAnonymousPermissions());
 
             if (!hasPublishActionlet) {
-
-                if (checkinContentlet.getMap().containsKey(autoAssignKey)) {
-                    checkinContentlet.getMap().remove(autoAssignKey);
-                }
 
                 if (checkinContentlet.getMap().containsKey(disableWorkflow)) {
                     checkinContentlet.getMap().remove(disableWorkflow);
