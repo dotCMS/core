@@ -28,6 +28,7 @@ import java.util.List;
  */
 public class UnassignedWorkflowContentletCheckinListener implements EventSubscriber<ContentletCheckinEvent> {
 
+    private static final String AUTO_ASSIGN_WORKFLOW = Contentlet.AUTO_ASSIGN_WORKFLOW;
     private volatile AutoAssignWorkflowDelegate customAutoAssignWorkflowDelegate;
     private final    AutoAssignWorkflowDelegate autoAssignWorkflowDelegate =
             UnassignedWorkflowContentletCheckinListener::assign;
@@ -62,7 +63,7 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
 
         try {
 
-            if (Config.getBooleanProperty("AUTO_ASSIGN_WORKFLOW", true) &&
+            if (Config.getBooleanProperty(AUTO_ASSIGN_WORKFLOW, true) &&
                     this.validContentType(event.getContentlet()) &&
                     !APILocator.getWorkflowAPI().findCurrentStep(event.getContentlet()).isPresent()) {
 
@@ -80,8 +81,18 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
 
     private boolean validContentType(final Contentlet contentlet) {
 
+        // is valid if not host and
+        // no auto assign attribute and if exists no in true
+
+        boolean autoAssign = true;
+
+        if (null != contentlet.get(AUTO_ASSIGN_WORKFLOW)) {
+
+            autoAssign = contentlet.getBoolProperty(AUTO_ASSIGN_WORKFLOW); // if AUTO_ASSIGN_WORKFLOW is set and FALSE, won't auto assign
+        }
+
         final ContentType contentType = contentlet.getContentType();
-        return null != contentType && !Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable());
+        return null != contentType && !Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable()) && autoAssign;
     }
 
     private static void assign (final Contentlet contentlet, final User user) {

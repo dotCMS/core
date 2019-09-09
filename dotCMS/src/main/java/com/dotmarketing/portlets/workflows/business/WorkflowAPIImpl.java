@@ -156,6 +156,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
+import javax.rmi.CORBA.Util;
+
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.elasticsearch.search.query.QueryPhaseExecutionException;
@@ -1564,6 +1566,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return this.findAvailableActions(contentlet, user, RenderMode.EDITING);
 	}
 
+	@Override
+	@CloseDBIfOpened
+	public boolean isActionAvailable(final Contentlet contentlet, final User user, final String actionId) {
+
+		List<WorkflowAction> workflowActions = null;
+
+		try {
+			workflowActions = this.findAvailableActions(contentlet, user);
+		} catch (DotDataException | DotSecurityException e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		return UtilMethods.isSet(workflowActions) &&
+				workflowActions.stream().anyMatch(workflowAction -> actionId.equals(workflowAction.getId()));
+	}
 
 	private List<WorkflowAction> doFilterActions(final ImmutableList.Builder<WorkflowAction> actions,
 								 final boolean isNew,
@@ -3713,24 +3730,60 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         if (UtilMethods.isSet(mappingRow)) {
 
         	final String workflowActionId       = (String)mappingRow.get("workflow_action");
-			final WorkflowAction workflowAction = this.findAction(workflowActionId, user);
-			if (null != workflowAction) {
-				return Optional.of(workflowAction);
+			final Optional<WorkflowAction> workflowAction = this.findActionAvailable(contentlet, workflowActionId, user);
+			if (workflowAction.isPresent()) {
+				return workflowAction;
 			} else {
 
 				Logger.warn(this, "The Workflow Action Id: " + workflowActionId +
-						", used as default for: " + contentType.variable() + " does not exists");
+						", used as default for: " + contentType.variable() + " does not exists, or is not available");
 			}
         }
 
-        final List<WorkflowScheme> schemes   = this.findSchemesForContentType(contentType);
+		return this.findActionAvailableOnSchemes(contentlet, contentType, systemAction, user);
+	}
 
-        final List<Map<String, Object>> mappingRows = // todo: double check if the system workflow is the first we pick
-                this.workFlowFactory.findSystemActionsBySchemes(systemAction, schemes);
+	private Optional<WorkflowAction> findActionAvailableOnSchemes (final Contentlet contentlet, final ContentType contentType,
+																   final SystemAction systemAction,
+																   final User user) throws DotSecurityException, DotDataException {
 
-		return UtilMethods.isSet(mappingRows)?
-                Optional.ofNullable(this.findAction((String)mappingRows.get(0).get("workflow_action"), user)):
-                Optional.empty();
+		final List<WorkflowScheme> schemes          = this.findSchemesForContentType(contentType);
+
+		if (UtilMethods.isSet(schemes)) {
+			final List<Map<String, Object>> mappingRows =
+					this.workFlowFactory.findSystemActionsBySchemes(systemAction, schemes);
+
+			if (UtilMethods.isSet(mappingRows)) {
+
+				mappingRows.sort(this::compareScheme);
+				return this.findActionAvailable(contentlet,
+						(String) mappingRows.get(0).get("workflow_action"), user);
+			}
+		}
+
+		return Optional.empty();
+	}
+
+	/*
+	 * This comparator will give precedence to the System Workflow to the rest of them
+	 */
+	private int compareScheme (final Map<String, Object> map1, final Map<String, Object> map2) {
+
+		final String schemeId1 = (String) map1.get("scheme_or_content_type");
+		final String schemeId2 = (String) map2.get("scheme_or_content_type");
+		final boolean isSystemWorkflow1 = SystemWorkflowConstants.SYSTEM_WORKFLOW_ID.equals(schemeId1);
+		final boolean isSystemWorkflow2 = SystemWorkflowConstants.SYSTEM_WORKFLOW_ID.equals(schemeId2);
+
+		return  isSystemWorkflow1? -1:
+				isSystemWorkflow2? 1: 0;
+	}
+
+	private Optional<WorkflowAction> findActionAvailable (final Contentlet contentlet,
+														  final String workflowActionId, final User user) throws DotSecurityException, DotDataException {
+
+		final WorkflowAction workflowAction = this.findAction(workflowActionId, user);
+		return null != workflowAction && this.isActionAvailable(contentlet, user, workflowActionId)?
+					Optional.of(workflowAction):Optional.empty();
 	}
 
 	@Override

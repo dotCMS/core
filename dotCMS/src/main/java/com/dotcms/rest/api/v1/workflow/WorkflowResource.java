@@ -1366,7 +1366,8 @@ public class WorkflowResource {
                 new ResponseEntityView(
                         this.workflowHelper.contentletToMap(
                                 fireCommandOpt.isPresent()?
-                                        fireCommandOpt.get().fire(contentlet, formBuilder.build()):
+                                        fireCommandOpt.get().fire(contentlet,
+                                                UtilMethods.isSet(fireActionForm.getContentletFormData()), formBuilder.build()):
                                         this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build()))
                 )
         ).build(); // 200
@@ -1415,7 +1416,7 @@ public class WorkflowResource {
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
-            final Optional<WorkflowAction> workflowActionOpt =
+            final Optional<WorkflowAction> workflowActionOpt = // ask to see if there is any default action by content type or scheme
                     this.workflowAPI.findActionMappedBySystemActionContentlet
                             (contentlet, systemAction, initDataObject.getUser());
 
@@ -1423,8 +1424,13 @@ public class WorkflowResource {
 
                 final WorkflowAction workflowAction = workflowActionOpt.get();
                 final String actionId = workflowAction.getId();
+
+                Logger.info(this, "Using the default action: " + workflowAction +
+                        ", for the system action: " + systemAction);
+
                 final Optional<SystemActionApiFireCommand> fireCommandOpt =
-                        this.systemActionApiFireCommandProvider.get(workflowAction, systemAction);
+                        this.systemActionApiFireCommandProvider.get(workflowAction,
+                                UtilMethods.isSet(fireActionForm.getContentletFormData()), systemAction);
 
                 return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
             } else {
@@ -1551,7 +1557,8 @@ public class WorkflowResource {
                 final WorkflowAction workflowAction = workflowActionOpt.get();
                 final String actionId = workflowAction.getId();
                 final Optional<SystemActionApiFireCommand> fireCommandOpt =
-                        this.systemActionApiFireCommandProvider.get(workflowAction, systemAction);
+                        this.systemActionApiFireCommandProvider.get(workflowAction,
+                                UtilMethods.isSet(fireActionForm.getContentletFormData()), systemAction);
 
                 return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
             } else {
