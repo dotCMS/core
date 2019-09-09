@@ -6128,8 +6128,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         HibernateUtil.evict(HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, beforeTouch.getInode()));
 
         final Set<String> inodes = Stream.of(beforeTouch).map(Contentlet::getInode).collect(Collectors.toSet());
-        int count = contentletAPI.updateModDate(inodes, user);
-        assertEquals("update count does not match",1, count);
+        contentletAPI.updateModDate(inodes, user);
 
         final Contentlet afterTouch = contentletAPI.find(beforeTouch.getInode(), APILocator.getUserAPI().getSystemUser(),false);
         assertEquals(beforeTouch.getInode(), afterTouch.getInode());
