@@ -116,7 +116,7 @@
 							<%= LanguageUtil.get(pageContext, "Address") %>: 
 						</td>
 						<td width="100%;" style="white-space: nowrap;padding-right:25px;">
-							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;" onchange="imageEditor.changeViewingUrl()">
+							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;" onkeypress="if (event.which == 13 || event.keyCode == 13) {imageEditor.changeViewingUrl()}" onchange="imageEditor.changeViewingUrl()">
 						</td>
 					</tr>
 				</table>

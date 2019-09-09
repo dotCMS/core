@@ -386,12 +386,7 @@ public class BinaryExporterServlet extends HttpServlet {
         }
       }
 
-      
-      
-      if(Config.getBooleanProperty("webp.unsupported.downgrade.to.jpeg", true) && Browser.SAFARI == new UserAgent(req.getHeader("user-agent")).getBrowser()) {
 
-      }
-			
 			
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){
