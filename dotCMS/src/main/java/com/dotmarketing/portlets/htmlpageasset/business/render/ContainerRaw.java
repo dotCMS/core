@@ -7,6 +7,8 @@ import java.util.Map;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageViewSerializer;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -26,7 +28,7 @@ public class ContainerRaw implements Serializable {
 
     private final Container container;
     private final List<ContainerStructure> containerStructures;
-    private final  Map<String, List<Map<String,Object>>> contentlets;
+    private final  Map<String, Collection<Contentlet>> contentletsByUUID;
 
     /**
      * Creates a new instance of the ContainerRendered.
@@ -34,14 +36,15 @@ public class ContainerRaw implements Serializable {
      * @param container The {@link Container} in the HTML Page.
      * @param containerStructures The list of {@link ContainerStructure} relationships. the browser.
      */
-    public ContainerRaw(final Container container, final List<ContainerStructure> containerStructures, final  Map<String, List<Map<String,Object>>> contentlets) {
+    public ContainerRaw(final Container container, final List<ContainerStructure> containerStructures,
+                        final  Map<String, Collection<Contentlet>> contentlets) {
         this.container = container;
         this.containerStructures =  (containerStructures != null)  ?  ImmutableList.copyOf(containerStructures) :  ImmutableList.of();
-        this.contentlets = contentlets;
+        this.contentletsByUUID = contentlets;
     }
 
-    public Map<String, List<Map<String,Object>>> getContentlets() {
-        return contentlets;
+    public Map<String, Collection<Contentlet>> getContentlets() {
+        return contentletsByUUID;
     }
 
     /**
@@ -66,6 +69,6 @@ public class ContainerRaw implements Serializable {
     @Override
     public String toString() {
         return "ContainerRendered{" + "container=" + container + ", containerStructures=" + containerStructures + ", contentlets='"
-                + contentlets + '\'' + '}';
+                + contentletsByUUID + '\'' + '}';
     }
 }

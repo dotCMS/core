@@ -1,5 +1,11 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -10,10 +16,14 @@ import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.model.User;
 
 import java.io.CharArrayReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * JsonSerializer of {@link PageView}
@@ -35,7 +45,7 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
         final Map<String, Object> pageViewMap = new TreeMap<>();
         pageViewMap.put("page", this.asMap(pageView.getPageInfo()));
-        pageViewMap.put("containers", pageView.getContainersMap());
+        pageViewMap.put("containers", getContainersMap(pageView));
 
         final Map<Object, Object> templateMap = this.asMap(template);
         templateMap.put("canEdit", pageView.canEditTemplate());
@@ -53,6 +63,23 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         return pageViewMap;
     }
 
+    private Map<String, Map> getContainersMap(final PageView pageView) {
+        return pageView.getContainersMap().entrySet().stream().collect(
+                Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> {
+                            final ContainerRaw containerRaw = entry.getValue();
+
+                            return map(
+                                    "container", containerRaw.getContainer(),
+                                    "containerStructures", containerRaw.getContainerStructures(),
+                                    "contentlets", PageViewSerializer.getContentsAsMap(containerRaw, pageView.getUser())
+                                );
+                        }
+                )
+        );
+    }
+
     private Map<Object, Object> asMap(final Object object)  {
         final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
 
@@ -62,6 +89,39 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
             map.values().removeIf(Objects::isNull);
             return map;
         } catch (IOException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    private static Map<String, Object> getContentsAsMap (final ContainerRaw containerRaw, final User user) {
+        return containerRaw.getContentlets().entrySet().stream().collect(
+                    Collectors.toMap(
+                            Map.Entry::getKey,
+                            contentEntry ->
+                                    PageViewSerializer.getContentsAsMap(contentEntry.getValue(), user)
+                    )
+                );
+    }
+
+    private static List<Map<String, Object>> getContentsAsMap(
+            final Collection<Contentlet> contents,
+            final User user) {
+
+        try {
+            final List<Map<String, Object>> result = new ArrayList<>();
+
+            for (final Contentlet contentlet : contents) {
+                try {
+                    final Map<String, Object> contentPrintableMap = ContentletUtil.getContentPrintableMap(user, contentlet);
+                    contentPrintableMap.put("contentType", contentlet.getContentType().variable());
+                    result.add(contentPrintableMap);
+                } catch (IOException e) {
+                    throw new DotStateException(e);
+                }
+            }
+
+            return result;
+        } catch (DotDataException e) {
             throw new DotRuntimeException(e);
         }
     }

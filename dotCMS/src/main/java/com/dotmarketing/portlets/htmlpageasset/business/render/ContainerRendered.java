@@ -1,10 +1,12 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 
 /**
  * Represents the information of the {@link Container} and its respective
@@ -23,21 +25,6 @@ public class ContainerRendered extends ContainerRaw {
 
     private final Map<String, String> rendered;
 
-
-    /**
-     * Creates a new instance of the ContainerRendered.
-     *
-     * @param container           The {@link Container} in the HTML Page.
-     * @param containerStructures The list of {@link ContainerStructure} relationships.
-     *                           the browser.
-     */
-    public ContainerRendered(final Container container, final List<ContainerStructure> containerStructures,
-                             final Map<String, String> rendered, final Map<String,List<Map<String,Object>>> contentlets) {
-        super(container, containerStructures, contentlets);
-
-        this.rendered = rendered;
-
-    }
     
     /**
      * Creates a new instance of the ContainerRendered.

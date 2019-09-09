@@ -11,6 +11,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageRenderContext;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
@@ -19,6 +20,7 @@ import org.apache.velocity.context.Context;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import com.dotcms.rendering.velocity.services.PageRenderVelocityContextUtil;
 
 public class VelocityPreviewMode extends VelocityModeHandler {
 
@@ -69,8 +71,8 @@ public class VelocityPreviewMode extends VelocityModeHandler {
         IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, langId, mode.showLive,user, mode.respectAnonPerms);
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
-
-        PageRenderUtil.addAll(htmlPage, context, PageMode.PREVIEW_MODE, user);
+        final PageRenderContext pageRenderContext = new PageRenderContext(PageMode.PREVIEW_MODE, user);
+        PageRenderVelocityContextUtil.addVelocityContext(htmlPage, pageRenderContext, context);
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
         request.setAttribute("velocityContext", context);

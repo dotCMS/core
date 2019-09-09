@@ -3,11 +3,9 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -22,7 +20,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -40,6 +37,7 @@ import java.util.stream.Collectors;
 
 
 public class PageContent {
+    public static String CONTAINER_UUID_PREFIX = "uuid-";
     private Table<String, String, Set<PersonalizedContentlet>> pageContents;
     private List<Container> containers;
 
@@ -261,37 +259,24 @@ public class PageContent {
             final Container container,
             final String uniqueId,
             final String personaId,
-            final PageMode mode,
-            final Long languageId,
-            final User user) {
+            final PageRenderContext pageRenderContext) {
 
         final String containerId = container.getIdentifier();
         final Set<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
 
         return personalizedContentletSet.stream()
                 .filter(personalizedContentlet ->  personalizedContentlet.getPersonalization().equals(personaId))
-                .map(personalizedContentlet -> getContentlet(mode, languageId, user, personalizedContentlet.getContentletId()))
+                .map(personalizedContentlet -> getContentlet(pageRenderContext, personalizedContentlet.getContentletId()))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
-    public Collection<Contentlet> getContents(
-            final Container container,
-            final String uniqueId,
-            final String personaId,
-            final PageMode mode,
-            final User user) {
-
-        return this.getContents(container, uniqueId, personaId, mode, null, user);
-    }
 
 
     public Collection<Contentlet> getContents(
             final Container container,
             final String uniqueId,
-            final PageMode mode,
-            final Long languageId,
-            final User user) {
+            final PageRenderContext pageRenderContext) {
 
         final String containerId = container.getIdentifier();
         final Set<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
@@ -299,31 +284,19 @@ public class PageContent {
         return personalizedContentletSet.stream()
                 .map(personalizedContentlet -> personalizedContentlet.getContentletId())
                 .distinct()
-                .map(contentletId -> getContentlet(mode, languageId, user, contentletId))
+                .map(contentletId -> getContentlet(pageRenderContext, contentletId))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
-    public Collection<Contentlet> getContents(
-            final Container container,
-            final String uniqueId,
-            final PageMode mode,
-            final User user) {
-
-        return this.getContents(container, uniqueId, mode, null, user);
-    }
-
-    public Collection<Contentlet> getContents(
-            final PageMode mode,
-            final long languageId,
-            final User user) {
+    public Collection<Contentlet> getContents(final PageRenderContext pageRenderContext) {
 
         return pageContents.values()
                 .stream()
                 .flatMap(cotentlets -> cotentlets.stream())
                 .map(personalizedContentlet -> personalizedContentlet.getContentletId())
                 .distinct()
-                .map(contentletId -> getContentlet(mode, languageId, user, contentletId))
+                .map(contentletId -> getContentlet(pageRenderContext, contentletId))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
@@ -358,13 +331,16 @@ public class PageContent {
 
     @Nullable
     private Contentlet getContentlet(
-            final PageMode mode,
-            final Long languageId,
-            final User user,
+            final PageRenderContext pageRenderContext,
             final String contentletId) {
         try {
+            final PageMode mode = pageRenderContext.getMode();
+            final Long languageId = pageRenderContext.getLanguageId();
+            final User user = pageRenderContext.getUser();
+
             final Optional<Contentlet> contentletOpt = languageId != null ?
-                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(contentletId, mode.showLive, languageId, user, mode.respectAnonPerms)
+                    APILocator.getContentletAPI().findContentletByIdentifierOrFallback(contentletId, mode.showLive,
+                            languageId, user, mode.respectAnonPerms)
                     : Optional.empty();
 
             return contentletOpt.isPresent()
@@ -374,5 +350,16 @@ public class PageContent {
         } catch (final Exception e) {
             return null;
         }
+    }
+
+    public Map<String, Collection<Contentlet>> getContentsByUUID(
+            final Container container, final PageRenderContext pageRenderContext, final String personaId) {
+
+        return this.getUUID(container.getIdentifier()).stream().collect(
+                Collectors.toMap(
+                        (String uuid) ->  (uuid.startsWith(CONTAINER_UUID_PREFIX)) ? uuid : CONTAINER_UUID_PREFIX + uuid,
+                        (String uuid) -> getContents(container, uuid, personaId, pageRenderContext)
+                )
+        );
     }
 }

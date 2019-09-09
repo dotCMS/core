@@ -5,12 +5,14 @@ import java.util.*;
 
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.liferay.portal.model.User;
 
 /**
  * Represents the different parts that make up the structure of an HTML Page in the system and its
@@ -43,6 +45,7 @@ public class PageView implements Serializable {
     private final boolean canEditTemplate;
     private int numberContents = 0;
     private int personalizationNumber = 0;
+    private User user;
 
     /**
      * Creates an instance of this class.
@@ -62,7 +65,8 @@ public class PageView implements Serializable {
              final boolean canCreateTemplate,
              final boolean canEditTemplate,
              final ViewAsPageStatus viewAs,
-             final int personalizationNumber) {
+             final int personalizationNumber,
+             final User user) {
 
         this.site = site;
         this.template = template;
@@ -73,13 +77,12 @@ public class PageView implements Serializable {
         this.canCreateTemplate = canCreateTemplate;
         this.canEditTemplate = canEditTemplate;
 
-        final Map<String, ContainerRaw> containersMap = this.getContainersMap();
-
         if (this.layout != null) {
-            this.numberContents = getContentsNumber(containersMap);
+            this.numberContents = getContentsNumber(this.getContainersMap());
         }
 
         this.personalizationNumber = personalizationNumber;
+        this.user = user;
     }
 
     private final int getContentsNumber(final Map<String, ContainerRaw> containersMap) {
@@ -91,7 +94,8 @@ public class PageView implements Serializable {
                 final ContainerRaw containerRaw = containersMap.get(containerUUID.getIdentifier());
 
                 if (containerRaw != null) {
-                    final List<Map<String, Object>> contents = containerRaw.getContentlets().get(PageRenderUtil.CONTAINER_UUID_PREFIX + containerUUID.getUUID());
+                    final Collection<Contentlet> contents =
+                            containerRaw.getContentlets().get(PageContent.CONTAINER_UUID_PREFIX + containerUUID.getUUID());
                     return contents != null ? contents.size() : 0;
                 } else {
                     return 0;
@@ -193,5 +197,9 @@ public class PageView implements Serializable {
 
     public int getPersonalizationNumber() {
         return personalizationNumber;
+    }
+
+    public User getUser() {
+        return user;
     }
 }

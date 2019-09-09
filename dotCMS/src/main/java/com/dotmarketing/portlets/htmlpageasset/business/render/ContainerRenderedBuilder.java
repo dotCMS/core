@@ -27,10 +27,12 @@ public class ContainerRenderedBuilder {
 
     final PageMode mode;
     final Context velocityContext;
-    final List<ContainerRaw> containerRaws;
+    final Collection<ContainerRaw> containerRaws;
 
 
-    public ContainerRenderedBuilder(List<ContainerRaw> raws, final Context velocityContext, final PageMode mode) {
+    public ContainerRenderedBuilder(
+            final Collection<ContainerRaw> raws, final Context velocityContext, final PageMode mode) {
+
         this.containerRaws = raws;
         this.velocityContext = velocityContext;
         this.mode = mode;

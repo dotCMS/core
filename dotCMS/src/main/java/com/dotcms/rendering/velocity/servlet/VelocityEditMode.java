@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.servlet;
 
 import com.dotcms.rendering.velocity.events.PreviewEditParseErrorException;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
+import com.dotcms.rendering.velocity.services.PageRenderVelocityContextUtil;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotmarketing.beans.Host;
@@ -12,6 +13,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageRenderContext;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
@@ -63,7 +65,8 @@ public class VelocityEditMode extends VelocityModeHandler {
 
         long langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
         IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, langId, mode.showLive,user, mode.respectAnonPerms);
-        PageRenderUtil.addAll(htmlPage, context, PageMode.EDIT_MODE, user);
+        final PageRenderContext pageRenderContext = new PageRenderContext(PageMode.EDIT_MODE, user);
+        PageRenderVelocityContextUtil.addVelocityContext(htmlPage, pageRenderContext, context);
 
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 

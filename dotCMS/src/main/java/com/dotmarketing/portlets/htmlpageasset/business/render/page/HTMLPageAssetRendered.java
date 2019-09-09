@@ -8,6 +8,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.liferay.portal.model.User;
 
 /**
  * It is a {@link PageView} rendered
@@ -25,9 +26,10 @@ public class HTMLPageAssetRendered extends PageView {
                                  final boolean canCreateTemplate,
                                  final boolean canEditTemplate,
                                  final ViewAsPageStatus viewAs,
-                                 final int personalizationNumber) {
+                                 final int personalizationNumber,
+                                 final User user) {
 
-        super(site, template, containers, page, layout, canCreateTemplate, canEditTemplate, viewAs, personalizationNumber);
+        super(site, template, containers, page, layout, canCreateTemplate, canEditTemplate, viewAs, personalizationNumber, user);
         this.html = html;
 
 
@@ -36,8 +38,4 @@ public class HTMLPageAssetRendered extends PageView {
     public String getHtml() {
         return html;
     }
-
-
-
-
 }

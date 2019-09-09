@@ -48,6 +48,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Optional;
+import com.dotcms.rendering.velocity.services.PageRenderVelocityContextUtil;
 
 /**
  * Builder of {@link HTMLPageAssetRendered}
@@ -128,25 +129,32 @@ public class HTMLPageAssetRenderedBuilder {
         final boolean canCreateTemplates = layoutAPI.doesUserHaveAccessToPortlet("templates", user);
         final IPersona persona     = this.getCurrentPersona();
         final HTMLPageAsset page = htmlPageAssetInfo.getPage();
-        final int personalizationNumber = PageRenderUtil.getPersonalizationNumber(page);
+        final PageRenderContext pageRenderContext = new PageRenderContext(mode, language.getId(), systemUser);
+        final Collection<ContainerRaw> containersRaw =  PageRenderUtil.getContainersRaw(page, persona,
+                pageRenderContext);
 
-        if (!rendered) {
-            final Collection<? extends ContainerRaw> containers =  PageRenderUtil
-                    .getContainersRaw(page, persona, mode, language.getId(), systemUser);
-            return new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates,
-                    canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), personalizationNumber);
-        } else {
+        final PageViewBuilder pageViewBuilder = PageViewBuilder.get()
+                .setSite(site)
+                .setTemplate(template)
+                .setContainers(containersRaw)
+                .setPage(htmlPageAssetInfo)
+                .setLayout(layout)
+                .setCanCreateTemplate(canCreateTemplates)
+                .setCanEditTemplate(canEditTemplate)
+                .setViewAs(this.getViewAsStatus(mode, pagePersonalizationSet))
+                .setPersonalizationNumber(PageRenderUtil.getPersonalizationNumber(page))
+                .setUser(user);
+
+        if (rendered) {
             final ChainedContext context = VelocityUtil.getInstance().getContext(request, response);
-            final Context velocityContext  = PageRenderUtil.addAll(page, context, mode, systemUser);
-            final List<ContainerRaw> containersRaw =  PageRenderUtil
-                    .getContainersRaw(page, persona, mode, language.getId(), systemUser);
-            final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(containersRaw, velocityContext, mode).build();
+            PageRenderVelocityContextUtil.addVelocityContext(page, pageRenderContext, context);
             final String pageHTML = this.getPageHTML();
-            return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
-                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet),
-                    personalizationNumber
-            );
+
+            pageViewBuilder.setContainers(new ContainerRenderedBuilder(containersRaw, context, mode).build());
+            pageViewBuilder.setPageHTML(pageHTML);
         }
+
+        return pageViewBuilder.build();
     }
 
     @CloseDBIfOpened
