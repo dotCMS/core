@@ -4,7 +4,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutColumn,
-    FieldVariable
+    DotCMSContentTypeFieldVariable
 } from 'dotcms-models';
 
 /**
@@ -35,13 +35,13 @@ export const shouldShowField = (field: DotCMSContentTypeField, fieldsToShow: str
 
 /**
  * Returns value of a Field Variable from a given key
- * @param fieldVariables fieldVariables
+ * @param DotCMSContentTypeFieldVariable[] fieldVariables
  * @param string key
  * @returns string
  */
-export const getFieldVariableValue = (fieldVariables: FieldVariable[], key: string): string => {
+export const getFieldVariableValue = (fieldVariables: DotCMSContentTypeFieldVariable[], key: string): string => {
     const variable = fieldVariables.filter(
-        (item: FieldVariable) => item.key.toUpperCase() === key.toUpperCase()
+        (item: DotCMSContentTypeFieldVariable) => item.key.toUpperCase() === key.toUpperCase()
     )[0];
     return variable && variable.value;
 };

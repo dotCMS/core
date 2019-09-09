@@ -37,7 +37,7 @@ export interface DotCMSContentTypeField {
     defaultValue?: string;
     fieldType: string;
     fieldTypeLabel: string;
-    fieldVariables: FieldVariable[];
+    fieldVariables: DotCMSContentTypeFieldVariable[];
     fixed: boolean;
     hint?: string;
     iDate: number;
@@ -76,17 +76,17 @@ export interface DotCMSContentTypeFieldCategories {
     sortOrder: number;
 }
 
-/** @private */
-interface Relationships {
-    cardinality: number;
-    velocityVar: string;
-}
-
-/** @private */
-interface FieldVariable {
+export interface DotCMSContentTypeFieldVariable {
     clazz: string;
     fieldId: string;
     id: string;
     key: string;
     value: string;
 }
+
+/** @private */
+interface Relationships {
+    cardinality: number;
+    velocityVar: string;
+}
+
