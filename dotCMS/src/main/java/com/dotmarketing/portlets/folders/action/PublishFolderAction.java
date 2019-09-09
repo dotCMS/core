@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.folders.action;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.exception.WebAssetException;
@@ -51,7 +52,7 @@ public class PublishFolderAction extends DotPortletAction {
 
 		        String referer = URLDecoder.decode(req.getParameter("referer"),"UTF-8");
 
-		        _sendToReferral(req,res,referer);
+		        _sendToReferral(req,res,referer + "&p_p_state="+ WindowState.MAXIMIZED + "&p_p_id=site-browser&p_p_action=1");
 		        return;
 			}
 			setForward(req,"portlet.ext.folders.publish_folder");
