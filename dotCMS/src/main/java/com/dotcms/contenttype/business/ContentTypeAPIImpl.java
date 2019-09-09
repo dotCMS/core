@@ -178,6 +178,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
 
 
+  @WrapInTransaction
   @Override
   public ContentType save(ContentType type) throws DotDataException, DotSecurityException {
     return save(type, null, null);
@@ -385,12 +386,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return contentTypeFactory.findUrlMapped();
   }
 
+  @WrapInTransaction
   @Override
   public ContentType save(ContentType contentType, List<Field> newFields)
       throws DotDataException, DotSecurityException {
     return save(contentType, newFields, null);
   }
 
+  @WrapInTransaction
   @Override
   public ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables)
       throws DotDataException, DotSecurityException {
