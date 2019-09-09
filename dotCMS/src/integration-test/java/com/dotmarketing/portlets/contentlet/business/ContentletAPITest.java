@@ -6498,22 +6498,23 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
             final Contentlet contentInEnglish = contentletDataGen.languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
-            Contentlet contentInSpanish = contentletDataGen.checkout(contentInEnglish);
+            Contentlet contentInSpanish = ContentletDataGen.checkout(contentInEnglish);
             contentInSpanish.setLanguageId(spanishLanguage.getId());
-            contentInSpanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
-            contentInSpanish = contentletDataGen.checkin(contentInSpanish);
+            contentInSpanish = ContentletDataGen.checkin(contentInSpanish);
 
             assertEquals(2,
                     contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
 
-            contentletDataGen.archive(contentInSpanish);
-            contentletDataGen.delete(contentInSpanish);
+            contentInSpanish.setIndexPolicy(IndexPolicy.FORCE);
+            ContentletDataGen.archive(contentInSpanish);
+            ContentletDataGen.delete(contentInSpanish);
 
             assertEquals(1,
                     contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
 
-            contentletDataGen.archive(contentInEnglish);
-            contentletDataGen.delete(contentInEnglish);
+            contentInEnglish.setIndexPolicy(IndexPolicy.FORCE);
+            ContentletDataGen.archive(contentInEnglish);
+            ContentletDataGen.delete(contentInEnglish);
 
             assertEquals(0,
                     contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
