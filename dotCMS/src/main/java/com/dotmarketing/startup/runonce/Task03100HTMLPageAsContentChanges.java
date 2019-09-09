@@ -551,7 +551,7 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 			dc.addParam(true); // require
 			dc.addParam(true); // indexed
 			dc.addParam(false); // listed
-			dc.addParam("friendlyname"); // velocity name
+			dc.addParam("friendlyName"); // velocity name
 			dc.addParam(9); // sort order
 			dc.addParam(""); // values
 			dc.addParam(""); // regex

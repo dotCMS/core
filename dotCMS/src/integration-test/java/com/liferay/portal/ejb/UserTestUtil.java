@@ -1,5 +1,6 @@
 package com.liferay.portal.ejb;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.ibm.icu.util.GregorianCalendar;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -29,6 +30,7 @@ public class UserTestUtil {
      * A deletion date can be set.
      * The new user will be saved in DB if saveInDatabase is set to true
      */
+    @WrapInTransaction
     public static User getUser(String userName, boolean toBeDeleted, boolean saveInDatabase, Date deletionDate)
         throws DotSecurityException, DotDataException {
 
