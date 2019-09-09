@@ -979,6 +979,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertNotNull(savedData);
             assertTrue(savedData.size() == 3);
 
+            Logger.info(this, "Printing all workflow tasks");
             workflowAPI.searchAllTasks(null).forEach(System.out::println);
 
             for (final Contentlet cont : savedData) {
