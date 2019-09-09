@@ -15,6 +15,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -29,6 +30,10 @@ import java.util.Map;
  * any user with a layout OR API_KEY receives the new DOTCMS_BACK_END_USER role.
  */
 public class Task05170DefineFrontEndAndBackEndRoles implements StartupTask {
+
+    private  static final String BACKEND_USER_ROLE_NAME = "Back-end User";
+
+    private  static final String FRONTEND_USER_ROLE_NAME = "Front-end User";
 
     private static final String FIND_SYSTEM_ROLE = "SELECT id FROM cms_role WHERE role_key = 'System'";
 
@@ -71,26 +76,28 @@ public class Task05170DefineFrontEndAndBackEndRoles implements StartupTask {
 
     private static final String FIND_NEW_FRONTEND_ROLE = "SELECT id FROM cms_role WHERE role_key = 'DOTCMS_FRONT_END_USER'";
 
+    private static final String UPDATE_ROLE_NAME  = " UPDATE cms_role SET role_name = ? WHERE id = ? ";
+
      //Anyone with layout OR an API Key gets added to the backend user role
      static final String USERS_WITH_ASSIGNED_LAYOUT_OR_API_KEY_BUT_NOT_BACKEND_ROLE =
              "select ur.user_id as user_id from users_cms_roles ur \n"
-                 + "join layouts_cms_roles l on ur.role_id = l.role_id  \n"
-                 + "join cms_role r on r.id = l.role_id \n"
-                 + "where ur.user_id not in (\n"
-                 + "  select ur2.user_id from users_cms_roles ur2 join cms_role r2 on ur2.role_id = r2.id and r2.role_key = 'DOTCMS_BACK_END_USER'\n"
-                 + ")\n"
-                 + "union  (  \n"
-                 + "\t select token_userid as user_id from  api_token_issued where token_userid not in (\n"
-                 + "\t   select ur2.user_id from users_cms_roles ur2 join cms_role r2 on ur2.role_id = r2.id and r2.role_key = 'DOTCMS_BACK_END_USER' \n"
-                 + "\t )\n"
-                 + ")";
+             + " join layouts_cms_roles l on ur.role_id = l.role_id  \n"
+             + " join cms_role r on r.id = l.role_id \n"
+             + " where not exists (\n"
+             + "   select ur2.user_id from users_cms_roles ur2, cms_role r2 where ur2.role_id = r2.id and r2.role_key = 'DOTCMS_BACK_END_USER' and ur2.user_id = ur.user_id \n"
+             + " )\n"
+             + "  union  (  \n"
+             + "   select token_userid as user_id from  api_token_issued where not exists (\n"
+             + "   select ur2.user_id from users_cms_roles ur2, cms_role r2 where ur2.role_id = r2.id and r2.role_key = 'DOTCMS_BACK_END_USER' and ur2.user_id = token_userid \n"
+             + "  )\n"
+             + " )";
 
     //Everyone gets the front end user role
-    static final String USERS_WITHOUT_FRONTEND_ROLE =
+    private static final String USERS_WITHOUT_FRONTEND_ROLE =
             "select distinct(ur.user_id) as user_id from users_cms_roles ur \n"
-            + " where ur.user_id not in ( \n"
-            + "   select ur2.user_id from users_cms_roles ur2 join cms_role r2 on ur2.role_id = r2.id and r2.role_key = 'DOTCMS_FRONT_END_USER' \n"
-            + " )";
+                + " where not exists ( \n"
+                + "  select ur2.user_id from users_cms_roles ur2, cms_role r2 where ur2.role_id = r2.id and r2.role_key = 'DOTCMS_FRONT_END_USER' and ur2.user_id = ur.user_id \n"
+                + ")";
 
 
     private final static String CMS_USER_LABEL = "CMS User";
@@ -224,10 +231,22 @@ public class Task05170DefineFrontEndAndBackEndRoles implements StartupTask {
         return dotConnect.getString("id");
     }
 
+    private void updateRoleName(final DotConnect dotConnect, final String roleName, final String roleId) throws DotDataException{
+        dotConnect.setSQL(UPDATE_ROLE_NAME);
+        dotConnect.addParam(roleName);
+        dotConnect.addParam(roleId);
+        dotConnect.loadResult();
+    }
+
     private boolean newBackendRoleExists(final DotConnect dotConnect){
         boolean found = false;
         try{
-            found = UtilMethods.isSet(findNewBackendRoleId(dotConnect));
+            final String backEndRoleId = findNewBackendRoleId(dotConnect);
+            found = UtilMethods.isSet(backEndRoleId);
+            if(found){
+               updateRoleName(dotConnect,BACKEND_USER_ROLE_NAME, backEndRoleId);
+            }
+
         }catch (Exception e){
            // Empty
         }
@@ -237,7 +256,11 @@ public class Task05170DefineFrontEndAndBackEndRoles implements StartupTask {
     private boolean newFrontendRoleExists(final DotConnect dotConnect){
         boolean found = false;
         try{
-            found = UtilMethods.isSet(findNewFrontendRoleId(dotConnect));
+            final String frontEndRoleId = findNewFrontendRoleId(dotConnect);
+            found = UtilMethods.isSet(frontEndRoleId);
+            if(found){
+                updateRoleName(dotConnect,FRONTEND_USER_ROLE_NAME, frontEndRoleId);
+            }
         }catch (Exception e){
             // Empty
         }
@@ -299,6 +322,7 @@ public class Task05170DefineFrontEndAndBackEndRoles implements StartupTask {
         }
 
         if (newBackendRoleExists(dotConnect)) {
+            //Update name
             Logger.warn(this, "The New Back-end role "+DOTCMS_BACK_END_USER + " already exists on this database.");
         } else {
             createOldBackendRolesIfAbsent(dotConnect, systemRoleId);
@@ -306,19 +330,28 @@ public class Task05170DefineFrontEndAndBackEndRoles implements StartupTask {
         }
 
         if (newFrontendRoleExists(dotConnect)) {
-            Logger.warn(this, "The New Front-end role "+DOTCMS_FRONT_END_USER + " already exists on this database.");
+            //Update name
+            Logger.warn(this, "The New Front-end role "+DOTCMS_FRONT_END_USER + " already exists in this database.");
         } else {
             createOldFrontendRolesIfAbsent(dotConnect, systemRoleId);
             renameOldFrontendRoles(dotConnect);
         }
 
         // These statements must run once we have ensured the new Roles are now in place.
-        final List<Map> userCandidatesForBackendRole = loadUsersWithLayoutOrAPIKeyButNotBackendRole(dotConnect);
+        final List<List<Map>> userCandidatesForBackendRolePartitionedList = Lists.partition(
+           loadUsersWithLayoutOrAPIKeyButNotBackendRole(dotConnect), 200
+        );
 
-        assignBackendRole(userCandidatesForBackendRole, dotConnect);
+        for(final List<Map> userCandidatesForBackendRole: userCandidatesForBackendRolePartitionedList) {
+            assignBackendRole(userCandidatesForBackendRole, dotConnect);
+        }
 
-        final List<Map> userCandidatesForFrontendRole = loadAllUsersWithoutFrontEndRole(dotConnect);
-        assignFrontendRole(userCandidatesForFrontendRole, dotConnect);
+        final List<List<Map>> userCandidatesForFrontendRolePartitionedList =  Lists.partition(
+           loadAllUsersWithoutFrontEndRole(dotConnect),200
+        );
+        for(final List<Map> userCandidatesForFrontendRole: userCandidatesForFrontendRolePartitionedList){
+           assignFrontendRole(userCandidatesForFrontendRole, dotConnect);
+        }
 
     }
 
