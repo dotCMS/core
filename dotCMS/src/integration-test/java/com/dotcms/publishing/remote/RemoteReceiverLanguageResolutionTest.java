@@ -39,6 +39,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -284,11 +285,13 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                     .getInstance()
                     .updateAuditTable(endpoint.getId(), endpoint.getGroupId(), bundleFolder, true);
 
-            // Remove contentlets so they can be regenerated from the bundle
-            for (final Contentlet contentlet : contentlets) {
-                contentlet.setIndexPolicy(IndexPolicy.FORCE);
-                contentletAPI.destroy(contentlet, adminUser, false );
-            }
+            LocalTransaction.wrap(() -> {
+                // Remove contentlets so they can be regenerated from the bundle
+                for (final Contentlet contentlet : contentlets) {
+                    contentlet.setIndexPolicy(IndexPolicy.FORCE);
+                    contentletAPI.destroy(contentlet, adminUser, false);
+                }
+            });
 
             // We have now added dupe Languages.
             // Now we need to flush cache so the next time the pp process asks for a Language
@@ -396,20 +399,25 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                     .getInstance()
                     .updateAuditTable(endpoint.getId(), endpoint.getGroupId(), bundleFolder, true);
 
-            // Remove contentlets so they can be regenerated from the bundle
-            for (final Contentlet contentlet : contentlets) {
-                contentletAPI.destroy(contentlet, adminUser, false );
-            }
+            final List<Long> savedLanguagesNowDeletedIds = LocalTransaction.wrapReturn(() -> {
 
-            final List<Long>savedLanguagesNowDeletedIds = new ArrayList<>();
-            // Remove all the languages we just created from the db.. see if they get re-generated out of the push-publish process.
-            for (final Language language : savedNewLanguages) {
-                languageAPI.deleteLanguage(language);
+                // Remove contentlets so they can be regenerated from the bundle
+                for (final Contentlet contentlet : contentlets) {
+                    contentletAPI.destroy(contentlet, adminUser, false);
+                }
 
-                //The language should be already deleted
-                assertNull(languageAPI.getLanguage(language.getId()));
-                savedLanguagesNowDeletedIds.add(language.getId());
-            }
+                final List<Long> internalSavedLanguagesNowDeletedIds = new ArrayList<>();
+                // Remove all the languages we just created from the db..., see if they get re-generated out of the push-publish process.
+                for (final Language language : savedNewLanguages) {
+                    languageAPI.deleteLanguage(language);
+
+                    //The language should be already deleted
+                    assertNull(languageAPI.getLanguage(language.getId()));
+                    internalSavedLanguagesNowDeletedIds.add(language.getId());
+                }
+
+                return internalSavedLanguagesNowDeletedIds;
+            });
 
             // Now we need to flush cache so the next time the pp process asks for a Language
             // it will get the first lang and not the one stored in cache during the bundle generation process.
