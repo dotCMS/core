@@ -129,20 +129,8 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.StringTokenizer;
+
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -1570,10 +1558,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public boolean isActionAvailable(final Contentlet contentlet, final User user, final String actionId) {
 
-		List<WorkflowAction> workflowActions = null;
+		final Set<WorkflowAction> workflowActions = new HashSet<>();
 
 		try {
-			workflowActions = this.findAvailableActions(contentlet, user);
+			final List<WorkflowAction> editingActions = this.findAvailableActions(contentlet, user, RenderMode.EDITING);
+			final List<WorkflowAction> listingActions = this.findAvailableActions(contentlet, user, RenderMode.LISTING);
+			workflowActions.addAll(editingActions);
+			workflowActions.addAll(listingActions);
 		} catch (DotDataException | DotSecurityException e) {
 			Logger.error(this, e.getMessage(), e);
 		}
