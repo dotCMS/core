@@ -102,7 +102,7 @@
 		"searchable": true,
 		"indexed": true,
 		"name": "Friendly Name",
-		"variable": "friendlyname",
+		"variable": "friendlyName",
 		"fixed": true,
 		"clazz": "com.dotcms.contenttype.model.field.TextField",
 		"fieldVariables": []

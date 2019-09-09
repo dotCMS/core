@@ -243,16 +243,11 @@ public abstract class PermissionFactory {
 	abstract void removePermissions(Permissionable permissionable) throws DotDataException;
 
 	/**
-	 * Removes all individual permissions associated to the given permissionable
-	 * it also removes all inheritable permissions if includeInheritablePermissions is
-	 * set to true
-	 * 
-	 * @param roleId
-	 * @version 1.0
-	 * @throws DotDataException 
-	 * @since 1.0
+	 * This version of the method allows performing a delete in batch
+	 * @param permissionables
+	 * @throws DotDataException
 	 */
-	abstract void removePermissions(Permissionable permissionable, boolean includeInheritablePermissions) throws DotDataException;
+	abstract void removePermissions(final List<Permissionable> permissionables) throws DotDataException;
 
 	/**
 	 * Removes all permissions associated to the given role

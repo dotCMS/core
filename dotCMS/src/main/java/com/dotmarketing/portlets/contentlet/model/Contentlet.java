@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.ConstantField;
@@ -40,7 +41,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -235,7 +235,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
   /**
    * Create a contentlet based on a map (makes a copy of it)
-   * 
+   *
    * @param map
    */
   public Contentlet(final Map<String, Object> mapIn) {
@@ -362,7 +362,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * use instead:
      * {@link #getContentTypeId()}
      */
-    
+
     public String getStructureInode() {
         return getContentTypeId();
     }
@@ -627,10 +627,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public long getLongProperty(String fieldVarName) throws DotRuntimeException {
 		try{
 	    final Object test = map.get(fieldVarName);
-	    return test == null 
-	        ? 0 
-	            : test instanceof String 
-	            ? Long.parseLong((String) test)  
+	    return test == null
+	        ? 0
+	            : test instanceof String
+	            ? Long.parseLong((String) test)
 	                : ((Number) test).longValue();
 		}catch (Exception e) {
 			 throw new DotRuntimeException("Unable to retrive field value", e);
@@ -779,7 +779,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public Map<String, Object> getMap() throws DotRuntimeException {
 	  addConstantsToMap();
-		return map;
+        try {
+            setTags();
+        } catch (DotDataException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+        return map;
 	}
 
 	/**
@@ -905,7 +911,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
 	public long getSortOrder(){
-	  return getLongProperty(SORT_ORDER_KEY);        
+	  return getLongProperty(SORT_ORDER_KEY);
 	}
 
 	/**
@@ -1320,7 +1326,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         this.setActionId(null);
     }
 
-    
+
 	/**
 	 * Returns the workflow action id the Contentlet is going to execute
 	 */
@@ -1347,9 +1353,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * Set the tags to the contentlet
      * @throws DotDataException
      */
+    @CloseDBIfOpened
 	public void setTags() throws DotDataException {
 
-		if (!this.loadedTags) {
+		if (!this.loadedTags && UtilMethods.isSet(getContentTypeId())) {
 
 			final boolean hasTagFields = this.getContentType().fields().stream().anyMatch(TagField.class::isInstance);
 
@@ -1364,7 +1371,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 						final String fieldVarName = foundTagInode.getFieldVarName();
 
 						// if the map does not have already this field on the map so populate it. we do not want to override the eventual user values.
-						if (!this.getMap().containsKey(fieldVarName)) {
+						if (!map.containsKey(fieldVarName)) {
 							StringBuilder contentletTagsBuilder = new StringBuilder();
 
 							if (UtilMethods.isSet(fieldVarName)) {
