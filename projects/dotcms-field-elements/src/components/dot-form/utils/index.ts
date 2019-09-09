@@ -3,7 +3,8 @@ import { getStringFromDotKeyArray, isStringType } from '../../../utils';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeLayoutColumn
+    DotCMSContentTypeLayoutColumn,
+    FieldVariable
 } from 'dotcms-models';
 
 /**
@@ -30,6 +31,19 @@ const pipedValuesToObject = (values: string): { [key: string]: string } => {
 export const shouldShowField = (field: DotCMSContentTypeField, fieldsToShow: string): boolean => {
     const fields2Show = fieldsToShow ? fieldsToShow.split(',') : [];
     return !fields2Show.length || fields2Show.includes(field.variable);
+};
+
+/**
+ * Returns value of a Field Variable from a given key
+ * @param fieldVariables fieldVariables
+ * @param string key
+ * @returns string
+ */
+export const getFieldVariableValue = (fieldVariables: FieldVariable[], key: string): string => {
+    const variable = fieldVariables.filter(
+        (item: FieldVariable) => item.key.toUpperCase() === key.toUpperCase()
+    )[0];
+    return variable && variable.value;
 };
 
 /**

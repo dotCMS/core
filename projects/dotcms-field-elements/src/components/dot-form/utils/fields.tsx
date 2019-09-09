@@ -1,4 +1,5 @@
 import { DotCMSContentTypeField } from 'dotcms-models';
+import { getFieldVariableValue } from '.';
 
 export const DotFormFields = {
     Text: (field: DotCMSContentTypeField) => (
@@ -136,6 +137,7 @@ export const DotFormFields = {
 
     Binary: (field: DotCMSContentTypeField) => (
         <dot-binary-file
+            accept={getFieldVariableValue(field.fieldVariables, 'accept')}
             hint={field.hint}
             label={field.name}
             name={field.variable}

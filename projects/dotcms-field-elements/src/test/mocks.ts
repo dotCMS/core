@@ -1,6 +1,6 @@
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from 'dotcms-models';
 
-const basicField: DotCMSContentTypeField = {
+export const basicField: DotCMSContentTypeField = {
     clazz: '',
     contentTypeId: '',
     dataType: '',

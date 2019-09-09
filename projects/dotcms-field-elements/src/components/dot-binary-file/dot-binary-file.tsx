@@ -157,6 +157,7 @@ export class DotBinaryFileComponent {
     optionsWatch(): void {
         this.accept = checkProp<DotBinaryFileComponent, string>(this, 'accept');
         this.allowedFileTypes = !!this.accept ? this.accept.split(',') : [];
+        this.allowedFileTypes = this.allowedFileTypes.map((fileType: string) => fileType.trim());
     }
 
     @Listen('fileChange')
