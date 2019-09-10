@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.personalization;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginatorOrdered;
 import com.dotmarketing.beans.Host;
@@ -20,10 +21,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered<PersonalizationPersonaPageView> {
 
@@ -65,9 +63,12 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
       final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage(pageId);
       final List<PersonalizationPersonaPageView> personalizationPersonaPageViews = new ArrayList<>();
 
-      Language foundLanguage =
-          Try.of(() -> WebAPILocator.getLanguageWebAPI().getLanguage(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
-              .getOrElse(APILocator.getLanguageAPI().getDefaultLanguage());
+      final Language foundLanguage = Try.of(() -> {
+            final Locale locale = (Locale) HttpServletRequestThreadLocal.INSTANCE.getRequest().getSession()
+                    .getAttribute(Globals.LOCALE_KEY);
+            return APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
+          }
+        ).getOrElse(APILocator.getLanguageAPI().getDefaultLanguage());
 
       for (final Persona persona : personas._1) {
 
