@@ -108,11 +108,13 @@ public class UserDataGen extends AbstractDataGen<User> {
      *
      * @return A new User instance persisted in DB
      */
+    @WrapInTransaction
     @Override
     public User nextPersisted() {
         return persist(next());
     }
 
+    @WrapInTransaction
     public static void remove(final User user) {
         remove(user, true);
     }
