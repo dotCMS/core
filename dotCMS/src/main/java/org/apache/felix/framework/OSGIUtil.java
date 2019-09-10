@@ -22,6 +22,7 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -48,7 +49,9 @@ public class OSGIUtil {
     //List of jar prefixes of the jars to be included in the osgi-extra-generated.conf file
     private List<String> dotCMSJarPrefixes = ImmutableList
             .copyOf(CollectionsUtils.list("dotcms", "ee-"));
-
+    public List<String> portletIDsStopped = new ArrayList<>();
+    public List<String> actionletsStopped = new ArrayList<>();
+    public WorkflowAPIOsgiService workflowOsgiService;
     private static final String WEB_INF_FOLDER = "/WEB-INF";
     private static final String FELIX_BASE_DIR = "felix.base.dir";
     private static final String FELIX_FILEINSTALL_DIR = "felix.fileinstall.dir";

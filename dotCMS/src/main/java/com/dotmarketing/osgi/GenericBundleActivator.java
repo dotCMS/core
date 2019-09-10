@@ -86,7 +86,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private ClassReloadingStrategy classReloadingStrategy;
 
     private PrimitiveToolboxManager toolboxManager;
-    private WorkflowAPIOsgiService workflowOsgiService;
     private CacheOSGIService cacheOSGIService;
     private ConditionletOSGIService conditionletOSGIService;
     private RuleActionletOSGIService actionletOSGIService;
@@ -412,6 +411,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
 
             Logger.info( this, "Added Portlet: " + portlet.getPortletId() );
+            if(OSGIUtil.getInstance().portletIDsStopped.contains(portlet.getPortletId())){
+                OSGIUtil.getInstance().portletIDsStopped.remove(portlet.getPortletId());
+            }
         }
 
         //Forcing a refresh of the portlets cache
@@ -593,11 +595,14 @@ public abstract class GenericBundleActivator implements BundleActivator {
             actionlets = new ArrayList<>();
         }
 
-        this.workflowOsgiService = (WorkflowAPIOsgiService) context.getService( serviceRefSelected );
-        this.workflowOsgiService.addActionlet( actionlet.getClass() );
+        OSGIUtil.getInstance().workflowOsgiService = (WorkflowAPIOsgiService) context.getService( serviceRefSelected );
+        OSGIUtil.getInstance().workflowOsgiService.addActionlet( actionlet.getClass() );
         actionlets.add( actionlet );
 
         Logger.info( this, "Added actionlet: " + actionlet.getName() );
+        if(OSGIUtil.getInstance().actionletsStopped.contains(actionlet.getClass().getCanonicalName())){
+            OSGIUtil.getInstance().actionletsStopped.remove(actionlet.getClass().getCanonicalName());
+        }
     }
 
     /**
@@ -866,11 +871,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterActionlets () {
 
-        if ( this.workflowOsgiService != null && actionlets != null ) {
+        if ( OSGIUtil.getInstance().workflowOsgiService != null && actionlets != null ) {
             for ( WorkFlowActionlet actionlet : actionlets ) {
-
-                this.workflowOsgiService.removeActionlet( actionlet.getClass().getCanonicalName() );
-                Logger.info( this, "Removed actionlet: " + actionlet.getClass().getCanonicalName());
+                if(!OSGIUtil.getInstance().actionletsStopped.contains(actionlet.getClass().getCanonicalName())){
+                    OSGIUtil.getInstance().actionletsStopped.add(actionlet.getClass().getCanonicalName());
+                }
             }
         }
     }
@@ -1012,7 +1017,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
         if ( portlets != null ) {
             
             for ( Portlet portlet : portlets ) {
-              APILocator.getPortletAPI().deletePortlet(portlet.getPortletId());
+                if(!OSGIUtil.getInstance().portletIDsStopped.contains(portlet.getPortletId())){
+                    OSGIUtil.getInstance().portletIDsStopped.add(portlet.getPortletId());
+                }
             }
         }
     }

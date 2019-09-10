@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.osgi.AJAX;
 
+import com.dotmarketing.business.APILocator;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
@@ -64,6 +65,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         Boolean success = FileUtil.move( from, to );
         if ( success ) {
         	Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Undeployed");
+            remove();// removes portlets and actionlets references
             writeSuccess( response, "OSGI Bundle "+jar+ " Undeployed" );
         } else {
             Logger.error( OSGIAJAX.class, "Error undeploying OSGI Bundle "+jar );
@@ -100,6 +102,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                 OSGIUtil.getInstance().getBundle(bundleID).stop();
             }
             Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Stopped");
+            remove();// removes portlets and actionlets references
         } catch ( BundleException e ) {
             Logger.error( OSGIAJAX.class, e.getMessage(), e );
             throw new ServletException( e.getMessage() + " Unable to stop bundle", e );
@@ -214,9 +217,25 @@ public class OSGIAJAX extends OSGIBaseAJAX {
 
         //Now we need to initialize it
         OSGIUtil.getInstance().initializeFramework();
-        
+
         //Send a respose
         writeSuccess( response, "OSGI Framework Restarted" );
+    }
+
+    private void remove () {
+
+        //Remove Portlets in the list
+        OSGIUtil.getInstance().portletIDsStopped.stream().forEach(p -> {APILocator.getPortletAPI().deletePortlet(p);});
+        Logger.info( this, "Portlets Removed: " + OSGIUtil.getInstance().portletIDsStopped.toString() );
+
+        //Remove Actionlets in the list
+        OSGIUtil.getInstance().actionletsStopped.stream().forEach(p -> {OSGIUtil.getInstance().workflowOsgiService.removeActionlet(p);});
+        Logger.info( this, "Actionlets Removed: " + OSGIUtil.getInstance().actionletsStopped.toString());
+
+        //Cleanup lists
+        OSGIUtil.getInstance().portletIDsStopped.clear();
+        OSGIUtil.getInstance().actionletsStopped.clear();
+
     }
 
 }
