@@ -37,6 +37,6 @@ public interface LanguageWebAPI {
 	 */
 	Language getLanguage(HttpServletRequest req);
 	
-	
+	Language getSessionLanguage();
 
 }

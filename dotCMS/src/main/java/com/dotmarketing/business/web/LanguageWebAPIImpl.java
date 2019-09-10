@@ -1,5 +1,6 @@
 package com.dotmarketing.business.web;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -10,6 +11,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
 
@@ -147,7 +149,14 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 
     }
 
-
+    /**
+     * Return the back end session languge
+     * @return
+     */
+    public Language getSessionLanguage() {
+        final Locale locale = LanguageUtil.getDefaultLocale(HttpServletRequestThreadLocal.INSTANCE.getRequest());
+        return APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
+    }
 
 
 }

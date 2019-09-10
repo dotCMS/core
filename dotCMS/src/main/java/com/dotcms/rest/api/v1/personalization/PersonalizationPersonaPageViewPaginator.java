@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
@@ -63,12 +64,9 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
       final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage(pageId);
       final List<PersonalizationPersonaPageView> personalizationPersonaPageViews = new ArrayList<>();
 
-      final Language foundLanguage = Try.of(() -> {
-            final Locale locale = (Locale) HttpServletRequestThreadLocal.INSTANCE.getRequest().getSession()
-                    .getAttribute(Globals.LOCALE_KEY);
-            return APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
-          }
-        ).getOrElse(APILocator.getLanguageAPI().getDefaultLanguage());
+      final Language foundLanguage = Try.of(
+                () -> WebAPILocator.getLanguageWebAPI().getSessionLanguage()
+              ).getOrElse(APILocator.getLanguageAPI().getDefaultLanguage());
 
       for (final Persona persona : personas._1) {
 
