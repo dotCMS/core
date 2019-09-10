@@ -187,13 +187,16 @@ export function isValidURL(url: string): boolean {
  *
  * @returns boolean
  */
-export function isFileAllowed(fileName: string, allowedExtensions: string[]): boolean {
+export function isFileAllowed(fileName: string, allowedExtensions: string): boolean {
+    let allowedExtensionsArray = allowedExtensions.split(',');
+    allowedExtensionsArray = allowedExtensionsArray.map((item: string) => item.trim());
     const extension = fileName ? fileName.substring(fileName.indexOf('.'), fileName.length) : '';
-    return allowAnyFile(allowedExtensions) || allowedExtensions.includes(extension);
+
+    return allowAnyFile(allowedExtensionsArray) || allowedExtensionsArray.includes(extension);
 }
 
 function allowAnyFile(allowedExtensions: string[]): boolean {
-    return allowedExtensions.length === 0 || allowedExtensions.includes('*');
+    return allowedExtensions[0] === '' || allowedExtensions.includes('*');
 }
 
 function slugify(text: string): string {

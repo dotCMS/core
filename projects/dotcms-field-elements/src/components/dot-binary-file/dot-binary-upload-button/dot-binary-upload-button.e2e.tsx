@@ -32,6 +32,14 @@ describe('dot-binary-upload-button', () => {
             });
         });
 
+        describe('accept', () => {
+            it('should render with accept', async () => {
+                element.setProperty('accept', 'test');
+                await page.waitForChanges();
+                expect(input.getAttribute('accept')).toBe('test');
+            });
+        });
+
         describe('required', () => {
             it('should not render required attribute by default', () => {
                 expect(input.getAttribute('required')).toBeNull();

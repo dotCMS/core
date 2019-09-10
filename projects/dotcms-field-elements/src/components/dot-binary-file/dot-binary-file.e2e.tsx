@@ -280,26 +280,14 @@ describe('dot-binary-file', () => {
             it('should set accept value correctly', async () => {
                 element.setAttribute('accept', '.pdf,.png,.jpg');
                 await page.waitForChanges();
-                expect(await dotBinaryText.getProperty('accept')).toEqual(['.pdf', '.png', '.jpg']);
-                expect(await dotBinaryButton.getProperty('accept')).toEqual([
-                    '.pdf',
-                    '.png',
-                    '.jpg'
-                ]);
+                expect(await dotBinaryText.getProperty('accept')).toEqual('.pdf,.png,.jpg');
+                expect(await dotBinaryButton.getProperty('accept')).toEqual('.pdf,.png,.jpg');
             });
 
             it('should set accept as empty value when not set', async () => {
                 await page.waitForChanges();
-                expect(await dotBinaryText.getProperty('accept')).toEqual([]);
-                expect(await dotBinaryButton.getProperty('accept')).toEqual([]);
-            });
-
-            it('should render and not break when is a unexpected value', async () => {
-                element.setProperty('accept', { test: true });
-                await page.waitForChanges();
-                expect(await element.getProperty('accept')).toEqual(null);
-                expect(await dotBinaryText.getProperty('accept')).toEqual([]);
-                expect(await dotBinaryButton.getProperty('accept')).toEqual([]);
+                expect(await dotBinaryText.getProperty('accept')).toEqual('');
+                expect(await dotBinaryButton.getProperty('accept')).toEqual('');
             });
         });
 

@@ -24,9 +24,9 @@ export class DotBinaryUploadButtonComponent {
     @Prop({ reflectToAttr: true })
     required = false;
 
-    /** (optional) Array that describes a type of file that may be selected by the user, eg: .pdf,.jpg  */
+    /** (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg  */
     @Prop({ reflectToAttr: true })
-    accept: string[];
+    accept: string;
 
     /** (optional) Disables field's interaction */
     @Prop({ reflectToAttr: true })
@@ -48,6 +48,7 @@ export class DotBinaryUploadButtonComponent {
         return (
             <Fragment>
                 <input
+                    accept={this.accept}
                     disabled={this.disabled}
                     id={getId(this.name)}
                     onChange={(event: Event) => this.fileChangeHandler(event)}

@@ -235,13 +235,13 @@ export class DotBinaryFileComponent {
                                 placeholder={this.placeholder}
                                 required={this.required}
                                 disabled={this.disabled}
-                                accept={this.allowedFileTypes}
+                                accept={this.allowedFileTypes.join(',')}
                                 hint={this.hint}
                                 onLostFocus={this.lostFocusEventHandler.bind(this)}
                             />
                             <dot-binary-upload-button
                                 name={this.name}
-                                accept={this.allowedFileTypes}
+                                accept={this.allowedFileTypes.join(',')}
                                 disabled={this.disabled}
                                 required={this.required}
                                 buttonLabel={this.buttonLabel}
@@ -318,7 +318,7 @@ export class DotBinaryFileComponent {
     }
 
     private handleDroppedFile(file: File): void {
-        if (isFileAllowed(file.name, this.allowedFileTypes)) {
+        if (isFileAllowed(file.name, this.allowedFileTypes.join(','))) {
             this.setValue(file);
             this.binaryTextField.value = file.name;
         } else {
