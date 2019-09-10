@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotcms.enterprise.license.LicenseManager;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -51,11 +53,14 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         pageViewMap.put("site", pageView.getSite());
         pageViewMap.put("viewAs", pageView.getViewAs());
         pageViewMap.put("canCreateTemplate", pageView.canCreateTemplate());
-        pageViewMap.put("numberContents", pageView.getNumberContents());
-        pageViewMap.put("personalizationNumber", pageView.getPersonalizationNumber());
+
+        if(LicenseManager.getInstance().isEnterprise()) {
+            pageViewMap.put("personalizationNumber", pageView.getPersonalizationNumber());
+        }
 
         if (pageView.getLayout() != null) {
             pageViewMap.put("layout", pageView.getLayout());
+            pageViewMap.put("numberContents", pageView.getNumberContents());
         }
         return pageViewMap;
     }

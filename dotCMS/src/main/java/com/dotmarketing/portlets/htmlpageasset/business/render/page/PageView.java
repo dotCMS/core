@@ -43,7 +43,7 @@ public class PageView implements Serializable {
     private final ViewAsPageStatus viewAs;
     private final boolean canCreateTemplate;
     private final boolean canEditTemplate;
-    private int numberContents = 0;
+    private int numberContents = -1;
     private int personalizationNumber = 0;
     private User user;
 

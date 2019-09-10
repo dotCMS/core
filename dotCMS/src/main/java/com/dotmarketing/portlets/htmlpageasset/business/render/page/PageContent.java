@@ -263,12 +263,17 @@ public class PageContent {
 
         final String containerId = container.getIdentifier();
         final Set<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
+        final String personaTag = this.hasPersonalizationsFor(personaId) ? personaId : MultiTree.DOT_PERSONALIZATION_DEFAULT;
 
         return personalizedContentletSet.stream()
-                .filter(personalizedContentlet ->  personalizedContentlet.getPersonalization().equals(personaId))
+                .filter(personalizedContentlet ->  personalizedContentlet.getPersonalization().equals(personaTag))
                 .map(personalizedContentlet -> getContentlet(pageRenderContext, personalizedContentlet.getContentletId()))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    private boolean hasPersonalizationsFor(final String personaId) {
+        return this.getPersonalizations().contains(personaId);
     }
 
 
