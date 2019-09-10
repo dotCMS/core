@@ -494,7 +494,7 @@ public class ContentletLoader implements DotLoader {
             sb.append("#set($isForm= \"").append(false).append("\")");
         } else {
             sb.append("#set($isForm= \"").append(true).append("\")");
-            sb.append("#set($formCode=").append("$velutil.mergeTemplate(\"/static/content/content_form_macro.vtl\")").append(")");
+            sb.append("#set($formCode=").append("$velutil.mergeTemplate(\"/static/content/content_form.vtl\")").append(")");
         }
 
         // This is code is repeated because the bug GETTYS-268, the content
