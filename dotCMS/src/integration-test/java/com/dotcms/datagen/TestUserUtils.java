@@ -12,6 +12,8 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -320,6 +322,36 @@ public class TestUserUtils {
 
     public static Role getFrontendRole() throws DotDataException {
         return APILocator.getRoleAPI().loadRoleByKey(DOTCMS_FRONT_END_USER);
+    }
+
+    private static final String POSTGRES_RANDOM_USER_ID = " SELECT userid FROM user_ ORDER BY random() LIMIT 1 ";
+    private static final String MYSQL_RANDOM_USER_ID = " SELECT userid from user_ ORDER BY RAND() LIMIT 1 ";
+    private static final String MSSQL_RANDOM_USER_ID = " SELECT TOP 1 userId FROM user_ ORDER BY NEWID()";
+    private static final String ORACLE_RANDOM_USER_ID = " SELECT userId FROM (SELECT userId FROM user_ ORDER BY dbms_random.value) WHERE rownum = 1";
+
+    public static String getRandomUserId(final DotConnect dotConnect) throws DotDataException {
+
+        if (DbConnectionFactory.isPostgres()) {
+            dotConnect.setSQL(POSTGRES_RANDOM_USER_ID);
+            return dotConnect.getString("userid");
+        }
+
+        if (DbConnectionFactory.isOracle()) {
+            dotConnect.setSQL(ORACLE_RANDOM_USER_ID);
+            return dotConnect.getString("userid");
+        }
+
+        if (DbConnectionFactory.isMsSql()) {
+            dotConnect.setSQL(MSSQL_RANDOM_USER_ID);
+            return dotConnect.getString("userid");
+        }
+
+        if (DbConnectionFactory.isMySql()) {
+            dotConnect.setSQL(MYSQL_RANDOM_USER_ID);
+            return dotConnect.getString("userid");
+        }
+
+        throw new IllegalStateException("dunno What Db 'Im running on");
     }
 
 }
