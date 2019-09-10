@@ -114,8 +114,7 @@ public class ContentToolTest extends IntegrationTestBase {
     	final long languageId = TestDataUtils.getSpanishLanguage().getId();
 
         // Get "News" content-type
-        final ContentType contentType = contentTypeAPI.search(" velocity_var_name = 'News'").get(0);
-
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
 
         // Create dummy "News" content in Spanish language
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.inode()).host(defaultHost).languageId(languageId);
@@ -127,216 +126,163 @@ public class ContentToolTest extends IntegrationTestBase {
         contentletDataGen.setProperty("urlTitle", "/news/el-titulo");
 
         // Persist dummy "News" contents to ensure at least one result will be returned
-        final Contentlet contentlet = contentletDataGen.nextPersisted();
+        contentletDataGen.nextPersisted();
 
         final ContentTool contentTool = getContentTool(languageId);
 
-        try {
+        // Query contents through Content Tool
+        final List<ContentMap> results = contentTool.pull(
+                "+structurename:" + contentType.variable() + " +(conhost:" + defaultHost
+                        .getIdentifier() + " conhost:system_host) +working:true", 6,
+                "score " + contentType.variable() + ".sysPublishDate desc"
+        );
 
-            // Query contents through Content Tool
-            final List<ContentMap> results = contentTool.pull(
-            	"+structurename:news +(conhost:"+defaultHost.getIdentifier()+" conhost:system_host) +working:true", 6, "score News.sysPublishDate desc"
-            );
-
-            // Ensure that every returned content is in Spanish Language
-            Assert.assertFalse(results.isEmpty());
-            for(ContentMap cm : results) {
-    	    	Assert.assertEquals(cm.getContentObject().getLanguageId(), languageId);
-            }
-	    } finally {
-
-	    	// Clean-up contents (delete dummy "News" content)
-	    	contentletDataGen.remove(contentlet);
-	    }
+        // Ensure that every returned content is in Spanish Language
+        Assert.assertFalse(results.isEmpty());
+        for (ContentMap cm : results) {
+            Assert.assertEquals(cm.getContentObject().getLanguageId(), languageId);
+        }
     }
 
     @Test
     public void testPullRelated() throws DotDataException, DotSecurityException {
 
-        ContentType parentContentType = null;
-        ContentType childContentType = null;
-
         final long time = System.currentTimeMillis();
 
-        try {
-            //creates parent content type
-            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+        //creates parent content type
+        ContentType parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
 
-            //creates child content type
-            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+        //creates child content type
+        ContentType childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
-            Field field = createField(childContentType.variable(), parentContentType.id(),
-                    childContentType.variable(),
-                    String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()));
+        Field field = createField(childContentType.variable(), parentContentType.id(),
+                childContentType.variable(),
+                String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()));
 
-            //One side of the relationship is set parentContentType --> childContentType
-            field = fieldAPI.save(field, user);
+        //One side of the relationship is set parentContentType --> childContentType
+        field = fieldAPI.save(field, user);
 
-            //creates a new parent contentlet
-            ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
-            final Contentlet parentContentlet = contentletDataGen.languageId(defaultLanguage.getId())
-                    .nextPersisted();
+        //creates a new parent contentlet
+        ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
+        final Contentlet parentContentlet = contentletDataGen.languageId(defaultLanguage.getId())
+                .nextPersisted();
 
-            //creates children contentlets
-            contentletDataGen = new ContentletDataGen(childContentType.id());
-            final Contentlet childContentlet1 = contentletDataGen.languageId(defaultLanguage.getId())
-                    .nextPersisted();
+        //creates children contentlets
+        contentletDataGen = new ContentletDataGen(childContentType.id());
+        final Contentlet childContentlet1 = contentletDataGen.languageId(defaultLanguage.getId())
+                .nextPersisted();
 
-            final Contentlet childContentlet2 = contentletDataGen.languageId(defaultLanguage.getId())
-                    .nextPersisted();
+        final Contentlet childContentlet2 = contentletDataGen.languageId(defaultLanguage.getId())
+                .nextPersisted();
 
-            final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + field.variable();
+        final String fullFieldVar =
+                parentContentType.variable() + StringPool.PERIOD + field.variable();
 
-            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+        final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
-            //relates parent contentlet with the child contentlet
-            contentletAPI.relateContent(parentContentlet, relationship,
-                    CollectionsUtils.list(childContentlet1, childContentlet2), user, false);
+        //relates parent contentlet with the child contentlet
+        contentletAPI.relateContent(parentContentlet, relationship,
+                CollectionsUtils.list(childContentlet1, childContentlet2), user, false);
 
-            //refresh relationships in the ES index
-            contentletAPI.reindex(parentContentlet);
-            contentletAPI.reindex(childContentlet1);
-            contentletAPI.reindex(childContentlet2);
+        //refresh relationships in the ES index
+        contentletAPI.reindex(parentContentlet);
+        contentletAPI.reindex(childContentlet1);
+        contentletAPI.reindex(childContentlet2);
 
-            final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+        final ContentTool contentTool = getContentTool(defaultLanguage.getId());
 
-            final List<ContentMap> result = contentTool
-                    .pullRelated(relationship.getRelationTypeValue(),
-                            parentContentlet.getIdentifier(), "+working:true", false, -1, null);
+        final List<ContentMap> result = contentTool
+                .pullRelated(relationship.getRelationTypeValue(),
+                        parentContentlet.getIdentifier(), "+working:true", false, -1, null);
 
-            assertNotNull(result);
-            assertEquals(2, result.size());
-            assertTrue(result.stream().map(elem -> elem.getContentObject().getIdentifier())
-                    .allMatch(identifier -> identifier.equals(childContentlet1.getIdentifier())
-                            || identifier.equals(childContentlet2.getIdentifier())));
-
-        } finally {
-
-            //clean up environment
-            if (parentContentType != null && parentContentType.id() != null) {
-                contentTypeAPI.delete(parentContentType);
-            }
-
-            if (childContentType != null && childContentType.id() != null) {
-                contentTypeAPI.delete(childContentType);
-            }
-        }
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertTrue(result.stream().map(elem -> elem.getContentObject().getIdentifier())
+                .allMatch(identifier -> identifier.equals(childContentlet1.getIdentifier())
+                        || identifier.equals(childContentlet2.getIdentifier())));
     }
 
     @Test
     public void testPullRelatedField_success() throws DotDataException, DotSecurityException {
 
-        ContentType parentContentType = null;
-        ContentType childContentType = null;
-
         final long time = System.currentTimeMillis();
 
-        try {
-            //creates parent content type
-            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+        //creates parent content type
+        ContentType parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
 
-            //creates child content type
-            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+        //creates child content type
+        ContentType childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
-            Field field = createField(childContentType.variable(), parentContentType.id(),
-                    childContentType.variable(),
-                    String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()));
+        Field field = createField(childContentType.variable(), parentContentType.id(),
+                childContentType.variable(),
+                String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()));
 
-            //One side of the relationship is set parentContentType --> childContentType
-            field = fieldAPI.save(field, user);
+        //One side of the relationship is set parentContentType --> childContentType
+        field = fieldAPI.save(field, user);
 
-            //creates a new parent contentlet
-            ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
-            final Contentlet parentContentlet = contentletDataGen.languageId(defaultLanguage.getId())
-                    .nextPersisted();
+        //creates a new parent contentlet
+        ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
+        final Contentlet parentContentlet = contentletDataGen.languageId(defaultLanguage.getId())
+                .nextPersisted();
 
-            //creates a new child contentlet
-            contentletDataGen = new ContentletDataGen(childContentType.id());
-            final Contentlet childContentlet = contentletDataGen.languageId(defaultLanguage.getId())
-                    .nextPersisted();
+        //creates a new child contentlet
+        contentletDataGen = new ContentletDataGen(childContentType.id());
+        final Contentlet childContentlet = contentletDataGen.languageId(defaultLanguage.getId())
+                .nextPersisted();
 
-            final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + field.variable();
+        final String fullFieldVar =
+                parentContentType.variable() + StringPool.PERIOD + field.variable();
 
-            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+        final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
-            //relates parent contentlet with the child contentlet
-            contentletAPI.relateContent(parentContentlet, relationship,
-                    CollectionsUtils.list(childContentlet), user, false);
+        //relates parent contentlet with the child contentlet
+        contentletAPI.relateContent(parentContentlet, relationship,
+                CollectionsUtils.list(childContentlet), user, false);
 
-            //refresh relationships in the ES index
-            contentletAPI.reindex(parentContentlet);
-            contentletAPI.reindex(childContentlet);
+        //refresh relationships in the ES index
+        contentletAPI.reindex(parentContentlet);
+        contentletAPI.reindex(childContentlet);
 
-            final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+        final ContentTool contentTool = getContentTool(defaultLanguage.getId());
 
-            final List<ContentMap> result = contentTool
-                    .pullRelatedField(
-                            parentContentlet.getIdentifier(), fullFieldVar,"+working:true");
+        final List<ContentMap> result = contentTool
+                .pullRelatedField(
+                        parentContentlet.getIdentifier(), fullFieldVar, "+working:true");
 
-            assertNotNull(result);
-            assertEquals(1, result.size());
-            assertEquals(childContentlet.getIdentifier(),result.get(0).getContentObject().getIdentifier());
-
-        } finally {
-            try {
-
-                //clean up environment
-                if (parentContentType != null && parentContentType.id() != null) {
-                    contentTypeAPI.delete(parentContentType);
-                }
-
-                if (childContentType != null && childContentType.id() != null) {
-                    contentTypeAPI.delete(childContentType);
-                }
-            }catch (Exception e) {e.printStackTrace();}
-        }
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(childContentlet.getIdentifier(),
+                result.get(0).getContentObject().getIdentifier());
     }
 
     @Test(expected = RuntimeException.class)
     public void testPullRelatedField_whenInvalidFieldIsSent_throwsAnException()
             throws DotDataException, DotSecurityException {
-        ContentType parentContentType = null;
-        ContentType childContentType = null;
 
         final long time = System.currentTimeMillis();
 
-        try {
-            //creates parent content type
-            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+        //creates parent content type
+        ContentType parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
 
-            //creates child content type
-            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+        //creates child content type
+        ContentType childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
-            Field field = createField(childContentType.variable(), parentContentType.id(),
-                    childContentType.variable(),
-                    String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()));
+        Field field = createField(childContentType.variable(), parentContentType.id(),
+                childContentType.variable(),
+                String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()));
 
-            //One side of the relationship is set parentContentType --> childContentType
-            field = fieldAPI.save(field, user);
+        //One side of the relationship is set parentContentType --> childContentType
+        field = fieldAPI.save(field, user);
 
-            //creates a new parent contentlet
-            ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
-            final Contentlet parentContenlet = contentletDataGen.languageId(defaultLanguage.getId())
-                    .nextPersisted();
+        //creates a new parent contentlet
+        ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
+        final Contentlet parentContenlet = contentletDataGen.languageId(defaultLanguage.getId())
+                .nextPersisted();
 
-            final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+        final ContentTool contentTool = getContentTool(defaultLanguage.getId());
 
-            contentTool.pullRelatedField(
-                            parentContenlet.getIdentifier(), field.variable(),"+working:true");
-
-        } finally {
-
-            //clean up environment
-            if (parentContentType != null && parentContentType.id() != null) {
-                contentTypeAPI.delete(parentContentType);
-            }
-
-            if (childContentType != null && childContentType.id() != null) {
-                contentTypeAPI.delete(childContentType);
-            }
-        }
+        contentTool.pullRelatedField(
+                parentContenlet.getIdentifier(), field.variable(), "+working:true");
     }
 
     @Test
@@ -344,76 +290,56 @@ public class ContentToolTest extends IntegrationTestBase {
     public void testPullRelatedContent_whenRelationshipFieldExists(final TestCase testCase)
             throws DotSecurityException, DotDataException {
 
-        ContentType parentContentType = null;
-        ContentType childContentType = null;
-
         final long time = System.currentTimeMillis();
 
-        try {
-            //creates parent content type
-            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+        //creates parent content type
+        ContentType parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
 
-            //creates child content type
-            childContentType = createAndSaveSimpleContentType("childContentType" + time);
+        //creates child content type
+        ContentType childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
-            Field parentField = createField(childContentType.variable(), parentContentType.id(),
-                    childContentType.variable(), String.valueOf(testCase.cardinality));
+        Field parentField = createField(childContentType.variable(), parentContentType.id(),
+                childContentType.variable(), String.valueOf(testCase.cardinality));
 
-            //One side of the relationship is set parentContentType --> childContentType
-            parentField = fieldAPI.save(parentField, user);
+        //One side of the relationship is set parentContentType --> childContentType
+        parentField = fieldAPI.save(parentField, user);
 
-            final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + parentField.variable();
+        final String fullFieldVar =
+                parentContentType.variable() + StringPool.PERIOD + parentField.variable();
 
-            Field childField = createField(parentContentType.variable(), childContentType.id(),
-                    fullFieldVar, String.valueOf(testCase.cardinality));
+        Field childField = createField(parentContentType.variable(), childContentType.id(),
+                fullFieldVar, String.valueOf(testCase.cardinality));
 
-            //The other side of the relationship is set childContentType --> parentContentType
-            childField = fieldAPI.save(childField, user);
+        //The other side of the relationship is set childContentType --> parentContentType
+        childField = fieldAPI.save(childField, user);
 
-            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+        final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
-            //creates a new parent contentlet
-            ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
-            Contentlet parentContentlet = contentletDataGen.languageId(defaultLanguage.getId())
-                    .nextPersisted();
+        //creates a new parent contentlet
+        ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
+        Contentlet parentContentlet = contentletDataGen.languageId(defaultLanguage.getId())
+                .nextPersisted();
 
-            //creates a new child contentlet
-            contentletDataGen = new ContentletDataGen(childContentType.id());
-            Contentlet childContentlet = contentletDataGen.languageId(defaultLanguage.getId())
-                    .nextPersisted();
+        //creates a new child contentlet
+        contentletDataGen = new ContentletDataGen(childContentType.id());
+        Contentlet childContentlet = contentletDataGen.languageId(defaultLanguage.getId())
+                .nextPersisted();
 
-            //relates parent contentlet with the child contentlet
-            contentletAPI.relateContent(parentContentlet, relationship,
-                    CollectionsUtils.list(childContentlet), user, false);
+        //relates parent contentlet with the child contentlet
+        contentletAPI.relateContent(parentContentlet, relationship,
+                CollectionsUtils.list(childContentlet), user, false);
 
-            //refresh relationships in the ES index
-            contentletAPI.reindex(parentContentlet);
-            contentletAPI.reindex(childContentlet);
+        //refresh relationships in the ES index
+        contentletAPI.reindex(parentContentlet);
+        contentletAPI.reindex(childContentlet);
 
-            //pull and validate child
-            validateRelationshipSide(testCase.childExpectedType, parentField, parentContentlet,
-                    childContentlet);
+        //pull and validate child
+        validateRelationshipSide(testCase.childExpectedType, parentField, parentContentlet,
+                childContentlet);
 
-            //pull and validate parent
-            validateRelationshipSide(testCase.parentExpectedType, childField, childContentlet,
-                    parentContentlet);
-
-        } finally {
-
-            try {
-                //clean up environment
-                if (parentContentType != null && parentContentType.id() != null) {
-                    contentTypeAPI.delete(parentContentType);
-                }
-
-                if (childContentType != null && childContentType.id() != null) {
-                    contentTypeAPI.delete(childContentType);
-                }
-            }catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        //pull and validate parent
+        validateRelationshipSide(testCase.parentExpectedType, childField, childContentlet,
+                parentContentlet);
     }
 
     private void validateRelationshipSide(final Class expectedType, final Field field,

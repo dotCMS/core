@@ -32,6 +32,7 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -276,8 +277,8 @@ public class SiteResourceTest extends UnitTestBase {
      *
      * @return
      */
-    private PaginatedArrayList<Host> getSite() {
-        List<Host> temp = list(new Host(new Contentlet(mapAll(
+    private PaginatedArrayList<Host> getSite() throws DotDataException {
+        Contentlet contentlet = new Contentlet(mapAll(
                 map(
                         "hostName", "system.dotcms.com",
                         "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utru0",
@@ -309,7 +310,11 @@ public class SiteResourceTest extends UnitTestBase {
                         "isSystemHost", true,
                         "sortOrder", 0,
                         "modUser", "dotcms.org.1"
-                )))) {
+                )));
+
+        contentlet = Mockito.spy(contentlet);
+        Mockito.doNothing().when(contentlet).setTags();
+        final List<Host> temp = list(new Host(contentlet) {
                                    @Override
                                    public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
                                        return false;
@@ -327,7 +332,7 @@ public class SiteResourceTest extends UnitTestBase {
      * @return
      */
     private PaginatedArrayList<Host> getSites() {
-        List<Host> temp = list(new Host(new Contentlet(mapAll(
+        final List<Contentlet> contentlets = list(new Contentlet(mapAll(
                 map(
                         "hostName", "demo.dotcms.com",
                         "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utmu0",
@@ -361,12 +366,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "sortOrder", 0,
                         "modUser", "dotcms.org.1"
                 )
-                               ))) {
-                                   @Override
-                                   public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
-                                       return false;
-                                   }
-                               }, new Host(new Contentlet(mapAll(
+        )), new Contentlet(mapAll(
                 map(
                         "hostName", "system.dotcms.com",
                         "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utru0",
@@ -398,13 +398,25 @@ public class SiteResourceTest extends UnitTestBase {
                         "isSystemHost", true,
                         "sortOrder", 0,
                         "modUser", "dotcms.org.1"
-                )))) {
-                                   @Override
-                                   public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
-                                       return false;
-                                   }
-                               }
-        );
+                ))));
+
+        final List<Host> temp = new ArrayList<>();
+        contentlets.forEach(contentlet -> {
+            contentlet = Mockito.spy(contentlet);
+            try {
+                Mockito.doNothing().when(contentlet).setTags();
+            } catch (DotDataException e) {
+                throw new RuntimeException(e);
+            }
+            temp.add(new Host(contentlet) {
+                @Override
+                public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
+                    return false;
+                }
+            });
+
+        });
+
         PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
         hosts.addAll(temp);
         hosts.setTotalResults(2);
