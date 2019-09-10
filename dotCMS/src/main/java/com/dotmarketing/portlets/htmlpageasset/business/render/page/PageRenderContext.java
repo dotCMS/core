@@ -8,7 +8,7 @@ public class PageRenderContext {
     private Long languageId;
     private User user;
 
-    public PageRenderContext(PageMode mode, User user) {
+    public PageRenderContext(final PageMode mode, final User user) {
         this(mode, null, user);
     }
 

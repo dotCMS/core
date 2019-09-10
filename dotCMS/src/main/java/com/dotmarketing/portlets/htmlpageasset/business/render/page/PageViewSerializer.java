@@ -1,9 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -12,7 +10,6 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.google.common.collect.ImmutableMap;

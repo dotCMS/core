@@ -6,7 +6,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
-import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -41,7 +40,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.*;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 public final class PageRenderVelocityContextUtil {
 
@@ -247,7 +245,14 @@ public final class PageRenderVelocityContextUtil {
         return contextMap;
     }
 
-    private static List<String> getContentsId(PageMode mode, User user, PageContent pageContents, Container container, String uniqueId, String personalizationToken) {
+    private static List<String> getContentsId(
+            final PageMode mode,
+            final User user,
+            final PageContent pageContents,
+            final Container container,
+            final String uniqueId,
+            final String personalizationToken) {
+
         final PageRenderContext pageRenderContext = new PageRenderContext(mode, user);
         return pageContents.getContents(container, uniqueId, personalizationToken, pageRenderContext)
                 .stream()
@@ -260,11 +265,14 @@ public final class PageRenderVelocityContextUtil {
             final IHTMLPage htmlPage) throws DotDataException, DotSecurityException {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        final boolean live =
-                request != null && request.getSession(false) != null && request.getSession().getAttribute("tm_date") != null ?
+        final boolean live = isTmDate(request) ?
                         false :
                         mode.showLive;
         return multiTreeAPI.getPageMultiTrees(htmlPage, live);
+    }
+
+    private static boolean isTmDate(HttpServletRequest request) {
+        return request != null && request.getSession(false) != null && request.getSession().getAttribute("tm_date") != null;
     }
 
     private static String getContainerUserId (final Container container) {

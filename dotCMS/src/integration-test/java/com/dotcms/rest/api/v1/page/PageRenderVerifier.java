@@ -45,7 +45,9 @@ public final class PageRenderVerifier {
         checkContent(pageContainers, pageRenderTest);
     }
 
-    private static void checkPermissionAttributes(PageView pageView, PageRenderTest pageRenderTest, User user) throws DotDataException {
+    private static void checkPermissionAttributes(final PageView pageView, final PageRenderTest pageRenderTest,
+                                                  final User user) throws DotDataException {
+
         final boolean haveWritepermission = APILocator.getPermissionAPI().doesUserHavePermission(pageRenderTest.getPage(),
                 PermissionAPI.PERMISSION_WRITE, user, false);
         assertEquals(haveWritepermission, pageView.getPageInfo().isCanEdit());
@@ -74,7 +76,7 @@ public final class PageRenderVerifier {
             }
 
             int nPageViewContents = 0;
-            for (Collection<Contentlet> pageViewContents : contentlets.values()) {
+            for (final Collection<Contentlet> pageViewContents : contentlets.values()) {
                 nPageViewContents += pageViewContents.size();
             }
 

@@ -20,7 +20,7 @@ import java.util.*;
 
 
 public class PageRenderTest {
-    private final HashMap<String, Container> containers = new HashMap<>();
+    private final Map<String, Container> containers = new HashMap<>();
     private final ContentTest contents = new ContentTest();
     private Template template;
     private HTMLPageAsset page;

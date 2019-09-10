@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 public class PageContent {
     public static String CONTAINER_UUID_PREFIX = "uuid-";
     private Table<String, String, Set<PersonalizedContentlet>> pageContents;
-    private List<Container> containers;
+    private final List<Container> containers;
 
     public PageContent(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException {
@@ -347,7 +347,7 @@ public class PageContent {
                     ? contentletOpt.get()
                     : APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId);
 
-        } catch (final Exception e) {
+        } catch (final DotDataException | DotSecurityException e) {
             return null;
         }
     }
@@ -357,7 +357,7 @@ public class PageContent {
 
         return this.getUUID(container.getIdentifier()).stream().collect(
                 Collectors.toMap(
-                        (String uuid) ->  (uuid.startsWith(CONTAINER_UUID_PREFIX)) ? uuid : CONTAINER_UUID_PREFIX + uuid,
+                        (String uuid) ->  uuid.startsWith(CONTAINER_UUID_PREFIX) ? uuid : CONTAINER_UUID_PREFIX + uuid,
                         (String uuid) -> getContents(container, uuid, personaId, pageRenderContext)
                 )
         );

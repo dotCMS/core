@@ -241,7 +241,7 @@ public class HTMLPageAssetRenderedBuilder {
     }
 
     @NotNull
-    public static  String getPersonaTag(IPersona persona) {
+    public static  String getPersonaTag(final IPersona persona) {
         return Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag();
     }
 

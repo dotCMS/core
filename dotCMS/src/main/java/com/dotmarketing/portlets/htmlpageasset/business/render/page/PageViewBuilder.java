@@ -1,14 +1,10 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import com.dotcms.rendering.velocity.services.PageRenderVelocityContextUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
-import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRenderedBuilder;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
-import org.apache.velocity.tools.view.context.ChainedContext;
 
 import java.util.Collection;
 
@@ -64,7 +60,7 @@ public class PageViewBuilder {
         return this;
     }
 
-    public PageViewBuilder setViewAs(ViewAsPageStatus viewAs) {
+    public PageViewBuilder setViewAs(final ViewAsPageStatus viewAs) {
         this.viewAs = viewAs;
         return this;
     }
