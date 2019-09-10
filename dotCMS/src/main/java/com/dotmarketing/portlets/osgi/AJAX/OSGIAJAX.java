@@ -212,6 +212,9 @@ public class OSGIAJAX extends OSGIBaseAJAX {
 
     public void restart ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
 
+        //Remove portlets and actionlets references that were removed directly from the file system
+        remove();
+
         //First we need to stop the framework
         OSGIUtil.getInstance().stopFramework();
 
