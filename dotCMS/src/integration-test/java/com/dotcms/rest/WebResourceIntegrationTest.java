@@ -21,6 +21,8 @@ public class WebResourceIntegrationTest {
 
   private static final String WRITE = "WRITE";
   private static final String READ = "READ";
+  private static final String NONE = "None";
+
   private HttpServletResponse response;
   private User frontEndUser = null;
   private User backEndUser = null;
@@ -114,7 +116,7 @@ public class WebResourceIntegrationTest {
   
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_anon_access_server_if_server_set_to_none() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "None");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, NONE);
     final InitDataObject initDataObject = new WebResource.InitBuilder()
         .requiredFrontendUser(true)
         .requiredAnonAccess(AnonymousAccess.READ)
@@ -124,7 +126,7 @@ public class WebResourceIntegrationTest {
 
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_front_end_access_server_if_only_allowBackendUser() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "None");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, NONE);
     final InitDataObject initDataObject = new WebResource.InitBuilder()
           .requiredBackendUser(true)
           .requestAndResponse(frontEndRequest(), response)
@@ -133,7 +135,7 @@ public class WebResourceIntegrationTest {
 
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_backEnd_access_server_if_only_allowFrontEndUser() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "None");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, NONE);
     final InitDataObject initDataObject = new WebResource.InitBuilder()
         .requiredFrontendUser(true)
         .requestAndResponse(backEndRequest(), response)
@@ -142,7 +144,7 @@ public class WebResourceIntegrationTest {
 
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_apiUser_access_server_if_only_allowFrontEndUser() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "None");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, NONE);
     final InitDataObject initDataObject = new WebResource.InitBuilder()
         .requiredFrontendUser(true)
         .requestAndResponse(apiRequest(), response)
