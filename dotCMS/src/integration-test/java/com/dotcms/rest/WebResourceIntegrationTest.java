@@ -1,29 +1,26 @@
 package com.dotcms.rest;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-
-import org.junit.Before;
-import org.junit.Test;
 
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.response.MockHttpResponse;
-import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.junit.Before;
+import org.junit.Test;
 
 public class WebResourceIntegrationTest {
 
-
+  private static final String WRITE = "WRITE";
+  private static final String READ = "READ";
   private HttpServletResponse response;
   private User frontEndUser = null;
   private User backEndUser = null;
@@ -55,128 +52,103 @@ public class WebResourceIntegrationTest {
     assertTrue("frontEndUser has frontEnd role", frontEndUser.isFrontendUser());
   }
 
-  private HttpServletRequest request() {
+  private HttpServletRequest anonymousRequest() {
     return new MockAttributeRequest(new MockHttpRequest("localhost", "/api/testing-web-resorce").request()).request();
   }
   
   private HttpServletRequest frontEndRequest() {
-    HttpServletRequest request = request();
+    final HttpServletRequest request = anonymousRequest();
     request.setAttribute(WebKeys.USER, frontEndUser);
     return request;
   }
   
   private HttpServletRequest backEndRequest() {
-    HttpServletRequest request = request();
+    final HttpServletRequest request = anonymousRequest();
     request.setAttribute(WebKeys.USER, backEndUser);
     return request;
   }
   
   private HttpServletRequest apiRequest() {
-    HttpServletRequest request = request();
+    final HttpServletRequest request = anonymousRequest();
     request.setAttribute(WebKeys.USER, apiUser);
     return request;
   }
   
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_anon_access_default() throws Exception {
-
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
-
-      InitDataObject initDataObject = new WebResource
-          .InitBuilder()
-          .requestAndResponse(request(), response).init();
-
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, WRITE);
+    InitDataObject initDataObject = new WebResource
+        .InitBuilder()
+        .requestAndResponse(anonymousRequest(), response).init();
 
   }
   
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_anon_access_server_set_to_read_and_write_required() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "READ");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
     InitDataObject initDataObject =
         new WebResource.InitBuilder()
         .requiredAnonAccess(AnonymousAccess.WRITE)
-        .requestAndResponse(request(), response)
+        .requestAndResponse(anonymousRequest(), response)
         .init();
-
   }
   
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_anon_access_server_if_no_anon_access_set() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "READ");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
     final InitDataObject initDataObject = new WebResource.InitBuilder()
-        .allowFrontendUser(true)
-        .requestAndResponse(request(), response)
+        .requiredFrontendUser(true)
+        .requestAndResponse(anonymousRequest(), response)
         .init();
-
-
   }
-  
-  
+
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_anon_access_server_if_anon_access_set_NONE() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, WRITE);
     final InitDataObject initDataObject = new WebResource.InitBuilder()
-        .allowFrontendUser(true)
+        .requiredFrontendUser(true)
         .requiredAnonAccess(AnonymousAccess.NONE)
-        .requestAndResponse(request(), response)
+        .requestAndResponse(anonymousRequest(), response)
         .init();
-
-
   }
   
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_anon_access_server_if_server_set_to_none() throws Exception {
     Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "None");
     final InitDataObject initDataObject = new WebResource.InitBuilder()
-        .allowFrontendUser(true)
+        .requiredFrontendUser(true)
         .requiredAnonAccess(AnonymousAccess.READ)
-        .requestAndResponse(request(), response)
+        .requestAndResponse(anonymousRequest(), response)
         .init();
   }
-  
-  
-  @Test
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_front_end_access_server_if_only_allowBackendUser() throws Exception {
     Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "None");
-    Exception exception = null;
-    try {
-    
-      final InitDataObject initDataObject = new WebResource.InitBuilder()
-          .allowBackendUser(true)
+    final InitDataObject initDataObject = new WebResource.InitBuilder()
+          .requiredBackendUser(true)
           .requestAndResponse(frontEndRequest(), response)
           .init();
-
-    }catch(Exception e) {
-      exception=e;
-    }
-    
-    assertTrue("we MUST have an exception", exception!=null);
-    assertTrue("we need a SecurityException, got a " + exception, exception instanceof SecurityException);
-    
   }
-  
-  
+
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_backEnd_access_server_if_only_allowFrontEndUser() throws Exception {
     Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "None");
     final InitDataObject initDataObject = new WebResource.InitBuilder()
-        .allowFrontendUser(true)
+        .requiredFrontendUser(true)
         .requestAndResponse(backEndRequest(), response)
         .init();
-
   }
-  
+
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_apiUser_access_server_if_only_allowFrontEndUser() throws Exception {
     Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "None");
     final InitDataObject initDataObject = new WebResource.InitBuilder()
-        .allowFrontendUser(true)
+        .requiredFrontendUser(true)
         .requestAndResponse(apiRequest(), response)
         .init();
-
   }
-  
-  
+
   @Test
   public void allow_front_end_by_defualt() throws Exception {
 
@@ -184,7 +156,7 @@ public class WebResourceIntegrationTest {
         new WebResource.InitBuilder()
         .requestAndResponse(frontEndRequest(), response)
         .init();
-    assertTrue("Frontend should be allowed", initDataObject.getUser().equals(frontEndUser));
+    assertEquals("Frontend should be allowed", initDataObject.getUser(), frontEndUser);
 
   }
   
@@ -195,139 +167,174 @@ public class WebResourceIntegrationTest {
         new WebResource.InitBuilder()
         .requestAndResponse(backEndRequest(), response)
         .init();
-    assertTrue("backend should be allowed", initDataObject.getUser().equals(backEndUser));
+    assertEquals("backend should be allowed", initDataObject.getUser(), backEndUser);
 
   }
   
   @Test
   public void allow_back_end_if_only_USER_ID_set_in_request() throws Exception {
 
-    HttpServletRequest request = request();
+    final HttpServletRequest request = anonymousRequest();
     request.setAttribute(WebKeys.USER_ID, backEndUser.getUserId());
+
     InitDataObject initDataObject =
         new WebResource.InitBuilder()
         .requestAndResponse(request, response)
         .init();
-    assertTrue("backend should be allowed", initDataObject.getUser().equals(backEndUser));
+    assertEquals("backend should be allowed", initDataObject.getUser(), backEndUser);
 
   }
   
-  
+
   @Test
   public void allow_anon_access_if_server_set_to_write() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, WRITE);
     InitDataObject initDataObject =
         new WebResource.InitBuilder()
         .requiredAnonAccess(AnonymousAccess.WRITE)
-        .requestAndResponse(request(), response)
+        .requestAndResponse(anonymousRequest(), response)
         .init();
-    assertTrue("Anonymous should be allowed", initDataObject.getUser().equals(cmsAnon));
+    assertEquals("Anonymous should be allowed", initDataObject.getUser(), cmsAnon);
 
   }
   
   @Test
   public void allow_anon_access_if_server_set_to_write_and_read_required() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, WRITE);
     InitDataObject initDataObject =
         new WebResource.InitBuilder()
         .requiredAnonAccess(AnonymousAccess.READ)
-        .requestAndResponse(request(), response)
+        .requestAndResponse(anonymousRequest(), response)
         .init();
-    assertTrue("Anonymous should be allowed", initDataObject.getUser().equals(cmsAnon));
+    assertEquals("Anonymous should be allowed", initDataObject.getUser(), cmsAnon);
 
   }
   
   @Test
   public void allow_anon_access_if_server_set_to_write_and_read_required_with_required_roles() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, WRITE);
     InitDataObject initDataObject =
         new WebResource.InitBuilder()
         .requiredAnonAccess(AnonymousAccess.READ)
-        .allowBackendUser(true)
-        .allowFrontendUser(true)
-        .requestAndResponse(request(), response)
+        .requiredBackendUser(true)
+        .requiredFrontendUser(true)
+        .requestAndResponse(anonymousRequest(), response)
         .init();
-    assertTrue("Anonymous should be allowed", initDataObject.getUser().equals(cmsAnon));
+    assertEquals("Anonymous should be allowed", initDataObject.getUser(), cmsAnon);
 
   }
   
   @Test
   public void allow_anon_access_if_server_set_to_write_and_frontend_user() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, WRITE);
     InitDataObject initDataObject =
         new WebResource.InitBuilder()
         .requiredAnonAccess(AnonymousAccess.WRITE)
-        .allowFrontendUser(true)
-        .requestAndResponse(request(), response)
+        .requiredFrontendUser(true)
+        .requestAndResponse(anonymousRequest(), response)
         .init();
-    assertTrue("Anonymous should be allowed", initDataObject.getUser().equals(cmsAnon));
+    assertEquals("Anonymous should be allowed", initDataObject.getUser(), cmsAnon);
 
   }
-  
+
   @Test
   public void allow_anon_access_if_server_set_to_read_and_frontend_user() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "READ");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
     InitDataObject initDataObject =
         new WebResource.InitBuilder()
         .requiredAnonAccess(AnonymousAccess.READ)
-        .allowFrontendUser(true)
-        .requestAndResponse(request(), response)
+        .requiredFrontendUser(true)
+        .requestAndResponse(anonymousRequest(), response)
         .init();
-    assertTrue("Anonymous should be allowed", initDataObject.getUser().equals(cmsAnon));
+    assertEquals("Anonymous should be allowed", initDataObject.getUser(), cmsAnon);
 
   }
-  
+
   @Test
   public void allow_frontEnd_access_if_server_set_to_read_and_frontend_user() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "READ");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
     InitDataObject initDataObject =
         new WebResource.InitBuilder()
         .requiredAnonAccess(AnonymousAccess.READ)
-        .allowFrontendUser(true)
+        .requiredFrontendUser(true)
         .requestAndResponse(frontEndRequest(), response)
         .init();
-    assertTrue("frontEndUser should be allowed", initDataObject.getUser().equals(frontEndUser));
+    assertEquals("frontEndUser should be allowed", initDataObject.getUser(), frontEndUser);
 
   }
-  
+
   @Test
   public void allow_backEnd_access_if_server_set_to_read_and_bakckend_user() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "READ");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
     InitDataObject initDataObject =
         new WebResource.InitBuilder()
         .requiredAnonAccess(AnonymousAccess.READ)
-        .allowBackendUser(true)
+        .requiredBackendUser(true)
         .requestAndResponse(backEndRequest(), response)
         .init();
-    assertTrue("backEnd should be allowed", initDataObject.getUser().equals(backEndUser));
+    assertEquals("backEnd should be allowed", initDataObject.getUser(), backEndUser);
 
   }
+
   @Test
   public void allow_backEnd_access_if_both_allow_front_and_backend_users() throws Exception {
-    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "READ");
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
     InitDataObject initDataObject =
         new WebResource.InitBuilder()
         .requiredAnonAccess(AnonymousAccess.READ)
-        .allowFrontendUser(true)
-        .allowBackendUser(true)
+        .requiredFrontendUser(true)
+        .requiredBackendUser(true)
         .requestAndResponse(backEndRequest(), response)
         .init();
-    assertTrue("backEnd should be allowed", initDataObject.getUser().equals(backEndUser));
+    assertEquals("backEnd should be allowed", initDataObject.getUser(), backEndUser);
 
   }
-  
-  
+
   @Test
   public void allow_api_user_access_if_server_set_to_nothing() throws Exception {
     InitDataObject initDataObject =
         new WebResource.InitBuilder()
         .requestAndResponse(apiRequest(), response)
         .init();
-    assertTrue("apiUser should be allowed", initDataObject.getUser().equals(apiUser));
+    assertEquals("apiUser should be allowed", initDataObject.getUser(), apiUser);
 
   }
-  
-  
-  
-  
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void disallow_api_user_when_required_both_frontend_and_backend() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
+    InitDataObject initDataObject =
+            new WebResource.InitBuilder()
+                    .requiredAnonAccess(AnonymousAccess.READ)
+                    .requiredFrontendUser(true)
+                    .requiredBackendUser(true)
+                    .requestAndResponse(apiRequest(), response)
+                    .init();
+
+  }
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void disallow_anon_when_required_both_frontend_and_backend() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
+    InitDataObject initDataObject =
+            new WebResource.InitBuilder()
+                    .requiredFrontendUser(false)
+                    .requiredBackendUser(true)
+                    .requestAndResponse(anonymousRequest(), response)
+                    .init();
+
+  }
+
+  @Test(expected = com.dotcms.rest.exception.SecurityException.class)
+  public void disallow_anon_when_required_frontend_but_not_backend() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, READ);
+    InitDataObject initDataObject =
+            new WebResource.InitBuilder()
+                    .requiredFrontendUser(true)
+                    .requiredBackendUser(false)
+                    .requestAndResponse(anonymousRequest(), response)
+                    .init();
+
+  }
+
 }

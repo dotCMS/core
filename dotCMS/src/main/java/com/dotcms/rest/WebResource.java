@@ -795,8 +795,8 @@ public  class WebResource {
             return this;
         }
 
-        public InitBuilder allowBackendUser(final boolean allowBackendUser) {
-            if (allowBackendUser) {
+        public InitBuilder requiredBackendUser(final boolean requiredBackendUser) {
+            if (requiredBackendUser) {
                 requiredRolesSet.add(Role.DOTCMS_BACK_END_USER);
             } else {
                 requiredRolesSet.remove(Role.DOTCMS_BACK_END_USER);
@@ -804,8 +804,8 @@ public  class WebResource {
             return this;
         }
 
-        public InitBuilder allowFrontendUser(final boolean allowFrontendUser) {
-            if (allowFrontendUser) {
+        public InitBuilder requiredFrontendUser(final boolean requiredFrontendUser) {
+            if (requiredFrontendUser) {
                 requiredRolesSet.add(Role.DOTCMS_FRONT_END_USER);
             } else {
                 requiredRolesSet.remove(Role.DOTCMS_FRONT_END_USER);

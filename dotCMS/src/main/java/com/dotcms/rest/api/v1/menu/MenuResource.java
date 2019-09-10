@@ -21,12 +21,10 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.WebKeys;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -92,7 +90,7 @@ public class MenuResource implements Serializable {
 
 	    final User user = new WebResource.InitBuilder(this.webResource)
 	    .requestAndResponse(httpServletRequest, httpServletResponse)
-	    .allowBackendUser(true)
+	    .requiredBackendUser(true)
 	    .rejectWhenNoUser(true)
 	    .init().getUser();
 	    
