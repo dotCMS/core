@@ -454,7 +454,7 @@ public class PageResourceTest {
         final Container container = pageRenderTest.getFirstContainer();
         pageRenderTest.createContent(container);
 
-        final User limitedUser = createLimitedUser(page);
+        createLimitedUser(page);
 
         pageResource.render(request, this.response, page.getURI(), PageMode.EDIT_MODE.toString(),
                 null, String.valueOf(languageId), null);
