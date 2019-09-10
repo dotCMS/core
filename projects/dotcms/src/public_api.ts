@@ -12,7 +12,7 @@ import { DotCMSConfigurationParams, DotCMSFormConfig } from './lib/models';
 import { DotApiContent } from './lib/api/DotApiContent';
 import { DotApiContentType } from './lib/api/DotApiContentType';
 import { DotApiForm } from './lib/api/DotApiForm';
-import { defineCustomElements } from 'projects/dotcms-field-elements/dist/loader';
+import { defineCustomElements } from 'dotcms-field-elements/dist/loader';
 
 export interface DotCMSApp {
     auth: DotApiAuthorization;

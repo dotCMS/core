@@ -3,7 +3,7 @@ import { DotApiContentType } from './DotApiContentType';
 import { DotApiContent } from './DotApiContent';
 
 // This import allow us to use the type for the form: HTMLDotFormElement
-import { Components as _Components } from 'projects/dotcms-field-elements/dist/types/components';
+import { Components as _Components } from 'dotcms-field-elements/dist/types/components';
 import { DotCMSContentTypeLayoutRow, DotCMSContentType } from 'dotcms-models';
 
 /**
@@ -36,6 +36,15 @@ export class DotApiForm {
         container.append(formTag);
     }
 
+    async create() {
+        this.contentType =
+            this.contentType || (await this.dotApiContentType.get(this.formConfig.identifier));
+        this.layout = this.contentType.layout;
+
+        const formTag = this.createForm(this.layout);
+        return formTag;
+    }
+
     private shouldSetFormLabel(
         label: string,
         labelConfig: { submit?: string; reset?: string }
@@ -54,6 +63,7 @@ export class DotApiForm {
 
         dotFormEl.layout = layout;
         dotFormEl.fieldsToShow = this.formConfig.fieldsToShow;
+        dotFormEl.variable = this.formConfig.contentType;
 
         dotFormEl.addEventListener('onSubmit', (e: CustomEvent) => {
             e.preventDefault();

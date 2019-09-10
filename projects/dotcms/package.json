@@ -1,11 +1,12 @@
 {
   "name": "dotcms",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "scripts": {
     "doc": "typedoc src/lib --options typedoc.json"
   },
   "peerDependencies": {
     "node-fetch": "^2.3.0",
-    "dotcms-models": "^0.0.3"
+    "dotcms-models": "0.0.8",
+    "dotcms-field-elements": "0.0.15"
   }
 }
