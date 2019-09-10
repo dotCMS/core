@@ -30,8 +30,16 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestWorkflowUtils;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
@@ -40,7 +48,6 @@ import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdCache;
@@ -95,7 +102,14 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -5504,9 +5518,10 @@ public class ContentletAPITest extends ContentletBaseTest {
             Map<String, Object> innerMap = new HashMap<>(newsContent.getMap());
             newsContent = contentletAPI.checkin(newsContent, user,false);
             Contentlet checkedoutNewsContent = contentletAPI.checkout(newsContent.getInode(), user, false);
-            assertNull(checkedoutNewsContent.getStringProperty("tags"));
+            assertEquals(checkedoutNewsContent.getStringProperty("tags"), innerMap.get("tags"));
+            innerMap.put("tags", "newTag");
             contentletAPI.copyProperties(checkedoutNewsContent, innerMap);
-            assertEquals(checkedoutNewsContent.getStringProperty("tags"), "test");
+            assertEquals(checkedoutNewsContent.getStringProperty("tags"), "newTag");
 
         } finally {
             try {
@@ -6114,8 +6129,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         HibernateUtil.evict(HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, beforeTouch.getInode()));
 
         final Set<String> inodes = Stream.of(beforeTouch).map(Contentlet::getInode).collect(Collectors.toSet());
-        int count = contentletAPI.updateModDate(inodes, user);
-        assertEquals("update count does not match",1, count);
+        contentletAPI.updateModDate(inodes, user);
 
         final Contentlet afterTouch = contentletAPI.find(beforeTouch.getInode(), APILocator.getUserAPI().getSystemUser(),false);
         assertEquals(beforeTouch.getInode(), afterTouch.getInode());
@@ -6484,22 +6498,23 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
             final Contentlet contentInEnglish = contentletDataGen.languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
-            Contentlet contentInSpanish = contentletDataGen.checkout(contentInEnglish);
+            Contentlet contentInSpanish = ContentletDataGen.checkout(contentInEnglish);
             contentInSpanish.setLanguageId(spanishLanguage.getId());
-            contentInSpanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
-            contentInSpanish = contentletDataGen.checkin(contentInSpanish);
+            contentInSpanish = ContentletDataGen.checkin(contentInSpanish);
 
             assertEquals(2,
                     contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
 
-            contentletDataGen.archive(contentInSpanish);
-            contentletDataGen.delete(contentInSpanish);
+            contentInSpanish.setIndexPolicy(IndexPolicy.FORCE);
+            ContentletDataGen.archive(contentInSpanish);
+            ContentletDataGen.delete(contentInSpanish);
 
             assertEquals(1,
                     contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
 
-            contentletDataGen.archive(contentInEnglish);
-            contentletDataGen.delete(contentInEnglish);
+            contentInEnglish.setIndexPolicy(IndexPolicy.FORCE);
+            ContentletDataGen.archive(contentInEnglish);
+            ContentletDataGen.delete(contentInEnglish);
 
             assertEquals(0,
                     contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
@@ -6510,5 +6525,4 @@ public class ContentletAPITest extends ContentletBaseTest {
             }
         }
     }
-
 }

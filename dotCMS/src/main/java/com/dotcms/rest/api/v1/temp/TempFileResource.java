@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.temp;
 
+import com.dotmarketing.util.UtilMethods;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -135,6 +136,12 @@ public class TempFileResource {
 
             if (!new SecurityUtils().validateReferer(request)) {
                 throw new BadRequestException("Invalid Origin or referer");
+            }
+            if(!UtilMethods.isSet(form.remoteUrl)){
+                throw new BadRequestException("No Url passed");
+            }
+            if (!tempApi.validUrl(form.remoteUrl)) {
+                throw new BadRequestException("Invalid url attempted for tempFile : " + form.remoteUrl);
             }
 
             final List<DotTempFile> tempFiles = new ArrayList<DotTempFile>();

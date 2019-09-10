@@ -136,7 +136,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
 
         final KeyValueAPI keyValueAPI = APILocator.getKeyValueAPI();
         final KeyValueCache cache = CacheLocator.getKeyValueCache();
-        final Contentlet contentlet = LocalTransaction.wrapReturn( ()->createTestKeyValueContent(key1, value1, englishLanguageId,
+        final Contentlet contentlet = LocalTransaction.wrapReturnWithListeners( ()->createTestKeyValueContent(key1, value1, englishLanguageId,
                 keyValueContentType, systemUser));
 
         Assert.assertTrue("Failed creating a new Contentlet using the Key/Value Content Type.",
@@ -151,7 +151,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
         Assert.assertNotNull("Key/Value cache MUST NOT be null.", cachedKeyValue);
 
         final String newValue = keyValue.getValue() + ".updatedvalue";
-        final Contentlet newContentlet = LocalTransaction.wrapReturn(
+        final Contentlet newContentlet = LocalTransaction.wrapReturnWithListeners(
                 ()->updateTestKeyValueContent(contentlet, keyValue.getKey(), newValue, englishLanguageId, keyValueContentType,systemUser));
         cachedKeyValue = cache
                 .get(key1, englishLanguageId, keyValueContentType.id(), true);

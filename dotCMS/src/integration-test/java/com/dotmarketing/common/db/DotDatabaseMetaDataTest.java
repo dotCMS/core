@@ -5,15 +5,15 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class DotDatabaseMetaDataTest extends BaseWorkflowIntegrationTest {
 
@@ -72,10 +72,14 @@ public class DotDatabaseMetaDataTest extends BaseWorkflowIntegrationTest {
         //alter table contentlet add constraint FK_structure_inode foreign key (structure_inode) references structure(inode);
         try (final Connection connection = DbConnectionFactory.getConnection()) {
             final Set<String> strings = new DotDatabaseMetaData().getColumnNames(connection, "contentlet");
-            Assert.assertTrue(strings.contains("inode"));
-            Assert.assertTrue(strings.contains("show_on_menu"));
-            Assert.assertTrue(strings.contains("title"));
-            Assert.assertTrue(strings.contains("mod_date"));
+
+            final Set<String> lowerStrings = strings.stream().map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            Assert.assertTrue(lowerStrings.contains("inode"));
+            Assert.assertTrue(lowerStrings.contains("show_on_menu"));
+            Assert.assertTrue(lowerStrings.contains("title"));
+            Assert.assertTrue(lowerStrings.contains("mod_date"));
         }
     }
 

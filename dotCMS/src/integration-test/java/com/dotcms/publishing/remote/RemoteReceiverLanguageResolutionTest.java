@@ -2,7 +2,6 @@ package com.dotcms.publishing.remote;
 
 import static com.dotcms.datagen.TestDataUtils.getSpanishLanguage;
 import static com.dotcms.datagen.TestDataUtils.getWikiLikeContentType;
-import static com.dotcms.publisher.business.PublisherTestUtil.cleanBundleEndpointEnv;
 import static com.dotcms.publisher.business.PublisherTestUtil.createEndpoint;
 import static com.dotcms.publisher.business.PublisherTestUtil.createEnvironment;
 import static com.dotcms.publisher.business.PublisherTestUtil.generateBundle;
@@ -40,6 +39,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -47,7 +47,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
@@ -66,8 +65,6 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.felix.framework.OSGIUtil;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -83,7 +80,6 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
     private static LanguageAPI languageAPI;
     private static ContentletAPI contentletAPI;
     private static User adminUser;
-    private static ContentType contentType;
 
     private static final String languagesSuffix = RandomStringUtils
             .random(3, true, true).toLowerCase();
@@ -119,18 +115,10 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
         host = new SiteDataGen().nextPersisted();
 
         adminUser = TestUserUtils.getAdminUser();
-        // Any CT should do it.
-        contentType = getWikiLikeContentType();
 
         //Make sure some default Languages exist
         getSpanishLanguage();
 
-    }
-
-    @AfterClass
-    public static void cleanUp() throws Exception {
-        //Stopping the OSGI framework
-        OSGIUtil.getInstance().stopFramework();
     }
 
     private Language newLanguageInstance(final String languageCode, final String countryCode,
@@ -147,6 +135,9 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
     @Test
     public void test_create_languages_create_bundle_then_publish_then_read_languages()
             throws Exception {
+
+        // Any CT should do it.
+        ContentType contentType = getWikiLikeContentType();
 
         final List<Language> newLanguages = new ImmutableList.Builder<Language>().
                 add(newLanguageInstance("eu" + languagesSuffix, "", "Basque", "")).
@@ -211,7 +202,7 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
             bundlePublisher.init(publisherConfig);
             bundlePublisher.process(null);
 
-            //extract and Test Results..
+            //extract and Test Results...
 
             for (final Language language : languages) {
                 assertNotNull(languageAPI
@@ -223,20 +214,12 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
         } finally {
 
-            for (final Contentlet contentlet : contentlets) {
-                contentletAPI.destroy(contentlet, adminUser, false );
-            }
-
-            for (final Language language : languages) {
-                languageAPI.deleteLanguage(language);
-            }
-
-            if (null != bundle && null != endpoint && null != environment) {
-                cleanBundleEndpointEnv(bundle, endpoint, environment);
-            }
-
             if (null != file) {
-                file.delete();
+                try {
+                    file.delete();
+                } catch (Exception e) {
+                    //Do nothing...
+                }
             }
         }
     }
@@ -245,6 +228,9 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
     @Test
     public void test_create_dupe_languages_create_bundle_then_publish_bundle_then_read_languages_verify_dupes_are_ignored()
             throws Exception {
+
+        // Any CT should do it.
+        ContentType contentType = getWikiLikeContentType();
 
         //We assume these languages already exist in the db
         final List<Language> dupeLanguages = new ImmutableList.Builder<Language>().
@@ -299,11 +285,13 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                     .getInstance()
                     .updateAuditTable(endpoint.getId(), endpoint.getGroupId(), bundleFolder, true);
 
-            // Remove contentlets so they can be regenerated from the bundle
-            for (final Contentlet contentlet : contentlets) {
-                contentlet.setIndexPolicy(IndexPolicy.FORCE);
-                contentletAPI.destroy(contentlet, adminUser, false );
-            }
+            LocalTransaction.wrap(() -> {
+                // Remove contentlets so they can be regenerated from the bundle
+                for (final Contentlet contentlet : contentlets) {
+                    contentlet.setIndexPolicy(IndexPolicy.FORCE);
+                    contentletAPI.destroy(contentlet, adminUser, false);
+                }
+            });
 
             // We have now added dupe Languages.
             // Now we need to flush cache so the next time the pp process asks for a Language
@@ -335,26 +323,12 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
         } finally {
 
-            try {
-                // Remove contentlets pushed
-                for (final Contentlet contentlet : publishedContentlets) {
-                    contentletAPI.destroy(contentlet, adminUser, false);
-                }
-
-                //Cleanup pushed langs
-                for (final Language language : savedDupeLanguages) {
-                    languageAPI.deleteLanguage(language);
-                }
-
-                if (null != bundle && null != endpoint && null != environment) {
-                    cleanBundleEndpointEnv(bundle, endpoint, environment);
-                }
-
-                if (null != file) {
+            if (null != file) {
+                try {
                     file.delete();
+                } catch (Exception e) {
+                    //Do nothing...
                 }
-            }catch (Exception e) {
-                e.printStackTrace();
             }
 
         }
@@ -364,6 +338,9 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
     @Test
     public void test_create_new_languages_create_bundle_then_publish_bundle_then_read_verify_dupes_are_ignored_and_new_languges_were_created()
             throws Exception {
+
+        // Any CT should do it.
+        ContentType contentType = getWikiLikeContentType();
 
         final List<Language> newLanguages = new ImmutableList.Builder<Language>().
                 add(newLanguageInstance("ep" + languagesSuffix, "", "Esperanto", "")).
@@ -422,20 +399,25 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
                     .getInstance()
                     .updateAuditTable(endpoint.getId(), endpoint.getGroupId(), bundleFolder, true);
 
-            // Remove contentlets so they can be regenerated from the bundle
-            for (final Contentlet contentlet : contentlets) {
-                contentletAPI.destroy(contentlet, adminUser, false );
-            }
+            final List<Long> savedLanguagesNowDeletedIds = LocalTransaction.wrapReturn(() -> {
 
-            final List<Long>savedLanguagesNowDeletedIds = new ArrayList<>();
-            // Remove all the languages we just created from the db.. see if they get re-generated out of the push-publish process.
-            for (final Language language : savedNewLanguages) {
-                languageAPI.deleteLanguage(language);
+                // Remove contentlets so they can be regenerated from the bundle
+                for (final Contentlet contentlet : contentlets) {
+                    contentletAPI.destroy(contentlet, adminUser, false);
+                }
 
-                //The language should be already deleted
-                assertNull(languageAPI.getLanguage(language.getId()));
-                savedLanguagesNowDeletedIds.add(language.getId());
-            }
+                final List<Long> internalSavedLanguagesNowDeletedIds = new ArrayList<>();
+                // Remove all the languages we just created from the db..., see if they get re-generated out of the push-publish process.
+                for (final Language language : savedNewLanguages) {
+                    languageAPI.deleteLanguage(language);
+
+                    //The language should be already deleted
+                    assertNull(languageAPI.getLanguage(language.getId()));
+                    internalSavedLanguagesNowDeletedIds.add(language.getId());
+                }
+
+                return internalSavedLanguagesNowDeletedIds;
+            });
 
             // Now we need to flush cache so the next time the pp process asks for a Language
             // it will get the first lang and not the one stored in cache during the bundle generation process.
@@ -505,32 +487,12 @@ public class RemoteReceiverLanguageResolutionTest extends IntegrationTestBase {
 
         } finally {
 
-            try {
-                // Remove contentlets pushed
-                for (final Contentlet contentlet : publishedContentlets) {
-                    contentletAPI.destroy(contentlet, adminUser, false );
-                }
-
-                for (final Language language : savedNewLanguages) {
-                    final Language persistedLang = languageAPI.getLanguage(language.getLanguageCode(), language.getCountryCode());
-                    if(UtilMethods.isSet(persistedLang) && persistedLang.getId() > 0 ){
-                        try {
-                            languageAPI.deleteLanguage(persistedLang);
-                        } catch (Exception e) {
-                            // Do nothing...
-                        }
-                    }
-                }
-
-                if (null != bundle && null != endpoint && null != environment) {
-                    cleanBundleEndpointEnv(bundle, endpoint, environment);
-                }
-
-                if (null != file) {
+            if (null != file) {
+                try {
                     file.delete();
+                } catch (Exception e) {
+                    //Do nothing...
                 }
-            }catch (Exception e) {
-                e.printStackTrace();
             }
 
         }

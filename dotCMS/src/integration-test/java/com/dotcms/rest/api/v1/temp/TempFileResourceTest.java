@@ -5,12 +5,10 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
-import io.vavr.Tuple4;
 import io.vavr.Tuple5;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -434,14 +432,31 @@ public class TempFileResourceTest {
     }
   }
 
+  @Test
+  public void test_TempResource_uploadFileByURL_success(){
+    HttpServletRequest request = mockRequest();
+    final String fileName = "test.png";
+    final String url = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Bocas2.jpg/250px-Bocas2.jpg";
 
-  
-  
-  
-  
-  
-  
-  
+    final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url,fileName,null);
+
+    final Response jsonResponse = resource.copyTempFromUrl(request,response,remoteUrlForm);
+
+    assertEquals(Status.OK.getStatusCode(),jsonResponse.getStatus());
+  }
+
+  @Test
+  public void test_TempResource_uploadFileByURL_UrlNotSent_BadRequest(){
+    HttpServletRequest request = mockRequest();
+    final String fileName = "test.png";
+    final String url = "";
+
+    final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url,fileName,null);
+
+    final Response jsonResponse = resource.copyTempFromUrl(request,response,remoteUrlForm);
+
+    assertEquals(Status.BAD_REQUEST.getStatusCode(),jsonResponse.getStatus());
+  }
 
   @Test
   @UseDataProvider("testCasesChangeFingerPrint")
@@ -521,8 +536,19 @@ public class TempFileResourceTest {
             new Tuple5<String,String,Long,Long,Long>(UserAPI.CMS_ANON_USER_ID,"5", 10L, 20L, 5L),
     };
   }
-  
-  
+
+  @Test
+  public void test_TempResource_uploadFileByURL_URLDoesNotExists_returnBadRequest(){
+    HttpServletRequest request = mockRequest();
+    final String fileName = "test.png";
+    final String url = "https://upload.wikimedia.org/this/not/exists/Bocas2.jpg";
+
+    final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url,fileName,null);
+
+    final Response jsonResponse = resource.copyTempFromUrl(request,response,remoteUrlForm);
+
+    assertEquals(Status.BAD_REQUEST.getStatusCode(),jsonResponse.getStatus());
+  }
   
   
   

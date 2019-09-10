@@ -9,6 +9,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.DateUtil;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -218,6 +219,9 @@ public class ApiTokenAPITest {
         // revoking
         apiTokenAPI.revokeToken(fatToken, APILocator.systemUser());
 
+        // let's wait a bit so revoking time gets passed
+        DateUtil.sleep(1000);
+
         // should be invalid
         issuedFromDb = apiTokenAPI.findApiToken(fatToken.id).get();
         assert (!issuedFromDb.isValid());
@@ -271,6 +275,9 @@ public class ApiTokenAPITest {
         assertEquals(savedToken, skinnyToken);
 
         apiTokenAPI.revokeToken(savedToken, APILocator.systemUser());
+
+        // let's wait a bit so revoking time gets passed
+        DateUtil.sleep(1000);
 
         assertFalse("Optional will return empty b/c token is revoked", apiTokenAPI.fromJwt(jwt).isPresent());
 

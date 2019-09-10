@@ -450,7 +450,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 .addAll(
                         loadDeps(parentContenlet)
                                 .stream()
-                                .peek((dep)-> dep.setIndexPolicy(IndexPolicy.DEFER))
+                                .peek((dep)-> dep.setIndexPolicy(parentContenlet.getIndexPolicyDependencies()))
                                 .collect(Collectors.toList()))
                 .build()
                 : ImmutableList.of(parentContenlet);
@@ -458,10 +458,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         if(parentContenlet.getIndexPolicy()==IndexPolicy.DEFER) {
             queueApi.addContentletsReindex(contentToIndex);
+        } else if (!DbConnectionFactory.inTransaction()) {
+            addContentToIndex(contentToIndex);
         } else {
             HibernateUtil.addCommitListener(() -> addContentToIndex(contentToIndex));
         }
-
     }
 
     /**
@@ -661,7 +662,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (contentToIndex != null && !contentToIndex.isEmpty()) {
             Logger.debug(this.getClass(),
                     "Indexing " + contentToIndex.size() + " contents, starting with identifier [ "
-                            + contentToIndex.get(0).getMap().get("identifier") + "]");
+                            + contentToIndex.get(0).getIdentifier() + "]");
         }
 
         // eliminate dups

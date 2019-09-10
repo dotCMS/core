@@ -33,7 +33,7 @@ public abstract class PageContentType extends ContentType implements Expireable{
 	public static final String PAGE_SHOW_ON_MENU_FIELD_VAR = "showOnMenu";
 	public static final String PAGE_SORT_ORDER_FIELD_VAR = "sortOrder";
 	public static final String PAGE_CACHE_TTL_FIELD_VAR = "cachettl";
-	public static final String PAGE_FRIENDLY_NAME_FIELD_VAR = "friendlyname";
+	public static final String PAGE_FRIENDLY_NAME_FIELD_VAR = "friendlyName";
 	public static final String PAGE_REDIRECT_URL_FIELD_VAR = "redirecturl";
 	public static final String PAGE_HTTP_REQUIRED_FIELD_VAR = "httpsreq";
 	public static final String PAGE_SEO_DESCRIPTION_FIELD_VAR = "seodescription";

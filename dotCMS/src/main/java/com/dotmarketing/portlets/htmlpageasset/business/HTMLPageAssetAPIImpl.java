@@ -13,21 +13,24 @@ import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
-import com.google.common.collect.ImmutableList;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -39,14 +42,27 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.CookieUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.*;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 
 
@@ -415,7 +431,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         return null;
 
     }
-
     
     @Override
     public String getHostDefaultPageType(String hostId) throws DotDataException, DotSecurityException {
