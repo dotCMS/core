@@ -53,6 +53,7 @@ export class DotFormComponent {
 
     private fieldsStatus: { [key: string]: { [key: string]: boolean } } = {};
     private value = {};
+
     /**
      * Update the form value when valueChange in any of the child fields.
      *
@@ -66,7 +67,7 @@ export class DotFormComponent {
         const process = fieldCustomProcess[tagName];
         if (tagName === 'DOT-BINARY-FILE' && value) {
             this.uploadFile(event).then((tempFile: DotCMSTempFile) => {
-                this.value[name] = tempFile.id;
+                this.value[name] = tempFile && tempFile.id;
             });
         } else {
             this.value[name] = process ? process(value) : value;
@@ -129,7 +130,7 @@ export class DotFormComponent {
                         </button>
                     </div>
                 </form>
-                <dot-form-error-message>{this.errorMessage}</dot-form-error-message>
+                <dot-error-message>{this.errorMessage}</dot-error-message>
             </Fragment>
         );
     }
@@ -226,25 +227,42 @@ export class DotFormComponent {
             );
     }
 
+    private getMaxSize(event: any): string {
+        const attributes = [...event.target.attributes];
+        const maxSize = attributes.filter((item) => {
+            return item.name === 'max-file-length';
+        })[0];
+        return maxSize && maxSize.value;
+    }
+
     private uploadFile(event: CustomEvent): Promise<DotCMSTempFile> {
         const uploadService = new DotUploadService();
-        const value = event.detail.value;
+        const file = event.detail.value;
+        const maxSize = this.getMaxSize(event);
         const binary: DotBinaryFileComponent = (event.target as unknown) as DotBinaryFileComponent;
-        this.uploadFileInProgress = true;
-        return uploadService
-            .uploadFile(value)
-            .then((tempFile: DotCMSTempFile) => {
-                this.errorMessage = '';
-                binary.previewImageUrl = tempFile.thumbnailUrl;
-                binary.previewImageName = tempFile.fileName;
-                this.uploadFileInProgress = false;
-                return tempFile;
-            })
-            .catch(({ message, status }: DotHttpErrorResponse) => {
-                binary.clearValue();
-                this.uploadFileInProgress = false;
-                this.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
-                return null;
-            });
+
+        if (file.size <= maxSize) {
+            this.uploadFileInProgress = true;
+            binary.errorMessage = '';
+            return uploadService
+                .uploadFile(file, maxSize)
+                .then((tempFile: DotCMSTempFile) => {
+                    this.errorMessage = '';
+                    binary.previewImageUrl = tempFile.thumbnailUrl;
+                    binary.previewImageName = tempFile.fileName;
+                    this.uploadFileInProgress = false;
+                    return tempFile;
+                })
+                .catch(({ message, status }: DotHttpErrorResponse) => {
+                    binary.clearValue();
+                    this.uploadFileInProgress = false;
+                    this.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
+                    return null;
+                });
+        } else {
+            binary.errorMessage = `File size larger than allowed ${maxSize} bytes`;
+            binary.reset();
+            return Promise.resolve(null);
+        }
     }
 }

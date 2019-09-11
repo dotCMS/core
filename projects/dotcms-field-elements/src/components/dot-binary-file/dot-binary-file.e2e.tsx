@@ -132,6 +132,18 @@ describe('dot-binary-file', () => {
             });
         });
 
+        describe('errorMessage', () => {
+            it('should display Error message', async () => {
+                element.setProperty('errorMessage', 'Error');
+                await page.waitForChanges();
+                expect((await page.find('.dot-binary__error-message')).innerText).toBe('Error');
+            });
+
+            it('should not display Error message', async () => {
+                expect(await page.find('.dot-binary__error-message')).toBeNull();
+            });
+        });
+
         describe('required', () => {
             it('should render required attribute with invalid value', async () => {
                 element.setProperty('required', { test: 'test' });

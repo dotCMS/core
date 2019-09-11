@@ -9,9 +9,7 @@ describe('dot-form', () => {
     let submitSpy: EventSpy;
 
     const getFields = () => page.findAll('form dot-form-column > *');
-
     const getResetButton = () => page.find('.dot-form__buttons button:not([type="submit"])');
-
     const getSubmitButton = () => page.find('.dot-form__buttons button[type="submit"]');
 
     const fillTextfield = async (text?: string) => {

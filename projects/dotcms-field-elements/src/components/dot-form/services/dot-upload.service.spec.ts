@@ -26,11 +26,19 @@ describe('DotUploadService', () => {
         expect(params[0]).toBe('/api/v1/temp/byUrl');
     });
 
-    it('should send data to the binary file endpoint with the correct information', () => {
+    it('should send data to the binary file endpoint without max file size', () => {
         uploadService.uploadFile({} as File);
         const params = fetchMock.mock.calls[0];
 
         expect(fetchMock.mock.calls.length).toBe(1);
         expect(params[0]).toBe('/api/v1/temp');
+    });
+
+    it('should send data to the binary file endpoint with max file size', () => {
+        uploadService.uploadFile({} as File, '1000');
+        const params = fetchMock.mock.calls[0];
+
+        expect(fetchMock.mock.calls.length).toBe(1);
+        expect(params[0]).toBe('/api/v1/temp?maxFileLength=1000');
     });
 });

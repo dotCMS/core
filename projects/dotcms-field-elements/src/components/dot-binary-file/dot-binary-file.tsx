@@ -80,9 +80,17 @@ export class DotBinaryFileComponent {
     @Prop({ reflectToAttr: true, mutable: true })
     accept = '';
 
+    /** (optional) Set the max file size limit  */
+    @Prop({ reflectToAttr: true, mutable: true })
+    maxFileLength = '';
+
     /** (optional) Text that be shown in the browse file button */
     @Prop({ reflectToAttr: true })
     buttonLabel = 'Browse';
+
+    /** (optional) Text that be shown in the browse file button */
+    @Prop({ reflectToAttr: true, mutable: true })
+    errorMessage = '';
 
     /** (optional) Name of the file uploaded */
     @Prop({ reflectToAttr: true, mutable: true })
@@ -251,6 +259,7 @@ export class DotBinaryFileComponent {
                 </dot-label>
                 {getTagHint(this.hint)}
                 {getTagError(this.shouldShowErrorMessage(), this.getErrorMessage())}
+                <dot-error-message>{this.errorMessage}</dot-error-message>
             </Fragment>
         );
     }

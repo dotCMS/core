@@ -12,11 +12,11 @@ export class DotUploadService {
      *
      * @memberof DotUploadService
      */
-    uploadFile(file: string | File): Promise<DotCMSTempFile> {
+    uploadFile(file: string | File, maxSize?: string): Promise<DotCMSTempFile> {
         if (typeof file === 'string') {
             return this.uploadFileByURL(file);
         } else {
-            return this.uploadBinaryFile(file);
+            return this.uploadBinaryFile(file, maxSize);
         }
     }
 
@@ -44,12 +44,12 @@ export class DotUploadService {
         });
     }
 
-    private uploadBinaryFile(file: File): Promise<DotCMSTempFile> {
-        const UPLOAD_FILE = '/api/v1/temp';
-
+    private uploadBinaryFile(file: File, maxSize?: string): Promise<DotCMSTempFile> {
+        let path = `/api/v1/temp`;
+        path += maxSize ? `?maxFileLength=${maxSize}` : '';
         const formData = new FormData();
         formData.append('file', file);
-        return fetch(UPLOAD_FILE, {
+        return fetch(path, {
             method: 'POST',
             headers: {
                 Origin: window.location.hostname
