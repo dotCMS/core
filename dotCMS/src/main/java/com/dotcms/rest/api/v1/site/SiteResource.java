@@ -4,7 +4,6 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -101,7 +100,7 @@ public class SiteResource implements Serializable {
         try {
           final User user = new WebResource.InitBuilder(this.webResource)
               .requestAndResponse(httpServletRequest, httpServletResponse)
-              .allowBackendUser(true)
+              .requiredBackendUser(true)
               .rejectWhenNoUser(true)
               .init().getUser();
           
@@ -135,7 +134,7 @@ public class SiteResource implements Serializable {
         Response response = null;
         final User user = new WebResource.InitBuilder(this.webResource)
             .requestAndResponse(httpServletRequest, httpServletResponse)
-            .allowBackendUser(true)
+            .requiredBackendUser(true)
             .rejectWhenNoUser(true)
             .init().getUser();
 
@@ -173,7 +172,7 @@ public class SiteResource implements Serializable {
         Response response = null;
         final User user = new WebResource.InitBuilder(this.webResource)
             .requestAndResponse(httpServletRequest, httpServletResponse)
-            .allowBackendUser(true)
+            .requiredBackendUser(true)
             .rejectWhenNoUser(true)
             .init().getUser();
         boolean switchDone = false;
@@ -226,7 +225,7 @@ public class SiteResource implements Serializable {
 
       final User user = new WebResource.InitBuilder(this.webResource)
           .requestAndResponse(request, response)
-          .allowBackendUser(true)
+          .requiredBackendUser(true)
           .rejectWhenNoUser(true)
           .init().getUser();
 

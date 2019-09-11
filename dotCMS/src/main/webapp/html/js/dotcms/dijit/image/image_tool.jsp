@@ -116,7 +116,7 @@
 							<%= LanguageUtil.get(pageContext, "Address") %>: 
 						</td>
 						<td width="100%;" style="white-space: nowrap;padding-right:25px;">
-							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;" onchange="imageEditor.changeViewingUrl()">
+							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;" onkeypress="if (event.which == 13 || event.keyCode == 13) {imageEditor.changeViewingUrl()}" onchange="imageEditor.changeViewingUrl()">
 						</td>
 					</tr>
 				</table>
@@ -191,6 +191,7 @@
             <td class="rightCol"><select dojoType="dijit.form.Select" name="compression" id="compression"
                style="width: 70px; margin-left: 2.6px;" onchange="imageEditor.toggleCompression()" >
                   <option value="none" selected>none</option>
+                  <option value="auto">auto</option>
                   <option value="jpeg">jpeg</option>
                   <option value="webp">webp</option>
             </select></td>

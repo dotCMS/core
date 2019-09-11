@@ -215,7 +215,7 @@ public class Task05170DefineFrontEndAndBackEndRolesTest {
     }
 
     @Test
-    public void Test_EveryOnce_Gets_The_FrontEnd_Role_User() throws DotDataException {
+    public void Test_Everyone_Gets_The_FrontEnd_Role_User() throws DotDataException {
 
         final Task05170DefineFrontEndAndBackEndRoles task05170DefineFrontEndAndBackEndRoles =
                 new Task05170DefineFrontEndAndBackEndRoles();
@@ -223,16 +223,20 @@ public class Task05170DefineFrontEndAndBackEndRolesTest {
         task05170DefineFrontEndAndBackEndRoles.executeUpgrade();
 
         final DotConnect dotConnect = new DotConnect();
-
-        for (int i = 1; i <= 13; i++) {
+        dotConnect.setSQL(" select count(*) as x from user_ ");
+        final int count = dotConnect.getInt("x");
+        //We take a snapshot of 15% of the total number of users, or 13 elements if less than that.
+        final int sampleSize = Math.max(Math.round(count * 15 / 100), 13);
+        for (int i = 1; i <= sampleSize; i++) {
             final String randomUserIdUserId = TestUserUtils.getRandomUserId(dotConnect);
             dotConnect
                     .setSQL(" select count(*) as x from users_cms_roles ur join cms_role r on ur.role_id = r.id and r.role_key = 'DOTCMS_FRONT_END_USER' and ur.user_id  = ? ");
             dotConnect.addParam(randomUserIdUserId);
             assertEquals(
-                    "User with Id " + randomUserIdUserId + " was expected to have FRONT-END Role.",
+                    "User with Id " + randomUserIdUserId
+                            + " was expected to have FRONT-END Role.",
                     1, dotConnect.getInt("x")
-                    );
+            );
         }
 
     }
