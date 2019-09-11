@@ -123,380 +123,371 @@ public class ContentletLoader implements DotLoader {
             sb.append("#set($isWidget= \"").append(false).append("\")");
         }
 
-        if (type.baseType() != BaseContentType.FORM) {
-            List<Field> fields = type.fields();
 
+        List<Field> fields = type.fields();
+        String widgetCode = "";
+        for (Field field : fields) {
 
-            String widgetCode = "";
+            String contField = field.dbColumn();
+            String contFieldValue = null;
+            Object contFieldValueObject = null;
 
-            for (Field field : fields) {
-
-              
-
-              
-              
-                String contField = field.dbColumn();
-                String contFieldValue = null;
-                Object contFieldValueObject = null;
-
-                if (field instanceof HiddenField || field instanceof ConstantField) {
-                  String velPath = new VelocityResourceKey(field, Optional.empty(), mode).path ;
-                    if (field.variable().equals("widgetPreexecute")) {
-                        continue;
-                    }
-                    if (field.variable().equals("widgetCode")) {
-                        widgetCode = "#set($" + field.variable() + "=$velutil.mergeTemplate(\"" +   velPath + "\"))";
-                        continue;
-                    } else {
-                        String fieldValues = field.values() == null ? "" : field.values();
-                        if (fieldValues.contains("$") || fieldValues.contains("#")) {
-                            sb.append("#set($")
-                                    .append(field.variable())
-                                    .append("= $velutil.mergeTemplate(\"")
-                                    .append(velPath)
-      
-                                    .append("\"))");
-                        } else {
-                            sb.append("#set($")
-                                    .append(field.variable())
-                                    .append("= \"")
-                                    .append(UtilMethods.espaceForVelocity(fieldValues).trim())
-                                    .append("\")");
-                        }
-                        continue;
-                    }
+            if (field instanceof HiddenField || field instanceof ConstantField) {
+              String velPath = new VelocityResourceKey(field, Optional.empty(), mode).path ;
+                if (field.variable().equals("widgetPreexecute")) {
+                    continue;
                 }
-
-
-                if (UtilMethods.isSet(contField)) {
-                    try {
-                        contFieldValueObject = conAPI.getFieldValue(content, field);
-                        contFieldValue = contFieldValueObject == null ? "" : contFieldValueObject.toString();
-                    } catch (final Exception e) {
-                      try {
-                        Logger.warnAndDebug(this.getClass(), "writeContentletToFile error: "+ e.getMessage() , e);
-                        Logger.warn(this.getClass(), "writeContentletToFile error: "+ e.getStackTrace()[1].toString());
-                        Logger.warn(this.getClass(), "writeContentletToFile error: values:" + content.getIdentifier() +  "/" + content.getTitle() + " : " + contField + " field:" + field + " contFieldValueObject:" + contFieldValueObject + " "  );
-                      }
-                      catch(Exception ex) {
-                        Logger.error(this.getClass(), e.getMessage(), e);
-                      }
-                        continue;
-                    }
-                    if (!(field instanceof DateTimeField || field instanceof DateField || field instanceof TimeField)) {
-                        if (contFieldValue.contains("$") || contFieldValue.contains("#")) {
-                            sb.append("#set($")
-                                    .append(field.variable())
-                                    .append("=$velutil.mergeTemplate(\"")
-                                    .append(new VelocityResourceKey(field, Optional.ofNullable(content), mode).path)
-                                    .append("\"))");
-                        } else {
-                            sb.append("#set($")
-                                    .append(field.variable())
-                                    .append("=\"")
-                                    .append(UtilMethods.espaceForVelocity(contFieldValue).trim())
-                                    .append("\")");
-                        }
-                    }
-
-                }
-
-                if (field instanceof ImageField || field instanceof FileField) {
-                    String identifierValue = content.getStringProperty(field.variable());
-                    if (InodeUtils.isSet(identifierValue)) {
+                if (field.variable().equals("widgetCode")) {
+                    widgetCode = "#set($" + field.variable() + "=$velutil.mergeTemplate(\"" +   velPath + "\"))";
+                    continue;
+                } else {
+                    String fieldValues = field.values() == null ? "" : field.values();
+                    if (fieldValues.contains("$") || fieldValues.contains("#")) {
                         sb.append("#set($")
                                 .append(field.variable())
-                                .append("Object= $filetool.getFile('")
-                                .append(identifierValue)
-                                .append("'," + mode.showLive + ",")
+                                .append("= $velutil.mergeTemplate(\"")
+                                .append(velPath)
+  
+                                .append("\"))");
+                    } else {
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("= \"")
+                                .append(UtilMethods.espaceForVelocity(fieldValues).trim())
+                                .append("\")");
+                    }
+                    continue;
+                }
+            }
+
+
+            if (UtilMethods.isSet(contField)) {
+                try {
+                    contFieldValueObject = conAPI.getFieldValue(content, field);
+                    contFieldValue = contFieldValueObject == null ? "" : contFieldValueObject.toString();
+                } catch (final Exception e) {
+                  try {
+                    Logger.warnAndDebug(this.getClass(), "writeContentletToFile error: "+ e.getMessage() , e);
+                    Logger.warn(this.getClass(), "writeContentletToFile error: "+ e.getStackTrace()[1].toString());
+                    Logger.warn(this.getClass(), "writeContentletToFile error: values:" + content.getIdentifier() +  "/" + content.getTitle() + " : " + contField + " field:" + field + " contFieldValueObject:" + contFieldValueObject + " "  );
+                  }
+                  catch(Exception ex) {
+                    Logger.error(this.getClass(), e.getMessage(), e);
+                  }
+                    continue;
+                }
+                if (!(field instanceof DateTimeField || field instanceof DateField || field instanceof TimeField)) {
+                    if (contFieldValue.contains("$") || contFieldValue.contains("#")) {
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("=$velutil.mergeTemplate(\"")
+                                .append(new VelocityResourceKey(field, Optional.ofNullable(content), mode).path)
+                                .append("\"))");
+                    } else {
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("=\"")
+                                .append(UtilMethods.espaceForVelocity(contFieldValue).trim())
+                                .append("\")");
+                    }
+                }
+
+            }
+
+            if (field instanceof ImageField || field instanceof FileField) {
+                String identifierValue = content.getStringProperty(field.variable());
+                if (InodeUtils.isSet(identifierValue)) {
+                    sb.append("#set($")
+                            .append(field.variable())
+                            .append("Object= $filetool.getFile('")
+                            .append(identifierValue)
+                            .append("'," + mode.showLive + ",")
+                            .append(content.getLanguageId())
+                            .append(" ))");
+
+                    if (field instanceof ImageField) {
+                        sb.append("#set($").append(field.variable()).append("ImageInode=$!{").append(field.variable()).append(
+                                "Object.getInode()} )");
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("ImageIdentifier=$!{")
+                                .append(field.variable())
+                                .append("Object.getIdentifier()} )");
+                        sb.append("#set($").append(field.variable()).append("ImageWidth=$!{").append(field.variable()).append(
+                                "Object.getWidth()} )");
+                        sb.append("#set($").append(field.variable()).append("ImageHeight=$!{").append(field.variable()).append(
+                                "Object.getHeight()} )");
+                        sb.append("#set($").append(field.variable()).append("ImageExtension=$!{").append(field.variable()).append(
+                                "Object.getExtension()} )");
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("ImageURI=$filetool.getURI($!{")
+                                .append(field.variable())
+                                .append("Object}, ")
                                 .append(content.getLanguageId())
                                 .append(" ))");
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("ImageTitle=$UtilMethods.espaceForVelocity($!{")
+                                .append(field.variable())
+                                .append("Object.getTitle()}) )");
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("ImageFriendlyName=$UtilMethods.espaceForVelocity($!{")
+                                .append(field.variable())
+                                .append("Object.getFriendlyName()}) )");
 
-                        if (field instanceof ImageField) {
-                            sb.append("#set($").append(field.variable()).append("ImageInode=$!{").append(field.variable()).append(
-                                    "Object.getInode()} )");
-                            sb.append("#set($")
-                                    .append(field.variable())
-                                    .append("ImageIdentifier=$!{")
-                                    .append(field.variable())
-                                    .append("Object.getIdentifier()} )");
-                            sb.append("#set($").append(field.variable()).append("ImageWidth=$!{").append(field.variable()).append(
-                                    "Object.getWidth()} )");
-                            sb.append("#set($").append(field.variable()).append("ImageHeight=$!{").append(field.variable()).append(
-                                    "Object.getHeight()} )");
-                            sb.append("#set($").append(field.variable()).append("ImageExtension=$!{").append(field.variable()).append(
-                                    "Object.getExtension()} )");
-                            sb.append("#set($")
-                                    .append(field.variable())
-                                    .append("ImageURI=$filetool.getURI($!{")
-                                    .append(field.variable())
-                                    .append("Object}, ")
-                                    .append(content.getLanguageId())
-                                    .append(" ))");
-                            sb.append("#set($")
-                                    .append(field.variable())
-                                    .append("ImageTitle=$UtilMethods.espaceForVelocity($!{")
-                                    .append(field.variable())
-                                    .append("Object.getTitle()}) )");
-                            sb.append("#set($")
-                                    .append(field.variable())
-                                    .append("ImageFriendlyName=$UtilMethods.espaceForVelocity($!{")
-                                    .append(field.variable())
-                                    .append("Object.getFriendlyName()}) )");
-
-                            sb.append("#set($").append(field.variable()).append("ImagePath=$!{").append(field.variable()).append(
-                                    "Object.getPath()})");
-                            sb.append("#set($").append(field.variable()).append("ImageName=$!{").append(field.variable()).append(
-                                    "Object.getFileName()})");
-
-                        } else {
-                            sb.append("#set($").append(field.variable()).append("FileInode=$!{").append(field.variable()).append(
-                                    "Object.getInode()} )");
-                            sb.append("#set($").append(field.variable()).append("FileIdentifier=$!{").append(field.variable()).append(
-                                    "Object.getIdentifier()} )");
-                            sb.append("#set($").append(field.variable()).append("FileExtension=$!{").append(field.variable()).append(
-                                    "Object.getExtension()} )");
-                            sb.append("#set($")
-                                    .append(field.variable())
-                                    .append("FileURI=$filetool.getURI($!{")
-                                    .append(field.variable())
-                                    .append("Object}, ")
-                                    .append(content.getLanguageId())
-                                    .append(" ))");
-                            sb.append("#set($").append(field.variable()).append("FileTitle=$!{").append(field.variable()).append(
-                                    "Object.getTitle()} )");
-                            sb.append("#set($")
-                                    .append(field.variable())
-                                    .append("FileFriendlyName=$UtilMethods.espaceForVelocity($!{")
-                                    .append(field.variable())
-                                    .append("Object.getFriendlyName()} ))");
-
-                            sb.append("#set($")
-                                    .append(field.variable())
-                                    .append("FilePath=$UtilMethods.espaceForVelocity($!{")
-                                    .append(field.variable())
-                                    .append("Object.getPath()}) )");
-                            sb.append("#set($")
-                                    .append(field.variable())
-                                    .append("FileName=$UtilMethods.espaceForVelocity($!{")
-                                    .append(field.variable())
-                                    .append("Object.getFileName()} ))");
-                        }
+                        sb.append("#set($").append(field.variable()).append("ImagePath=$!{").append(field.variable()).append(
+                                "Object.getPath()})");
+                        sb.append("#set($").append(field.variable()).append("ImageName=$!{").append(field.variable()).append(
+                                "Object.getFileName()})");
 
                     } else {
-                        sb.append("#set($").append(field.variable()).append("Object= $filetool.getNewFile())");
+                        sb.append("#set($").append(field.variable()).append("FileInode=$!{").append(field.variable()).append(
+                                "Object.getInode()} )");
+                        sb.append("#set($").append(field.variable()).append("FileIdentifier=$!{").append(field.variable()).append(
+                                "Object.getIdentifier()} )");
+                        sb.append("#set($").append(field.variable()).append("FileExtension=$!{").append(field.variable()).append(
+                                "Object.getExtension()} )");
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("FileURI=$filetool.getURI($!{")
+                                .append(field.variable())
+                                .append("Object}, ")
+                                .append(content.getLanguageId())
+                                .append(" ))");
+                        sb.append("#set($").append(field.variable()).append("FileTitle=$!{").append(field.variable()).append(
+                                "Object.getTitle()} )");
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("FileFriendlyName=$UtilMethods.espaceForVelocity($!{")
+                                .append(field.variable())
+                                .append("Object.getFriendlyName()} ))");
+
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("FilePath=$UtilMethods.espaceForVelocity($!{")
+                                .append(field.variable())
+                                .append("Object.getPath()}) )");
+                        sb.append("#set($")
+                                .append(field.variable())
+                                .append("FileName=$UtilMethods.espaceForVelocity($!{")
+                                .append(field.variable())
+                                .append("Object.getFileName()} ))");
                     }
-                } // http://jira.dotmarketing.net/browse/DOTCMS-2178
-                else if (field instanceof BinaryField) {
-                    java.io.File binFile;
-                    String fileName = "";
-                    String filesize = "";
-                    try {
-                        binFile = content.getBinary(field.variable());
-                        if (binFile != null) {
-                            fileName = binFile.getName();
-                            filesize = FileUtil.getsize(binFile);
+
+                } else {
+                    sb.append("#set($").append(field.variable()).append("Object= $filetool.getNewFile())");
+                }
+            } // http://jira.dotmarketing.net/browse/DOTCMS-2178
+            else if (field instanceof BinaryField) {
+                java.io.File binFile;
+                String fileName = "";
+                String filesize = "";
+                try {
+                    binFile = content.getBinary(field.variable());
+                    if (binFile != null) {
+                        fileName = binFile.getName();
+                        filesize = FileUtil.getsize(binFile);
+                    }
+                } catch (IOException e) {
+                    Logger.error(this.getClass(), "Unable to retrive binary file for content id " + content.getIdentifier()
+                            + " field " + field.variable(), e);
+                    continue;
+                }
+                sb.append("#set($")
+                        .append(field.variable())
+                        .append("BinaryFileTitle=\"")
+                        .append(UtilMethods.espaceForVelocity(fileName))
+                        .append("\" )");
+                sb.append("#set($")
+                        .append(field.variable())
+                        .append("BinaryFileSize=\"")
+                        .append(UtilMethods.espaceForVelocity(filesize))
+                        .append("\" )");
+                String binaryFileURI = fileName.length() > 0
+                        ? UtilMethods.espaceForVelocity("/contentAsset/raw-data/" + content.getIdentifier() + "/"
+                        + field.variable() + "/" + content.getInode())
+                        : "";
+                sb.append("#set($").append(field.variable()).append("BinaryFileURI=\"").append(binaryFileURI).append("\" )");
+            } else if (field instanceof SelectField) {
+                sb.append("#set($")
+                        .append(field.variable())
+                        .append("SelectLabelsValues=\"")
+                        .append(field.values().replaceAll("\\r\\n", " ").replaceAll("\\n", " "))
+                        .append("\")");
+            } else if (field instanceof RadioField) {
+                sb.append("#set($")
+                        .append(field.variable())
+                        .append("RadioLabelsValues=\"")
+                        .append(field.values().replaceAll("\\r\\n", " ").replaceAll("\\n", " "))
+                        .append("\" )");
+            } else if (field instanceof CheckboxField) {
+                sb.append("#set($")
+                        .append(field.variable())
+                        .append("CheckboxLabelsValues=\"")
+                        .append(field.values().replaceAll("\\r\\n", " ").replaceAll("\\n", " "))
+                        .append("\" )");
+            } else if (field instanceof DateField) {
+                String shortFormat = "";
+                String dbFormat = "";
+                if (contFieldValueObject != null && contFieldValueObject instanceof Date) {
+                    shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy");
+                    dbFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "yyyy-MM-dd");
+                }
+                sb.append("#set($").append(field.variable()).append("=$date.toDate(\"yyyy-MM-dd\", \"").append(dbFormat).append(
+                        "\"))");
+                sb.append("#set($").append(field.variable()).append("ShortFormat=\"").append(shortFormat).append("\" )");
+                sb.append("#set($").append(field.variable()).append("DBFormat=\"").append(dbFormat).append("\" )");
+            } else if (field instanceof TimeField) {
+                String shortFormat = "";
+                if (contFieldValueObject != null && contFieldValueObject instanceof Date) {
+                    shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "H:mm:ss");
+                }
+                sb.append("#set( $").append(field.variable()).append("ShortFormat=\"").append(shortFormat).append("\" )");
+                sb.append("#set( $").append(field.variable()).append("= $date.toDate(\"H:mm:ss\", \"").append(shortFormat).append(
+                        "\"))");
+            } else if (field instanceof DateTimeField) {
+                String shortFormat = "";
+                String longFormat = "";
+                String dbFormat = "";
+                if (contFieldValueObject != null && contFieldValueObject instanceof Date) {
+                    shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy");
+                    longFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy H:mm:ss");
+                    dbFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "yyyy-MM-dd H:mm:ss");
+                }
+                sb.append("#set( $")
+                        .append(field.variable())
+                        .append("= $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"")
+                        .append(dbFormat)
+                        .append("\"))");
+                sb.append("#set( $").append(field.variable()).append("ShortFormat=\"").append(shortFormat).append("\" )");
+                sb.append("#set( $").append(field.variable()).append("LongFormat=\"").append(longFormat).append("\" )");
+                sb.append("#set( $").append(field.variable()).append("DBFormat=\"").append(dbFormat).append("\" )");
+            } // http://jira.dotmarketing.net/browse/DOTCMS-2869
+            // else if (field.getFieldType().equals(Field.FieldType.CUSTOM_FIELD.toString())){
+            // sb.append("#set( $" + field.variable() + "Code=\"" +
+            // UtilMethods.espaceForVelocity(field.getValues()) + "\" )");
+            // }//http://jira.dotmarketing.net/browse/DOTCMS-3232
+            else if (field instanceof HostFolderField) {
+                if (InodeUtils.isSet(content.getFolder())) {
+                    sb.append("#set( $ConHostFolder='").append(content.getFolder()).append("' )");
+                } else {
+                    sb.append("#set( $ConHostFolder='").append(content.getHost()).append("' )");
+                }
+            } else if (field instanceof CategoryField) {
+
+                // Get the Category Field
+                Category category = categoryAPI.find(field.values(), systemUser, false);
+                // Get all the Contentlets Categories
+                List<Category> selectedCategories = categoryAPI.getParents(content, systemUser, false);
+
+                // Initialize variables
+                String catInodes = "";
+                Set<Category> categoryList = new HashSet<Category>();
+                List<Category> categoryTree = categoryAPI.getAllChildren(category, systemUser, false);
+
+                if (selectedCategories.size() > 0 && categoryTree != null) {
+                    for (int k = 0; k < categoryTree.size(); k++) {
+                        Category cat = (Category) categoryTree.get(k);
+                        for (Category categ : selectedCategories) {
+                            if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
+                                categoryList.add(cat);
+                            }
                         }
-                    } catch (IOException e) {
-                        Logger.error(this.getClass(), "Unable to retrive binary file for content id " + content.getIdentifier()
-                                + " field " + field.variable(), e);
-                        continue;
                     }
-                    sb.append("#set($")
-                            .append(field.variable())
-                            .append("BinaryFileTitle=\"")
-                            .append(UtilMethods.espaceForVelocity(fileName))
-                            .append("\" )");
-                    sb.append("#set($")
-                            .append(field.variable())
-                            .append("BinaryFileSize=\"")
-                            .append(UtilMethods.espaceForVelocity(filesize))
-                            .append("\" )");
-                    String binaryFileURI = fileName.length() > 0
-                            ? UtilMethods.espaceForVelocity("/contentAsset/raw-data/" + content.getIdentifier() + "/"
-                            + field.variable() + "/" + content.getInode())
-                            : "";
-                    sb.append("#set($").append(field.variable()).append("BinaryFileURI=\"").append(binaryFileURI).append("\" )");
-                } else if (field instanceof SelectField) {
-                    sb.append("#set($")
-                            .append(field.variable())
-                            .append("SelectLabelsValues=\"")
-                            .append(field.values().replaceAll("\\r\\n", " ").replaceAll("\\n", " "))
-                            .append("\")");
-                } else if (field instanceof RadioField) {
-                    sb.append("#set($")
-                            .append(field.variable())
-                            .append("RadioLabelsValues=\"")
-                            .append(field.values().replaceAll("\\r\\n", " ").replaceAll("\\n", " "))
-                            .append("\" )");
-                } else if (field instanceof CheckboxField) {
-                    sb.append("#set($")
-                            .append(field.variable())
-                            .append("CheckboxLabelsValues=\"")
-                            .append(field.values().replaceAll("\\r\\n", " ").replaceAll("\\n", " "))
-                            .append("\" )");
-                } else if (field instanceof DateField) {
-                    String shortFormat = "";
-                    String dbFormat = "";
-                    if (contFieldValueObject != null && contFieldValueObject instanceof Date) {
-                        shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy");
-                        dbFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "yyyy-MM-dd");
+                }
+
+                if (categoryList.size() > 0) {
+                    StringBuilder catbuilder = new StringBuilder();
+                    Iterator<Category> it = categoryList.iterator();
+                    while (it.hasNext()) {
+                        Category cat = (Category) it.next();
+                        catbuilder.append("\"").append(cat.getInode()).append("\"");
+                        if (it.hasNext()) {
+                            catbuilder.append(",");
+                        }
                     }
-                    sb.append("#set($").append(field.variable()).append("=$date.toDate(\"yyyy-MM-dd\", \"").append(dbFormat).append(
-                            "\"))");
-                    sb.append("#set($").append(field.variable()).append("ShortFormat=\"").append(shortFormat).append("\" )");
-                    sb.append("#set($").append(field.variable()).append("DBFormat=\"").append(dbFormat).append("\" )");
-                } else if (field instanceof TimeField) {
-                    String shortFormat = "";
-                    if (contFieldValueObject != null && contFieldValueObject instanceof Date) {
-                        shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "H:mm:ss");
-                    }
-                    sb.append("#set( $").append(field.variable()).append("ShortFormat=\"").append(shortFormat).append("\" )");
-                    sb.append("#set( $").append(field.variable()).append("= $date.toDate(\"H:mm:ss\", \"").append(shortFormat).append(
-                            "\"))");
-                } else if (field instanceof DateTimeField) {
-                    String shortFormat = "";
-                    String longFormat = "";
-                    String dbFormat = "";
-                    if (contFieldValueObject != null && contFieldValueObject instanceof Date) {
-                        shortFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy");
-                        longFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "MM/dd/yyyy H:mm:ss");
-                        dbFormat = UtilMethods.dateToHTMLDate((Date) contFieldValueObject, "yyyy-MM-dd H:mm:ss");
-                    }
+                    catInodes = catbuilder.toString();
+
                     sb.append("#set( $")
                             .append(field.variable())
-                            .append("= $date.toDate(\"yyyy-MM-dd H:mm:ss\", \"")
-                            .append(dbFormat)
-                            .append("\"))");
-                    sb.append("#set( $").append(field.variable()).append("ShortFormat=\"").append(shortFormat).append("\" )");
-                    sb.append("#set( $").append(field.variable()).append("LongFormat=\"").append(longFormat).append("\" )");
-                    sb.append("#set( $").append(field.variable()).append("DBFormat=\"").append(dbFormat).append("\" )");
-                } // http://jira.dotmarketing.net/browse/DOTCMS-2869
-                // else if (field.getFieldType().equals(Field.FieldType.CUSTOM_FIELD.toString())){
-                // sb.append("#set( $" + field.variable() + "Code=\"" +
-                // UtilMethods.espaceForVelocity(field.getValues()) + "\" )");
-                // }//http://jira.dotmarketing.net/browse/DOTCMS-3232
-                else if (field instanceof HostFolderField) {
-                    if (InodeUtils.isSet(content.getFolder())) {
-                        sb.append("#set( $ConHostFolder='").append(content.getFolder()).append("' )");
-                    } else {
-                        sb.append("#set( $ConHostFolder='").append(content.getHost()).append("' )");
-                    }
-                } else if (field instanceof CategoryField) {
-
-                    // Get the Category Field
-                    Category category = categoryAPI.find(field.values(), systemUser, false);
-                    // Get all the Contentlets Categories
-                    List<Category> selectedCategories = categoryAPI.getParents(content, systemUser, false);
-
-                    // Initialize variables
-                    String catInodes = "";
-                    Set<Category> categoryList = new HashSet<Category>();
-                    List<Category> categoryTree = categoryAPI.getAllChildren(category, systemUser, false);
-
-                    if (selectedCategories.size() > 0 && categoryTree != null) {
-                        for (int k = 0; k < categoryTree.size(); k++) {
-                            Category cat = (Category) categoryTree.get(k);
-                            for (Category categ : selectedCategories) {
-                                if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
-                                    categoryList.add(cat);
-                                }
-                            }
-                        }
-                    }
-
-                    if (categoryList.size() > 0) {
-                        StringBuilder catbuilder = new StringBuilder();
-                        Iterator<Category> it = categoryList.iterator();
-                        while (it.hasNext()) {
-                            Category cat = (Category) it.next();
-                            catbuilder.append("\"").append(cat.getInode()).append("\"");
-                            if (it.hasNext()) {
-                                catbuilder.append(",");
-                            }
-                        }
-                        catInodes = catbuilder.toString();
-
-                        sb.append("#set( $")
-                                .append(field.variable())
-                                .append("FilteredCategories=$categories.filterCategoriesByUserPermissions([")
-                                .append(catInodes)
-                                .append("] ))");
-                        sb.append("#set( $")
-                                .append(field.variable())
-                                .append("Categories=$categories.fetchCategoriesInodes($")
-                                .append(field.variable())
-                                .append("FilteredCategories))");
-                        sb.append("#set( $")
-                                .append(field.variable())
-                                .append("CategoriesNames=$categories.fetchCategoriesNames($")
-                                .append(field.variable())
-                                .append("FilteredCategories))");
-                        sb.append("#set( $").append(field.variable()).append("=$").append(field.variable()).append("Categories)");
-                        sb.append("#set( $")
-                                .append(field.variable())
-                                .append("CategoriesKeys=$categories.fetchCategoriesKeys($")
-                                .append(field.variable())
-                                .append("FilteredCategories))");
-                    } else {
-                        sb.append("#set( $").append(field.variable()).append("FilteredCategories=$contents.getEmptyList())");
-                        sb.append("#set( $").append(field.variable()).append("Categories=$contents.getEmptyList())");
-                        sb.append("#set( $").append(field.variable()).append("CategoriesNames=$contents.getEmptyList())");
-                        sb.append("#set( $").append(field.variable()).append("=$contents.getEmptyList())");
-                        sb.append("#set( $").append(field.variable()).append("CategoriesKeys=$contents.getEmptyList())");
-                    }
-                } else if (field instanceof TagField) {
-                    content.setTags();
-                    String value = content.getStringProperty(field.variable());
-                    sb.append("#set($")
+                            .append("FilteredCategories=$categories.filterCategoriesByUserPermissions([")
+                            .append(catInodes)
+                            .append("] ))");
+                    sb.append("#set( $")
                             .append(field.variable())
-                            .append("=\"")
-                            .append(UtilMethods.espaceForVelocity(value).trim())
-                            .append("\")");
+                            .append("Categories=$categories.fetchCategoriesInodes($")
+                            .append(field.variable())
+                            .append("FilteredCategories))");
+                    sb.append("#set( $")
+                            .append(field.variable())
+                            .append("CategoriesNames=$categories.fetchCategoriesNames($")
+                            .append(field.variable())
+                            .append("FilteredCategories))");
+                    sb.append("#set( $").append(field.variable()).append("=$").append(field.variable()).append("Categories)");
+                    sb.append("#set( $")
+                            .append(field.variable())
+                            .append("CategoriesKeys=$categories.fetchCategoriesKeys($")
+                            .append(field.variable())
+                            .append("FilteredCategories))");
+                } else {
+                    sb.append("#set( $").append(field.variable()).append("FilteredCategories=$contents.getEmptyList())");
+                    sb.append("#set( $").append(field.variable()).append("Categories=$contents.getEmptyList())");
+                    sb.append("#set( $").append(field.variable()).append("CategoriesNames=$contents.getEmptyList())");
+                    sb.append("#set( $").append(field.variable()).append("=$contents.getEmptyList())");
+                    sb.append("#set( $").append(field.variable()).append("CategoriesKeys=$contents.getEmptyList())");
                 }
+            } else if (field instanceof TagField) {
+                content.setTags();
+                String value = content.getStringProperty(field.variable());
+                sb.append("#set($")
+                        .append(field.variable())
+                        .append("=\"")
+                        .append(UtilMethods.espaceForVelocity(value).trim())
+                        .append("\")");
             }
-
-
-            // get the contentlet categories to make a list
-            String categories = "";
-            Set<Category> categoryList = new HashSet<Category>(categoryAPI.getParents(content, systemUser, false));
-            if (categoryList != null && categoryList.size() > 0) {
-                StringBuilder catbuilder = new StringBuilder();
-                Iterator<Category> it = categoryList.iterator();
-                while (it.hasNext()) {
-                    Category category = (Category) it.next();
-                    catbuilder.append("\"").append(category.getInode()).append("\"");
-                    if (it.hasNext()) {
-                        catbuilder.append(",");
-                    }
-                }
-                categories = catbuilder.toString();
-
-                sb.append("#set($ContentletFilteredCategories=$categories.filterCategoriesByUserPermissions([")
-                        .append(categories)
-                        .append("] ))");
-                sb.append("#set($ContentletCategories=$categories.fetchCategoriesInodes($ContentletFilteredCategories))");
-                sb.append("#set($ContentletCategoryNames=$categories.fetchCategoriesNames($ContentletFilteredCategories))");
-                sb.append("#set($ContentletCategoryKeys=$categories.fetchCategoriesKeys($ContentletFilteredCategories))");
-            } else {
-                sb.append("#set($ContentletFilteredCategories=$contents.getEmptyList())");
-                sb.append("#set($ContentletCategories=$contents.getEmptyList())");
-                sb.append("#set($ContentletCategoryNames=$contents.getEmptyList())");
-                sb.append("#set($ContentletCategoryKeys=$contents.getEmptyList())");
-            }
-
-            // This needs to be here because the all fields like cats etc.. need to be parsed first and
-            // it needs to be before
-            // the $CONTENT_INODE is reset sb.append("#set( $CONTENT_INODE=\"" + content.getInode() +
-            // "\" )");
-            // http://jira.dotmarketing.net/browse/DOTCMS-2808
-            sb.append(widgetCode);
-            sb.append("#set($isForm= \"").append(false).append("\")");
-        } else {
-            sb.append("#set($isForm= \"").append(true).append("\")");
-            sb.append("#set($formCode=").append("$velutil.mergeTemplate(\"/static/content/content_form_macro.vtl\")").append(")");
         }
 
+
+        // get the contentlet categories to make a list
+        String categories = "";
+        Set<Category> categoryList = new HashSet<Category>(categoryAPI.getParents(content, systemUser, false));
+        if (categoryList != null && categoryList.size() > 0) {
+            StringBuilder catbuilder = new StringBuilder();
+            Iterator<Category> it = categoryList.iterator();
+            while (it.hasNext()) {
+                Category category = (Category) it.next();
+                catbuilder.append("\"").append(category.getInode()).append("\"");
+                if (it.hasNext()) {
+                    catbuilder.append(",");
+                }
+            }
+            categories = catbuilder.toString();
+
+            sb.append("#set($ContentletFilteredCategories=$categories.filterCategoriesByUserPermissions([")
+                    .append(categories)
+                    .append("] ))");
+            sb.append("#set($ContentletCategories=$categories.fetchCategoriesInodes($ContentletFilteredCategories))");
+            sb.append("#set($ContentletCategoryNames=$categories.fetchCategoriesNames($ContentletFilteredCategories))");
+            sb.append("#set($ContentletCategoryKeys=$categories.fetchCategoriesKeys($ContentletFilteredCategories))");
+        } else {
+            sb.append("#set($ContentletFilteredCategories=$contents.getEmptyList())");
+            sb.append("#set($ContentletCategories=$contents.getEmptyList())");
+            sb.append("#set($ContentletCategoryNames=$contents.getEmptyList())");
+            sb.append("#set($ContentletCategoryKeys=$contents.getEmptyList())");
+        }
+
+        // This needs to be here because the all fields like cats etc.. need to be parsed first and
+        // it needs to be before
+        // the $CONTENT_INODE is reset sb.append("#set( $CONTENT_INODE=\"" + content.getInode() +
+        // "\" )");
+        // http://jira.dotmarketing.net/browse/DOTCMS-2808
+        sb.append(widgetCode);
+        sb.append("#set($isForm= \"").append(false).append("\")");
+        
+        
+        
         // This is code is repeated because the bug GETTYS-268, the content
         // variables were been overwritten
         // by the parse inside the some of the content fields
