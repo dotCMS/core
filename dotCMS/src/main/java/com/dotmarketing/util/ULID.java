@@ -159,18 +159,18 @@ public class ULID {
       throw new IllegalArgumentException("ulidString must be exactly 26 chars long.");
     }
 
-    String timeString = ulidString.substring(0, 10);
-    long time = internalParseCrockford(timeString);
+    final String timeString = ulidString.substring(0, 10);
+    final long time = internalParseCrockford(timeString);
     if ((time & TIMESTAMP_OVERFLOW_MASK) != 0) {
       throw new IllegalArgumentException("ulidString must not exceed '7ZZZZZZZZZZZZZZZZZZZZZZZZZ'!");
     }
-    String part1String = ulidString.substring(10, 18);
-    String part2String = ulidString.substring(18);
-    long part1 = internalParseCrockford(part1String);
-    long part2 = internalParseCrockford(part2String);
+    final String part1String = ulidString.substring(10, 18);
+    final String part2String = ulidString.substring(18);
+    final long part1 = internalParseCrockford(part1String);
+    final long part2 = internalParseCrockford(part2String);
 
-    long most = (time << 16) | (part1 >>> 24);
-    long least = part2 | (part1 << 40);
+    final long most = (time << 16) | (part1 >>> 24);
+    final long least = part2 | (part1 << 40);
     return new Value(most, least);
   }
 
@@ -243,11 +243,11 @@ public class ULID {
     }
 
     public Value increment() {
-      long lsb = leastSignificantBits;
+      final long lsb = leastSignificantBits;
       if (lsb != 0xFFFF_FFFF_FFFF_FFFFL) {
         return new Value(mostSignificantBits, lsb + 1);
       }
-      long msb = mostSignificantBits;
+      final long msb = mostSignificantBits;
       if ((msb & RANDOM_MSB_MASK) != RANDOM_MSB_MASK) {
         return new Value(msb + 1, 0);
       }
@@ -256,16 +256,18 @@ public class ULID {
 
     @Override
     public int hashCode() {
-      long hilo = mostSignificantBits ^ leastSignificantBits;
+      final long hilo = mostSignificantBits ^ leastSignificantBits;
       return ((int) (hilo >> 32)) ^ (int) hilo;
     }
 
     @Override
     public boolean equals(final Object o) {
-      if (this == o)
+      if (this == o) {
         return true;
-      if (o == null || getClass() != o.getClass())
+      }
+      if (o == null || getClass() != o.getClass()) {
         return false;
+      }
 
       final Value value = (Value) o;
 
@@ -365,7 +367,7 @@ public class ULID {
     checkTimestamp(timestamp);
     // could use nextBytes(byte[] bytes) instead
     long mostSignificantBits = random.nextLong();
-    long leastSignificantBits = random.nextLong();
+    final long leastSignificantBits = random.nextLong();
     mostSignificantBits &= 0xFFFF;
     mostSignificantBits |= (timestamp << 16);
     return new Value(mostSignificantBits, leastSignificantBits);
