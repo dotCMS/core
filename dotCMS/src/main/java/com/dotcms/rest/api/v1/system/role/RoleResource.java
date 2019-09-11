@@ -84,8 +84,8 @@ public class RoleResource implements Serializable {
 							   final @PathParam("roleIds") String roleIds) {
 
 		final InitDataObject init = new WebResource.InitBuilder(webResource)
-				.allowBackendUser(true)
-				.allowFrontendUser(false)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init();
 

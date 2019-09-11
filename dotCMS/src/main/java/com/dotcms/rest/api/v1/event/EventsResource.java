@@ -95,8 +95,8 @@ public class EventsResource implements Serializable {
         Response response              = null;
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
 
@@ -138,8 +138,8 @@ public class EventsResource implements Serializable {
 
         Response response             = null;
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
 

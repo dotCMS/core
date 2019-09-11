@@ -150,8 +150,8 @@ public class ConditionletsResource {
 
     private User getUser(@Context HttpServletRequest request, final @Context HttpServletResponse response) {
          return new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true).init().getUser();
 
