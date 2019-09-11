@@ -46,8 +46,18 @@ public class Task05175AssignDefaultActionsToTheSystemWorkflow implements Startup
 
     private void insert (final WorkflowAPI.SystemAction systemAction, final String workflowActionId) throws DotDataException {
 
-        new DotConnect().setSQL("insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type) values (?,?,?,?)")
-                .addParam(UUIDUtil.uuid()).addParam(systemAction.name()).addParam(workflowActionId).addParam(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
-                .loadObjectResults();
+        if (!UtilMethods.isSet(new DotConnect()
+                .setSQL("select * from workflow_action_mappings where action = ? and workflow_action = ? and scheme_or_content_type = ?")
+                .addParam(systemAction.name()).addParam(workflowActionId)
+                .addParam(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                .loadObjectResults())) {
+
+            new DotConnect()
+                    .setSQL("insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type) values (?,?,?,?)")
+                    .addParam(UUIDUtil.uuid()).addParam(systemAction.name())
+                    .addParam(workflowActionId).addParam(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .loadObjectResults();
+        }
+
     }
 }
