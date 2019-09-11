@@ -2102,24 +2102,49 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	@Override
 	public void saveWorkflowTask ( WorkflowTask task ) throws DotDataException {
 
-		if ( task.isNew() ) {
-			HibernateUtil.save( task );
-		} else {
-
+		boolean isNew = true;
+		if (UtilMethods.isSet(task.getId())) {
 			try {
-				Object currentWorkflowTask = HibernateUtil.load( WorkflowTask.class, task.getId() );
-				HibernateUtil.evict( currentWorkflowTask );//Remove the object from hibernate cache, we used just to verify if exist
-
-				// if the object exists no exception is thrown so just update it
-
-				HibernateUtil.update( task );
-			} catch ( Exception ex ) {
-				// if it doesn't exists then save with that primary key
-				HibernateUtil.saveWithPrimaryKey( task, task.getId() );
+				final WorkflowTask test = this.findWorkFlowTaskById(task.getId());
+				if (test != null) {
+					isNew = false;
+				}
+			} catch (final Exception e) {
+				Logger.debug(this.getClass(), e.getMessage(), e);
 			}
+		} else {
+			task.setId(UUIDGenerator.generateUuid());
 		}
 
-		cache.remove( task );
+		final DotConnect db = new DotConnect();
+
+		if (isNew) {
+			db.setSQL(sql.INSERT_WORKFLOW_TASK);
+			db.addParam(task.getId());
+			setTaskDBParams(task, db);
+			db.loadResult();
+		} else {
+			db.setSQL(sql.UPDATE_WORKFLOW_TASK);
+			setTaskDBParams(task, db);
+			db.addParam(task.getId());
+			db.loadResult();
+		}
+
+		cache.remove(task);
+	}
+
+	private void setTaskDBParams(WorkflowTask task, DotConnect db) {
+		db.addParam(task.getCreationDate());
+		db.addParam(task.getModDate());
+		db.addParam(task.getDueDate());
+		db.addParam(task.getCreatedBy());
+		db.addParam(task.getAssignedTo());
+		db.addParam(task.getBelongsTo());
+		db.addParam(task.getTitle());
+		db.addParam(task.getDescription());
+		db.addParam(task.getStatus());
+		db.addParam(task.getWebasset());
+		db.addParam(task.getLanguageId());
 	}
 
 	@Override
