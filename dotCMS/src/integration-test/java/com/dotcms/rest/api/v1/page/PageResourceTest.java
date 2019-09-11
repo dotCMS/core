@@ -1,10 +1,14 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.rest.*;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -14,6 +18,7 @@ import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
@@ -25,11 +30,9 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -38,7 +41,9 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.jvnet.hk2.internal.Collector;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -47,7 +52,7 @@ import javax.ws.rs.core.Response;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -55,6 +60,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 /**
  * {@link PageResource} test
@@ -84,10 +90,14 @@ public class PageResourceTest {
 
     @Before
     public void init() throws DotSecurityException, DotDataException {
+
+        // Collection to store attributes keys/values
+        final Map<String, Object> attributes = new ConcurrentHashMap<>();
         session = mock(HttpSession.class);
         request  = mock(HttpServletRequest.class);
         response  = mock(HttpServletResponse.class);
 
+        final ModuleConfig moduleConfig     = mock(ModuleConfig.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
         user = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
 
@@ -102,13 +112,30 @@ public class PageResourceTest {
         when(initDataObject.getUser()).thenReturn(user);
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
 
+        when(request.getRequestURI()).thenReturn("/test");
         when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
+        when(request.getSession(true)).thenReturn(session);
+        when(session.getAttribute("clickstream")).thenReturn(new Clickstream());
 
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         host = new SiteDataGen().name(hostName).nextPersisted();
         APILocator.getVersionableAPI().setWorking(host);
         APILocator.getVersionableAPI().setLive(host);
         when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
+        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
+        when(request.getAttribute("com.dotcms.repackage.org.apache.struts.action.MODULE")).thenReturn(moduleConfig);
+        // Mock setAttribute
+        Mockito.doAnswer((InvocationOnMock invocation)-> {
+
+                String key = invocation.getArgumentAt(0, String.class);
+                Object value = invocation.getArgumentAt(1, Object.class);
+                if (null != key && null != value) {
+                    attributes.put(key, value);
+                }
+                return null;
+        }).when(request).setAttribute(Mockito.anyString(), Mockito.anyObject());
+
 
         Folder aboutUs = APILocator.getFolderAPI().findFolderByPath(String.format("/%s/",folderName), host, APILocator.systemUser(), false);
         if(null == aboutUs || !UtilMethods.isSet(aboutUs.getIdentifier())) {
@@ -146,37 +173,36 @@ public class PageResourceTest {
         final String  htmlPage            = UUIDGenerator.generateUuid();
         final String  container           = UUIDGenerator.generateUuid();
         final String  content             = UUIDGenerator.generateUuid();
-        final List<Contentlet> contentlets  = APILocator.getContentletAPI().search
-                (new StringBuilder("+contentType:persona +live:true +deleted:false +working:true +conhost:" + host.getIdentifier()).toString(),
-                        -1, 0, "title desc", APILocator.systemUser(), false);
-        final Optional<Contentlet> personaOpt = contentlets.stream().findFirst();
-        if (personaOpt.isPresent()) {
-            final Persona persona = APILocator.getPersonaAPI().fromContentlet(personaOpt.get());
-            final String personaTag = persona.getKeyTag();
-            final String personalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
+        final Persona persona    = new PersonaDataGen().keyTag("persona"+System.currentTimeMillis()).hostFolder(host.getIdentifier()).nextPersisted();
+        final String personaTag  = persona.getKeyTag();
+        final String personalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
 
-            multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
-            multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
+        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
 
-            when(request.getRequestURI()).thenReturn("/index");
-            final Response response = pageResource.getPersonalizedPersonasOnPage(request, new EmptyHttpResponse(),
-                    null, 0, 10, "title", "ASC", host.getIdentifier(), htmlPage);
+        persona.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        APILocator.getContentletAPI().publish(persona, user, false);
 
-            final ResponseEntityView entityView = (ResponseEntityView) response.getEntity();
-            assertNotNull(entityView);
+        when(request.getRequestURI()).thenReturn("/index");
+        final Response response = pageResource.getPersonalizedPersonasOnPage(request, new EmptyHttpResponse(),
+                null, 0, 10, "title", "ASC", host.getIdentifier(), htmlPage);
 
-            final PaginatedArrayList<PersonalizationPersonaPageView> paginatedArrayList = (PaginatedArrayList) entityView.getEntity();
-            assertNotNull(paginatedArrayList);
+        final ResponseEntityView entityView = (ResponseEntityView) response.getEntity();
+        assertNotNull(entityView);
 
-            Logger.info(this, "************ htmlPage: " + htmlPage + ", container: " + container + ", personaTag: " + personaTag);
-            Logger.info(this, "************ PaginatedArrayList: " + paginatedArrayList.stream()
-                    .map(p -> Tuple.of(p.getPersona().get(PersonaAPI.KEY_TAG_FIELD), p.getPersona().get("personalized"))).collect(Collectors.toList()));
+        final PaginatedArrayList<PersonalizationPersonaPageView> paginatedArrayList = (PaginatedArrayList) entityView.getEntity();
+        assertNotNull(paginatedArrayList);
 
-            assertTrue(paginatedArrayList.stream().anyMatch(personalizationPersonaPageView ->
-                    personalizationPersonaPageView.getPersona().get(PersonaAPI.KEY_TAG_FIELD).equals(personaTag) &&
-                            Boolean.TRUE.equals(personalizationPersonaPageView.getPersona().get("personalized"))));
-        }
+        Logger.info(this, "************ htmlPage: " + htmlPage + ", container: " + container + ", personaTag: " + personaTag);
+        Logger.info(this, "************ PaginatedArrayList1: " + paginatedArrayList);
+        Logger.info(this, "************ PaginatedArrayList2: " + paginatedArrayList.stream()
+                .map(p -> Tuple.of(p.getPersona().get(PersonaAPI.KEY_TAG_FIELD), p.getPersona().get("personalized"))).collect(Collectors.toList()));
+
+        assertTrue(paginatedArrayList.stream().anyMatch(personalizationPersonaPageView ->
+                personalizationPersonaPageView.getPersona().get(PersonaAPI.KEY_TAG_FIELD).equals(personaTag) &&
+                        Boolean.TRUE.equals(personalizationPersonaPageView.getPersona().get("personalized"))));
     }
+
 
     /**
      * Should return about-us/index page
@@ -296,6 +322,7 @@ public class PageResourceTest {
                 .map((ContainerRaw containerRaw) -> containerRaw.getContainer().getIdentifier())
                 .collect(Collectors.toList());
 
+        assertEquals(pageView.getNumberContents(), 0);
         assertTrue(containerIds.contains(localContainer1.getIdentifier()));
         assertTrue(containerIds.contains(localContainer1.getIdentifier()));
         assertFalse(containerIds.contains(container1.getIdentifier()));
@@ -316,5 +343,77 @@ public class PageResourceTest {
             }
             assertEquals(contentlets.size(), 1);
         }
+
+    }
+
+    /**
+     * Should remove visitors and persona from session
+     *
+     */
+    @Test
+    public void testRemoveVisitorAndPersona() throws DotDataException, DotSecurityException {
+        final String personaId = "1";
+        final String languageId = "1";
+        final String deviceInode = "3";
+
+        final String mode = "PREVIEW_MODE";
+        pageResource.render(request, response, pagePath, mode, personaId, languageId, deviceInode);
+        pageResource.render(request, response, pagePath, null, null, languageId, null);
+
+        verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
+        verify(session).removeAttribute(WebKeys.VISITOR);
+    }
+
+    /**
+     * Should return haveContent equals to true for a page with MultiTree linked
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testRenderWithContent() throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container localContainer = new ContainerDataGen().withStructure(structure,"").friendlyName("container-1-friendly-name").title("container-1-title").nextPersisted();
+
+        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
+                .withContainer(localContainer.getIdentifier())
+                .next();
+
+        final Template newTemplate = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .withContainer(localContainer.getIdentifier()
+                ).nextPersisted();
+        APILocator.getVersionableAPI().setWorking(newTemplate);
+        APILocator.getVersionableAPI().setLive(newTemplate);
+
+        final Contentlet checkout = APILocator.getContentletAPIImpl().checkout(pageAsset.getInode(), systemUser, false);
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate.getIdentifier());
+
+        APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
+        final Contentlet contentlet = contentletDataGen.setProperty("title", "title")
+                .setProperty("body", "body").languageId(1).nextPersisted();
+
+
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(), localContainer.getIdentifier(), contentlet.getIdentifier(), "1", 1);
+        multiTreeAPI.saveMultiTree(multiTree);
+
+        final Response response = pageResource
+                .loadJson(request, this.response, pagePath, "PREVIEW_MODE", null,
+                        "1", null);
+
+        RestUtilTest.verifySuccessResponse(response);
+
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertEquals(pageView.getNumberContents(), 1);
+
     }
 }

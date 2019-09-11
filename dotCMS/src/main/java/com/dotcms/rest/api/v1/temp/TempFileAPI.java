@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.temp;
 
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.util.WebKeys;
+import com.dotcms.rest.exception.BadRequestException;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
@@ -23,7 +22,8 @@ import com.dotcms.util.CloseUtils;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -31,10 +31,14 @@ import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.util.Encryptor;
 import com.liferay.util.StringPool;
 
@@ -45,6 +49,9 @@ public class TempFileAPI {
   public static final String TEMP_RESOURCE_MAX_AGE_SECONDS = "TEMP_RESOURCE_MAX_AGE_SECONDS";
   public static final String TEMP_RESOURCE_ALLOW_ANONYMOUS = "TEMP_RESOURCE_ALLOW_ANONYMOUS";
   public static final String TEMP_RESOURCE_ALLOW_NO_REFERER = "TEMP_RESOURCE_ALLOW_NO_REFERER";
+  public static final String TEMP_RESOURCE_MAX_FILE_SIZE = "TEMP_RESOURCE_MAX_FILE_SIZE";
+  public static final String TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS = "TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS";
+  
   public static final String TEMP_RESOURCE_ENABLED = "TEMP_RESOURCE_ENABLED";
   public static final String TEMP_RESOURCE_PREFIX = "temp_";
 
@@ -66,7 +73,9 @@ public class TempFileAPI {
     
     
     final User user = PortalUtil.getUser(request);
+
     final String sessionId = (request.getSession(false)!=null) ? request.getSession().getId() : null;
+
     final String requestFingerprint = this.getRequestFingerprint(request);
     
     
@@ -100,10 +109,35 @@ public class TempFileAPI {
       throw new DotRuntimeException("Invalid file upload");
     }
     createTempPermissionFile(tempFolder, allowList);
-
+    SecurityLogger.logInfo(this.getClass(),"Temp File Created with id: " + tempFileId + ", uploaded by userId: " + user.getUserId());
     return new DotTempFile(tempFileId, tempFile);
   }
 
+  /**
+   * This method takes a request and based upon it it returns the max file size that can be
+   * uploaded, based on the user uploading.  Anonymous users can have smaller file size limitations
+   * than authenticated users.  A return of -1 means unlimited.
+   * @param request
+   * @return
+   */
+  @VisibleForTesting
+  public long maxFileSize(final HttpServletRequest request) {
+    
+
+    final long requestedMax = Try.of(()->Long.parseLong(request.getParameter("maxFileLength"))).getOrElse(-1l);
+    final long systemMax =  Config.getLongProperty(TEMP_RESOURCE_MAX_FILE_SIZE, -1l);
+    final long anonMax =  Config.getLongProperty(TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS, -1l);
+    final boolean isAnon = PortalUtil.getUserId(request) == null || UserAPI.CMS_ANON_USER_ID.equals(PortalUtil.getUserId(request));
+    
+    List<Long> longs = (isAnon) ? Lists.newArrayList(requestedMax,systemMax,anonMax) : Lists.newArrayList(requestedMax,systemMax);
+    longs.removeIf(i-> i < 0);
+    Collections.sort(longs); 
+    return longs.isEmpty() ? -1l : longs.get(0);
+
+  }
+  
+  
+  
   /**
    * Writes an InputStream to a temp file and returns the tempFile with a unique id and file handle
    * that can be used to access the temp file. The request will be used to create a fingerprint
@@ -116,14 +150,16 @@ public class TempFileAPI {
    * @return
    * @throws DotSecurityException
    */
-  public DotTempFile createTempFile(final String incomingFileName,final HttpServletRequest request, final InputStream inputStream)
+  public DotTempFile createTempFile(final String incomingFileName,final HttpServletRequest request, final InputStream inputStream, final long maxLength)
       throws DotSecurityException {
     
-
     final DotTempFile dotTempFile = this.createEmptyTempFile(incomingFileName, request);
     final File tempFile = dotTempFile.file;
 
-    try (final OutputStream out = new FileOutputStream(tempFile)) {
+        
+    try (final OutputStream out = new BoundedOutputStream(maxFileSize(request),new FileOutputStream(tempFile))) {
+
+
       int read = 0;
       byte[] bytes = new byte[4096];
       while ((read = inputStream.read(bytes)) != -1) {
@@ -131,7 +167,9 @@ public class TempFileAPI {
       }
       return dotTempFile;
     } catch (Exception e) {
-      throw new DotRuntimeException("unable to create tmpFile:" + dotTempFile, e);
+      String message = APILocator.getLanguageAPI().getStringKey(WebAPILocator.getLanguageWebAPI().getLanguage(request), "temp.file.max.file.size.error").replace("{0}", UtilMethods.prettyByteify(maxLength));
+      
+      throw new DotRuntimeException(message, e);
     } finally {
       CloseUtils.closeQuietly(inputStream);
     }
@@ -147,38 +185,31 @@ public class TempFileAPI {
    * @return
    * @throws DotSecurityException
    */
-  public DotTempFile createTempFileFromUrl(final String incomingFileName,final HttpServletRequest request, final URL url, final int timeoutSeconds)
-      throws DotSecurityException {
+  public DotTempFile createTempFileFromUrl(final String incomingFileName,
+          final HttpServletRequest request, final URL url, final int timeoutSeconds,
+          final long maxLength)
+          throws DotSecurityException, IOException {
 
-    if (!validUrl(url)) {
-      throw new DotSecurityException("Invalid url attempted for tempFile:" + url);
-    }
+      final String fileName = resolveFileName(incomingFileName, url);
 
+      final DotTempFile dotTempFile = createEmptyTempFile(fileName, request);
+      final File tempFile = dotTempFile.file;
 
+      final OutputStream out = new BoundedOutputStream(maxFileSize(request),
+              new FileOutputStream(tempFile));
 
-    final String fileName = resolveFileName(incomingFileName, url);
-
-    final DotTempFile dotTempFile = createEmptyTempFile(fileName, request);
-    final String tempFileId = dotTempFile.id;
-    final File tempFile = dotTempFile.file;
-
-    try (OutputStream fileOut = new FileOutputStream(tempFile)) {
       final CircuitBreakerUrl urlGetter =
-          CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url.toString()).setTimeout(timeoutSeconds * 1000).build();
-      urlGetter.doOut(fileOut);
-      if (urlGetter.response() != 200) {
-        throw new DoesNotExistException("Url not found. Got a " + urlGetter.response());
-      }
-    } catch (Exception e) {
-      Logger.warnAndDebug(this.getClass(), "unable to save temp file:" + tempFileId, e);
-      throw new DotRuntimeException(e);
-    }
-    return dotTempFile;
+              CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url.toString())
+                      .setTimeout(timeoutSeconds * 1000).build();
+
+      urlGetter.doOut(out);
+
+      return dotTempFile;
 
   }
 
-  private boolean validUrl(final URL url) {
-    return Try.of(() -> url.toString().toLowerCase().startsWith("http://") || url.toString().toLowerCase().startsWith("https://"))
+  public boolean validUrl(final String url) {
+    return Try.of(() -> url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://"))
         .getOrElse(false);
   }
 
@@ -324,27 +355,23 @@ public class TempFileAPI {
   public String getRequestFingerprint(final HttpServletRequest request) {
     
     final List<String> uniqList = new ArrayList<String>();
-    uniqList.add("User-Agent:" + request.getHeader("User-Agent"));
-    uniqList.add("Host:" + request.getHeader("Host"));
-    uniqList.add("Accept-Language:" + request.getHeader("Accept-Language"));
-
-    uniqList.add("Accept-Encoding:" + request.getHeader("Accept-Encoding"));
-    uniqList.add("X-Forwarded-For:" + request.getHeader("X-Forwarded-For"));
-    uniqList.add("getRemoteHost:" + request.getRemoteHost());
-    uniqList.add("isSecure:" + request.isSecure());
-    uniqList.add("getRemoteAddr:" + request.getRemoteAddr());
+    uniqList.add(request.getHeader("User-Agent"));
+    uniqList.add(request.getHeader("Host"));
+    uniqList.add(request.getHeader("Accept-Language"));
+    uniqList.add(request.getHeader("Accept-Encoding"));
+    uniqList.add(request.getHeader("X-Forwarded-For"));
+    uniqList.add(request.getRemoteHost());
+    uniqList.add(String.valueOf(request.isSecure()));
+    uniqList.add(request.getRemoteAddr());
     
     final String incomingReferer = (request.getHeader("Origin")!=null) ? request.getHeader("Origin") :  request.getHeader("referer");
-    uniqList.add("incomingReferer:" + new SecurityUtils().hostFromUrl(incomingReferer));
+    uniqList.add(new SecurityUtils().hostFromUrl(incomingReferer));
 
-    uniqList.add("userId:" + PortalUtil.getUserId(request));
-
-    if(request.getSession(false)!=null) {
-      uniqList.add("getSession:" + request.getSession().getId());
-    }
+    
     uniqList.removeIf(Objects::isNull);
-    if(uniqList.isEmpty()) {
-      throw new DotRuntimeException("Invalid request - no unique identifiers passed in");
+    if(uniqList.size() < 4) {
+      Logger.warn(this.getClass(),"request does not have enough params to create a valid fingerprint");
+      uniqList.add(UUIDGenerator.generateUuid());
     }
     
     final String fingerPrint = String.join(" , ", uniqList);
@@ -355,4 +382,9 @@ public class TempFileAPI {
   }
   
 
+  
+
+  
+  
+  
 }

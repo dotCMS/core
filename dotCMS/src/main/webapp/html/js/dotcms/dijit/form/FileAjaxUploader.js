@@ -68,6 +68,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
     idShorty:'',
     licenseLevel:100,
     accept:'*/*',
+    maxFileLength:"-1",
     postMixInProperties: function (elem) {
         if((this.name == null) || (this.name == ''))
             this.name = this.id;
@@ -184,6 +185,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
         
         xhr.onload = (self => {
             return () => {
+                dojo.style(this.fileUploadStatus, { display: 'none' });
                 if (xhr.status == 200) {
                     
                     let data = JSON.parse(xhr.responseText);
@@ -197,8 +199,14 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 
                     
                 } else {
-                    alert("Error! Upload failed");
-                    console.log("xhr error:", xhr);
+                    let data = JSON.parse(xhr.responseText);
+                    if(data.message){
+                        alert(data.message);
+                    }else{
+                        alert("Error! Upload failed");
+                    }
+                    
+
                 }
             };
         })(this);
@@ -242,7 +250,7 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
                 }
             }
         }
-        xhr.open("POST", "/api/v1/temp", true);
+        xhr.open("POST", "/api/v1/temp?maxFileLength=" + this.maxFileLength, true);
         xhr.send(formData);
         this.progressBar.update({ progress: 0 });
         dojo.style(this.fileUploadStatus, { display: '' });

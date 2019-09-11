@@ -4,9 +4,46 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
+import com.dotmarketing.common.reindex.ReindexEntry;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
+import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.ReindexRunnable;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
+import com.liferay.util.StringPool;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -26,7 +63,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-
+import java.util.stream.Collectors;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -46,47 +83,6 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryAction;
-
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.content.business.DotMappingException;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.reindex.ReindexEntry;
-import com.dotmarketing.common.reindex.ReindexQueueAPI;
-import com.dotmarketing.common.reindex.ReindexThread;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.db.ReindexRunnable;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ThreadUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
-import com.google.gson.Gson;
-import com.liferay.util.StringPool;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
-
-import io.vavr.control.Try;
-import org.elasticsearch.index.reindex.DeleteByQueryRequestBuilder;
 
 public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
@@ -204,6 +200,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             IndiciesInfo info = new IndiciesInfo();
             info.working = workingIndex;
             info.live = liveIndex;
+
+            IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
+
+            if (oldInfo != null && oldInfo.site_search != null){
+                info.site_search = oldInfo.site_search;
+            }
             APILocator.getIndiciesAPI().point(info);
 
             return timeStamp;
@@ -221,7 +223,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * the new re-indexed content available and then work on the conflicting contents, which can be
      * either fixed or removed from the database.
      * </p>
-     * 
+     *
      * @throws SQLException An error occurred when interacting with the database.
      * @throws DotDataException The process to switch to the new failed.
      * @throws InterruptedException The established pauses to switch to the new index failed.
@@ -237,12 +239,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             ReindexThread.unpause();
         }
     }
-    
+
     /**
      * Switches the current index structure to the new re-indexed data. This method also allows users to
      * switch to the new re-indexed data even if there are still remaining contents in the
      * {@code dist_reindex_journal} table.
-     * 
+     *
      * @param forceSwitch - If {@code true}, the new index will be used, even if there are contents that
      *        could not be processed. Otherwise, set to {@code false} and the index switch will only
      *        happen if ALL contents were re-indexed.
@@ -266,11 +268,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
     }
-    
+
     /**
      * creates new working and live indexes with reading aliases pointing to old index and write aliases
      * pointing to both old and new indexes
-     * 
+     *
      * @return the timestamp string used as suffix for indices
      * @throws DotDataException
      * @throws ElasticsearchException
@@ -295,6 +297,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 newinfo.live = info.live;
                 newinfo.reindex_working = workingIndex;
                 newinfo.reindex_live = liveIndex;
+                newinfo.site_search = info.site_search;
                 APILocator.getIndiciesAPI().point(newinfo);
 
                 return timeStamp;
@@ -319,13 +322,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     /**
      * This will drop old index and will point read aliases to new index. This method should be called
      * after call to {@link #fullReindexStart()}
-     * 
+     *
      * @return
      */
     @CloseDBIfOpened
     public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch) {
-      
-      
+
+
         if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 15)*1000) {
           Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
           ThreadUtils.sleep(3000);
@@ -384,10 +387,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         return 0;
     }
-    
-    
-    
-    
+
+
+
+
   @Override
   public Optional<String> reindexTimeElapsed() {
     try {
@@ -430,37 +433,42 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     @Override
-    public void addContentToIndex(final Contentlet content, final boolean deps) throws DotDataException {
-        addContentToIndex(content, deps, false);
-    }
-
-    @Override
-    public void addContentToIndex(final Contentlet parentContenlet, final boolean includeDependencies, final boolean indexBeforeCommit)
+    public void addContentToIndex(final Contentlet parentContenlet, final boolean includeDependencies)
             throws DotDataException {
 
         if (null == parentContenlet || !UtilMethods.isSet(parentContenlet.getIdentifier())) {
             return;
         }
 
-        Logger.info(this, "Indexing: " + parentContenlet.getIdentifier() + ", includeDependencies: " + includeDependencies);
+        Logger.info(this, "Indexing: " + parentContenlet.getIdentifier()
+                + ", includeDependencies: " + includeDependencies +
+                ", policy: " + parentContenlet.getIndexPolicy());
 
-        // parentContenlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        final List<Contentlet> contentToIndex =
-                (includeDependencies) ? ImmutableList.<Contentlet>builder().add(parentContenlet).addAll(loadDeps(parentContenlet)).build()
-                        : ImmutableList.of(parentContenlet);
+        final List<Contentlet> contentToIndex = includeDependencies
+                ? ImmutableList.<Contentlet>builder()
+                .add(parentContenlet)
+                .addAll(
+                        loadDeps(parentContenlet)
+                                .stream()
+                                .peek((dep)-> dep.setIndexPolicy(parentContenlet.getIndexPolicyDependencies()))
+                                .collect(Collectors.toList()))
+                .build()
+                : ImmutableList.of(parentContenlet);
 
-        if (indexBeforeCommit == false && DbConnectionFactory.inTransaction()) {
+
+        if(parentContenlet.getIndexPolicy()==IndexPolicy.DEFER) {
             queueApi.addContentletsReindex(contentToIndex);
+        } else if (!DbConnectionFactory.inTransaction()) {
+            addContentToIndex(contentToIndex);
+        } else {
+            HibernateUtil.addCommitListener(() -> addContentToIndex(contentToIndex));
         }
-
-        addContentToIndex(contentToIndex);
-
     }
-    
+
     /**
      * Stops the full re-indexation process. This means clearing up the content queue and the reindex
      * journal.
-     * 
+     *
      * @throws DotDataException
      */
     @Override
@@ -654,7 +662,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (contentToIndex != null && !contentToIndex.isEmpty()) {
             Logger.debug(this.getClass(),
                     "Indexing " + contentToIndex.size() + " contents, starting with identifier [ "
-                            + contentToIndex.get(0).getMap().get("identifier") + "]");
+                            + contentToIndex.get(0).getIdentifier() + "]");
         }
 
         // eliminate dups
@@ -682,7 +690,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             try {
 
-                if (Sneaky.sneak(() -> contentlet.isWorking())) {
+                if (this.isWorking(contentlet)) {
                     mapping = gson.toJson(mappingAPI.toMap(contentlet));
                     if (!forReindex || info.reindex_working == null) {
                         bulk.add(new IndexRequest(info.working, "content", id)
@@ -694,7 +702,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     }
                 }
 
-                if (Sneaky.sneak(() -> contentlet.isLive())) {
+                if (this.isLive(contentlet)) {
                     if (mapping == null) {
                         mapping = gson.toJson(mappingAPI.toMap(contentlet));
                     }
@@ -716,6 +724,36 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 throw ex;
             }
         }
+    }
+
+    private boolean isWorking (final Contentlet contentlet) {
+
+        boolean isWorking = false;
+
+        try {
+            isWorking = contentlet.isWorking();
+        }catch (Exception e) {
+            Logger.debug(this, e.getMessage(), e);
+            Logger.warn(this, e.getMessage(), e);
+            isWorking = false;
+        }
+
+        return isWorking;
+    }
+
+    private boolean isLive (final Contentlet contentlet) {
+
+        boolean isLive = false;
+
+        try {
+            isLive = contentlet.isLive();
+        }catch (Exception e) {
+            Logger.debug(this, e.getMessage(), e);
+            Logger.warn(this, e.getMessage(), e);
+            isLive = false;
+        }
+
+        return isLive;
     }
 
     @CloseDBIfOpened
@@ -977,6 +1015,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             IndiciesInfo newinfo = new IndiciesInfo();
             newinfo.working = info.working;
             newinfo.live = info.live;
+            newinfo.site_search = info.site_search;
             APILocator.getIndiciesAPI().point(newinfo);
 
             esIndexApi.moveIndexBackToCluster(rew);

@@ -11,8 +11,12 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.PermissionType;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -24,6 +28,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
+import io.vavr.API;
 import java.util.Date;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -63,6 +68,19 @@ public class ContentMapTest extends IntegrationTestBase {
     @Test
     public void testGet_showCategories_AsAnonUser() throws DotDataException, DotSecurityException {
 
+        // save proper permissions to SYSTEM_HOST
+
+        final Permission catsPermsSystemHost = new Permission();
+        final Role anonUserRole = APILocator.getRoleAPI().loadRoleByKey("CMS Anonymous");
+        catsPermsSystemHost.setRoleId(anonUserRole.getId());
+        catsPermsSystemHost.setInode(Host.SYSTEM_HOST);
+        catsPermsSystemHost.setBitPermission(true);
+        catsPermsSystemHost.setType(PermissionType.CATEGORY.getKey());
+        catsPermsSystemHost.setPermission(PermissionAPI.PERMISSION_READ);
+
+        APILocator.getPermissionAPI().save(catsPermsSystemHost, APILocator.systemHost(),
+                APILocator.systemUser(), false);
+
         //Create Categories
         final Category categoryChild1 = new CategoryDataGen().setCategoryName("RoadBike-"+System.currentTimeMillis()).setKey("RoadBike").setKeywords("RoadBike").setCategoryVelocityVarName("roadBike").next();
         final Category categoryChild2 = new CategoryDataGen().setCategoryName("MTB-"+System.currentTimeMillis()).setKey("MTB").setKeywords("MTB").setCategoryVelocityVarName("mtb").next();
@@ -90,7 +108,7 @@ public class ContentMapTest extends IntegrationTestBase {
 
         final Context velocityContext = mock(Context.class);
 
-        final ContentMap contentMap = new ContentMap(contentlet,userAPI.getAnonymousUser(),
+        final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
                 PageMode.LIVE,defaultHost,velocityContext);
 
         //If is null no categories were pulled

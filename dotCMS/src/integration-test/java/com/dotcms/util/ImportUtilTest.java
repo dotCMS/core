@@ -526,7 +526,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             }
             assertEquals(spanishFound, 2);
         } finally {
-            contentTypeApi.delete(new StructureTransformer(contentType).from());
+            try {
+                contentTypeApi.delete(new StructureTransformer(contentType).from());
+            }catch (Exception e) {e.printStackTrace();}
+
         }
     }
 
@@ -658,7 +661,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
 
         } finally {
-            contentTypeApi.delete(type);
+            try {
+                contentTypeApi.delete(type);
+            }catch (Exception e) { e.printStackTrace(); }
         }
     }
 
@@ -730,7 +735,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertEquals("Line # 3 contains duplicate values for a unique Content Type field testTitle and will be ignored.", results.get("warnings").get(1));
 
         } finally {
-            contentTypeApi.delete(type);
+            try {
+                contentTypeApi.delete(type);
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 
@@ -801,14 +808,20 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
             assertTrue(savedData.size() == 3);
+
+            Logger.info(this, "Printing all workflow tasks");
+            workflowAPI.searchAllTasks(null).forEach(System.out::println);
+
             for (final Contentlet cont : savedData) {
                 assertNotNull(workflowAPI.findTaskByContentlet(cont));
             }
 
         } finally {
-            if (null != contentType) {
-                contentTypeApi.delete(contentType);
-            }
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 
@@ -890,8 +903,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             }
 
         } finally {
-            if (null != contentType) {
-                contentTypeApi.delete(contentType);
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -961,6 +978,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
             assertTrue(savedData.size() == 3);
+
+            Logger.info(this, "Printing all workflow tasks");
+            workflowAPI.searchAllTasks(null).forEach(System.out::println);
+
             for (final Contentlet cont : savedData) {
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
                 if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testG)) {
@@ -976,9 +997,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             }
 
         } finally {
-            if (null != contentType) {
-                contentTypeApi.delete(contentType);
-            }
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 
@@ -1058,9 +1081,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             }
 
         } finally {
-            if (null != contentType) {
-                contentTypeApi.delete(contentType);
-            }
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 
@@ -1193,9 +1218,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             }
 
         } finally {
-            if (null != contentType) {
-                contentTypeApi.delete(contentType);
-            }
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 
@@ -1243,9 +1270,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validateRelationshipResults(relationship, parentContentlet, childContentlet, results);
 
         } finally {
-            if (type != null) {
-                contentTypeApi.delete(type);
-            }
+            try {
+                if (type != null) {
+                    contentTypeApi.delete(type);
+                }
+            }catch (Exception e) {e.printStackTrace();}
         }
     }
 
@@ -1315,12 +1344,16 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validateRelationshipResults(relationship, null, childContentlet, results);
 
         } finally {
-            if (parentContentType != null) {
-                contentTypeApi.delete(parentContentType);
-            }
+            try {
+                if (parentContentType != null) {
+                    contentTypeApi.delete(parentContentType);
+                }
 
-            if (childContentType != null) {
-                contentTypeApi.delete(childContentType);
+                if (childContentType != null) {
+                    contentTypeApi.delete(childContentType);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -1383,12 +1416,16 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertNotNull(childTrees);
             assertEquals(0, childTrees.size());
         } finally {
-            if (parentContentType != null) {
-                contentTypeApi.delete(parentContentType);
-            }
+            try {
+                if (parentContentType != null) {
+                    contentTypeApi.delete(parentContentType);
+                }
 
-            if (childContentType != null) {
-                contentTypeApi.delete(childContentType);
+                if (childContentType != null) {
+                    contentTypeApi.delete(childContentType);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -1451,12 +1488,16 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertEquals(1, childTrees.size());
             assertEquals(childContentlet.getIdentifier(), childTrees.get(0).getChild());
         } finally {
-            if (parentContentType != null) {
-                contentTypeApi.delete(parentContentType);
-            }
+            try {
+                if (parentContentType != null) {
+                    contentTypeApi.delete(parentContentType);
+                }
 
-            if (childContentType != null) {
-                contentTypeApi.delete(childContentType);
+                if (childContentType != null) {
+                    contentTypeApi.delete(childContentType);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -1519,12 +1560,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertEquals(1, childTrees.size());
             assertEquals(childContentlet.getIdentifier(), childTrees.get(0).getChild());
         } finally {
-            if (parentContentType != null) {
-                contentTypeApi.delete(parentContentType);
-            }
+            try {
 
-            if (childContentType != null) {
-                contentTypeApi.delete(childContentType);
+                if (parentContentType != null) {
+                    contentTypeApi.delete(parentContentType);
+                }
+
+                if (childContentType != null) {
+                    contentTypeApi.delete(childContentType);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -1576,8 +1622,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validateRelationshipResults(relationship, null, childContentlet, results);
 
         } finally {
-            if (parentContentType != null) {
-                contentTypeApi.delete(parentContentType);
+            try {
+                if (parentContentType != null) {
+                    contentTypeApi.delete(parentContentType);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -1646,8 +1696,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             validateRelationshipResults(relationship, parentContentlet, childContentlet, results);
 
         } finally {
-            if (parentContentType != null) {
-                contentTypeApi.delete(parentContentType);
+            try {
+                if (parentContentType != null) {
+                    contentTypeApi.delete(parentContentType);
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

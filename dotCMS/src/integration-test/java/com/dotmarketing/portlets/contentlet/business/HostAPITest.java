@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -52,7 +53,7 @@ import org.quartz.JobExecutionContext;
  * @since Sep 5, 2013
  *
  */
-public class HostAPITest {
+public class HostAPITest extends IntegrationTestBase  {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -92,11 +93,13 @@ public class HostAPITest {
     @Test
     public void testDeleteHostCleanUpTemplates() throws Exception {
 
+
+
         final User user = APILocator.getUserAPI().getSystemUser();
         final Host host = new SiteDataGen().nextPersisted();
 
         final DotConnect dc = new DotConnect();
-        final String query = "select inode.inode from inode left outer join template on template.inode = inode.inode where template.inode is null and inode.type='template';";
+        final String query = "select inode.inode from inode left outer join template on template.inode = inode.inode where template.inode is null and inode.type='template'";
 
         //Verifies that the environment is clean
         dc.setSQL(query);
@@ -208,6 +211,9 @@ public class HostAPITest {
         //Getting the default host
         Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, false);
         defaultHost.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        if (!defaultHost.isLive()) {
+            APILocator.getHostAPI().publish(defaultHost, user, false);
+        }
 
         //Create a new test host
         final String newHostName = "test" + System.currentTimeMillis() + ".dotcms.com";

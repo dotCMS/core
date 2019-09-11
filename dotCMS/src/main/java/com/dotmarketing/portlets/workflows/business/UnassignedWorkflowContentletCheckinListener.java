@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Config;
@@ -27,6 +28,7 @@ import java.util.List;
  */
 public class UnassignedWorkflowContentletCheckinListener implements EventSubscriber<ContentletCheckinEvent> {
 
+    private static final String AUTO_ASSIGN_WORKFLOW = Contentlet.AUTO_ASSIGN_WORKFLOW;
     private volatile AutoAssignWorkflowDelegate customAutoAssignWorkflowDelegate;
     private final    AutoAssignWorkflowDelegate autoAssignWorkflowDelegate =
             UnassignedWorkflowContentletCheckinListener::assign;
@@ -61,7 +63,7 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
 
         try {
 
-            if (Config.getBooleanProperty("AUTO_ASSIGN_WORKFLOW", true) &&
+            if (Config.getBooleanProperty(AUTO_ASSIGN_WORKFLOW, true) &&
                     this.validContentType(event.getContentlet()) &&
                     !APILocator.getWorkflowAPI().findCurrentStep(event.getContentlet()).isPresent()) {
 
@@ -79,8 +81,18 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
 
     private boolean validContentType(final Contentlet contentlet) {
 
+        // is valid if not host and
+        // no auto assign attribute and if exists no in true
+
+        boolean autoAssign = true;
+
+        if (null != contentlet.get(AUTO_ASSIGN_WORKFLOW)) {
+
+            autoAssign = contentlet.getBoolProperty(AUTO_ASSIGN_WORKFLOW); // if AUTO_ASSIGN_WORKFLOW is set and FALSE, won't auto assign
+        }
+
         final ContentType contentType = contentlet.getContentType();
-        return null != contentType && !Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable());
+        return null != contentType && !Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable()) && autoAssign;
     }
 
     private static void assign (final Contentlet contentlet, final User user) {
@@ -95,7 +107,7 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
 
                 if (null != identifier && UtilMethods.isSet(identifier.getId())) {
 
-                    final List<WorkflowAction> workflowActions = APILocator.getWorkflowAPI()
+                    final List<WorkflowAction> workflowActions = APILocator.getWorkflowAPI() // todo: see if what you need is the first step of all schemes or if this is ok
                             .findAvailableDefaultActionsByContentType(contentlet.getContentType(), user);
 
                     if (UtilMethods.isSet(workflowActions)) {
@@ -104,7 +116,7 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
                                 createWorkflowTask(contentlet, user, workflowActions));
                     } else {
 
-                        setToFirstSystemWorkflowStep(contentlet, user);
+                        setToFirstWorkflowStep(contentlet, user);
                     }
                 }
             }
@@ -142,10 +154,16 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
         return null != contentlet && null != contentlet.getTitle()? contentlet.getTitle().trim(): "unknown";
     }
 
-    private static void setToFirstSystemWorkflowStep(final Contentlet contentlet, final User user) throws DotDataException {
+    private static void setToFirstWorkflowStep(final Contentlet contentlet, final User user) throws DotDataException {
 
-        final WorkflowStep workflowStep = APILocator.getWorkflowAPI()
-                .findFirstStep(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID).get();
-        APILocator.getWorkflowAPI().saveWorkflowTask(createWorkflowTask(contentlet, user, workflowStep));
+        final List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().
+                findSchemesForContentType(contentlet.getContentType());
+
+        if (UtilMethods.isSet(schemes)) {
+            final WorkflowScheme workflowScheme = schemes.get(0);
+            final WorkflowStep workflowStep = APILocator.getWorkflowAPI()
+                    .findFirstStep(workflowScheme.getId()).get();
+            APILocator.getWorkflowAPI().saveWorkflowTask(createWorkflowTask(contentlet, user, workflowStep));
+        }
     }
 } // E:O:F:UnassignedWorkflowContentletCheckinListener.

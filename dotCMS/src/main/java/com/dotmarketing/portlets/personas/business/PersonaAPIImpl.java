@@ -4,6 +4,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -298,10 +299,24 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
       includeDefaultInList = (displayName.toLowerCase().contains(filter.toLowerCase()));
       includeDefaultInCount=includeDefaultInList;
       List<ContentType> personaTypes= APILocator.getContentTypeAPI(APILocator.systemUser()).findByBaseType(BaseContentType.PERSONA, "mod_date", 100, 0);
+      final Iterator<ContentType> personaTypeIterator = personaTypes.iterator();
+      if (!personaTypes.isEmpty()) {
+        query.append("+");
+        while (personaTypeIterator.hasNext()) {
+          final ContentType personaType = personaTypeIterator.next();
+          // +(persona.name:keyTag*  persona.keytag:keyTag*)
+          query.append(String.format("(%s.name:%s*  %s.keytag:%s*)",personaType.variable(),filter,personaType.variable(),filter));
+          if(personaTypeIterator.hasNext()){
+             query.append(" OR ");
+          }
+        }
+      }
+      /*
       for(ContentType personaType : personaTypes) {
         query.append(" +(" +personaType.variable() + ".name:").append(filter).append("* ");
         query.append(" " +personaType.variable() + ".keytag:").append(filter).append("*)");
       }
+       */
     }
 
     if (includeDefaultInList) {

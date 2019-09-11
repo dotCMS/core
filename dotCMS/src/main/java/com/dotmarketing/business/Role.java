@@ -16,14 +16,24 @@ public class Role implements Serializable,Comparable<Role> {
 	private static final long serialVersionUID = 4882862821671404604L;
 	
 	public static final String SYSTEM = "System";
+	@Deprecated
+	/**
+	 * Use CMS_ADMINISTRATOR_ROLE
+	 */
 	public static final String ADMINISTRATOR = "Administrator";
+	@Deprecated
 	public static final String POLLS_ADMIN = "Polls Admin";
+	@Deprecated
 	public static final String POWER_USER = "Power User";
 	public static final String LOGIN_AS = "Login As";
 	public static final String USER = "User";
 	public static final String CMS_POWER_USER = "CMS Power User";
-	public static final String DEFAULT_CMS_ADMINISTRATOR_ROLE = "CMS Administrator";
+  public static final String CMS_ANONYMOUS_ROLE = "CMS Anonymous";
+  public static final String CMS_OWNER_ROLE = "CMS Owner";
+  public static final String CMS_ADMINISTRATOR_ROLE = "CMS Administrator";
 
+  
+  
 	public static final String DOTCMS_BACK_END_USER  = "DOTCMS_BACK_END_USER";
 	public static final String DOTCMS_FRONT_END_USER = "DOTCMS_FRONT_END_USER";
 
@@ -172,13 +182,14 @@ public class Role implements Serializable,Comparable<Role> {
 	}
 	
 	@Override
-	public boolean equals(Object other) {
-		if (!(other instanceof Role)) {
+	public boolean equals(final Object other) {
+
+		if (null == other || !(other instanceof Role)) {
+
 			return false;
 		}
 
-		Role castOther = (Role) other;
-		
+		final Role castOther = (Role) other;
 		return (this.getId().equalsIgnoreCase(castOther.getId()));
 	}
 

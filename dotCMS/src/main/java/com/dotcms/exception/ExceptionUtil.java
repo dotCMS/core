@@ -360,7 +360,7 @@ public class ExceptionUtil {
         }
 
         public ValidationError(final String message) {
-            this(message, null);
+            this(null, message);
         }
 
         public String getField() {

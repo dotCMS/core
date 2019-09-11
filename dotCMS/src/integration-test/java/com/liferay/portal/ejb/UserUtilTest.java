@@ -318,20 +318,21 @@ public class UserUtilTest {
     @Test(expected = NoSuchUserException.class)
     public void testRemoveByCompanyId()
         throws DotSecurityException, DotDataException, SystemException, NoSuchUserException, NoSuchCompanyException {
-        String id;
-        String userName;
+
+        String id, userName, companyName;
         User user;
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
+        companyName = "fake" + id + ".org";
         user = UserTestUtil.getUser(userName, false, false);
 
-        Company company = PublicCompanyFactory.create("fake.org");
+        Company company = PublicCompanyFactory.create(companyName);
         company.setHomeURL("localhost");
         company.setPortalURL("localhost");
-        company.setMx("fake.org");
-        company.setName("fake.org");
-        company.setShortName("fake.org");
+        company.setMx(companyName);
+        company.setName(companyName);
+        company.setShortName(companyName);
         PublicCompanyFactory.update(company);
         user.setCompanyId(company.getCompanyId());
 
@@ -349,20 +350,21 @@ public class UserUtilTest {
     @Test
     public void testRemoveByCompanyIdMarkDeleted()
         throws DotSecurityException, DotDataException, SystemException, NoSuchUserException, NoSuchCompanyException {
-        String id;
-        String userName;
+
+        String id, companyName, userName;
         User user;
 
         id = String.valueOf(new Date().getTime());
         userName = "user" + id;
+        companyName = "fake" + id + ".org";
         user = UserTestUtil.getUser(userName, true, false);
 
-        Company company = PublicCompanyFactory.create("fake.org");
+        Company company = PublicCompanyFactory.create(companyName);
         company.setHomeURL("localhost");
         company.setPortalURL("localhost");
-        company.setMx("fake.org");
-        company.setName("fake.org");
-        company.setShortName("fake.org");
+        company.setMx(companyName);
+        company.setName(companyName);
+        company.setShortName(companyName);
         PublicCompanyFactory.update(company);
         user.setCompanyId(company.getCompanyId());
 

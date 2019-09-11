@@ -17,6 +17,8 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.*;
@@ -214,20 +216,20 @@ public interface WorkflowAPI {
 
 	/**
 	 * Deletes (reset) a workflow tasks associated to the webAsset by any language
-	 * @param webAsset {@link String}
+	 * @param contentlet {@link Contentlet}
 	 * @param user {@link User}
 	 * @throws DotDataException
 	 */
-	public void deleteWorkflowTaskByContentletIdAnyLanguage(String webAsset, User user) throws DotDataException;
+	public void deleteWorkflowTaskByContentletIdAnyLanguage(Contentlet contentlet, User user) throws DotDataException;
 
 	/**
 	 * Deletes (reset) a workflow tasks associated to the webAsset + language id by any language
-	 * @param webAsset {@link String}
+	 * @param contentlet {@link Contentlet}
 	 * @param languageId {@link Long}
 	 * @param user {@link User}
 	 * @throws DotDataException
 	 */
-	public void deleteWorkflowTaskByContentletId(String webAsset, long languageId, User user) throws DotDataException;
+	public void deleteWorkflowTaskByContentlet(Contentlet contentlet, long languageId, User user) throws DotDataException;
 
 	/**
 	 *
@@ -443,6 +445,15 @@ public interface WorkflowAPI {
 	 */
 	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
 	DotSecurityException ;
+
+	/**
+	 * Determine if the actionId is available for this contentlet (this means the action is available to call on the current or first step)
+	 * @param contentlet {@link Contentlet}
+	 * @param user       {@link User}
+	 * @param actionId   {@link String}
+	 * @return boolean
+	 */
+	boolean isActionAvailable(final Contentlet contentlet, final User user, final String actionId);
 
 	/**
 	 * Find the list of Workflow Actions available for the current user on the specified workflow step
@@ -1051,7 +1062,17 @@ public interface WorkflowAPI {
 		ARCHIVE,
 		UNARCHIVE,
 		DELETE,
-		DESTROY
+		DESTROY;
+
+		/**
+		 * Prefer this over valueOf(String..) since mySQL sends lowercased vals
+		 * @param value
+		 * @return
+		 */
+		public static SystemAction fromString(final String value){
+		   return valueOf(value.toUpperCase());
+		}
+
 	}
 
 }

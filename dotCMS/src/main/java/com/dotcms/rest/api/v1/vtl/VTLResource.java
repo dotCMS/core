@@ -571,7 +571,11 @@ public class VTLResource {
                 response.setHeader(headerName, velocityResponse.getHeader(headerName));
               }
             }
-            return Response.ok(evalResult.toString()).type(contentType).build();
+
+            return UtilMethods.isSet(contentType)
+                    ? Response.ok(evalResult.toString()).type(contentType).build()
+                    : Response.ok(evalResult.toString()).type(MediaType.TEXT_PLAIN_TYPE).build();
+
         } else {
             // let's add it to cache
             if(UtilMethods.isSet(dotJSON.get("errors"))) {

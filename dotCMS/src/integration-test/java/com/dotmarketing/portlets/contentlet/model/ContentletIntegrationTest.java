@@ -567,7 +567,11 @@ public class ContentletIntegrationTest {
             contentlet.getRelated("AnyField", user, false);
 
         }finally{
-            contentTypeAPI.delete(contentType);
+            try {
+                contentTypeAPI.delete(contentType);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

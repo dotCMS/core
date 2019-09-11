@@ -16,12 +16,17 @@ public class VelocityUtilTest {
         return new Tuple3[] {
                 // actual, expected, firstLetterUppercase
                 new Tuple3<>("123", "one23", false),
-                new Tuple3<>("123", "one23", true),
+                new Tuple3<>("123", "One23", true),
                 new Tuple3<>("_123", "_123", false),
                 new Tuple3<>("_123a", "_123a", false),
                 new Tuple3<>("_123a", "_123a", true),
                 new Tuple3<>("asd123asd", "asd123asd", false),
-                new Tuple3<>("asd123asd", "Asd123asd", true)
+                new Tuple3<>("asd123asd", "Asd123asd", true),
+                new Tuple3<>("#%#$", "____", true),
+                new Tuple3<>("#%#$1", "____1", true),
+                new Tuple3<>("#%#$abc", "____abc", true),
+                new Tuple3<>("#%#$abc", "____abc", false),
+
         };
     }
 

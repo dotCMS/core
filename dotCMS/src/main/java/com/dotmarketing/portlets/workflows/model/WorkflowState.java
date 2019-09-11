@@ -56,7 +56,6 @@ public enum WorkflowState {
                         .map(WorkflowState::valueOf)
                         .collect(Collectors.toSet());
             } catch (Exception e) {
-                Logger.error(WorkflowState.class, "No show On data on workflow action record, bad data?");
                 workflowStateSet = Collections.emptySet();
             }
         }

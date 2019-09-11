@@ -1,11 +1,7 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
-import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
-import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
-
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -20,14 +16,17 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
+import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 
 /**
  *
@@ -75,9 +74,9 @@ public class ContentletAjaxTest {
 				/*
 				 * changing id to recreate possible match between languages
 				 */
-				DotConnect dc = new DotConnect();
-				dc.setSQL("update language set id="+defaultLang.getId()+"02 where language_code='it'");
-				dc.loadResult();
+				new DotConnect().setSQL("update language set id="+defaultLang.getId()+"02 where id=?")
+						.addParam(language.getId())
+						.loadResult();
 			}
 			language = APILocator.getLanguageAPI().getLanguage("it", "IT");
 		}
@@ -162,8 +161,7 @@ public class ContentletAjaxTest {
 		result = (Map<String,Object>)results.get(3);
 		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
 		contentlet = APILocator.getContentletAPI().find(String.valueOf(result.get("inode")),systemUser,false);
-		APILocator.getContentletAPI().archive(contentlet,systemUser,false);
-		APILocator.getContentletAPI().delete(contentlet,systemUser,false);
+		APILocator.getContentletAPI().destroy(contentlet, systemUser, false);
 	}
 
 	@Test

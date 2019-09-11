@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
@@ -79,6 +80,7 @@ public class UserDataGen extends AbstractDataGen<User> {
     }
 
     @Override
+    @WrapInTransaction
     public User persist(User user) {
 
         try {
@@ -106,15 +108,18 @@ public class UserDataGen extends AbstractDataGen<User> {
      *
      * @return A new User instance persisted in DB
      */
+    @WrapInTransaction
     @Override
     public User nextPersisted() {
         return persist(next());
     }
 
+    @WrapInTransaction
     public static void remove(final User user) {
         remove(user, true);
     }
 
+    @WrapInTransaction
     public static void remove(final User user, final Boolean failSilently) {
         try {
             APILocator.getUserAPI()

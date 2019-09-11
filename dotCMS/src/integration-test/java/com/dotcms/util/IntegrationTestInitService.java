@@ -20,14 +20,13 @@ public class IntegrationTestInitService {
 
     private static IntegrationTestInitService service = new IntegrationTestInitService();
 
-    private static AtomicBoolean initCompleted;
+    private static final AtomicBoolean initCompleted = new AtomicBoolean(false);
 
     static {
         SystemProperties.getProperties();
     }
 
     private IntegrationTestInitService() {
-        initCompleted = new AtomicBoolean(false);
     }
 
     public static IntegrationTestInitService getInstance() {
@@ -35,7 +34,7 @@ public class IntegrationTestInitService {
     }
 
     public void init() throws Exception {
-        if (!initCompleted.get()) {
+        if (initCompleted.compareAndSet(false, true)) {
             TestingJndiDatasource.init();
             ConfigTestHelper._setupFakeTestingContext();
 
@@ -53,8 +52,6 @@ public class IntegrationTestInitService {
             Config.setProperty("NETWORK_CACHE_FLUSH_DELAY", (long) 0);
             // Init other dotCMS services.
             DotInitializationService.getInstance().initialize();
-
-            initCompleted.set(true);
         }
     }
 

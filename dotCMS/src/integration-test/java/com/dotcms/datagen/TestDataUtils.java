@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -64,6 +65,7 @@ public class TestDataUtils {
         return getBlogLikeContentType("Blog" + System.currentTimeMillis(), site);
     }
 
+    @WrapInTransaction
     public static ContentType getBlogLikeContentType(final String contentTypeName,
             final Host site, final Set <String> workflowIds) {
 
@@ -183,6 +185,7 @@ public class TestDataUtils {
         return getCommentsLikeContentType(contentTypeName, null);
     }
 
+    @WrapInTransaction
     public static ContentType getCommentsLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
 
         ContentType commentsType = null;
@@ -242,6 +245,7 @@ public class TestDataUtils {
         return getEmployeeLikeContentType(contentTypeName, site, null);
     }
 
+    @WrapInTransaction
     public static ContentType getEmployeeLikeContentType(final String contentTypeName,
             final Host site,  final Set<String> workflowIds) {
 
@@ -359,6 +363,7 @@ public class TestDataUtils {
         return getNewsLikeContentType(contentTypeName, site, detailPageIdentifier, urlMapPattern, null,null);
     }
 
+    @WrapInTransaction
     public static ContentType getNewsLikeContentType(final String contentTypeName,
             final Host site,
             final String detailPageIdentifier,
@@ -480,6 +485,7 @@ public class TestDataUtils {
         return getWikiLikeContentType("Wiki" + System.currentTimeMillis(), null);
     }
 
+    @WrapInTransaction
     public static ContentType getWikiLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
 
         ContentType wikiType = null;
@@ -544,6 +550,7 @@ public class TestDataUtils {
         return getWidgetLikeContentType("SimpleWidget" + System.currentTimeMillis(), null);
     }
 
+    @WrapInTransaction
     public static ContentType getWidgetLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
 
         ContentType simpleWidgetContentType = null;
@@ -584,6 +591,7 @@ public class TestDataUtils {
         return getFormLikeContentType("Form" + System.currentTimeMillis(), null);
     }
 
+    @WrapInTransaction
     public static ContentType getFormLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
 
         ContentType formContentType = null;
@@ -614,6 +622,7 @@ public class TestDataUtils {
             return getFormWithRequiredFieldsLikeContentType("Form" + System.currentTimeMillis(), null);
     }
 
+    @WrapInTransaction
     public static ContentType getFormWithRequiredFieldsLikeContentType(final String contentTypeName, Set<String> workFlowsId) {
 
         ContentType formContentType = null;
@@ -1020,6 +1029,7 @@ public class TestDataUtils {
        return getDocumentLikeContentType("Document" + System.currentTimeMillis(), null);
     }
 
+    @WrapInTransaction
     public static ContentType getDocumentLikeContentType(final String contentTypeName, Set<String> workflowIds) {
 
         ContentType simpleWidgetContentType = null;
@@ -1103,7 +1113,7 @@ public class TestDataUtils {
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
                         .fields(fields)
-                        .workflowId(workflowIds)
+                        .workflowId(collectedWorkflowIds)
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -1158,6 +1168,7 @@ public class TestDataUtils {
         return getBannerLikeContentType(contentTypeName, site, null);
     }
 
+    @WrapInTransaction
     public static ContentType getBannerLikeContentType(final String contentTypeName,
             final Host site,
             final Set<String> workflowIds) {
@@ -1303,6 +1314,7 @@ public class TestDataUtils {
         return  getProductLikeContentType("Product" + System.currentTimeMillis(), APILocator.systemHost(),null);
     }
 
+    @WrapInTransaction
     public static ContentType getProductLikeContentType(final String contentTypeName,
             final Host site,
             final Set<String> workflowIds) {
@@ -1457,6 +1469,7 @@ public class TestDataUtils {
         return  getYoutubeLikeContentType("Youtube" + System.currentTimeMillis(), APILocator.systemHost(),null);
     }
 
+    @WrapInTransaction
     public static ContentType getYoutubeLikeContentType(final String contentTypeName,
             final Host site,
             final Set<String> workflowIds) {

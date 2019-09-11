@@ -109,14 +109,12 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
 
             if (null != SaveContentDraftActionletTest.contentlet) {
 
-                SaveContentDraftActionletTest.contentletAPI.archive(SaveContentDraftActionletTest.contentlet, APILocator.systemUser(), false);
-                SaveContentDraftActionletTest.contentletAPI.delete(SaveContentDraftActionletTest.contentlet, APILocator.systemUser(), false);
+                SaveContentDraftActionletTest.contentletAPI.destroy(SaveContentDraftActionletTest.contentlet, APILocator.systemUser(), false);
             }
 
             if (null != SaveContentDraftActionletTest.contentlet2) {
 
-                SaveContentDraftActionletTest.contentletAPI.archive(SaveContentDraftActionletTest.contentlet2, APILocator.systemUser(), false);
-                SaveContentDraftActionletTest.contentletAPI.delete(SaveContentDraftActionletTest.contentlet2, APILocator.systemUser(), false);
+                SaveContentDraftActionletTest.contentletAPI.destroy(SaveContentDraftActionletTest.contentlet2, APILocator.systemUser(), false);
             }
         } finally {
 
@@ -172,6 +170,7 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
 
         // first save
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         final Contentlet contentlet1 = SaveContentDraftActionletTest.contentletAPI.checkin(contentlet, user, false);
         SaveContentDraftActionletTest.contentlet = contentlet1;
 
@@ -179,12 +178,14 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
         contentlet1.setStringProperty("txt", "Test Save Text 1");
 
         contentlet1.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet1.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         final Contentlet contentlet2 = SaveContentDraftActionletTest.contentletAPI.checkout(contentlet1.getInode(), user, false);
 
         contentlet2.setStringProperty("title", "Test Save 2");
         contentlet2.setStringProperty("txt", "Test Save Text 2");
 
         contentlet2.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet2.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         final Contentlet contentlet3 = SaveContentDraftActionletTest.contentletAPI.checkin(contentlet2, user, false);
 
         final Contentlet contentlet4 = SaveContentDraftActionletTest.contentletAPI.
@@ -200,6 +201,7 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
             SaveContentDraftActionletTest.contentletAPI.unlock(contentlet4, user, false);
         }
 
+        contentlet4.setIndexPolicy(IndexPolicy.FORCE);
         SaveContentDraftActionletTest.workflowAPI.fireWorkflowNoCheckin(contentlet4, user);
 
         final Contentlet contentlet5 = SaveContentDraftActionletTest.contentletAPI.findContentletByIdentifier

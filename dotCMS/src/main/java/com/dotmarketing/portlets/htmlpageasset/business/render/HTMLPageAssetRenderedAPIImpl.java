@@ -157,6 +157,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final HttpServletResponse response)
                 throws DotDataException, DotSecurityException {
 
+
+
         final PageMode mode = context.getPageMode();
 
         PageMode.setPageMode(request, mode);

@@ -3,6 +3,7 @@ package com.dotmarketing.startup.runonce;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.DbType;
 import com.dotmarketing.util.Logger;
@@ -26,6 +27,8 @@ public class Task05165CreateContentTypeWorkflowActionMappingTableTest {
         try{
             final Task05165CreateContentTypeWorkflowActionMappingTable task05165CreateContentTypeWorkflowActionMappingTable =
                     new Task05165CreateContentTypeWorkflowActionMappingTable();
+            final Task05175AssignDefaultActionsToTheSystemWorkflow task05175AssignDefaultActionsToTheSystemWorkflow =
+                    new Task05175AssignDefaultActionsToTheSystemWorkflow();
 
             if (!task05165CreateContentTypeWorkflowActionMappingTable.forceRun()) {
 
@@ -35,8 +38,12 @@ public class Task05165CreateContentTypeWorkflowActionMappingTableTest {
             if (task05165CreateContentTypeWorkflowActionMappingTable.forceRun()) {
                 task05165CreateContentTypeWorkflowActionMappingTable.executeUpgrade();
             }
+
+            if (task05175AssignDefaultActionsToTheSystemWorkflow.forceRun()) {
+                task05175AssignDefaultActionsToTheSystemWorkflow.executeUpgrade();
+            }
         } catch (Exception e) {
-            final String  errMessage = "Could not modify workflow_action_mappings table on db of type: " + dbType + " Err: " +  e.toString() ;
+            final String  errMessage = "Could not modify content_type_workflow_action_mapping table on db of type: " + dbType + " Err: " +  e.toString() ;
             Logger.debug(getClass(),errMessage, e);
             Assert.fail(errMessage);
         }
@@ -44,8 +51,8 @@ public class Task05165CreateContentTypeWorkflowActionMappingTableTest {
 
     @WrapInTransaction
     private void removeContentTypeWorkflowActionMappingTable() throws SQLException {
-
-        new DotConnect().executeStatement("DROP INDEX idx_workflow_action_mappings");
+        final DotDatabaseMetaData metaData = new DotDatabaseMetaData();
+        metaData.dropIndex("workflow_action_mappings","idx_workflow_action_mappings");
         new DotConnect().executeStatement("DROP TABLE workflow_action_mappings");
     }
 

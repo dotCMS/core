@@ -150,7 +150,6 @@ public class UserAPIImpl implements UserAPI {
 		return userFactory.getUsersByName(filter, start, limit);
 	}
 
-	@WrapInTransaction
 	@Override
 	public User createUser(String userId, String email) throws DotDataException, DuplicateUserException {
 		return userFactory.createUser(userId, email);
@@ -212,28 +211,39 @@ public class UserAPIImpl implements UserAPI {
     }
     
 	@WrapInTransaction
-	private User _getAnonymousUser() throws DotDataException {
+	private synchronized User _getAnonymousUser() throws DotDataException {
+	  if(this.anonUser!=null) {
+	    return this.anonUser;
+	  }
 		User user = null;
 		try {
 			user = userFactory.loadUserById(CMS_ANON_USER_ID);
 		} catch (DotDataException e) {
 			user = createUser(CMS_ANON_USER_ID, "anonymous@dotcmsfakeemail.org");
 			user.setUserId(CMS_ANON_USER_ID);
-			user.setFirstName("anonymous user");
+      user.setFirstName("Anonymous");
+      user.setLastName("User");
 			user.setCreateDate(new java.util.Date());
 			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
 			userFactory.saveUser(user);
-			com.dotmarketing.business.APILocator.getRoleAPI().addRoleToUser(com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_ANONYMOUS_ROLE")).getId(), user);
 		} catch (NoSuchUserException e) {
-			user = createUser("anonymous", "anonymous@dotcmsfakeemail.org");
+			user = createUser(CMS_ANON_USER_ID, "anonymous@dotcmsfakeemail.org");
 			user.setUserId(CMS_ANON_USER_ID);
-			user.setFirstName("anonymous user");
+			user.setFirstName("Anonymous");
+			user.setLastName("User");
 			user.setCreateDate(new java.util.Date());
 			user.setCompanyId(PublicCompanyFactory.getDefaultCompanyId());
 			userFactory.saveUser(user);
-			com.dotmarketing.business.APILocator.getRoleAPI().addRoleToUser(com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), user);
 		}
-		return user;
+		
+		// Assure CMS ANON has the anon role and the Front End User Role
+		Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
+		if(cmsAnon!=null) {
+		  APILocator.getRoleAPI().addRoleToUser(cmsAnon, user);
+		}
+    APILocator.getRoleAPI().addRoleToUser(Role.DOTCMS_FRONT_END_USER, user);
+    this.anonUser=user;
+    return this.anonUser;
 	}
 
 	@CloseDBIfOpened
@@ -284,11 +294,17 @@ public class UserAPIImpl implements UserAPI {
 		return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous);
 	}
 
+  @Override
+  public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
+    // TODO Auto-generated method stub
+    return getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault, null);
+  }
+	
 	@CloseDBIfOpened
 	@Override
-	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault)
+	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault, String roleId)
 			throws DotDataException {
-		return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault);
+		return userFactory.getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault, roleId);
 	}
 
 	@CloseDBIfOpened
@@ -302,12 +318,18 @@ public class UserAPIImpl implements UserAPI {
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
 		return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous);
 	}
-
+	
+  @CloseDBIfOpened
+  @Override
+  public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous, String roleId) throws DotDataException {
+    return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous,false, roleId);
+  }
+  
 	@CloseDBIfOpened
 	@Override
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
-			int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
-		return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault);
+			int pageSize, boolean includeAnonymous, boolean includeDefault, String roleId) throws DotDataException {
+		return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault,roleId);
 	}
 
 	@WrapInTransaction

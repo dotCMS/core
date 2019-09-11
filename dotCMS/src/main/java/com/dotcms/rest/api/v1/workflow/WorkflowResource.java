@@ -1,16 +1,28 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotcms.rest.ResponseEntityView.OK;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.DotLambdas.not;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-import com.dotcms.rest.*;
+import com.dotcms.rest.AnonymousAccess;
+import com.dotcms.rest.ContentHelper;
+import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.MapToContentletPopulator;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
@@ -22,7 +34,24 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonArrayToLinkedSetConverter;
-import com.dotcms.workflow.form.*;
+import com.dotcms.workflow.form.BulkActionForm;
+import com.dotcms.workflow.form.FireActionByNameForm;
+import com.dotcms.workflow.form.FireActionForm;
+import com.dotcms.workflow.form.FireBulkActionsForm;
+import com.dotcms.workflow.form.WorkflowActionForm;
+import com.dotcms.workflow.form.WorkflowActionStepBean;
+import com.dotcms.workflow.form.WorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowActionletActionBean;
+import com.dotcms.workflow.form.WorkflowActionletActionForm;
+import com.dotcms.workflow.form.WorkflowCopyForm;
+import com.dotcms.workflow.form.WorkflowReorderBean;
+import com.dotcms.workflow.form.WorkflowReorderWorkflowActionStepForm;
+import com.dotcms.workflow.form.WorkflowSchemeForm;
+import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
+import com.dotcms.workflow.form.WorkflowSchemesForm;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
+import com.dotcms.workflow.form.WorkflowStepUpdateForm;
+import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -40,7 +69,11 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Logger;
@@ -53,26 +86,37 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Tuple2;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.server.JSONP;
-
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import static com.dotcms.rest.ResponseEntityView.OK;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.DotLambdas.not;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * Encapsulates all the interaction with Workflows, can:
@@ -1220,8 +1264,10 @@ public class WorkflowResource {
                                               @DefaultValue("-1") @QueryParam("language")         final long   language,
                                               final FormDataMultiPart multipart) {
 
-        final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
+      final InitDataObject initDataObject = new WebResource.InitBuilder()
+          .requestAndResponse(request, new MockHttpResponse())
+          .requiredAnonAccess(AnonymousAccess.WRITE)
+          .init();
         String actionId = null;
 
         try {
@@ -1271,8 +1317,10 @@ public class WorkflowResource {
                                      @DefaultValue("-1") @QueryParam("language") final long   language,
                                      final FireActionByNameForm fireActionForm) {
 
-        final InitDataObject initDataObject = this.webResource.init
-                (null, true, request, true, null);
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+          .requestAndResponse(request, new MockHttpResponse())
+          .requiredAnonAccess(AnonymousAccess.WRITE)
+          .init();
         String actionId = null;
 
         try {
@@ -1355,7 +1403,8 @@ public class WorkflowResource {
                 new ResponseEntityView(
                         this.workflowHelper.contentletToMap(
                                 fireCommandOpt.isPresent()?
-                                        fireCommandOpt.get().fire(contentlet, formBuilder.build()):
+                                        fireCommandOpt.get().fire(contentlet,
+                                                UtilMethods.isSet(fireActionForm.getContentletFormData()), formBuilder.build()):
                                         this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build()))
                 )
         ).build(); // 200
@@ -1385,9 +1434,11 @@ public class WorkflowResource {
                                      @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
                                      final FireActionForm fireActionForm) {
 
-        final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
-
+          final InitDataObject initDataObject = new WebResource.InitBuilder()
+          .requestAndResponse(request, response)
+          .requiredAnonAccess(AnonymousAccess.WRITE)
+          .init();
+      
         try {
 
             Logger.debug(this, ()-> "On Fire Action: systemAction = " + systemAction + ", inode = " + inode +
@@ -1400,7 +1451,7 @@ public class WorkflowResource {
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
-            final Optional<WorkflowAction> workflowActionOpt =
+            final Optional<WorkflowAction> workflowActionOpt = // ask to see if there is any default action by content type or scheme
                     this.workflowAPI.findActionMappedBySystemActionContentlet
                             (contentlet, systemAction, initDataObject.getUser());
 
@@ -1408,11 +1459,24 @@ public class WorkflowResource {
 
                 final WorkflowAction workflowAction = workflowActionOpt.get();
                 final String actionId = workflowAction.getId();
+
+                Logger.info(this, "Using the default action: " + workflowAction +
+                        ", for the system action: " + systemAction);
+
                 final Optional<SystemActionApiFireCommand> fireCommandOpt =
-                        this.systemActionApiFireCommandProvider.get(workflowAction, systemAction);
+                        this.systemActionApiFireCommandProvider.get(workflowAction,
+                                UtilMethods.isSet(fireActionForm.getContentletFormData()), systemAction);
 
                 return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
             } else {
+
+                final Optional<SystemActionApiFireCommand> fireCommandOpt =
+                        this.systemActionApiFireCommandProvider.get(systemAction);
+
+                if (fireCommandOpt.isPresent()) {
+
+                    return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, null, fireCommandOpt);
+                }
 
                 final ContentType contentType = contentlet.getContentType();
                 throw new DoesNotExistException("For the contentType: " + (null != contentType?contentType.variable():"unknown") +
@@ -1528,10 +1592,19 @@ public class WorkflowResource {
                 final WorkflowAction workflowAction = workflowActionOpt.get();
                 final String actionId = workflowAction.getId();
                 final Optional<SystemActionApiFireCommand> fireCommandOpt =
-                        this.systemActionApiFireCommandProvider.get(workflowAction, systemAction);
+                        this.systemActionApiFireCommandProvider.get(workflowAction,
+                                UtilMethods.isSet(fireActionForm.getContentletFormData()), systemAction);
 
                 return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
             } else {
+
+                final Optional<SystemActionApiFireCommand> fireCommandOpt =
+                        this.systemActionApiFireCommandProvider.get(systemAction);
+
+                if (fireCommandOpt.isPresent()) {
+
+                    return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, null, fireCommandOpt);
+                }
 
                 final ContentType contentType = contentlet.getContentType();
                 throw new DoesNotExistException("For the contentType: " + (null != contentType?contentType.variable():"unknown") +
@@ -1775,7 +1848,7 @@ public class WorkflowResource {
 
             DotPreconditions.notNull(currentContentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
 
-            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet);
+            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet,mode);
         } else if (UtilMethods.isSet(identifier)) {
 
             Logger.debug(this, ()-> "Fire Action, looking for content by identifier: " + identifier
@@ -1788,13 +1861,13 @@ public class WorkflowResource {
 
             DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
 
-            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet.get());
+            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet.get(),mode);
         } else {
 
             //otherwise the information must be grabbed from the request body.
             Logger.debug(this, ()-> "Fire Action, creating a new contentlet");
             DotPreconditions.notNull(fireActionForm, ()-> "When no inode is sent the info on the Request body becomes mandatory.");
-            contentlet = this.populateContentlet(fireActionForm, initDataObject.getUser());
+            contentlet = this.populateContentlet(fireActionForm, initDataObject.getUser(), mode);
         }
 
         return contentlet;
@@ -1804,14 +1877,14 @@ public class WorkflowResource {
 
     private Contentlet createContentlet(final FireActionForm fireActionForm,
                                         final InitDataObject initDataObject,
-                                        final Contentlet currentContentlet) throws DotSecurityException {
+                                        final Contentlet currentContentlet,final PageMode mode) throws DotSecurityException {
 
         Contentlet contentlet = new Contentlet();
         contentlet.getMap().putAll(currentContentlet.getMap());
 
         if (null != fireActionForm && null != fireActionForm.getContentletFormData() && null != contentlet) {
 
-            contentlet = this.populateContentlet(fireActionForm, contentlet, initDataObject.getUser());
+            contentlet = this.populateContentlet(fireActionForm, contentlet, initDataObject.getUser(),mode);
         }
         return contentlet;
     }
@@ -1823,10 +1896,10 @@ public class WorkflowResource {
      * @return Contentlet
      * @throws DotSecurityException
      */
-    private Contentlet populateContentlet(final FireActionForm fireActionForm, final User user)
+    private Contentlet populateContentlet(final FireActionForm fireActionForm, final User user,final PageMode mode)
             throws DotSecurityException {
 
-        return this.populateContentlet(fireActionForm, new Contentlet(), user);
+        return this.populateContentlet(fireActionForm, new Contentlet(), user,mode);
     } // populateContentlet.
 
     /**
@@ -1837,7 +1910,7 @@ public class WorkflowResource {
      * @return Contentlet
      * @throws DotSecurityException
      */
-    private Contentlet populateContentlet(final FireActionForm fireActionForm, final Contentlet contentletInput, final User user)
+    private Contentlet populateContentlet(final FireActionForm fireActionForm, final Contentlet contentletInput, final User user,final PageMode mode)
             throws DotSecurityException {
 
         final Contentlet contentlet = this.contentHelper.populateContentletFromMap
@@ -1864,7 +1937,7 @@ public class WorkflowResource {
 
         try {
             if (!this.permissionAPI.doesUserHavePermission(contentlet.getContentType(),
-                    PermissionAPI.PERMISSION_READ, user, false)) {
+                    PermissionAPI.PERMISSION_READ, user, mode.respectAnonPerms)) {
                 throw new DotSecurityException(errorMessageSupplier.get());
             }
         } catch (DotDataException e) {
@@ -1879,6 +1952,11 @@ public class WorkflowResource {
         contentlet.setStringProperty(WHERE_TO_SEND,   fireActionForm.getWhereToSend());
         contentlet.setStringProperty(FORCE_PUSH,     fireActionForm.getForcePush());
 
+        for(Field constant : contentlet.getContentType().fields()) {
+          if(constant instanceof ConstantField)
+            contentlet.getMap().put(constant.variable(), constant.values());
+        }
+        
         return contentlet;
     } // populateContentlet.
 

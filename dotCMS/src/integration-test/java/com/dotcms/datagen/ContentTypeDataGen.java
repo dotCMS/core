@@ -164,6 +164,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
                 .build();
     }
 
+    @WrapInTransaction
     @Override
     public ContentType persist(final ContentType contentType) {
         try {
@@ -183,6 +184,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
      *
      * @return A new ContentType instance persisted in DB
      */
+    @WrapInTransaction
     @Override
     public ContentType nextPersisted() {
         return persist(next());
@@ -229,6 +231,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
         remove(contentType, true);
     }
 
+    @WrapInTransaction
     public static void remove(final ContentType contentType, final Boolean failSilently) {
 
         if (null != contentType) {
@@ -244,6 +247,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
         }
     }
 
+    @WrapInTransaction
     public static ContentType createLanguageVariableContentType() {
         final User systemUser = APILocator.systemUser();
 
@@ -257,6 +261,8 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
                         .name(LanguageVariableAPI.LANGUAGEVARIABLE)
                         .nextPersisted();
             }
+
+            PermissionUtilTest.addAnonymousUser(languageVariableContentType);
 
             return languageVariableContentType;
         } catch (DotSecurityException | DotDataException e) {

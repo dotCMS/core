@@ -17,7 +17,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -36,7 +35,6 @@ import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
-import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.business.TagAPI;
@@ -67,6 +65,7 @@ import static com.dotmarketing.business.PermissionAPI.*;
  */
 public class PageRenderUtil implements Serializable {
 
+    public static String CONTAINER_UUID_PREFIX = "uuid-";
     private static final long serialVersionUID = 1L;
 
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -369,7 +368,7 @@ public class PageRenderUtil implements Serializable {
                     }
                 }
                 
-                contentMaps.put((uniqueId.startsWith("uuid-")) ? uniqueId : "uuid-" + uniqueId, cListAsMaps);
+                contentMaps.put((uniqueId.startsWith(CONTAINER_UUID_PREFIX)) ? uniqueId : CONTAINER_UUID_PREFIX + uniqueId, cListAsMaps);
                 this.setContentletListPerPersonalization(uniqueId, container, contentIdListByPersonalizationMap, personalizationsForPage);
                 contextMap.put("totalSize" +  container.getIdentifier() + uniqueId, new Integer(contentlets.size())); // todo: not sure about this
             }

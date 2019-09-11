@@ -1,32 +1,10 @@
 package com.dotcms.rest.api.v1.temp;
 
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-
-
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Response;
-
-import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.media.multipart.BodyPart;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.multipart.MultiPart;
-import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -38,17 +16,44 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Tuple5;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.MultiPart;
+import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
@@ -57,6 +62,8 @@ public class TempFileResourceTest {
 
   static HttpServletResponse response;
   static TempFileResource resource;
+  static User user;
+
 
   @BeforeClass
   public static void prepare() throws Exception {
@@ -64,10 +71,41 @@ public class TempFileResourceTest {
     IntegrationTestInitService.getInstance().init();
 
     resource = new TempFileResource();
-
+    user = new UserDataGen().nextPersisted();
     response = new MockHttpResponse();
+
+
+    
+  }
+  
+  private static File testFile() throws Exception {
+    File testFile = new File(UUIDGenerator.shorty() + "test.png");
+    RandomAccessFile fileWrite = new RandomAccessFile(testFile , "rw");
+    final long fileLength=1024 * 50;
+    fileWrite.setLength(fileLength);
+    fileWrite.seek(fileLength-1);
+    fileWrite.writeByte(20);
+    fileWrite.close();
+    assert(fileLength == testFile.length());
+    return testFile;
+  }
+  
+  private void resetTempResourceConfig() {
+    Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS, -1);
+    Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_FILE_SIZE, -1);
+    Config.setProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true);
+    Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_AGE_SECONDS, 1800);
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
   }
 
+
+
+  private static HttpServletRequest mockRequest(String host) {
+    return new MockSessionRequest(
+            new MockHeaderRequest(new MockHttpRequest(host, "/api/v1/tempResource").request(), "Origin", host)
+                    .addHeader("Host", host).request());
+  }
+  
   private static HttpServletRequest mockRequest() {
     return new MockSessionRequest(
         new MockHeaderRequest(new MockHttpRequest("localhost", "/api/v1/tempResource").request(), "Origin", "localhost").request());
@@ -77,12 +115,13 @@ public class TempFileResourceTest {
   }
 
   private DotTempFile saveTempFile_usingTempResource(final String fileName, final HttpServletRequest request){
+    
     final BodyPart filePart1 = new StreamDataBodyPart(fileName, inputStream());
 
     final MultiPart multipartEntity = new FormDataMultiPart()
             .bodyPart(filePart1);
 
-    final Response jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
+    final Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1, (FormDataMultiPart) multipartEntity);
 
     final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
     return dotTempFiles.get("tempFiles").get(0);
@@ -90,6 +129,7 @@ public class TempFileResourceTest {
   
   @Test
   public void test_temp_resource_upload(){
+    resetTempResourceConfig();
     final String fileName = "test.file";
     final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName, mockRequest());
   // its not an image because we set the filename to "test.file"
@@ -103,6 +143,7 @@ public class TempFileResourceTest {
 
   @Test
   public void test_temp_resource_multifile_upload(){
+    resetTempResourceConfig();
     final String fileName1 ="here-is-my-file.png";
     final BodyPart filePart1 = new StreamDataBodyPart(fileName1, inputStream());
 
@@ -114,7 +155,7 @@ public class TempFileResourceTest {
             .bodyPart(filePart1)
             .bodyPart(filePart2);
     
-    final Response jsonResponse = resource.uploadTempResourceMulti(mockRequest(), response, (FormDataMultiPart) multipartEntity);
+    final Response jsonResponse = resource.uploadTempResourceMulti(mockRequest(), response,-1, (FormDataMultiPart) multipartEntity);
     assertNotNull(jsonResponse);
 
     final Map<String,List<DotTempFile>> dotTempFile = (Map) jsonResponse.getEntity();
@@ -133,10 +174,15 @@ public class TempFileResourceTest {
 
   }
 
+  /**
+   * This test will creates a temporal file.
+   * then will request this temporal with a new request, which means not same finger print b/c the host will be diff, so should return an empty file.
+   * Then an user is set to the request and it works b/c is the same user.
+   */
   @Test
   public void test_tempResourceAPI_who_can_use_via_userID(){
+    resetTempResourceConfig();
 
-    final User user = new UserDataGen().nextPersisted();
     HttpServletRequest request = mockRequest();
     request.setAttribute(WebKeys.USER, user);
     request.setAttribute(WebKeys.USER_ID, user.getUserId());
@@ -145,7 +191,7 @@ public class TempFileResourceTest {
     final DotTempFile dotTempFile = saveTempFile_usingTempResource(fileName,request);
 
     // CANNOT get the file again because we have a new session ID in the new mock request
-    Optional<DotTempFile> file = new TempFileAPI().getTempFile(mockRequest(), dotTempFile.id);
+    Optional<DotTempFile> file = new TempFileAPI().getTempFile(mockRequest("anotherHost"), dotTempFile.id);
     assertFalse(file.isPresent());
 
     request.setAttribute(WebKeys.USER, user);
@@ -157,6 +203,7 @@ public class TempFileResourceTest {
 
   @Test
   public void test_tempResourceapi_max_age(){
+    resetTempResourceConfig();
     HttpServletRequest request = mockRequest();
     final String fileName = "test.png";
 
@@ -182,7 +229,8 @@ public class TempFileResourceTest {
 
   @Test
   public void test_tempResourceapi_test_anonymous_access(){
-
+    resetTempResourceConfig();
+    
     final String fileName = "test.png";
     HttpServletRequest request = mockRequest();
     Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, false);
@@ -190,21 +238,105 @@ public class TempFileResourceTest {
 
     final MultiPart multipartEntity = new FormDataMultiPart()
             .bodyPart(filePart1);
-
-    Response jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
+    Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1, (FormDataMultiPart) multipartEntity);
     assertEquals(Status.UNAUTHORIZED.getStatusCode(), jsonResponse.getStatus());
 
+
     Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
-    jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
+    jsonResponse = resource.uploadTempResourceMulti(request, response, -1, (FormDataMultiPart) multipartEntity);
     final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
     final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
     assertNotNull(dotTempFile.id);
   }
+
+  /**
+   * this tests that TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS
+   * takes preciedence TEMP_RESOURCE_MAX_FILE_SIZE and
+   * what is passed in on the request
+   * @throws Exception
+   */
+  @Test
+  public void test_tempResourceapi_test_user_max_filesize() throws Exception{
+    resetTempResourceConfig();
+    final File testFile = testFile();
+    /**
+     * setting TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS less than file size should
+     * reject the file for anon user, even though TEMP_RESOURCE_MAX_FILE_SIZE is 
+     * set to more
+     */
+    
+    Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS, testFile.length()-10);
+    Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_FILE_SIZE, testFile.length()+10);
+
+    HttpServletRequest request = new MockParameterRequest(mockRequest(), ImmutableMap.of(resource.MAX_FILE_LENGTH_PARAM, "0")).request();
+    request.setAttribute(WebKeys.USER, user);
+    request.setAttribute(WebKeys.USER_ID, user.getUserId());
+
+    final MultiPart multipartEntity = new FormDataMultiPart().bodyPart(new StreamDataBodyPart(testFile.getName(), new FileInputStream(testFile)));
+
+    Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1, (FormDataMultiPart) multipartEntity);
+    assertTrue("User can upload temp file larger than TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS", jsonResponse.getStatus()==200 );
   
+  
+  }
+  
+  /**
+   * this tests that TEMP_RESOURCE_MAX_FILE_SIZE
+   * takes preciedence TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS 
+   * when a user is passed in
+   * @throws Exception
+   */
+  @Test
+  public void test_tempResourceapi_test_anonymous_max_filesize() throws Exception{
+    resetTempResourceConfig();
+    final File testFile = testFile();
+    /**
+     * setting TEMP_RESOURCE_MAX_FILE_SIZE greater than file size should
+     * allow the file for a real user
+     */
+
+    Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS, testFile.length()-10);
+    Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_FILE_SIZE, testFile.length()+10);
+
+
+
+    HttpServletRequest request = new MockParameterRequest(mockRequest(), ImmutableMap.of(resource.MAX_FILE_LENGTH_PARAM, "-1")).request();
+    
+
+    final MultiPart multipartEntity = new FormDataMultiPart().bodyPart(new StreamDataBodyPart(testFile.getName(), new FileInputStream(testFile)));
+
+    
+    Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1, (FormDataMultiPart) multipartEntity);
+    assertTrue("Anon User cannot upload temp file larger than TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS",jsonResponse.getStatus()!=200 );
+  
+  }
+  /**
+   * this tests that the temp endpoint respects max filesize that 
+   * is requested (if it is smaller than what is configured)
+   * @throws Exception
+   */
+  @Test
+  public void test_tempResourceapi_test_max_filesize() throws Exception{
+    resetTempResourceConfig();
+    final File testFile = testFile();
+    HttpServletRequest request = mockRequest();
+    final BodyPart filePart1 = new StreamDataBodyPart(testFile.getName(), new FileInputStream(testFile));
+
+    final MultiPart multipartEntity = new FormDataMultiPart()
+            .bodyPart(filePart1);
+
+    /**
+     * dotCMS configured for unlimited max file size,  
+     * so that is our max
+     */
+    Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_FILE_SIZE, testFile.length()-10);
+    Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1, (FormDataMultiPart) multipartEntity);
+    assertTrue("anon user cannot upload >TEMP_RESOURCE_MAX_FILE_SIZE", jsonResponse.getStatus()!=200 );
+  }
   
   @Test
   public void temp_resource_makes_it_into_checked_in_content() throws Exception {
-
+    resetTempResourceConfig();
     final User user = APILocator.systemUser();
     final Host host = APILocator.getHostAPI().findDefaultHost(user, true);
     HttpServletRequest request = mockRequest();
@@ -239,7 +371,7 @@ public class TempFileResourceTest {
     final RemoteUrlForm form = new RemoteUrlForm(
         "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif", fileName2, null);
 
-    final Response jsonResponse = resource.copyTempFromUrl(request, form);
+    final Response jsonResponse = resource.copyTempFromUrl(request,new MockHttpResponse(), form);
     final Map<String,List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
     final DotTempFile dotTempFile2 = dotTempFiles.get("tempFiles").get(0);
 
@@ -280,6 +412,7 @@ public class TempFileResourceTest {
    */
   @Test
   public void test_TempResourceAPI_TempResourceEnabledProperty(){
+    resetTempResourceConfig();
     final boolean tempResourceEnabledOriginalValue = Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true);
     try {
       HttpServletRequest request = mockRequest();
@@ -291,7 +424,7 @@ public class TempFileResourceTest {
       final MultiPart multipartEntity = new FormDataMultiPart()
               .bodyPart(filePart1);
 
-      final Response jsonResponse = resource.uploadTempResourceMulti(request, response, (FormDataMultiPart) multipartEntity);
+      final Response jsonResponse = resource.uploadTempResourceMulti(request, response,0, (FormDataMultiPart) multipartEntity);
 
       assertEquals(Status.NOT_FOUND.getStatusCode(), jsonResponse.getStatus());
     }finally {
@@ -299,13 +432,37 @@ public class TempFileResourceTest {
     }
   }
 
+  @Test
+  public void test_TempResource_uploadFileByURL_success(){
+    HttpServletRequest request = mockRequest();
+    final String fileName = "test.png";
+    final String url = "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Bocas2.jpg/250px-Bocas2.jpg";
 
+    final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url,fileName,null);
+
+    final Response jsonResponse = resource.copyTempFromUrl(request,response,remoteUrlForm);
+
+    assertEquals(Status.OK.getStatusCode(),jsonResponse.getStatus());
+  }
+
+  @Test
+  public void test_TempResource_uploadFileByURL_UrlNotSent_BadRequest(){
+    HttpServletRequest request = mockRequest();
+    final String fileName = "test.png";
+    final String url = "";
+
+    final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url,fileName,null);
+
+    final Response jsonResponse = resource.copyTempFromUrl(request,response,remoteUrlForm);
+
+    assertEquals(Status.BAD_REQUEST.getStatusCode(),jsonResponse.getStatus());
+  }
 
   @Test
   @UseDataProvider("testCasesChangeFingerPrint")
   public void testGetTempFile_fileIsNotReturned_fingerprintIsDifferent(final testCaseChangeFingerPrint testCase){
 
-    final User user = new UserDataGen().nextPersisted();
+    resetTempResourceConfig();
     HttpServletRequest request = mockRequest();
     request.setAttribute(WebKeys.USER, user);
 
@@ -343,5 +500,60 @@ public class TempFileResourceTest {
             new testCaseChangeFingerPrint("referer")
     };
   }
+  
+  @Test
+  public void test_get_max_allowed_filesize_for_users(){
+    resetTempResourceConfig();
+    for(final Tuple5<String,String,Long,Long,Long> testCase : testAllowedMaxFileSizes() ) {
+
+      HttpServletRequest request = new MockParameterRequest(mockRequest(), ImmutableMap.of(TempFileResource.MAX_FILE_LENGTH_PARAM,testCase._2));
+      request.setAttribute(WebKeys.USER_ID, testCase._1);
+      Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_FILE_SIZE, testCase._3);
+      Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS, testCase._4);
+      
+      
+      assertTrue("testing config:" + testCase, new TempFileAPI().maxFileSize(request)==testCase._5);
+    }
+  }
+  
+  
+  /**
+   * (UserId, requestedMaxSize, MAX_FILE_SIZE, MAX_FILE_SIZE_ANONYMOUS, expected result)
+   * @return
+   */
+  public static Tuple5<String,String,Long,Long,Long>[] testAllowedMaxFileSizes(){
+    return new Tuple5[] {
+            new Tuple5<String,String,Long,Long,Long>(user.getUserId(),"-1", 10L, 0L, 10L),
+            new Tuple5<String,String,Long,Long,Long>(user.getUserId() , "-1", -1L, 0L, -1L),
+            new Tuple5<String,String,Long,Long,Long>(user.getUserId(),"-1", 10L, 0L, 10L),
+            new Tuple5<String,String,Long,Long,Long>(user.getUserId(),"0", 10L, 0L, 0L),
+            new Tuple5<String,String,Long,Long,Long>(user.getUserId(),"5", 10L, 0L, 5L),
+            new Tuple5<String,String,Long,Long,Long>(UserAPI.CMS_ANON_USER_ID,"-1", -1L, 0L, 0L),
+            new Tuple5<String,String,Long,Long,Long>(UserAPI.CMS_ANON_USER_ID,"-1", 10L, -1L, 10L),
+            new Tuple5<String,String,Long,Long,Long>(UserAPI.CMS_ANON_USER_ID,"-1", -1L, -1L, -1L),
+            new Tuple5<String,String,Long,Long,Long>(UserAPI.CMS_ANON_USER_ID,"-1", 10L, 20L, 10L),
+            new Tuple5<String,String,Long,Long,Long>(UserAPI.CMS_ANON_USER_ID,"-1", 0L, 20L, 0L),
+            new Tuple5<String,String,Long,Long,Long>(UserAPI.CMS_ANON_USER_ID,"5", 10L, 20L, 5L),
+    };
+  }
+
+  @Test
+  public void test_TempResource_uploadFileByURL_URLDoesNotExists_returnBadRequest(){
+    HttpServletRequest request = mockRequest();
+    final String fileName = "test.png";
+    final String url = "https://upload.wikimedia.org/this/not/exists/Bocas2.jpg";
+
+    final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url,fileName,null);
+
+    final Response jsonResponse = resource.copyTempFromUrl(request,response,remoteUrlForm);
+
+    assertEquals(Status.BAD_REQUEST.getStatusCode(),jsonResponse.getStatus());
+  }
+  
+  
+  
+  
+  
+  
 
 }
