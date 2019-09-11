@@ -150,13 +150,20 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
     }
 
     /**
-     * Return the back end session languge
+     * Return the back end session language
      * @return
      */
     public Language getSessionLanguage() {
-        final Locale locale = LanguageUtil.getDefaultLocale(HttpServletRequestThreadLocal.INSTANCE.getRequest());
-        return APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
+        return this.getSessionLanguage(HttpServletRequestThreadLocal.INSTANCE.getRequest());
     }
 
+    /**
+     * Return the back end session language
+     * @return
+     */
+    public Language getSessionLanguage(final HttpServletRequest request) {
+        final Locale locale = LanguageUtil.getDefaultLocale(request);
+        return APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
+    }
 
 }
