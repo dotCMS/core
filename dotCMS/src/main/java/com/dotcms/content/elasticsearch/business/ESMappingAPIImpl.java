@@ -417,8 +417,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	    List<Category> cats = APILocator.getCategoryAPI().getParents(con, APILocator.systemUser(), false);
 
-        List<String> catsVarNames = cats.stream().map(Category::getCategoryVelocityVarName).collect(
-				Collectors.toList());
+        List<String> catsVarNames = cats.stream().map(Category::getCategoryVelocityVarName).map(
+                String::toLowerCase).collect(Collectors.toList());
 
         m.put(ESMappingConstants.CATEGORIES, catsVarNames);
         
