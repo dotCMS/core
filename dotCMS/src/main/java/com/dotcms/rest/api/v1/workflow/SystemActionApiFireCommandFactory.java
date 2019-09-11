@@ -1,17 +1,24 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.workflows.business.UnassignedWorkflowContentletCheckinListener;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.model.User;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 
+import javax.ws.rs.DELETE;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,16 +43,16 @@ public class SystemActionApiFireCommandFactory {
     private final ContentletAPI  contentletAPI  = APILocator.getContentletAPI();
     private final WorkflowAPI    workflowAPI    = APILocator.getWorkflowAPI();
 
-    private final Map<WorkflowAPI.SystemAction, Function<WorkflowAction, Boolean>> systemActionHasActionletHandlerMap =
-            new ImmutableMap.Builder<WorkflowAPI.SystemAction, Function<WorkflowAction, Boolean>>()
-                    .put(NEW,       this.workflowAPI::hasSaveActionlet)
-                    .put(EDIT,      this.workflowAPI::hasSaveActionlet)
-                    .put(PUBLISH,   this.workflowAPI::hasPublishActionlet)
-                    .put(UNPUBLISH, this.workflowAPI::hasUnpublishActionlet)
-                    .put(ARCHIVE,   this.workflowAPI::hasArchiveActionlet)
-                    .put(UNARCHIVE, this.workflowAPI::hasUnarchiveActionlet)
-                    .put(DELETE,    this.workflowAPI::hasDeleteActionlet)
-                    .put(DESTROY,   this.workflowAPI::hasDestroyActionlet)
+    private final Map<WorkflowAPI.SystemAction, Function<Tuple2<WorkflowAction, Boolean>, Boolean>> systemActionHasActionletHandlerMap =
+            new ImmutableMap.Builder<WorkflowAPI.SystemAction, Function<Tuple2<WorkflowAction, Boolean>, Boolean>> ()
+                    .put(NEW,       (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasSaveActionlet(params._1))
+                    .put(EDIT,      (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasSaveActionlet(params._1))
+                    .put(PUBLISH,   this::hasPublishValid)
+                    .put(UNPUBLISH, (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasUnpublishActionlet(params._1))
+                    .put(ARCHIVE,   (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasUnpublishActionlet(params._1))
+                    .put(UNARCHIVE, (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasUnarchiveActionlet(params._1))
+                    .put(DELETE,    (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasDeleteActionlet(params._1))
+                    .put(DESTROY,   (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasDestroyActionlet(params._1))
                     .build();
 
     private final Map<WorkflowAPI.SystemAction, SystemActionApiFireCommand> commandMap = new ConcurrentHashMap<>();
@@ -60,6 +67,16 @@ public class SystemActionApiFireCommandFactory {
         this.commandMap.put(UNARCHIVE, new UnArchiveSystemActionApiFireCommandImpl());
         this.commandMap.put(DELETE,    new DeleteSystemActionApiFireCommandImpl());
         this.commandMap.put(DESTROY,   new DestroySystemActionApiFireCommandImpl());*/
+    }
+
+    private boolean hasPublishValid (final Tuple2<WorkflowAction, Boolean> params) {
+
+        final WorkflowAction action   = params._1;
+        final boolean        needSave = params._2;
+
+        return needSave? // if needs Save has to have save and publish actionlet
+                this.workflowAPI.hasSaveActionlet(action) && this.workflowAPI.hasPublishActionlet(action):
+                this.workflowAPI.hasPublishActionlet(action);
     }
 
     /**
@@ -84,14 +101,16 @@ public class SystemActionApiFireCommandFactory {
      * If the system action is NEW or EDIT and the workflow action does not have a Save Content action, the command will do the checkin and fire the workflow action in a workflow.
      * Otherwise returns an empty optional, in that case the workflow fire should be run normally.
      *
-     * @param workflowAction {@link WorkflowAction}
-     * @param systemAction   {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+     * @param workflowAction    {@link WorkflowAction}
+     * @param needSave         {@link Boolean} true if needs to save the contentlet (b/c it has body and changes to safe)
+     * @param systemAction     {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
      * @return Optional of SystemActionApiFireCommand
      */
-    public Optional<SystemActionApiFireCommand> get(final WorkflowAction workflowAction, final WorkflowAPI.SystemAction systemAction) {
+    public Optional<SystemActionApiFireCommand> get(final WorkflowAction workflowAction, final boolean needSave,
+                                                    final WorkflowAPI.SystemAction systemAction) {
 
         final boolean hasActionlet = this.systemActionHasActionletHandlerMap.containsKey(systemAction)?
-                this.systemActionHasActionletHandlerMap.get(systemAction).apply(workflowAction):false;
+                this.systemActionHasActionletHandlerMap.get(systemAction).apply(Tuple.of(workflowAction, needSave)):false;
 
         return hasActionlet?Optional.empty():Optional.ofNullable(this.commandMap.get(systemAction));
     }
@@ -113,7 +132,7 @@ public class SystemActionApiFireCommandFactory {
     private class SaveSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
 
         @Override
-        public Contentlet fire(final Contentlet contentlet, final ContentletDependencies dependencies)
+        public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
                 throws DotDataException, DotSecurityException {
 
             Logger.info(this, "The contentlet : " + contentlet.getTitle()
@@ -138,16 +157,21 @@ public class SystemActionApiFireCommandFactory {
 
     private class PublishSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
 
+        @WrapInTransaction
         @Override
-        public Contentlet fire(final Contentlet contentlet, final ContentletDependencies dependencies)
+        public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
                 throws DotDataException, DotSecurityException {
 
             Logger.info(this, "The contentlet : " + contentlet.getTitle()
                     + ", was fired by default action: " + dependencies.getWorkflowActionId() +
                     ", however this action has not any publish content actionlet, so the publish api call is being triggered as part of the request");
 
-            if(UtilMethods.isSet(dependencies.getWorkflowActionId())){
-                contentlet.setActionId(dependencies.getWorkflowActionId());
+            final String actionId       = UtilMethods.isSet(dependencies.getWorkflowActionId())?
+                    dependencies.getWorkflowActionId():contentlet.getActionId();
+            final User   user           = dependencies.getModUser();
+
+            if(UtilMethods.isSet(actionId)) {
+                contentlet.setActionId(actionId);
             }
 
             if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
@@ -158,9 +182,60 @@ public class SystemActionApiFireCommandFactory {
                 contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
             }
 
-            contentletAPI.publish(contentlet, dependencies.getModUser(), dependencies.isRespectAnonymousPermissions());
+            if (needSave) {
+
+                return firePublishWithSave(contentlet, dependencies, actionId, user);
+            }
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", on the action id: " + actionId +
+                    ", will do a publish");
+
+            contentletAPI.publish(contentlet, user, dependencies.isRespectAnonymousPermissions());
 
             return contentlet;
+        }
+
+        private Contentlet firePublishWithSave(final Contentlet contentlet,
+                                               final ContentletDependencies dependencies,
+                                               final String actionId, final User user) throws DotDataException, DotSecurityException {
+
+            final String disableWorkflow = Contentlet.DISABLE_WORKFLOW;
+            final boolean hasPublishActionlet  = UtilMethods.isSet(actionId)?
+                workflowAPI.findAction(actionId, user).hasPublishActionlet():false;
+
+            // we do not want auto assign this checkin
+            if (!hasPublishActionlet) {
+
+                Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                        + ", on the action id: " + actionId +
+                        ", does not have publish, and has changes, so a checkin will be fired without assign to any step");
+                contentlet.setBoolProperty(disableWorkflow, true);
+            }
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
+            final Contentlet checkinContentlet = contentletAPI.checkin(contentlet,
+                    user, dependencies.isRespectAnonymousPermissions());
+
+            if (!hasPublishActionlet) {
+
+                if (checkinContentlet.getMap().containsKey(disableWorkflow)) {
+                    checkinContentlet.getMap().remove(disableWorkflow);
+                }
+
+                if (UtilMethods.isSet(actionId)) {
+                    checkinContentlet.setActionId(actionId);
+                }
+
+                Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                        + ", on the action id: " + actionId +
+                        ", was checkin but does not have publish, so a publish will be fired (could autoassign if needed)");
+
+                contentletAPI.publish(checkinContentlet,
+                        user, dependencies.isRespectAnonymousPermissions());
+            }
+
+            return checkinContentlet;
         }
     }
 }
