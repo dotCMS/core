@@ -22,6 +22,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
 
                 .ui-splitbutton {
                     display: flex;
+                    justify-content: space-between;
                     height: 48px;
                     border: 0;
                     background: transparent;
@@ -40,6 +41,8 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
 
                     .ui-button-text-icon-left .ui-button-text {
                         padding-left: 50px;
+                        text-transform: none;
+                        font-size: $font-size-medium;
                     }
 
                     button {

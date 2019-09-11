@@ -44,6 +44,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
                 'contenttypes.tab.publisher.push.history.header',
                 'contenttypes.tab.relationship.header',
                 'contenttypes.dropzone.rows.add',
+                'contenttypes.content.row',
                 'contenttypes.dropzone.rows.tab_divider',
                 'contenttypes.content.variable',
                 'contenttypes.form.identifier',
