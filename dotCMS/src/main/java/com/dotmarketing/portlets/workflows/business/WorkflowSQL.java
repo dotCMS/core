@@ -131,5 +131,11 @@ abstract class WorkflowSQL {
 	static String SELECT_STRUCTS_FOR_SCHEME="select st.* from structure st join workflow_scheme_x_structure wss on st.inode = wss.structure_id where wss.scheme_id = ? order by st.name";
     static String DELETE_STRUCTS_FOR_SCHEME="delete from workflow_scheme_x_structure where scheme_id = ?";
 	static String DELETE_SCHEME="delete from workflow_scheme where id = ?";
+
+	static String INSERT_WORKFLOW_HISTORY = "INSERT INTO workflow_history (id, creation_date, made_by, change_desc, workflowtask_id, workflow_action_id, workflow_step_id) values (?,?,?,?,?,?,?)";
+	static String UPDATE_WORKFLOW_HISTORY = "UPDATE workflow_task SET creation_date=?, made_by=?, change_desc=?, workflowtask_id=?, workflow_action_id=?, workflow_step_id=?  WHERE id=?";
+
+	static String INSERT_WORKFLOW_COMMENT = "INSERT INTO workflow_comment (id, creation_date, posted_by, wf_comment, workflowtask_id) values (?,?,?,?,?)";
+	static String UPDATE_WORKFLOW_COMMENT = "UPDATE workflow_comment SET creation_date=?, posted_by=?, wf_comment=?, workflowtask_id=? WHERE id=?";
 }
 
