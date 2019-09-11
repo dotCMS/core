@@ -29,7 +29,7 @@ public class Task05190UpdateFormsWidgetCodeFieldTest {
             new Task05190UpdateFormsWidgetCodeField();
 
         String inode = dotConnect
-            .setSQL(Task05190UpdateFormsWidgetCodeField.SELECT_FORM_INODE).getString("inode");
+            .setSQL(Task05190UpdateFormsWidgetCodeField.SELECT_FORM_WIDGET_FIELD_INODE).getString("contentTypeId");
         
 
 

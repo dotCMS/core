@@ -18,11 +18,15 @@ import com.dotmarketing.startup.StartupTask;
 public class Task05190UpdateFormsWidgetCodeField implements StartupTask {
 
 
-  protected static final String SELECT_FORM_INODE =
-      "select inode from structure where velocity_var_name='" + FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + "'";
 
-  protected static final String SELECT_FIELD_INODE =
-      "select inode from field where inode=? and velocity_var_name='" + FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME + "'";
+  protected static final String SELECT_FORM_WIDGET_FIELD_INODE =
+      "select field.inode as fieldId, structure.inode as contentTypeId "
+      + "from field,structure "
+      + "where "
+      + "field.structure_inode=structure.inode and "
+      + "structure.velocity_var_name='" + FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + "' and "
+      + "field.velocity_var_name = '" + FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME + "'";
+  
   private static final String DELETE_FIELD="delete from field where inode=?";
   private static final String DELETE_INODE="delete from inode where inode=?";
   protected static final String REPLACEMENT_VELOCITY_CODE = "$velutil.mergeTemplate('/static/content/content_form.vtl')";
@@ -37,13 +41,13 @@ public class Task05190UpdateFormsWidgetCodeField implements StartupTask {
   @Override
   public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
-      final DotConnect dotConnect = new DotConnect();
-
-      // find widget type "forms"
-      final String contentTypeId = dotConnect.setSQL(SELECT_FORM_INODE).getString("inode");
+      final DotConnect dotConnect = new DotConnect().setSQL(SELECT_FORM_WIDGET_FIELD_INODE);
+      final String fieldId = dotConnect.getString("fieldId");
+      final String contentTypeId = dotConnect.getString("contentTypeId");
       
-      
-      final String fieldId = dotConnect.setSQL(SELECT_FIELD_INODE).addParam(contentTypeId).getString("inode");
+      if(contentTypeId==null) {
+        return;
+      }
       
       
       // delete old field from "forms"
@@ -57,12 +61,13 @@ public class Task05190UpdateFormsWidgetCodeField implements StartupTask {
       dotConnect.addParam(fieldId);
       dotConnect.loadResult();
       
-      // delete new field from "forms" (idempotent)
+      
+      // delete new field from "forms" if it exists (idempotent)
       dotConnect.setSQL(DELETE_FIELD);
       dotConnect.addParam(NEW_FIELD_ID);
       dotConnect.loadResult();
       
-      // delete new field from "forms" (idempotent)
+      // delete new field from "forms" if it exists (idempotent)
       dotConnect.setSQL(DELETE_INODE);
       dotConnect.addParam(NEW_FIELD_ID);
       dotConnect.loadResult();
@@ -71,7 +76,7 @@ public class Task05190UpdateFormsWidgetCodeField implements StartupTask {
       
       // insert new field into forms
       Field newField = ImmutableConstantField.builder()
-          .id("e5666638-e7f4-4b3a-b6d3-22f8d13188e8")
+          .id(NEW_FIELD_ID)
           .name(WidgetContentType.WIDGET_CODE_FIELD_NAME)
           .variable(WidgetContentType.WIDGET_CODE_FIELD_VAR)
           .sortOrder(3)
@@ -85,6 +90,7 @@ public class Task05190UpdateFormsWidgetCodeField implements StartupTask {
           .build();
 
 
+      // insert the new field
       insertInodeInDb(newField);
       insertFieldInDb(newField);
       CacheLocator.getContentTypeCache().clearCache();
