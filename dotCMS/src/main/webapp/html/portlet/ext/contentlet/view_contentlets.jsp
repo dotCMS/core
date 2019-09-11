@@ -55,9 +55,15 @@
         languageId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
     }
 
-    String structureSelected = (String) request.getAttribute("selectedStructure");
+    String structureSelected = null;
+    final String variableName = (String) request.getParameter("filter");
 
-
+    if(UtilMethods.isSet(variableName)){
+        ContentType filterContentType = APILocator.getContentTypeAPI(user).find(variableName);
+        structureSelected = filterContentType.id();
+    }else{
+        structureSelected = (String) request.getAttribute("selectedStructure");
+    }
 
     String schemeSelected = "catchall";
     if(UtilMethods.isSet(session.getAttribute(ESMappingConstants.WORKFLOW_SCHEME))){
