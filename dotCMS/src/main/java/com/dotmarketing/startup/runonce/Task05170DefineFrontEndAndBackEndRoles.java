@@ -80,24 +80,25 @@ public class Task05170DefineFrontEndAndBackEndRoles implements StartupTask {
 
      //Anyone with layout OR an API Key gets added to the backend user role
      static final String USERS_WITH_ASSIGNED_LAYOUT_OR_API_KEY_BUT_NOT_BACKEND_ROLE =
-             "select ur.user_id as user_id from users_cms_roles ur \n"
-             + " join layouts_cms_roles l on ur.role_id = l.role_id  \n"
-             + " join cms_role r on r.id = l.role_id \n"
-             + " where not exists (\n"
-             + "   select ur2.user_id from users_cms_roles ur2, cms_role r2 where ur2.role_id = r2.id and r2.role_key = 'DOTCMS_BACK_END_USER' and ur2.user_id = ur.user_id \n"
-             + " )\n"
-             + "  union  (  \n"
-             + "   select token_userid as user_id from  api_token_issued where not exists (\n"
-             + "   select ur2.user_id from users_cms_roles ur2, cms_role r2 where ur2.role_id = r2.id and r2.role_key = 'DOTCMS_BACK_END_USER' and ur2.user_id = token_userid \n"
-             + "  )\n"
-             + " )";
+             "select u.userid as user_id from user_ u \n"
+             + "  join users_cms_roles ur on ur.user_id = u.userid\n"
+             + "  join layouts_cms_roles l on ur.role_id = l.role_id  \n"
+             + "  join cms_role r on r.id = l.role_id \n"
+             + "   where not exists (\n"
+             + "    select ur2.user_id from users_cms_roles ur2, cms_role r2 where ur2.role_id = r2.id and r2.role_key = 'DOTCMS_BACK_END_USER' and ur2.user_id = ur.user_id  \n"
+             + "  ) union  (  \n"
+             + "       select token_userid as user_id from  api_token_issued where not exists (\n"
+             + "          select ur2.user_id from users_cms_roles ur2, cms_role r2 where ur2.role_id = r2.id and r2.role_key = 'DOTCMS_BACK_END_USER' and ur2.user_id = token_userid \n"
+             + "       )\n"
+             + "  )";
 
     //Everyone gets the front end user role
     private static final String USERS_WITHOUT_FRONTEND_ROLE =
-            "select distinct(ur.user_id) as user_id from users_cms_roles ur \n"
-                + " where not exists ( \n"
-                + "  select ur2.user_id from users_cms_roles ur2, cms_role r2 where ur2.role_id = r2.id and r2.role_key = 'DOTCMS_FRONT_END_USER' and ur2.user_id = ur.user_id \n"
-                + ")";
+            "select distinct(user_.userid) as user_id from user_\n"
+            + "  where not exists ( \n"
+            + "     select ur2.user_id from users_cms_roles ur2, cms_role r2 where ur2.role_id = r2.id \n"
+            + "     and r2.role_key = 'DOTCMS_FRONT_END_USER' and ur2.user_id = user_.userid \n"
+            + "  )";
 
 
     private final static String CMS_USER_LABEL = "CMS User";
