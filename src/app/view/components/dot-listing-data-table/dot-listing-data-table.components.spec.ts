@@ -72,43 +72,50 @@ describe('DotListingDataTableComponent', () => {
                 field1: 'item1-value1',
                 field2: 'item1-value2',
                 field3: 'item1-value3',
-                field4: 'item1-value4'
+                nEntries: 'item1-value4',
+                variable: 'Banner'
             },
             {
                 field1: 'item2-value1',
                 field2: 'item2-value2',
                 field3: 'item2-value3',
-                field4: 'item1-value4'
+                nEntries: 'item1-value4',
+                variable: 'Banner'
             },
             {
                 field1: 'item3-value1',
                 field2: 'item3-value2',
                 field3: 'item3-value3',
-                field4: 'item1-value4'
+                nEntries: 'item1-value4',
+                variable: 'Banner'
             },
             {
                 field1: 'item4-value1',
                 field2: 'item4-value2',
                 field3: 'item4-value3',
-                field4: 'item1-value4'
+                nEntries: 'item1-value4',
+                variable: 'Banner'
             },
             {
                 field1: 'item5-value1',
                 field2: 'item5-value2',
                 field3: 'item5-value3',
-                field4: 'item1-value4'
+                nEntries: 'item1-value4',
+                variable: 'Banner'
             },
             {
                 field1: 'item6-value1',
                 field2: 'item6-value2',
                 field3: 'item6-value3',
-                field4: 'item1-value4'
+                nEntries: 'item1-value4',
+                variable: 'Banner'
             },
             {
                 field1: 'item7-value1',
                 field2: 'item7-value2',
                 field3: 'item7-value3',
-                field4: 'item1-value4'
+                nEntries: 'item1-value4',
+                variable: '1'
             }
         ];
 
@@ -121,7 +128,7 @@ describe('DotListingDataTableComponent', () => {
             { fieldName: 'field1', header: 'Field 1', width: '45%' },
             { fieldName: 'field2', header: 'Field 2', width: '10%' },
             { fieldName: 'field3', header: 'Field 3', width: '30%' },
-            { fieldName: 'field4', header: 'Field 4', width: '5%' }
+            { fieldName: 'nEntries', header: 'Field 4', width: '5%' }
         ];
 
         this.url = '/test/';
@@ -136,7 +143,7 @@ describe('DotListingDataTableComponent', () => {
         ];
     });
 
-    it('renderer basic datatable component', () => {
+    it('should set active element the global search on load', () => {
         const actionHeader = fixture.debugElement.query(By.css('dot-action-header'));
         const globalSearch = actionHeader.query(By.css('input'));
 
@@ -178,10 +185,15 @@ describe('DotListingDataTableComponent', () => {
                 const cells = row.querySelectorAll('td');
                 const item = this.items[rowIndex - 1];
                 cells.forEach((_cell, cellIndex) => {
-                    if (cellIndex && cellIndex < 4) {
+                    if (cellIndex < 3) {
                         expect(cells[cellIndex].querySelector('span').textContent).toContain(
                             item[comp.columns[cellIndex].fieldName]
                         );
+                    }
+                    if (cellIndex === 3) {
+                        const anchor = cells[cellIndex].querySelector('a');
+                        expect(anchor.textContent).toContain(item[comp.columns[cellIndex].fieldName]);
+                        expect(anchor.href).toContain('/c/content?filter=Banner');
                     }
                 });
             }

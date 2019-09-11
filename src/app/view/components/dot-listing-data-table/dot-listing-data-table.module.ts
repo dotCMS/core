@@ -11,6 +11,7 @@ import { DataTableModule, InputTextModule } from 'primeng/primeng';
 import { TableModule } from 'primeng/table';
 import { ActionMenuButtonModule } from '../_common/action-menu-button/action-menu-button.module';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
+import { RouterModule } from '@angular/router';
 
 @NgModule({
     declarations: [DotListingDataTableComponent],
@@ -23,8 +24,15 @@ import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
         FormsModule,
         InputTextModule,
         ActionMenuButtonModule,
-        DotIconModule
+        DotIconModule,
+        RouterModule
     ],
-    providers: [DotCrudService, FormatDateService, DotcmsConfigService, LoggerService, DotMessageService]
+    providers: [
+        DotCrudService,
+        FormatDateService,
+        DotcmsConfigService,
+        LoggerService,
+        DotMessageService
+    ]
 })
 export class DotListingDataTableModule {}

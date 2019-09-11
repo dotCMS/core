@@ -115,9 +115,14 @@ describe('DotRouterService', () => {
         expect(service.isCustomPortlet('site-browser')).toBe(false);
     });
 
-
     it('should return true if the currentPortlet is not a custom portlet', () => {
         router.routerState.snapshot.url = '/c/c-testing';
         expect(service.isCustomPortlet('site-browser')).toBe(false);
     });
+
+    it('should return the correct  Portlet Id', () => {
+        expect(service.getPortletId('#/c/content?test=value')).toBe('content');
+        expect(service.getPortletId('/c/add/content?fds=ds')).toBe('content');
+    });
+
 });

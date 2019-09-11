@@ -44,7 +44,9 @@
                     <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
                     <span>{{ rowData[col.fieldName] }}</span>
                 </div>
-                <span *ngIf="!col.icon">{{ rowData[col.fieldName] }}</span>
+                <span *ngIf="!col.icon && col.fieldName !== 'nEntries'">{{ rowData[col.fieldName] }}</span>
+                <a *ngIf="col.fieldName === 'nEntries'" [routerLink]="'/c/content'" [queryParams]="{filter: rowData.variable}">{{ rowData[col.fieldName] }}</a>
+
             </td>
             <td class="listing-datatable__action-column" style="width: 5%">
                 <dot-action-menu-button
