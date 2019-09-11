@@ -40,6 +40,10 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import eu.bitwalker.useragentutils.Browser;
+import eu.bitwalker.useragentutils.UserAgent;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,6 +60,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TimeZone;
 import javax.imageio.ImageIO;
@@ -369,9 +374,19 @@ public class BinaryExporterServlet extends HttpServlet {
         }
         inputFile = APILocator.getTempFileAPI().getTempFile(req, shorty.longId).get().file;
       }
-			
-			
-			
+      
+      final String[] val = params.get("filter");
+      if(val!=null && val[0].contains("Quality")) {
+        if(Browser.SAFARI == new UserAgent(req.getHeader("user-agent")).getBrowser()){
+          params.put("filter", new String[] {val[0].replace("Quality","Jpeg")});
+          params.put("jpeg_q", params.get("quality_q"));
+        }else {
+          params.put("filter", new String[] {val[0].replace("Quality","WebP")});
+          params.put("webp_q", params.get("quality_q"));
+        }
+      }
+
+
 			
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){

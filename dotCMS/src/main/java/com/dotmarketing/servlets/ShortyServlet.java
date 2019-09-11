@@ -61,7 +61,8 @@ public class ShortyServlet extends HttpServlet {
   public  static final String  SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
   private static final Pattern widthPattern                = Pattern.compile("/\\d+[w]");
   private static final Pattern heightPattern               = Pattern.compile("/\\d+[h]");
-
+  private static final Pattern qualityPattern               = Pattern.compile("/\\d+[q]");
+  
   @CloseDBIfOpened
   protected void service(final HttpServletRequest request, final HttpServletResponse response)
       throws ServletException, IOException {
@@ -105,7 +106,23 @@ public class ShortyServlet extends HttpServlet {
 
     return height;
   }
+  
+  private int getQuality (final String uri, final int defaultQuality) {
 
+    int quality = 0;
+
+    try {
+      final Matcher qualityMatcher = qualityPattern.matcher(uri);
+      quality = qualityMatcher.find() ?
+              Integer.parseInt(qualityMatcher.group().substring(1).replace("q", StringPool.BLANK)) :
+                defaultQuality;
+    } catch(Exception e){
+      Logger.debug(this, e.getMessage());
+    }
+    quality= (quality<0) ? 0 : (quality>100) ? 100 : quality;
+    return quality;
+  }
+  
   private void serve(final HttpServletRequest request,
                      final HttpServletResponse response) throws Exception {
 
@@ -150,10 +167,11 @@ public class ShortyServlet extends HttpServlet {
 
     final int      width   = this.getWidth(lowerUri, 0);
     final int      height  = this.getHeight(lowerUri, 0);
+    final int      quality  = this.getQuality(lowerUri, 0);
     final boolean  jpeg    = lowerUri.contains(JPEG);
     final boolean  jpegp   = jpeg && lowerUri.contains(JPEGP);
-    final boolean   webp   = lowerUri.contains(WEBP);
-    final boolean  isImage = webp || jpeg || width+height > 0;
+    final boolean  webp    = lowerUri.contains(WEBP);
+    final boolean  isImage = webp || jpeg || width+height > 0 || quality>0;
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
     final User systemUser  = APILocator.systemUser();
@@ -181,7 +199,7 @@ public class ShortyServlet extends HttpServlet {
       final StringBuilder pathBuilder = new StringBuilder(path)
               .append(id).append("/byInode/true");
 
-      this.addImagePath(width, height, jpeg, jpegp,webp, isImage, pathBuilder);
+      this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder);
       this.doForward(request, response, pathBuilder.toString());
     } catch (DotContentletStateException e) {
 
@@ -207,6 +225,7 @@ public class ShortyServlet extends HttpServlet {
 
   private void addImagePath(final int weight,
                             final int height,
+                            final int quality,
                             final boolean jpeg,
                             final boolean jpegp,
                             final boolean webp,
@@ -216,9 +235,13 @@ public class ShortyServlet extends HttpServlet {
 
           pathBuilder.append("/filter/");
           pathBuilder.append(weight+height > 0? "Resize,"      : StringPool.BLANK);
-          pathBuilder.append(jpeg ? "Jpeg/jpeg_q/75"            : StringPool.BLANK);
-          pathBuilder.append(webp ? "WebP/webp_q/75"        : StringPool.BLANK);
-          pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1"        : StringPool.BLANK);
+          if(quality>0) {
+            pathBuilder.append("Quality/quality_q/" + quality);
+          }else {
+            pathBuilder.append(jpeg ? "Jpeg/jpeg_q/75"            : StringPool.BLANK);
+            pathBuilder.append(webp ? "WebP/webp_q/75"        : StringPool.BLANK);
+            pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1"        : StringPool.BLANK);
+          }
           pathBuilder.append(weight > 0? "/resize_w/" + weight : StringPool.BLANK);
           pathBuilder.append(height > 0? "/resize_h/" + height : StringPool.BLANK);
       }
