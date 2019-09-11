@@ -23,7 +23,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
-import com.dotmarketing.factories.MultiTreeAPIImpl;
 import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.portlets.containers.business.ContainerExceptionNotifier;
 import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
@@ -62,7 +61,6 @@ import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.*;
 
@@ -330,7 +328,7 @@ public class PageRenderUtil implements Serializable {
                         // contentPrintableMap.put("personalization", personalization); // todo: not sure if this will be needed by FOX
                         cListAsMaps.add(contentPrintableMap);
 
-                        if (personalizedContentlet.getPersonalization().equals(currentPersonaTag)) {
+                        if (personalizedContentlet != null && personalizedContentlet.getPersonalization().equals(currentPersonaTag)) {
                             cListAsMaps2.add(contentPrintableMap);
                         }
                     } catch (IOException e) {
@@ -362,7 +360,7 @@ public class PageRenderUtil implements Serializable {
                 
                 contentMaps.put((uniqueId.startsWith(CONTAINER_UUID_PREFIX)) ? uniqueId : CONTAINER_UUID_PREFIX + uniqueId, cListAsMaps2);
                 this.setContentletListPerPersonalization(uniqueId, container, contentIdListByPersonalizationMap, personalizationsForPage);
-                contextMap.put("totalSize" +  container.getIdentifier() + uniqueId, new Integer(personalizedContentletSet.size())); // todo: not sure about this
+                contextMap.put("totalSize" +  container.getIdentifier() + uniqueId, Integer.valueOf(personalizedContentletSet.size())); // todo: not sure about this
             }
 
             raws.add(new ContainerRaw(container, containerStructures, contentMaps));
@@ -372,7 +370,9 @@ public class PageRenderUtil implements Serializable {
     }
 
     @Nullable
-    private Contentlet getContentlet(Map<String, List<String>> contentIdListByPersonalizationMap, PersonalizedContentlet personalizedContentlet) {
+    private Contentlet getContentlet(
+            final Map<String, List<String>> contentIdListByPersonalizationMap,
+            final PersonalizedContentlet personalizedContentlet) {
         try {
 
             // indexing
