@@ -1841,11 +1841,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		DotPreconditions.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
 				()-> "Workflow-does-not-exists-scheme", DoesNotExistException.class);
 
-		if (!this.isValidShowOn(action.getShowOn())) {
-
-			Logger.error(this, "No show On data on workflow action record, bad data?");
-			action.setShowOn(WorkflowAPI.DEFAULT_SHOW_ON);
-		}
 
 		action.setSchemeId(this.getLongIdForScheme(action.getSchemeId()));
 		if (UtilMethods.isSet(action.getId())) {
