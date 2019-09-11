@@ -73,12 +73,12 @@ public class ULID {
     this(new SecureRandom());
   }
 
-  public ULID(Random random) {
+  public ULID(final Random random) {
     Objects.requireNonNull(random, "random must not be null!");
     this.random = random;
   }
 
-  public void appendULID(StringBuilder stringBuilder) {
+  public void appendULID(final StringBuilder stringBuilder) {
     Objects.requireNonNull(stringBuilder, "stringBuilder must not be null!");
     internalAppendULID(stringBuilder, System.currentTimeMillis(), random);
   }
@@ -87,7 +87,7 @@ public class ULID {
     return nextULID(System.currentTimeMillis());
   }
 
-  public String nextULID(long timestamp) {
+  public String nextULID(final long timestamp) {
     return internalUIDString(timestamp, random);
   }
 
@@ -95,7 +95,7 @@ public class ULID {
     return nextValue(System.currentTimeMillis());
   }
 
-  public Value nextValue(long timestamp) {
+  public Value nextValue(final long timestamp) {
     return internalNextValue(timestamp, random);
   }
 
@@ -106,7 +106,7 @@ public class ULID {
    * @param previousUlid the previous ULID value.
    * @return the next monotonic value.
    */
-  public Value nextMonotonicValue(Value previousUlid) {
+  public Value nextMonotonicValue(final Value previousUlid) {
     return nextMonotonicValue(previousUlid, System.currentTimeMillis());
   }
 
@@ -118,7 +118,7 @@ public class ULID {
    * @param timestamp the timestamp of the next ULID value.
    * @return the next monotonic value.
    */
-  public Value nextMonotonicValue(Value previousUlid, long timestamp) {
+  public Value nextMonotonicValue(final Value previousUlid, final long timestamp) {
     Objects.requireNonNull(previousUlid, "previousUlid must not be null!");
     if (previousUlid.timestamp() == timestamp) {
       return previousUlid.increment();
@@ -133,7 +133,7 @@ public class ULID {
    * @param previousUlid the previous ULID value.
    * @return the next monotonic value or empty if an overflow happened.
    */
-  public Optional<Value> nextStrictlyMonotonicValue(Value previousUlid) {
+  public Optional<Value> nextStrictlyMonotonicValue(final Value previousUlid) {
     return nextStrictlyMonotonicValue(previousUlid, System.currentTimeMillis());
   }
 
@@ -145,7 +145,7 @@ public class ULID {
    * @param timestamp the timestamp of the next ULID value.
    * @return the next monotonic value or empty if an overflow happened.
    */
-  public Optional<Value> nextStrictlyMonotonicValue(Value previousUlid, long timestamp) {
+  public Optional<Value> nextStrictlyMonotonicValue(final Value previousUlid, final long timestamp) {
     Value result = nextMonotonicValue(previousUlid, timestamp);
     if (result.compareTo(previousUlid) < 1) {
       return Optional.empty();
@@ -153,7 +153,7 @@ public class ULID {
     return Optional.of(result);
   }
 
-  public static Value parseULID(String ulidString) {
+  public static Value parseULID(final String ulidString) {
     Objects.requireNonNull(ulidString, "ulidString must not be null!");
     if (ulidString.length() != 26) {
       throw new IllegalArgumentException("ulidString must be exactly 26 chars long.");
@@ -174,7 +174,7 @@ public class ULID {
     return new Value(most, least);
   }
 
-  public static Value fromBytes(byte[] data) {
+  public static Value fromBytes(final byte[] data) {
     Objects.requireNonNull(data, "data must not be null!");
     if (data.length != 16) {
       throw new IllegalArgumentException("data must be 16 bytes in length!");
@@ -203,7 +203,7 @@ public class ULID {
      */
     private final long leastSignificantBits;
 
-    public Value(long mostSignificantBits, long leastSignificantBits) {
+    public Value(final long mostSignificantBits, final long leastSignificantBits) {
       this.mostSignificantBits = mostSignificantBits;
       this.leastSignificantBits = leastSignificantBits;
     }
@@ -261,19 +261,19 @@ public class ULID {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
       if (this == o)
         return true;
       if (o == null || getClass() != o.getClass())
         return false;
 
-      Value value = (Value) o;
+      final Value value = (Value) o;
 
       return mostSignificantBits == value.mostSignificantBits && leastSignificantBits == value.leastSignificantBits;
     }
 
     @Override
-    public int compareTo(Value val) {
+    public int compareTo(final Value val) {
       // The ordering is intentionally set up so that the ULIDs
       // can simply be numerically compared as two numbers
       return (this.mostSignificantBits < val.mostSignificantBits ? -1
@@ -284,11 +284,11 @@ public class ULID {
 
     @Override
     public String toString() {
-      char[] buffer = new char[26];
+      final char[] buffer = new char[26];
 
       internalWriteCrockford(buffer, timestamp(), 10, 0);
       long value = ((mostSignificantBits & 0xFFFFL) << 24);
-      long interim = (leastSignificantBits >>> 40);
+      final long interim = (leastSignificantBits >>> 40);
       value = value | interim;
       internalWriteCrockford(buffer, value, 8, 10);
       internalWriteCrockford(buffer, leastSignificantBits, 8, 18);
@@ -300,23 +300,23 @@ public class ULID {
   /*
    * http://crockford.com/wrmg/base32.html
    */
-  static void internalAppendCrockford(StringBuilder builder, long value, int count) {
+  static void internalAppendCrockford(final StringBuilder builder, final long value, final int count) {
     for (int i = count - 1; i >= 0; i--) {
-      int index = (int) ((value >>> (i * MASK_BITS)) & MASK);
+      final int index = (int) ((value >>> (i * MASK_BITS)) & MASK);
       builder.append(ENCODING_CHARS[index]);
     }
   }
 
-  static long internalParseCrockford(String input) {
+  static long internalParseCrockford(final String input) {
     Objects.requireNonNull(input, "input must not be null!");
-    int length = input.length();
+    final int length = input.length();
     if (length > 12) {
       throw new IllegalArgumentException("input length must not exceed 12 but was " + length + "!");
     }
 
     long result = 0;
     for (int i = 0; i < length; i++) {
-      char current = input.charAt(i);
+      final char current = input.charAt(i);
       byte value = -1;
       if (current < DECODING_CHARS.length) {
         value = DECODING_CHARS[current];
@@ -332,17 +332,17 @@ public class ULID {
   /*
    * http://crockford.com/wrmg/base32.html
    */
-  static void internalWriteCrockford(char[] buffer, long value, int count, int offset) {
+  static void internalWriteCrockford(final char[] buffer, final long value, final int count, final int offset) {
     for (int i = 0; i < count; i++) {
-      int index = (int) ((value >>> ((count - i - 1) * MASK_BITS)) & MASK);
+      final int index = (int) ((value >>> ((count - i - 1) * MASK_BITS)) & MASK);
       buffer[offset + i] = ENCODING_CHARS[index];
     }
   }
 
-  static String internalUIDString(long timestamp, Random random) {
+  static String internalUIDString(final long timestamp, final Random random) {
     checkTimestamp(timestamp);
 
-    char[] buffer = new char[26];
+    final char[] buffer = new char[26];
 
     internalWriteCrockford(buffer, timestamp, 10, 0);
     // could use nextBytes(byte[] bytes) instead
@@ -352,7 +352,7 @@ public class ULID {
     return new String(buffer);
   }
 
-  static void internalAppendULID(StringBuilder builder, long timestamp, Random random) {
+  static void internalAppendULID(final StringBuilder builder, final long timestamp, final Random random) {
     checkTimestamp(timestamp);
 
     internalAppendCrockford(builder, timestamp, 10);
@@ -361,7 +361,7 @@ public class ULID {
     internalAppendCrockford(builder, random.nextLong(), 8);
   }
 
-  static Value internalNextValue(long timestamp, Random random) {
+  static Value internalNextValue(final long timestamp, final Random random) {
     checkTimestamp(timestamp);
     // could use nextBytes(byte[] bytes) instead
     long mostSignificantBits = random.nextLong();
@@ -371,7 +371,7 @@ public class ULID {
     return new Value(mostSignificantBits, leastSignificantBits);
   }
 
-  private static void checkTimestamp(long timestamp) {
+  private static void checkTimestamp(final long timestamp) {
     if ((timestamp & TIMESTAMP_OVERFLOW_MASK) != 0) {
       throw new IllegalArgumentException("ULID does not support timestamps after +10889-08-02T05:31:50.655Z!");
     }

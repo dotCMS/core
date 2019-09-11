@@ -29,7 +29,6 @@ public class BundleFactoryImpl extends BundleFactory {
 		}
 		dc.addParam(bundle.getId());
 		dc.addParam(UtilMethods.isSet(bundle.getName()) ? bundle.getName() : "bundle-" + UtilMethods.dateToJDBC(new Date()));
-		Date pubDate = (bundle.getPublishDate()==null) ? new Date(System.currentTimeMillis() + (1000*100*365*24*60*60)) : bundle.getPublishDate();
 
 		dc.addParam(bundle.getPublishDate());
 		dc.addParam(bundle.getExpireDate());
