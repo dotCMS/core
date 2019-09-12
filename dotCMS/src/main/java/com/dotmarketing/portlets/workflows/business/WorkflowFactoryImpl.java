@@ -1737,25 +1737,41 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	@Override
 	public void saveComment(WorkflowComment comment) throws DotDataException {
-		if(InodeUtils.isSet(comment.getId())) {
-			boolean update=false;
+		boolean isNew = true;
+		if (UtilMethods.isSet(comment.getId())) {
 			try {
-				HibernateUtil.load(WorkflowComment.class, comment.getId());
-				// if no exception it exists. just update
-				update=true;
+				final WorkflowComment test = this.findWorkFlowCommentById(comment.getId());
+				if (test != null) {
+					isNew = false;
+				}
+			} catch (final Exception e) {
+				Logger.debug(this.getClass(), e.getMessage(), e);
 			}
-			catch(Exception ex) {
-				// if it doesn't then save with primary key
-				HibernateUtil.saveWithPrimaryKey(comment, comment.getId());
-			}
-			if(update) {
-				HibernateUtil.update(comment);
-			}
-		}
-		else {
-			HibernateUtil.save(comment);
+		} else {
+			comment.setId(UUIDGenerator.generateUuid());
 		}
 
+		final DotConnect db = new DotConnect();
+
+		if (isNew) {
+			db.setSQL(WorkflowSQL.INSERT_WORKFLOW_COMMENT);
+			db.addParam(comment.getId());
+			setCommentDBParams(comment, db);
+			db.loadResult();
+		} else {
+			db.setSQL(WorkflowSQL.UPDATE_WORKFLOW_COMMENT);
+			setCommentDBParams(comment, db);
+			db.addParam(comment.getId());
+			db.loadResult();
+		}
+
+	}
+
+	private void setCommentDBParams(WorkflowComment comment, DotConnect db) {
+		db.addParam(comment.getCreationDate());
+		db.addParam(comment.getPostedBy());
+		db.addParam(comment.getComment());
+		db.addParam(comment.getWorkflowtaskId());
 	}
 
 	@Override
@@ -2081,47 +2097,89 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 	@Override
 	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException {
-		if(InodeUtils.isSet(history.getId())) {
-			boolean update=false;
+		boolean isNew = true;
+		if (UtilMethods.isSet(history.getId())) {
 			try {
-				HibernateUtil.load(WorkflowHistory.class, history.getId());
-				// if exists just update
-				update=true;
+				final WorkflowHistory test = this.findWorkFlowHistoryById(history.getId());
+				if (test != null) {
+					isNew = false;
+				}
+			} catch (final Exception e) {
+				Logger.debug(this.getClass(), e.getMessage(), e);
 			}
-			catch(Exception ex) {
-				// if not then save with existing key
-				HibernateUtil.saveWithPrimaryKey(history, history.getId());	            
-			}
-			if(update) {
-				HibernateUtil.update(history);
-			}
+		} else {
+			history.setId(UUIDGenerator.generateUuid());
 		}
-		else {
-			HibernateUtil.save(history);
+
+		final DotConnect db = new DotConnect();
+
+		if (isNew) {
+			db.setSQL(WorkflowSQL.INSERT_WORKFLOW_HISTORY);
+			db.addParam(history.getId());
+			setHistoryDBParams(history, db);
+			db.loadResult();
+		} else {
+			db.setSQL(WorkflowSQL.UPDATE_WORKFLOW_HISTORY);
+			setHistoryDBParams(history, db);
+			db.addParam(history.getId());
+			db.loadResult();
 		}
+	}
+
+	private void setHistoryDBParams(WorkflowHistory history, DotConnect db) {
+		db.addParam(history.getCreationDate());
+		db.addParam(history.getMadeBy());
+		db.addParam(history.getChangeDescription());
+		db.addParam(history.getWorkflowtaskId());
+		db.addParam(history.getActionId());
+		db.addParam(history.getStepId());
 	}
 
 	@Override
 	public void saveWorkflowTask ( WorkflowTask task ) throws DotDataException {
-
-		if ( task.isNew() ) {
-			HibernateUtil.save( task );
-		} else {
-
+		boolean isNew = true;
+		if (UtilMethods.isSet(task.getId())) {
 			try {
-				Object currentWorkflowTask = HibernateUtil.load( WorkflowTask.class, task.getId() );
-				HibernateUtil.evict( currentWorkflowTask );//Remove the object from hibernate cache, we used just to verify if exist
-
-				// if the object exists no exception is thrown so just update it
-
-				HibernateUtil.update( task );
-			} catch ( Exception ex ) {
-				// if it doesn't exists then save with that primary key
-				HibernateUtil.saveWithPrimaryKey( task, task.getId() );
+				final WorkflowTask test = this.findWorkFlowTaskById(task.getId());
+				if (test != null) {
+					isNew = false;
+				}
+			} catch (final Exception e) {
+				Logger.debug(this.getClass(), e.getMessage(), e);
 			}
+		} else {
+			task.setId(UUIDGenerator.generateUuid());
 		}
 
-		cache.remove( task );
+		final DotConnect db = new DotConnect();
+
+		if (isNew) {
+			db.setSQL(WorkflowSQL.INSERT_WORKFLOW_TASK);
+			db.addParam(task.getId());
+			setTaskDBParams(task, db);
+			db.loadResult();
+		} else {
+			db.setSQL(WorkflowSQL.UPDATE_WORKFLOW_TASK);
+			setTaskDBParams(task, db);
+			db.addParam(task.getId());
+			db.loadResult();
+		}
+
+		cache.remove(task);
+	}
+
+	private void setTaskDBParams(WorkflowTask task, DotConnect db) {
+		db.addParam(task.getCreationDate());
+		db.addParam(task.getModDate());
+		db.addParam(task.getDueDate());
+		db.addParam(task.getCreatedBy());
+		db.addParam(task.getAssignedTo());
+		db.addParam(task.getBelongsTo());
+		db.addParam(task.getTitle());
+		db.addParam(task.getDescription());
+		db.addParam(task.getStatus());
+		db.addParam(task.getWebasset());
+		db.addParam(task.getLanguageId());
 	}
 
 	@Override
