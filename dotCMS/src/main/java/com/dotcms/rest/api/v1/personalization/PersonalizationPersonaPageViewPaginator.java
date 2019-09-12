@@ -1,7 +1,5 @@
 package com.dotcms.rest.api.v1.personalization;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginatorOrdered;
 import com.dotmarketing.beans.Host;
@@ -16,7 +14,6 @@ import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
