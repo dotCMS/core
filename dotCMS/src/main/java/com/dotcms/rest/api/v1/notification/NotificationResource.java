@@ -104,8 +104,8 @@ public class NotificationResource {
 
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-           .allowBackendUser(true)
-           .allowFrontendUser(false)
+           .requiredBackendUser(true)
+           .requiredFrontendUser(false)
            .params(params)
            .requestAndResponse(request, response)
            .rejectWhenNoUser(true).init();
@@ -189,8 +189,8 @@ public class NotificationResource {
                                                @PathParam ("params") final String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
         
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
@@ -239,8 +239,8 @@ public class NotificationResource {
     public Response markAsRead ( @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse )  {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
 
@@ -279,8 +279,8 @@ public class NotificationResource {
     public Response delete(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("id") String groupId) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
 
@@ -324,8 +324,8 @@ public class NotificationResource {
     public Response delete ( @Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, final DeleteForm deleteForm )  {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
 

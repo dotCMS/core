@@ -276,12 +276,12 @@ public class StructuresWebAPI implements ViewTool {
 	 * @param user
 	 * @return
 	 */
-	public String getLayoutAsJson(final Structure structure, final User user) {
+	public String getLayoutAsJson(final String inodeOrVar) {
 		try {
+		  ContentType contentType = APILocator.getContentTypeAPI(user).find(inodeOrVar);
 			final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
-			final StructureTransformer transformer = new StructureTransformer(structure);
-			final ContentType contentType = transformer.from();
+
 
 			final boolean live = (PageMode.get(Try.of(() -> HttpServletRequestThreadLocal.INSTANCE.getRequest()).getOrNull())).showLive;
 

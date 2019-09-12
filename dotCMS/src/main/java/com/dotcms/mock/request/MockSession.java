@@ -55,7 +55,7 @@ public class MockSession implements  HttpSession {
 	@Override
 	public boolean isNew() {
 
-		return true;
+		return (valmap.isEmpty());
 	}
 
 	@Override

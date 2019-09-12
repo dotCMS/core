@@ -55,6 +55,7 @@ import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -634,12 +635,27 @@ public class WorkflowAPITest extends IntegrationTestBase {
     @Test()
     public void findActionMappedBySystemActionContentlet_Test() throws DotDataException, DotSecurityException {
 
-        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+        final ContentType contentGenericType = new ContentTypeDataGen().workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                .baseContentType(BaseContentType.CONTENT)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .field(new FieldDataGen().name("body").velocityVarName("body").next()).nextPersisted();
         final String unicodeText = "Numéro de téléphone";
+
+        final List<WorkflowScheme> schemes = workflowAPI.findSchemesForContentType(contentGenericType);
+        Logger.info(this, "Schemes for content type: " + contentGenericType.variable() + ", schemes" + schemes);
+        assertTrue(schemes.stream().anyMatch(scheme -> scheme.getId().equals(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)));
 
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
         Contentlet contentlet = contentletDataGen.setProperty("title", "TestContent")
                 .setProperty("body", unicodeText ).languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId()).nextPersisted();
+        contentletAPI.lock(contentlet, user, false);
+
+        Optional<WorkflowStep> workflowStep = workflowAPI.findCurrentStep(contentlet);
+        if (workflowStep.isPresent()) {
+            workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
+        }
+
+        assertFalse(workflowAPI.findCurrentStep(contentlet).isPresent());
 
         Optional<WorkflowAction> workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
                 (contentlet, WorkflowAPI.SystemAction.NEW, user);
@@ -652,30 +668,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
         assertTrue(workflowActionOpt.isPresent());
         assertEquals(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, workflowActionOpt.get().getId());
-
-        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
-                (contentlet, WorkflowAPI.SystemAction.PUBLISH, user);
-
-        assertTrue(workflowActionOpt.isPresent());
-        assertEquals(SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID, workflowActionOpt.get().getId());
-
-        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
-                (contentlet, WorkflowAPI.SystemAction.UNPUBLISH, user);
-
-        assertTrue(workflowActionOpt.isPresent());
-        assertEquals(SystemWorkflowConstants.WORKFLOW_UNPUBLISH_ACTION_ID, workflowActionOpt.get().getId());
-
-        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
-                (contentlet, WorkflowAPI.SystemAction.ARCHIVE, user);
-
-        assertTrue(workflowActionOpt.isPresent());
-        assertEquals(SystemWorkflowConstants.WORKFLOW_ARCHIVE_ACTION_ID, workflowActionOpt.get().getId());
-
-        workflowActionOpt = workflowAPI.findActionMappedBySystemActionContentlet
-                (contentlet, WorkflowAPI.SystemAction.DELETE, user);
-
-        assertTrue(workflowActionOpt.isPresent());
-        assertEquals(SystemWorkflowConstants.WORKFLOW_DELETE_ACTION_ID, workflowActionOpt.get().getId());
     }
 
     @Test()
@@ -2452,7 +2444,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             List<WorkflowHistory> histories1 = workflowAPI.findWorkflowHistory(task1);
             assertNotNull(histories1);
-            assertTrue(histories1.size() == 7);
+            assertEquals(7, histories1.size());
 
             WorkflowTask task2 = workflowAPI.findTaskByContentlet(contentlet2);
             assertNotNull(task2);

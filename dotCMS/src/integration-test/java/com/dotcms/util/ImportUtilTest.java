@@ -809,9 +809,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertNotNull(savedData);
             assertTrue(savedData.size() == 3);
 
-            Logger.info(this, "Printing all workflow tasks");
-            workflowAPI.searchAllTasks(null).forEach(System.out::println);
-
             for (final Contentlet cont : savedData) {
                 assertNotNull(workflowAPI.findTaskByContentlet(cont));
             }
@@ -978,9 +975,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
             assertTrue(savedData.size() == 3);
-
-            Logger.info(this, "Printing all workflow tasks");
-            workflowAPI.searchAllTasks(null).forEach(System.out::println);
 
             for (final Contentlet cont : savedData) {
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);

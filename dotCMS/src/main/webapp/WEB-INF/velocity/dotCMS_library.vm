@@ -156,85 +156,7 @@
 
 #end
 
-##Get related contentlets from relationships
-## params $relationshipName The name of the relationship as you can find it in the structures portlet
-## params $identifier The contentlet identifier
-## params $limit The max number of results to pull if 0 is specified no limit will be used
-## params $orderBy the field(s) name you want sort by.
-## E.G.
-##           imageTitle
-##           imageTile desc, longDescription asc
-#macro(pullRelatedContent $relationshipName $identifier $limit $orderBy)
-    #set($x = "")
-    #set($x = $webapi.getIdentifierInode($identifier))
-    #if(!$UtilMethods.isSet($x))
-       #set($x = $inode)
-    #end
 
-	#set($relationshipNameQ = $relationshipName)
-
-	#set($relationship = $contents.getRelationshipByName($relationshipName))
-
-	#if($relationship.parentStructureInode == $relationship.childStructureInode)
-		#if($pullParents)
-			#set($relationshipNameQ = "${relationshipName.trim()}-child")
-		#else
-			#set($relationshipNameQ = "${relationshipName.trim()}-parent")
-		#end
-	#end
-
-	#set($language= '')
-	#if($request.session.getAttribute("com.dotmarketing.htmlpage.language"))
-		#set($language= " +languageId:${request.session.getAttribute('com.dotmarketing.htmlpage.language')} ")
-	#end
-
-	#set($pullquery = "+type:content +live:true +deleted:false $language +${relationshipNameQ}:${x}")
-
-	#if($!{condition})
-           #set($pullquery = "$!{pullquery} $!{condition}")
-	#end
-
-	#if($orderBy == "")
-		#set($orderByQ = "${relationshipName}-${x}-order")
-	#else
-		#set($orderByQ = "$orderBy")
-	#end
-	#pullContent($pullquery $limit $orderByQ)
-	#set($x = 0)
-#end
-
-
-
-#macro(comment $commentContentInode)
-	#set($_commentContentInode = $commentContentInode)
-	#set ($commentsOptions = {})
-	#set($dummy = $commentsOptions.put('contentInode', $!commentContentInode))
-	#set($dummy = $commentsOptions.put('commentAutoPublish', $!commentAutoPublish))
-	#set($dummy = $commentsOptions.put('commentStripHtml', $!commentStripHtml))
-	#set($dummy = $commentsOptions.put('commentTitle', $!commentTitle))
-	#set($dummy = $commentsOptions.put('emailTemplate', $!emailTemplate))
-	#set($dummy = $commentsOptions.put('commentsModeration', $!commentsModeration))
-
-	#if(!$UtilMethods.isSet($commentReferer))
-	  	#if($URLMapContent)
-		    #set($commentReferer =  $contents.getUrlMapForContentlet($URLMapContent.identifier))
-	  	#else
-		    #set($commentReferer =  "${VTLSERVLET_URI}?$!{request.getQueryString()}")
-	  	#end
-	#end
-
-	#set($dummy = $commentsOptions.put('referrer', $!commentReferer))
-	$session.setAttribute("commentsOptions", $commentsOptions)
-
-	#if(!$UtilMethods.isSet("$!maxDepth") || $maxDepth < 1)
-		#set($maxDepth = 1)
-	#end
-	#if($commentSourceCode)
-		#dotParse($commentSourceCode)
-	#else
-		$velutil.mergeTemplate('/static/comments/listcomments.html')
-	#end
-#end
 
 
 
@@ -251,30 +173,5 @@ Creates a div'ed login form that can be dropped in on any page to authenticate t
 	#end
 #end
 
-#*
- Macro to submit content from frontend
-*#
-#macro(submitContent $structureNameAux)
-   #set($action = '')
-   #set($structureName = $structureNameAux)
-   #if ($UtilMethods.isSet($submitContentSrc))
-      #dotParse($submitContentSrc)
-   #else
-      $velutil.mergeTemplate('/static/content/content_form_macro.vtl')
-   #end
-#end
 
 
-#*
- Macro to Edit submit content from frontend
-*#
-#macro(submitContentEdit $contentletInode)
-   #set($action = 'editContent')
-   #set($contentletInode = $contentletInode)
-   #if ($UtilMethods.isSet($submitContentSrc))
-      #dotParse($submitContentSrc)
-   #else
-      $velutil.mergeTemplate('/static/content/content_form_macro.vtl')
-
-   #end
-#end

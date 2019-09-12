@@ -103,8 +103,8 @@ public class UserResource implements Serializable {
 
         final User user =
 		new WebResource.InitBuilder(webResource)
-				.allowBackendUser(true)
-				.allowFrontendUser(false)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true)
 				.init().getUser();
@@ -148,8 +148,8 @@ public class UserResource implements Serializable {
 
         final User modUser =
 				new WebResource.InitBuilder(webResource)
-						.allowBackendUser(true)
-						.allowFrontendUser(false)
+						.requiredBackendUser(true)
+						.requiredFrontendUser(false)
 						.requestAndResponse(httpServletRequest, httpServletResponse)
 						.rejectWhenNoUser(true)
 						.init().getUser();
@@ -268,8 +268,8 @@ public class UserResource implements Serializable {
 
 		final InitDataObject initData =
 		new WebResource.InitBuilder(webResource)
-				.allowBackendUser(true)
-				.allowFrontendUser(false)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
 				.params(params)
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true)
@@ -333,8 +333,8 @@ public class UserResource implements Serializable {
 
 		final InitDataObject initData =
 		new WebResource.InitBuilder(webResource)
-				.allowBackendUser(true)
-				.allowFrontendUser(false)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
 				.credentials(loginAsUserId,loginAsUserPwd)
 				.requestAndResponse(request, httpResponse)
 				.rejectWhenNoUser(true)
@@ -431,8 +431,8 @@ public class UserResource implements Serializable {
 	public final Response logoutAs(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) {
 
 		new WebResource.InitBuilder(webResource)
-				.allowBackendUser(true)
-				.allowFrontendUser(false)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
 				.requestAndResponse(httpServletRequest, httpServletResponse)
 				.rejectWhenNoUser(true)
 				.init();
@@ -510,8 +510,8 @@ public class UserResource implements Serializable {
 			InitDataObject initData = //webResource.init(null, httpServletRequest, httpServletResponse, true, null);
 
 			new WebResource.InitBuilder(webResource)
-					.allowBackendUser(true)
-					.allowFrontendUser(false)
+					.requiredBackendUser(true)
+					.requiredFrontendUser(false)
 					.requestAndResponse(httpServletRequest, httpServletResponse)
 					.rejectWhenNoUser(true)
 					.init();

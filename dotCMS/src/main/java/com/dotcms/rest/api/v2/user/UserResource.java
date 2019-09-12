@@ -61,8 +61,8 @@ public class UserResource {
                                       @QueryParam(PaginationUtil.PER_PAGE) final int perPage) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
 

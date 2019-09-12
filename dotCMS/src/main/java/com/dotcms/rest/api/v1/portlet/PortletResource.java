@@ -61,8 +61,8 @@ public class PortletResource implements Serializable {
   public final Response createContentPortlet(@Context final HttpServletRequest request, final CustomPortletForm formData) {
 
     final InitDataObject initData = new WebResource.InitBuilder(webResource)
-            .allowBackendUser(true)
-            .allowFrontendUser(false)
+            .requiredBackendUser(true)
+            .requiredFrontendUser(false)
             .requestAndResponse(request, null)
             .rejectWhenNoUser(true)
             .requiredPortlet("roles")
@@ -101,8 +101,8 @@ public class PortletResource implements Serializable {
   public final Response deleteCustomPortlet(@Context final HttpServletRequest request, @PathParam("portletId") final String portletId) {
 
     final InitDataObject initData = new WebResource.InitBuilder(webResource)
-            .allowBackendUser(true)
-            .allowFrontendUser(false)
+            .requiredBackendUser(true)
+            .requiredFrontendUser(false)
             .requestAndResponse(request, null)
             .rejectWhenNoUser(true)
             .requiredPortlet("roles")

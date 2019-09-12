@@ -17,6 +17,8 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.*;
@@ -443,6 +445,15 @@ public interface WorkflowAPI {
 	 */
 	public List<WorkflowAction> findAvailableActions(Contentlet contentlet, User user) throws DotDataException,
 	DotSecurityException ;
+
+	/**
+	 * Determine if the actionId is available for this contentlet (this means the action is available to call on the current or first step)
+	 * @param contentlet {@link Contentlet}
+	 * @param user       {@link User}
+	 * @param actionId   {@link String}
+	 * @return boolean
+	 */
+	boolean isActionAvailable(final Contentlet contentlet, final User user, final String actionId);
 
 	/**
 	 * Find the list of Workflow Actions available for the current user on the specified workflow step
