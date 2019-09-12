@@ -1190,14 +1190,9 @@
                            hasHostField = true;
                         }
 
-                        var isOneOption = data[i]["fieldValues"].split("\r\n").length === 1;
-                        if (type === 'checkbox' && isOneOption || type === 'radio' && isOneOption) {
-                            htmlstr += "<dl class='radio-check-one-line'>";
-                        } else {
-                            htmlstr += "<dl class='vertical'>";
-                        }
+                        htmlstr += "<dl class='vertical'>";
                         htmlstr += "<dt><label>" + fieldName(data[i]) + "</label></dt>";
-                        htmlstr += "<dd>" + renderSearchField(data[i]) + "</dd>";
+                        htmlstr += "<dd style='min-height:0px'>" + renderSearchField(data[i]) + "</dd>";
                         htmlstr += "</dl>";
                         htmlstr += "<div class='clear'></div>";
                 }
