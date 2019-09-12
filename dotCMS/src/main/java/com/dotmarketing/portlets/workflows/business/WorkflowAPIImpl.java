@@ -1819,7 +1819,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				throw new DotWorkflowException("Workflow-action-already-exists", e);
 			} else {
 
-				Logger.error(WorkflowAPIImpl.class, e.getMessage());
+				Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 				Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 				throw new DotWorkflowException("Workflow-could-not-save-action", e);
 			}
