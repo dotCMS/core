@@ -3,6 +3,7 @@ package com.dotcms.datagen;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -134,7 +135,21 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         this.title = title;
         return this;
     }
-
+    
+    /**
+     * Sets title property to the TemplateDataGen instance. This will be used when a new {@link
+     * Template} instance is created
+     *
+     * @param title the title of this template
+     * @return TemplateDataGen with title property set
+     */
+    public TemplateDataGen host(Host host) {
+        this.host = host;
+        return this;
+    }
+    public TemplateDataGen site(Host site) {
+      return this.host(site);
+    }
     /**
      * Adds a container to the list of containers to be included in the {@link Template} this
      * data-gen will create.
