@@ -2444,7 +2444,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             List<WorkflowHistory> histories1 = workflowAPI.findWorkflowHistory(task1);
             assertNotNull(histories1);
-            assertTrue(histories1.size() == 7);
+            assertEquals(7, histories1.size());
 
             WorkflowTask task2 = workflowAPI.findTaskByContentlet(contentlet2);
             assertNotNull(task2);
