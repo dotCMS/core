@@ -11,11 +11,14 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.datagen.PersonaDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.struts.MultiMessageResources;
@@ -29,6 +32,7 @@ public class PersonaAPITest {
   private static Host host;
   private static Persona persona1, persona2, persona3, persona4;
   private static Tuple2<List<Persona>, Integer> allPersonasOnHost;
+  
   @BeforeClass
   public static void initData() throws Exception {
     IntegrationTestInitService.getInstance().init();
@@ -37,6 +41,14 @@ public class PersonaAPITest {
     host = new SiteDataGen().nextPersisted();
     when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
     .thenReturn(new MultiMessageResources(MultiMessageResourcesFactory.createFactory(),""));
+    final ContentletAPI capi = APILocator.getContentletAPI();
+    
+    // delete system host personas
+    List<Contentlet> cons = capi.search("+baseType:" + BaseContentType.PERSONA.getType() + " +conhost:" + Host.SYSTEM_HOST,1000, 0, null, APILocator.systemUser(), false);
+    capi.destroy(cons, APILocator.systemUser(), false);
+    
+    
+    
     persona1 = new PersonaDataGen().hostFolder(host.getIdentifier()).nextPersisted();
     persona2 = new PersonaDataGen().hostFolder(host.getIdentifier()).nextPersisted();
     persona3 = new PersonaDataGen().hostFolder(host.getIdentifier()).nextPersisted();

@@ -304,4 +304,19 @@ public class StringUtils {
 
         return loweredString.toString();
     }
+    
+    
+    /**
+     * this is just a reference to the FileUtil methos, 
+     * added for findability
+     * @param fileName
+     * @return
+     */
+    public static String sanitizeFileName(final String fileName) {
+      return FileUtil.sanitizeFileName(fileName);
+      
+    }
+    
+    
+    
 }
