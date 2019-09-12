@@ -2093,7 +2093,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //save as Draft
             contentlet1 = fireWorkflowAction(contentlet1, contentletRelationships, saveAsDraft,
                     StringPool.BLANK, StringPool.BLANK, joeContributor);
-            // WorkflowHistory.size() for this task == 0
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
@@ -2112,7 +2111,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //Send for Review
             contentlet1 = fireWorkflowAction(contentlet1, contentletRelationships, sendForReview,
                     comment1, StringPool.BLANK, joeContributor);
-            // WorkflowHistory.size() for this task == 1
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
@@ -2135,7 +2133,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //Return for edit
             contentlet1 = fireWorkflowAction(contentlet1, contentletRelationships, returnForEdits,
                     comment2, contributor.getId(), janeReviewer);
-            // WorkflowHistory.size() for this task == 2
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
@@ -2159,7 +2156,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //Save as a draft
             contentlet1 = fireWorkflowAction(contentlet1, contentletRelationships, saveAsDraft,
                     StringPool.BLANK, StringPool.BLANK, joeContributor);
-            // WorkflowHistory.size() for this task == 3
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
@@ -2179,7 +2175,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //Send For Review
             contentlet1 = fireWorkflowAction(contentlet1, contentletRelationships, sendForReview,
                     comment3, StringPool.BLANK, joeContributor);
-            // WorkflowHistory.size() for this task == 4
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
@@ -2200,7 +2195,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //Send to Legal
             contentlet1 = fireWorkflowAction(contentlet1, contentletRelationships, sendToLegal,
                     comment4, StringPool.BLANK, janeReviewer);
-            // WorkflowHistory.size() for this task == 5
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, LEGAL_APPROVAL_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
@@ -2222,7 +2216,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //publish
             contentlet1 = fireWorkflowAction(contentlet1, contentletRelationships, publish,
                     StringPool.BLANK, StringPool.BLANK, chrisPublisher);
-            // WorkflowHistory.size() for this task == 6
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, PUBLISHED_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet1).getName()));
@@ -2247,7 +2240,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //Save as a draft
             contentlet2 = fireWorkflowAction(contentlet2, contentletRelationships2, saveAsDraft,
                     StringPool.BLANK, StringPool.BLANK, joeContributor);
-            // WorkflowHistory.size() for this task == 0
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet2).getName()));
@@ -2265,7 +2257,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //Send For Review
             contentlet2 = fireWorkflowAction(contentlet2, contentletRelationships2, sendForReview,
                     comment1, StringPool.BLANK, joeContributor);
-            // WorkflowHistory.size() for this task == 1
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet2).getName()));
@@ -2286,7 +2277,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //return For Edits
             contentlet2 = fireWorkflowAction(contentlet2, contentletRelationships2, returnForEdits,
                     comment2, contributor.getId(), janeReviewer);
-            // WorkflowHistory.size() for this task == 2
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet2).getName()));
@@ -2308,7 +2298,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //save as draft
             contentlet2 = fireWorkflowAction(contentlet2, contentletRelationships2, saveAsDraft,
                     comment3, StringPool.BLANK, joeContributor);
-            // WorkflowHistory.size() for this task == 3
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet2).getName()));
@@ -2328,7 +2317,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //send for review
             contentlet2 = fireWorkflowAction(contentlet2, contentletRelationships2, sendForReview,
                     comment4, StringPool.BLANK, joeContributor);
-            // WorkflowHistory.size() for this task == 4
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet2).getName()));
@@ -2348,7 +2336,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //send to legal
             contentlet2 = fireWorkflowAction(contentlet2, contentletRelationships2, sendToLegal,
                     comment4, StringPool.BLANK, janeReviewer);
-            // WorkflowHistory.size() for this task == 5
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, LEGAL_APPROVAL_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet2).getName()));
@@ -2383,7 +2370,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //Save as a draft
             contentlet3 = fireWorkflowAction(contentlet3, contentletRelationships3, saveAsDraft,
                     StringPool.BLANK, StringPool.BLANK, joeContributor);
-            // WorkflowHistory.size() for this task == 0
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet3).getName()));
@@ -2401,7 +2387,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //Send For Review
             contentlet3 = fireWorkflowAction(contentlet3, contentletRelationships3, sendForReview,
                     comment1, StringPool.BLANK, joeContributor);
-            // WorkflowHistory.size() for this task == 1
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet3).getName()));
@@ -2423,7 +2408,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
                     .getAllRelationships(contentlet4);
             contentlet4 = fireWorkflowAction(contentlet4, contentletRelationships4, saveAsDraft,
                     StringPool.BLANK, StringPool.BLANK, joeContributor);
-            // WorkflowHistory.size() for this task == 0
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet4).getName()));
@@ -2441,7 +2425,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //Send for review
             contentlet4 = fireWorkflowAction(contentlet4, contentletRelationships4, sendForReview,
                     comment1, StringPool.BLANK, joeContributor);
-            // WorkflowHistory.size() for this task == 1
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, REVIEW_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet4).getName()));
@@ -2462,7 +2445,6 @@ public class WorkflowAPITest extends IntegrationTestBase {
             //return fo Edits
             contentlet4 = fireWorkflowAction(contentlet4, contentletRelationships4, returnForEdits,
                     comment2, contributor.getId(), janeReviewer);
-            // WorkflowHistory.size() for this task == 2
 
             assertTrue(CONTENTLET_ON_WRONG_STEP_MESSAGE, EDITING_STEP_NAME
                     .equals(workflowAPI.findStepByContentlet(contentlet4).getName()));
@@ -2477,7 +2459,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             List<WorkflowHistory> histories1 = workflowAPI.findWorkflowHistory(task1);
             assertNotNull(histories1);
-            assertEquals(6, histories1.size());
+            assertEquals(7, histories1.size());
 
             WorkflowTask task2 = workflowAPI.findTaskByContentlet(contentlet2);
             assertNotNull(task2);
@@ -2488,7 +2470,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             List<WorkflowHistory> histories2 = workflowAPI.findWorkflowHistory(task2);
             assertNotNull(histories2);
-            assertEquals(5, histories2.size());
+            assertEquals(6, histories2.size());
 
             WorkflowTask task3 = workflowAPI.findTaskByContentlet(contentlet3);
             assertNotNull(task3);
@@ -2498,7 +2480,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             List<WorkflowHistory> histories3 = workflowAPI.findWorkflowHistory(task3);
             assertNotNull(histories3);
-            assertEquals(1, histories3.size());
+            assertEquals(2, histories3.size());
 
             WorkflowTask task4 = workflowAPI.findTaskByContentlet(contentlet4);
             assertNotNull(task4);
@@ -2508,7 +2490,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
             List<WorkflowHistory> histories4 = workflowAPI.findWorkflowHistory(task4);
             assertNotNull(histories4);
-            assertEquals(2, histories4.size());
+            assertEquals(3, histories4.size());
 
             //Test the delete
             //Deleting workflow 7
