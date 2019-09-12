@@ -165,6 +165,7 @@ public class UserAPIImpl implements UserAPI {
 		}
 	}
 
+	@WrapInTransaction
     @Override
 	public User getSystemUser() throws DotDataException {
       if(this.systemUser==null){
