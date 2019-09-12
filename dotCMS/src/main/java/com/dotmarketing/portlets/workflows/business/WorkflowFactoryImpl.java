@@ -148,7 +148,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				ret.add(this.convertMaptoObject(map, clazz));
 			}
 		} catch (final Exception e) {
-			throw new DotDataException("cannot convert object to " + clazz + " " + e.getMessage());
+			throw new DotDataException("cannot convert object to " + clazz + " " + e.getMessage(), e);
 
 		}
 		return ret;
