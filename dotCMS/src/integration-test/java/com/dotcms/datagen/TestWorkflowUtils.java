@@ -44,7 +44,7 @@ public class TestWorkflowUtils {
                                 // First component of the Tuple is the desired Action-Name.
                                 // The Second Component is The Next-Step we desire to be pointed to by the current action.
                                 // Third is the show-When definition.
-                                        Tuple.of("Save as Draft", "Current Step", EnumSet.of(EDITING, LOCKED, NEW, PUBLISHED, UNPUBLISHED)),
+                                        Tuple.of("Save as Draft", "Current Step", EnumSet.of(EDITING, UNLOCKED, LOCKED, NEW, PUBLISHED, UNPUBLISHED)),
                                         Tuple.of("Send for Review", "Review",  EnumSet.of(EDITING, UNLOCKED, NEW, UNPUBLISHED)),
                                         Tuple.of("Send to Legal", "Legal Approval", EnumSet.of(EDITING, UNLOCKED, NEW, PUBLISHED, UNPUBLISHED)),
                                         Tuple.of("Publish", "Published", EnumSet.of(EDITING, LISTING, UNLOCKED, NEW, PUBLISHED, UNPUBLISHED))
