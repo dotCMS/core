@@ -5,6 +5,17 @@ import { pluck, take } from 'rxjs/operators';
 import { CoreWebService } from 'dotcms-js';
 import { DotCMSContentlet } from 'dotcms-models';
 
+interface DotActionRequestOptions {
+    contentType: string;
+    data: { [key: string]: any };
+    action: ActionToFire;
+}
+
+enum ActionToFire {
+    NEW = 'NEW',
+    PUBLISH = 'PUBLISH'
+}
+
 @Injectable()
 export class DotWorkflowActionsFireService {
     constructor(private coreWebService: CoreWebService) {}
@@ -36,12 +47,36 @@ export class DotWorkflowActionsFireService {
      * @memberof DotWorkflowActionsFireService
      */
     newContentlet<T>(contentType: string, data: { [key: string]: any }): Observable<T> {
+        return this.request<T>({ contentType, data, action: ActionToFire.NEW });
+    }
+
+    /**
+     * Fire a "PUBLISH" action over the content type received with the specified data
+     *
+     * @param {contentType} string
+     * @param {[key: string]: any} data
+     * @returns Observable<T>
+     *
+     * @memberof DotWorkflowActionsFireService
+     */
+    publishContentlet<T>(contentType: string, data: { [key: string]: any }): Observable<T> {
+        return this.request<T>({
+            contentType,
+            data,
+            action: ActionToFire.PUBLISH
+        });
+    }
+
+    private request<T>({ contentType, data, action }: DotActionRequestOptions): Observable<T> {
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Put,
-                url: `v1/workflow/actions/default/fire/NEW`,
+                url: `v1/workflow/actions/default/fire/${action}`,
                 body: { contentlet: { contentType: contentType, ...data } }
             })
-            .pipe(take(1), pluck('entity'));
+            .pipe(
+                take(1),
+                pluck('entity')
+            );
     }
 }

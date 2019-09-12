@@ -14,7 +14,7 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { LoginService, SiteService } from 'dotcms-js';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { mockDotPersona } from '@tests/dot-persona.mock';
-import { of as observableOf, throwError as observableThrowError } from 'rxjs';
+import { of as observableOf, throwError } from 'rxjs';
 import { NgControl } from '@angular/forms';
 import { FileUploadModule } from 'primeng/primeng';
 import { SiteServiceMock } from '@tests/site-service.mock';
@@ -124,18 +124,20 @@ describe('DotAddPersonaDialogComponent', () => {
 
         describe('call to dotWorkflowActionsFireService endpoint', () => {
             let dotHttpErrorManagerService: DotHttpErrorManagerService;
+            let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
             let de: DebugElement;
 
             beforeEach(() => {
                 de = fixture.debugElement;
                 dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
+                dotWorkflowActionsFireService = de.injector.get(DotWorkflowActionsFireService);
                 spyOn(component.createdPersona, 'emit');
                 spyOnProperty(component.personaForm.form, 'valid').and.returnValue(true);
             });
 
             it('should emit the new persona and close dialog if form is valid', () => {
                 spyOn(component, 'closeDialog');
-                spyOn(component.dotWorkflowActionsFireService, 'newContentlet').and.returnValue(
+                spyOn(dotWorkflowActionsFireService, 'publishContentlet').and.returnValue(
                     observableOf(mockDotPersona)
                 );
 
@@ -148,8 +150,8 @@ describe('DotAddPersonaDialogComponent', () => {
                 const fake500Response = mockResponseView(500);
                 spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
 
-                spyOn(component.dotWorkflowActionsFireService, 'newContentlet').and.returnValue(
-                    observableThrowError(fake500Response)
+                spyOn(dotWorkflowActionsFireService, 'publishContentlet').and.returnValue(
+                    throwError(fake500Response)
                 );
 
                 component.savePersona();

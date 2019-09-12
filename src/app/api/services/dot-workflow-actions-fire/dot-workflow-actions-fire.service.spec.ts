@@ -12,11 +12,11 @@ describe('DotWorkflowActionsFireService', () => {
         this.backend.connections.subscribe((connection: any) => (this.lastConnection = connection));
     });
 
-    it('should create and return a new Content', () => {
+    it('should SAVE and return a new contentlet', () => {
         let result;
         this.dotWorkflowActionsFireService
             .newContentlet('persona', { name: 'Test' })
-            .subscribe(res => {
+            .subscribe((res) => {
                 result = res;
             });
 
@@ -42,11 +42,57 @@ describe('DotWorkflowActionsFireService', () => {
 
         expect(this.lastConnection.request.url).toContain('v1/workflow/actions/default/fire/NEW');
         expect(this.lastConnection.request.method).toEqual(RequestMethod.Put);
+        expect(JSON.parse(this.lastConnection.request.getBody())).toEqual({
+            contentlet: {
+                contentType: 'persona',
+                name: 'Test'
+            }
+        });
+    });
+
+    it('should PUBLISH and return a new contentlet', () => {
+        let result;
+        this.dotWorkflowActionsFireService
+            .publishContentlet('persona', { name: 'Test' })
+            .subscribe((res) => {
+                result = res;
+            });
+
+        this.lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: [
+                            {
+                                name: 'test'
+                            }
+                        ]
+                    }
+                })
+            )
+        );
+
+        expect(result).toEqual([
+            {
+                name: 'test'
+            }
+        ]);
+
+        expect(this.lastConnection.request.url).toContain(
+            'v1/workflow/actions/default/fire/PUBLISH'
+        );
+        expect(this.lastConnection.request.method).toEqual(RequestMethod.Put);
+        expect(JSON.parse(this.lastConnection.request.getBody())).toEqual({
+            contentlet: {
+                contentType: 'persona',
+                name: 'Test'
+            }
+        });
     });
 
     it('should create and return a new Content', () => {
         let result;
-        this.dotWorkflowActionsFireService.fireTo('123', 'new').subscribe(res => {
+        this.dotWorkflowActionsFireService.fireTo('123', 'new').subscribe((res) => {
             result = res;
         });
 
