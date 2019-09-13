@@ -36,7 +36,7 @@ import javax.servlet.http.HttpSession;
 public enum PageMode {
 
     LIVE(true, false), 
-    ADMIN_MODE(true, true),
+    ADMIN_MODE(true, true, true),
     PREVIEW_MODE(false, true),
     WORKING(false, true),
     EDIT_MODE(false, true),
@@ -49,9 +49,13 @@ public enum PageMode {
     public final boolean respectAnonPerms;
 
     PageMode(boolean live, boolean admin) {
+        this(live, admin, !admin);
+    }
+
+    PageMode(final boolean live, final boolean admin, final boolean respectAnonPerms) {
         this.showLive = live;
         this.isAdmin = admin;
-        this.respectAnonPerms = !admin;
+        this.respectAnonPerms = respectAnonPerms;
     }
 
 
@@ -169,14 +173,11 @@ public enum PageMode {
 
     private static boolean isNavigateEditMode(final HttpSession ses) {
         PageMode sessionPageMode = (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION);
+        HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
-        return sessionPageMode != PageMode.LIVE && isModeRequestParameter();
-    }
-
-    private static boolean isModeRequestParameter() {
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        return request != null &&
-                request.getAttribute(WebKeys.PAGE_MODE_PARAMETER) == null;
+        return  sessionPageMode != PageMode.LIVE &&
+                request != null &&
+                request.getAttribute(WebKeys.PAGE_MODE_PARAMETER) == null ;
     }
 
 }
