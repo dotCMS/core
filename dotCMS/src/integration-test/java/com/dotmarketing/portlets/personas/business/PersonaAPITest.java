@@ -4,9 +4,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import java.util.List;
 
+import java.util.Optional;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -196,7 +202,38 @@ public class PersonaAPITest {
     
   }
   
-  
+  @Test
+  public void testFindPersonaByTag_CustomPersonaType_ShouldReturnTag()
+          throws DotDataException, DotSecurityException {
+    ContentType customPersonaType = null;
+
+    try {
+      long time = System.currentTimeMillis();
+
+      // create custom persona type
+
+      customPersonaType = new ContentTypeDataGen()
+              .baseContentType(BaseContentType.PERSONA).nextPersisted();
+
+      final Contentlet customPersonaContent = new ContentletDataGen(customPersonaType.id())
+              .setProperty("name", "persona"+time)
+              .setProperty("keyTag", "personaKeyTag"+time)
+              .nextPersisted();
+
+      final String keyTagValue = customPersonaContent.getStringProperty("keyTag");
+
+      Optional<Persona> optionalPersona = personaAPI.findPersonaByTag(keyTagValue,
+              APILocator.systemUser(), false);
+
+      assertTrue(optionalPersona.isPresent());
+      assertEquals(keyTagValue, optionalPersona.get().getKeyTag());
+
+    } finally {
+        if(customPersonaType!=null) {
+          ContentTypeDataGen.remove(customPersonaType);
+        }
+    }
+  }
   
   
 }

@@ -78,6 +78,7 @@ public final class ESMappingConstants {
     public static final String CATEGORIES = "categories";
     public static final String TAGS = "tags";
     public static final String PERSONAS = "personas";
+    public static final String PERSONA_KEY_TAG = "personaKeyTag";
 
     public static final String DOT_INDEX_PATTERN = "dotIndexPattern";
     public static final String PERMISSIONS = "permissions";
