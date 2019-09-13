@@ -1,3 +1,6 @@
+<%@page import="com.dotmarketing.beans.Host"%>
+<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
+<%@page import="com.dotmarketing.filters.CMSUrlUtil"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.util.Config"%>
@@ -5,7 +8,16 @@
 
 <%@page import="com.liferay.portal.model.User"%>
 
-<% String cssPath = Config.getStringProperty("WYSIWYG_CSS", "/application/wysiwyg/wysiwyg.css");%>
+<% 
+
+String cssPath = Config.getStringProperty("WYSIWYG_CSS", "/application/wysiwyg/wysiwyg.css");
+Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+if(!CMSUrlUtil.getInstance().amISomething(cssPath, host, WebAPILocator.getLanguageWebAPI().getLanguage(request).getId())){
+  cssPath=null;
+}
+
+
+%>
 
 
 
@@ -34,7 +46,9 @@ var tinyMCEProps = {
             browser_spellcheck:true,
             urlconverter_callback : cmsURLConverter,
             verify_css_classes : false,
+            <%if(cssPath!=null){ %>
             content_css: "<%=cssPath %>",
+            <%} %>
             trim_span_elements : false,
             apply_source_formatting : false,
             valid_elements : "*[*]",
