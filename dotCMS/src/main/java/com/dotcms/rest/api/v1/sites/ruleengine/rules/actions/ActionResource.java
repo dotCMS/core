@@ -166,8 +166,8 @@ public class ActionResource {
 
     private User getUser(final HttpServletRequest request, final HttpServletResponse response) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();

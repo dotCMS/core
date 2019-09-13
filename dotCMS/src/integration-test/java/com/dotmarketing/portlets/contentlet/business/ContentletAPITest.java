@@ -5518,9 +5518,10 @@ public class ContentletAPITest extends ContentletBaseTest {
             Map<String, Object> innerMap = new HashMap<>(newsContent.getMap());
             newsContent = contentletAPI.checkin(newsContent, user,false);
             Contentlet checkedoutNewsContent = contentletAPI.checkout(newsContent.getInode(), user, false);
-            assertNull(checkedoutNewsContent.getStringProperty("tags"));
+            assertEquals(checkedoutNewsContent.getStringProperty("tags"), innerMap.get("tags"));
+            innerMap.put("tags", "newTag");
             contentletAPI.copyProperties(checkedoutNewsContent, innerMap);
-            assertEquals(checkedoutNewsContent.getStringProperty("tags"), "test");
+            assertEquals(checkedoutNewsContent.getStringProperty("tags"), "newTag");
 
         } finally {
             try {
@@ -6128,8 +6129,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         HibernateUtil.evict(HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, beforeTouch.getInode()));
 
         final Set<String> inodes = Stream.of(beforeTouch).map(Contentlet::getInode).collect(Collectors.toSet());
-        int count = contentletAPI.updateModDate(inodes, user);
-        assertEquals("update count does not match",1, count);
+        contentletAPI.updateModDate(inodes, user);
 
         final Contentlet afterTouch = contentletAPI.find(beforeTouch.getInode(), APILocator.getUserAPI().getSystemUser(),false);
         assertEquals(beforeTouch.getInode(), afterTouch.getInode());
@@ -6498,22 +6498,23 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
             final Contentlet contentInEnglish = contentletDataGen.languageId(languageAPI.getDefaultLanguage().getId()).nextPersisted();
-            Contentlet contentInSpanish = contentletDataGen.checkout(contentInEnglish);
+            Contentlet contentInSpanish = ContentletDataGen.checkout(contentInEnglish);
             contentInSpanish.setLanguageId(spanishLanguage.getId());
-            contentInSpanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
-            contentInSpanish = contentletDataGen.checkin(contentInSpanish);
+            contentInSpanish = ContentletDataGen.checkin(contentInSpanish);
 
             assertEquals(2,
                     contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
 
-            contentletDataGen.archive(contentInSpanish);
-            contentletDataGen.delete(contentInSpanish);
+            contentInSpanish.setIndexPolicy(IndexPolicy.FORCE);
+            ContentletDataGen.archive(contentInSpanish);
+            ContentletDataGen.delete(contentInSpanish);
 
             assertEquals(1,
                     contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
 
-            contentletDataGen.archive(contentInEnglish);
-            contentletDataGen.delete(contentInEnglish);
+            contentInEnglish.setIndexPolicy(IndexPolicy.FORCE);
+            ContentletDataGen.archive(contentInEnglish);
+            ContentletDataGen.delete(contentInEnglish);
 
             assertEquals(0,
                     contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());

@@ -59,8 +59,8 @@ public class LicenseResource {
     public Response getAll(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -128,8 +128,8 @@ public class LicenseResource {
             @FormDataParam("return") String ret) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -164,8 +164,8 @@ public class LicenseResource {
     public Response delete(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -203,8 +203,8 @@ public class LicenseResource {
     public Response pickLicense(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -254,8 +254,8 @@ public class LicenseResource {
     public Response freeLicense(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -355,8 +355,8 @@ public class LicenseResource {
     ) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -425,8 +425,8 @@ public class LicenseResource {
     	@QueryParam("licenseText") String licenseText
     ) {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -474,8 +474,8 @@ public class LicenseResource {
     public Response resetLicense(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)

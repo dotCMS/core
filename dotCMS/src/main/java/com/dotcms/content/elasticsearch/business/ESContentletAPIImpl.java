@@ -547,7 +547,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         WorkflowProcessor workflow = null;
+        // to run a workflow we need an action id set, not be part of a workflow already and do not desired disable it
         if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null &&
+                UtilMethods.isSet(contentlet.getActionId()) &&
                 (null == contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) ||
                         Boolean.FALSE.equals(contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS))
                 ))  {
@@ -3257,13 +3259,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final boolean createNewVersion,  final boolean generateSystemEvent) throws DotDataException, DotSecurityException {
 
         Contentlet contentletOut = null;
+        Boolean autoAssign       = null;
+
         try {
 
             String wfPublishDate = contentletIn.getStringProperty("wfPublishDate");
-            String wfExpireDate = contentletIn.getStringProperty("wfExpireDate");
+            String wfExpireDate  = contentletIn.getStringProperty("wfExpireDate");
 
             final String contentPushPublishDateBefore = UtilMethods.isSet(wfPublishDate) ? wfPublishDate : "N/D";
-            final String contentPushExpireDateBefore = UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
+            final String contentPushExpireDateBefore  = UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
 
             ActivityLogger.logInfo(getClass(), "Saving Content",
                     "StartDate: " + contentPushPublishDateBefore + "; "
@@ -3287,6 +3291,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     return workflowContentletOpt.get();
                 }
 
+                autoAssign = (Boolean)contentletIn.getMap().get(Contentlet.AUTO_ASSIGN_WORKFLOW);
                 contentletOut = lockManager.tryLock(lockKey,
                                 () -> internalCheckin(
                                         contentletIn, contentRelationships, categories, user,
@@ -3311,6 +3316,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentletOut.getHost());
 
             // Creates the Local System event
+            if (null != autoAssign) {
+
+                contentletOut.setBoolProperty(Contentlet.AUTO_ASSIGN_WORKFLOW, autoAssign);
+            }
+
             this.createLocalCheckinEvent (contentletOut, user, createNewVersion);
 
             //Create a System event for this contentlet
@@ -3381,9 +3391,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                                       final User user,
                                                       final WorkflowAPI workflowAPI,
                                                       final String actionId) throws DotDataException, DotSecurityException {
-        final List<WorkflowAction> workflowActions = workflowAPI.findAvailableActions(contentletIn, user);
-        if (UtilMethods.isSet(workflowActions) &&
-                workflowActions.stream().anyMatch(workflowAction -> actionId.equals(workflowAction.getId()))) {
+
+        if (workflowAPI.isActionAvailable(contentletIn, user, actionId)) {
 
             return true;
         }
@@ -3586,6 +3595,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             WorkflowProcessor workflow=null;
 
             if(contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW)==null &&
+                    UtilMethods.isSet(contentlet.getActionId()) &&
                     (null == contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) ||
                             Boolean.FALSE.equals(contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS))
                     ))  {

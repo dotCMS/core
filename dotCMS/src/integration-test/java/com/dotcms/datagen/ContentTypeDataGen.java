@@ -184,6 +184,7 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
      *
      * @return A new ContentType instance persisted in DB
      */
+    @WrapInTransaction
     @Override
     public ContentType nextPersisted() {
         return persist(next());

@@ -952,7 +952,7 @@ public class UserAjax {
     final UserAPI uApi=APILocator.getUserAPI();
     final String access = params.getOrDefault("access", "nope");
     final User loggedInUser = new WebResource.InitBuilder(request,response)
-        .allowBackendUser(true)
+        .requiredBackendUser(true)
         .requiredAnonAccess(AnonymousAccess.NONE)
         .requiredPortlet("users")
         .init()

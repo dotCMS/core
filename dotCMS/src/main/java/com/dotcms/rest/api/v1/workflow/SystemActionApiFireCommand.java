@@ -14,8 +14,9 @@ public interface SystemActionApiFireCommand {
     /**
      * Fires command
      * @param contentlet {@link Contentlet}
+     * @param needSave   {@link Boolean} true if needs to save the contentlet (b/c it has body and changes to safe)
      * @param contentletDependencies {@link ContentletDependencies}
      * @return Contentlet
      */
-    Contentlet fire(Contentlet contentlet, ContentletDependencies contentletDependencies) throws DotDataException, DotSecurityException;
+    Contentlet fire(Contentlet contentlet, final boolean needSave, ContentletDependencies contentletDependencies) throws DotDataException, DotSecurityException;
 }

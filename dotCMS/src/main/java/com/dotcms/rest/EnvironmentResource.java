@@ -47,8 +47,8 @@ public class EnvironmentResource {
 			throws DotDataException, JSONException {
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
-				.allowBackendUser(true)
-				.allowFrontendUser(false)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
 				.params(params)
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true)

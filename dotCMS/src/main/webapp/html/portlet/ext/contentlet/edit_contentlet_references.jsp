@@ -42,7 +42,7 @@
 %>
 	<tr <%= str_style2 %> >
 		<td>			
-			<a href="javascript:previewHTMLPage('<%=htmlpageRef.getInode()%>')" class="beta">
+			<a href="/dotAdmin/#/edit-page/content?url=<%=htmlpageRef.getURI()%>" class="beta" target="_top">
 				<%= UtilMethods.escapeHTMLSpecialChars(htmlpageRef.getTitle()) %>
 			</a>
 		</td>
@@ -53,12 +53,5 @@
 	}
 %>
 </table>
-
-<script type="text/javascript">
-function previewHTMLPage (objId) 
-{
-	top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/preview_htmlpage" /><portlet:param name="previewPage" value="1" /></portlet:actionURL>&inode=' + objId;
-}
-</script>
 
 

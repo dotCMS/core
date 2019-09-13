@@ -23,6 +23,7 @@ import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -166,7 +167,9 @@ public class TempFileAPI {
       }
       return dotTempFile;
     } catch (Exception e) {
-      throw new DotRuntimeException("create tmpFile failed : " + dotTempFile.fileName + " : " + e.getMessage(), e);
+      String message = APILocator.getLanguageAPI().getStringKey(WebAPILocator.getLanguageWebAPI().getLanguage(request), "temp.file.max.file.size.error").replace("{0}", UtilMethods.prettyByteify(maxLength));
+      
+      throw new DotRuntimeException(message, e);
     } finally {
       CloseUtils.closeQuietly(inputStream);
     }

@@ -7,7 +7,6 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -29,7 +28,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -54,7 +52,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -62,7 +59,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -226,19 +222,6 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 Logger.warn(this, "Unable to convert Contentlet to page asset " + con, e);
             }
         }
-
-        //Getting tags if needed
-        final Map<String, List> tags = new HashMap<>();
-        con.getContentType().fields().stream()
-                .filter(field -> (field.type().equals(TagField.class) && !con.getMap()
-                        .containsKey(field.variable())))
-                .forEach((field) -> {
-                    tags.put(field.variable(), Sneaky.sneaked(() -> APILocator.getTagAPI()
-                            .getTagsByInodeAndFieldVarName(con.getInode(), field.variable()))
-                            .get());
-                });
-
-        pa.getMap().putAll(tags);
 
         try {
 			CacheLocator.getHTMLPageCache().add(pa);

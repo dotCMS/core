@@ -7,14 +7,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.contenttype.model.field.ImmutableColumnField;
-import com.dotcms.contenttype.model.field.ImmutableRowField;
-import com.dotcms.contenttype.model.field.ImmutableTagField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -23,7 +18,6 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
@@ -54,7 +48,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -537,10 +530,9 @@ public class HTMLPageAPITest extends IntegrationTestBase {
                     APILocator.getContentletAPI().find(contentlet.getInode(), sysuser, false));
             assertNotNull(page);
 
-            List<Tag> tags = (List<Tag>) page.getMap().get("tags");
+            final String tags = (String) page.getMap().get("tags");
             assertNotNull(tags);
-            assertFalse(tags.isEmpty());
-            assertEquals("test", tags.get(0).getTagName());
+            assertEquals("test", tags);
         }finally {
 	        if (testContentType != null && testContentType.inode() != null) {
                 ContentTypeDataGen.remove(testContentType);

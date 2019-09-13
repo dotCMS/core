@@ -47,8 +47,8 @@ public class BundleResource {
             throws DotDataException, JSONException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -119,8 +119,8 @@ public class BundleResource {
 	public Response updateBundle(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws IOException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -156,8 +156,8 @@ public class BundleResource {
 	public Response deletePushHistory(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -190,8 +190,8 @@ public class BundleResource {
 	public Response deleteEnvironmentPushHistory(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .allowBackendUser(true)
-                .allowFrontendUser(false)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
                 .params(params)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
