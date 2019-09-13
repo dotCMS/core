@@ -48,6 +48,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.File;
@@ -149,7 +150,7 @@ public class ContentMap implements Serializable{
 		try {
 			final boolean respectFrontEndRoles = PageMode.get(Try.of(()->(HttpServletRequest)context.get("request")).getOrNull()).respectAnonPerms;
 			Object ret = null;
-			Field f = content.getContentType().fieldMap().get(fieldVariableName);
+			final Field f = content.getContentType().fieldMap().get(fieldVariableName);
 			if(f==null){
 				if("host".equalsIgnoreCase(fieldVariableName)){
 					try{
@@ -166,9 +167,9 @@ public class ContentMap implements Serializable{
           return content.getContentType();
 				//http://jira.dotmarketing.net/browse/DOTCMS-6033
 				}else if(fieldVariableName.contains("FileURI")){
-					f =  content.getContentType().fieldMap().get(fieldVariableName.replace("FileURI", ""));
-					if(f!=null && (f instanceof FileField || f instanceof ImageField)){
-						String fid = (String)conAPI.getFieldValue(content, f);
+					Field f2 =  content.getContentType().fieldMap().get(fieldVariableName.replace("FileURI", ""));
+					if(f2!=null && (f2 instanceof FileField || f2 instanceof ImageField)){
+						String fid = (String)conAPI.getFieldValue(content, f2);
 						if(!UtilMethods.isSet(fid)){
 							return null;
 						}
@@ -256,25 +257,10 @@ public class ContentMap implements Serializable{
 				return null;
 			}else if(f instanceof TagField){
 
-				StringBuilder tags = new StringBuilder();
-
 				//Search for the list of tags related to this contentlet
 				List<Tag> foundTags = APILocator.getTagAPI().getTagsByInode(content.getInode());
-				if ( foundTags != null && !foundTags.isEmpty() ) {
+				return new TagList(foundTags);
 
-					Iterator<Tag> iterator = foundTags.iterator();
-					while ( iterator.hasNext() ) {
-
-						Tag foundTag = iterator.next();
-						tags.append(foundTag.getTagName());
-
-						if ( iterator.hasNext() ) {
-							tags.append(",");
-						}
-					}
-				}
-
-				return new TagList(tags.toString());
 			}else if(f instanceof HostFolderField){
 				if(FolderAPI.SYSTEM_FOLDER.equals(content.getFolder())){
 					try{
@@ -295,21 +281,7 @@ public class ContentMap implements Serializable{
 			}else if(f instanceof CheckboxField){
 				return new CheckboxMap(f, content);
 			}else if(f instanceof KeyValueField){
-			    final String jsonData=(String)conAPI.getFieldValue(content, f);
-				Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(jsonData);
-				//needs to be ordered
-				Map<String,Object> retMap = new java.util.LinkedHashMap<String,Object>() {
-				    @Override
-				    public String toString() {
-				        return jsonData;
-				    }
-				};
-				for(String key :keyValueMap.keySet()){
-					retMap.put(key.replaceAll("\\W",""), keyValueMap.get(key));
-				}
-				retMap.put("keys", retMap.keySet());
-				retMap.put("map", keyValueMap);
-				return retMap;
+			    return Try.of(() -> new JSONObject(conAPI.getFieldValue(content, f))).getOrNull();
 			} else if(f instanceof RelationshipField){
 				return getRelationshipInfo(f);
 			}

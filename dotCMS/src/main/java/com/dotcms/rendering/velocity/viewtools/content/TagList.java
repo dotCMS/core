@@ -4,8 +4,10 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.tag.model.Tag;
 
 /**
  * Used as a wrapper around an ArrayList of Tags to return to the front-end of dotCMS from the 
@@ -17,39 +19,25 @@ import com.dotmarketing.util.UtilMethods;
  */
 public class TagList extends ArrayList<String> {
 
-	protected TagList(String tagValue) {
-		super();
-		if(UtilMethods.isSet(tagValue)){
-			for(String t : tagValue.split(",")){
-				add(t.trim());
-			
-			}
-		}
-		
+  final List<String> tags;
+	protected TagList(List<Tag> tagValue) {
+		tags=tagValue.stream().map(t->t.getTagName()).collect(Collectors.toList());
 	}
-	
-	/**
-	 * The raw Tag values is a comma separated list of the selected tags.  
-	 */
-	private String rawTagValues;
-	
+
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -2259803707187904180L;
 
-	/**
-	 * @param rawTagValues the rawTagValues to set
-	 */
-	protected void setRawTagValues(String rawTagValues) {
-		this.rawTagValues = rawTagValues;
-	}
 
 	/**
 	 * @return the rawTagValues
 	 */
 	public String getRawTagValues() {
-		return rawTagValues;
+		return String.join(",",tags);
 	}
 	
+	public List<String> getTags() {
+	  return tags;
+	}
 }
