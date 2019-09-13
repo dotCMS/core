@@ -15,6 +15,7 @@
 <%@ page import="com.dotmarketing.util.InodeUtils" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@ page import="com.dotmarketing.util.PortletID" %>
+<%@ page import="com.dotcms.contenttype.exception.NotFoundInDbException" %>
 
 <iframe id="AjaxActionJackson" name="AjaxActionJackson" style="border:0; width:0; height:0;"></iframe>
 <%
@@ -55,9 +56,33 @@
         languageId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
     }
 
-    String structureSelected = (String) request.getAttribute("selectedStructure");
+    String structureSelected = null;
+    final String variableName = (String) request.getParameter("filter");
 
-
+    if(UtilMethods.isSet(variableName)){
+        if (com.dotmarketing.beans.Host.HOST_VELOCITY_VAR_NAME.equals(variableName)){
+            structureSelected = null;
+        }else{
+            try {
+                ContentType filterContentType = APILocator.getContentTypeAPI(user).find(variableName);
+                structureSelected = filterContentType != null ? filterContentType.id() : null;
+            } catch (NotFoundInDbException e) {
+                structureSelected = null;
+            }
+        }
+    }else{
+        structureSelected = (String) request.getAttribute("selectedStructure");
+        if (structureSelected != null){
+            try {
+                ContentType contentType = APILocator.getContentTypeAPI(user).find(structureSelected);
+                if (contentType != null && com.dotmarketing.beans.Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable()) ){
+                    structureSelected = null;
+                }
+            } catch (NotFoundInDbException e) {
+                structureSelected = null;
+            }
+        }
+    }
 
     String schemeSelected = "catchall";
     if(UtilMethods.isSet(session.getAttribute(ESMappingConstants.WORKFLOW_SCHEME))){
