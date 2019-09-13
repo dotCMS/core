@@ -59,8 +59,12 @@
     final String variableName = (String) request.getParameter("filter");
 
     if(UtilMethods.isSet(variableName)){
-        ContentType filterContentType = APILocator.getContentTypeAPI(user).find(variableName);
-        structureSelected = filterContentType.id();
+        try {
+            ContentType filterContentType = APILocator.getContentTypeAPI(user).find(variableName);
+            structureSelected = filterContentType != null ? filterContentType.id() : null;
+        } catch (NotFoundInDbException e) {
+            structureSelected = null;
+        }
     }else{
         structureSelected = (String) request.getAttribute("selectedStructure");
     }
