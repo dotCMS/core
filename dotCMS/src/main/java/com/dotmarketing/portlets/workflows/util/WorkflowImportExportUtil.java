@@ -127,21 +127,25 @@ public class WorkflowImportExportUtil {
 
 			for (final WorkflowScheme scheme : importer.getSchemes()) {
 
+				Logger.info(this,"Importing scheme: " + scheme);
 				workflowAPI.saveScheme(scheme, user);
 			}
 
 			for (final WorkflowStep step : importer.getSteps()) {
 
+				Logger.info(this, "Importing step: " + step);
 				workflowAPI.saveStep(step, user);
 			}
 
 			for (final WorkflowAction action : importer.getActions()) {
 
+				Logger.info(this, "Importing action: " + action);
 				workflowAPI.saveAction(action, null, user);
 			}
 
 			for(final Map<String, String> actionStepMap : importer.getActionSteps()){
 
+				Logger.info(this, "Importing actionStepMap: " + actionStepMap);
 				workflowAPI.saveAction(actionStepMap.get(ACTION_ID),
 						actionStepMap.get(STEP_ID),
 						user,
@@ -149,11 +153,14 @@ public class WorkflowImportExportUtil {
 			}
 
 			for (final WorkflowActionClass actionClass : importer.getActionClasses()) {
+
+				Logger.info(this, "Importing actionClass: " + actionClass);
 				workflowAPI.saveActionClass(actionClass, user);
 			}
 
 			for(final Map<String, String> map : importer.getWorkflowStructures()) {
 
+				Logger.info(this, "Importing WorkflowStructures: " + map);
 				DotConnect dc = new DotConnect();
 				dc.setSQL("delete from workflow_scheme_x_structure where id=?");
 				dc.addParam(map.get("id"));
@@ -165,6 +172,7 @@ public class WorkflowImportExportUtil {
 				dc.loadResult();
 			}
 
+			Logger.info(this, "Importing ActionClassParams: " + importer.getActionClassParams());
 			workflowAPI.saveWorkflowActionClassParameters(importer.getActionClassParams(), user);
 
 		} catch (Exception e) {// Catch exception if any
