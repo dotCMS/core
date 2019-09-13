@@ -70,6 +70,17 @@ describe('dot-textfield', () => {
     });
 
     describe('@Props', () => {
+        describe('dot-attr', () => {
+            it('should set value correctly', async () => {
+                page = await newE2EPage({
+                    html: `<dot-textfield dotplaceholder="test"></dot-textfield>`
+                });
+                await page.waitForChanges();
+                input = await page.find('input');
+                expect(input.getAttribute('placeholder')).toBe('test');
+            });
+        });
+
         describe('value', () => {
             it('should set value correctly', async () => {
                 element.setProperty('value', 'hi');

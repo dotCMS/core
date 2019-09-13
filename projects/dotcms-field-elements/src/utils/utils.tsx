@@ -1,5 +1,7 @@
 import { DotOption, DotFieldStatus, DotFieldStatusClasses, DotKeyValueField } from '../models';
 
+export const DOT_ATTR_PREFIX = 'dot';
+
 /**
  * Returns CSS classes object based on field Status values
  *
@@ -24,8 +26,28 @@ export function getClassNames(
     };
 }
 
+/**
+ * Returns if it is a valid string
+ *
+ * @param string val
+ * @returns boolean
+ */
 export function isStringType(val: string): boolean {
     return typeof val === 'string' && !!val;
+}
+
+/**
+ * Sets attributes with "dot" prefix to the HtmlElement passed
+ *
+ * @param Element element
+ * @param Attr[] attributes
+ */
+export function setAttributesToElement(element: Element, attributes: Attr[]): void {
+    attributes.forEach(({ name, value }) => {
+        if (isDotAttribute(name)) {
+            element.setAttribute(name.replace(DOT_ATTR_PREFIX, ''), value);
+        }
+    });
 }
 
 /**
@@ -44,8 +66,8 @@ export function getDotOptionsFromFieldValue(rawString: string): DotOption[] {
     const items = isKeyPipeValueFormatValid(rawString)
         ? rawString
               .split(',')
-              .filter(item => !!item.length)
-              .map(item => {
+              .filter((item) => !!item.length)
+              .map((item) => {
                   const [label, value] = item.split('|');
                   return { label, value };
               })
@@ -193,6 +215,10 @@ export function isFileAllowed(fileName: string, allowedExtensions: string): bool
     const extension = fileName ? fileName.substring(fileName.indexOf('.'), fileName.length) : '';
 
     return allowAnyFile(allowedExtensionsArray) || allowedExtensionsArray.includes(extension);
+}
+
+function isDotAttribute(name: string): boolean {
+    return name.startsWith(DOT_ATTR_PREFIX);
 }
 
 function allowAnyFile(allowedExtensions: string[]): boolean {

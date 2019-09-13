@@ -67,6 +67,17 @@ describe('dot-textarea', () => {
     });
 
     describe('@Props', () => {
+        describe('dot-attr', () => {
+            it('should set value correctly', async () => {
+                page = await newE2EPage({
+                    html: `<dot-textarea dotplaceholder="test"></dot-textarea>`
+                });
+                await page.waitForChanges();
+                textarea = await page.find('textarea');
+                expect(textarea.getAttribute('placeholder')).toBe('test');
+            });
+        });
+
         describe('value', () => {
             it('should set value correctly', async () => {
                 element.setProperty('value', 'text');
@@ -206,7 +217,7 @@ describe('dot-textarea', () => {
                 await textarea.press('a');
                 await page.waitForChanges();
                 expect((await dotTestUtil.getErrorMessage(page)).innerText).toBe(
-                    'The field doesn\'t comply with the specified format'
+                    "The field doesn't comply with the specified format"
                 );
             });
 
