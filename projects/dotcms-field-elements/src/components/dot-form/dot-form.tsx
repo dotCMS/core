@@ -260,8 +260,8 @@ export class DotFormComponent {
                     return null;
                 });
         } else {
-            binary.errorMessage = `File size larger than allowed ${maxSize} bytes`;
             binary.reset();
+            binary.errorMessage = `File size larger than allowed ${maxSize} bytes`;
             return Promise.resolve(null);
         }
     }

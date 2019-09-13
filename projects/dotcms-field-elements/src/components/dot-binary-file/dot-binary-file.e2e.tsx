@@ -448,7 +448,9 @@ describe('dot-binary-file', () => {
                     value: ''
                 });
                 expect(await dotBinaryText.getProperty('value')).toEqual('');
+                expect(await element.getProperty('errorMessage')).toEqual('');
             });
+
             it('should emit status, value and clear value on clearValue', async () => {
                 await element.callMethod('clearValue');
                 expect(spyStatusChangeEvent).toHaveReceivedEventDetail({

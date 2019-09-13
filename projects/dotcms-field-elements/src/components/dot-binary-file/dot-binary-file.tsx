@@ -118,6 +118,7 @@ export class DotBinaryFileComponent {
     reset(): void {
         this.file = '';
         this.binaryTextField.value = '';
+        this.errorMessage = '';
         this.clearPreviewData();
         this.status = getOriginalStatus(this.isValid());
         this.emitStatusChange();
