@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.personas.business;
 
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
+
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -502,8 +504,8 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
   public Optional<Persona> findPersonaByTag(final String personaTag, final User user, final boolean respectFrontEndRoles)
       throws DotSecurityException, DotDataException {
 
-    final StringBuilder query = new StringBuilder(" +contentType:").append(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_VARNAME)
-        .append(" +persona.keytag:").append(personaTag);
+    final StringBuilder query = new StringBuilder(" +baseType:").append(BaseContentType.PERSONA.getType())
+        .append(" +").append(PERSONA_KEY_TAG).append(":").append(personaTag);
 
     final List<Contentlet> contentlets =
         APILocator.getContentletAPI().search(query.toString(), -1, 0, StringPool.BLANK, user, respectFrontEndRoles);

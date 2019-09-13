@@ -496,8 +496,12 @@ public class PageRenderUtil implements Serializable {
     }
 
     private String getCurrentPersonaTag(final HttpServletRequest request) {
-        final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
-        final IPersona iPersona = visitor.isPresent() && visitor.get().getPersona() != null ? visitor.get().getPersona() : null;
+        IPersona iPersona = null;
+
+        if (request != null) {
+            final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
+            iPersona = visitor.isPresent() && visitor.get().getPersona() != null ? visitor.get().getPersona() : null;
+        }
 
         return iPersona == null ? MultiTree.DOT_PERSONALIZATION_DEFAULT
                 : Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + iPersona.getKeyTag();
