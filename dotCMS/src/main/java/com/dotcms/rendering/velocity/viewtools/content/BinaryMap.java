@@ -1,8 +1,9 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.model.Field;
+
 import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -31,9 +32,9 @@ public class BinaryMap {
 		this.content = content;
 		this.field = field;
 		try {
-			file = content.getBinary(field.getVelocityVarName());
+			file = content.getBinary(field.variable());
 		} catch (IOException e) {
-			Logger.error(this, "Unable to retrive binary file for content id " + content.getIdentifier() + " field " + field.getVelocityVarName(), e);
+			Logger.error(this, "Unable to retrive binary file for content id " + content.getIdentifier() + " field " + field.variable(), e);
 		}
 	}
 	
@@ -76,7 +77,7 @@ public class BinaryMap {
 	 * @return the rawUri
 	 */
 	public String getRawUri() {
-		rawUri = getName().length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.getVelocityVarName()):"";
+		rawUri = getName().length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.variable()):"";
 		return rawUri;
 	}
 
@@ -84,7 +85,7 @@ public class BinaryMap {
 
         if (file != null && file.exists()) {
             String shorty = APILocator.getShortyAPI().shortify(content.getIdentifier());
-            return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName();
+            return "/dA/"+shorty+"/"+field.variable()+"/" + file.getName();
         } else {
 	        return null;
         }
@@ -99,7 +100,7 @@ public class BinaryMap {
 
         if (file != null && file.exists()) {
             String shorty = APILocator.getShortyAPI().shortify(content.getInode());
-            return "/dA/"+shorty+"/"+field.getVelocityVarName()+"/" + file.getName();
+            return "/dA/"+shorty+"/"+field.variable()+"/" + file.getName();
         } else {
             return null;
         }
@@ -117,7 +118,7 @@ public class BinaryMap {
 	    if(getName().length()==0) return "";
 
 	    final String imageId =  UtilMethods.isSet(content.getIdentifier()) ? content.getIdentifier() : content.getInode();
-		resizeUri = "/contentAsset/image/"+imageId+"/"+field.getVelocityVarName()+"/filter/Resize"; 
+		resizeUri = "/contentAsset/image/"+imageId+"/"+field.variable()+"/filter/Resize"; 
 		return resizeUri;
 	}
 	
@@ -149,7 +150,7 @@ public class BinaryMap {
 	    if(getName().length()==0) return "";
 	    
 	    final String imageId =  UtilMethods.isSet(content.getIdentifier()) ? content.getIdentifier() : content.getInode();
-        resizeUri = "/contentAsset/image/"+imageId+"/"+field.getVelocityVarName()+"/filter/Thumbnail"; 
+        resizeUri = "/contentAsset/image/"+imageId+"/"+field.variable()+"/filter/Thumbnail"; 
         return resizeUri;
 	}
 

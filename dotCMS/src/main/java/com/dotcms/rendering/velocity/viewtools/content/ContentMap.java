@@ -3,8 +3,27 @@
  */
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TextAreaField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.contenttype.util.KeyValueFieldUtil;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
@@ -12,7 +31,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -22,9 +40,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Field.FieldType;
-import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
+
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
@@ -36,6 +52,7 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,19 +79,17 @@ import org.apache.velocity.context.Context;
  * @author Jason Tesser
  * @since 1.9.3
  */
-public class ContentMap {
+public class ContentMap implements Serializable{
 
 	private Contentlet content;
 	private ContentletAPI conAPI;
 	private PermissionAPI perAPI;
-	private List<Field> fields;
-	private Map<String,Field> fieldMap;
+
+
 	private Map<String, Object> fieldValueMap;
 	private User user;
 	private boolean EDIT_OR_PREVIEW_MODE;
 	private Host host;
-	private Structure structure;
-	private String title;
 	private Context context;
     public ContentMap(Contentlet content, User user, PageMode mode, Host host, Context context) {
         this( content,  user, !mode.showLive,  host,  context) ;
@@ -83,7 +98,6 @@ public class ContentMap {
         this.content = content;
         this.conAPI = APILocator.getContentletAPI();
         this.perAPI = APILocator.getPermissionAPI();
-        this.fields = FieldsCache.getFieldsByStructureInode(content.getStructureInode());
         this.user = user;
         this.EDIT_OR_PREVIEW_MODE = EDIT_OR_PREVIEW_MODE;
         this.host = host;
@@ -131,11 +145,11 @@ public class ContentMap {
 	}
 
 	
-	private Object get(String fieldVariableName, Boolean parseVelocity) {
+	private Object get(final String fieldVariableName, boolean parseVelocity) {
 		try {
 			final boolean respectFrontEndRoles = PageMode.get(Try.of(()->(HttpServletRequest)context.get("request")).getOrNull()).respectAnonPerms;
 			Object ret = null;
-			Field f = retriveField(fieldVariableName);
+			Field f = content.getContentType().fieldMap().get(fieldVariableName);
 			if(f==null){
 				if("host".equalsIgnoreCase(fieldVariableName)){
 					try{
@@ -145,14 +159,15 @@ public class ContentMap {
 						return null;
 					}
 				}else if("title".equalsIgnoreCase(fieldVariableName)){
-					ret =  getContentletsTitle();
-				}else if("structure".equalsIgnoreCase(fieldVariableName) || "contenttype".equalsIgnoreCase(fieldVariableName)){
-					return getStructure();
+					ret =  content.getTitle();
+				}else if("structure".equalsIgnoreCase(fieldVariableName)) {
+					return content.getStructure();
+        }else if("contenttype".equalsIgnoreCase(fieldVariableName)) {
+          return content.getContentType();
 				//http://jira.dotmarketing.net/browse/DOTCMS-6033
 				}else if(fieldVariableName.contains("FileURI")){
-					f = retriveField(fieldVariableName.replaceAll("FileURI", ""));
-					if(f!=null && (f.getFieldType()!= null && f.getFieldType().equals(Field.FieldType.FILE.toString())
-							|| f.getFieldType().equals(Field.FieldType.IMAGE.toString()))){
+					f =  content.getContentType().fieldMap().get(fieldVariableName.replace("FileURI", ""));
+					if(f!=null && (f instanceof FileField || f instanceof ImageField)){
 						String fid = (String)conAPI.getFieldValue(content, f);
 						if(!UtilMethods.isSet(fid)){
 							return null;
@@ -165,15 +180,17 @@ public class ContentMap {
 					}
 					return null;
 
-				}else{
-					return content.getMap().get(fieldVariableName);
 				}
+				return content.getMap().get(fieldVariableName);
 			}
-			if(f != null && f.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
+			
+			if(f instanceof ConstantField) {
+			  return f.values();
+			}else if(f instanceof CategoryField){
 				return perAPI.filterCollection(new ArrayList<Category>((Set<Category>)
 						conAPI.getFieldValue(content, new LegacyFieldTransformer(f).from(),
 								this.user, respectFrontEndRoles)), PermissionAPI.PERMISSION_USE, true, user);
-			}else if(f != null && (f.getFieldType().equals(Field.FieldType.FILE.toString()) || f.getFieldType().equals(Field.FieldType.IMAGE.toString()))){
+			}else if(f instanceof ImageField || f instanceof FileField){
                 // Check if image or file is in fieldValueMap hashmap
                 Object fieldvalue = retriveFieldValue(f);
                 if (fieldvalue != null) {
@@ -204,7 +221,7 @@ public class ContentMap {
 				  }
 					
 				
-			}else if(f != null && f.getFieldType().equals(Field.FieldType.BINARY.toString())){
+			}else if(f instanceof BinaryField){
                 // Check if fileAsset or binaryMap is in fieldValueMap hashmap
                 Object fieldvalue = retriveFieldValue(f);
                 if (fieldvalue != null) {
@@ -213,7 +230,7 @@ public class ContentMap {
 
                 // Field value is not present in fieldValueMap hashmap
                 if (BaseContentType.FILEASSET.equals(content.getContentType().baseType())
-                        && "fileasset".equalsIgnoreCase(f.getVelocityVarName())) {
+                        && "fileasset".equalsIgnoreCase(f.variable())) {
                     // http://jira.dotmarketing.net/browse/DOTCMS-7406
                     FileAssetMap fam = FileAssetMap.of(content);
 
@@ -237,7 +254,7 @@ public class ContentMap {
 					Logger.debug(this, "The URL can't be get from an empty identifier, the page might not exists on the identifier table.");
 				}
 				return null;
-			}else if(f != null && f.getFieldType().equals(Field.FieldType.TAG.toString())){
+			}else if(f instanceof TagField){
 
 				StringBuilder tags = new StringBuilder();
 
@@ -258,7 +275,7 @@ public class ContentMap {
 				}
 
 				return new TagList(tags.toString());
-			}else if(f != null && f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
+			}else if(f instanceof HostFolderField){
 				if(FolderAPI.SYSTEM_FOLDER.equals(content.getFolder())){
 					try{
 						return new ContentMap(conAPI.findContentletByIdentifier( content.getHost() ,!EDIT_OR_PREVIEW_MODE, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true ),user,EDIT_OR_PREVIEW_MODE,host,context);
@@ -269,15 +286,15 @@ public class ContentMap {
 				}else{
 					return APILocator.getFolderAPI().find(content.getFolder(), user, true);
 				}
-			}else if(f != null && f.getFieldType().equals(Field.FieldType.SELECT.toString())){
+			}else if(f instanceof SelectField){
 				return new SelectMap(f, content);
-			}else if(f != null && f.getFieldType().equals(Field.FieldType.RADIO.toString())){
+			}else if(f instanceof RadioField){
 				return new RadioMap(f, content);
-			}else if(f != null && f.getFieldType().equals(Field.FieldType.MULTI_SELECT.toString())){
+			}else if(f instanceof MultiSelectField){
 				return new MultiSelectMap(f, content);
-			}else if(f != null && f.getFieldType().equals(Field.FieldType.CHECKBOX.toString())){
+			}else if(f instanceof CheckboxField){
 				return new CheckboxMap(f, content);
-			}else if(f != null && f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
+			}else if(f instanceof KeyValueField){
 			    final String jsonData=(String)conAPI.getFieldValue(content, f);
 				Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(jsonData);
 				//needs to be ordered
@@ -293,7 +310,7 @@ public class ContentMap {
 				retMap.put("keys", retMap.keySet());
 				retMap.put("map", keyValueMap);
 				return retMap;
-			} else if(f != null && f.getFieldType().equals(FieldType.RELATIONSHIP.toString())){
+			} else if(f instanceof RelationshipField){
 				return getRelationshipInfo(f);
 			}
 
@@ -303,12 +320,12 @@ public class ContentMap {
 			}
 
 			//handle Velocity Code
-			if(parseVelocity && ret != null && (f == null || f.getFieldType().equals(Field.FieldType.TEXT.toString()) || f.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || f.getFieldType().equals(Field.FieldType.CUSTOM_FIELD.toString()) || f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) && (ret.toString().contains("#") || ret.toString().contains("$"))){
+			if(parseVelocity && ret != null && (f == null || f instanceof TextField || f instanceof TextAreaField  || f instanceof CustomField || f instanceof WysiwygField) && (ret.toString().contains("#") || ret.toString().contains("$"))){
 				VelocityEngine ve = VelocityUtil.getEngine();
 				Template template = null;
 				StringWriter sw = new StringWriter();
 
-				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? PageMode.PREVIEW_MODE.name():PageMode.LIVE.name()) + File.separator + content.getInode() + File.separator + f.getInode() + "." + VelocityType.FIELD.fileExtension);
+				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? PageMode.PREVIEW_MODE.name():PageMode.LIVE.name()) + File.separator + content.getInode() + File.separator + f.id() + "." + VelocityType.FIELD.fileExtension);
 				template.merge(context, sw);
 				ret = sw.toString();
 			}
@@ -395,25 +412,18 @@ public class ContentMap {
 
 
     private String getShortyUrl(final String idInode) throws IOException{
-        String tryField=getFileField();
+        Field tryField=content.getContentType().fields(BinaryField.class).stream().findFirst().orElse(null);
         StringBuilder sb = new StringBuilder("/dA/").append(APILocator.getShortyAPI().shortify(idInode));
         if(tryField!=null){
-          java.io.File f = content.getBinary(tryField);
+          java.io.File f = content.getBinary(tryField.variable());
           if(f !=null && f.exists()){
-            sb.append("/").append(content.getBinary(tryField).getName()) ;
+            sb.append("/").append(f.getName()) ;
           }
         }
         return sb.toString();
     }
 
-    private String getFileField() throws IOException{
-        for (Field f : FieldsCache.getFieldsByStructureInode(content.getStructureInode())) {
-            if ("binary".equals(f.getFieldType())) {
-                return f.getVelocityVarName();
-            }
-        }
-        return null;
-    }
+
 
 
 
@@ -432,12 +442,7 @@ public class ContentMap {
 		return result;
 	}
 
-	private Field retriveField(String fieldVariableName) throws Exception{
-		if(fieldMap == null){
-			fieldMap = UtilMethods.convertListToHashMap(fields, "getVelocityVarName", String.class);
-		}
-		return fieldMap.get(fieldVariableName);
-	}
+
 
     /**
      * Returns the value object using the velocity var name stored in the Field
@@ -451,7 +456,7 @@ public class ContentMap {
             // Lazy init
             fieldValueMap = new HashMap<String, Object>();
         }
-        return fieldValueMap.get(field.getVelocityVarName());
+        return fieldValueMap.get(field.variable());
     }
 
     /**
@@ -464,18 +469,9 @@ public class ContentMap {
             // Lazy init
             fieldValueMap = new HashMap<String, Object>();
         }
-        fieldValueMap.put(field.getVelocityVarName(), value);
+        fieldValueMap.put(field.variable(), value);
     }
 
-	public Structure getStructure() {
-		structure = content.getStructure();
-		return structure;
-	}
-
-	public String getContentletsTitle() {
-		title = content.getTitle();
-		return title;
-	}
 
 	public boolean isLive() throws Exception {
 	    return content.isLive();
@@ -485,8 +481,6 @@ public class ContentMap {
 	}	
 
 	public String toString() {
-		getContentletsTitle();
-		getStructure();
 		return ToStringBuilder.reflectionToString(this);
 	}
 

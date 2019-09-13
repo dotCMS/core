@@ -1,8 +1,9 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.model.Field;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -23,7 +24,7 @@ public class CheckboxMap {
 	private List<String> selectedValues = new ArrayList<String>();
 	
 	public CheckboxMap(Field field, Contentlet content) {
-		String[] pairs = (field.getValues()!=null?field.getValues():"").split("\r\n");
+		String[] pairs = (field.values()!=null?field.values():"").split("\r\n");
 		for (int j = 0; j < pairs.length; j++) {
 		    String pair = pairs[j];
 		    String[] tokens = pair.split("\\|");

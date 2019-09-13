@@ -2,7 +2,7 @@ package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.model.Field;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -22,8 +22,8 @@ public class SelectMap {
 	private List<String> values = new ArrayList<String>();
 	private Object selectValue;
 	
-	public SelectMap(Field field, Contentlet content) {
-		String[] pairs = (field.getValues()!=null?field.getValues():"").split("\r\n");
+	public SelectMap(com.dotcms.contenttype.model.field.Field field, Contentlet content) {
+		String[] pairs = (field.values()!=null?field.values():"").split("\r\n");
 		for (int j = 0; j < pairs.length; j++) {
 		    String pair = pairs[j];
 		    String[] tokens = pair.split("\\|");
