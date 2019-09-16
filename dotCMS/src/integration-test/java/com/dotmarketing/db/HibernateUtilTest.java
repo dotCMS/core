@@ -1,5 +1,6 @@
 package com.dotmarketing.db;
 
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
@@ -103,7 +104,8 @@ public class HibernateUtilTest {
     @Test
     public void updateOnDirtyObjectWhenQuery() throws Exception {
         // now test it can happen at load of another object
-        
+        final Host newHost = new SiteDataGen().nextPersisted();
+
         // 1st
         Container container = new Container();
         String title = "Test container #"+UUIDGenerator.generateUuid();
@@ -115,7 +117,7 @@ public class HibernateUtilTest {
         cs.setStructureId(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent").getInode());
         cs.setCode("$body");
         containerStructureList.add(cs);
-        container = APILocator.getContainerAPI().save(container, containerStructureList, host, user, false);
+        container = APILocator.getContainerAPI().save(container, containerStructureList, newHost, user, false);
         String cInode=container.getInode();
         
         
@@ -128,7 +130,7 @@ public class HibernateUtilTest {
         cs=new ContainerStructure();
         cs.setStructureId(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent").getInode());
         cs.setCode("$body"); containerStructureList.add(cs);
-        container = APILocator.getContainerAPI().save(container, containerStructureList, host, user, false);
+        container = APILocator.getContainerAPI().save(container, containerStructureList, newHost, user, false);
         String cInode2=container.getInode();
         container = null;
         
