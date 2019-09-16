@@ -208,39 +208,43 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 	@CloseDBIfOpened
 	public FileAsset fromContentlet(Contentlet con) throws DotStateException {
-		if (con == null) {
-			throw new DotStateException("Contentlet : is null");
+		if (con == null || con.getInode()==null) {
+			throw new DotStateException("Contentlet is null");
 		}
-		if (con.getStructure().getStructureType() != Structure.STRUCTURE_TYPE_FILEASSET) {
+		if (!con.isFileAsset()) {
 			throw new DotStateException("Contentlet : " + con.getInode() + " is not a FileAsset");
 		}
-
+		if(con instanceof FileAsset) {
+		  return (FileAsset) con;
+		}
+		
 		FileAsset fa = new FileAsset();
-		fa.setStructureInode(con.getStructureInode());
+		fa.setContentTypeId(con.getContentTypeId());
 		try {
 			contAPI.copyProperties((Contentlet) fa, con.getMap());
 		} catch (Exception e) {
-			throw new DotStateException("File Copy Failed :" + e.getMessage(), e);
+			throw new DotStateException("Content -> FileAsset Copy Failed :" + e.getMessage(), e);
 		}
 		fa.setHost(con.getHost());
 		if(UtilMethods.isSet(con.getFolder())){
 			try{
 				Identifier ident = APILocator.getIdentifierAPI().find(con);
-				User systemUser = APILocator.getUserAPI().getSystemUser();
-				Host host = APILocator.getHostAPI().find(con.getHost(), systemUser , false);
-				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, systemUser, false);
+
+				Host host = APILocator.getHostAPI().find(con.getHost(), APILocator.systemUser() , false);
+				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, APILocator.systemUser(), false);
 				fa.setFolder(folder.getInode());
 			}catch(Exception e){
 				try{
-					User systemUser = APILocator.getUserAPI().getSystemUser();
-					Host host = APILocator.getHostAPI().find(con.getHost(), systemUser , false);
-					Folder folder = APILocator.getFolderAPI().find(con.getFolder(), systemUser, false);
+
+					Host host = APILocator.getHostAPI().find(con.getHost(), APILocator.systemUser() , false);
+					Folder folder = APILocator.getFolderAPI().find(con.getFolder(), APILocator.systemUser(), false);
 					fa.setFolder(folder.getInode());
 				}catch(Exception e1){
 					Logger.warn(this, "Unable to convert contentlet to file asset " + con, e1);
 				}
 			}
 		}
+		CacheLocator.getContentletCache().add(fa);
 		return fa;
 	}
 
@@ -511,6 +515,20 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return assets;
 	}
 
+  @Override
+  @CloseDBIfOpened
+  public FileAsset find(final String inode, final User user, final boolean respectFrontendRoles)
+      throws DotDataException, DotSecurityException {
+
+
+
+    return fromContentlet(contAPI.find(inode, user, respectFrontendRoles));
+
+
+
+  }
+	
+	
 	public String getRealAssetPath(String inode, String fileName, String ext) {
         String _inode = inode;
         String path = "";

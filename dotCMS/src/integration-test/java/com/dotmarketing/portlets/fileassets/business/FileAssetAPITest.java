@@ -169,5 +169,25 @@ public class FileAssetAPITest extends IntegrationTestBase {
     }
 
 
+    @Test
+    public void test_that_file_asset_gets_stored_in_cache_and_is_not_rebuilt_everytime()
+        throws Exception {
+
+      
+
+      final Folder parentFolder = new FolderDataGen().nextPersisted();
+
+      // Lets make up some fictional data.
+
+      final java.io.File file = java.io.File.createTempFile("blah", ".txt");
+      FileUtil.write(file, "helloworld");
+      
+      final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
+      final Contentlet fileAssetContentlet = fileAssetDataGen.nextPersisted();
+      final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
+      
+      
+      
+    }
 
 }

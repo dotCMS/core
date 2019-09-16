@@ -316,4 +316,17 @@ public interface FileAssetAPI {
 	public String getMimeType (String filename);
 
 	public String getRealAssetPathTmpBinary();
+
+	/**
+	 * this returns a fileAsset for a given inode - if the inode is in cache as a FileAsset, then this method will return it
+	 * If the inode is in cache as a contentlet, then it will be converted to a FileAsset, re-added to cache and return it
+	 * Otherwise, it will throw a DotStateException that the FileAsset was not found
+	 * @param inode
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+  FileAsset find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 }

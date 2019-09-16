@@ -1253,7 +1253,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
     public Boolean isHTMLPage() {
-        return getStructure().getStructureType() == BaseContentType.HTMLPAGE.getType();
+      return getContentType().baseType() == BaseContentType.HTMLPAGE;
     }
 
     /**
@@ -1261,7 +1261,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @return
      */
 	public boolean isFileAsset() {
-		return getStructure().getStructureType() == BaseContentType.FILEASSET.getType();
+		return getContentType().baseType() == BaseContentType.FILEASSET;
 	}
 
 	/**
@@ -1269,10 +1269,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
     public boolean isHost() {
-        Structure hostStructure =
-                CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+      
 
-        return getStructure().getInode().equals(hostStructure.getInode());
+        return getContentType().variable().equals(Host.HOST_VELOCITY_VAR_NAME);
     }
 
 	/**
