@@ -1,13 +1,13 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotmarketing.util.Logger;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.util.Logger;
-
-
+/**
+ * This class does not execute anything and should be removed in a major release
+ */
+@Deprecated
 public class CronThread implements Runnable {
     private int emailCampaign = 1; //every minute
 
@@ -27,20 +27,13 @@ public class CronThread implements Runnable {
             greg = new GregorianCalendar();
 
             try {
-                try {
-                	if ((greg.get(Calendar.MINUTE) % emailCampaign) == 0) {
-                		//EmailFactory.deliverCampaigns();
-                	}
-                } catch (Exception e) {
-                    Logger.error(this, "CronThread: Error occurred delivering campaigns.", e);
+                if ((greg.get(Calendar.MINUTE) % emailCampaign) == 0) {
+                    //EmailFactory.deliverCampaigns();
                 }
-            } finally {
-                try {
-					HibernateUtil.closeSession();
-				} catch (Exception e) {
-					Logger.error(this,e.getMessage(), e);
-				}
+            } catch (Exception e) {
+                Logger.error(this, "CronThread: Error occurred delivering campaigns.", e);
             }
+
     	    Logger.debug(this, "CronThread.Minute: " + greg.get(Calendar.MINUTE));
 
             try {
@@ -56,10 +49,6 @@ public class CronThread implements Runnable {
      * @see java.lang.Thread#destroy()
      */
     public void destroy() {
-        try {
-			HibernateUtil.closeSession();
-		} catch (DotHibernateException e) {
-			Logger.error(this,e.getMessage(), e);
-		}
+
     }
 }

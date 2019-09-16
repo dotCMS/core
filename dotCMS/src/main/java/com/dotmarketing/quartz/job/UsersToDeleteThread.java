@@ -1,23 +1,19 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.business.CloseDBIfOpened;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.UsersToDelete;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 
 public class UsersToDeleteThread extends Thread implements Job {
 
@@ -77,14 +73,10 @@ public class UsersToDeleteThread extends Thread implements Job {
 	 * @see java.lang.Thread#destroy()
 	 */
 	public void destroy() {
-		try {
-			HibernateUtil.closeSession();
-		} catch (DotHibernateException e) {
-			Logger.error(this, e.getMessage(), e);
-		}
+
 	}
 
-	@CloseDBIfOpened
+	@WrapInTransaction
 	public void execute(JobExecutionContext context) throws JobExecutionException {
 		Logger.debug(this, "Running UsersToDeleteThread - " + new Date());
 

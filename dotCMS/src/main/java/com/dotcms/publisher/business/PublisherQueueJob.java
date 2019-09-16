@@ -3,6 +3,7 @@ package com.dotcms.publisher.business;
 import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
@@ -98,7 +99,7 @@ public class PublisherQueueJob implements StatefulJob {
 	 * @throws JobExecutionException
 	 *             An exception occurred while executing the job.
 	 */
-	@CloseDBIfOpened
+	@WrapInTransaction
 	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 		try {
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - check for publish dates");
