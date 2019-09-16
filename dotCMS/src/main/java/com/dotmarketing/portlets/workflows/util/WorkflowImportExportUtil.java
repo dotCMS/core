@@ -19,6 +19,9 @@ import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
+
+import io.vavr.Tuple2;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -32,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.ws.rs.HEAD;
 import org.jetbrains.annotations.NotNull;
 
 public class WorkflowImportExportUtil {
@@ -131,9 +135,14 @@ public class WorkflowImportExportUtil {
 				workflowAPI.saveScheme(scheme, user);
 			}
 
+			List<Tuple2<String, String>> stepsWithActions = new ArrayList<>();
 			for (final WorkflowStep step : importer.getSteps()) {
 
 				Logger.info(this, "Importing step: " + step);
+			    if(step.getEscalationAction()!=null) {
+			        stepsWithActions.add(new Tuple2<String, String>(step.getId(), step.getEscalationAction()));
+			        step.setEscalationAction(null);
+			    }
 				workflowAPI.saveStep(step, user);
 			}
 
@@ -142,7 +151,15 @@ public class WorkflowImportExportUtil {
 				Logger.info(this, "Importing action: " + action);
 				workflowAPI.saveAction(action, null, user);
 			}
-
+			
+			// Now we can save the step and action
+			for (Tuple2<String, String> stepsWithAction:stepsWithActions) {
+			  WorkflowStep step  = workflowAPI.findStep(stepsWithAction._1);
+			  step.setEscalationAction(stepsWithAction._2);
+			  workflowAPI.saveStep(step, user);
+			}
+			
+			
 			for(final Map<String, String> actionStepMap : importer.getActionSteps()){
 
 				Logger.info(this, "Importing actionStepMap: " + actionStepMap);
