@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.workflows.model;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,7 +29,7 @@ public class SystemActionWorkflowActionMappingDeserializer extends JsonDeseriali
 
         if (isOwnerContentType) {
 
-            owner = readValueAs(objectNode.get("owner"), ContentType.class, parser);
+            owner = readContentTypeValueAs(objectNode.get("owner"));
         }
 
         if (isOwnerScheme) {
@@ -36,6 +38,18 @@ public class SystemActionWorkflowActionMappingDeserializer extends JsonDeseriali
         }
 
         return new SystemActionWorkflowActionMapping(identifier, systemAction, workflowAction, owner);
+    }
+
+    private ContentType readContentTypeValueAs(final JsonNode node) {
+
+        final String id     = node.get("id").asText();
+        final String name   = node.get("name").asText();
+        final String hostId = node.get("host").asText();
+        final String var    = node.get("variable").asText();
+
+        return ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass()).id(id).name(name).host(hostId).
+                variable(var) // this is the only variable important for the content type
+                .build();
     }
 
     private <T> T readValueAs (final JsonNode node, final Class<T> clazz, final JsonParser parser)

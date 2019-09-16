@@ -68,24 +68,33 @@ public class SystemActionMappingsHandlerMerger {
                 if (remoteContentType.variable().equals(localContentType.variable())) {
 
                     final WorkflowAPI.SystemAction systemAction   = remoteMapping.getSystemAction();
-                    final Optional<WorkflowAction> workflowAction = this.findWorkflowAction(remoteMapping.getWorkflowAction().getId());
-                    if (workflowAction.isPresent()) {
-                        final SystemActionWorkflowActionMapping localSavedMapping =
-                                workflowAPI.mapSystemActionToWorkflowActionForContentType(
-                                        systemAction, workflowAction.get(), localContentType);
+                    if (UtilMethods.isSet(remoteMapping.getWorkflowAction()) && UtilMethods.isSet(remoteMapping.getWorkflowAction().getId())) {
 
-                        remoteSystemMappingIdentifiers.add(null != localSavedMapping ?
-                                localSavedMapping.getIdentifier() : remoteMapping.getIdentifier());
-                        Logger.info(this, "The mapping for systemAction: " + systemAction
-                                + ", workflowAction: " + workflowAction
-                                + ", and content type: " + localContentType.variable()
-                                + " has been saved");
+                        final Optional<WorkflowAction> workflowAction = this
+                                .findWorkflowAction(remoteMapping.getWorkflowAction().getId());
+                        if (workflowAction.isPresent()) {
+                            final SystemActionWorkflowActionMapping localSavedMapping =
+                                    workflowAPI.mapSystemActionToWorkflowActionForContentType(
+                                            systemAction, workflowAction.get(), localContentType);
+
+                            remoteSystemMappingIdentifiers.add(null != localSavedMapping ?
+                                    localSavedMapping.getIdentifier()
+                                    : remoteMapping.getIdentifier());
+                            Logger.info(this, "The mapping for systemAction: " + systemAction
+                                    + ", workflowAction: " + workflowAction
+                                    + ", and content type: " + localContentType.variable()
+                                    + " has been saved");
+                        } else {
+
+                            Logger.warn(this, "The mapping for systemAction: " + systemAction
+                                    + ", workflowAction: " + workflowAction
+                                    + ", and content type: " + localContentType.variable()
+                                    + " was not saved because the workflow action does not exists locally");
+                        }
                     } else {
 
-                        Logger.warn(this, "The mapping for systemAction: " + systemAction
-                                + ", workflowAction: " + workflowAction
-                                + ", and content type: " + localContentType.variable()
-                                + " was not saved because the workflow action does not exists locally");
+                        Logger.info(this, "The workflow on the " + remoteContentType
+                                + " is null or the id is null");
                     }
                 } else {
 
@@ -142,25 +151,33 @@ public class SystemActionMappingsHandlerMerger {
                 if (mappingScheme.equals(localScheme)) {
 
                     final WorkflowAPI.SystemAction systemAction   = remoteMapping.getSystemAction();
-                    final Optional<WorkflowAction> workflowAction = this.findWorkflowAction(remoteMapping.getWorkflowAction().getId());
-                    if (workflowAction.isPresent()) {
+                    if (UtilMethods.isSet(remoteMapping.getWorkflowAction()) && UtilMethods.isSet(remoteMapping.getWorkflowAction().getId())) {
+                        final Optional<WorkflowAction> workflowAction = this
+                                .findWorkflowAction(remoteMapping.getWorkflowAction().getId());
+                        if (workflowAction.isPresent()) {
 
-                        final SystemActionWorkflowActionMapping localSavedMapping =
-                                workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(
-                                        systemAction, workflowAction.get(), localScheme);
+                            final SystemActionWorkflowActionMapping localSavedMapping =
+                                    workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(
+                                            systemAction, workflowAction.get(), localScheme);
 
-                        remoteSystemMappingIdentifiers.add(null != localSavedMapping ?
-                                localSavedMapping.getIdentifier() : remoteMapping.getIdentifier());
-                        Logger.info(this, "The mapping for systemAction: " + systemAction
-                                + ", workflowAction: " + workflowAction
-                                + ", and scheme: " + mappingScheme.getId()
-                                + " has been saved");
+                            remoteSystemMappingIdentifiers.add(null != localSavedMapping ?
+                                    localSavedMapping.getIdentifier()
+                                    : remoteMapping.getIdentifier());
+                            Logger.info(this, "The mapping for systemAction: " + systemAction
+                                    + ", workflowAction: " + workflowAction
+                                    + ", and scheme: " + mappingScheme.getId()
+                                    + " has been saved");
+                        } else {
+
+                            Logger.warn(this, "The mapping for systemAction: " + systemAction
+                                    + ", workflowAction: " + workflowAction
+                                    + ", and scheme: " + mappingScheme.getId()
+                                    + " was not saved because the workflow action does not exists locally");
+                        }
                     } else {
 
-                        Logger.warn(this, "The mapping for systemAction: " + systemAction
-                                + ", workflowAction: " + workflowAction
-                                + ", and scheme: " + mappingScheme.getId()
-                                + " was not saved because the workflow action does not exists locally");
+                        Logger.info(this, "The workflow on the " + remoteMapping
+                                + " is null or the id is null");
                     }
                 } else {
 
@@ -194,7 +211,7 @@ public class SystemActionMappingsHandlerMerger {
 
         try {
             return Optional.ofNullable(this.workflowAPI.findAction(workflowId, APILocator.systemUser()));
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (Exception e) {
             return Optional.empty();
         }
     }
