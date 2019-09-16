@@ -1453,9 +1453,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final List<Contentlet> result = new ArrayList<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
 
-            SearchResponse response = APILocator.getEsSearchAPI()
-                    .esSearchRelated(contentlet.getIdentifier(), relationshipName, false,false, user,
-                            respectFrontendRoles, limit, offset, sortBy);
+            SearchResponse response;
+
+            //Search for related content in existing contentlet
+            if (UtilMethods.isSet(contentlet.getInode())) {
+                response = APILocator.getEsSearchAPI()
+                        .esSearchRelated(contentlet, relationshipName, false, false, user,
+                                respectFrontendRoles, limit, offset, sortBy);
+            } else{
+                //Search for related content in other versions of the same contentlet
+                response = APILocator.getEsSearchAPI()
+                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, false, false, user,
+                                respectFrontendRoles, limit, offset, sortBy);
+            }
 
             if (response.getHits() == null) {
                 return result;
@@ -1494,25 +1504,34 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return FactoryLocator.getRelationshipFactory()
                     .dbRelatedContent(rel, contentlet, false, false, "tree_order", limit, offset);
         } else{
-            final List<Contentlet> result = new ArrayList<>();
+            final Map<String, Contentlet> relatedMap = new HashMap<>();
             final String relationshipName = rel.getRelationTypeValue().toLowerCase();
 
-            SearchResponse response = APILocator.getEsSearchAPI()
-                    .esSearchRelated(contentlet.getIdentifier(), relationshipName, true,false, user,
-                            respectFrontendRoles, limit, offset, sortBy);
+            SearchResponse response;
 
-            if (response.getHits() == null) {
-                return result;
+            //Search for related content in existing contentlet
+            if (UtilMethods.isSet(contentlet.getInode())) {
+                response = APILocator.getEsSearchAPI()
+                    .esSearchRelated(contentlet, relationshipName, true,false, user,
+                            respectFrontendRoles, limit, offset, sortBy);
+            } else{
+                response = APILocator.getEsSearchAPI()
+                        .esSearchRelated(contentlet.getIdentifier(), relationshipName, true,false, user,
+                                respectFrontendRoles, limit, offset, sortBy);
             }
 
-            for (SearchHit sh : response.getHits()) {
-                Map<String, Object> sourceMap = sh.getSourceAsMap();
-                if (sourceMap.get("identifier") != null) {
-                    result.add(findContentletByIdentifierAnyLanguage(sourceMap.get("identifier").toString()));
+            if (response.getHits() != null) {
+                for (SearchHit sh : response.getHits()) {
+                    final Map<String, Object> sourceMap = sh.getSourceAsMap();
+                    final String identifier = (String) sourceMap.get("identifier");
+                    if (identifier != null && !relatedMap.containsKey(identifier)) {
+                        relatedMap
+                                .put(identifier, findContentletByIdentifierAnyLanguage(identifier));
+                    }
                 }
             }
 
-            return result;
+            return new ArrayList<>(relatedMap.values());
         }
     }
 
