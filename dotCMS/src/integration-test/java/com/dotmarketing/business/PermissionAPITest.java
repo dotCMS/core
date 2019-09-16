@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -186,19 +187,30 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void removePermissions() throws DotDataException, DotSecurityException {
-        APILocator.getFolderAPI().createFolders("/f1/", host, sysuser, false);
-        Folder f=APILocator.getFolderAPI().findFolderByPath("/f1/", host, sysuser, false);
+
+        final Host newHost = new SiteDataGen().nextPersisted();
+        Role newRole = getRole("Role" + System.currentTimeMillis());
+
+        // Adding permissions to the just created host
+        Permission permission = new Permission();
+        permission.setPermission(PermissionAPI.PERMISSION_EDIT);
+        permission.setRoleId(newRole.getId());
+        permission.setInode(newHost.getIdentifier());
+        permissionAPI.save(permission, newHost, sysuser, false);
+
+        APILocator.getFolderAPI().createFolders("/f1/", newHost, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f1/", newHost, sysuser, false);
 
         assertTrue(permissionAPI.isInheritingPermissions(f));
-        assertTrue(f.getParentPermissionable().equals(host));
+        assertEquals(f.getParentPermissionable().getPermissionId(), newHost.getPermissionId());
 
-        permissionAPI.permissionIndividually(host, f, sysuser);
+        permissionAPI.permissionIndividually(newHost, f, sysuser);
         assertFalse(permissionAPI.isInheritingPermissions(f));
 
         permissionAPI.removePermissions(f);
 
         assertTrue(permissionAPI.isInheritingPermissions(f));
-        assertTrue(f.getParentPermissionable().equals(host));
+        assertEquals(f.getParentPermissionable().getPermissionId(), newHost.getPermissionId());
     }
 
     @Test
