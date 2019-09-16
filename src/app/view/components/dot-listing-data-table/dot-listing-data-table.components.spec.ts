@@ -22,7 +22,6 @@ import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
 import { DotIconModule } from '../_common/dot-icon/dot-icon.module';
 import { DotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 
-
 describe('DotListingDataTableComponent', () => {
     let comp: DotListingDataTableComponent;
     let fixture: ComponentFixture<DotListingDataTableComponent>;
@@ -73,7 +72,7 @@ describe('DotListingDataTableComponent', () => {
                 field2: 'item1-value2',
                 field3: 'item1-value3',
                 nEntries: 'item1-value4',
-                variable: 'Banner'
+                variable: 'Host'
             },
             {
                 field1: 'item2-value1',
@@ -115,7 +114,7 @@ describe('DotListingDataTableComponent', () => {
                 field2: 'item7-value2',
                 field3: 'item7-value3',
                 nEntries: 'item1-value4',
-                variable: '1'
+                variable: 'Banner'
             }
         ];
 
@@ -154,7 +153,7 @@ describe('DotListingDataTableComponent', () => {
 
     it('renderer basic datatable component', () => {
         spyOn(this.paginatorService, 'getWithOffset').and.callFake(() => {
-            return Observable.create((observer) => {
+            return Observable.create(observer => {
                 observer.next(Object.assign([], this.items));
             });
         });
@@ -175,9 +174,7 @@ describe('DotListingDataTableComponent', () => {
         expect(5).toEqual(headers.length);
 
         comp.columns.forEach((_col, index) =>
-            expect(comp.columns[index].header).toEqual(
-                headers[index].textContent.trim()
-            )
+            expect(comp.columns[index].header).toEqual(headers[index].textContent.trim())
         );
 
         rows.forEach((row, rowIndex) => {
@@ -192,8 +189,14 @@ describe('DotListingDataTableComponent', () => {
                     }
                     if (cellIndex === 3) {
                         const anchor = cells[cellIndex].querySelector('a');
-                        expect(anchor.textContent).toContain(item[comp.columns[cellIndex].fieldName]);
-                        expect(anchor.href).toContain('/c/content?filter=Banner');
+                        expect(anchor.textContent).toContain(
+                            item[comp.columns[cellIndex].fieldName]
+                        );
+                        if (item.variable === 'Host') {
+                            expect(anchor.href).toContain('/c/sites');
+                        } else {
+                            expect(anchor.href).toContain('/c/content?filter=Banner');
+                        }
                     }
                 });
             }
@@ -203,13 +206,13 @@ describe('DotListingDataTableComponent', () => {
     });
 
     it('renderer with format date column', () => {
-        const itemsWithFormat = this.items.map((item) => {
+        const itemsWithFormat = this.items.map(item => {
             item.field3 = 1496178801000;
             return item;
         });
 
         spyOn(this.paginatorService, 'getWithOffset').and.callFake(() => {
-            return Observable.create((observer) => {
+            return Observable.create(observer => {
                 observer.next(Object.assign([], itemsWithFormat));
             });
         });
@@ -233,9 +236,7 @@ describe('DotListingDataTableComponent', () => {
         expect(5).toEqual(headers.length, 'th');
 
         comp.columns.forEach((_col, index) =>
-            expect(comp.columns[index].header).toEqual(
-                headers[index].textContent.trim()
-            )
+            expect(comp.columns[index].header).toEqual(headers[index].textContent.trim())
         );
 
         rows.forEach((row, rowIndex) => {
@@ -258,7 +259,7 @@ describe('DotListingDataTableComponent', () => {
 
     it('should renderer table without checkbox', () => {
         spyOn(this.paginatorService, 'getWithOffset').and.callFake(() => {
-            return Observable.create((observer) => {
+            return Observable.create(observer => {
                 observer.next(Object.assign([], this.items));
             });
         });
@@ -298,7 +299,7 @@ describe('DotListingDataTableComponent', () => {
             }
         ];
         spyOn(this.paginatorService, 'getWithOffset').and.callFake(() => {
-            return Observable.create((observer) => {
+            return Observable.create(observer => {
                 observer.next(Object.assign([], this.items));
             });
         });
@@ -331,7 +332,7 @@ describe('DotListingDataTableComponent', () => {
             }
         ];
         spyOn(this.paginatorService, 'getWithOffset').and.callFake(() => {
-            return Observable.create((observer) => {
+            return Observable.create(observer => {
                 observer.next(Object.assign([], this.items));
             });
         });
@@ -377,7 +378,9 @@ describe('DotListingDataTableComponent', () => {
         comp.columns = this.columns;
         comp.loadFirstPage();
         fixture.detectChanges();
-        comp.globalSearch.nativeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'arrowDown' }));
+        comp.globalSearch.nativeElement.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'arrowDown' })
+        );
 
         expect(comp.dataTable.tableViewChild.nativeElement.rows[1]).toBe(document.activeElement);
     });
@@ -391,5 +394,4 @@ describe('DotListingDataTableComponent', () => {
 
         expect(comp.dataTable.rows).toBe(5);
     });
-
 });
