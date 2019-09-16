@@ -177,7 +177,7 @@ public abstract class PermissionFactory {
 
 	/**
 	 * This method saves or update the permission object in db
-	 * @param p permission
+	 * @param permission
 	 * @version 1.7
 	 * @throws DotDataException 
 	 * @since 1.0
