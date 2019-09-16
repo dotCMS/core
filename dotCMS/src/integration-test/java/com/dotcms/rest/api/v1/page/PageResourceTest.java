@@ -417,14 +417,6 @@ public class PageResourceTest {
 
     }
 
-    private Contentlet createContentlet() throws DotSecurityException, DotDataException {
-        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
-
-        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
-        return contentletDataGen.setProperty("title", "title")
-                .setProperty("body", "body").languageId(1).nextPersisted();
-    }
 
     /**
      * Should return about-us/index page
@@ -469,7 +461,7 @@ public class PageResourceTest {
 
         final Contentlet checkin = APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
 
-        final Contentlet contentlet = createContentlet();
+        final Contentlet contentlet =  TestDataUtils.getGenericContentContent(true, 1);
 
         final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
         final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(), localContainer1.getIdentifier(), contentlet.getIdentifier(), "1", 1);

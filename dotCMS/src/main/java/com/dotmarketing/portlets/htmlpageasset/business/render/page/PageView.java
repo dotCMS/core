@@ -73,7 +73,7 @@ public class PageView implements Serializable {
         this.numberContents = getContentsNumber();
     }
 
-    private final int getContentsNumber() {
+    private int getContentsNumber() {
         final Optional<Integer> contentsNumber = this.getContainersMap().values()
                 .stream()
                 .flatMap(containerRaw -> containerRaw.getContentlets().values().stream())
