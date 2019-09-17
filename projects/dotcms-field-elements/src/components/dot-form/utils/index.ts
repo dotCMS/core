@@ -7,6 +7,23 @@ import {
     DotCMSContentTypeFieldVariable
 } from 'dotcms-models';
 
+export const DOT_ATTR_PREFIX = 'dot';
+
+/**
+ * Sets attributes to the HtmlElement from fieldVariables array
+ *
+ * @param HTMLElement element
+ * @param DotCMSContentTypeFieldVariable fieldVariables
+ */
+export function setAttributesToTag(
+    element: HTMLElement,
+    fieldVariables: DotCMSContentTypeFieldVariable[]
+): void {
+    fieldVariables.forEach(({ key, value }) => {
+        element.setAttribute(key, value);
+    });
+}
+
 /**
  * Given a string formatted value "key|value,llave|valor" return an object.
  * @param values
@@ -22,6 +39,36 @@ const pipedValuesToObject = (values: string): { [key: string]: string } => {
           }, {})
         : null;
 };
+
+function isDotAttribute(name: string): boolean {
+    return name.startsWith(DOT_ATTR_PREFIX);
+}
+
+/**
+ * Sets attributes with "dot" prefix to the HtmlElement passed
+ *
+ * @param Element element
+ * @param Attr[] attributes
+ */
+export function setDotAttributesToElement(element: Element, attributes: Attr[]): void {
+    attributes.forEach(({ name, value }) => {
+        element.setAttribute(name.replace(DOT_ATTR_PREFIX, ''), value);
+    });
+}
+
+/**
+ * Returns "Dot" attributes from all element's attributes
+ *
+ * @param Attr[] attributes
+ * @param string[] attrException
+ * @returns Attr[]
+ */
+export function getDotAttributesFromElement(attributes: Attr[], attrException: string[]): Attr[] {
+    const exceptions = attrException.map((attr: string) => attr.toUpperCase());
+    return attributes.filter(
+        (item: Attr) => !exceptions.includes(item.name.toUpperCase()) && isDotAttribute(name)
+    );
+}
 
 /**
  * Returns if a field should be displayed from a comma separated list of fields
@@ -39,7 +86,10 @@ export const shouldShowField = (field: DotCMSContentTypeField, fieldsToShow: str
  * @param string key
  * @returns string
  */
-export const getFieldVariableValue = (fieldVariables: DotCMSContentTypeFieldVariable[], key: string): string => {
+export const getFieldVariableValue = (
+    fieldVariables: DotCMSContentTypeFieldVariable[],
+    key: string
+): string => {
     const variable = fieldVariables.filter(
         (item: DotCMSContentTypeFieldVariable) => item.key.toUpperCase() === key.toUpperCase()
     )[0];

@@ -10,9 +10,9 @@ import {
     getTagError,
     getTagHint,
     updateStatus,
-    getHintId,
-    setAttributesToElement
+    getHintId
 } from '../../utils';
+import { setDotAttributesToElement, getDotAttributesFromElement } from '../dot-form/utils';
 
 /**
  * Represent a dotcms input control.
@@ -93,8 +93,8 @@ export class DotTextfieldComponent {
     componentDidLoad(): void {
         const htmlElement = this.el.querySelector('input');
         setTimeout(() => {
-            const attrs: Attr[] = Array.from(this.el.attributes);
-            setAttributesToElement(htmlElement, attrs);
+            const attrs = getDotAttributesFromElement(Array.from(this.el.attributes), []);
+            setDotAttributesToElement(htmlElement, attrs);
         }, 0);
     }
 

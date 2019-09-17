@@ -10,7 +10,6 @@ import {
     getTagError,
     getTagHint,
     isFileAllowed,
-    isValidURL,
     updateStatus
 } from './utils';
 
