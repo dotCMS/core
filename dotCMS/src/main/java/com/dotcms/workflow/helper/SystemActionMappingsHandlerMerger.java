@@ -75,6 +75,7 @@ public class SystemActionMappingsHandlerMerger {
                         if (workflowAction.isPresent()) {
 
                             try {
+                                
                                 final SystemActionWorkflowActionMapping localSavedMapping =
                                         workflowAPI.mapSystemActionToWorkflowActionForContentType(
                                                 systemAction, workflowAction.get(),
@@ -87,7 +88,7 @@ public class SystemActionMappingsHandlerMerger {
                                         + ", workflowAction: " + workflowAction
                                         + ", and content type: " + localContentType.variable()
                                         + " has been saved");
-                            } catch (DotDataException e) { // we just catch but do not propagate the exception in order to not break the transaction
+                            } catch (DotDataException | IllegalArgumentException e) { // we just catch but do not propagate the exception in order to not break the transaction
 
                                 Logger.error(this, "The mapping for systemAction: " + systemAction
                                         + ", workflowAction: " + workflowAction
@@ -181,7 +182,7 @@ public class SystemActionMappingsHandlerMerger {
                                         + ", workflowAction: " + workflowAction
                                         + ", and scheme: " + mappingScheme.getId()
                                         + " has been saved");
-                            } catch (DotDataException e) { // we just catch but do not propagate the exception in order to not break the transaction
+                            } catch (DotDataException | IllegalArgumentException  e) { // we just catch but do not propagate the exception in order to not break the transaction
 
                                 Logger.error(this, "The mapping for systemAction: " + systemAction
                                     + ", workflowAction: " + workflowAction
