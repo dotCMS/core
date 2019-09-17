@@ -8,6 +8,8 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
+import io.vavr.control.Try;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -108,23 +110,16 @@ public enum PageMode {
             pageMode = get(session);
         }
 
-        if (PageMode.LIVE != pageMode) {
+        if (DEFAULT_PAGE_MODE != pageMode) {
 
             final User user = PortalUtil.getUser(req);
-            try {
 
-                if (null != user && APILocator.getUserAPI().getAnonymousUser().equals(user)) {
-
-                    final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(req, pageMode);
-                    if (null == host || !APILocator.getPermissionAPI().doesUserHavePermission
-                            (host, PermissionLevel.READ.getType(), user)) {
-
-                        pageMode = DEFAULT_PAGE_MODE;
-                    }
-                }
-            } catch (Exception e) {
-
-                Logger.debug(PageMode.class, e.getMessage(), e);
+            if(user==null || !user.isBackendUser()) {
+              pageMode = DEFAULT_PAGE_MODE;
+            }
+            final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(req);
+            if (Try.of(()-> APILocator.getPermissionAPI().doesUserHavePermission(WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(req), PermissionLevel.READ.getType(), user)).getOrElse(false)) {
+              pageMode = DEFAULT_PAGE_MODE;
             }
         }
 
