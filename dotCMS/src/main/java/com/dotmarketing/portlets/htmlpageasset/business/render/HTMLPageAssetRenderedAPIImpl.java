@@ -120,14 +120,15 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 throws DotSecurityException, DotDataException {
 
         final Host host = resolveSite(context, request);
-        final IHTMLPage page = getHtmlPageAsset(context, host, request);
+        final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
 
         return new HTMLPageAssetRenderedBuilder()
-                .setHtmlPageAsset(page)
+                .setHtmlPageAsset(htmlPageUrl.getHTMLPage())
                 .setUser(context.getUser())
                 .setRequest(request)
                 .setResponse(response)
                 .setSite(host)
+                .setURLMapper(htmlPageUrl.getPageUrlMapper())
                 .build(false, context.getPageMode());
     }
 
@@ -164,16 +165,17 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         PageMode.setPageMode(request, mode);
 
         final Host host = resolveSite(context, request);
-        final HTMLPageAsset page = context.getPage() != null
-                ? context.getPage()
-                : (HTMLPageAsset) getHtmlPageAsset(context, host, request);
+        final HTMLPageUrl htmlPageUrl = context.getPage() != null
+                ? new HTMLPageUrl(context.getPage())
+                : getHtmlPageAsset(context, host, request);
 
         return new HTMLPageAssetRenderedBuilder()
-                .setHtmlPageAsset(page)
+                .setHtmlPageAsset(htmlPageUrl.getHTMLPage())
                 .setUser(context.getUser())
                 .setRequest(request)
                 .setResponse(response)
                 .setSite(host)
+                .setURLMapper(htmlPageUrl.pageUrlMapper)
                 .build(true, mode);
     }
 
@@ -218,7 +220,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                         .build(),
                     host,
                     request
-            );
+            ).getHTMLPage();
 
             return this.permissionAPI.doesUserHavePermission(htmlPageAsset, PermissionLevel.READ.getType(), user, false)
                     ? PageMode.PREVIEW_MODE : PageMode.ADMIN_MODE;
@@ -234,7 +236,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 throws DotSecurityException, DotDataException {
 
         final Host host = resolveSite(context, request);
-        final IHTMLPage page = getHtmlPageAsset(context, host, request);
+        final IHTMLPage page = getHtmlPageAsset(context, host, request).getHTMLPage();
 
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
@@ -245,32 +247,38 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .getPageHTML();
     }
 
-    private IHTMLPage getHtmlPageAsset(
+    private HTMLPageUrl getHtmlPageAsset(
             final PageContext context,
             final Host host,
             final HttpServletRequest request)
                 throws DotDataException, DotSecurityException {
 
-        final IHTMLPage htmlPageAsset = findPageByContext(host, context);
+        HTMLPageUrl htmlPageUrl = null;
+        IHTMLPage htmlPageAsset = findPageByContext(host, context);
 
         if (htmlPageAsset == null){
-            return getPageByUri(context.getPageMode(), host, findByURLMap(context, host, request));
-        } else  {
-            final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(
-                    htmlPageAsset,
-                    PermissionLevel.READ.getType(),
-                    context.getUser(),
-                    context.getPageMode().respectAnonPerms);
-
-            if (!doesUserHavePermission) {
-                final String message = String.format("User: %s does not have permissions %s for object %s",
-                        context.getUser(),
-                        PermissionLevel.READ, htmlPageAsset);
-                throw new DotSecurityException(message);
-            }
+            htmlPageUrl = findByURLMap(context, host, request);
+            htmlPageAsset = getPageByUri(context.getPageMode(), host, htmlPageUrl.getPageUrl());
+        } else {
+            htmlPageUrl = new HTMLPageUrl(context.getPageUri(), null);
         }
 
-        return htmlPageAsset;
+        htmlPageUrl.setHTMLPage(htmlPageAsset);
+
+        final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(
+                htmlPageAsset,
+                PermissionLevel.READ.getType(),
+                context.getUser(),
+                context.getPageMode().respectAnonPerms);
+
+        if (!doesUserHavePermission) {
+            final String message = String.format("User: %s does not have permissions %s for object %s",
+                    context.getUser(),
+                    PermissionLevel.READ, htmlPageAsset);
+            throw new DotSecurityException(message);
+        }
+
+        return htmlPageUrl;
     }
 
     private IHTMLPage findPageByContext(final Host host, final PageContext context)
@@ -286,7 +294,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 getPageByUri(mode, host, pageUri);
     }
 
-    private String findByURLMap(
+    private HTMLPageUrl findByURLMap(
             final PageContext context,
             final Host host,
             final HttpServletRequest request)
@@ -304,19 +312,18 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                     .build()
         );
 
-        urlMapInfoOptional.ifPresent(urlMapInfo -> {
+        if (!urlMapInfoOptional.isPresent()) {
+            throw new HTMLPageAssetNotFoundException(context.getPageUri());
+        } else {
+            final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
             request.setAttribute(WebKeys.WIKI_CONTENTLET, urlMapInfo.getContentlet().getIdentifier());
             request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, urlMapInfo.getContentlet().getInode());
             request.setAttribute(WebKeys.WIKI_CONTENTLET_URL, context.getPageUri());
             request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE, urlMapInfo.getContentlet().getIdentifier());
             request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, urlMapInfo.getIdentifier().getURI());
-        });
 
-        if (!urlMapInfoOptional.isPresent()) {
-            throw new HTMLPageAssetNotFoundException(context.getPageUri());
+            return new HTMLPageUrl (urlMapInfo.getIdentifier().getURI(), urlMapInfo.getUrlMapper());
         }
-
-        return urlMapInfoOptional.get().getIdentifier().getURI();
     }
 
     private IHTMLPage getPageByUri(final PageMode mode, final Host host, final String pageUri)
@@ -364,5 +371,37 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         }
         return site;
 
+    }
+
+    public class HTMLPageUrl {
+        private String pageUrl;
+        private String pageUrlMapper;
+        private IHTMLPage htmlPage;
+
+        public HTMLPageUrl(final String pageUrl, final String pageUrlMapper) {
+            this.pageUrl = pageUrl;
+            this.pageUrlMapper = pageUrlMapper;
+        }
+
+        public HTMLPageUrl(final IHTMLPage htmlPage) {
+            this(htmlPage.getPageUrl(), null);
+            this.setHTMLPage(htmlPage);
+        }
+
+        public String getPageUrl() {
+            return pageUrl;
+        }
+
+        public String getPageUrlMapper() {
+            return pageUrlMapper;
+        }
+
+        public IHTMLPage getHTMLPage() {
+            return htmlPage;
+        }
+
+        public void setHTMLPage(IHTMLPage ihtmlPage) {
+            this.htmlPage = ihtmlPage;
+        }
     }
 }

@@ -53,14 +53,18 @@ public class URLMapAPIImpl implements URLMapAPI {
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
-    public Optional<URLMapInfo> processURLMap(final UrlMapContext context)
-            throws DotSecurityException, DotDataException {
-
+    public boolean isUrlPattern(final String uri) throws DotDataException {
         if (this.shouldLoadPatterns()) {
             this.loadPatterns();
         }
 
-        if (containsRegEx(context.getUri())) {
+        return containsRegEx(uri);
+    }
+
+    public Optional<URLMapInfo> processURLMap(final UrlMapContext context)
+            throws DotSecurityException, DotDataException {
+
+        if (this.isUrlPattern(context.getUri())) {
             final Matches matches = this.findPatternChange(context.getUri());
 
             final Structure structure = CacheLocator.getContentTypeCache()
@@ -76,7 +80,8 @@ public class URLMapAPIImpl implements URLMapAPI {
 
             final Identifier pageUriIdentifier = this.getDetailtPageUri(structure);
 
-            return Optional.of(new URLMapInfo(contentlet, pageUriIdentifier));
+            final String urlMapper = this.buildUrlMapper(matches);
+            return Optional.of(new URLMapInfo(contentlet, pageUriIdentifier, urlMapper));
         } else {
             return Optional.empty();
         }
@@ -168,6 +173,22 @@ public class URLMapAPIImpl implements URLMapAPI {
         }
 
         return query.toString();
+    }
+
+    private String buildUrlMapper(final Matches matches) {
+
+       final List<RegExMatch> groups = matches.getMatches().get(0).getGroups();
+        final List<String> fieldMatches = matches.getPatternChange().getFieldMatches();
+        String urLPattern = matches.patternChange.getURLpattern();
+
+        for (int i = 0; i < fieldMatches.size(); i++) {
+            final String fieldMath = fieldMatches.get(i);
+            final RegExMatch regExMatch = groups.get(i);
+
+            urLPattern = urLPattern.replace(String.format("{%s}", fieldMath), regExMatch.getMatch());
+        }
+
+        return urLPattern;
     }
 
     private Contentlet getContentlet(
@@ -271,7 +292,8 @@ public class URLMapAPIImpl implements URLMapAPI {
         patternsCache = new ArrayList<>();
 
         final List<SimpleStructureURLMap> urlMaps = StructureFactory.findStructureURLMapPatterns();
-        final StringBuilder masterRegEx = new StringBuilder();
+        final StringBuilder masterRegEx = new StringBuilder("^");
+        final int startLength = masterRegEx.length();
 
         for (final SimpleStructureURLMap urlMap : urlMaps) {
             final String regEx = StructureUtil.generateRegExForURLMap(urlMap.getURLMapPattern());
@@ -285,9 +307,10 @@ public class URLMapAPIImpl implements URLMapAPI {
                     urlMap.getURLMapPattern(), getFieldMathed(urlMap)
             ));
 
-            if (masterRegEx.length() > 0) {
+            if (masterRegEx.length() > startLength) {
                 masterRegEx.append('|');
             }
+
             masterRegEx.append(regEx);
         }
 

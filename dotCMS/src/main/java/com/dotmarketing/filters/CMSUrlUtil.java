@@ -181,7 +181,13 @@ public class CMSUrlUtil {
 				return false;
 			}
 		}
-		return false;
+
+		try {
+			return APILocator.getURLMapAPI().isUrlPattern(uri);
+		} catch (final DotDataException e){
+			Logger.error(this.getClass(), e.getMessage());
+			return false;
+		}
 	}
 
 	/**
