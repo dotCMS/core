@@ -163,28 +163,43 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
      * @return
      */
     public Language getBackendLanguage(final HttpServletRequest request) {
-        Locale locale = this.getGlocalLocale(request);
+        Locale locale = null;
 
-        if (locale == null) {
-            locale = (Locale) request.getAttribute(Globals.LOCALE_KEY);
+        if(request != null) {
+            locale = this.getGlocalLocale(request);
+
+            if (locale == null) {
+                locale = (Locale) request.getAttribute(Globals.LOCALE_KEY);
+            }
+
+            if (locale == null) {
+                HttpSession session = request.getSession(false);
+                locale = (Locale) session.getAttribute(Globals.LOCALE_KEY);
+            }
         }
 
-        if (locale == null) {
-            HttpSession session = request.getSession(false);
-            locale = (Locale) session.getAttribute(Globals.LOCALE_KEY);
+        return getLanguage(locale);
+    }
+
+    private Language getLanguage(final Locale locale) {
+        Language language = null;
+
+        if (locale != null) {
+            language = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
         }
 
-        if (locale == null) {
-            locale =  LanguageUtil.getDefaultLocale(request);
-        }
-
-        return APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
+        return language != null ? language : APILocator.getLanguageAPI().getDefaultLanguage() ;
     }
 
     private Locale getGlocalLocale(final HttpServletRequest request){
-        final String parameter = request.getParameter(Globals.LOCALE_KEY);
-        final String[] parameterSplit = parameter.split("-");
-        return new Locale(parameterSplit[0], parameterSplit[1]);
+        final String parameter = request.getParameter(WebKeys.BACKEND_LANGUAGE_PARAMETER_NAME);
+
+        if (parameter != null) {
+            final String[] parameterSplit = parameter.split("-|_");
+            return new Locale(parameterSplit[0], parameterSplit.length > 1 ? parameterSplit[1] : null);
+        } else {
+            return null;
+        }
     }
 
 }
