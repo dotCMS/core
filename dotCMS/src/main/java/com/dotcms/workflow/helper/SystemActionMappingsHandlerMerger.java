@@ -73,17 +73,27 @@ public class SystemActionMappingsHandlerMerger {
                         final Optional<WorkflowAction> workflowAction = this
                                 .findWorkflowAction(remoteMapping.getWorkflowAction().getId());
                         if (workflowAction.isPresent()) {
-                            final SystemActionWorkflowActionMapping localSavedMapping =
-                                    workflowAPI.mapSystemActionToWorkflowActionForContentType(
-                                            systemAction, workflowAction.get(), localContentType);
 
-                            remoteSystemMappingIdentifiers.add(null != localSavedMapping ?
-                                    localSavedMapping.getIdentifier()
-                                    : remoteMapping.getIdentifier());
-                            Logger.info(this, "The mapping for systemAction: " + systemAction
-                                    + ", workflowAction: " + workflowAction
-                                    + ", and content type: " + localContentType.variable()
-                                    + " has been saved");
+                            try {
+                                final SystemActionWorkflowActionMapping localSavedMapping =
+                                        workflowAPI.mapSystemActionToWorkflowActionForContentType(
+                                                systemAction, workflowAction.get(),
+                                                localContentType);
+
+                                remoteSystemMappingIdentifiers.add(null != localSavedMapping ?
+                                        localSavedMapping.getIdentifier()
+                                        : remoteMapping.getIdentifier());
+                                Logger.info(this, "The mapping for systemAction: " + systemAction
+                                        + ", workflowAction: " + workflowAction
+                                        + ", and content type: " + localContentType.variable()
+                                        + " has been saved");
+                            } catch (DotDataException e) { // we just catch but do not propagate the exception in order to not break the transaction
+
+                                Logger.error(this, "The mapping for systemAction: " + systemAction
+                                        + ", workflowAction: " + workflowAction
+                                        + ", and content type: " + localContentType.variable()
+                                        + " could not be saved, msg: " + e.getMessage(), e);
+                            }
                         } else {
 
                             Logger.warn(this, "The mapping for systemAction: " + systemAction
@@ -156,17 +166,28 @@ public class SystemActionMappingsHandlerMerger {
                                 .findWorkflowAction(remoteMapping.getWorkflowAction().getId());
                         if (workflowAction.isPresent()) {
 
-                            final SystemActionWorkflowActionMapping localSavedMapping =
-                                    workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(
-                                            systemAction, workflowAction.get(), localScheme);
+                            try {
 
-                            remoteSystemMappingIdentifiers.add(null != localSavedMapping ?
-                                    localSavedMapping.getIdentifier()
-                                    : remoteMapping.getIdentifier());
-                            Logger.info(this, "The mapping for systemAction: " + systemAction
+                                final SystemActionWorkflowActionMapping localSavedMapping =
+                                        workflowAPI
+                                                .mapSystemActionToWorkflowActionForWorkflowScheme(
+                                                        systemAction, workflowAction.get(),
+                                                        localScheme);
+
+                                remoteSystemMappingIdentifiers.add(null != localSavedMapping ?
+                                        localSavedMapping.getIdentifier()
+                                        : remoteMapping.getIdentifier());
+                                Logger.info(this, "The mapping for systemAction: " + systemAction
+                                        + ", workflowAction: " + workflowAction
+                                        + ", and scheme: " + mappingScheme.getId()
+                                        + " has been saved");
+                            } catch (DotDataException e) { // we just catch but do not propagate the exception in order to not break the transaction
+
+                                Logger.error(this, "The mapping for systemAction: " + systemAction
                                     + ", workflowAction: " + workflowAction
                                     + ", and scheme: " + mappingScheme.getId()
-                                    + " has been saved");
+                                    + " could not be saved, msg: " + e.getMessage(), e);
+                            }
                         } else {
 
                             Logger.warn(this, "The mapping for systemAction: " + systemAction
