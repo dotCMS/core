@@ -416,4 +416,66 @@ public class PageResourceTest {
         assertEquals(pageView.getNumberContents(), 1);
 
     }
+
+
+    /**
+     * Should return about-us/index page
+     *
+     * @throws JSONException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void testNumberContentWithNotDrawTemplate() throws DotDataException, DotSecurityException {
+
+        final String pageUri =  pagePath;
+        final long languageId = 1;
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final HTMLPageAsset pageByPath = (HTMLPageAsset) APILocator.getHTMLPageAssetAPI().getPageByPath(pageUri, host, languageId, false);
+
+        final Structure structure1 = new StructureDataGen().nextPersisted();
+        final Container localContainer1 = new ContainerDataGen()
+                .withStructure(structure1,"")
+                .friendlyName("container-1-friendly-name")
+                .title("container-1-title")
+                .nextPersisted();
+
+        final Structure structure2 = new StructureDataGen().nextPersisted();
+        final Container localContainer2 = new ContainerDataGen()
+                .withStructure(structure2,"")
+                .friendlyName("container-2-friendly-name")
+                .title("container-2-title")
+                .nextPersisted();
+
+        final Template newTemplate = new TemplateDataGen()
+                .withContainer(localContainer1.getIdentifier())
+                .withContainer(localContainer2.getIdentifier())
+                .nextPersisted();
+
+        APILocator.getVersionableAPI().setWorking(newTemplate);
+        APILocator.getVersionableAPI().setLive(newTemplate);
+
+        final Contentlet checkout = APILocator.getContentletAPIImpl().checkout(pageByPath.getInode(), systemUser, false);
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate.getIdentifier());
+
+        final Contentlet checkin = APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
+
+        final Contentlet contentlet =  TestDataUtils.getGenericContentContent(true, 1);
+
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(), localContainer1.getIdentifier(), contentlet.getIdentifier(), "1", 1);
+        multiTreeAPI.saveMultiTree(multiTree);
+
+        final Response response = pageResource
+                .loadJson(request, this.response, pageUri, null, null,
+                        String.valueOf(languageId), null);
+
+        RestUtilTest.verifySuccessResponse(response);
+
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertEquals(pageView.getNumberContents(), 1);
+
+    }
+
 }
