@@ -196,7 +196,7 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 
         if (parameter != null) {
             final String[] parameterSplit = parameter.split("-|_");
-            return new Locale(parameterSplit[0], parameterSplit.length > 1 ? parameterSplit[1] : null);
+            return parameterSplit.length < 2 ? null : new Locale(parameterSplit[0], parameterSplit[1]);
         } else {
             return null;
         }
