@@ -1,13 +1,12 @@
 package com.dotcms.publisher.pusher.wrapper;
 
-import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
-import com.google.common.collect.ImmutableList;
-import java.util.List;
-
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.google.common.collect.ImmutableList;
+import java.util.List;
 
 public class ContentTypeWrapper {
 	private ContentType contentType;

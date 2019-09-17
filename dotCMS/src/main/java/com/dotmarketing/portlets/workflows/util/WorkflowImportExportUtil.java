@@ -19,9 +19,7 @@ import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
-
 import io.vavr.Tuple2;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -35,8 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.ws.rs.HEAD;
-import org.jetbrains.annotations.NotNull;
 
 public class WorkflowImportExportUtil {
 	public static final String ACTION_ID = "actionId";
@@ -272,7 +268,6 @@ public class WorkflowImportExportUtil {
 		steps.addAll(mySteps);
 	}
 
-	@NotNull
 	private void exportSchemeActions(final WorkflowAPI wapi,
 													 final List<WorkflowAction> actions,
 													 final List<WorkflowActionClass> actionClasses,

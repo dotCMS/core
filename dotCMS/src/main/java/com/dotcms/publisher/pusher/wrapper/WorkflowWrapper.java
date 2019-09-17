@@ -1,11 +1,15 @@
 package com.dotcms.publisher.pusher.wrapper;
 
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Encapsulates the necessary object to represent a workflow to PP
@@ -47,7 +51,7 @@ public class WorkflowWrapper {
 		return systemActionMappings;
 	}
 
-	public void setSystemActionMappings(List<SystemActionWorkflowActionMapping> systemActionMappings) {
+	public void setSystemActionMappings(final List<SystemActionWorkflowActionMapping> systemActionMappings) {
 		this.systemActionMappings = systemActionMappings;
 	}
 

@@ -139,8 +139,10 @@ public class WorkflowScheme implements Serializable {
     }
 
 	@Override
-	public boolean equals(Object obj) {
-		if(obj ==null || ! (obj instanceof WorkflowScheme)) return false;
+	public boolean equals(final Object obj) {
+		if(obj ==null || ! (obj instanceof WorkflowScheme)) {
+			return false;
+		}
 		return ((WorkflowScheme)obj).getId().equals(this.getId());
 	}
 
