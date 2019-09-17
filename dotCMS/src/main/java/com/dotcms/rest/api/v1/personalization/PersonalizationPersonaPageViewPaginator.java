@@ -62,7 +62,7 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
       final List<PersonalizationPersonaPageView> personalizationPersonaPageViews = new ArrayList<>();
 
       final Language foundLanguage = Try.of(
-                () -> WebAPILocator.getLanguageWebAPI().getSessionLanguage()
+                () -> WebAPILocator.getLanguageWebAPI().getBackendLanguage()
               ).getOrElse(APILocator.getLanguageAPI().getDefaultLanguage());
 
       for (final Persona persona : personas._1) {

@@ -2,6 +2,7 @@ package com.dotmarketing.business.web;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -153,17 +154,37 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
      * Return the back end session language
      * @return
      */
-    public Language getSessionLanguage() {
-        return this.getSessionLanguage(HttpServletRequestThreadLocal.INSTANCE.getRequest());
+    public Language getBackendLanguage() {
+        return this.getBackendLanguage(HttpServletRequestThreadLocal.INSTANCE.getRequest());
     }
 
     /**
      * Return the back end session language
      * @return
      */
-    public Language getSessionLanguage(final HttpServletRequest request) {
-        final Locale locale = LanguageUtil.getDefaultLocale(request);
+    public Language getBackendLanguage(final HttpServletRequest request) {
+        Locale locale = this.getGlocalLocale(request);
+
+        if (locale == null) {
+            locale = (Locale) request.getAttribute(Globals.LOCALE_KEY);
+        }
+
+        if (locale == null) {
+            HttpSession session = request.getSession(false);
+            locale = (Locale) session.getAttribute(Globals.LOCALE_KEY);
+        }
+
+        if (locale == null) {
+            locale =  LanguageUtil.getDefaultLocale(request);
+        }
+
         return APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
+    }
+
+    private Locale getGlocalLocale(final HttpServletRequest request){
+        final String parameter = request.getParameter(Globals.LOCALE_KEY);
+        final String[] parameterSplit = parameter.split("-");
+        return new Locale(parameterSplit[0], parameterSplit[1]);
     }
 
 }

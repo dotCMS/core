@@ -44,7 +44,7 @@ public interface LanguageWebAPI {
 	 * @param req
 	 * @return
 	 */
-	Language getSessionLanguage(HttpServletRequest req);
+	Language getBackendLanguage(HttpServletRequest req);
 
 	/**
 	 * Return the back end session language, taking the {@link com.dotcms.repackage.org.apache.http.HttpRequest} object
@@ -53,6 +53,6 @@ public interface LanguageWebAPI {
 	 * @param req
 	 * @return
 	 */
-	Language getSessionLanguage();
+	Language getBackendLanguage();
 
 }
