@@ -205,7 +205,13 @@ export class DotPageStateService {
         }
     }
 
-    public updatePageStateHaveContent(event: PageModelChangeEvent) {
+    /**
+     * Update page content status
+     *
+     * @param {PageModelChangeEvent} event
+     * @memberof DotPageStateService
+     */
+    updatePageStateHaveContent(event: PageModelChangeEvent) {
         if (event.type === PageModelChangeEventType.ADD_CONTENT) {
             this.contentAdded();
         } else if (event.type === PageModelChangeEventType.REMOVE_CONTENT) {

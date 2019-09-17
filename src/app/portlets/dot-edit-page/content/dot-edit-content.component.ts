@@ -440,8 +440,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 takeUntil(this.destroy$)
             )
             .subscribe((event: PageModelChangeEvent) => {
-                this.dotPageStateService.updatePageStateHaveContent(event);
-                this.saveContent(event);
+                this.ngZone.run(() => {
+                    this.dotPageStateService.updatePageStateHaveContent(event);
+                    this.saveContent(event);
+                });
             });
     }
 
