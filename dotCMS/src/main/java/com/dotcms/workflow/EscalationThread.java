@@ -1,12 +1,9 @@
 package com.dotcms.workflow;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.business.APILocator;
-
-
-import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -18,14 +15,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import java.util.List;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import java.util.List;
-import static com.dotmarketing.db.HibernateUtil.*;
-
 public class EscalationThread extends DotStatefulJob {
 
+    @WrapInTransaction
     public void run(final JobExecutionContext jobContext) throws JobExecutionException {
 
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
@@ -35,8 +31,6 @@ public class EscalationThread extends DotStatefulJob {
         if (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
 
             try {
-
-                startTransaction();
                 final List<WorkflowTask> tasks = workflowAPI.findExpiredTasks();
 
                 for (final WorkflowTask task : tasks) {
@@ -73,17 +67,8 @@ public class EscalationThread extends DotStatefulJob {
                                         .workflowAssignKey(wfActionAssign).build());
                     }
                 }
-
-                commitTransaction();
             } catch (Exception ex) {
                 Logger.warn(this, ex.getMessage(), ex);
-
-                try {
-                    rollbackTransaction();
-                } catch (DotHibernateException e) {}
-            } finally {
-
-                closeSessionSilently();
             }
         }
     } // run.

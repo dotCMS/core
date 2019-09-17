@@ -269,7 +269,7 @@ public class ServerAPIImpl implements ServerAPI {
         serverFactory.removeServerFromClusterTable(serverId);
     }
 
-    @WrapInTransaction
+    @CloseDBIfOpened
     @Override
     public List<Server> getInactiveServers() throws DotDataException {
         return serverFactory.getInactiveServers();
