@@ -64,7 +64,6 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	private static final long serialVersionUID = 1L;
 
-	private String path;
 
 	public String getPath() {
 		Identifier id = null;
@@ -86,11 +85,14 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	}
 
+	private long fileSizeInteral = 0;
 	public long getFileSize() {
-		if(getFileAsset()!=null)
-			return getFileAsset().length();
-		else
-			return 0;
+
+		if(this.fileSizeInteral==0 && getFileAsset()!=null) {
+		  this.fileSizeInteral = getFileAsset().length();
+		}
+		return this.fileSizeInteral > 0 ? this.fileSizeInteral : 0;
+		
 	}
 
 	private Dimension fileDimension = new Dimension();
@@ -125,18 +127,28 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	 * @param name
 	 */
 	public void setUnderlyingFileName(String name) {
+	    
 	    File ff=getFileAsset();
 	    ff.renameTo(new File(ff.getParent(),name));
+	    this.underlyingFileName = null;
 	}
 
-	/**
-	 * This access the physical file on disk
-	 * @return
-	 */
-	public String getUnderlyingFileName() {
-		final File fileAsset = getFileAsset();
-		return fileAsset != null ? fileAsset.getName(): null;
-	}
+  /**
+   * This access the physical file on disk
+   * 
+   * @return
+   */
+  private String underlyingFileName = null;
+
+  public String getUnderlyingFileName() {
+
+    if (underlyingFileName != null) {
+      return underlyingFileName;
+    }
+
+    this.underlyingFileName = getFileAsset() != null ? getFileAsset().getName() : null;
+    return this.underlyingFileName;
+  }
 
 	/***
 	 * This access the logical file name stored on the table Identifier

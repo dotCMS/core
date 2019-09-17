@@ -9,6 +9,7 @@ import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
@@ -168,7 +169,12 @@ public class FileAssetAPITest extends IntegrationTestBase {
 
     }
 
-
+  /**
+   * file assets should be stored in cache once they've been hydrated. This method tests to make sure
+   * that our cache is returning a fileAsset if it has been stored as one
+   * 
+   * @throws Exception
+   */
     @Test
     public void test_that_file_asset_gets_stored_in_cache_and_is_not_rebuilt_everytime()
         throws Exception {
@@ -183,10 +189,35 @@ public class FileAssetAPITest extends IntegrationTestBase {
       FileUtil.write(file, "helloworld");
       
       final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
-      final Contentlet fileAssetContentlet = fileAssetDataGen.nextPersisted();
-      final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
+      final Contentlet con = fileAssetDataGen.nextPersisted();
+  
+      
+      // content from the content API will be content, first hit
+      Contentlet con1 = APILocator.getContentletAPI().find(con.getInode(), APILocator.systemUser(), false);
+      assertTrue("Content should not be a file asset", (!(con1 instanceof FileAsset)));
+      
+      // content from the content cache will be content, first hit
+      Contentlet con2 = CacheLocator.getContentletCache().get(con.getInode());
+      assertTrue("Contentlet from find comes from cache", con1==con2);
+      
+      // if you pipe that through the fileAssetAPI, it becomes a new file asset
+      FileAsset asset  = APILocator.getFileAssetAPI().find(con.getInode(), APILocator.systemUser(), false);
+      assertTrue("FileAsset should be a file asset", (asset instanceof FileAsset));
+      
+      // it is not just a mutated version of the contentlet
+      assertTrue("FileAsset is a new object, not a mutated contentlet", (asset != con2));
       
       
+      FileAsset asset2  = APILocator.getFileAssetAPI().find(con.getInode(), APILocator.systemUser(), false);
+      assertTrue("FileAssets should be the same Object", asset == asset2);
+      
+      
+      FileAsset asset3  = APILocator.getFileAssetAPI().fromContentlet(asset2);
+      assertTrue("FileAssets should be the same Object", asset3 == asset2);
+      
+      Contentlet asset4 = APILocator.getContentletAPI().find(con.getInode(), APILocator.systemUser(), false);
+      assertTrue("Content should not be a file asset", (asset4 instanceof FileAsset));
+      assertTrue("FileAssets should be the same Object", asset3 == asset4);
       
     }
 

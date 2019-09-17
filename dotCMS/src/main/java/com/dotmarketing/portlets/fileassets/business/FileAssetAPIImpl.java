@@ -520,11 +520,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
   public FileAsset find(final String inode, final User user, final boolean respectFrontendRoles)
       throws DotDataException, DotSecurityException {
 
-
-
     return fromContentlet(contAPI.find(inode, user, respectFrontendRoles));
-
-
 
   }
 	
