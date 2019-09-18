@@ -264,7 +264,6 @@
 		<servlet-class>com.liferay.portal.servlet.InitServlet</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
-
 	<servlet>
 		<servlet-name>MainServlet</servlet-name>
 		<servlet-class>com.liferay.portal.servlet.MainServlet</servlet-class>
@@ -419,7 +418,6 @@
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/edit/*</url-pattern>
     </servlet-mapping>
-
     
 	<servlet-mapping>
         <servlet-name>login_edit_mode</servlet-name>
