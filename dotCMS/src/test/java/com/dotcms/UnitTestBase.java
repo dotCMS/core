@@ -27,5 +27,6 @@ public abstract class UnitTestBase extends BaseMessageResources {
 	public static void prepare () throws DotDataException, DotSecurityException, Exception {
 		Config.initializeConfig();
 		Config.setProperty("API_LOCATOR_IMPLEMENTATION", MyAPILocator.class.getName());
+		Config.setProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", false);
 	}
 }
