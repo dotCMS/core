@@ -57,7 +57,7 @@ public class NumberUtil {
     public static Boolean toBoolean (final String sBoolean, final Supplier<Boolean> defaultOne) {
 
         try {
-            return (UtilMethods.isSet(sBoolean))?
+            return UtilMethods.isSet(sBoolean)?
                     Boolean.valueOf(sBoolean):defaultOne.get();
         } catch(NumberFormatException e) {
             return defaultOne.get();

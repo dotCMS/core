@@ -141,12 +141,12 @@ public class ContentUtilsTest {
 
     @Test
     @UseDataProvider("testCases")
-    public void testPullRelated(TestCase testCase) throws DotDataException, DotSecurityException {
+    public void testPullRelated(final TestCase testCase) throws DotDataException, DotSecurityException {
         final long time = System.currentTimeMillis();
         ContentType parentContentType = null;
         ContentType childContentType = null;
-        Language defaultLanguage = languageAPI.getDefaultLanguage();
-        Language spanishLanguage = TestDataUtils.getSpanishLanguage();
+        final Language defaultLanguage = languageAPI.getDefaultLanguage();
+        final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
         try {
 
             //Create parent and child content types
@@ -177,13 +177,13 @@ public class ContentUtilsTest {
             final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
             //Save children content
-            Contentlet childInEnglish = new ContentletDataGen(childContentType.id())
+            final Contentlet childInEnglish = new ContentletDataGen(childContentType.id())
                     .languageId(defaultLanguage.getId())
                     .setPolicy(IndexPolicy.FORCE).nextPersisted();
 
             ContentletDataGen.publish(childInEnglish);
 
-            Contentlet childInSpanish = new ContentletDataGen(childContentType.id())
+            final Contentlet childInSpanish = new ContentletDataGen(childContentType.id())
                     .languageId(spanishLanguage.getId())
                     .setPolicy(IndexPolicy.FORCE).nextPersisted();
 
@@ -243,7 +243,7 @@ public class ContentUtilsTest {
                 liveParam = testCase.publishType == PUBLISH_TYPE.LIVE;
             }
 
-            List<Contentlet> results = ContentUtils
+            final List<Contentlet> results = ContentUtils
                     .pullRelated(fullFieldVar, contentletToPullFrom.getIdentifier(),
                             testCase.addCondition ? "+working:true" : null,
                             testCase.pullByParent, -1, null, user, null,
@@ -265,9 +265,7 @@ public class ContentUtilsTest {
                         return testCase.publishType == PUBLISH_TYPE.LIVE && contentlet.isLive()
                                 || testCase.publishType == PUBLISH_TYPE.WORKING && !contentlet
                                 .isLive();
-                    } catch (DotDataException e) {
-                        e.printStackTrace();
-                    } catch (DotSecurityException e) {
+                    } catch (DotDataException | DotSecurityException e) {
                         e.printStackTrace();
                     }
                     return false;
