@@ -1,5 +1,6 @@
 package com.dotcms.mock.response;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import javax.ws.rs.container.AsyncResponse;
@@ -23,7 +24,7 @@ import java.util.stream.IntStream;
 
 import static org.junit.Assert.*;
 
-public class MockAsyncResponseTest {
+public class MockAsyncResponseTest extends UnitTestBase {
 
     @SuppressWarnings("unchecked")
     @Ignore
