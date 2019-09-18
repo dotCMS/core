@@ -1623,6 +1623,23 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @param language
+     * @param live
+     * @return
+     */
+    public List<Contentlet> getRelated(final String variableName, final User user,
+            final boolean respectFrontendRoles, Boolean pullByParents, final long language, final Boolean live) {
+        return APILocator.getContentletAPI()
+                .getRelatedContent(this, variableName, user, respectFrontendRoles, pullByParents,
+                        -1, 0, null, language, live);
+    }
+
+    /**
      * Set related content for a content given a relationship field
      * @param field Relationship {@link com.dotcms.contenttype.model.field.Field}
      * @param contentlets {@link List} of contentlets to be related
