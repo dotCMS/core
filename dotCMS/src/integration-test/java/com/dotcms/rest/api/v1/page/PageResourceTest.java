@@ -37,6 +37,7 @@ import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
+import javafx.scene.control.TextField;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -414,6 +415,35 @@ public class PageResourceTest {
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         assertEquals(pageView.getNumberContents(), 1);
+    }
 
+    @Test
+    public void shouldReturnPageByURLPattern() throws DotDataException, DotSecurityException {
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        final ContentType contentType = new ContentTypeDataGen().user(systemUser)
+                .host(host)
+                .detailPage(pageAsset.getIdentifier())
+                .urlMapPattern("/{text}")
+                .nextPersisted();
+
+        new FieldDataGen()
+                .name("text")
+                .type(TextField.class)
+                .contentTypeId(contentType.id())
+                .nextPersisted();
+
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+        contentletDataGen
+                .setProperty("text", "test_text")
+                .languageId(1)
+                .nextPersisted();
+
+        final Response response = pageResource
+                .render(request, this.response, "/text_test", "PREVIEW_MODE", null,
+                        "1", null);
+
+        RestUtilTest.verifySuccessResponse(response);
     }
 }
