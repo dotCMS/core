@@ -62,6 +62,9 @@ public class PublishContentActionlet extends WorkFlowActionlet {
                  */
                 relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, relatedNotPublished,
                         true, processor.getUser(), false);
+                relatedNotPublished.stream().filter(asset -> asset instanceof Contentlet).forEach(
+                        asset -> Contentlet.class.cast(asset)
+                                .setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE));
                 //Publish the page and the related content
                 htmlPageAsset.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
                 this.setIndexPolicy(contentlet, htmlPageAsset);
