@@ -66,6 +66,19 @@ describe('dot-date-time', () => {
     });
 
     describe('@Props', () => {
+        describe('dot-attr', () => {
+            it('should set value correctly', async () => {
+                page = await newE2EPage({
+                    html: `<dot-date-time dotstep="3,6"></dot-date-time>`
+                });
+                await page.waitForChanges();
+                dateInput = await page.find('input[type=date]');
+                timeInput = await page.find('input[type=time]');
+                expect(dateInput.getAttribute('step')).toBe('3');
+                expect(timeInput.getAttribute('step')).toBe('6');
+            });
+        });
+
         describe('value', () => {
             it('should render default value', () => {
                 expect(dateInput.getAttribute('value')).toBeNull();

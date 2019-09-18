@@ -21,6 +21,7 @@ import {
 import { Components } from '../../components';
 import DotInputCalendar = Components.DotInputCalendar;
 import { checkProp, getClassNames, getTagError, getTagHint, getHintId } from '../../utils';
+import { setDotAttributesToElement, getDotAttributesFromElement, DOT_ATTR_PREFIX } from '../dot-form/utils';
 import { dotParseDate } from '../../utils/props/validators';
 
 const DATE_SUFFIX = '-date';
@@ -176,6 +177,10 @@ export class DotDateTimeComponent {
         };
     }
 
+    componentDidLoad(): void {
+        this.setDotAttributes();
+    }
+
     render() {
         return (
             <Fragment>
@@ -183,7 +188,8 @@ export class DotDateTimeComponent {
                     <div
                         class="dot-date-time__body"
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}>
+                        tabIndex={this.hint ? 0 : null}
+                    >
                         <label>
                             {this.dateLabel}
                             <dot-input-calendar
@@ -216,6 +222,30 @@ export class DotDateTimeComponent {
                 {this.errorMessageElement}
             </Fragment>
         );
+    }
+
+    private setDotAttributes(): void {
+        const htmlDateElement = this.el.querySelector('input[type="date"]');
+        const htmlTimeElement = this.el.querySelector('input[type="time"]');
+        const attrException = ['dottype', 'dotstep', 'dotmin', 'dotmax', 'dotvalue'];
+
+        setTimeout(() => {
+            let attrs: Attr[] = Array.from(this.el.attributes);
+            attrs.forEach(({ name, value }) => {
+                const attr = name.replace(DOT_ATTR_PREFIX, '');
+                if (this[attr]) {
+                    this[attr] = value;
+                }
+            });
+
+            attrs = getDotAttributesFromElement(
+                Array.from(this.el.attributes),
+                attrException
+            );
+
+            setDotAttributesToElement(htmlDateElement, attrs);
+            setDotAttributesToElement(htmlTimeElement, attrs);
+        }, 0);
     }
 
     private validateProps(): void {
@@ -287,7 +317,9 @@ export class DotDateTimeComponent {
 
     private getErrorMessage(): string {
         return !!this.getValue()
-            ? this.isValid() ? '' : this.validationMessage
+            ? this.isValid()
+                ? ''
+                : this.validationMessage
             : this.requiredMessage;
     }
 }
