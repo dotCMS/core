@@ -269,10 +269,14 @@ public class ContentletAjax {
 					languageContentlet = null;
 					languageContentlet = contentletAPI.findContentletByIdentifier(firstContentlet.getIdentifier(), true, lang.getId(), currentUser, false);
 				}catch (Exception e) {
-					try{
-					languageContentlet = contentletAPI.findContentletByIdentifier(firstContentlet.getIdentifier(), false, lang.getId(), currentUser, false);
-					}catch (Exception e1) {	}
 				}
+
+				//Try to find non-live version
+				if (languageContentlet == null){
+                    try{
+                        languageContentlet = contentletAPI.findContentletByIdentifier(firstContentlet.getIdentifier(), false, lang.getId(), currentUser, false);
+                    }catch (Exception e1) {	}
+                }
 
 				boolean hasListedFields = false;
 

@@ -230,20 +230,18 @@ public class LoginServiceAPIFactory implements Serializable {
                                      final boolean rememberMe,
                                      final HttpServletRequest request,
                                      final HttpServletResponse response) throws Exception {
-        
-          final Company company= APILocator.getCompanyAPI().getDefaultCompany();
-          User user = Try.of(()-> 
-            Company.AUTH_TYPE_EA.equals(company.getAuthType()) 
-              ? APILocator.getUserAPI().loadByUserByEmail(userId, APILocator.systemUser(), false) 
-                  : APILocator.getUserAPI().loadUserById(userId) ).getOrElseThrow(()->new AuthException());
-                
-          if(!user.hasConsoleAccess()) {
-            Thread.sleep(2000);
-            SecurityLogger.logInfo(this.getClass(),"User " + user.getEmailAddress() + " / " + user.getUserId() +" login has failed. User does not have the Back End User Role or any layouts");
-            throw new AuthException();
-          }
-          
-          return doActionLogin(userId, password,rememberMe,request,response);
+
+            final boolean success = doActionLogin(userId, password,rememberMe,request,response);
+
+            User user = PortalUtil.getUser(request);
+
+            if(user!=null && !user.hasConsoleAccess()) {
+                Thread.sleep(2000);
+                SecurityLogger.logInfo(this.getClass(),"User " + user.getEmailAddress() + " / " + user.getUserId() +" login has failed. User does not have the Back End User Role or any layouts");
+                throw new AuthException();
+            }
+
+            return success;
         
         }
         

@@ -135,7 +135,7 @@ public class DashboardAPIImpl implements DashboardAPI{
 		return dashboardFactory.getTopAssets(user, hostId);
 	}
 
-	@CloseDBIfOpened
+	@WrapInTransaction
 	public void populateAnalyticSummaryTables() {
 		dashboardFactory.populateAnalyticSummaryTables();
 	}

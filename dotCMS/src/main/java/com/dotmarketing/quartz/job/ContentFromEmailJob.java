@@ -1,6 +1,7 @@
 package com.dotmarketing.quartz.job;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -45,7 +46,7 @@ public class ContentFromEmailJob implements Job {
 		
 	}
 
-	@CloseDBIfOpened
+	@WrapInTransaction
 	public void execute(JobExecutionContext ctx) throws JobExecutionException {
 
 		ContentletAPI conAPI = APILocator.getContentletAPI();

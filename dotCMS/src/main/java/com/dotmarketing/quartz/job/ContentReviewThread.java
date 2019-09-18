@@ -1,17 +1,6 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.business.CloseDBIfOpened;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -22,7 +11,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -40,6 +28,15 @@ import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 public class ContentReviewThread implements Runnable, Job {
 
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
@@ -52,11 +49,11 @@ public class ContentReviewThread implements Runnable, Job {
 	public ContentReviewThread() {
     }
 
+    @WrapInTransaction
     public void run() {
         try {
             Logger.debug(this, "Starting ContentsReview");
-            HibernateUtil.startTransaction();
-            
+
             HibernateUtil dh = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
             dh.setSQLQuery("select {contentlet.*} from contentlet join inode contentlet_1_ on (contentlet.inode = contentlet_1_.inode) " 
             		+ " join structure on (contentlet.structure_inode = structure.inode) "
@@ -140,12 +137,6 @@ public class ContentReviewThread implements Runnable, Job {
 
         } catch (Exception e) {
             Logger.error(this, "Error ocurred trying to review contents.", e);
-        } finally {
-            try {
-				HibernateUtil.closeAndCommitTransaction();
-			} catch (DotHibernateException e) {
-				Logger.error(this.getClass(), e.getMessage(), e);
-			}
         }
     }
 
@@ -191,14 +182,9 @@ public class ContentReviewThread implements Runnable, Job {
      * @see java.lang.Thread#destroy()
      */
     public void destroy() {
-        try {
-			HibernateUtil.closeSession();
-		} catch (DotHibernateException e) {
-			Logger.error(this.getClass(), e.getMessage(), e);
-		}
+
     }
 
-	@CloseDBIfOpened
     public void execute(JobExecutionContext context) throws JobExecutionException {
     	Logger.debug(this, "Running ContentReviewThread - " + new Date());
 

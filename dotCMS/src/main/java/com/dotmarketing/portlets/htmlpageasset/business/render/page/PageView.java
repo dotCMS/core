@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 import java.io.Serializable;
 import java.util.*;
 
-import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotmarketing.beans.Host;
@@ -75,30 +74,17 @@ public class PageView implements Serializable {
         this.pageUrlMapper = pageUrlMapper;
 
         final Map<String, ContainerRaw> containersMap = this.getContainersMap();
-
-        if (this.layout != null) {
-            this.numberContents = getContentsNumber(containersMap);
-        }
+        this.numberContents = getContentsNumber();
     }
 
-    private final int getContentsNumber(final Map<String, ContainerRaw> containersMap) {
-        final Optional<Integer> optionalResult = this.layout.getBody().getRows()
-            .stream()
-            .flatMap(row -> row.getColumns().stream())
-            .flatMap(column -> column.getContainers().stream())
-            .map(containerUUID -> {
-                final ContainerRaw containerRaw = containersMap.get(containerUUID.getIdentifier());
+    private int getContentsNumber() {
+        final Optional<Integer> contentsNumber = this.getContainersMap().values()
+                .stream()
+                .flatMap(containerRaw -> containerRaw.getContentlets().values().stream())
+                .map(contents -> contents.size())
+                .reduce((currentValue, accumulator) -> currentValue + accumulator);
 
-                if (containerRaw != null) {
-                    final List<Map<String, Object>> contents = containerRaw.getContentlets().get(PageRenderUtil.CONTAINER_UUID_PREFIX + containerUUID.getUUID());
-                    return contents != null ? contents.size() : 0;
-                } else {
-                    return 0;
-                }
-            })
-            .reduce((value, accumulator) -> value + accumulator);
-
-        return optionalResult.isPresent() ? optionalResult.get() : 0;
+        return contentsNumber.isPresent() ? contentsNumber.get() : 0;
     }
 
     /**
