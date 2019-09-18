@@ -66,7 +66,7 @@ export function setDotAttributesToElement(element: Element, attributes: Attr[]):
 export function getDotAttributesFromElement(attributes: Attr[], attrException: string[]): Attr[] {
     const exceptions = attrException.map((attr: string) => attr.toUpperCase());
     return attributes.filter(
-        (item: Attr) => !exceptions.includes(item.name.toUpperCase()) && isDotAttribute(name)
+        (item: Attr) => !exceptions.includes(item.name.toUpperCase()) && isDotAttribute(item.name)
     );
 }
 

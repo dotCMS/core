@@ -91,7 +91,7 @@ export class DotDateComponent {
 
     componentDidLoad(): void {
         const attrException = ['dottype'];
-        const htmlElement = this.el.querySelector('input');
+        const htmlElement = this.el.querySelector('input[type="date"]');
         setTimeout(() => {
             const attrs = getDotAttributesFromElement(
                 Array.from(this.el.attributes),

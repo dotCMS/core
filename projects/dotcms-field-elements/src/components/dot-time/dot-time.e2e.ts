@@ -64,6 +64,17 @@ describe('dot-time', () => {
     });
 
     describe('@Props', () => {
+        describe('dot-attr', () => {
+            it('should set value correctly', async () => {
+                page = await newE2EPage({
+                    html: `<dot-time dotstep="3"></dot-time>`
+                });
+                await page.waitForChanges();
+                inputCalendar = await page.find('input');
+                expect(inputCalendar.getAttribute('step')).toBe('3');
+            });
+        });
+
         describe('value', () => {
             it('should render default value', () => {
                 expect(inputCalendar.getAttribute('value')).toBe('');
