@@ -306,7 +306,7 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
         query.append(StringPool.PLUS + StringPool.OPEN_PARENTHESES);
         while (personaTypeIterator.hasNext()) {
           final ContentType personaType = personaTypeIterator.next();
-          query.append(String.format("(%s.name:%s*  %s.keytag:%s*)",personaType.variable(),filter,personaType.variable(),filter));
+          query.append(String.format("(%s.name:*%s*  %s.keytag:*%s*)",personaType.variable(),filter,personaType.variable(),filter));
           if(personaTypeIterator.hasNext()){
              query.append(" OR ");
           }
