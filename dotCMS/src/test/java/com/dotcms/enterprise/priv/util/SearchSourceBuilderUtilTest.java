@@ -1,11 +1,12 @@
 package com.dotcms.enterprise.priv.util;
 
+import com.dotcms.UnitTestBase;
 import java.io.IOException;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class SearchSourceBuilderUtilTest {
+public class SearchSourceBuilderUtilTest extends UnitTestBase {
 
 
     @Test

@@ -3540,7 +3540,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // in the future if the contentlet exist, EDIT should be catch
         final Optional<WorkflowAction> workflowActionOpt =
                 workflowAPI.findActionMappedBySystemActionContentlet
-                        (contentletIn, UtilMethods.isSet(contentletIn.getIdentifier())?WorkflowAPI.SystemAction.NEW:WorkflowAPI.SystemAction.EDIT, user);
+                        (contentletIn, contentletIn.isNew()?WorkflowAPI.SystemAction.NEW:WorkflowAPI.SystemAction.EDIT, user);
 
         if (workflowActionOpt.isPresent()) {
 
@@ -6337,9 +6337,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 newContentlet.setStringProperty(Contentlet.CONTENTLET_ASSET_NAME_COPY, newIdentifierName);
             }
 
+            final String temporalFolder =
+                    APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator
+                            + UUIDGenerator.generateUuid();
+
             List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
             File srcFile;
-            File destFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + user.getUserId());
+            File destFile = new File(temporalFolder);
             if (!destFile.exists())
                 destFile.mkdirs();
 
@@ -6355,7 +6359,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }else{
                                 fieldValue=srcFile.getName();
                             }
-                            destFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + user.getUserId() + File.separator + fieldValue);
+                            destFile = new File(temporalFolder + File.separator + fieldValue);
                             if (!destFile.exists())
                                 destFile.createNewFile();
 
