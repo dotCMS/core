@@ -52,7 +52,6 @@ public class PublishContentActionlet extends WorkFlowActionlet {
             //First verify if we are handling a HTML page
             if (structureType == Structure.STRUCTURE_TYPE_HTMLPAGE) {
 
-                Logger.info(this, "HEY the structure type is a Page");
                 final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
                 //Get the un-publish content related to this HTMLPage

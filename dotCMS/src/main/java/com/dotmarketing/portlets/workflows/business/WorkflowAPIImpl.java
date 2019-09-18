@@ -129,8 +129,21 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -144,8 +157,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
-import javax.rmi.CORBA.Util;
-
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.elasticsearch.search.query.QueryPhaseExecutionException;
@@ -584,10 +595,44 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			if(schemesIds.isEmpty()){
 				contentTypeAPI.updateModDate(contentType);
 			}
-		} catch(DotDataException e) {
+
+			this.cleanInvalidDefaultActionForContentType(contentType, schemesIds);
+		} catch(DotDataException | DotSecurityException e) {
 
 			Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas: %s for Content type %s",
 					String.join(",", schemesIds), contentType.inode()));
+		}
+	}
+
+	private void cleanInvalidDefaultActionForContentType(final ContentType contentType,
+			final Set<String> schemesIds) throws DotDataException, DotSecurityException {
+
+		if (UtilMethods.isSet(schemesIds)) {
+
+			final List<Map<String, Object>> mappings = this.workFlowFactory
+					.findSystemActionsByContentType(contentType);
+			if (UtilMethods.isSet(mappings)) {
+
+				for (final Map<String, Object> mappingRow : mappings) {
+
+					final SystemActionWorkflowActionMapping mapping =
+							this.toSystemActionWorkflowActionMapping(mappingRow, contentType, APILocator.systemUser());
+					if (UtilMethods.isSet(mapping) && UtilMethods.isSet(mapping.getWorkflowAction())) {
+
+						if (!schemesIds.contains(mapping.getWorkflowAction().getSchemeId())) {
+
+							Logger.info(this, "Removing invalid system default action: " + mapping.getWorkflowAction() +
+									" on content type: " + contentType.variable() + ", the scheme: " + mapping.getWorkflowAction().getSchemeId() +
+									" is not longer valid on the content type schemes: " + schemesIds);
+							this.workFlowFactory.deleteSystemAction(mapping);
+						}
+					}
+				}
+			}
+		} else {
+
+			// no scheme remove all content type default actions.
+			this.workFlowFactory.deleteSystemActionsByContentType(contentType.variable());
 		}
 	}
 
@@ -3561,6 +3606,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		DotPreconditions.checkArgument(null != contentType, "Content Type can not be null");
 		DotPreconditions.checkArgument(null != workflowAction, "Workflow Action can not be null");
 		DotPreconditions.checkArgument(!Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable()), "The Content Type can not be a Host");
+
+		final  List<WorkflowScheme> contentTypeSchemes = this.findSchemesForContentType(contentType);
+
+		if (UtilMethods.isSet(contentTypeSchemes)) {
+
+			if (contentTypeSchemes.stream().noneMatch(scheme -> scheme.getId().equals(workflowAction.getSchemeId()))) {
+				throw new IllegalArgumentException(
+						"The workflow action: " + workflowAction.getId() +
+								" does not belong to any of the content type schemes");
+			}
+		} else {
+
+			throw new IllegalArgumentException("The content type action: " + contentType.variable() +
+					" does not have any scheme associated");
+		}
 
 		Logger.info(this, "Mapping the systemAction: " + systemAction +
 				", workflowAction: " + workflowAction.getName() + " and contentType: " + contentType.variable());
