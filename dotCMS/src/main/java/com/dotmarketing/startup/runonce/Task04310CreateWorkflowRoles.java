@@ -46,8 +46,6 @@ public class Task04310CreateWorkflowRoles extends AbstractJDBCStartupTask {
     private String systemRootRoleId;
 
     @Override
-    @WrapInTransaction
-    @CloseDBIfOpened
     public void executeUpgrade() throws DotDataException {
 
         dc = new DotConnect();
