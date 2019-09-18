@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
@@ -37,7 +38,6 @@ import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
-import javafx.scene.control.TextField;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
