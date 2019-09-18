@@ -3440,7 +3440,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // in the future if the contentlet exist, EDIT should be catch
         final Optional<WorkflowAction> workflowActionOpt =
                 workflowAPI.findActionMappedBySystemActionContentlet
-                        (contentletIn, UtilMethods.isSet(contentletIn.getIdentifier())?WorkflowAPI.SystemAction.NEW:WorkflowAPI.SystemAction.EDIT, user);
+                        (contentletIn, contentletIn.isNew()?WorkflowAPI.SystemAction.NEW:WorkflowAPI.SystemAction.EDIT, user);
 
         if (workflowActionOpt.isPresent()) {
 
