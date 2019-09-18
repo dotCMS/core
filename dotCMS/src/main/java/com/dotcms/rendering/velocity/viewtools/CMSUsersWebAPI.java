@@ -1,6 +1,5 @@
 package com.dotcms.rendering.velocity.viewtools;
 
-import com.google.common.collect.ImmutableList;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.ChallengeQuestion;
 import com.dotmarketing.beans.UserProxy;
@@ -18,24 +17,20 @@ import com.dotmarketing.portlets.user.factories.UserCommentsFactory;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-
-import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
 
 public class CMSUsersWebAPI implements ViewTool {
 
@@ -248,13 +243,21 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 			try {
-				_rVal = LoginFactory.doLogin(userName, password, rememberMe, request, response);                
+				_rVal = LoginFactory.doLogin(userName, password, rememberMe, request, response);
 			} catch (NoSuchUserException e) {
 				_rVal = false;
 				Logger.debug(this, "failed login from:" + request.getRemoteHost());
 			}
 			if(! _rVal){
 				ctx.put("_loginMessage", "dotcms_macro_login_failed");
+			} else {
+			    final User user = getLoggedInUser(request);
+				if(!user.isFrontendUser()){
+					LoginFactory.doLogout(request,response);
+					ctx.remove("user");
+					ctx.put("_loginMessage", "errors.user.front-end-role.missing");
+					_rVal = false;
+			    }
 			}
 
 			if( _rVal && UtilMethods.isSet(referrer)){

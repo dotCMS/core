@@ -77,6 +77,18 @@ public abstract class UserFactory {
     protected abstract List<User> getUsersByName(String filter, int start,int limit) throws DotDataException;
 
 	/**
+	 * This method returns a list of users whose names are like the filter passed in.
+	 * It also allows filtering through a list of roles
+	 * @param filter filter compare string.
+	 * @param roles a list of roles to filter by. This is optional
+	 * @param start is the first element to display.
+	 * @param limit  is the maximum number of elements to get.
+	 * @return List<User> of user entities
+	 * @throws DotDataException
+	 */
+	protected abstract List<User> getUsersByName(final String filter, final List<Role> roles ,final int start, final int limit) throws DotDataException;
+
+	/**
 	 * This Method return the number of user that have a name like the filter string.
 	 *
 	 * @param filter compare string.
@@ -84,6 +96,16 @@ public abstract class UserFactory {
 	 * @throws DotDataException
 	 */
 	protected abstract long getCountUsersByName(String filter) throws DotDataException;
+
+
+	/**
+	 *
+	 * @param filter
+	 * @param roles
+	 * @return
+	 * @throws DotDataException
+	 */
+	protected abstract long getCountUsersByName(String filter, final List<Role> roles) throws DotDataException;
 
     /**
      * 
