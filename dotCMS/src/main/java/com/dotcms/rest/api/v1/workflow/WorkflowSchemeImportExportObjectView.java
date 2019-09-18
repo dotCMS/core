@@ -23,6 +23,8 @@ public class WorkflowSchemeImportExportObjectView implements Serializable {
 	private final List<Map<String, String>> actionSteps;
 	private final List<WorkflowActionClass> actionClasses;
 	private final List<WorkflowActionClassParameter> actionClassParams;
+	private final List<SystemActionWorkflowActionMapping> schemeSystemActionWorkflowActionMappings;
+	private final List<SystemActionWorkflowActionMapping> contentTpeSystemActionWorkflowActionMappings;
 
 	@JsonCreator
 	public WorkflowSchemeImportExportObjectView(@JsonProperty("version") 		   final String version,
@@ -31,7 +33,11 @@ public class WorkflowSchemeImportExportObjectView implements Serializable {
 												@JsonProperty("actions")		   final List<WorkflowAction> 		        actions,
 												@JsonProperty("actionSteps") 	   final List<Map<String, String>> 		    actionSteps,
 												@JsonProperty("actionClasses") 	   final List<WorkflowActionClass> 		    actionClasses,
-												@JsonProperty("actionClassParams") final List<WorkflowActionClassParameter> actionClassParams) {
+												@JsonProperty("actionClassParams") final List<WorkflowActionClassParameter> actionClassParams,
+												@JsonProperty("schemeSystemActionWorkflowActionMappings")
+                                                    final List<SystemActionWorkflowActionMapping> schemeSystemActionWorkflowActionMappings,
+												@JsonProperty("actionClassParams")
+                                                    final List<SystemActionWorkflowActionMapping> contentTpeSystemActionWorkflowActionMappings) {
 
 		this.version = version;
 		this.schemes = schemes;
@@ -40,12 +46,16 @@ public class WorkflowSchemeImportExportObjectView implements Serializable {
 		this.actionSteps = actionSteps;
 		this.actionClasses = actionClasses;
 		this.actionClassParams = actionClassParams;
+		this.schemeSystemActionWorkflowActionMappings     = schemeSystemActionWorkflowActionMappings;
+		this.contentTpeSystemActionWorkflowActionMappings = contentTpeSystemActionWorkflowActionMappings;
 	}
 
 	public WorkflowSchemeImportExportObjectView(final String version, final WorkflowSchemeImportExportObject workflowExportObject) {
 
 		this (version, workflowExportObject.getSchemes(), workflowExportObject.getSteps(), workflowExportObject.getActions(),
-				workflowExportObject.getActionSteps(), workflowExportObject.getActionClasses(), workflowExportObject.getActionClassParams());
+				workflowExportObject.getActionSteps(), workflowExportObject.getActionClasses(), workflowExportObject.getActionClassParams(),
+                workflowExportObject.getSchemeSystemActionWorkflowActionMappings(),
+                workflowExportObject.getContentTpeSystemActionWorkflowActionMappings());
 	}
 
 	public List<Map<String, String>> getActionSteps() {
@@ -85,4 +95,11 @@ public class WorkflowSchemeImportExportObjectView implements Serializable {
 		return actionClassParams;
 	}
 
+    public List<SystemActionWorkflowActionMapping> getSchemeSystemActionWorkflowActionMappings() {
+        return schemeSystemActionWorkflowActionMappings;
+    }
+
+    public List<SystemActionWorkflowActionMapping> getContentTpeSystemActionWorkflowActionMappings() {
+        return contentTpeSystemActionWorkflowActionMappings;
+    }
 }
