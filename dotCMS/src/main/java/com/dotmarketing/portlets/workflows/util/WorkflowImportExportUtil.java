@@ -175,18 +175,21 @@ public class WorkflowImportExportUtil {
 				workflowAPI.saveActionClass(actionClass, user);
 			}
 
-			for(final Map<String, String> map : importer.getWorkflowStructures()) {
+			if (UtilMethods.isSet(importer.getWorkflowStructures())) {
+				for (final Map<String, String> map : importer.getWorkflowStructures()) {
 
-				Logger.info(this, "Importing WorkflowStructures: " + map);
-				DotConnect dc = new DotConnect();
-				dc.setSQL("delete from workflow_scheme_x_structure where id=?");
-				dc.addParam(map.get("id"));
-				dc.loadResult();
-				dc.setSQL("insert into workflow_scheme_x_structure (id, scheme_id, structure_id) values (?, ?, ?)");
-				dc.addParam(map.get("id"));
-				dc.addParam(map.get("scheme_id"));
-				dc.addParam(map.get("structure_id"));
-				dc.loadResult();
+					Logger.info(this, "Importing WorkflowStructures: " + map);
+					DotConnect dc = new DotConnect();
+					dc.setSQL("delete from workflow_scheme_x_structure where id=?");
+					dc.addParam(map.get("id"));
+					dc.loadResult();
+					dc.setSQL(
+							"insert into workflow_scheme_x_structure (id, scheme_id, structure_id) values (?, ?, ?)");
+					dc.addParam(map.get("id"));
+					dc.addParam(map.get("scheme_id"));
+					dc.addParam(map.get("structure_id"));
+					dc.loadResult();
+				}
 			}
 
 			Logger.info(this, "Importing ActionClassParams: " + importer.getActionClassParams());
@@ -297,7 +300,7 @@ public class WorkflowImportExportUtil {
 
 						if (UtilMethods.isSet(mapping) &&
 								UtilMethods.isSet(mapping.getWorkflowAction()) &&
-								scheme.getId().equals(mapping.getWorkflowAction().getId())) { // if the action associated to the content type as default action belongs to the scheme, add it
+								scheme.getId().equals(mapping.getWorkflowAction().getSchemeId())) { // if the action associated to the content type as default action belongs to the scheme, add it
 
 							contentTypeSystemActionWorkflowActionMappings.add(mapping);
 						}
