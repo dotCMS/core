@@ -2,6 +2,7 @@ package com.dotmarketing.business.web;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 
@@ -36,7 +37,22 @@ public interface LanguageWebAPI {
 	 * @return
 	 */
 	Language getLanguage(HttpServletRequest req);
-	
-	
+
+	/**
+	 * Return the back end session language
+	 *
+	 * @param req
+	 * @return
+	 */
+	Language getBackendLanguage(HttpServletRequest req);
+
+	/**
+	 * Return the back end session language, taking the {@link com.dotcms.repackage.org.apache.http.HttpRequest} object
+	 * from {@link HttpServletRequestThreadLocal#getRequest()}
+	 *
+	 * @param req
+	 * @return
+	 */
+	Language getBackendLanguage();
 
 }
