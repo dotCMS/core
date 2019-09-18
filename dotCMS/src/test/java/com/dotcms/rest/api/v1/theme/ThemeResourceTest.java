@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -42,7 +43,7 @@ import org.junit.Test;
 /**
  * test of {@link ThemeResource}
  */
-public class ThemeResourceTest {
+public class ThemeResourceTest extends UnitTestBase {
 
     private  static final String FOLDER_1 = "folder_1";
     private  static final String FOLDER_2 = "folder_2";
