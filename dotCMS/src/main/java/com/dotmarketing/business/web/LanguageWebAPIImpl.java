@@ -173,12 +173,16 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
             }
 
             if (locale == null) {
-                HttpSession session = request.getSession(false);
-                locale = (Locale) session.getAttribute(Globals.LOCALE_KEY);
+                locale = getLocaleFromSession(request);
             }
         }
 
         return getLanguage(locale);
+    }
+
+    private Locale getLocaleFromSession(HttpServletRequest request) {
+        final HttpSession session = request.getSession(false);
+        return session != null ? (Locale) session.getAttribute(Globals.LOCALE_KEY) :  null;
     }
 
     private Language getLanguage(final Locale locale) {
@@ -188,7 +192,7 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
             language = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
         }
 
-        return language != null ? language : APILocator.getLanguageAPI().getDefaultLanguage() ;
+        return language != null ? language : APILocator.getLanguageAPI().getDefaultLanguage();
     }
 
     private Locale getGlocalLocale(final HttpServletRequest request){
