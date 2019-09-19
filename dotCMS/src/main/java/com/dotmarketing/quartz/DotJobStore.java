@@ -62,8 +62,8 @@ public class DotJobStore extends JobStoreCMT {
 					public Connection getConnection() throws SQLException {
 						//return dataSource.getConnection();
 						final boolean isNew = !DbConnectionFactory.connectionExists();
-						return new DotJobConnectionWrapper(isNew,
-								DbConnectionFactory.getConnection());
+						return isNew? dataSource.getConnection():
+								DbConnectionFactory.getConnection();
 					}
 					public void shutdown() {
 						// Do nothing - a Spring-managed DataSource has its own lifecycle.
@@ -161,18 +161,11 @@ public class DotJobStore extends JobStoreCMT {
 	}
 
 	protected void closeConnection(Connection con) {
-
-		boolean closeMe = true;
-
-		if (null != con && con instanceof DotJobConnectionWrapper &&
-				!DotJobConnectionWrapper.class.cast(con).isNewConnection()) {
-			closeMe = false;
-		}
-
-		if (closeMe) {
-			DbConnectionFactory.closeSilently();
-			CloseUtils.closeQuietly(con);
-		}
+        if (DbConnectionFactory.connectionExists()){
+            DbConnectionFactory.closeSilently();
+        } else {
+            CloseUtils.closeQuietly(con);
+        }
 	}
 
 }
