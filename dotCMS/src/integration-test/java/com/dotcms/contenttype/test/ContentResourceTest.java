@@ -842,7 +842,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletRequest request2 = createHttpRequest(jsonPayload2);
             final HttpServletResponse response2 = mock(HttpServletResponse.class);
             final Response endpointResponse2 = contentResource.singlePOST(request2, response2, "/save/1");
-            assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), endpointResponse2.getStatus());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse2.getStatus());
 
             //The Endpoint can only handle the entire set of fields.. You can not use this endpoint to only update 1 field.
 
@@ -873,7 +873,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletRequest request1 = createHttpRequest(jsonPayload1);
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
             final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
-            assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), endpointResponse1.getStatus());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
             assertEquals("Unable to set string value as a Long", endpointResponse1.getEntity());
 
         }finally {
@@ -902,7 +902,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletRequest request1 = createHttpRequest(jsonPayload1);
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
             final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
-            assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), endpointResponse1.getStatus());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
             /// No Detailed Message is shown here. Explaining that the field is required
         }finally {
             if(null != contentType){
