@@ -289,7 +289,7 @@ public class MapToContentletPopulator  {
     public List<Category> getCategories (final Contentlet contentlet, final User user,
                                          final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-        DotPreconditions.checkNotNull(contentlet, IllegalArgumentException.class, "Invalid Content Type");
+        DotPreconditions.checkNotNull(contentlet, IllegalArgumentException.class, "Invalid Contentlet");
         DotPreconditions.checkNotNull(contentlet.getContentType(), IllegalArgumentException.class, "Invalid Content Type");
 
         final List<Category> categories = new ArrayList<>();
