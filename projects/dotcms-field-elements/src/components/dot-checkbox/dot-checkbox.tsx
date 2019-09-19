@@ -13,6 +13,7 @@ import {
     getId,
     getHintId
 } from '../../utils';
+import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-form/utils';
 
 @Component({
     tag: 'dot-checkbox',
@@ -22,7 +23,7 @@ export class DotCheckboxComponent {
     @Element() el: HTMLElement;
 
     /** (optional) Disables field's interaction */
-    @Prop({ reflectToAttr: true }) disabled = false;
+    @Prop({ reflectToAttr: true, mutable: true }) disabled = false;
 
     /** Name that will be used as ID */
     @Prop({ reflectToAttr: true }) name = '';
@@ -57,6 +58,20 @@ export class DotCheckboxComponent {
         this.emitValueChange();
         this.status = getOriginalStatus(this.isValid());
         this.emitStatusChange();
+    }
+
+    componentDidLoad(): void {
+        const attrException = ['dottype'];
+        const htmlElements = this.el.querySelectorAll('input[type="checkbox"]');
+        setTimeout(() => {
+            const attrs = getDotAttributesFromElement(
+                Array.from(this.el.attributes),
+                attrException
+            );
+            htmlElements.forEach((htmlElement: Element) => {
+                setDotAttributesToElement(htmlElement, attrs);
+            });
+        }, 0);
     }
 
     @Watch('options')

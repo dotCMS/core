@@ -95,6 +95,20 @@ describe('dot-checkbox', () => {
             element = await page.find('dot-checkbox');
         });
 
+        describe('dot-attr', () => {
+            it('should set value correctly', async () => {
+                page = await newE2EPage({
+                    html: `<dot-checkbox dotdisabled="true"></dot-checkbox>`
+                });
+                element = await page.find('dot-checkbox');
+                element.setProperty('options', 'valueA|1,valueB|2');
+                await page.waitForChanges();
+                const htmlElements = await getOptions(page);
+                expect(htmlElements[0].getAttribute('disabled')).toBeDefined();
+                expect(htmlElements[1].getAttribute('disabled')).toBeDefined();
+            });
+        });
+
         describe('disabled', () => {
             it('should render attribute', async () => {
                 element.setProperty('options', 'valueA|1,valueB|2');
