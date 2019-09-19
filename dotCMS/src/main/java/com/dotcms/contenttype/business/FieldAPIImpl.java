@@ -132,7 +132,7 @@ public class FieldAPIImpl implements FieldAPI {
 		permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
 
 	    Field oldField = null;
-	    boolean useOldVarName = false;
+	    boolean useFriendlyNameOldVarName = false;
 	    if (UtilMethods.isSet(field.id())) {
 	    	try {
 	    		oldField = fieldFactory.byId(field.id());
@@ -147,7 +147,7 @@ public class FieldAPIImpl implements FieldAPI {
                     // It has been done to keep backward compatibility -> Issue: https://github.com/dotCMS/core/issues/17239
                     if (oldField.variable().equalsIgnoreCase(field.variable()) && oldField
                             .variable().equals(PAGE_FRIENDLY_NAME_FIELD_VAR)) {
-                        useOldVarName = true;
+                        useFriendlyNameOldVarName = true;
                     } else {
                         throw new DotDataValidationException(
                                 "Field variable can not be modified, please use the following: "
@@ -197,7 +197,7 @@ public class FieldAPIImpl implements FieldAPI {
       //TODO: Remove this condition for future releases.
       // It has been done to keep backward compatibility -> Issue: https://github.com/dotCMS/core/issues/17239
       Field result = fieldFactory
-              .save(useOldVarName ? FieldBuilder.builder(field).variable(oldField.variable())
+              .save(useFriendlyNameOldVarName ? FieldBuilder.builder(field).variable(oldField.variable())
                       .build() : field);
 
         //if RelationshipField, Relationship record must be added/updated
