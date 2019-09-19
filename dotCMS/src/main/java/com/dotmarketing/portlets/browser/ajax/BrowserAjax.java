@@ -1007,7 +1007,8 @@ public class BrowserAjax {
         if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
 
             //Getting the contentlet file
-            Contentlet contentlet = APILocator.getContentletAPI().find( inode, user, false );
+            final Contentlet contentlet = APILocator.getContentletAPI().find( inode, user, false );
+            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true); // on move we do not want to run a workflow
             Folder srcFolder = APILocator.getFolderAPI().find(contentlet.getFolder(),user,false);
 
             if(contentlet.getFolder().equals("SYSTEM_FOLDER")) {

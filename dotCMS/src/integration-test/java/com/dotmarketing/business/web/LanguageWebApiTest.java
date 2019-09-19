@@ -1,13 +1,16 @@
 package com.dotmarketing.business.web;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.datagen.TestDataUtils;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -20,6 +23,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableMap;
+import org.mockito.Mockito;
+import java.util.Locale;
 
 public class LanguageWebApiTest {
 
@@ -228,10 +233,81 @@ public class LanguageWebApiTest {
         assertEquals(lang.getId(), spanishLanguage.getId());
 
     }
-    
-    
-    
-    
-    
-    
+
+    /**
+     * Should return default lang when request is null
+     */
+    @Test
+    public void testShouldReturnDefaultLangWhenReturnNull() {
+        final Language backendLanguage = lapi.getBackendLanguage(null);
+        assertEquals(backendLanguage, APILocator.getLanguageAPI().getDefaultLanguage());
+    }
+
+    /**
+     * Should return default lang when request is null
+     */
+    @Test
+    public void testShouldReturnParameterLanguage() {
+        final HttpServletRequest mockRequest = Mockito.mock(HttpServletRequest.class);
+        when(mockRequest.getParameter(WebKeys.BACKEND_LANGUAGE_PARAMETER_NAME)).thenReturn("en_US");
+
+        Language backendLanguage = lapi.getBackendLanguage(null);
+        assertEquals(backendLanguage, APILocator.getLanguageAPI().getLanguage(1));
+
+        when(mockRequest.getParameter(WebKeys.BACKEND_LANGUAGE_PARAMETER_NAME)).thenReturn("en-US");
+
+        backendLanguage = lapi.getBackendLanguage(null);
+        assertEquals(backendLanguage, APILocator.getLanguageAPI().getLanguage(1));
+    }
+
+    /**
+     * Should return default lang when request's parameter and session attribute is null
+     */
+    @Test
+    public void testShouldReturnDefaultWhenParameterIsNoTRight() {
+        final HttpSession session = Mockito.mock(HttpSession.class);
+
+        final HttpServletRequest mockRequest = Mockito.mock(HttpServletRequest.class);
+        when(mockRequest.getParameter(WebKeys.BACKEND_LANGUAGE_PARAMETER_NAME)).thenReturn("en");
+        when(mockRequest.getSession(false)).thenReturn(session);
+
+        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(null);
+
+        final Language backendLanguage = lapi.getBackendLanguage(mockRequest);
+        assertEquals(backendLanguage, APILocator.getLanguageAPI().getDefaultLanguage());
+    }
+
+    /**
+     * Should return default lang when request's parameter is null and there is not session
+     */
+    @Test
+    public void testShouldReturnDefaultWhenIsNotSession() {
+        final HttpSession session = Mockito.mock(HttpSession.class);
+
+        final HttpServletRequest mockRequest = Mockito.mock(HttpServletRequest.class);
+        when(mockRequest.getParameter(WebKeys.BACKEND_LANGUAGE_PARAMETER_NAME)).thenReturn("en");
+        when(mockRequest.getSession(false)).thenReturn(null);
+
+        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(null);
+
+        final Language backendLanguage = lapi.getBackendLanguage(mockRequest);
+        assertEquals(backendLanguage, APILocator.getLanguageAPI().getDefaultLanguage());
+    }
+
+    /**
+     * Should return lang from session when session attribute is not null
+     */
+    @Test
+    public void testShouldReturnLangFromSession() {
+        final HttpSession session = Mockito.mock(HttpSession.class);
+
+        final HttpServletRequest mockRequest = Mockito.mock(HttpServletRequest.class);
+        when(mockRequest.getParameter(WebKeys.BACKEND_LANGUAGE_PARAMETER_NAME)).thenReturn("en");
+        when(mockRequest.getSession(false)).thenReturn(session);
+
+        when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale("en", "US"));
+
+        final Language backendLanguage = lapi.getBackendLanguage(mockRequest);
+        assertEquals(backendLanguage, APILocator.getLanguageAPI().getLanguage(1));
+    }
 }

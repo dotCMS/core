@@ -721,4 +721,6 @@ public final class WebKeys {
 
     public static final String LANGUAGE_ID_PARAMETER= "language_id";
 
+    public static final String BACKEND_LANGUAGE_PARAMETER_NAME = "backend_language_id";
+
 }
