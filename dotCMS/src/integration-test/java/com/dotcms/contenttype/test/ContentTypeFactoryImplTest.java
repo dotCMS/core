@@ -32,7 +32,6 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.text.AbstractDocument.Content;
 import org.junit.Test;
 
 public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
@@ -314,25 +313,25 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 	}
 
-	@Test
-	public void suggestVelocityVar() throws DotDataException {
-		String tryVar = "Content" + System.currentTimeMillis();
-		String newVar = contentTypeFactory.suggestVelocityVar(tryVar);
+    @Test
+    public void suggestVelocityVar() throws DotDataException {
+        String tryVar = "Content" + System.currentTimeMillis();
+        String newVar = contentTypeFactory.suggestVelocityVar(tryVar);
 
-		assertThat("random velocity var works", newVar!=null);
-		assertThat("random velocity var works : " + newVar + " == " + tryVar, newVar.equals(tryVar));
+        assertThat("random velocity var works", newVar != null);
+        assertThat("random velocity var works : " + newVar + " == " + tryVar,
+                newVar.equals(tryVar));
 
-		//Create a test content type
-		final ContentType newsLikeContentType = TestDataUtils.getNewsLikeContentType();
-		tryVar = newsLikeContentType.variable();
-		newVar = contentTypeFactory.suggestVelocityVar(tryVar);
-		assertThat("existing velocity var will not work", !newVar.equalsIgnoreCase(tryVar));
+        //Create a test content type
+        final ContentType newsLikeContentType = TestDataUtils.getNewsLikeContentType();
+        tryVar = newsLikeContentType.variable();
+        newVar = contentTypeFactory.suggestVelocityVar(tryVar);
+        assertThat("existing velocity var will not work", !newVar.equalsIgnoreCase(tryVar));
 
-
-		//Velocity var should be case insensitive
+        //Velocity var should be case insensitive
         newVar = contentTypeFactory.suggestVelocityVar(tryVar.toUpperCase());
         assertThat("existing velocity var will not work", !newVar.equalsIgnoreCase(tryVar));
-	}
+    }
 
 	private void testDeleting() throws Exception{
 		List<ContentType> types = contentTypeFactory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", -1, 0);
