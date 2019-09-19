@@ -1362,19 +1362,9 @@ public class ContentResource {
             Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_BAD_REQUEST);
             responseBuilder.entity(e.getMessage());
             return responseBuilder.build();
-        } catch (DotStateException e) {
-            Logger.error(this.getClass(), e);
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_BAD_REQUEST);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
         } catch (Exception e) {
-
             Logger.error(this.getClass(), "Error processing Stream", e);
-
-            Response.ResponseBuilder responseBuilder = Response
-                    .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
         return saveContent(contentlet, init);

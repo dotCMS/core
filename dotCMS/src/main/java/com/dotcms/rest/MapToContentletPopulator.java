@@ -5,11 +5,13 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -59,7 +61,7 @@ public class MapToContentletPopulator  {
             this.processMap(contentlet, stringObjectMap);
         } catch (DotDataException | DotSecurityException e) {
 
-            throw new DotRuntimeException(e);
+            throw new DotStateException(e);
         }
 
         return contentlet;
@@ -286,6 +288,9 @@ public class MapToContentletPopulator  {
     @CloseDBIfOpened
     public List<Category> getCategories (final Contentlet contentlet, final User user,
                                          final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        DotPreconditions.checkNotNull(contentlet, IllegalArgumentException.class, "Invalid Content Type");
+        DotPreconditions.checkNotNull(contentlet.getContentType(), IllegalArgumentException.class, "Invalid Content Type");
 
         final List<Category> categories = new ArrayList<>();
         final List<Field> fields = new LegacyFieldTransformer(
