@@ -13,6 +13,7 @@ import {
     updateStatus,
     getHintId
 } from '../../utils';
+import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-form/utils';
 
 /**
  * Represent a dotcms select control.
@@ -91,6 +92,14 @@ export class DotSelectComponent {
         this.status = getOriginalStatus(this.isValid());
         this.emitInitialValue();
         this.emitStatusChange();
+    }
+
+    componentDidLoad(): void {
+        const htmlElement = this.el.querySelector('select');
+        setTimeout(() => {
+            const attrs = getDotAttributesFromElement(Array.from(this.el.attributes), []);
+            setDotAttributesToElement(htmlElement, attrs);
+        }, 0);
     }
 
     render() {
