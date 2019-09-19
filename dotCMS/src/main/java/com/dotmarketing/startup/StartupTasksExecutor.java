@@ -220,9 +220,13 @@ public class StartupTasksExecutor {
 				}
 			}
 			Logger.info(this, "Finishing startup tasks.");
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			HibernateUtil.rollbackTransaction();
 			Logger.fatal(this, "Unable to execute the upgrade task : " + name, e);
+	    if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
+	      e.printStackTrace();
+	      System.exit(1);
+	    }
 		} finally {
 			// This will commit the changes and close the connection
 			HibernateUtil.closeSession();
@@ -309,9 +313,12 @@ public class StartupTasksExecutor {
 	
 			ReindexThread.unpause();
 			
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			HibernateUtil.rollbackTransaction();
-			Logger.fatal(this, "Unable to execute the upgrade task : " + name, e);
+      if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
+        e.printStackTrace();
+        System.exit(1);
+      }
 			throw new DotDataException("Unable to execute startup task : ",e);
 		} finally {
 			// This will commit the changes and close the connection

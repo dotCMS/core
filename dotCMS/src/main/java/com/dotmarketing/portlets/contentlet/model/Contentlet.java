@@ -384,28 +384,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
     public void setContentTypeId(String id) {
       map.put(STRUCTURE_INODE_KEY,id);
-      if(UtilMethods.isSet(id)) {
-        addConstantsToMap();
-      }
-    }
-    /**
-     * Contentlets should have their
-     * constant values set in their maps
-     * @return
-     */
 
-    private transient boolean CONTSTANTS_ADDED=false;
-    private void addConstantsToMap() {
-
-      if(!CONTSTANTS_ADDED && UtilMethods.isSet(getContentTypeId()) && DbConnectionFactory.dbAvailable()) {
-        ContentType type=getContentType();
-        if(type==null)return;
-        for(com.dotcms.contenttype.model.field.Field constant : type.fields(ConstantField.class)) {
-          map.put(constant.variable(), constant.values());
-        }
-        CONTSTANTS_ADDED= true;
-      }
     }
+
     /**
      *
      * @param type
@@ -574,7 +555,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws DotRuntimeException
 	 */
 	public String getStringProperty(String fieldVarName) throws DotRuntimeException {
-	  addConstantsToMap();
 		try{
 			Object value = get(fieldVarName);
 			if(value instanceof Long || value instanceof Date ){
@@ -778,7 +758,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * The keys used in the map will be the velocity variables names
 	 */
 	public Map<String, Object> getMap() throws DotRuntimeException {
-	  addConstantsToMap();
+
         try {
             setTags();
         } catch (DotDataException e) {
@@ -1216,7 +1196,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		if(map ==null || key ==null){
 			return null;
 		}
-		addConstantsToMap();
+
 		Object value=map.get(key);
 
 		if(isMetadataFieldCached(getStructureInode(), key, value))
@@ -1620,6 +1600,23 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return APILocator.getContentletAPI()
                 .getRelatedContent(this, variableName, user, respectFrontendRoles, pullByParents,
                         -1, 0, null);
+    }
+
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @param language
+     * @param live
+     * @return
+     */
+    public List<Contentlet> getRelated(final String variableName, final User user,
+            final boolean respectFrontendRoles, Boolean pullByParents, final long language, final Boolean live) {
+        return APILocator.getContentletAPI()
+                .getRelatedContent(this, variableName, user, respectFrontendRoles, pullByParents,
+                        -1, 0, null, language, live);
     }
 
     /**

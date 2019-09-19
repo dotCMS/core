@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import static com.dotmarketing.util.NumberUtil.toBoolean;
 import static com.dotmarketing.util.NumberUtil.toInt;
 import static com.dotmarketing.util.NumberUtil.toLong;
 
@@ -509,13 +510,13 @@ public class ContentResource {
                 int i = 0;
                 for(String relationshipValue: related.split(",")){
                     if (i == 0) {
-                        contentlets.addAll(getPullRelated(user, limit, contentlets, orderBy, tmDate,
-                                processQuery(query), relationshipValue));
+                        contentlets.addAll(getPullRelated(user, limit, orderBy, tmDate,
+                                processQuery(query), relationshipValue, language, live));
                     } else {
                         //filter the intersection in case multiple relationship
                         contentlets = contentlets.stream()
-                                .filter(getPullRelated(user, limit, contentlets, orderBy, tmDate,
-                                        processQuery(query), relationshipValue)::contains).collect(
+                                .filter(getPullRelated(user, limit, orderBy, tmDate,
+                                        processQuery(query), relationshipValue, language, live)::contains).collect(
                                         Collectors.toList());
                     }
 
@@ -544,9 +545,15 @@ public class ContentResource {
         /* Converting the Contentlet list to XML or JSON */
         try {
             if ("xml".equals(type)) {
-                result = getXML(contentlets, request, response, render, user, depth, respectFrontendRoles);
+                result = getXML(contentlets, request, response, render, user, depth,
+                        respectFrontendRoles, toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
+                                () -> -1L), toBoolean(paramsMap.get(RESTParams.LIVE.getValue()),
+                                () -> null));
             } else {
-                result = getJSON(contentlets, request, response, render, user, depth, respectFrontendRoles);
+                result = getJSON(contentlets, request, response, render, user, depth,
+                        respectFrontendRoles, toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
+                                () -> -1L), toBoolean(paramsMap.get(RESTParams.LIVE.getValue()),
+                                () -> null));
             }
         } catch (Exception e) {
             Logger.warn(this, "Error converting result to XML/JSON");
@@ -556,21 +563,22 @@ public class ContentResource {
     }
 
     /**
-     *
+     * Method used to obtain related content that matches a given criteria (lucene query and additional params)
      * @param user
      * @param limit
-     * @param contentlets
      * @param orderBy
      * @param tmDate
      * @param luceneQuery
      * @param relationshipValue
+     * @param language
+     * @param live
      * @return
      * @throws DotSecurityException
      * @throws DotDataException
      */
     @NotNull
-    private List<Contentlet> getPullRelated(User user, int limit, List<Contentlet> contentlets,
-            String orderBy, String tmDate, String luceneQuery, String relationshipValue)
+    private List<Contentlet> getPullRelated(User user, int limit,
+            String orderBy, String tmDate, String luceneQuery, String relationshipValue, long language, Boolean live)
             throws DotSecurityException, DotDataException {
         final String contentTypeVar = relationshipValue.split(":")[0].split("\\.")[0];
         final String fieldVar = relationshipValue.split(":")[0].split("\\.")[1];
@@ -585,7 +593,7 @@ public class ContentResource {
         List<Contentlet> pullRelated = ContentUtils
                 .pullRelated(relationship.getRelationTypeValue(), relatedIdentifier,
                         luceneQuery, relationship.hasParents(), limit, orderBy, user,
-                        tmDate);
+                        tmDate, language, live);
 
         return pullRelated;
     }
@@ -638,6 +646,8 @@ public class ContentResource {
      * @param user
      * @param depth
      * @param respectFrontendRoles
+     * @param language
+     * @param live
      * @return
      * @throws DotDataException
      * @throws IOException
@@ -645,7 +655,7 @@ public class ContentResource {
      */
     private String getXML(final List<Contentlet> cons, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user,
-            final int depth, final boolean respectFrontendRoles){
+            final int depth, final boolean respectFrontendRoles, long language, Boolean live){
 
         final StringBuilder sb = new StringBuilder();
         final XStream xstream = new XStream(new DomDriver());
@@ -660,7 +670,7 @@ public class ContentResource {
                 if (depth != -1){
                     sb.append(xstream.toXML(
                             addRelationshipsToXML(request, response, render, user, depth, respectFrontendRoles, contentlet,
-                                    getContentXML(contentlet, request, response, render, user), null)));
+                                    getContentXML(contentlet, request, response, render, user), null, language, live)));
                 } else{
                     sb.append(xstream.toXML(
                                     getContentXML(contentlet, request, response, render, user)));
@@ -674,7 +684,18 @@ public class ContentResource {
         return sb.toString();
     }
 
-
+    /**
+     *
+     * @param contentlet
+     * @param request
+     * @param response
+     * @param render
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
     private Map<String, Object> getContentXML(final Contentlet contentlet, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user)
             throws DotDataException, IOException, DotSecurityException {
@@ -713,6 +734,8 @@ public class ContentResource {
      * @param contentlet
      * @param objectMap
      * @param addedRelationships
+     * @param language
+     * @param live
      * @return
      * @throws DotDataException
      * @throws JSONException
@@ -721,8 +744,10 @@ public class ContentResource {
      */
     private Map<String, Object> addRelationshipsToXML(final HttpServletRequest request,
             final HttpServletResponse response,
-            final String render, final User user, final int depth, final boolean respectFrontendRoles,
-            final Contentlet contentlet, final Map<String, Object> objectMap, Set<Relationship> addedRelationships)
+            final String render, final User user, final int depth,
+            final boolean respectFrontendRoles,
+            final Contentlet contentlet, final Map<String, Object> objectMap,
+            Set<Relationship> addedRelationships, long language, Boolean live)
             throws DotDataException, IOException, DotSecurityException {
 
         Relationship relationship;
@@ -760,7 +785,7 @@ public class ContentResource {
                     relationship,
                     relationshipAPI.isParent(relationship, contentlet.getContentType()));
 
-            for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles)) {
+            for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles, null, language, live)) {
                 switch (depth) {
                     //returns a list of identifiers
                     case 0:
@@ -778,7 +803,7 @@ public class ContentResource {
                         records.add(addRelationshipsToXML(request, response, render, user, 0,
                                 respectFrontendRoles, relatedContent,
                                 getContentXML(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
+                                new HashSet<>(addedRelationships), language, live));
                         break;
 
                     //returns a list of hydrated related content for each of the related content
@@ -786,7 +811,7 @@ public class ContentResource {
                         records.add(addRelationshipsToXML(request, response, render, user, 1,
                                 respectFrontendRoles, relatedContent,
                                 getContentXML(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
+                                new HashSet<>(addedRelationships), language, live));
                         break;
                 }
             }
@@ -835,13 +860,15 @@ public class ContentResource {
      * @param user
      * @param depth
      * @param respectFrontendRoles
+     * @param language
+     * @param live
      * @return
      * @throws IOException
      * @throws DotDataException
      */
     private String getJSON(final List<Contentlet> cons, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user,
-            final int depth, boolean respectFrontendRoles){
+            final int depth, boolean respectFrontendRoles, long language, Boolean live){
         final JSONObject json = new JSONObject();
         final JSONArray jsonCons = new JSONArray();
 
@@ -853,7 +880,7 @@ public class ContentResource {
                 //we need to add relationships fields
                 if (depth != -1){
                     addRelationshipsToJSON(request, response, render, user, depth,
-                            respectFrontendRoles, c, jo, null);
+                            respectFrontendRoles, c, jo, null, language, live);
                 }
             } catch (Exception e) {
                 Logger.warn(this.getClass(), "unable to get JSON contentlet " + c.getIdentifier());
@@ -881,6 +908,8 @@ public class ContentResource {
      * @param contentlet
      * @param jsonObject
      * @param addedRelationships
+     * @param language
+     * @param live
      * @return
      * @throws DotDataException
      * @throws JSONException
@@ -889,9 +918,11 @@ public class ContentResource {
      */
     public static JSONObject addRelationshipsToJSON(final HttpServletRequest request,
             final HttpServletResponse response,
-            final String render, final User user, final int depth, final boolean respectFrontendRoles,
+            final String render, final User user, final int depth,
+            final boolean respectFrontendRoles,
             final Contentlet contentlet,
-            final JSONObject jsonObject, Set<Relationship> addedRelationships)
+            final JSONObject jsonObject, Set<Relationship> addedRelationships, long language,
+            Boolean live)
             throws DotDataException, JSONException, IOException, DotSecurityException {
 
         Relationship relationship;
@@ -929,7 +960,7 @@ public class ContentResource {
 
             final JSONArray jsonArray = new JSONArray();
 
-            for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles)) {
+            for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles, null, language, live)) {
                 switch (depth) {
                     //returns a list of identifiers
                     case 0:
@@ -949,7 +980,7 @@ public class ContentResource {
                                 respectFrontendRoles, relatedContent,
                                 contentletToJSON(relatedContent, request, response, render,
                                         user),
-                                new HashSet<>(addedRelationships)));
+                                new HashSet<>(addedRelationships), language, live));
                         break;
 
                     //returns a list of hydrated related content for each of the related content
@@ -958,7 +989,7 @@ public class ContentResource {
                                 respectFrontendRoles, relatedContent,
                                 contentletToJSON(relatedContent, request, response, render,
                                         user),
-                                new HashSet<>(addedRelationships)));
+                                new HashSet<>(addedRelationships), language, live));
                         break;
                 }
 

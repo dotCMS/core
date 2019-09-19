@@ -239,11 +239,15 @@
 						try{
 							languageContentlet = null;
 							languageContentlet = contentletAPI.findContentletByIdentifier(cont.getIdentifier(), true, lang.getId(), user, false);
-						}catch (Exception e) {
-							try{
-							languageContentlet = contentletAPI.findContentletByIdentifier(cont.getIdentifier(), false, lang.getId(), user, false);
-							}catch (Exception e1) {	}
-						}
+						}catch (Exception e) { }
+
+						//Try to find non-live version
+						if (languageContentlet == null) {
+                            try{
+                                languageContentlet = contentletAPI.findContentletByIdentifier(cont.getIdentifier(), false, lang.getId(), user, false);
+                            }catch (Exception e1) { }
+                        }
+
 					    %>
 					    var cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling = new Array();
 					    <%
