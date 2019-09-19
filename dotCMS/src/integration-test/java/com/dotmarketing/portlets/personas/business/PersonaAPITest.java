@@ -234,6 +234,38 @@ public class PersonaAPITest {
         }
     }
   }
+
+  @Test
+  public void testgetPersonasIncludingDefaultPersona_filterNewPersonaContentType_ShouldReturnPersonas()
+          throws DotSecurityException, DotDataException {
+    ContentType customPersonaType = null;
+
+    try {
+
+      // create custom persona type
+
+      customPersonaType = new ContentTypeDataGen()
+              .host(host)
+              .baseContentType(BaseContentType.PERSONA).nextPersisted();
+
+      final Contentlet newPersona = new ContentletDataGen(customPersonaType.id())
+              .host(host)
+              .setProperty("name", "Testing Filter New CT")
+              .setProperty("keyTag", "TestingFilterNewCT")
+              .nextPersisted();
+
+      final Tuple2<List<Persona>, Integer> filteredPersonas = personaAPI.getPersonasIncludingDefaultPersona(host,"ilter",false, 100, -1, null, APILocator.systemUser(), false);
+
+      assertEquals(1,filteredPersonas._2.intValue());
+      assertEquals(newPersona.getStringProperty("name"),filteredPersonas._1.get(0).getName());
+      assertEquals(newPersona.getStringProperty("keyTag"),filteredPersonas._1.get(0).getKeyTag());
+
+    } finally {
+      if (customPersonaType != null) {
+        ContentTypeDataGen.remove(customPersonaType);
+      }
+    }
+  }
   
   
 }
