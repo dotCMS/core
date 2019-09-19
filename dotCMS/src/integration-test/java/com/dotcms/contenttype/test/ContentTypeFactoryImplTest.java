@@ -32,7 +32,6 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.text.AbstractDocument.Content;
 import org.junit.Test;
 
 public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
@@ -169,31 +168,6 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 		}
 
 	}
-
-	/*
-	@Test
-	public void testLegacyTransform() throws Exception {
-
-		Structure st = new Structure();
-		List<ContentType> types = contentTypeFactory.findAll("name");
-		List<ContentType> oldTypes = new StructureTransformer(getCrappyStructures()).asList();
-
-		assertThat("findAll and legacy return same quantity", types.size() == oldTypes.size());
-
-		for (int i = 0; i < types.size(); i++) {
-			try {
-				assertThat("Old and New Contentyypes are the same", types.get(i).equals(oldTypes.get(i)));
-			} catch (Throwable t) {
-				System.out.println("Old and New Contentyypes are NOT the same");
-				System.out.println(types.get(i));
-				System.out.println(oldTypes.get(i));
-				throw t;
-			}
-		}
-
-		assertThat("findAll sort by Name has same size as find all", contentTypeFactory.findAll("name").size() == types.size());
-	}
-	*/
 
 	@Test
 	public void testAddingContentTypes() throws Exception {
@@ -339,20 +313,25 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 	}
 
-	@Test
-	public void suggestVelocityVar() throws DotDataException {
-		String tryVar = "Content" + System.currentTimeMillis();
-		String newVar = contentTypeFactory.suggestVelocityVar(tryVar);
+    @Test
+    public void suggestVelocityVar() throws DotDataException {
+        String tryVar = "Content" + System.currentTimeMillis();
+        String newVar = contentTypeFactory.suggestVelocityVar(tryVar);
 
-		assertThat("random velocity var works", newVar!=null);
-		assertThat("random velocity var works : " + newVar + " == " + tryVar, newVar.equals(tryVar));
+        assertThat("random velocity var works", newVar != null);
+        assertThat("random velocity var works : " + newVar + " == " + tryVar,
+                newVar.equals(tryVar));
 
-		//Create a test content type
-		final ContentType newsLikeContentType = TestDataUtils.getNewsLikeContentType();
-		tryVar = newsLikeContentType.variable();
-		newVar = contentTypeFactory.suggestVelocityVar(tryVar);
-		assertThat("existing velocity var will not work", !newVar.equals(tryVar));
-	}
+        //Create a test content type
+        final ContentType newsLikeContentType = TestDataUtils.getNewsLikeContentType();
+        tryVar = newsLikeContentType.variable();
+        newVar = contentTypeFactory.suggestVelocityVar(tryVar);
+        assertThat("existing velocity var will not work", !newVar.equalsIgnoreCase(tryVar));
+
+        //Velocity var should be case insensitive
+        newVar = contentTypeFactory.suggestVelocityVar(tryVar.toUpperCase());
+        assertThat("existing velocity var will not work", !newVar.equalsIgnoreCase(tryVar));
+    }
 
 	private void testDeleting() throws Exception{
 		List<ContentType> types = contentTypeFactory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", -1, 0);

@@ -814,6 +814,44 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
+    @Test
+    public void testSaveShouldRespectCaseInsensitiveVariableName()
+            throws DotSecurityException, DotDataException {
+
+        ContentType type1 = null;
+        ContentType type2 = null;
+        try {
+            type1 = APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .save(ContentTypeBuilder
+                            .builder(SimpleContentType.class)
+                            .folder(FolderAPI.SYSTEM_FOLDER)
+                            .host(Host.SYSTEM_HOST)
+                            .name("CASEINSENSITIVEVAR")
+                            .owner(user.getUserId())
+                            .build());
+
+            Assert.assertTrue(type1.variable().equalsIgnoreCase("CASEINSENSITIVEVAR"));
+
+            type2 = APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .save(ContentTypeBuilder
+                            .builder(SimpleContentType.class)
+                            .folder(FolderAPI.SYSTEM_FOLDER)
+                            .host(Host.SYSTEM_HOST)
+                            .name("caseinsensitivevar")
+                            .owner(user.getUserId())
+                            .build());
+
+            Assert.assertFalse(type2.variable().equalsIgnoreCase("caseinsensitivevar"));
+        } finally {
+            if(type1!=null) {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type1);
+            }
+            if(type2!=null) {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type2);
+            }
+        }
+    }
+
 	@Test
 	@UseDataProvider("testCasesUpdateTypePermissions")
 	public void testDeleteLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
