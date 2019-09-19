@@ -14,6 +14,7 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -86,6 +87,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -1101,7 +1103,7 @@ public class ContentResource {
 
     @PUT
     @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript", MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response multipartPUT(@Context HttpServletRequest request,
             @Context HttpServletResponse response,
@@ -1274,7 +1276,7 @@ public class ContentResource {
 
     @PUT
     @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
             MediaType.APPLICATION_XML})
     public Response singlePUT(@Context HttpServletRequest request,
@@ -1285,7 +1287,7 @@ public class ContentResource {
 
     @POST
     @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
             MediaType.APPLICATION_XML})
     public Response singlePOST(@Context HttpServletRequest request,
@@ -1329,6 +1331,11 @@ public class ContentResource {
             Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_BAD_REQUEST);
             responseBuilder.entity(e.getMessage());
             return responseBuilder.build();
+        } catch (DotStateException e) {
+            Logger.error(this.getClass(), e);
+            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_BAD_REQUEST);
+            responseBuilder.entity(e.getMessage());
+            return responseBuilder.build();
         } catch (Exception e) {
 
             Logger.error(this.getClass(), "Error processing Stream", e);
@@ -1351,6 +1358,8 @@ public class ContentResource {
 
         try {
 
+            HibernateUtil.startTransaction();
+
             // preparing categories
             List<Category> categories = MapToContentletPopulator.INSTANCE.getCategories
                     (contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
@@ -1359,8 +1368,6 @@ public class ContentResource {
             final Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
                     .get(RELATIONSHIP_KEY);
             live = contentWorkflowResult.publish;
-
-            HibernateUtil.startTransaction();
 
             categories = UtilMethods.isSet(categories)?categories:null;
 
@@ -1387,27 +1394,8 @@ public class ContentResource {
 
             HibernateUtil.closeAndCommitTransaction();
             clean = true;
-        } catch (DotContentletStateException e) {
-
-            Logger.error(this.getClass(), "Error saving Contentlet" + e);
-
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_CONFLICT);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
-        } catch (IllegalArgumentException e) {
-
-            Logger.error(this.getClass(), "Error saving Contentlet" + e);
-
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_CONFLICT);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
-        } catch (DotSecurityException e) {
-
-            Logger.error(this.getClass(), "Error saving Contentlet" + e);
-            throw new ForbiddenException(e);
         } catch (Exception e) {
-            Logger.warn(this, e.getMessage(), e);
-            return Response.serverError().build();
+            return ResponseUtil.mapExceptionResponse(e);
         } finally {
             try {
                 if (!clean) {
