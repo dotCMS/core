@@ -112,6 +112,17 @@ describe('dot-multi-select', () => {
             element = await page.find('dot-multi-select');
         });
 
+        describe('dot-attr', () => {
+            it('should set value correctly', async () => {
+                page = await newE2EPage({
+                    html: `<dot-select dotmultiple="true"></dot-select>`
+                });
+                await page.waitForChanges();
+                const htmlElement = await getSelect(page);
+                expect(htmlElement.getAttribute('multiple')).toBe('true');
+            });
+        });
+
         describe('disabled', () => {
             it('should not render attribute', async () => {
                 const htmlElement = await getSelect(page);

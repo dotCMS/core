@@ -13,6 +13,7 @@ import {
     checkProp,
     getHintId
 } from '../../utils';
+import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-form/utils';
 
 /**
  * Represent a dotcms multi select control.
@@ -68,6 +69,14 @@ export class DotMultiSelectComponent {
         this.emitInitialValue();
         this.status = getOriginalStatus(this.isValid());
         this.emitStatusChange();
+    }
+
+    componentDidLoad(): void {
+        const htmlElement = this.el.querySelector('select');
+        setTimeout(() => {
+            const attrs = getDotAttributesFromElement(Array.from(this.el.attributes), []);
+            setDotAttributesToElement(htmlElement, attrs);
+        }, 0);
     }
 
     @Watch('options')
