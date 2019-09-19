@@ -29,6 +29,7 @@ import {
 
 import { Components } from '../../components';
 import DotBinaryTextField = Components.DotBinaryTextField;
+import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-form/utils';
 
 /**
  * Represent a dotcms binary file control.
@@ -145,6 +146,15 @@ export class DotBinaryFileComponent {
 
     componentDidLoad(): void {
         this.binaryTextField = this.el.querySelector('dot-binary-text-field');
+        const attrException = ['dottype'];
+        const uploadButtonElement = this.el.querySelector('input[type="file"]');
+        setTimeout(() => {
+            const attrs = getDotAttributesFromElement(
+                Array.from(this.el.attributes),
+                attrException
+            );
+            setDotAttributesToElement(uploadButtonElement, attrs);
+        }, 0);
     }
 
     @Watch('requiredMessage')

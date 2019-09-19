@@ -73,6 +73,17 @@ describe('dot-binary-file', () => {
     });
 
     describe('@Props', () => {
+        describe('dot-attr', () => {
+            it('should set value correctly', async () => {
+                page = await newE2EPage({
+                    html: `<dot-binary-file dotmultiple="true"></dot-binary-file>`
+                });
+                await page.waitForChanges();
+                const inputUploadButton = await page.find('input[type="file"]');
+                expect(inputUploadButton.getAttribute('multiple')).toBe('true');
+            });
+        });
+
         describe('name', () => {
             it('should set name prop in dot-binary-upload-button', async () => {
                 element.setProperty('name', 'text01');
