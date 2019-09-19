@@ -11,50 +11,23 @@ package com.dotmarketing.cms.urlmap.filters;
 
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.ContentTypeCache;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
-import com.dotmarketing.common.model.ContentletSearch;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
-import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.structure.StructureUtil;
-import com.dotmarketing.portlets.structure.factories.StructureFactory;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.tag.business.TagAPI;
-import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
-import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.oro.text.regex.MalformedPatternException;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.*;
 
@@ -90,7 +63,7 @@ public class URLMapFilter implements Filter {
             try {
 
                 final long languageId = this.languageWebAPI.getLanguage(request).getId();
-                String uri = request.getRequestURI();
+                final String uri = request.getRequestURI();
                 final Host host = getHost(request, uri);
                 final User user = getUser(request);
 

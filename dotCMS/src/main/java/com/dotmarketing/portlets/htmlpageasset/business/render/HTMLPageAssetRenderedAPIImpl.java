@@ -400,7 +400,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             return htmlPage;
         }
 
-        public void setHTMLPage(IHTMLPage ihtmlPage) {
+        public void setHTMLPage(final IHTMLPage ihtmlPage) {
             this.htmlPage = ihtmlPage;
         }
     }

@@ -1,6 +1,4 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
-
-import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 

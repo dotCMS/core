@@ -72,8 +72,6 @@ public class PageView implements Serializable {
         this.canCreateTemplate = canCreateTemplate;
         this.canEditTemplate = canEditTemplate;
         this.pageUrlMapper = pageUrlMapper;
-
-        final Map<String, ContainerRaw> containersMap = this.getContainersMap();
         this.numberContents = getContentsNumber();
     }
 
