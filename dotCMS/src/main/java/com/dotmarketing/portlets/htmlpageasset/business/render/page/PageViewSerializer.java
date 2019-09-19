@@ -1,19 +1,18 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.google.common.collect.ImmutableMap;
-
 import java.io.CharArrayReader;
 import java.io.IOException;
-import java.util.*;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 
 /**
  * JsonSerializer of {@link PageView}
