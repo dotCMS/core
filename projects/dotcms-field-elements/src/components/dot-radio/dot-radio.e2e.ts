@@ -81,6 +81,20 @@ describe('dot-radio', () => {
             element = await page.find('dot-radio');
         });
 
+        describe('dot-attr', () => {
+            it('should set value correctly', async () => {
+                page = await newE2EPage({
+                    html: `<dot-radio dotdisabled="true"></dot-radio>`
+                });
+                element = await page.find('dot-radio');
+                element.setProperty('options', 'valueA|1,valueB|2');
+                await page.waitForChanges();
+                const htmlElements = await getOptions(page);
+                expect(htmlElements[0].getAttribute('disabled')).toBeDefined();
+                expect(htmlElements[1].getAttribute('disabled')).toBeDefined();
+            });
+        });
+
         describe('disabled', () => {
             it('should render attribute', async () => {
                 element.setProperty('options', 'valueA|1,valueB|2');

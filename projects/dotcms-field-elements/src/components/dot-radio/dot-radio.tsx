@@ -13,6 +13,7 @@ import {
     getId,
     getHintId
 } from '../../utils';
+import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-form/utils';
 
 /**
  * Represent a dotcms radio control.
@@ -43,7 +44,7 @@ export class DotRadioComponent {
     @Prop({ reflectToAttr: true }) required = false;
 
     /** (optional) Disables field's interaction */
-    @Prop({ reflectToAttr: true }) disabled = false;
+    @Prop({ reflectToAttr: true, mutable: true }) disabled = false;
 
     /** (optional) Text that will be shown when required is set and condition is not met */
     @Prop({ reflectToAttr: true }) requiredMessage = '';
@@ -75,6 +76,20 @@ export class DotRadioComponent {
         this.emitStatusChange();
     }
 
+    componentDidLoad(): void {
+        const attrException = ['dottype'];
+        const htmlElements = this.el.querySelectorAll('input[type="radio"]');
+        setTimeout(() => {
+            const attrs = getDotAttributesFromElement(
+                Array.from(this.el.attributes),
+                attrException
+            );
+            htmlElements.forEach((htmlElement: Element) => {
+                setDotAttributesToElement(htmlElement, attrs);
+            });
+        }, 0);
+    }
+
     @Watch('options')
     optionsWatch(): void {
         const validOptions = checkProp<DotRadioComponent, string>(this, 'options');
@@ -100,7 +115,8 @@ export class DotRadioComponent {
                         class="dot-radio__items"
                         aria-describedby={getHintId(this.hint)}
                         tabIndex={this.hint ? 0 : null}
-                        role="radiogroup">
+                        role="radiogroup"
+                    >
                         {this._options.map((item: DotOption) => {
                             item.value = item.value.trim();
                             return (
