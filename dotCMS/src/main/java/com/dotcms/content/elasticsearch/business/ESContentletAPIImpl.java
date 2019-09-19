@@ -6479,8 +6479,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(resultContentlet.getIdentifier(),
                         multitree.getContainer(),
                         multitree.getContentlet(),
-                        MultiTree.LEGACY_RELATION_TYPE,
-                        multitree.getTreeOrder()));
+                        multitree.getRelationType(),
+                        multitree.getTreeOrder(), 
+                        multitree.getPersonalization()));
             }
         }
 

@@ -40,6 +40,7 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.PersonaDataGen;
 import com.dotcms.datagen.StructureDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -75,6 +76,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
@@ -90,6 +92,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -117,6 +120,7 @@ import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Table;
 import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -1453,6 +1457,86 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
     }
 
+    
+    /**
+     * This tests that when a page is copied, we also include the personalized multitrees with it
+     * See https://github.com/dotCMS/core/issues/16977
+     * @throws Exception
+     */
+    @Test
+    public void TestCopyHTMLPageIncludesPersonalizedMultiTrees () throws Exception {
+      
+      final Template template = new TemplateDataGen().body("body").nextPersisted();
+      final Folder folder = new FolderDataGen().nextPersisted();
+      final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+      final Structure structure = new StructureDataGen().nextPersisted();
+      final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+      final Contentlet content1 = new ContentletDataGen(structure.getInode()).nextPersisted();
+      final Contentlet content2 = new ContentletDataGen(structure.getInode()).nextPersisted();
+
+      final Persona persona = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+      final String uniqueId = UUIDGenerator.shorty();
+
+      MultiTree multiTree = new MultiTree();
+      multiTree.setHtmlPage(page);
+      multiTree.setContainer(container);
+      multiTree.setContentlet(content1);
+      multiTree.setInstanceId(uniqueId);
+      multiTree.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+      multiTree.setTreeOrder(1);
+      APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+      multiTree = new MultiTree();
+      multiTree.setHtmlPage(page);
+      multiTree.setContainer(container);
+      multiTree.setContentlet(content2);
+      multiTree.setInstanceId(uniqueId);
+      multiTree.setPersonalization(persona.getKeyTag());
+      multiTree.setTreeOrder(1);
+      APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+      Table<String, String, Set<PersonalizedContentlet>> pageContents = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+
+      for (final String containerId : pageContents.rowKeySet()) {
+        assertEquals("containers match. Saved:" + container.getIdentifier() + ", got:" + containerId, containerId, container.getIdentifier());
+
+        for (final String uuid : pageContents.row(containerId).keySet()) {
+          assertEquals("containers uuids match. Saved:" + uniqueId + ", got:" + uuid, uniqueId, uuid);
+          Set<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
+
+          assertTrue("container should have 2 personalized contents - got :" + personalizedContentletSet.size(),
+              personalizedContentletSet.size() == 2);
+          assertTrue("container should have contentlet for keyTag:" + MultiTree.DOT_PERSONALIZATION_DEFAULT, personalizedContentletSet
+              .contains(new PersonalizedContentlet(content1.getIdentifier(), MultiTree.DOT_PERSONALIZATION_DEFAULT)));
+          assertTrue("container should have contentlet for persona:" + persona.getKeyTag(),
+              personalizedContentletSet.contains(new PersonalizedContentlet(content2.getIdentifier(), persona.getKeyTag())));
+        }
+
+      }
+      
+      HTMLPageAsset copyPage = APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().copyContentlet(page, user, false));
+      
+      
+      pageContents = APILocator.getMultiTreeAPI().getPageMultiTrees(copyPage, false);
+      for (final String containerId : pageContents.rowKeySet()) {
+        assertEquals("containers match. Saved:" + container.getIdentifier() + ", got:" + containerId, containerId, container.getIdentifier());
+
+        for (final String uuid : pageContents.row(containerId).keySet()) {
+          assertEquals("containers uuids match. Saved:" + uniqueId + ", got:" + uuid, uniqueId, uuid);
+          Set<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
+
+          assertTrue("container should have 2 personalized contents - got :" + personalizedContentletSet.size(),
+              personalizedContentletSet.size() == 2);
+          assertTrue("container should have contentlet for keyTag:" + MultiTree.DOT_PERSONALIZATION_DEFAULT, personalizedContentletSet
+              .contains(new PersonalizedContentlet(content1.getIdentifier(), MultiTree.DOT_PERSONALIZATION_DEFAULT)));
+          assertTrue("container should have contentlet for persona:" + persona.getKeyTag(),
+              personalizedContentletSet.contains(new PersonalizedContentlet(content2.getIdentifier(), persona.getKeyTag())));
+        }
+      }
+      
+      
+    }
+    
     /**
      * Testing {@link ContentletAPI#copyContentlet(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.folders.model.Folder, com.liferay.portal.model.User, boolean, boolean)}
      *
@@ -1487,6 +1571,14 @@ public class ContentletAPITest extends ContentletBaseTest {
             e.printStackTrace();
         }
     }
+    
+    
+    
+    
+    
+    
+    
+    
     
     @Test
     public void copyContentletWithSeveralVersionsOrderIssue() throws Exception {
