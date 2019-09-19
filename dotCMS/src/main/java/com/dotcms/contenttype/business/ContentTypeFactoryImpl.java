@@ -242,7 +242,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     String var = VelocityUtil.convertToVelocityVariable(tryVar, true);
     for (int i = 1; i < 100000; i++) {
       dc.setSQL(this.contentTypeSql.SELECT_COUNT_VAR);
-      dc.addParam(var);
+      dc.addParam(var.toLowerCase());
       if (dc.getInt("test") == 0) {
         return var;
       }
