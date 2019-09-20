@@ -408,7 +408,6 @@ public class FieldFactoryImpl implements FieldFactory {
   }
 
   private FieldVariable upsertFieldVariable(final FieldVariable throwAway) throws DotDataException {
-    String key = StringUtils.camelCaseLower(throwAway.key());
     String value = throwAway.value().trim();
 
 
@@ -416,7 +415,6 @@ public class FieldFactoryImpl implements FieldFactory {
         ImmutableFieldVariable.builder().from(throwAway).modDate(DateUtils.round(new Date(), Calendar.SECOND));
 
 
-    builder.key(key);
     builder.value(value);
 
 
