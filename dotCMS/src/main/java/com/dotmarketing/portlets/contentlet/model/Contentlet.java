@@ -1203,7 +1203,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		    return lazyMetadataLoad(getInode(),getStructureInode());
 		}
 		if(value==null) {
-  		 value=getConstantValue(key);
+  		 value=Try.of(()-> getConstantValue(key)).getOrNull();
 		}
 		
 		return value;
