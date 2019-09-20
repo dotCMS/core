@@ -612,8 +612,7 @@ var cmsfile=null;
 	
 	
 	function replaceUrlPattern(pattern, file){
-		console.log("file", file);
-		
+
 	     return pattern
           .replace(/{name}/g        ,file.fileName)
           .replace(/{fileName}/g        ,file.fileName)
