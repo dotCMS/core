@@ -14,7 +14,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
@@ -103,8 +102,6 @@ public class EditTemplateAction extends DotPortletAction implements
 			setForward(req, "portlet.ext.templates.container_selector");
 			return;
 		}
-
-		HibernateUtil.startTransaction();
 
 		User user = _getUser(req);
 		
@@ -480,8 +477,6 @@ public class EditTemplateAction extends DotPortletAction implements
 			_sendToReferral(req, res, referer);
 		} else
 			Logger.debug(this, "Unspecified Action");
-
-		HibernateUtil.closeAndCommitTransaction();
 
 		_setupEditTemplatePage(reqImpl, res, config, form, user);
 
