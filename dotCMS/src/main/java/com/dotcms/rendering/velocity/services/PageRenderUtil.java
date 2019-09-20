@@ -258,8 +258,7 @@ public class PageRenderUtil implements Serializable {
         final Set<String> personalizationsForPage = this.multiTreeAPI.getPersonalizationsForPage(htmlPage.getIdentifier());
         final List<ContainerRaw> raws = Lists.newArrayList();
 
-        final String currentPersonaTag = this.getCurrentPersonaTag(request);
-        final boolean hasPersonalizations = personalizationsForPage.contains(currentPersonaTag);
+        final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage);
 
         for (final String containerId : pageContents.rowKeySet()) {
 
@@ -331,7 +330,7 @@ public class PageRenderUtil implements Serializable {
                         cListAsMaps.add(contentPrintableMap);
 
                         if (personalizedContentlet != null &&
-                                (!hasPersonalizations || personalizedContentlet.getPersonalization().equals(currentPersonaTag))) {
+                                personalizedContentlet.getPersonalization().equals(includeContentFor)) {
                             personalizedContentletMap.add(contentPrintableMap);
                         }
                     } catch (IOException e) {
@@ -498,7 +497,7 @@ public class PageRenderUtil implements Serializable {
         return this.containersRaw;
     }
 
-    private String getCurrentPersonaTag(final HttpServletRequest request) {
+    private String getPersonaTagToIncludeContent(final HttpServletRequest request, final Set<String> personalizationsForPage) {
         IPersona iPersona = null;
 
         if (request != null) {
@@ -506,7 +505,11 @@ public class PageRenderUtil implements Serializable {
             iPersona = visitor.isPresent() && visitor.get().getPersona() != null ? visitor.get().getPersona() : null;
         }
 
-        return iPersona == null ? MultiTree.DOT_PERSONALIZATION_DEFAULT
+        final String currentPersonaTag =  iPersona == null ? MultiTree.DOT_PERSONALIZATION_DEFAULT
                 : Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + iPersona.getKeyTag();
+
+        final boolean hasPersonalizations = personalizationsForPage.contains(currentPersonaTag);
+
+        return hasPersonalizations ? currentPersonaTag : MultiTree.DOT_PERSONALIZATION_DEFAULT;
     }
 }

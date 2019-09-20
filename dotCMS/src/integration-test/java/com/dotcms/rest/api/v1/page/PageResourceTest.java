@@ -81,6 +81,7 @@ public class PageResourceTest {
     private Template template;
     private Container container1;
     private Container container2;
+    private InitDataObject initDataObject;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -98,7 +99,7 @@ public class PageResourceTest {
         response  = mock(HttpServletResponse.class);
 
         final ModuleConfig moduleConfig     = mock(ModuleConfig.class);
-        final InitDataObject initDataObject = mock(InitDataObject.class);
+        initDataObject = mock(InitDataObject.class);
         user = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
 
         final PageResourceHelper pageResourceHelper = mock(PageResourceHelper.class);
@@ -476,6 +477,84 @@ public class PageResourceTest {
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         assertEquals(pageView.getNumberContents(), 1);
 
+    }
+
+    /***
+     * Should return page for default persona
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testRenderNotPersonalizationVersion() throws DotDataException, DotSecurityException {
+        final String modeParam = "PREVIEW_MODE";
+        when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.get(modeParam));
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
+
+        final ContentType contentTypePersona = APILocator.getContentTypeAPI(APILocator.systemUser()).find("persona");
+        final Contentlet persona = new ContentletDataGen(contentTypePersona.id())
+                .setProperty("name", "name")
+                .setProperty("keyTag", "keyTag")
+                .host(host)
+                .languageId(1)
+                .nextPersisted();
+
+        when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
+
+        final Response response = pageResource
+                .render(request, this.response, page.getURI(), modeParam, persona.getIdentifier(),
+                        String.valueOf(languageId), null);
+
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        PageRenderVerifier.verifyPageView(pageView, pageRenderTest, APILocator.systemUser());
+
+        assertNull(pageView.getViewAs().getPersona());
+    }
+
+    /***
+     * Should return page for a persona
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testRenderPersonalizationVersion() throws DotDataException, DotSecurityException {
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
+
+        final ContentType contentTypePersona = APILocator.getContentTypeAPI(APILocator.systemUser()).find("persona");
+        final Contentlet persona = new ContentletDataGen(contentTypePersona.id())
+                .setProperty("name", "name")
+                .setProperty("keyTag", "keyTag")
+                .host(host)
+                .languageId(1)
+                .nextPersisted();
+
+        final Container container = pageRenderTest.getFirstContainer();
+        pageRenderTest.createContent(container);
+
+        APILocator.getMultiTreeAPI().copyPersonalizationForPage(
+                page.getIdentifier(),
+                Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getIdentifier()
+        );
+
+        final Response response = pageResource
+                .render(request, this.response, page.getURI(), null, persona.getIdentifier(),
+                        String.valueOf(languageId), null);
+
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        PageRenderVerifier.verifyPageView(pageView, pageRenderTest, user);
+
+        assertNull(pageView.getViewAs().getPersona());
     }
 
 }
