@@ -8,7 +8,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -60,6 +59,7 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Tuple2;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -842,7 +842,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletRequest request2 = createHttpRequest(jsonPayload2);
             final HttpServletResponse response2 = mock(HttpServletResponse.class);
             final Response endpointResponse2 = contentResource.singlePOST(request2, response2, "/save/1");
-            assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), endpointResponse2.getStatus());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse2.getStatus());
 
             //The Endpoint can only handle the entire set of fields.. You can not use this endpoint to only update 1 field.
 
@@ -873,8 +873,9 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletRequest request1 = createHttpRequest(jsonPayload1);
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
             final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
-            assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), endpointResponse1.getStatus());
-            assertEquals("Unable to set string value as a Long", endpointResponse1.getEntity());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
+            assertEquals(CollectionsUtils.map("message", "Unable to set string value as a Long"),
+                    endpointResponse1.getEntity());
 
         }finally {
             if(null != contentType){
@@ -902,8 +903,57 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletRequest request1 = createHttpRequest(jsonPayload1);
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
             final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
-            assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), endpointResponse1.getStatus());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
             /// No Detailed Message is shown here. Explaining that the field is required
+        }finally {
+            if(null != contentType){
+                contentTypeAPI.delete(contentType);
+            }
+        }
+
+    }
+
+    @DataProvider
+    public static Object[] contentResourceInvalidParamsDP(){
+
+        // case 1 bad stInode value
+        final String case1Payload = "{\n"
+                + "    \"stInode\" : \"InvalidValue\",\n"
+                + "    \"numeric\" : \"0\",\n"
+                + "    \"image\" : \"whatever\"\n"
+                + "}";
+
+        // tuple: payload, expected response
+        final Tuple2 case1 = new Tuple2<>(case1Payload, Status.BAD_REQUEST);
+
+        // case 2 missing stInode param
+        final String case2Payload = "{\n"
+                + "    \"numeric\" : \"0\",\n"
+                + "    \"image\" : \"whatever\"\n"
+                + "}";
+
+        // tuple: payload, expected response
+        final Tuple2 case2 = new Tuple2<>(case2Payload, Status.BAD_REQUEST);
+
+        return new Tuple2[]{
+                case1,
+                case2
+        };
+    }
+
+    @Test
+    @UseDataProvider("contentResourceInvalidParamsDP")
+    public void testSinglePOST_InvalidParamsShouldReturn400(final Tuple2<String, Response.Status> testCase) throws Exception {
+        final ContentResource contentResource = new ContentResource();
+        ContentType contentType = null;
+        try {
+            contentType = createSampleContentType(true);
+
+            //Create an instance of the CT
+            final HttpServletRequest request1 = createHttpRequest(testCase._1);
+            final HttpServletResponse response1 = mock(HttpServletResponse.class);
+            final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
         }finally {
             if(null != contentType){
                 contentTypeAPI.delete(contentType);

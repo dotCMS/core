@@ -5137,11 +5137,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 else if(value instanceof String && tempApi.isTempResource((String) value)) {
                   final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
                   // we use the session to verify access to the temp resource
-                  final DotTempFile tempFile = tempApi.getTempFile(request, (String) value).get();
-                  contentlet.setBinary(field.getVelocityVarName(), tempFile.file);
+                  final Optional<DotTempFile> tempFileOptional =  tempApi
+                          .getTempFile(request, (String) value);
+
+                  if(tempFileOptional.isPresent()) {
+                        contentlet.setBinary(field.getVelocityVarName(), tempFileOptional.get().file);
+                  } else {
+                      throw new DotStateException("Invalid Temp File provided");
+                  }
 
                 }
-            }catch (Exception e) {
+            }catch (IOException e) {
                 throw new DotContentletStateException("Unable to set binary file Object",e);
             }
         }else if(field.getFieldContentlet().startsWith("system_field")){
