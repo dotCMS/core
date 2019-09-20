@@ -107,7 +107,7 @@ public class PersonalizationResource {
 
         final Contentlet pageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(pageId);
         if(!permissionAPI.doesUserHavePermission(pageContentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
-            Logger.error(PersonalizationResource.class,String.format("User `%s` does not have edit permission over page `%s` therefore personalization isn't allowed.  ",user.getUserId(), pageId));
+            Logger.warn(PersonalizationResource.class,String.format("User `%s` does not have edit permission over page `%s` therefore personalization isn't allowed.  ",user.getUserId(), pageId));
             return Response.status(Status.UNAUTHORIZED).build();
         }
 
@@ -156,7 +156,7 @@ public class PersonalizationResource {
 
         final Contentlet pageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(pageId);
         if(!permissionAPI.doesUserHavePermission(pageContentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
-            Logger.error(PersonalizationResource.class,String.format("User `%s` does not have edit permission over page `%s` therefore personalization isn't allowed.  ",user.getUserId(), pageId));
+            Logger.warn(PersonalizationResource.class,String.format("User `%s` does not have edit permission over page `%s` therefore personalization isn't allowed.  ",user.getUserId(), pageId));
             return Response.status(Status.UNAUTHORIZED).build();
         }
 
