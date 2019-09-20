@@ -204,31 +204,28 @@
 		dojo.byId('usersGrid').style.display = 'none';
 		var value = dijit.byId('usersFilter').attr('value');
 		var showUsers = "all";
-		var myId = (btn && btn.id) ? btn.id : "all"
-		if(myId =="showFrontEndUsers"){
+		var myId = (btn && btn.id) ? btn.id : "all";
+		if(myId === "showFrontEndUsers"){
 		    dijit.byId("showFrontEndUsers").attr('checked',true);
 		    dijit.byId("showAllUsers").attr('checked',false);
 		    dijit.byId("showBackEndUsers").attr('checked',false);
 		    showUsers="frontEnd";
-		}else if(myId =="showBackEndUsers"){
+		}else if(myId === "showBackEndUsers"){
 		      dijit.byId("showBackEndUsers").attr('checked',true);
 	          dijit.byId("showAllUsers").attr('checked',false);
 	          dijit.byId("showFrontEndUsers").attr('checked',false);
 	          showUsers="backEnd";
-		}else{
-		    dijit.byId("showAllUsers").attr('checked',true);
-            dijit.byId("showBackEndUsers").attr('checked',false);
-            dijit.byId("showFrontEndUsers").attr('checked',false);
 		}
-		
 
-		
 		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: value, includeDefault: false, showUsers: showUsers }, dojo.hitch(this, getUsersListCallback));
 	}
 
 	//Event handler for clearing the users filter
 	function clearUserFilter () {
 	    dijit.byId("showAllUsers").attr('checked',true);
+        dijit.byId("showBackEndUsers").attr('checked',false);
+        dijit.byId("showFrontEndUsers").attr('checked',false);
+
 	    dojo.byId('loadingUsers').style.display = '';
 		dojo.byId('usersGrid').style.display = 'none';
 		dijit.byId('usersFilter').attr('value', '');
@@ -284,7 +281,6 @@
 	//Gathering the user info from the server and setting up the right hand side
 	//of user info
 	function editUserCallback(user) {
-
 		//Global user variable
 		currentUser = user;
         dijit.byId('userActive').attr("checked", user.active);
@@ -310,7 +306,7 @@
 	        dojo.byId('gravatarTextHolder').style.display='';
 	        
 	    }
-	    
+
 	    
 
 	    
@@ -371,6 +367,9 @@
 		}
 	 	switch (currentSelectedTab) {
 			case 'userDetailsTab':
+			    if(userId){
+                    UserAjax.getUserById(userId, editUserCallback);
+                }
 				break;
 			case 'userRolesTab':
 				initStructures();
@@ -425,6 +424,7 @@
 		newUser = true;
 		dojo.byId('userProfileTabs').style.display = '';
 		dojo.byId('loadingUserProfile').style.display = 'none';
+        dojo.byId('gravatarTextHolder').style.display='none';
 		if(dojo.isIE){
 		  //http://jira.dotmarketing.net/browse/DOTCMS-5679
 		  dijit.byId('userTabsContainer').selectChild(dijit.byId('userRolesTab'));
@@ -459,7 +459,7 @@
 
 	//Handler to save the user details
 	function saveUserDetails() {
-
+         
 		//If the form is not valid focus on the first not valid field and
 		//hightlight the other not valid ones
 		if(!dijit.byId('userInfoForm').validate()) {
