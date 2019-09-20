@@ -35,7 +35,7 @@ export class DotPersonaSelectorComponent implements OnInit {
     canDespersonalize = false;
     isEditMode = false;
     messagesKey: { [key: string]: string } = {};
-    paginationPerPage = 5;
+    paginationPerPage = 10;
     personas: DotPersona[];
     totalRecords: number;
     value: DotPersona;

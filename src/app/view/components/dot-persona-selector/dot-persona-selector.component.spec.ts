@@ -100,8 +100,8 @@ describe('DotPersonaSelectorComponent', () => {
 
     it('should call page change', () => {
         spyOn(paginatorService, 'getWithOffset').and.returnValue(of([mockDotPersona]));
-        dropdown.triggerEventHandler('pageChange', { filter: '', first: 5, rows: 5 });
-        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(5);
+        dropdown.triggerEventHandler('pageChange', { filter: '', first: 10, rows: 10 });
+        expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
     });
 
     it('should set dot-searchable-dropdown with right attributes', () => {
@@ -109,7 +109,7 @@ describe('DotPersonaSelectorComponent', () => {
         expect(dropdown.componentInstance.cssClass).toBe('dot-persona-selector');
         expect(dropdown.componentInstance.optionsWidth).toBe(448);
         expect(dropdown.componentInstance.data).toEqual([mockDotPersona]);
-        expect(dropdown.componentInstance.rows).toBe(5);
+        expect(dropdown.componentInstance.rows).toBe(10);
         expect(dropdown.componentInstance.totalRecords).toBe(1);
     });
 
