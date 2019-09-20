@@ -282,7 +282,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final WorkflowSchemeImportObjectForm exportObjectForm =
                     new WorkflowSchemeImportObjectForm(
                             new WorkflowSchemeImportExportObjectView(WorkflowResource.VERSION,schemes,steps,actions,actionSteps, Collections.emptyList(),
-                                    Collections.emptyList(),Collections.emptyList(), Collections.emptyList(), Collections.emptyList()),
+                                    Collections.emptyList(),Collections.emptyList()),
                             permissions);
 
             final Response importResponse = workflowResource.importScheme(request, new EmptyHttpResponse(), exportObjectForm);

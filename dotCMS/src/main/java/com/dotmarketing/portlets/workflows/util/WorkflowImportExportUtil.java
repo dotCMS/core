@@ -169,7 +169,7 @@ public class WorkflowImportExportUtil {
 						ConversionUtils.toInt(actionStepMap.get(ACTION_ORDER), 0));
 			}
 
-			for (final WorkflowActionClass actionClass : importer.getActionClasses()) {
+ 			for (final WorkflowActionClass actionClass : importer.getActionClasses()) {
 
 				Logger.info(this, "Importing actionClass: " + actionClass);
 				workflowAPI.saveActionClass(actionClass, user);
