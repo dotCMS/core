@@ -276,7 +276,6 @@ public class PublisherAPIImpl extends PublisherAPI{
 		  }
 
     	  Map<String, Object> dataMap = CollectionsUtils.map("deliveryStrategy", deliveryStrategy);
-		  firePublisherQueueNow(dataMap);
 
 		  //Preparing and returning the response status object
 		  resultMap.put( "errorMessages", errorsList );
@@ -287,7 +286,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 		  //Triggering event listener
 		  try {
 
-			  HibernateUtil.addCommitListener(() -> this.sendQueueElements(bundleId), 1000);
+			  HibernateUtil.addCommitListener(() -> {
+                  firePublisherQueueNow(dataMap);
+			      this.sendQueueElements(bundleId);
+              }, 1000);
 		  } catch (DotHibernateException e) {
 			  Logger.error(this, e.getMessage(), e);
 		  }
