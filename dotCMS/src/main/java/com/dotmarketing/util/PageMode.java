@@ -107,15 +107,6 @@ public enum PageMode {
 
             final User user = PortalUtil.getUser(request);
 
-            /*if(user != null && user.isAnonymousUser()){
-                final PageMode pageModeRef = pageMode;
-                if (Try.of(()-> APILocator.getPermissionAPI().doesUserHavePermission(
-                     WebAPILocator.getHostWebAPI().getCurrentHost(req, pageModeRef), PermissionLevel.READ.getType(), user)).getOrElse(false)
-                   ) {
-                    pageMode = DEFAULT_PAGE_MODE;
-                }
-            } else*/
-
             if (user == null || !user.isBackendUser()) {
                 pageMode = DEFAULT_PAGE_MODE;
             }
