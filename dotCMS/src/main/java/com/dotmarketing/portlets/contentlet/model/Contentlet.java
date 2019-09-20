@@ -1211,14 +1211,19 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	public String getConstantValue(final String key) {
-    if(this.getContentType()!=null && this.getContentType().fieldMap().containsKey(key)) {
-      com.dotcms.contenttype.model.field.Field field = this.getContentType().fieldMap().get(key);
-      if(field!=null && field instanceof ConstantField ) {
-        // cache it in map for future use
-        map.put(key, field.values());
-        return field.values();
+	  try {
+      if(this.getContentType()!=null && this.getContentType().fieldMap().containsKey(key)) {
+        com.dotcms.contenttype.model.field.Field field = this.getContentType().fieldMap().get(key);
+        if(field!=null && field instanceof ConstantField ) {
+          // cache it in map for future use
+          map.put(key, field.values());
+          return field.values();
+        }
       }
-    }
+	  }
+	  catch(Throwable t) {
+	    Logger.warnAndDebug(this.getClass(), t.getMessage(),t);
+	  }
     return null;
 	}
 	
