@@ -287,7 +287,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 		  try {
 
 			  HibernateUtil.addCommitListener(() -> {
-                  firePublisherQueueNow(dataMap);
+			      if (operationType != -1) {
+			          //It does not need to be executed when just adding to a bundle
+                      firePublisherQueueNow(dataMap);
+                  }
 			      this.sendQueueElements(bundleId);
               }, 1000);
 		  } catch (DotHibernateException e) {
