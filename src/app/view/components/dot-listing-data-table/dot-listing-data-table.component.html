@@ -7,7 +7,6 @@
     />
     <ng-content></ng-content>
 </dot-action-header>
-
 <p-table #dataTable
         (onLazyLoad)="loadDataPaginationEvent($event)"
         (onRowSelect)="handleRowClick($event)"
@@ -30,7 +29,7 @@
                 [pSortableColumn]="col.fieldName"
                 [pSortableColumnDisabled]="!col.sortable">
                 {{col.header}}
-                <p-sortIcon [field]="col.fieldName"></p-sortIcon>
+                <p-sortIcon *ngIf="col.sortable" [field]="col.fieldName"></p-sortIcon>
             </th>
             <th style="width: 5%"></th>
         </tr>
@@ -42,13 +41,13 @@
                 [ngStyle]="{'width': col.width, 'text-align': getAlign(col)}">
                 <div class="listing-datatable__column-icon"  *ngIf="col.icon">
                     <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
-                    <span>{{ rowData[col.fieldName] }}</span>
+                    <span>{{ col.textContent || rowData[col.fieldName] }}</span>
                 </div>
                 <span *ngIf="!col.icon && col.fieldName !== 'nEntries'">{{ rowData[col.fieldName] }}</span>
                 <a *ngIf="col.fieldName === 'nEntries'"
                    [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
                    [queryParams]="rowData.variable === 'Host' ? {} : {filter: rowData.variable}">
-                    {{ rowData[col.fieldName] }}
+                    {{ col.textContent || rowData[col.fieldName] }}
                 </a>
             </td>
             <td class="listing-datatable__action-column" style="width: 5%">

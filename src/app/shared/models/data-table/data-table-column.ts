@@ -5,5 +5,6 @@ export interface DataTableColumn {
     icon?: (any) => string;
     sortable?: boolean;
     textAlign?: string;
+    textContent?: string;
     width?: string;
 }

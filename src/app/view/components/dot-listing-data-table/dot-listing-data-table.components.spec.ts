@@ -124,10 +124,10 @@ describe('DotListingDataTableComponent', () => {
         this.paginatorService.totalRecords = this.items.length;
 
         this.columns = [
-            { fieldName: 'field1', header: 'Field 1', width: '45%' },
+            { fieldName: 'field1', header: 'Field 1', width: '45%', sortable: true },
             { fieldName: 'field2', header: 'Field 2', width: '10%' },
             { fieldName: 'field3', header: 'Field 3', width: '30%' },
-            { fieldName: 'nEntries', header: 'Field 4', width: '5%' }
+            { fieldName: 'nEntries', header: 'Field 4', width: '5%', textContent: 'View Entries' }
         ];
 
         this.url = '/test/';
@@ -173,8 +173,12 @@ describe('DotListingDataTableComponent', () => {
         const headers = rows[0].querySelectorAll('th');
         expect(5).toEqual(headers.length);
 
-        comp.columns.forEach((_col, index) =>
-            expect(comp.columns[index].header).toEqual(headers[index].textContent.trim())
+        comp.columns.forEach((_col, index) => {
+            const sortableIcon = headers[index].querySelector('p-sortIcon');
+            index === 0 ? expect(sortableIcon).toBeDefined() : expect(sortableIcon).toBeNull();
+            expect(comp.columns[index].header).toEqual(headers[index].textContent.trim());
+        }
+
         );
 
         rows.forEach((row, rowIndex) => {
@@ -189,14 +193,8 @@ describe('DotListingDataTableComponent', () => {
                     }
                     if (cellIndex === 3) {
                         const anchor = cells[cellIndex].querySelector('a');
-                        expect(anchor.textContent).toContain(
-                            item[comp.columns[cellIndex].fieldName]
-                        );
-                        if (item.variable === 'Host') {
-                            expect(anchor.href).toContain('/c/sites');
-                        } else {
-                            expect(anchor.href).toContain('/c/content?filter=Banner');
-                        }
+                        expect(anchor.textContent).toContain(comp.columns[cellIndex].textContent);
+                        expect(anchor.href).toContain(item.variable === 'Host' ? '/c/sites' : '/c/content?filter=Banner');
                     }
                 });
             }
@@ -247,8 +245,8 @@ describe('DotListingDataTableComponent', () => {
                 cells.forEach((_cell, cellIndex) => {
                     if (cellIndex < 4) {
                         const textContent = cells[cellIndex].textContent;
-                        const itemCOntent = item[comp.columns[cellIndex].fieldName];
-                        expect(textContent).toContain(itemCOntent);
+                        const itemContent = comp.columns[cellIndex].textContent || item[comp.columns[cellIndex].fieldName];
+                        expect(textContent).toContain(itemContent);
                     }
                 });
             }

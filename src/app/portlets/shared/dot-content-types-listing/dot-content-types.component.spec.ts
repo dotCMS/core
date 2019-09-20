@@ -184,7 +184,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         expect('nEntries').toEqual(columns[3].fieldName);
         expect('Entries').toEqual(columns[3].header);
-        expect('7%').toEqual(columns[3].width);
+        expect('8%').toEqual(columns[3].width);
 
         expect('modDate').toEqual(columns[4].fieldName);
         expect('Last').toEqual(columns[4].header);

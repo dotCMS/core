@@ -65,7 +65,8 @@ export class DotContentTypesPortletComponent implements OnInit {
         'contenttypes.fieldname.structure.name',
         'contenttypes.form.label.description',
         'message.structure.cantdelete',
-        'message.structure.delete.structure.and.content'
+        'message.structure.delete.structure.and.content',
+        'dot.common.view.entries'
     ];
 
     constructor(
@@ -230,7 +231,9 @@ export class DotContentTypesPortletComponent implements OnInit {
             {
                 fieldName: 'nEntries',
                 header: this.dotMessageService.get('contenttypes.fieldname.entries'),
-                width: '7%'
+                width: '8%',
+                textAlign: 'left',
+                textContent: this.dotMessageService.get('dot.common.view.entries')
             },
             {
                 fieldName: 'modDate',
