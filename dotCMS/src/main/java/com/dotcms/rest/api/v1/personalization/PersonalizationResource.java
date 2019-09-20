@@ -108,7 +108,7 @@ public class PersonalizationResource {
         final Contentlet pageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(pageId);
         if(!permissionAPI.doesUserHavePermission(pageContentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
             Logger.warn(PersonalizationResource.class,String.format("User `%s` does not have edit permission over page `%s` therefore personalization isn't allowed.  ",user.getUserId(), pageId));
-            return Response.status(Status.UNAUTHORIZED).build();
+            return Response.status(Status.FORBIDDEN).build();
         }
 
         return Response.ok(new ResponseEntityView(
@@ -157,7 +157,7 @@ public class PersonalizationResource {
         final Contentlet pageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(pageId);
         if(!permissionAPI.doesUserHavePermission(pageContentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
             Logger.warn(PersonalizationResource.class,String.format("User `%s` does not have edit permission over page `%s` therefore personalization isn't allowed.  ",user.getUserId(), pageId));
-            return Response.status(Status.UNAUTHORIZED).build();
+            return Response.status(Status.FORBIDDEN).build();
         }
 
         this.multiTreeAPI.deletePersonalizationForPage(pageId, Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personalization);
