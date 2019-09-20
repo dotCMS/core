@@ -10,6 +10,8 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
@@ -41,22 +43,29 @@ public class PersonalizationResource {
     private final PersonaAPI    personaAPI;
     private final WebResource   webResource;
     private final MultiTreeAPI  multiTreeAPI;
-
+    private final PermissionAPI permAPI;
+    private final ContentletAPI conAPI;
 
 
     @SuppressWarnings("unused")
     public PersonalizationResource() {
-        this(APILocator.getPersonaAPI(), APILocator.getMultiTreeAPI(), new WebResource(new ApiProvider()));
+        this(APILocator.getPersonaAPI(), APILocator.getMultiTreeAPI(), new WebResource(new ApiProvider()), APILocator.getPermissionAPI(),APILocator.getContentletAPI());
     }
 
     @VisibleForTesting
     protected PersonalizationResource(final PersonaAPI personaAPI,
                                       final MultiTreeAPI multiTreeAPI,
-                                      final WebResource webResource) {
+                                      final WebResource webResource,
+                                      final PermissionAPI permAPI,
+                                      final ContentletAPI conAPI
+        
+        ) {
 
         this.personaAPI    = personaAPI;
         this.multiTreeAPI  = multiTreeAPI;
         this.webResource   = webResource;
+        this.permAPI = permAPI;
+        this.conAPI=conAPI;
     }
 
 
@@ -89,6 +98,11 @@ public class PersonalizationResource {
             throw new BadRequestException("Does not exists a Persona with the tag: " + personalizationPersonaPageForm.getPersonaTag());
         }
 
+        // test permissions
+        permAPI.checkPermission(conAPI.findContentletByIdentifierAnyLanguage(personalizationPersonaPageForm.getPageId()),PermissionLevel.EDIT, user);
+        
+        
+        
         return Response.ok(new ResponseEntityView(
                         this.multiTreeAPI.copyPersonalizationForPage(
                             personalizationPersonaPageForm.getPageId(),
@@ -125,7 +139,10 @@ public class PersonalizationResource {
             throw new BadRequestException(
                     "Page or Personalization parameter are missing, should use: /pagepersonas/page/{pageId}/personalization/{personalization}");
         }
-
+        
+        // test permissions
+        permAPI.checkPermission(conAPI.findContentletByIdentifierAnyLanguage(pageId),PermissionLevel.EDIT, user);
+        
         if (MultiTree.DOT_PERSONALIZATION_DEFAULT.equalsIgnoreCase(personalization) ||
                 !this.personaAPI.findPersonaByTag(personalization, user, respectFrontEndRoles).isPresent()) {
 
