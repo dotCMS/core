@@ -1,6 +1,6 @@
 {
     "name": "dotcms-field-elements",
-    "version": "0.0.18",
+    "version": "0.0.19",
     "description": "Stencil Component Starter",
     "module": "dist/esm/index.js",
     "main": "dist/index.js",
