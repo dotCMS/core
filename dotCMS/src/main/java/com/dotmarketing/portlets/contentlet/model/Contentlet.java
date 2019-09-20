@@ -1199,13 +1199,32 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 		Object value=map.get(key);
 
-		if(isMetadataFieldCached(getStructureInode(), key, value))
+		if(isMetadataFieldCached(getStructureInode(), key, value)) {
 		    return lazyMetadataLoad(getInode(),getStructureInode());
-
+		}
+		if(value==null) {
+  		 value=getConstantValue(key);
+		}
+		
 		return value;
 
 	}
 
+	public String getConstantValue(final String key) {
+    if(this.getContentType()!=null && this.getContentType().fieldMap().containsKey(key)) {
+      com.dotcms.contenttype.model.field.Field field = this.getContentType().fieldMap().get(key);
+      if(field!=null && field instanceof ConstantField ) {
+        // cache it in map for future use
+        map.put(key, field.values());
+        return field.values();
+      }
+    }
+    return null;
+	}
+	
+	
+	
+	
 	/**
 	 * @param lowIndexPriority the lowIndexPriority to set
 	 */
