@@ -26,11 +26,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.TagUtil;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.HashMultiset;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
 
 import eu.bitwalker.useragentutils.DeviceType;
 import eu.bitwalker.useragentutils.UserAgent;
+import io.vavr.control.Try;
 
 @JsonSerialize(using = VisitorSerializer.class)
 public class Visitor implements Serializable {
@@ -104,8 +106,8 @@ public class Visitor implements Serializable {
 
   /**
    * Returns a map of the persona and the percentage of times that persona 
-   * has been assigned to the visitor ordered by how often that persona has been set
-   * e.g. if someone has been classified as  extremeSports 3 times, a snowboarder 2 times and
+   * has been assigned to the visitor and the percentage of how often that persona has been set
+   * e.g. if someone has been classified as  extremeSports 4 times, a snowboarder 3 times and
    * a skiier 1 time, this would return:
    * {
    * {extremeSports,.5},
@@ -135,12 +137,12 @@ public class Visitor implements Serializable {
 
       try {
         // The Persona changed for this Visitor, we must accrue the tags associated to this new Persona
-        List<Tag> personaTags = APILocator.getTagAPI().getTagsByInode(persona.getInode());
+        List<Tag> personaTags = Try.of(()-> APILocator.getTagAPI().getTagsByInode(persona.getInode())).getOrElse(ImmutableList.of());
 
         String foundTags = TagUtil.tagListToString(personaTags);
         // Accrue these found tags to this visitor object
         TagUtil.accrueTagsToVisitor(this, foundTags);
-      } catch (DotDataException e) {
+      } catch (Exception e) {
         Logger.error(this, "Unable to retrieve Tags associated to Persona [" + persona.getInode() + "].", e);
       }
       this.personas.add(persona.getKeyTag());
