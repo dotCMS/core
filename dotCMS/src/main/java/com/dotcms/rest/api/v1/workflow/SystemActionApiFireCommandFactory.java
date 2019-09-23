@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.business.UnassignedWorkflowContentletCheckinListener;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -151,7 +152,10 @@ public class SystemActionApiFireCommandFactory {
                 contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
             }
 
-            return contentletAPI.checkin(contentlet, dependencies);
+            final Contentlet checkoutContentlet = new SaveContentActionlet()
+                    .checkout(contentlet, dependencies.getModUser());
+
+            return  contentletAPI.checkin(checkoutContentlet, dependencies);
         }
     }
 
@@ -214,7 +218,9 @@ public class SystemActionApiFireCommandFactory {
             }
 
             Logger.info(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
-            final Contentlet checkinContentlet = contentletAPI.checkin(contentlet,
+            final Contentlet checkoutContentlet = new SaveContentActionlet()
+                    .checkout(contentlet, dependencies.getModUser());
+            final Contentlet checkinContentlet = contentletAPI.checkin(checkoutContentlet,
                     user, dependencies.isRespectAnonymousPermissions());
 
             if (!hasPublishActionlet) {

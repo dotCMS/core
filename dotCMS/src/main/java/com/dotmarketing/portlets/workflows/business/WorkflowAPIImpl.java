@@ -357,6 +357,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 */
 	private String getLongId (final String shortyId, final ShortyIdAPI.ShortyInputType type) {
 
+		//  it is already long
+		if (null != shortyId && shortyId.length() == 36) {
+
+			return shortyId;
+		}
+
 		final Optional<ShortyId> shortyIdOptional =
 				this.shortyIdAPI.getShorty(shortyId, type);
 
@@ -1757,7 +1763,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						   final User user) throws DotDataException {
 
 		DotPreconditions.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
-				()-> "Workflow-does-not-exists-scheme",
+				()-> {
+					Logger.error(this, "The Workflow Scheme does not exist, id: " + action.getSchemeId());
+					return "Workflow-does-not-exists-scheme";
+				},
 				DoesNotExistException.class);
 
 		try {

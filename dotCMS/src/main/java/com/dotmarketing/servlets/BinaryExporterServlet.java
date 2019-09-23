@@ -377,9 +377,11 @@ public class BinaryExporterServlet extends HttpServlet {
       
       final String[] val = params.get("filter");
       if(val!=null && val[0].contains("Quality")) {
-        if(Browser.SAFARI == new UserAgent(req.getHeader("user-agent")).getBrowser()){
+        Browser browser = new UserAgent(req.getHeader("user-agent")).getBrowser();
+        if(browser == Browser.SAFARI || browser == Browser.MOBILE_SAFARI){
           params.put("filter", new String[] {val[0].replace("Quality","Jpeg")});
           params.put("jpeg_q", params.get("quality_q"));
+          params.put("jpeg_p",  new String[] {"1"});
         }else {
           params.put("filter", new String[] {val[0].replace("Quality","WebP")});
           params.put("webp_q", params.get("quality_q"));
