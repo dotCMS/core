@@ -11,7 +11,7 @@ import { take, map } from 'rxjs/operators';
 
 export interface DotHttpErrorHandled {
     redirected: boolean;
-    forbidden?: boolean;
+    status: HttpCode;
 }
 
 /**
@@ -52,11 +52,15 @@ export class DotHttpErrorManagerService {
         return this.getMessages().pipe(
             map(() => {
                 const result: DotHttpErrorHandled = {
-                    redirected: this.callErrorHandler(err.response)
+                    redirected: this.callErrorHandler(err.response),
+                    status: err.status
                 };
 
-                if (err['bodyJsonObject'].error) {
-                    result.forbidden = this.contentletIsForbidden(err['bodyJsonObject'].error);
+                if (
+                    err['bodyJsonObject'].error &&
+                    this.contentletIsForbidden(err['bodyJsonObject'].error)
+                ) {
+                    result.status = HttpCode.FORBIDDEN;
                 }
                 return result;
             })
@@ -86,7 +90,9 @@ export class DotHttpErrorManagerService {
         const code = response.status;
 
         return code === HttpCode.FORBIDDEN
-            ? this.isLicenseError(response) ? this.handleLicense() : this.handleForbidden()
+            ? this.isLicenseError(response)
+                ? this.handleLicense()
+                : this.handleForbidden()
             : this.errorHandlers[code](response);
     }
 

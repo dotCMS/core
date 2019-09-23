@@ -1,20 +1,21 @@
-import { throwError as observableThrowError, of as observableOf } from 'rxjs';
-import { mockDotRenderedPage } from '../../../../../test/dot-page-render.mock';
-import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
-import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
+import { ActivatedRouteSnapshot } from '@angular/router';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotPageRender } from '../../models';
+import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
+import { DotPageRenderState } from '../../models/dot-rendered-page-state.model';
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { LoginService } from 'dotcms-js';
+import { LoginService, HttpCode, ResponseView } from 'dotcms-js';
 import { LoginServiceMock, mockUser } from './../../../../../test/login-service.mock';
+import { Response, Headers } from '@angular/http';
 import { RouterTestingModule } from '@angular/router/testing';
 import { async } from '@angular/core/testing';
-import { ActivatedRouteSnapshot } from '@angular/router';
-import { DotPageRenderState } from '../../models/dot-rendered-page-state.model';
+import { mockDotRenderedPage } from '../../../../../test/dot-page-render.mock';
 import { mockResponseView } from '../../../../../test/response-view.mock';
-import { DotPageRender } from '../../models';
+import { throwError, of } from 'rxjs';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'
@@ -23,10 +24,11 @@ const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteS
 route.queryParams = {};
 
 describe('DotEditPageResolver', () => {
-    let resolver: DotEditPageResolver;
-    let dotPageStateService: DotPageStateService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
+    let dotPageStateService: DotPageStateService;
+    let dotPageStateServiceRequestPageSpy: jasmine.Spy;
     let dotRouterService: DotRouterService;
+    let resolver: DotEditPageResolver;
 
     beforeEach(async(() => {
         const testbed = DOTTestBed.configureTestingModule({
@@ -43,107 +45,72 @@ describe('DotEditPageResolver', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
-                },
+                }
             ],
             imports: [RouterTestingModule]
         });
 
-        resolver = testbed.get(DotEditPageResolver);
-        dotPageStateService = testbed.get(DotPageStateService);
         dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);
+        dotPageStateService = testbed.get(DotPageStateService);
+        dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
         dotRouterService = testbed.get(DotRouterService);
+        resolver = testbed.get(DotEditPageResolver);
+
+        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
     }));
 
-    describe('content', () => {
-        beforeEach(() => {
-            route.queryParams.url = 'edit-page/content';
-            route.queryParams.language_id = '2';
-            route.children = [
-                {
-                    url: [
-                        {
-                            path: 'content'
-                        }
-                    ]
-                }
-            ];
+    beforeEach(() => {
+        route.queryParams.url = 'edit-page/content';
+        route.queryParams.language_id = '2';
+        route.children = [
+            {
+                url: [
+                    {
+                        path: 'content'
+                    }
+                ]
+            }
+        ];
+    });
+
+    it('should return a DotRenderedPageState', () => {
+        const mock = new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage));
+        dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+
+        resolver.resolve(route).subscribe((state: DotPageRenderState) => {
+            expect(state).toEqual(mock);
         });
 
-        it('should return a DotRenderedPageState valid object', () => {
-            spyOn(dotPageStateService, 'get').and.returnValue(
-                observableOf(new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage)))
-            );
-
-            resolver.resolve(route).subscribe((res) => {
-                expect(res).toEqual(new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage)));
-            });
-        });
-
-        it('should return a DotRenderedPageState valid object when layout is null', () => {
-            const mockDotRenderedPageState: DotPageRenderState = new DotPageRenderState(
-                mockUser,
-                new DotPageRender({
-                    ...mockDotRenderedPage,
-                    layout: null
-                })
-            );
-            spyOn(dotPageStateService, 'get').and.returnValue(
-                observableOf(mockDotRenderedPageState)
-            );
-
-            resolver.resolve(route).subscribe((res) => {
-                expect(res).toEqual(mockDotRenderedPageState);
-            });
-        });
-
-        it('should return handle 403', () => {
-            const fake403Response = mockResponseView(403);
-
-            spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(
-                observableOf({
-                    redirected: true
-                })
-            );
-            spyOn(dotPageStateService, 'get').and.returnValue(
-                observableThrowError(fake403Response)
-            );
-
-            resolver.resolve(route).subscribe();
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(fake403Response);
-            expect(dotPageStateService.get).toHaveBeenCalledWith({
-                url: 'edit-page/content',
-                viewAs: {
-                    language_id: '2'
-                }
-            });
-        });
-
-        it('should redirect to site-browser', () => {
-            const fake403Response = mockResponseView(403);
-
-            spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(
-                observableOf({
-                    redirected: false
-                })
-            );
-            spyOn(dotPageStateService, 'get').and.returnValue(
-                observableThrowError(fake403Response)
-            );
-
-            resolver.resolve(route).subscribe();
-            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
-            expect(dotPageStateService.get).toHaveBeenCalledWith({
-                url: 'edit-page/content',
-                viewAs: {
-                    language_id: '2'
-                }
-            });
+        expect(dotPageStateService.requestPage).toHaveBeenCalledWith({
+            url: 'edit-page/content',
+            viewAs: {
+                language: '2'
+            }
         });
     });
 
-    describe('layout', () => {
+    it('should redirect to site-browser when request fail', () => {
+        const fake403Response = mockResponseView(403);
+
+        dotPageStateServiceRequestPageSpy.and.returnValue(throwError(fake403Response));
+
+        resolver.resolve(route).subscribe();
+        expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return DotPageRenderState from local state', () => {
+        const mock = new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage));
+        dotPageStateService.setInternalNavigationState(mock);
+
+        resolver.resolve(route).subscribe((state: DotPageRenderState) => {
+            expect(state).toEqual(mock);
+        });
+
+        expect(dotPageStateServiceRequestPageSpy).not.toHaveBeenCalled();
+    });
+
+    describe('handle layout', () => {
         beforeEach(() => {
-            route.queryParams.url = 'edit-page/layout';
             route.children = [
                 {
                     url: [
@@ -155,76 +122,73 @@ describe('DotEditPageResolver', () => {
             ];
         });
 
-        it('should return a DotRenderedPageState valid object', () => {
-            spyOn(dotPageStateService, 'get').and.returnValue(
-                observableOf(new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage)))
-            );
+        it('should return a DotRenderedPageState', () => {
+            const mock = new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage));
+            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
 
-            resolver.resolve(route).subscribe((res) => {
-                expect(res).toEqual(new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage)));
+            resolver.resolve(route).subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
             });
+            expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
         });
 
-        it('should trigger 403 error when try to go to layout because user canEdit page', () => {
-            spyOn(dotPageStateService, 'get').and.returnValue(
-                observableOf(
-                    new DotPageRenderState(mockUser,
-                        new DotPageRender({
-                            ...mockDotRenderedPage,
-                            page: {
-                                ...mockDotRenderedPage.page,
-                                canEdit: false
-                            }
-                        })
-                    )
-                )
-            );
-
-            spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(
-                observableOf({
-                    redirected: false
+        it('should handle error and redirect to site-browser when cant edit layout', () => {
+            const mock = new DotPageRenderState(
+                mockUser,
+                new DotPageRender({
+                    ...mockDotRenderedPage,
+                    page: {
+                        ...mockDotRenderedPage.page,
+                        canEdit: false
+                    }
                 })
             );
-            resolver.resolve(route).subscribe();
-            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
-        });
+            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
 
-        it('should trigger 403 error when try to go to layout because layout is null', () => {
-            spyOn(dotPageStateService, 'get').and.returnValue(
-                observableOf(
-                    new DotPageRenderState(mockUser,
-                        new DotPageRender({
-                            ...mockDotRenderedPage,
-                            layout: null
-                        })
-                    )
+            resolver.resolve(route).subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
+            });
+            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
+                new ResponseView(
+                    new Response({
+                        body: {},
+                        status: HttpCode.FORBIDDEN,
+                        headers: null,
+                        url: '',
+                        merge: null
+                    })
                 )
             );
+        });
 
-            spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(
-                observableOf({
-                    redirected: false
+        it('should handle error and redirect to site-browser when layout is not drawed', () => {
+            const mock = new DotPageRenderState(
+                mockUser,
+                new DotPageRender({
+                    ...mockDotRenderedPage,
+                    layout: null
                 })
             );
+            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
 
-            resolver.resolve(route).subscribe();
-            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('with dotRenderedPageState', () => {
-        const renderedPageState: DotPageRenderState = new DotPageRenderState(
-            mockUser,
-            new DotPageRender(mockDotRenderedPage)
-        );
-
-        beforeEach(() => {
-        });
-
-        it('should return a DotRenderedPageState valid object', () => {
-            resolver.resolve(route).subscribe((res) => {
-                expect(res).toEqual(renderedPageState);
+            resolver.resolve(route).subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
             });
+            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
+                new ResponseView(
+                    new Response({
+                        body: {},
+                        status: HttpCode.FORBIDDEN,
+                        headers: new Headers({
+                            'error-key': 'dotcms.api.error.license.required'
+                        }),
+                        url: '',
+                        merge: null
+                    })
+                )
+            );
         });
     });
 });

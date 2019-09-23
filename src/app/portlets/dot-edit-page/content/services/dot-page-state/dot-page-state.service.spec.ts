@@ -1,37 +1,55 @@
-import { of as observableOf } from 'rxjs';
-import { ConnectionBackend, ResponseOptions, Response } from '@angular/http';
+import { of, throwError } from 'rxjs';
+import { ConnectionBackend } from '@angular/http';
 import { MockBackend } from '@angular/http/testing';
 
-import { LoginService } from 'dotcms-js';
+import { LoginService, HttpCode } from 'dotcms-js';
 
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DOTTestBed } from '@tests/dot-test-bed';
 import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
 import { DotPageStateService } from './dot-page-state.service';
 import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
 import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
-import { DotPageRender } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
-import { LoginServiceMock } from '../../../../../test/login-service.mock';
-import { mockDotRenderedPage, mockDotPage } from '../../../../../test/dot-page-render.mock';
-import { mockUser } from '../../../../../test/login-service.mock';
+import { LoginServiceMock } from '@tests/login-service.mock';
+import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
+import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
+import { mockUser } from '@tests/login-service.mock';
 import * as _ from 'lodash';
 import { mockDotPersona } from '@tests/dot-persona.mock';
+import { DotDevice } from '@shared/models/dot-device/dot-device.model';
+import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { mockResponseView } from '@tests/response-view.mock';
+import { TestBedStatic } from '@angular/core/testing';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { PageModelChangeEventType } from '../dot-edit-content-html/models';
+
+const getDotPageRenderStateMock = () => {
+    return new DotPageRenderState(mockUser, mockDotRenderedPage);
+};
 
 describe('DotPageStateService', () => {
-    let service: DotPageStateService;
-    let loginService: LoginService;
     let backend: MockBackend;
+    let dotContentletLockerService: DotContentletLockerService;
+    let dotHttpErrorManagerService: DotHttpErrorManagerService;
+    let dotHttpErrorManagerServiceHandle: jasmine.Spy;
+    let dotPageRenderService: DotPageRenderService;
+    let dotPageRenderServiceGetSpy: jasmine.Spy;
+    let dotRouterService: DotRouterService;
+    let injector: TestBedStatic;
     let lastConnection;
-    let injector;
+    let loginService: LoginService;
+    let service: DotPageStateService;
 
     beforeEach(() => {
         lastConnection = [];
 
         injector = DOTTestBed.configureTestingModule({
             providers: [
-                DotPageStateService,
-                DotPageRenderService,
                 DotContentletLockerService,
+                DotHttpErrorManagerService,
+                DotPageRenderService,
+                DotPageStateService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -39,338 +57,242 @@ describe('DotPageStateService', () => {
             ]
         });
 
-        service = injector.get(DotPageStateService);
         backend = injector.get(ConnectionBackend) as MockBackend;
-        loginService = injector.get(LoginService);
         backend.connections.subscribe((connection: any) => {
             lastConnection.push(connection);
         });
+
+        dotContentletLockerService = injector.get(DotContentletLockerService);
+        dotHttpErrorManagerService = injector.get(DotHttpErrorManagerService);
+        dotPageRenderService = injector.get(DotPageRenderService);
+        dotRouterService = injector.get(DotRouterService);
+        loginService = injector.get(LoginService);
+
+        dotPageRenderServiceGetSpy = spyOn(dotPageRenderService, 'get').and.returnValue(
+            of(mockDotRenderedPage)
+        );
+
+        dotHttpErrorManagerServiceHandle = spyOn(
+            dotHttpErrorManagerService,
+            'handle'
+        ).and.callThrough();
+
+        service = injector.get(DotPageStateService);
     });
 
-    describe('set page state', () => {
-        it('should set a page locked and live mode', () => {
-            service
-                .setLock({
-                    mode: DotPageMode.LIVE,
-                }, true)
-                // .subscribe((updatedPageState: DotRenderedPageState) => {
-                //     expect(updatedPageState.page).toEqual(mockDotPage);
-                //     expect(updatedPageState.state).toEqual({
-                //         locked: true,
-                //         lockedByAnotherUser: true,
-                //         mode: DotPageMode.LIVE
-                //     });
-                // });
+    describe('$state', () => {
+        it('should get state', () => {
+            const mock = getDotPageRenderStateMock();
 
-            lastConnection[0].mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            message: 'locked'
-                        }
-                    })
-                )
-            );
-
-            const mockDotRenderedPageCopy: DotPageRender = _.cloneDeep(mockDotRenderedPage);
-            mockDotRenderedPageCopy.viewAs.mode = DotPageMode[DotPageMode.LIVE];
-
-            lastConnection[1].mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            entity: mockDotRenderedPageCopy
-                        }
-                    })
-                )
-            );
-
-            expect(lastConnection[0].request.url).toContain('content/lock/inode/999');
-            expect(lastConnection[1].request.url).toContain(
-                'v1/page/render/an/url/test?mode=ADMIN_MODE'
-            );
-        });
-
-        it('should set a page unlocked and preview mode', () => {
-            const mockDotRenderedPageTest = _.cloneDeep(mockDotRenderedPage);
-            mockDotRenderedPageTest.page.lockedBy = null;
-
-            service
-                .setLock({
-                    mode: DotPageMode.PREVIEW,
-                }, false)
-                // .subscribe((updatedPageState: DotRenderedPageState) => {
-                //     expect(updatedPageState.page).toEqual(mockDotRenderedPageTest.page);
-                //     expect(updatedPageState.state).toEqual({
-                //         locked: false,
-                //         lockedByAnotherUser: false,
-                //         mode: DotPageMode.PREVIEW
-                //     });
-                // });
-
-            lastConnection[0].mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            message: 'locked'
-                        }
-                    })
-                )
-            );
-
-            lastConnection[1].mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            entity: mockDotRenderedPageTest
-                        }
-                    })
-                )
-            );
-
-            expect(lastConnection[0].request.url).toContain('content/unlock/inode/999');
-            expect(lastConnection[1].request.url).toContain(
-                'v1/page/render/an/url/test?mode=PREVIEW'
-            );
-        });
-
-        it('should set a page preview mode and keep the lock', () => {
-            service
-                .setLock({
-                    mode: DotPageMode.PREVIEW
-                })
-                // .subscribe((updatedPageState: DotRenderedPageState) => {
-                //     expect(updatedPageState.page).toEqual(mockDotPage);
-                //     expect(updatedPageState.state).toEqual({
-                //         locked: true,
-                //         lockedByAnotherUser: true,
-                //         mode: DotPageMode.PREVIEW
-                //     });
-                // });
-
-            lastConnection[0].mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            entity: mockDotRenderedPage
-                        }
-                    })
-                )
-            );
-
-            expect(lastConnection[0].request.url).toContain(
-                'v1/page/render/an/url/test?mode=PREVIEW'
-            );
-            expect(lastConnection[1]).toBeUndefined();
-        });
-    });
-
-    describe('reload page state', () => {
-        it('should emit reload evt with DotRenderedPageState', () => {
-            const renderedPage = new DotPageRenderState(mockUser,
-                new DotPageRender({
-                    ...mockDotRenderedPage
-                })
-            );
-            spyOn(service, 'get').and.returnValue(observableOf(renderedPage));
-            service.state$.subscribe((page: DotPageRenderState) => {
-                expect(page).toBe(renderedPage);
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(mock);
             });
+            service.get({
+                url: 'some/url/test'
+            });
+        });
 
+        it('should reload', () => {
+            service.get({
+                url: '/an/url/test'
+            });
             service.reload();
+            expect(dotPageRenderServiceGetSpy).toHaveBeenCalledWith({
+                mode: 'PREVIEW_MODE',
+                url: '/an/url/test'
+            });
         });
     });
 
-    describe('get a page state', () => {
-        it('should get a unlocked page and set default state', () => {
-            const {
-                lockedBy,
-                lockMessage,
-                lockedByName,
-                lockedOn,
-                ...noLockedByPage
-            } = mockDotPage;
-
+    describe('setters', () => {
+        beforeEach(() => {
             service.get({
-                url: '/hello/world'
-            })
-            // .subscribe((updatedPageState: DotRenderedPageState) => {
-            //     expect(updatedPageState.page).toEqual(noLockedByPage);
-            //     expect(updatedPageState.state).toEqual({
-            //         locked: false,
-            //         mode: DotPageMode.PREVIEW,
-            //         lockedByAnotherUser: false
-            //     });
-            // });
-            lastConnection[0].mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            entity: {
-                                page: noLockedByPage,
-                                viewAs: {
-                                    mode: DotPageMode[DotPageMode.PREVIEW]
-                                }
-                            }
-                        }
-                    })
-                )
-            );
-
-            expect(lastConnection[0].request.url).toContain('v1/page/render/hello/world');
+                url: 'some/url/test'
+            });
         });
 
-        it('should get a page in a specific language', () => {
-            const {
-                lockedBy,
-                lockMessage,
-                lockedByName,
-                lockedOn,
-                ...noLockedByPage
-            } = mockDotPage;
-
-            const options = {
-                url: '/hello/world',
-                viewAs: {
-                    language: 2
-                }
-            };
-
-            service.get(options)
-            // .subscribe((updatedPageState: DotRenderedPageState) => {
-            //     expect(updatedPageState.page).toEqual(noLockedByPage);
-            //     expect(updatedPageState.state).toEqual({
-            //         locked: false,
-            //         mode: DotPageMode.PREVIEW,
-            //         lockedByAnotherUser: false
-            //     });
-            // });
-
-            lastConnection[0].mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            entity: {
-                                page: noLockedByPage,
-                                viewAs: {
-                                    mode: DotPageMode[DotPageMode.PREVIEW]
-                                }
-                            }
-                        }
+        describe('setLock', () => {
+            it('should lock', () => {
+                spyOn(dotContentletLockerService, 'lock').and.returnValue(
+                    of({
+                        message: 'locked'
                     })
-                )
-            );
+                );
+                service.setLock(
+                    {
+                        mode: DotPageMode.LIVE
+                    },
+                    true
+                );
 
-            expect(lastConnection[0].request.url).toContain(
-                'v1/page/render/hello/world?language_id=2'
-            );
-        });
-
-        describe('locked by another user', () => {
-            beforeEach(() => {
-                spyOnProperty(loginService, 'auth', 'get').and.returnValue({
-                    loginAsUser: {
-                        userId: 'someone'
-                    }
+                expect(dotContentletLockerService.lock).toHaveBeenCalledWith('2');
+                expect(dotPageRenderServiceGetSpy).toHaveBeenCalledWith({
+                    mode: 'ADMIN_MODE',
+                    url: '/an/url/test'
                 });
             });
 
-            it('should get a locked page and set default state', () => {
-                service.get({
-                    url: '/test/123'
-                })
-                // .subscribe((updatedPageState: DotRenderedPageState) => {
-                //     expect(updatedPageState.page).toEqual(mockDotPage);
-                //     expect(updatedPageState.state).toEqual({
-                //         locked: true,
-                //         mode: DotPageMode.EDIT,
-                //         lockedByAnotherUser: false
-                //     });
-                // });
-
-                const mockDotRenderedPageCopy: DotPageRender = _.cloneDeep(mockDotRenderedPage);
-                mockDotRenderedPageCopy.viewAs.mode = DotPageMode[DotPageMode.EDIT];
-
-                lastConnection[0].mockRespond(
-                    new Response(
-                        new ResponseOptions({
-                            body: {
-                                entity: mockDotRenderedPageCopy
-                            }
-                        })
-                    )
+            it('should unlock', () => {
+                spyOn(dotContentletLockerService, 'unlock').and.returnValue(
+                    of({
+                        message: 'unlocked'
+                    })
                 );
-                expect(lastConnection[0].request.url).toContain('v1/page/render/test/123');
+                service.setLock(
+                    {
+                        mode: DotPageMode.PREVIEW
+                    },
+                    false
+                );
+
+                expect(dotContentletLockerService.unlock).toHaveBeenCalledWith('2');
+                expect(dotPageRenderServiceGetSpy).toHaveBeenCalledWith({
+                    mode: 'PREVIEW_MODE',
+                    url: '/an/url/test'
+                });
             });
+        });
 
-            it('should get a locked page and set default state locked by another user', () => {
-                service.get({
-                    url: '/hola/mundo'
-                })
-                // .subscribe((updatedPageState: DotRenderedPageState) => {
-                //     expect(updatedPageState.page).toEqual(mockDotPage);
-                //     expect(updatedPageState.state).toEqual({
-                //         locked: true,
-                //         mode: DotPageMode.EDIT,
-                //         lockedByAnotherUser: false
-                //     });
-                // });
+        describe('setDevice', () => {
+            it('should set iPad', () => {
+                const device: DotDevice = {
+                    inode: '',
+                    name: 'iPad',
+                    cssHeight: '',
+                    cssWidth: ''
+                };
 
-                const mockDotRenderedPageCopy: DotPageRender = _.cloneDeep(mockDotRenderedPage);
-                mockDotRenderedPageCopy.viewAs.mode = DotPageMode[DotPageMode.EDIT];
+                service.setDevice(device);
 
-                lastConnection[0].mockRespond(
-                    new Response(
-                        new ResponseOptions({
-                            body: {
-                                entity: mockDotRenderedPageCopy
-                            }
-                        })
-                    )
-                );
-                expect(lastConnection[0].request.url).toContain('v1/page/render/hola/mundo');
+                expect(dotPageRenderServiceGetSpy).toHaveBeenCalledWith({
+                    viewAs: {
+                        device: device
+                    },
+                    url: '/an/url/test'
+                });
+            });
+        });
+
+        describe('setLanguage', () => {
+            it('should set laguage 1', () => {
+                service.setLanguage(1);
+
+                expect(dotPageRenderServiceGetSpy).toHaveBeenCalledWith({
+                    viewAs: {
+                        language: 1
+                    },
+                    url: '/an/url/test'
+                });
+            });
+        });
+
+        describe('setPersona', () => {
+            it('should set persona', () => {
+                const persona: DotPersona = {
+                    ...dotcmsContentletMock,
+                    keyTag: 'persona',
+                    name: 'persona',
+                    personalized: false
+                };
+                service.setPersona(persona);
+
+                expect(dotPageRenderServiceGetSpy).toHaveBeenCalledWith({
+                    viewAs: {
+                        persona: persona
+                    },
+                    url: '/an/url/test'
+                });
             });
         });
     });
 
-    describe('normal user', () => {
-        it('should get', () => {
-            service.get({
-                url: '/test/123'
-            })
-            // .subscribe((updatedPageState: DotRenderedPageState) => {
-            //     expect(updatedPageState.user.userId).toEqual('123');
-            // });
-
-            lastConnection[0].mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            entity: mockDotRenderedPage
-                        }
-                    })
-                )
+    describe('errors', () => {
+        it('should show error 300 message and redirect to site browser', () => {
+            const error300 = mockResponseView(300);
+            dotPageRenderServiceGetSpy.and.returnValue(throwError(error300));
+            dotHttpErrorManagerServiceHandle.and.returnValue(
+                of({
+                    redirected: false,
+                    status: HttpCode.FORBIDDEN
+                })
             );
+
+            service
+                .requestPage({
+                    url: 'hello/world'
+                })
+                .subscribe(() => {});
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error300);
+            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
 
-        it('should set', () => {
-            service
-                .setLock({
-                    mode: DotPageMode.PREVIEW
+        it('should show error 404 message and redirect to site browser', () => {
+            const error404 = mockResponseView(400);
+            dotPageRenderServiceGetSpy.and.returnValue(throwError(error404));
+            dotHttpErrorManagerServiceHandle.and.returnValue(
+                of({
+                    redirected: false,
+                    status: HttpCode.NOT_FOUND
                 })
-                // .subscribe((updatedPageState: DotRenderedPageState) => {
-                //     expect(updatedPageState.user.userId).toEqual('123');
-                // });
-
-            lastConnection[0].mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            entity: mockDotRenderedPage
-                        }
-                    })
-                )
             );
+
+            service
+                .requestPage({
+                    url: 'hello/world'
+                })
+                .subscribe(() => {});
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error404);
+            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
+        });
+
+        it('should show error 500 and reload', () => {
+            spyOn(service, 'reload');
+            const error500 = mockResponseView(500);
+            dotPageRenderServiceGetSpy.and.returnValue(throwError(error500));
+            dotHttpErrorManagerServiceHandle.and.returnValue(
+                of({
+                    redirected: false,
+                    status: HttpCode.SERVER_ERROR
+                })
+            );
+
+            service
+                .requestPage({
+                    url: 'hello/world'
+                })
+                .subscribe(() => {});
+
+            expect(service.reload).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('internal navigation state', () => {
+        it('should return content from setted internal state', () => {
+            const renderedPage = getDotPageRenderStateMock();
+            service.setInternalNavigationState(renderedPage);
+
+            expect(service.getInternalNavigationState()).toEqual(renderedPage);
+            expect(dotPageRenderServiceGetSpy).not.toHaveBeenCalled();
+        });
+
+        it('should return null when internal state is not set', () => {
+            expect(service.getInternalNavigationState()).toEqual(null);
+            expect(dotPageRenderServiceGetSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('setting local state', () => {
+        it('should set local state and emit', () => {
+            const renderedPage = getDotPageRenderStateMock();
+
+            service.state$.subscribe((state: DotPageRenderState) => {
+                expect(state).toEqual(renderedPage);
+            });
+
+            service.setLocalState(renderedPage);
         });
     });
 
@@ -386,138 +308,113 @@ describe('DotPageStateService', () => {
             });
         });
 
-        it('should get', () => {
-            service.get({
-                url: '/test/123'
-            })
-            // .subscribe((updatedPageState: DotRenderedPageState) => {
-            //     expect(updatedPageState.user.userId).toEqual('login-as-user');
-            // });
-
-            lastConnection[0].mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            entity: mockDotRenderedPage
-                        }
-                    })
-                )
-            );
-        });
-
-        it('should set', () => {
-            service
-                .setLock({
-                    mode: DotPageMode.PREVIEW
-                })
-                // .subscribe((updatedPageState: DotRenderedPageState) => {
-                //     expect(updatedPageState.user.userId).toEqual('login-as-user');
-                // });
-
-            lastConnection[0].mockRespond(
-                new Response(
-                    new ResponseOptions({
-                        body: {
-                            entity: mockDotRenderedPage
-                        }
-                    })
-                )
-            );
-        });
-
-        describe('haveContent event', () => {
-            describe('selected persona is not default', () => {
-
-                it('should trigger haceContent as true', () => {
-                    const renderedPage = new DotPageRenderState(mockUser,
-                        new DotPageRender({
-                            ...mockDotRenderedPage
-                        })
-                    );
-                    service.setLocalState(renderedPage);
-
-                    const subscribeCallback = jasmine.createSpy('spy');
-                    service.haveContent$.subscribe(subscribeCallback);
-
-                    expect(subscribeCallback).toHaveBeenCalledWith(true);
-
-                    service.contentRemoved();
-
-                    expect(subscribeCallback).toHaveBeenCalledWith(false);
-                    expect(subscribeCallback).toHaveBeenCalledTimes(2);
-                });
-
-                it('should trigger haceContent as false', () => {
-                    const renderedPage = new DotPageRenderState(mockUser,
-                        new DotPageRender({
-                            ...mockDotRenderedPage,
-                            ...{
-                                numberContents: 0
-                            }
-                        })
-                    );
-                    service.setLocalState(renderedPage);
-
-                    const subscribeCallback = jasmine.createSpy('spy');
-                    service.haveContent$.subscribe(subscribeCallback);
-
-                    expect(subscribeCallback).toHaveBeenCalledWith(false);
-
-                    service.contentAdded();
-                    expect(subscribeCallback).toHaveBeenCalledWith(true);
-                    expect(subscribeCallback).toHaveBeenCalledTimes(2);
-                });
+        it('should set lockedByAnotherUser', () => {
+            service.state$.subscribe(({ state }: DotPageRenderState) => {
+                expect(state.lockedByAnotherUser).toBe(true);
+                expect(state.locked).toBe(true);
             });
 
-            describe('selected persona is not default', () => {
-                it('should trigger haceContent as false', () => {
-                    const renderedPage = new DotPageRenderState(mockUser,
-                        new DotPageRender({
-                            ...mockDotRenderedPage,
-                            ...{
-                                viewAs: {
-                                    ...mockDotRenderedPage.viewAs,
-                                    persona: mockDotPersona
-                                }
-                            }
-                        })
-                    );
-                    service.setLocalState(renderedPage);
+            service.get({
+                url: '/test/123'
+            });
+        });
+    });
 
-                    const subscribeCallback = jasmine.createSpy('spy');
-                    service.haveContent$.subscribe(subscribeCallback);
+    describe('content added/removed', () => {
+        describe('selected persona is not default', () => {
+            it('should trigger haceContent as true', () => {
+                const renderedPage = getDotPageRenderStateMock();
+                service.setLocalState(renderedPage);
 
-                    expect(subscribeCallback).toHaveBeenCalledWith(false);
+                const subscribeCallback = jasmine.createSpy('spy');
+                service.haveContent$.subscribe(subscribeCallback);
 
-                    service.contentRemoved();
-                    expect(subscribeCallback).toHaveBeenCalledTimes(1);
+                expect(subscribeCallback).toHaveBeenCalledWith(true);
+
+                service.updatePageStateHaveContent({
+                    type: PageModelChangeEventType.REMOVE_CONTENT,
+                    model: []
                 });
 
-                it('should trigger haceContent as true', () => {
-                    const renderedPage = new DotPageRenderState(mockUser,
-                        new DotPageRender({
-                            ...mockDotRenderedPage,
-                            ...{
-                                viewAs: {
-                                    ...mockDotRenderedPage.viewAs,
-                                    persona: mockDotPersona
-                                }
-                            },
-                            ...{
-                                numberContents: 0
-                            }
-                        })
-                    );
-                    service.setLocalState(renderedPage);
+                expect(subscribeCallback).toHaveBeenCalledWith(false);
+                expect(subscribeCallback).toHaveBeenCalledTimes(2);
+            });
 
-                    const subscribeCallback = jasmine.createSpy('spy');
-                    service.haveContent$.subscribe(subscribeCallback);
-
-                    expect(subscribeCallback).toHaveBeenCalledWith(false);
-
-                    service.contentAdded();
-                    expect(subscribeCallback).toHaveBeenCalledTimes(1);
+            it('should trigger haceContent as false', () => {
+                const renderedPage = new DotPageRenderState(mockUser, {
+                    ...mockDotRenderedPage,
+                    ...{
+                        numberContents: 0
+                    }
                 });
+                service.setLocalState(renderedPage);
+
+                const subscribeCallback = jasmine.createSpy('spy');
+                service.haveContent$.subscribe(subscribeCallback);
+
+                expect(subscribeCallback).toHaveBeenCalledWith(false);
+
+                service.updatePageStateHaveContent({
+                    type: PageModelChangeEventType.ADD_CONTENT,
+                    model: []
+                });
+
+                expect(subscribeCallback).toHaveBeenCalledWith(true);
+                expect(subscribeCallback).toHaveBeenCalledTimes(2);
+            });
+        });
+
+        describe('selected persona is not default', () => {
+            it('should trigger haveContent as false', () => {
+                const renderedPage = new DotPageRenderState(mockUser, {
+                    ...mockDotRenderedPage,
+                    ...{
+                        viewAs: {
+                            ...mockDotRenderedPage.viewAs,
+                            persona: mockDotPersona
+                        }
+                    }
+                });
+                service.setLocalState(renderedPage);
+
+                const subscribeCallback = jasmine.createSpy('spy');
+                service.haveContent$.subscribe(subscribeCallback);
+
+                expect(subscribeCallback).toHaveBeenCalledWith(false);
+
+                service.updatePageStateHaveContent({
+                    type: PageModelChangeEventType.REMOVE_CONTENT,
+                    model: []
+                });
+
+                expect(subscribeCallback).toHaveBeenCalledTimes(1);
+            });
+
+            it('should trigger haceContent as true', () => {
+                const renderedPage = new DotPageRenderState(mockUser, {
+                    ...mockDotRenderedPage,
+                    ...{
+                        viewAs: {
+                            ...mockDotRenderedPage.viewAs,
+                            persona: mockDotPersona
+                        }
+                    },
+                    ...{
+                        numberContents: 0
+                    }
+                });
+                service.setLocalState(renderedPage);
+
+                const subscribeCallback = jasmine.createSpy('spy');
+                service.haveContent$.subscribe(subscribeCallback);
+
+                expect(subscribeCallback).toHaveBeenCalledWith(false);
+
+                service.updatePageStateHaveContent({
+                    type: PageModelChangeEventType.ADD_CONTENT,
+                    model: []
+                });
+                expect(subscribeCallback).toHaveBeenCalledTimes(1);
             });
         });
     });

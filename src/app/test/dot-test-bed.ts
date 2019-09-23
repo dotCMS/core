@@ -65,7 +65,6 @@ export class DOTTestBed {
             DotHttpErrorManagerService,
             DotIframeService,
             DotMessageService,
-            DotRouterService,
             DotEventsSocket,
             { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             DotcmsConfigService,

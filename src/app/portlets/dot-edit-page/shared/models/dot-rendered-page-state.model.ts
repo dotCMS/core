@@ -15,7 +15,7 @@ interface DotPageState {
 export class DotPageRenderState extends DotPageRender {
     private _state: DotPageState;
 
-    constructor(private _user: User, private dotRenderedPage: DotPageRender) {
+    constructor(private _user: User, private dotRenderedPage: DotPageRender.Parameters) {
         super(dotRenderedPage);
         const locked = !!dotRenderedPage.page.lockedBy;
         const lockedByAnotherUser = locked ? dotRenderedPage.page.lockedBy !== _user.userId : false;

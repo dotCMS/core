@@ -1,7 +1,7 @@
 import { of, Observable, Subject, BehaviorSubject } from 'rxjs';
 
-import { pluck, take, map, catchError } from 'rxjs/operators';
-import { LoginService, User, ResponseView } from 'dotcms-js';
+import { pluck, take, map, catchError, tap } from 'rxjs/operators';
+import { LoginService, User, ResponseView, HttpCode } from 'dotcms-js';
 import { DotPageRenderState } from '../../../shared/models/dot-rendered-page-state.model';
 import {
     DotPageRenderService,
@@ -75,32 +75,6 @@ export class DotPageStateService {
         this.get({
             mode: this.currentState.state.mode
         });
-    }
-
-    /**
-     * Request an new page state and set the local internal state
-     *
-     * @param {DotPageRenderOptions} options
-     * @returns {Observable<DotPageRenderState>}
-     * @memberof DotPageStateService
-     */
-    requestPage(options: DotPageRenderOptions): Observable<DotPageRenderState> {
-        return this.dotPageRenderService.get(options).pipe(
-            catchError((err: ResponseView) => {
-                this.handleSetPageStateFailed(err);
-                return of(null);
-            }),
-            take(1),
-            map((page: DotPageRender) => {
-                if (page) {
-                    const pageState = new DotPageRenderState(this.getCurrentUser(), page);
-                    this.setCurrentState(pageState);
-                    return pageState;
-                }
-
-                return this.currentState;
-            })
-        );
     }
 
     /**
@@ -184,28 +158,6 @@ export class DotPageStateService {
     }
 
     /**
-     * Call to notify that a content was add into the page
-     */
-    contentAdded(): void {
-        this.currentState.numberContents++;
-
-        if (this.currentState.numberContents === 1 && !this.selectedIsDefaultPersona()) {
-            this.haveContent$.next(true);
-        }
-    }
-
-    /**
-     * Call to notify that a content was remove from the page
-     */
-    contentRemoved(): void {
-        this.currentState.numberContents--;
-
-        if (this.currentState.numberContents === 0 && !this.selectedIsDefaultPersona()) {
-            this.haveContent$.next(false);
-        }
-    }
-
-    /**
      * Update page content status
      *
      * @param {PageModelChangeEvent} event
@@ -216,6 +168,45 @@ export class DotPageStateService {
             this.contentAdded();
         } else if (event.type === PageModelChangeEventType.REMOVE_CONTENT) {
             this.contentRemoved();
+        }
+    }
+
+    /**
+     * Get the page from API, set local state and return DotPageRenderState
+     *
+     * @param {DotPageRenderOptions} options
+     * @returns {Observable<DotPageRenderState>}
+     * @memberof DotPageStateService
+     */
+    requestPage(options: DotPageRenderOptions): Observable<DotPageRenderState> {
+        return this.dotPageRenderService.get(options).pipe(
+            catchError((err: ResponseView) => this.handleSetPageStateFailed(err)),
+            take(1),
+            map((page: DotPageRender.Parameters) => {
+                if (page) {
+                    const pageState = new DotPageRenderState(this.getCurrentUser(), page);
+                    this.setCurrentState(pageState);
+                    return pageState;
+                }
+
+                return this.currentState;
+            })
+        );
+    }
+
+    private contentAdded(): void {
+        this.currentState.numberContents++;
+
+        if (this.currentState.numberContents === 1 && !this.selectedIsDefaultPersona()) {
+            this.haveContent$.next(true);
+        }
+    }
+
+    private contentRemoved(): void {
+        this.currentState.numberContents--;
+
+        if (this.currentState.numberContents === 0 && !this.selectedIsDefaultPersona()) {
+            this.haveContent$.next(false);
         }
     }
 
@@ -245,17 +236,18 @@ export class DotPageStateService {
         return of(null);
     }
 
-    private handleSetPageStateFailed(err: ResponseView): void {
-        this.dotHttpErrorManagerService
-            .handle(err)
-            .pipe(take(1))
-            .subscribe((res: DotHttpErrorHandled) => {
-                if (res.forbidden) {
+    private handleSetPageStateFailed(err: ResponseView): Observable<DotHttpErrorHandled> {
+        return this.dotHttpErrorManagerService.handle(err).pipe(
+            take(1),
+            tap(({ status }: DotHttpErrorHandled) => {
+                if (status === HttpCode.FORBIDDEN || status === HttpCode.NOT_FOUND) {
                     this.dotRouterService.goToSiteBrowser();
                 } else {
                     this.reload();
                 }
-            });
+            }),
+            map(() => null)
+        );
     }
 
     private setState(state: DotPageRenderState): void {

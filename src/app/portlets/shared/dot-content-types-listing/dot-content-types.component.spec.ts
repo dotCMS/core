@@ -18,7 +18,7 @@ import { DotPushPublishContentTypesDialogModule } from '@components/_common/dot-
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { SelectItem } from 'primeng/primeng';
-import { ResponseView } from 'dotcms-js';
+import { ResponseView, HttpCode } from 'dotcms-js';
 import {
     DotHttpErrorHandled,
     DotHttpErrorManagerService
@@ -71,7 +71,8 @@ class MockPushPublishService {
 class MockDotHttpErrorManagerService {
     handle(_err: ResponseView): Observable<DotHttpErrorHandled> {
         return observableOf({
-            redirected: false
+            redirected: false,
+            status: HttpCode.BAD_REQUEST
         });
     }
 }

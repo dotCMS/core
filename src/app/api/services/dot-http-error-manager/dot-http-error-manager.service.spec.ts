@@ -68,7 +68,8 @@ describe('DotHttpErrorManagerService', () => {
         });
 
         expect(result).toEqual({
-            redirected: false
+            redirected: false,
+            status: 401
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: '403 Message',
@@ -85,7 +86,8 @@ describe('DotHttpErrorManagerService', () => {
         });
 
         expect(result).toEqual({
-            redirected: true
+            redirected: true,
+            status: 401
         });
         expect(dotDialogService.alert).not.toHaveBeenCalled();
         expect(dotRouterService.goToLogin).toHaveBeenCalledTimes(1);
@@ -99,7 +101,8 @@ describe('DotHttpErrorManagerService', () => {
         });
 
         expect(result).toEqual({
-            redirected: false
+            redirected: false,
+            status: 403
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: '403 Message',
@@ -115,7 +118,8 @@ describe('DotHttpErrorManagerService', () => {
         });
 
         expect(result).toEqual({
-            redirected: false
+            redirected: false,
+            status: 500
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: '500 Message',
@@ -137,7 +141,8 @@ describe('DotHttpErrorManagerService', () => {
         });
 
         expect(result).toEqual({
-            redirected: false
+            redirected: false,
+            status: 403
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: 'license message',
@@ -158,7 +163,8 @@ describe('DotHttpErrorManagerService', () => {
         });
 
         expect(result).toEqual({
-            redirected: false
+            redirected: false,
+            status: 400
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: 'Error',
@@ -179,7 +185,8 @@ describe('DotHttpErrorManagerService', () => {
         });
 
         expect(result).toEqual({
-            redirected: false
+            redirected: false,
+            status: 400
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: 'Server Error',
@@ -195,7 +202,8 @@ describe('DotHttpErrorManagerService', () => {
         });
 
         expect(result).toEqual({
-            redirected: false
+            redirected: false,
+            status: 400
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: '400 Message',
@@ -211,7 +219,8 @@ describe('DotHttpErrorManagerService', () => {
         });
 
         expect(result).toEqual({
-            redirected: false
+            redirected: false,
+            status: 204
         });
         expect(dotDialogService.alert).toHaveBeenCalledWith({
             message: '204 Message',

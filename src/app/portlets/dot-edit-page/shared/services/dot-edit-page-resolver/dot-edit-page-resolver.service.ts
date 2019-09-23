@@ -1,19 +1,16 @@
-import { throwError as observableThrowError, Observable, of } from 'rxjs';
+import { throwError, Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
 import { Response, Headers } from '@angular/http';
 
 import { ResponseView, HttpCode } from 'dotcms-js';
-import { take, switchMap, tap, catchError, map } from 'rxjs/operators';
+import { tap, switchMap, filter, catchError, map } from 'rxjs/operators';
 
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotPageRenderState } from '../../models/dot-rendered-page-state.model';
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
-import {
-    DotHttpErrorManagerService,
-    DotHttpErrorHandled
-} from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotPageRenderOptions } from '@services/dot-page-render/dot-page-render.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 /**
  * With the url return a string of the edit page html
@@ -25,9 +22,9 @@ import { DotPageRenderOptions } from '@services/dot-page-render/dot-page-render.
 @Injectable()
 export class DotEditPageResolver implements Resolve<DotPageRenderState> {
     constructor(
-        private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotPageStateService: DotPageStateService,
-        private dotRouterService: DotRouterService
+        private dotRouterService: DotRouterService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService
     ) {}
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotPageRenderState> {
@@ -46,20 +43,25 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
                       }
                     : {})
             };
+
             return this.dotPageStateService.requestPage(options).pipe(
-                take(1),
+                tap((state: DotPageRenderState) => {
+                    if (!state) {
+                        this.dotRouterService.goToSiteBrowser();
+                    }
+                }),
+                filter((state: DotPageRenderState) => !!state),
                 switchMap((dotRenderedPageState: DotPageRenderState) => {
                     const currentSection = route.children[0].url[0].path;
                     const isLayout = currentSection === 'layout';
 
-                    if (isLayout) {
-                        return this.checkUserCanGoToLayout(dotRenderedPageState);
-                    } else {
-                        return of(dotRenderedPageState);
-                    }
+                    return isLayout
+                        ? this.checkUserCanGoToLayout(dotRenderedPageState)
+                        : of(dotRenderedPageState);
                 }),
                 catchError((err: ResponseView) => {
-                    return this.errorHandler(err).pipe(map(() => null));
+                    this.dotRouterService.goToSiteBrowser();
+                    return this.dotHttpErrorManagerService.handle(err).pipe(map(() => null));
                 })
             );
         }
@@ -69,7 +71,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
         dotRenderedPageState: DotPageRenderState
     ): Observable<DotPageRenderState> {
         if (!dotRenderedPageState.page.canEdit) {
-            return observableThrowError(
+            return throwError(
                 new ResponseView(
                     new Response({
                         body: {},
@@ -81,7 +83,7 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
                 )
             );
         } else if (!dotRenderedPageState.layout) {
-            return observableThrowError(
+            return throwError(
                 new ResponseView(
                     new Response({
                         body: {},
@@ -97,15 +99,5 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState> {
         } else {
             return of(dotRenderedPageState);
         }
-    }
-
-    private errorHandler(err: ResponseView): Observable<any> {
-        return this.dotHttpErrorManagerService.handle(err).pipe(
-            tap((res: DotHttpErrorHandled) => {
-                if (!res.redirected) {
-                    this.dotRouterService.goToSiteBrowser();
-                }
-            })
-        );
     }
 }
