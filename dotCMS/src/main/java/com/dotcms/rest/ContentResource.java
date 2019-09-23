@@ -494,15 +494,21 @@ public class ContentResource {
         try {
 
             if (idPassed = UtilMethods.isSet(id)) {
-                Optional.ofNullable(
-                        this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
-                                .findContentletByIdentifier(id, live, language, user, respectFrontendRoles)))
-                        .ifPresent(contentlets::add);
+
+                final Contentlet contentlet = APILocator.getContentletAPI()
+                        .findContentletByIdentifier(id, live, language, user, respectFrontendRoles);
+
+                if (contentlet != null){
+                    contentlets.add(this.contentHelper.hydrateContentlet(contentlet));
+                }
+
             } else if (inodePassed = UtilMethods.isSet(inode)) {
-                Optional.ofNullable(
-                        this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
-                                .find(inode, user, respectFrontendRoles)))
-                        .ifPresent(contentlets::add);
+
+                final Contentlet contentlet = APILocator.getContentletAPI()
+                        .find(inode, user, respectFrontendRoles);
+                if (contentlet != null){
+                    contentlets.add(this.contentHelper.hydrateContentlet(contentlet));
+                }
             } else if (UtilMethods.isSet(related)){
                 //Related identifier are expected this way: "ContentTypeVarName.FieldVarName:contentletIdentifier"
                 //In case of multiple relationships, they must be sent as a comma separated list
@@ -533,11 +539,11 @@ public class ContentResource {
             return ExceptionMapperUtil.createResponse(new DotStateException("No Permissions"), Response.Status.FORBIDDEN);
         } catch (Exception e) {
             if (idPassed) {
-                Logger.warn(this, "Can't find Content with Identifier: " + id);
+                Logger.warn(this, "Can't find Content with Identifier: " + id, e);
             } else if (queryPassed || UtilMethods.isSet(related)) {
                 Logger.warn(this, "Error searching Content : " + e.getMessage());
             } else if (inodePassed) {
-                Logger.warn(this, "Can't find Content with Inode: " + inode);
+                Logger.warn(this, "Can't find Content with Inode: " + inode, e);
             }
             status = Optional.of(Status.INTERNAL_SERVER_ERROR);
         }
