@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -906,4 +907,50 @@ public class FieldAPITest extends IntegrationTestBase {
         //One side of the relationship is set parentContentType --> childContentType
         return fieldAPI.save(field, user);
     }
+
+    @DataProvider
+    public static Object[] dataProviderFieldVariableKeys() {
+        return new String[] {
+                "__myKey",
+                "dottype.",
+                "dot:type",
+                "dot-type",
+                "*dottype*",
+                "$my^^&key%",
+        };
+    }
+
+    @Test
+    @UseDataProvider("dataProviderFieldVariableKeys")
+    public void testSaveFieldVariable_KeyWithSpecialChars_ShouldSucceed(final String fieldVarKey)
+            throws DotSecurityException, DotDataException {
+
+        final long time = System.currentTimeMillis();
+        final ContentType type = new ContentTypeDataGen().nextPersisted();
+        try {
+            Field field = FieldBuilder.builder(TextField.class)
+                    .name("field"+time)
+                    .contentTypeId(type.id())
+                    .indexed(false)
+                    .listed(false)
+                    .fixed(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            final FieldVariable variable = ImmutableFieldVariable.builder().fieldId(field.inode())
+                    .name(fieldVarKey).key(fieldVarKey).value("value").userId(user.getUserId())
+                    .build();
+
+            fieldAPI.save(variable, user);
+
+            boolean anyMatch = field.fieldVariables().stream()
+                  .anyMatch((var)->var.key().equals(fieldVarKey));
+
+            Assert.assertTrue("Incorrect var key", anyMatch);
+        } finally {
+            contentTypeAPI.delete(type);
+        }
+    }
+
+
 }
