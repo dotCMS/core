@@ -5,9 +5,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ContentTest {
-    private final HashMap<String, List<Contentlet>> contents = new HashMap<>();
+    private final Map<String, List<Contentlet>> contents = new HashMap<>();
 
     void addContent (final String conteinerId, final Contentlet contentlet) {
         List<Contentlet> contentlets = contents.get(conteinerId);

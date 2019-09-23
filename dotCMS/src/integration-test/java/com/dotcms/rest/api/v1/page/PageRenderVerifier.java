@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
+
 
 public final class PageRenderVerifier {
 

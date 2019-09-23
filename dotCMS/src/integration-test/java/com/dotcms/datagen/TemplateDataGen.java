@@ -198,7 +198,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         return this;
     }
 
-    public TemplateDataGen theme(String theme) {
+    public TemplateDataGen theme(final String theme) {
         this.theme = theme;
         return this;
     }
