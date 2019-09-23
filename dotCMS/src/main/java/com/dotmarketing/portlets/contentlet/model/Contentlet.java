@@ -147,7 +147,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     private transient ContentletAPI contentletAPI;
     private transient UserAPI userAPI;
-	private transient IndexPolicy indexPolicy = IndexPolicy.DEFER;
+	private transient IndexPolicy indexPolicy = IndexPolicy.WAIT_FOR;
 	private transient IndexPolicy indexPolicyDependencies = IndexPolicy.DEFER;
 
 	private transient boolean needsReindex = false;
