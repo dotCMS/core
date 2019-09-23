@@ -131,7 +131,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		builder.name("Test");
 		final PersonaContentType personaContentType = builder.build();
 
-		Assert.assertFalse(personaContentType.languageFallback());
+		Assert.assertTrue(personaContentType.languageFallback());
 	}
 
 	@Test
