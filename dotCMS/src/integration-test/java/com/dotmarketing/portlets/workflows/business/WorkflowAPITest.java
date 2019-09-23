@@ -1459,6 +1459,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet2Checkout = contentletAPI.checkout(testContentlet2.getInode(), user, false);
             testContentlet2Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
             testContentlet2Checkout.setIndexPolicy(IndexPolicy.FORCE);
+            testContentlet1Checkout.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             testContentletTop = contentletAPI.checkin(testContentlet2Checkout, user, false);
             APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet2Checkout, user);
 

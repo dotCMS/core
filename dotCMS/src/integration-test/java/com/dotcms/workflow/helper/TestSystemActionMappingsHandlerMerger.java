@@ -101,7 +101,7 @@ public class TestSystemActionMappingsHandlerMerger extends IntegrationTestBase {
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
         final WorkflowScheme scheme   = new WorkflowDataGen().name("TestWF"+System.currentTimeMillis())
                 .nextPersistedWithDefaultStepsAndActions();
-        final ContentType contentType = new ContentTypeDataGen().velocityVarName("ContentType"+System.currentTimeMillis())
+        final ContentType contentType = new ContentTypeDataGen().workflowId(scheme.getId()).velocityVarName("ContentType"+System.currentTimeMillis())
                 .nextPersisted();
 
         Assert.assertNotNull(scheme);

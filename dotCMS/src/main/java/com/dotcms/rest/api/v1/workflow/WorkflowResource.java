@@ -2030,6 +2030,7 @@ public class WorkflowResource {
             exportObject.setActionSteps(workflowSchemeImportForm.getWorkflowImportObject().getActionSteps());
             exportObject.setActionClasses(workflowSchemeImportForm.getWorkflowImportObject().getActionClasses());
             exportObject.setActionClassParams(workflowSchemeImportForm.getWorkflowImportObject().getActionClassParams());
+            exportObject.setSchemeSystemActionWorkflowActionMappings(workflowSchemeImportForm.getWorkflowImportObject().getSchemeSystemActionWorkflowActionMappings());
 
             this.workflowHelper.importScheme (
                     exportObject,
