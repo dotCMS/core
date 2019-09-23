@@ -18,6 +18,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -128,8 +130,32 @@ public class MapToContentletPopulator  {
                 // fill fields
                 this.fillFields(contentlet, map, type, fieldMap);
             }
+
+            this.setIndexPolicy (contentlet, map);
         }
     } // processMap.
+
+    private void setIndexPolicy(final Contentlet contentlet, final Map<String, Object> map) {
+
+        final Object indexPolicyValue = map.getOrDefault("indexPolicy", IndexPolicyProvider.getInstance().forSingleContent());
+        final IndexPolicy indexPolicy = indexPolicyValue instanceof IndexPolicy?
+            (IndexPolicy)indexPolicyValue:
+            IndexPolicy.valueOf(this.parseIndexPolicy(indexPolicyValue));
+
+        contentlet.setIndexPolicy(indexPolicy);
+    }
+
+    private String parseIndexPolicy (final Object indexPolicyValue) {
+
+        String indexPolicyParsed = "WAIT_FOR";
+        if (null != indexPolicyValue && ("DEFER".equalsIgnoreCase(indexPolicyValue.toString())
+                || "FORCE".equalsIgnoreCase(indexPolicyValue.toString()))) {
+
+            indexPolicyParsed = indexPolicyValue.toString().toUpperCase();
+        }
+
+        return indexPolicyParsed;
+    }
 
     private void processWorkflow(final Contentlet contentlet, final Map<String,Object> map) {
         if(map.containsKey(WORKFLOW_ASSIGN_KEY)) {
