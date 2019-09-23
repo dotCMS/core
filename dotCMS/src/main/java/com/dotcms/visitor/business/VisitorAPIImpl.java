@@ -81,8 +81,6 @@ public class VisitorAPIImpl implements VisitorAPI {
                             personaAPI.find(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true);
 					visitor.setPersona(persona);
 				} catch(Exception e) {
-
-                    Logger.error(this, e.getMessage()); // trying to be no so much noise
                     Logger.debug(this, e.getMessage(), e);
 					visitor.setPersona(null);
 				}
