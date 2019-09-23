@@ -418,17 +418,20 @@ public class PageResourceTest {
     }
 
     @Test
-    public void shouldReturnPageByURLPattern() throws DotDataException, DotSecurityException {
+    public void shouldReturnPageByURLPattern() throws DotDataException, DotSecurityException, InterruptedException {
+        final String baseUrl = String.format("/test%s", System.currentTimeMillis());
+
         final User systemUser = APILocator.getUserAPI().getSystemUser();
 
         final ContentType contentType = new ContentTypeDataGen().user(systemUser)
                 .host(host)
                 .detailPage(pageAsset.getIdentifier())
-                .urlMapPattern("/{text}")
+                .urlMapPattern(String.format("%s/{text}", baseUrl))
                 .nextPersisted();
 
         new FieldDataGen()
                 .name("text")
+                .velocityVarName("text")
                 .type(TextField.class)
                 .contentTypeId(contentType.id())
                 .nextPersisted();
@@ -436,12 +439,14 @@ public class PageResourceTest {
 
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
         contentletDataGen
-                .setProperty("text", "test_text")
+                .setProperty("text", "text")
                 .languageId(1)
                 .nextPersisted();
 
+        Thread.sleep(500);
+
         final Response response = pageResource
-                .render(request, this.response, "/text_test", "PREVIEW_MODE", null,
+                .render(request, this.response, String.format("%s/text", baseUrl), "PREVIEW_MODE", null,
                         "1", null);
 
         RestUtilTest.verifySuccessResponse(response);
