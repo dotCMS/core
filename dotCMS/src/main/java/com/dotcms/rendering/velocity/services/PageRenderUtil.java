@@ -258,6 +258,8 @@ public class PageRenderUtil implements Serializable {
         final Set<String> personalizationsForPage = this.multiTreeAPI.getPersonalizationsForPage(htmlPage.getIdentifier());
         final List<ContainerRaw> raws = Lists.newArrayList();
 
+        final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage);
+
         for (final String containerId : pageContents.rowKeySet()) {
 
             Container container = null;
@@ -298,7 +300,6 @@ public class PageRenderUtil implements Serializable {
                 contextMap.put("USE_CONTAINER_PERMISSION" + container.getIdentifier(), hasReadPermissionOnContainer);
             }
 
-
             final Map<String, List<Map<String,Object>>> contentMaps = Maps.newLinkedHashMap();
 
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
@@ -311,11 +312,11 @@ public class PageRenderUtil implements Serializable {
                 final Map<String, List<String>> contentIdListByPersonalizationMap = new HashMap<>();
                 final Set<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
 
-                final String currentPersonaTag = this.getCurrentPersonaTag(request);
                 final List<Map<String, Object>> cListAsMaps = Lists.newArrayList();
-                final List<Map<String, Object>> cListAsMaps2 = Lists.newArrayList();
+                final List<Map<String, Object>> personalizedContentletMap = Lists.newArrayList();
 
-                for (final PersonalizedContentlet personalizedContentlet : personalizedContentletSet) {
+                for (final PersonalizedContentlet
+                        personalizedContentlet : personalizedContentletSet) {
                     final Contentlet contentlet = getContentlet(contentIdListByPersonalizationMap, personalizedContentlet);
 
                     if (contentlet == null) {
@@ -328,8 +329,9 @@ public class PageRenderUtil implements Serializable {
                         // contentPrintableMap.put("personalization", personalization); // todo: not sure if this will be needed by FOX
                         cListAsMaps.add(contentPrintableMap);
 
-                        if (personalizedContentlet != null && personalizedContentlet.getPersonalization().equals(currentPersonaTag)) {
-                            cListAsMaps2.add(contentPrintableMap);
+                        if (personalizedContentlet != null &&
+                                personalizedContentlet.getPersonalization().equals(includeContentFor)) {
+                            personalizedContentletMap.add(contentPrintableMap);
                         }
                     } catch (IOException e) {
                         throw new DotStateException(e);
@@ -358,7 +360,7 @@ public class PageRenderUtil implements Serializable {
                     }
                 }
                 
-                contentMaps.put((uniqueId.startsWith(CONTAINER_UUID_PREFIX)) ? uniqueId : CONTAINER_UUID_PREFIX + uniqueId, cListAsMaps2);
+                contentMaps.put((uniqueId.startsWith(CONTAINER_UUID_PREFIX)) ? uniqueId : CONTAINER_UUID_PREFIX + uniqueId, personalizedContentletMap);
                 this.setContentletListPerPersonalization(uniqueId, container, contentIdListByPersonalizationMap, personalizationsForPage);
                 contextMap.put("totalSize" +  container.getIdentifier() + uniqueId, Integer.valueOf(personalizedContentletSet.size())); // todo: not sure about this
             }
@@ -495,7 +497,7 @@ public class PageRenderUtil implements Serializable {
         return this.containersRaw;
     }
 
-    private String getCurrentPersonaTag(final HttpServletRequest request) {
+    private String getPersonaTagToIncludeContent(final HttpServletRequest request, final Set<String> personalizationsForPage) {
         IPersona iPersona = null;
 
         if (request != null) {
@@ -503,7 +505,11 @@ public class PageRenderUtil implements Serializable {
             iPersona = visitor.isPresent() && visitor.get().getPersona() != null ? visitor.get().getPersona() : null;
         }
 
-        return iPersona == null ? MultiTree.DOT_PERSONALIZATION_DEFAULT
+        final String currentPersonaTag =  iPersona == null ? MultiTree.DOT_PERSONALIZATION_DEFAULT
                 : Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + iPersona.getKeyTag();
+
+        final boolean hasPersonalizations = personalizationsForPage.contains(currentPersonaTag);
+
+        return hasPersonalizations ? currentPersonaTag : MultiTree.DOT_PERSONALIZATION_DEFAULT;
     }
 }
