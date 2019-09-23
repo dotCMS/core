@@ -1,6 +1,7 @@
 package com.dotcms.rest;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -22,6 +23,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
@@ -108,6 +110,7 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
                     .get(Contentlet.RELATIONSHIP_KEY);
 
             assertEquals(1, resultMap.size());
+            assertNotEquals(IndexPolicy.DEFER, contentlet.getIndexPolicy());
 
             Entry<Relationship, List<Contentlet>> result = resultMap.entrySet().iterator().next();
 
@@ -152,6 +155,8 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
             if(testCase.relationshipsCount > 0) {
 
                 assertNotNull(contentlet.get(Contentlet.RELATIONSHIP_KEY));
+
+                assertNotEquals(IndexPolicy.DEFER, contentlet.getIndexPolicy());
 
                 final Map<Relationship, List<Contentlet>> resultMap = (Map<Relationship, List<Contentlet>>) contentlet
                         .get(Contentlet.RELATIONSHIP_KEY);
@@ -216,6 +221,7 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
                     .get(Contentlet.RELATIONSHIP_KEY);
 
             assertEquals(1, resultMap.size());
+            assertNotEquals(IndexPolicy.DEFER, contentlet.getIndexPolicy());
 
             Entry<Relationship, List<Contentlet>> result = resultMap.entrySet().iterator().next();
 
@@ -275,6 +281,7 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
             contentlet = populator.populate(contentlet, properties);
 
             assertNull(contentlet.get(Contentlet.RELATIONSHIP_KEY));
+            assertNotEquals(IndexPolicy.DEFER, contentlet.getIndexPolicy());
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
                 contentTypeAPI.delete(parentContentType);
