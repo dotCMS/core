@@ -6,6 +6,7 @@ import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -80,10 +81,13 @@ public class VisitorAPIImpl implements VisitorAPI {
                             personaAPI.findLive(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true):
                             personaAPI.find(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true);
 					visitor.setPersona(persona);
-				} catch(Exception e) {
-
-                    Logger.error(this, e.getMessage()); // trying to be no so much noise
+				}catch(DotContentletStateException e) {
+				    // This is meant to catch the "Can't find contentlet" error.
                     Logger.debug(this, e.getMessage(), e);
+                    visitor.setPersona(null);
+                } catch(Exception e) {
+                    //Anything else will be reported here.
+                    Logger.error(this, e);
 					visitor.setPersona(null);
 				}
 			}
