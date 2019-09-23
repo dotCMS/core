@@ -19,21 +19,21 @@ import com.dotmarketing.portlets.templates.model.Template;
 
 import java.util.*;
 
-public final class PageRenderUtilTest {
+public final class PageRenderTestUtil {
 
-    private PageRenderUtilTest(){}
+    private PageRenderTestUtil(){}
 
 
     public static PageRenderTest createPage(final int containersNumber, final Host host) {
         try {
             final PageRenderTest pageRenderTest = new PageRenderTest(host);
 
-            PageRenderUtilTest.addContainers(pageRenderTest, containersNumber);
+            PageRenderTestUtil.addContainers(pageRenderTest, containersNumber);
             pageRenderTest.persist();
 
             final Template template = pageRenderTest.getTemplate();
 
-            final HTMLPageAsset page = PageRenderUtilTest.createHTMLPageAsset(template, host);
+            final HTMLPageAsset page = PageRenderTestUtil.createHTMLPageAsset(template, host);
             pageRenderTest.setPage(page);
 
             return pageRenderTest;

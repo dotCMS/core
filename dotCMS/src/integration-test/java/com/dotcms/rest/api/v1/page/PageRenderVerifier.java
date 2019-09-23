@@ -25,7 +25,7 @@ public final class PageRenderVerifier {
 
     public static  void verifyPageView(
             final PageView pageView,
-            final PageRenderUtilTest.PageRenderTest pageRenderTest,
+            final PageRenderTestUtil.PageRenderTest pageRenderTest,
             final User user)
             throws DotSecurityException, DotDataException {
 
@@ -45,7 +45,7 @@ public final class PageRenderVerifier {
         checkContent(pageContainers, pageRenderTest);
     }
 
-    private static void checkPermissionAttributes(final PageView pageView, final PageRenderUtilTest.PageRenderTest pageRenderTest,
+    private static void checkPermissionAttributes(final PageView pageView, final PageRenderTestUtil.PageRenderTest pageRenderTest,
                                                   final User user) throws DotDataException {
 
         final boolean haveWritepermission = APILocator.getPermissionAPI().doesUserHavePermission(pageRenderTest.getPage(),
@@ -60,7 +60,7 @@ public final class PageRenderVerifier {
 
     private static void checkContent(
             final Collection<? extends ContainerRaw> pageContainers,
-            final PageRenderUtilTest.PageRenderTest pageRenderTest)
+            final PageRenderTestUtil.PageRenderTest pageRenderTest)
             throws DotDataException, DotSecurityException {
 
         for (final ContainerRaw pageContainer : pageContainers) {

@@ -13,7 +13,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -44,7 +43,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -493,7 +491,7 @@ public class PageResourceTest {
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         final long languageId = defaultLang.getId();
 
-        final PageRenderUtilTest.PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
+        final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(2, host);
         final HTMLPageAsset page = pageRenderTest.getPage();
 
         final ContentType contentTypePersona = APILocator.getContentTypeAPI(APILocator.systemUser()).find("persona");
@@ -527,7 +525,7 @@ public class PageResourceTest {
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         final long languageId = defaultLang.getId();
 
-        final PageRenderUtilTest.PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
+        final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(2, host);
         final HTMLPageAsset page = pageRenderTest.getPage();
 
         final ContentType contentTypePersona = APILocator.getContentTypeAPI(APILocator.systemUser()).find("persona");
