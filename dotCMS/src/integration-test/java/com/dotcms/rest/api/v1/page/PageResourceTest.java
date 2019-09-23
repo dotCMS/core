@@ -13,6 +13,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -49,9 +50,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -494,7 +493,7 @@ public class PageResourceTest {
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         final long languageId = defaultLang.getId();
 
-        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
+        final PageRenderUtilTest.PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
         final HTMLPageAsset page = pageRenderTest.getPage();
 
         final ContentType contentTypePersona = APILocator.getContentTypeAPI(APILocator.systemUser()).find("persona");
@@ -528,7 +527,7 @@ public class PageResourceTest {
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         final long languageId = defaultLang.getId();
 
-        final PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
+        final PageRenderUtilTest.PageRenderTest pageRenderTest = PageRenderUtilTest.createPage(2, host);
         final HTMLPageAsset page = pageRenderTest.getPage();
 
         final ContentType contentTypePersona = APILocator.getContentTypeAPI(APILocator.systemUser()).find("persona");
@@ -556,5 +555,4 @@ public class PageResourceTest {
 
         assertNull(pageView.getViewAs().getPersona());
     }
-
 }
