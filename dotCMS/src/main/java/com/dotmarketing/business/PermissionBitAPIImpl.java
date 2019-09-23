@@ -354,13 +354,18 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			if(p.matchesPermission(permissionType)){
 				if(respectFrontendRoles){
 					// if we are anonymous
-					if(p.getRoleId().equals(anonRole.getId())){
-						return true;
-						//if logged in site user has permission
-					}else if(!anonUser.getUserId().equals(user.getUserId()) && p.getRoleId().equals(frontEndUserRole.getId())){
-						return true;
-					}
-				} 
+                    try {
+                        if(p.getRoleId().equals(anonRole.getId()) && !(permissionable instanceof Contentlet && !((Contentlet) permissionable).isLive())){
+                            return true;
+                            //if logged in site user has permission
+                        }else if(!anonUser.getUserId().equals(user.getUserId()) && p.getRoleId().equals(frontEndUserRole.getId())){
+                            return true;
+                        }
+                    } catch (DotSecurityException e) {
+                        Logger.error(this,"Error getting permissions for user " + user.getUserId(), e);
+                        throw new DotRuntimeException(e.getMessage(), e);
+                    }
+                }
 				// if owner and owner has required permission return true
 				try {
 					if(p.getRoleId().equals(cmsOwnerRole.getId()) && permissionable.getOwner() != null && permissionable.getOwner().equals(user.getUserId()) &&

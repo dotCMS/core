@@ -6,10 +6,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -1007,6 +1009,27 @@ public class PermissionAPITest extends IntegrationTestBase {
             }catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+
+    }
+
+    @Test
+    public void testAnonymousUserCannotReadNonLiveContent() throws DotDataException {
+        Contentlet content = TestDataUtils.getDocumentLikeContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(), null);
+
+        try {
+
+            //Anonymous user should not read non-live content
+            assertFalse(permissionAPI.doesUserHavePermission(content, PermissionAPI.PERMISSION_READ,
+                    APILocator.getUserAPI().getAnonymousUser(), true));
+
+            //Once the content is published, anonymous user can read it
+            content = ContentletDataGen.publish(content);
+            assertTrue(permissionAPI.doesUserHavePermission(content, PermissionAPI.PERMISSION_READ,
+                    APILocator.getUserAPI().getAnonymousUser(), true));
+        } finally {
+            ContentletDataGen.destroy(content);
         }
 
     }
