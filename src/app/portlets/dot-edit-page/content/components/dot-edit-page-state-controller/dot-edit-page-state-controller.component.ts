@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, ViewChild, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, OnInit, Input, ViewChild, OnChanges, SimpleChanges, Output, EventEmitter } from '@angular/core';
 
 import { take, switchMap } from 'rxjs/operators';
 import { Observable, of, from } from 'rxjs';
@@ -27,6 +27,7 @@ export class DotEditPageStateControllerComponent implements OnInit, OnChanges {
     @ViewChild('pageLockInfo') pageLockInfo: DotEditPageLockInfoComponent;
 
     @Input() pageState: DotPageRenderState;
+    @Output() modeChange = new EventEmitter<DotPageMode>();
 
     lock: boolean;
     lockWarn = false;
@@ -110,6 +111,8 @@ export class DotEditPageStateControllerComponent implements OnInit, OnChanges {
      * @memberof DotEditPageStateControllerComponent
      */
     stateSelectorHandler(mode: DotPageMode): void {
+        this.modeChange.emit(mode);
+
         if (this.shouldShowConfirmation(mode)) {
             this.lock = mode === DotPageMode.EDIT;
 

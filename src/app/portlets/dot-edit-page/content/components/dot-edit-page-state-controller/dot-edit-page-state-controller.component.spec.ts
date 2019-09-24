@@ -42,7 +42,7 @@ class TestHostComponent {
 describe('DotEditPageStateControllerComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let componentHost: TestHostComponent;
-    // let component: DotEditPageStateControllerComponent;
+    let component: DotEditPageStateControllerComponent;
     let de: DebugElement;
     let deHost: DebugElement;
 
@@ -82,7 +82,7 @@ describe('DotEditPageStateControllerComponent', () => {
         deHost = fixtureHost.debugElement;
         componentHost = fixtureHost.componentInstance;
         de = deHost.query(By.css('dot-edit-page-state-controller'));
-        // component = de.componentInstance;
+        component = de.componentInstance;
     });
 
     describe('elements', () => {
@@ -169,6 +169,19 @@ describe('DotEditPageStateControllerComponent', () => {
                     expect(selectButton.value).toBe(DotPageMode.PREVIEW);
                 });
             });
+        });
+    });
+
+    describe('events', () => {
+        it('should emit modeChange', () => {
+            spyOn(component.modeChange, 'emit');
+
+            const selectButton = de.query(By.css('p-selectButton'));
+            selectButton.triggerEventHandler('onChange', {
+                value: DotPageMode.EDIT
+            });
+
+            expect(component.modeChange.emit).toHaveBeenCalledWith(DotPageMode.EDIT);
         });
     });
 });

@@ -21,7 +21,7 @@
     </div>
 
     <div class="lower-toolbar-left">
-        <dot-edit-page-state-controller [pageState]="pageState"></dot-edit-page-state-controller>
+        <dot-edit-page-state-controller (modeChange)="stateChange($event)" [pageState]="pageState"></dot-edit-page-state-controller>
 
         <p-checkbox
             class="dot-edit__what-changed-button"

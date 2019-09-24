@@ -36,10 +36,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     ngOnInit() {
         this.isEnterpriseLicense$ = this.dotLicenseService.isEnterprise();
         this.dotMessageService
-            .getMessages([
-                'dot.common.whats.changed',
-                'dot.common.cancel'
-            ])
+            .getMessages(['dot.common.whats.changed', 'dot.common.cancel'])
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
                 this.messagesKey = messages;
@@ -48,5 +45,17 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
 
     ngOnChanges(): void {
         this.showWhatsChanged = this.pageState.state.mode === DotPageMode.PREVIEW;
+    }
+
+    /**
+     * Hide what's change when state change
+     *
+     * @memberof DotEditPageToolbarComponent
+     */
+    stateChange(): void {
+        if (this.showWhatsChanged) {
+            this.showWhatsChanged = false;
+            this.whatschange.emit(this.showWhatsChanged);
+        }
     }
 }

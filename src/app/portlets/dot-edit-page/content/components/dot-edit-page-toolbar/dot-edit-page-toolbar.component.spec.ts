@@ -52,48 +52,46 @@ describe('DotEditPageToolbarComponent', () => {
     let deHost: DebugElement;
     let dotLicenseService: DotLicenseService;
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotEditPageToolbarComponent],
-                imports: [
-                    ButtonModule,
-                    CommonModule,
-                    CheckboxModule,
-                    DotSecondaryToolbarModule,
-                    FormsModule,
-                    ToolbarModule,
-                    DotEditPageViewAsControllerModule,
-                    DotEditPageStateControllerModule,
-                    DotGlobalMessageModule,
-                    DotEditPageInfoModule,
-                    DotEditPageWorkflowsActionsModule
-                ],
-                providers: [
-                    { provide: DotLicenseService, useClass: MockDotLicenseService },
-                    {
-                        provide: DotMessageService,
-                        useValue: new MockDotMessageService({
-                            'dot.common.whats.changed': 'Whats',
-                            'dot.common.cancel': 'Cancel'
-                        })
-                    },
-                    {
-                        provide: DotPageStateService,
-                        useValue: {}
-                    },
-                    {
-                        provide: SiteService,
-                        useClass: SiteServiceMock
-                    },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    }
-                ]
-            });
-        })
-    );
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [TestHostComponent, DotEditPageToolbarComponent],
+            imports: [
+                ButtonModule,
+                CommonModule,
+                CheckboxModule,
+                DotSecondaryToolbarModule,
+                FormsModule,
+                ToolbarModule,
+                DotEditPageViewAsControllerModule,
+                DotEditPageStateControllerModule,
+                DotGlobalMessageModule,
+                DotEditPageInfoModule,
+                DotEditPageWorkflowsActionsModule
+            ],
+            providers: [
+                { provide: DotLicenseService, useClass: MockDotLicenseService },
+                {
+                    provide: DotMessageService,
+                    useValue: new MockDotMessageService({
+                        'dot.common.whats.changed': 'Whats',
+                        'dot.common.cancel': 'Cancel'
+                    })
+                },
+                {
+                    provide: DotPageStateService,
+                    useValue: {}
+                },
+                {
+                    provide: SiteService,
+                    useClass: SiteServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                }
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixtureHost = DOTTestBed.createComponent(TestHostComponent);
@@ -222,10 +220,6 @@ describe('DotEditPageToolbarComponent', () => {
         });
 
         describe('with license', () => {
-            beforeEach(() => {
-                spyOn(component.whatschange, 'emit');
-            });
-
             it("should hide what's change selector", () => {
                 componentHost.pageState.state.mode = DotPageMode.EDIT;
                 fixtureHost.detectChanges();
@@ -242,27 +236,49 @@ describe('DotEditPageToolbarComponent', () => {
                 expect(whatsChangedElem).toBeDefined();
                 expect(whatsChangedElem.componentInstance.label).toBe('Whats');
             });
+        });
+    });
 
-            describe('events', () => {
-                let whatsChangedElem: DebugElement;
+    describe('events', () => {
+        let whatsChangedElem: DebugElement;
 
-                beforeEach(() => {
-                    componentHost.pageState.state.mode = DotPageMode.PREVIEW;
-                    fixtureHost.detectChanges();
-                    whatsChangedElem = de.query(By.css('p-checkbox'));
-                });
+        beforeEach(() => {
+            spyOn(component.whatschange, 'emit');
 
-                it("should emit what's change in true", () => {
-                    whatsChangedElem.triggerEventHandler('onChange', true);
-                    expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
-                    expect(component.whatschange.emit).toHaveBeenCalledWith(true);
-                });
+            componentHost.pageState.state.mode = DotPageMode.PREVIEW;
+            fixtureHost.detectChanges();
+            whatsChangedElem = de.query(By.css('p-checkbox'));
+        });
 
-                it("should emit what's change in false", () => {
-                    whatsChangedElem.triggerEventHandler('onChange', false);
-                    expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
-                    expect(component.whatschange.emit).toHaveBeenCalledWith(false);
-                });
+        it("should emit what's change in true", () => {
+            whatsChangedElem.triggerEventHandler('onChange', true);
+            expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
+            expect(component.whatschange.emit).toHaveBeenCalledWith(true);
+        });
+
+        it("should emit what's change in false", () => {
+            whatsChangedElem.triggerEventHandler('onChange', false);
+            expect(component.whatschange.emit).toHaveBeenCalledTimes(1);
+            expect(component.whatschange.emit).toHaveBeenCalledWith(false);
+        });
+
+        describe('whats change on state change', () => {
+            it('should emit when showWhatsChanged is true', () => {
+                component.showWhatsChanged = true;
+                fixtureHost.detectChanges();
+                const dotEditPageState = de.query(By.css('dot-edit-page-state-controller'));
+                dotEditPageState.triggerEventHandler('modeChange', DotPageMode.EDIT);
+
+                expect(component.whatschange.emit).toHaveBeenCalledWith(false);
+            });
+
+            it('should not emit when showWhatsChanged is false', () => {
+                component.showWhatsChanged = false;
+                fixtureHost.detectChanges();
+                const dotEditPageState = de.query(By.css('dot-edit-page-state-controller'));
+                dotEditPageState.triggerEventHandler('modeChange', DotPageMode.EDIT);
+
+                expect(component.whatschange.emit).not.toHaveBeenCalled();
             });
         });
     });
