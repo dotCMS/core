@@ -143,17 +143,6 @@ public class MapToContentletPopulator  {
         
     }
 
-    private String parseIndexPolicy (final Object indexPolicyValue) {
-
-        String indexPolicyParsed = "WAIT_FOR";
-        if (null != indexPolicyValue && ("DEFER".equalsIgnoreCase(indexPolicyValue.toString())
-                || "FORCE".equalsIgnoreCase(indexPolicyValue.toString()))) {
-
-            indexPolicyParsed = indexPolicyValue.toString().toUpperCase();
-        }
-
-        return indexPolicyParsed;
-    }
 
     private void processWorkflow(final Contentlet contentlet, final Map<String,Object> map) {
         if(map.containsKey(WORKFLOW_ASSIGN_KEY)) {
