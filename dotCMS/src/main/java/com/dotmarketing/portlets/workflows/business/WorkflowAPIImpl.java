@@ -2938,6 +2938,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			contentlet.setTags();
 			contentlet.getMap().put(Contentlet.WORKFLOW_BULK_KEY, true);
+			contentlet.setIndexPolicy(IndexPolicy.DEFER);
 			try{
 				final Contentlet afterFireContentlet = fireContentWorkflow(contentlet, dependencies, context);
 				if(afterFireContentlet != null){

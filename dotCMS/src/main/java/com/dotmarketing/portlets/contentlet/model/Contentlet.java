@@ -145,8 +145,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
   private transient ContentletAPI contentletAPI;
   private transient UserAPI userAPI;
-  private transient IndexPolicy indexPolicy = IndexPolicy.WAIT_FOR;
-  private transient IndexPolicy indexPolicyDependencies = IndexPolicy.DEFER;
+  private transient IndexPolicy indexPolicy = null;
+  private transient IndexPolicy indexPolicyDependencies = null;
 
   private transient boolean needsReindex = false;
 
@@ -182,8 +182,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	@JsonIgnore
 	public IndexPolicy getIndexPolicy() {
 
-		return (null == this.indexPolicy)?
-				IndexPolicy.DEFER:indexPolicy;
+		return (null == this.indexPolicy)
+		    ? IndexPolicyProvider.getInstance().forSingleContent()
+		        :indexPolicy;
 	}
 
 	/**
@@ -197,16 +198,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @param indexPolicy
 	 */
 	public void setIndexPolicy(final IndexPolicy indexPolicy) {
-
-		if (null != indexPolicy) {
 			this.indexPolicy = indexPolicy;
-		}
 	}
 
 	public IndexPolicy getIndexPolicyDependencies() {
 
 		return (null == this.indexPolicyDependencies)?
-				IndexPolicy.DEFER:indexPolicyDependencies;
+		    IndexPolicyProvider.getInstance().forContentDependencies():indexPolicyDependencies;
 	}
 
 	/**
@@ -221,9 +219,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setIndexPolicyDependencies(final IndexPolicy indexPolicy) {
 
-		if (null != indexPolicy) {
+
 			this.indexPolicyDependencies = indexPolicy;
-		}
+
 	}
 
 	@Override
