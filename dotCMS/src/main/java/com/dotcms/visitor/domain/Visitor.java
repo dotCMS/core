@@ -161,7 +161,7 @@ public class Visitor implements Serializable {
    * }
    * @return
    */
-  public Map<String, Float> getPersonaWeights() {
+  public Map<String, Float> getWeightedPersonas() {
     
     return getPersonaCounts()
         .entrySet()

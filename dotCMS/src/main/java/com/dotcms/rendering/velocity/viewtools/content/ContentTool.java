@@ -586,7 +586,7 @@ public class ContentTool implements ViewTool {
 		
 
     if(Config.getBooleanProperty("PULLPERSONALIZED_USE_MULTIPLE_PERSONAS", true)) {
-      Map<String,Float> personas = visitor.getPersonaWeights();
+      Map<String,Float> personas = visitor.getWeightedPersonas();
       if(personas!=null && !personas.isEmpty()) {
         for(Map.Entry<String, Float> map: personas.entrySet()) {
           int boostMe = Math.round(maxBoost*map.getValue()) ;
