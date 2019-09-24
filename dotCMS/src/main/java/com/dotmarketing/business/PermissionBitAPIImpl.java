@@ -355,7 +355,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				if(respectFrontendRoles){
 					// if we are anonymous
                     try {
-                        if(p.getRoleId().equals(anonRole.getId()) && !(permissionable instanceof Contentlet && !((Contentlet) permissionable).isLive())){
+                        //anonymous role should not be able to access non-live contentlet
+                        boolean isContentlet = permissionable instanceof Contentlet;
+                        if (p.getRoleId().equals(anonRole.getId()) && (!isContentlet
+                                || isLiveContentlet(permissionable))) {
                             return true;
                             //if logged in site user has permission
                         }else if(!anonUser.getUserId().equals(user.getUserId()) && p.getRoleId().equals(frontEndUserRole.getId())){
@@ -426,7 +429,20 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return doRolesHavePermission(userRoleIds,getPermissions(permissionable, true),permissionType);
 	}
 
-	@WrapInTransaction
+    /**
+     *
+     * @param permissionable
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private boolean isLiveContentlet(Permissionable permissionable)
+            throws DotDataException, DotSecurityException {
+        return permissionable instanceof Contentlet
+                && ((Contentlet) permissionable).isLive();
+    }
+
+    @WrapInTransaction
 	@Override
 	public void removePermissions(Permissionable permissionable) throws DotDataException {
 
