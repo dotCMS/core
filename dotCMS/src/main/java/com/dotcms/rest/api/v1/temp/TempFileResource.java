@@ -101,7 +101,7 @@ public class TempFileResource {
                 if (fileName == null || fileName.startsWith(".") || fileName.contains("/.")) {
                     continue;
                 }
-                tempFiles.add(tempApi.createTempFile(fileName, request, in, maxFileLength));
+                tempFiles.add(tempApi.createTempFile(fileName, request, in));
             }
 
             return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();

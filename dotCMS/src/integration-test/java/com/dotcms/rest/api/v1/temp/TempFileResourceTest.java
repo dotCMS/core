@@ -323,8 +323,8 @@ public class TempFileResourceTest {
         Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1,
                 (FormDataMultiPart) multipartEntity);
         assertTrue(
-                "Anon User cannot upload temp file larger than TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS",
-                jsonResponse.getStatus() != 200);
+                "Anon User cannot upload temp file larger than TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS" + jsonResponse.getStatus(),
+                jsonResponse.getStatus() == 400);
 
     }
 
@@ -352,8 +352,8 @@ public class TempFileResourceTest {
         Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_FILE_SIZE, testFile.length() - 10);
         Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1,
                 (FormDataMultiPart) multipartEntity);
-        assertTrue("anon user cannot upload >TEMP_RESOURCE_MAX_FILE_SIZE",
-                jsonResponse.getStatus() != 200);
+        assertTrue("anon user cannot upload >TEMP_RESOURCE_MAX_FILE_SIZE " + jsonResponse.getStatus(),
+                jsonResponse.getStatus() == 400);
     }
 
     @Test
