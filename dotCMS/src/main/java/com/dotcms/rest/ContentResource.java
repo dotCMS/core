@@ -15,10 +15,12 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.workflow.form.FireActionForm;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.RelationshipAPI;
@@ -38,6 +40,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
@@ -87,6 +90,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
@@ -1130,9 +1134,22 @@ public class ContentResource {
 
     }
 
+    /**
+     * This method has been deprecated in favor of the {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefaultMultipart(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FormDataMultiPart)}
+     * @param request
+     * @param response
+     * @param multipart
+     * @param params
+     * @deprecated 
+     * @see com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefaultMultipart(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FormDataMultiPart)
+     * @return
+     * @throws URISyntaxException
+     * @throws DotDataException
+     */
+    @Deprecated
     @PUT
     @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript", MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response multipartPUT(@Context HttpServletRequest request,
             @Context HttpServletResponse response,
@@ -1141,6 +1158,19 @@ public class ContentResource {
         return multipartPUTandPOST(request, response, multipart, params, "PUT");
     }
 
+    /**
+     * This method has been deprecated in favor of the {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefaultMultipart(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FormDataMultiPart)}
+     * @param request
+     * @param response
+     * @param multipart
+     * @param params
+     * @deprecated
+     * @see com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefaultMultipart(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FormDataMultiPart)
+     * @return
+     * @throws URISyntaxException
+     * @throws DotDataException
+     */
+    @Deprecated
     @POST
     @Path("/{params:.*}")
     @Produces(MediaType.TEXT_PLAIN)
@@ -1303,20 +1333,43 @@ public class ContentResource {
         }
     }
 
+    /**
+     * This method has been deprecated in favor of {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
+     * @param request
+     * @param response
+     * @param params
+     * @deprecated
+     * @see  {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
+     * @return
+     * @throws URISyntaxException
+     */
     @PUT
     @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
             MediaType.APPLICATION_XML})
+    @Deprecated
     public Response singlePUT(@Context HttpServletRequest request,
             @Context HttpServletResponse response, @PathParam("params") String params)
             throws URISyntaxException {
         return singlePUTandPOST(request, response, params, "PUT");
     }
 
+    /**
+     * This method has been deprecated in favor of {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
+     * @param request
+     * @param response
+     * @param params
+     * @deprecated
+     * @see  {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
+     *
+     * @return
+     * @throws URISyntaxException
+     */
+    @Deprecated
     @POST
     @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
             MediaType.APPLICATION_XML})
     public Response singlePOST(@Context HttpServletRequest request,
@@ -1361,13 +1414,8 @@ public class ContentResource {
             responseBuilder.entity(e.getMessage());
             return responseBuilder.build();
         } catch (Exception e) {
-
             Logger.error(this.getClass(), "Error processing Stream", e);
-
-            Response.ResponseBuilder responseBuilder = Response
-                    .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
         return saveContent(contentlet, init);
@@ -1382,6 +1430,8 @@ public class ContentResource {
 
         try {
 
+            HibernateUtil.startTransaction();
+
             // preparing categories
             List<Category> categories = MapToContentletPopulator.INSTANCE.getCategories
                     (contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
@@ -1390,8 +1440,6 @@ public class ContentResource {
             final Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
                     .get(RELATIONSHIP_KEY);
             live = contentWorkflowResult.publish;
-
-            HibernateUtil.startTransaction();
 
             categories = UtilMethods.isSet(categories)?categories:null;
 
@@ -1418,27 +1466,8 @@ public class ContentResource {
 
             HibernateUtil.closeAndCommitTransaction();
             clean = true;
-        } catch (DotContentletStateException e) {
-
-            Logger.error(this.getClass(), "Error saving Contentlet" + e);
-
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_CONFLICT);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
-        } catch (IllegalArgumentException e) {
-
-            Logger.error(this.getClass(), "Error saving Contentlet" + e);
-
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_CONFLICT);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
-        } catch (DotSecurityException e) {
-
-            Logger.error(this.getClass(), "Error saving Contentlet" + e);
-            throw new ForbiddenException(e);
         } catch (Exception e) {
-            Logger.warn(this, e.getMessage(), e);
-            return Response.serverError().build();
+            return ResponseUtil.mapExceptionResponse(e);
         } finally {
             try {
                 if (!clean) {

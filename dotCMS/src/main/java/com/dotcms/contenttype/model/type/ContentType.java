@@ -309,7 +309,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
           CollectionsUtils.imap(
                   BaseContentType.CONTENT,   Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false),
                   BaseContentType.WIDGET,    Config.getBooleanProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", false),
-                  BaseContentType.FILEASSET, Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",false)
+                  BaseContentType.FILEASSET, Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE",false),
+                  BaseContentType.PERSONA,   Config.getBooleanProperty("DEFAULT_PERSONA_TO_DEFAULT_LANGUAGE",false)
                   );
 
   @JsonIgnore

@@ -131,7 +131,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		builder.name("Test");
 		final PersonaContentType personaContentType = builder.build();
 
-		Assert.assertFalse(personaContentType.languageFallback());
+		Assert.assertTrue(personaContentType.languageFallback());
 	}
 
 	@Test
@@ -813,6 +813,44 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			}
 		}
 	}
+
+    @Test
+    public void testSaveShouldRespectCaseInsensitiveVariableName()
+            throws DotSecurityException, DotDataException {
+
+        ContentType type1 = null;
+        ContentType type2 = null;
+        try {
+            type1 = APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .save(ContentTypeBuilder
+                            .builder(SimpleContentType.class)
+                            .folder(FolderAPI.SYSTEM_FOLDER)
+                            .host(Host.SYSTEM_HOST)
+                            .name("CASEINSENSITIVEVAR")
+                            .owner(user.getUserId())
+                            .build());
+
+            Assert.assertTrue(type1.variable().equalsIgnoreCase("CASEINSENSITIVEVAR"));
+
+            type2 = APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .save(ContentTypeBuilder
+                            .builder(SimpleContentType.class)
+                            .folder(FolderAPI.SYSTEM_FOLDER)
+                            .host(Host.SYSTEM_HOST)
+                            .name("caseinsensitivevar")
+                            .owner(user.getUserId())
+                            .build());
+
+            Assert.assertFalse(type2.variable().equalsIgnoreCase("caseinsensitivevar"));
+        } finally {
+            if(type1!=null) {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type1);
+            }
+            if(type2!=null) {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type2);
+            }
+        }
+    }
 
 	@Test
 	@UseDataProvider("testCasesUpdateTypePermissions")
@@ -1772,6 +1810,71 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
        assertThat("Filtering fields by immutable type",testType.fields(HostFolderField.class).size()==1);
        assertThat("Filtering fields by field type",testType.fields(ImmutableHostFolderField.class).size()==1);
      }
+
+	/***
+	 * If you create a CT with the same name than existing one, the number at the end of the variable should increase
+	 * instead of concat the next number.
+	 * E.g
+	 * Name               |       Variable
+	 * newContentType           newContentType
+	 * newContentType           newContentType1
+	 * newContentType           newContentType2
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	@Test
+	public void testSaveContentTypeWithSameName_ShouldIncreaseNumberInsteadConcat()
+			throws DotSecurityException, DotDataException {
+
+		ContentType type1 = null;
+		ContentType type2 = null;
+		ContentType type3 = null;
+		final String contentTypeName = "newContentType";
+		try {
+			type1 = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name(contentTypeName)
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertTrue("Got instead:" + type1.variable(), type1.variable().equalsIgnoreCase(contentTypeName));
+
+			type2 = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name(contentTypeName)
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertTrue("Got instead:" + type2.variable(), type2.variable().equalsIgnoreCase(contentTypeName + 1));
+
+			type3 = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name(contentTypeName)
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertTrue("Got instead:" + type3.variable() ,type3.variable().equalsIgnoreCase(contentTypeName + 2));
+		} finally {
+			if(type1!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type1);
+			}
+			if(type2!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type2);
+			}
+			if(type3!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type3);
+			}
+		}
+	}
      
      
 }

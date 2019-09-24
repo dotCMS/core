@@ -16,7 +16,7 @@ function submitfmPublish() {
 	submitForm(form);
 }
 function cancel() {
-	window.location.href = "<%=referer%>";
+    window.location.href = "<%=referer%>" + "&p_p_id=site-browser";
 }
 </script>
 
