@@ -593,7 +593,8 @@ public class WorkflowResourceLicenseIntegrationTest {
     public void Find_Available_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final ContentType contentType = APILocator.getContentTypeAPI(userAdmin).find("webPageContent");
-        final Contentlet contentlet = new ContentletDataGen(contentType.id()).setProperty("title", "content1").setProperty("body", "content1").nextPersisted();
+        Contentlet contentlet = new ContentletDataGen(contentType.id()).setProperty("title", "content1").setProperty("body", "content1").nextPersisted();
+        contentlet = ContentletDataGen.publish(contentlet);
         Logger.error(this, "Contentlet: " + contentlet);
         final Response response = nonLicenseWorkflowResource.findAvailableActions(request,  new EmptyHttpResponse(), contentlet.getInode(), null);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());

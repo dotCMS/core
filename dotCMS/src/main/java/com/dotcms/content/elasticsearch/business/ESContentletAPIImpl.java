@@ -363,7 +363,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try {
             ContentletVersionInfo clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
             if(clvi ==null){
-                throw new DotContentletStateException("No contenlet found for given identifier");
+                throw new DotContentletStateException("No contentlet found for given identifier");
             }
             if(live){
                 return find(clvi.getLiveInode(), user, respectFrontendRoles);
@@ -3061,7 +3061,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (field != null && limit == -1 && offset == 0 && sortBy == null) {
             if (UtilMethods.isSet(relatedList)) {
                 relatedIds.put(variableName,
-                        relatedList.stream().map(cont -> cont.getIdentifier())
+                        relatedList.stream().map(Contentlet::getIdentifier).distinct()
                                 .collect(
                                         CollectionsUtils.toImmutableList()));
             } else {
