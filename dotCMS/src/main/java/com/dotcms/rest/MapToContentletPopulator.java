@@ -138,11 +138,9 @@ public class MapToContentletPopulator  {
     private void setIndexPolicy(final Contentlet contentlet, final Map<String, Object> map) {
 
         final Object indexPolicyValue = map.getOrDefault("indexPolicy", IndexPolicyProvider.getInstance().forSingleContent());
-        final IndexPolicy indexPolicy = indexPolicyValue instanceof IndexPolicy?
-            (IndexPolicy)indexPolicyValue:
-            IndexPolicy.valueOf(this.parseIndexPolicy(indexPolicyValue));
-
-        contentlet.setIndexPolicy(indexPolicy);
+        
+        contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicyValue));
+        
     }
 
     private String parseIndexPolicy (final Object indexPolicyValue) {
