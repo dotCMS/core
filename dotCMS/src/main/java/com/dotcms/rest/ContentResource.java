@@ -539,11 +539,11 @@ public class ContentResource {
             return ExceptionMapperUtil.createResponse(new DotStateException("No Permissions"), Response.Status.FORBIDDEN);
         } catch (Exception e) {
             if (idPassed) {
-                Logger.warn(this, "Can't find Content with Identifier: " + id, e);
+                Logger.warnAndDebug(this.getClass(), "Can't find Content with Identifier: " + id, e);
             } else if (queryPassed || UtilMethods.isSet(related)) {
                 Logger.warn(this, "Error searching Content : " + e.getMessage());
             } else if (inodePassed) {
-                Logger.warn(this, "Can't find Content with Inode: " + inode, e);
+                Logger.warnAndDebug(this.getClass(), "Can't find Content with Inode: " + inode, e);
             }
             status = Optional.of(Status.INTERNAL_SERVER_ERROR);
         }
@@ -552,14 +552,10 @@ public class ContentResource {
         try {
             if ("xml".equals(type)) {
                 result = getXML(contentlets, request, response, render, user, depth,
-                        respectFrontendRoles, toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
-                                () -> -1L), toBoolean(paramsMap.get(RESTParams.LIVE.getValue()),
-                                () -> null));
+                        respectFrontendRoles, language, live);
             } else {
                 result = getJSON(contentlets, request, response, render, user, depth,
-                        respectFrontendRoles, toLong(paramsMap.get(RESTParams.LANGUAGE.getValue()),
-                                () -> -1L), toBoolean(paramsMap.get(RESTParams.LIVE.getValue()),
-                                () -> null));
+                        respectFrontendRoles, language, live);
             }
         } catch (Exception e) {
             Logger.warn(this, "Error converting result to XML/JSON");
@@ -584,7 +580,7 @@ public class ContentResource {
      */
     @NotNull
     private List<Contentlet> getPullRelated(User user, int limit,
-            String orderBy, String tmDate, String luceneQuery, String relationshipValue, long language, Boolean live)
+            String orderBy, String tmDate, String luceneQuery, String relationshipValue, long language, boolean live)
             throws DotSecurityException, DotDataException {
         final String contentTypeVar = relationshipValue.split(":")[0].split("\\.")[0];
         final String fieldVar = relationshipValue.split(":")[0].split("\\.")[1];
@@ -661,7 +657,7 @@ public class ContentResource {
      */
     private String getXML(final List<Contentlet> cons, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user,
-            final int depth, final boolean respectFrontendRoles, long language, Boolean live){
+            final int depth, final boolean respectFrontendRoles, long language, boolean live){
 
         final StringBuilder sb = new StringBuilder();
         final XStream xstream = new XStream(new DomDriver());
@@ -753,7 +749,7 @@ public class ContentResource {
             final String render, final User user, final int depth,
             final boolean respectFrontendRoles,
             final Contentlet contentlet, final Map<String, Object> objectMap,
-            Set<Relationship> addedRelationships, long language, Boolean live)
+            Set<Relationship> addedRelationships, long language, boolean live)
             throws DotDataException, IOException, DotSecurityException {
 
         Relationship relationship;
@@ -874,7 +870,7 @@ public class ContentResource {
      */
     private String getJSON(final List<Contentlet> cons, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user,
-            final int depth, boolean respectFrontendRoles, long language, Boolean live){
+            final int depth, boolean respectFrontendRoles, long language, boolean live){
         final JSONObject json = new JSONObject();
         final JSONArray jsonCons = new JSONArray();
 
@@ -927,8 +923,8 @@ public class ContentResource {
             final String render, final User user, final int depth,
             final boolean respectFrontendRoles,
             final Contentlet contentlet,
-            final JSONObject jsonObject, Set<Relationship> addedRelationships, long language,
-            Boolean live)
+            final JSONObject jsonObject, Set<Relationship> addedRelationships, final long language,
+            final boolean live)
             throws DotDataException, JSONException, IOException, DotSecurityException {
 
         Relationship relationship;
