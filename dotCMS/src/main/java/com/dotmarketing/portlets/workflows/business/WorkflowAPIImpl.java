@@ -3805,11 +3805,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final List<WorkflowScheme> schemes          = this.findSchemesForContentType(contentType);
 
 		if (UtilMethods.isSet(schemes)) {
-			final List<Map<String, Object>> mappingRows =
+			final List<Map<String, Object>> unsortedMappingRows =
 					this.workFlowFactory.findSystemActionsBySchemes(systemAction, schemes);
 
-			if (UtilMethods.isSet(mappingRows)) {
+			if (UtilMethods.isSet(unsortedMappingRows)) {
 
+				final List<Map<String, Object>> mappingRows = new ArrayList<>(unsortedMappingRows);
 				mappingRows.sort(this::compareScheme);
 				return this.findActionAvailable(contentlet,
 						(String) mappingRows.get(0).get("workflow_action"), user);
