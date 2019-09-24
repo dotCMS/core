@@ -545,10 +545,26 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         Logger.info(this, "Updating the personalization: " + currentPersonalization +
                                         " to " + newPersonalization);
+        final List<Map<String, Object>> currentPersonalizationPages =
+                new DotConnect().setSQL("select parent1 from multi_tree where personalization = ?")
+                .addObject(currentPersonalization).loadObjectResults();
 
         new DotConnect().setSQL(UPDATE_MULTI_TREE_PERSONALIZATION)
                 .addParam(newPersonalization)
                 .addParam(currentPersonalization).loadResult();
+
+        if (UtilMethods.isSet(currentPersonalizationPages)) {
+
+            Logger.info(this, "The personalization: " + currentPersonalization + ", has been changed to : " + newPersonalization +
+                    " all related pages multitrees will be invalidated: " + currentPersonalizationPages.size());
+            for (final Map<String, Object> pageMap : currentPersonalizationPages) {
+
+                final String pageId = (String) pageMap.get("parent1");
+                Logger.info(this, "Invalidating the multitrees for the page: " + pageId);
+                CacheLocator.getMultiTreeCache()
+                        .removePageMultiTrees(pageId);
+            }
+        }
     }
 
     /**

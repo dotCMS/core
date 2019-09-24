@@ -38,6 +38,8 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     private String title = "testTitle" + currentTime;
     private List<Map<String, String>> containers = new ArrayList<>();
 
+    private String theme;
+
     private static final TemplateAPI templateAPI = APILocator.getTemplateAPI();
     private static final String type = "template";
 
@@ -196,6 +198,11 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         return this;
     }
 
+    public TemplateDataGen theme(final String theme) {
+        this.theme = theme;
+        return this;
+    }
+
     /**
      * {@inheritDoc}
      * <p>It will also include a '#parseContainer('containerId')' string to the body of the
@@ -220,6 +227,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         template.setType(type);
         template.setBody(body);
         template.setDrawedBody(drawedBody);
+        template.setTheme(theme);
         return template;
     }
 
