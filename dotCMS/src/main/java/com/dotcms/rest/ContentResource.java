@@ -1170,6 +1170,7 @@ public class ContentResource {
      * @throws URISyntaxException
      * @throws DotDataException
      */
+    @Deprecated
     @POST
     @Path("/{params:.*}")
     @Produces(MediaType.TEXT_PLAIN)
