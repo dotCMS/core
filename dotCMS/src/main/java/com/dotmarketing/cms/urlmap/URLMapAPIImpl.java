@@ -53,18 +53,15 @@ public class URLMapAPIImpl implements URLMapAPI {
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
-    public boolean isUrlPattern(final String uri) throws DotDataException {
-        if (this.shouldLoadPatterns()) {
-            this.loadPatterns();
-        }
 
-        return containsRegEx(uri);
+    public boolean isUrlPattern(final UrlMapContext urlMapContext) throws DotDataException {
+        return matchingUrlPattern(urlMapContext.getUri()) && getContentlet(urlMapContext) != null;
     }
 
     public Optional<URLMapInfo> processURLMap(final UrlMapContext context)
             throws DotSecurityException, DotDataException {
 
-        if (this.isUrlPattern(context.getUri())) {
+        if (this.matchingUrlPattern(context.getUri())) {
             final Matches matches = this.findPatternChange(context.getUri());
 
             final Structure structure = CacheLocator.getContentTypeCache()
@@ -80,11 +77,33 @@ public class URLMapAPIImpl implements URLMapAPI {
 
             final Identifier pageUriIdentifier = this.getDetailtPageUri(structure);
 
-            final String urlMapper = this.buildUrlMapper(matches);
-            return Optional.of(new URLMapInfo(contentlet, pageUriIdentifier, urlMapper));
+            return Optional.of(new URLMapInfo(contentlet, pageUriIdentifier));
         } else {
             return Optional.empty();
         }
+    }
+
+    private Contentlet getContentlet(final UrlMapContext urlMapContext){
+        final Matches matches = this.findPatternChange(urlMapContext.getUri());
+
+        final Structure structure = CacheLocator.getContentTypeCache()
+                .getStructureByInode(matches.getPatternChange().getStructureInode());
+
+        final Field hostField = this.findHostField(structure);
+
+        try {
+            return this.getContentlet(matches, structure, hostField, urlMapContext);
+        } catch (DotDataException | DotSecurityException e){
+            return null;
+        }
+    }
+
+    private boolean matchingUrlPattern(final String uri) throws DotDataException {
+        if (this.shouldLoadPatterns()) {
+            this.loadPatterns();
+        }
+
+        return containsRegEx(uri);
     }
 
     private Identifier getDetailtPageUri(final Structure structure) {
@@ -173,22 +192,6 @@ public class URLMapAPIImpl implements URLMapAPI {
         }
 
         return query.toString();
-    }
-
-    private String buildUrlMapper(final Matches matches) {
-
-       final List<RegExMatch> groups = matches.getMatches().get(0).getGroups();
-        final List<String> fieldMatches = matches.getPatternChange().getFieldMatches();
-        String urLPattern = matches.patternChange.getURLpattern();
-
-        for (int i = 0; i < fieldMatches.size(); i++) {
-            final String fieldMath = fieldMatches.get(i);
-            final RegExMatch regExMatch = groups.get(i);
-
-            urLPattern = urLPattern.replace(String.format("{%s}", fieldMath), regExMatch.getMatch());
-        }
-
-        return urLPattern;
     }
 
     private Contentlet getContentlet(

@@ -322,7 +322,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE, urlMapInfo.getContentlet().getIdentifier());
             request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, urlMapInfo.getIdentifier().getURI());
 
-            return new HTMLPageUrl (urlMapInfo.getIdentifier().getURI(), urlMapInfo.getUrlMapper());
+            return new HTMLPageUrl (urlMapInfo.getIdentifier().getURI(), context.getPageUri());
         }
     }
 
