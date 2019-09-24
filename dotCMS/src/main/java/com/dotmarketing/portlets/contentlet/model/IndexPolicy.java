@@ -22,10 +22,10 @@ public enum IndexPolicy {
     public static IndexPolicy parseIndexPolicy (final Object indexPolicyValue) {
 
       if ("DEFER".equalsIgnoreCase(indexPolicyValue.toString())){
-        return IndexPolicy.DEFER;
+        return DEFER;
       }
       else if("FORCE".equalsIgnoreCase(indexPolicyValue.toString())) {
-        return IndexPolicy.FORCE;
+        return FORCE;
       }
 
       return WAIT_FOR;
