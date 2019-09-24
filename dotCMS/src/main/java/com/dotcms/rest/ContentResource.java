@@ -20,6 +20,7 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.workflow.form.FireActionForm;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.RelationshipAPI;
@@ -39,6 +40,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
@@ -1134,6 +1136,19 @@ public class ContentResource {
 
     }
 
+    /**
+     * This method has been deprecated in favor of the {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefaultMultipart(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FormDataMultiPart)}
+     * @param request
+     * @param response
+     * @param multipart
+     * @param params
+     * @deprecated 
+     * @see com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefaultMultipart(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FormDataMultiPart)
+     * @return
+     * @throws URISyntaxException
+     * @throws DotDataException
+     */
+    @Deprecated
     @PUT
     @Path("/{params:.*}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript", MediaType.TEXT_PLAIN})
@@ -1145,6 +1160,19 @@ public class ContentResource {
         return multipartPUTandPOST(request, response, multipart, params, "PUT");
     }
 
+    /**
+     * This method has been deprecated in favor of the {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefaultMultipart(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FormDataMultiPart)}
+     * @param request
+     * @param response
+     * @param multipart
+     * @param params
+     * @deprecated
+     * @see com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefaultMultipart(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FormDataMultiPart)
+     * @return
+     * @throws URISyntaxException
+     * @throws DotDataException
+     */
+    @Deprecated
     @POST
     @Path("/{params:.*}")
     @Produces(MediaType.TEXT_PLAIN)
@@ -1307,17 +1335,40 @@ public class ContentResource {
         }
     }
 
+    /**
+     * This method has been deprecated in favor of {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
+     * @param request
+     * @param response
+     * @param params
+     * @deprecated
+     * @see  {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
+     * @return
+     * @throws URISyntaxException
+     */
     @PUT
     @Path("/{params:.*}")
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
             MediaType.APPLICATION_XML})
+    @Deprecated
     public Response singlePUT(@Context HttpServletRequest request,
             @Context HttpServletResponse response, @PathParam("params") String params)
             throws URISyntaxException {
         return singlePUTandPOST(request, response, params, "PUT");
     }
 
+    /**
+     * This method has been deprecated in favor of {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
+     * @param request
+     * @param response
+     * @param params
+     * @deprecated
+     * @see  {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
+     *
+     * @return
+     * @throws URISyntaxException
+     */
+    @Deprecated
     @POST
     @Path("/{params:.*}")
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
