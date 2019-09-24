@@ -118,9 +118,13 @@ public class VisitorAPITest extends UnitTestBase {
         visitor.setPersona(persona2);
         assertTrue("persona2 should be set in the visitor",visitor.getPersona()==persona2);
         
-        assertTrue("persona1 should be 1/2  in the visitor.personas",visitor.getPersonas().get("persona1") == .5f);
-        assertTrue("persona2 should be 1/2  in the visitor.personas",visitor.getPersonas().get("persona2") == .5f);
+        assertTrue("persona1 should be 1/2  in the visitor.personas",visitor.getPersonaWeights().get("persona1") == .5f);
+        assertTrue("persona1 should be 1 in the visitor.personas",visitor.getPersonaCounts().get("persona1") == 1);
         
+        
+        
+        assertTrue("persona2 should be 1/2  in the visitor.personas",visitor.getPersonaWeights().get("persona2") == .5f);
+        assertTrue("persona2 should be 1  in the visitor.personas",visitor.getPersonaCounts().get("persona2") == 1);
         
         
         visitor.setPersona(persona3);
@@ -133,10 +137,17 @@ public class VisitorAPITest extends UnitTestBase {
         visitor.setPersona(persona3);
         visitor.setPersona(persona3);
         visitor.setPersona(persona3);
+
+        assertTrue("persona1 should be 1  in the visitor.personas",visitor.getPersonaCounts().get("persona1") == 1);
+        assertTrue("persona2 should be 3  in the visitor.personas",visitor.getPersonaCounts().get("persona2") == 3);
+        assertTrue("persona3 should be 4  in the visitor.personas",visitor.getPersonaCounts().get("persona3") == 4);
         
-        assertTrue("persona1 should be 1/8  in the visitor.personas",visitor.getPersonas().get("persona1") == .125f);
-        assertTrue("persona2 should be 3/8  in the visitor.personas",visitor.getPersonas().get("persona2") == .375f);
-        assertTrue("persona3 should be 1/2  in the visitor.personas",visitor.getPersonas().get("persona3") == .5f);
+        
+        assertTrue("persona1 should be 1/8  in the visitor.personas",visitor.getPersonaWeights().get("persona1") == .125f);
+        assertTrue("persona2 should be 3/8  in the visitor.personas",visitor.getPersonaWeights().get("persona2") == .375f);
+        assertTrue("persona3 should be 1/2  in the visitor.personas",visitor.getPersonaWeights().get("persona3") == .5f);
+        visitor.accruePersona(persona3);
+        assertTrue("persona3 should be 5  in the visitor.personas",visitor.getPersonaCounts().get("persona3") == 5);
     }
     
     

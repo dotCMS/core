@@ -28,6 +28,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.personas.model.IPersona;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -568,6 +569,10 @@ public class ContentTool implements ViewTool {
 		StringWriter buff  = new StringWriter().append(query);
 		Visitor visitor = opt.get();
 		IPersona p = visitor.getPersona();
+		
+
+		
+		
 		List<AccruedTag> tags = visitor.getAccruedTags();
 		if(p==null && (tags==null || tags.size()==0)){
 			return query;
@@ -578,9 +583,31 @@ public class ContentTool implements ViewTool {
 		if(tags.size()>0){
 			maxBoost = tags.get(0).getCount() + maxBoost;
 		}
-		if(p!=null){
-			buff.append(" tags:\"" + p.getKeyTag().toLowerCase() + "\"^" + maxBoost);
-		}
+		
+
+    if(Config.getBooleanProperty("PULLPERSONALIZED_USE_MULTIPLE_PERSONAS", true)) {
+      Map<String,Float> personas = visitor.getPersonaWeights();
+      if(personas!=null && !personas.isEmpty()) {
+        for(Map.Entry<String, Float> map: personas.entrySet()) {
+          int boostMe = Math.round(maxBoost*map.getValue()) ;
+          if(map.getKey().equals(p.getKeyTag())) {
+           boostMe = boostMe+Config.getIntProperty("PULLPERSONALIZED_LAST_PERSONA_WEIGHT", 0);
+          }
+          
+          buff.append(" tags:\"" + map.getKey().toLowerCase() + "\"^" + boostMe);
+        }
+      }
+      
+      
+    }else {
+      if(p!=null){
+        buff.append(" tags:\"" + p.getKeyTag().toLowerCase() + "\"^" + maxBoost);
+      }
+    }
+		
+		
+		
+
 		
 		for(AccruedTag tag : tags){
 			buff.append(" tags:\"" + tag.getTag().toLowerCase() + "\"^" + (tag.getCount()+1) + " ");

@@ -104,6 +104,37 @@ public class Visitor implements Serializable {
       return lastPersona;
     }
 
+    
+    
+    public void accruePersona(String personaKeyTag) {
+      if(personaKeyTag != null) {
+        this.personas.add(personaKeyTag);
+      }
+    }
+    
+    public void accruePersona(Persona persona) {
+      if(persona != null) {
+        this.personas.add(persona.getKeyTag());
+      }
+    }
+    
+    public Map<String, Long> getPersonaCounts() {
+      
+      return personas
+          .stream()
+          .collect(Collectors.groupingBy(p -> p.toString(), Collectors.counting()))
+          .entrySet()
+          .stream()
+          .collect(Collectors.toMap( e->e.getKey(),  e -> e.getValue()));
+    }
+    
+    public List<String> getPersonas() {
+      return this.personas;
+    }
+    
+    public void clearPersonas() {
+       this.personas = new ArrayList<>();
+    }
   /**
    * Returns a map of the persona and the percentage of times that persona 
    * has been assigned to the visitor and the percentage of how often that persona has been set
@@ -116,11 +147,9 @@ public class Visitor implements Serializable {
    * }
    * @return
    */
-  public Map<String, Float> getPersonas() {
+  public Map<String, Float> getPersonaWeights() {
     
-    return personas
-        .stream()
-        .collect(Collectors.groupingBy(p -> p.toString(), Collectors.counting()))
+    return getPersonaCounts()
         .entrySet()
         .stream()
         .collect(Collectors.toMap( e->e.getKey(),  e -> e.getValue()/new Float(personas.size())));
@@ -145,7 +174,7 @@ public class Visitor implements Serializable {
       } catch (Exception e) {
         Logger.error(this, "Unable to retrieve Tags associated to Persona [" + persona.getInode() + "].", e);
       }
-      this.personas.add(persona.getKeyTag());
+      accruePersona(persona);
     }
     this.lastPersona=persona;
 
