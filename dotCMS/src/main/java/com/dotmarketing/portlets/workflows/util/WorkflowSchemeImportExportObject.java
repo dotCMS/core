@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.util;
 
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,8 @@ public class WorkflowSchemeImportExportObject implements Serializable {
 	List<WorkflowActionClass> actionClasses;
 	List<WorkflowActionClassParameter> actionClassParams;
 	List<Map<String, String>> workflowStructures;
+	List<SystemActionWorkflowActionMapping> schemeSystemActionWorkflowActionMappings;
+	List<SystemActionWorkflowActionMapping> contentTpeSystemActionWorkflowActionMappings;
 
 
 	public List<Map<String, String>> getActionSteps() {
@@ -90,9 +93,22 @@ public class WorkflowSchemeImportExportObject implements Serializable {
 	public void setActionClassParams(List<WorkflowActionClassParameter> actionClassParams) {
 		this.actionClassParams = actionClassParams;
 	}
-	
-	
-	
-	
 
+	public List<SystemActionWorkflowActionMapping> getSchemeSystemActionWorkflowActionMappings() {
+		return schemeSystemActionWorkflowActionMappings;
+	}
+
+	public void setSchemeSystemActionWorkflowActionMappings(
+			List<SystemActionWorkflowActionMapping> schemeSystemActionWorkflowActionMappings) {
+		this.schemeSystemActionWorkflowActionMappings = schemeSystemActionWorkflowActionMappings;
+	}
+
+	public List<SystemActionWorkflowActionMapping> getContentTpeSystemActionWorkflowActionMappings() {
+		return contentTpeSystemActionWorkflowActionMappings;
+	}
+
+	public void setContentTpeSystemActionWorkflowActionMappings(
+			List<SystemActionWorkflowActionMapping> contentTpeSystemActionWorkflowActionMappings) {
+		this.contentTpeSystemActionWorkflowActionMappings = contentTpeSystemActionWorkflowActionMappings;
+	}
 }

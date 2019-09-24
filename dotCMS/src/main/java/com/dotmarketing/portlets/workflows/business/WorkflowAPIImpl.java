@@ -357,6 +357,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 */
 	private String getLongId (final String shortyId, final ShortyIdAPI.ShortyInputType type) {
 
+		//  it is already long
+		if (null != shortyId && shortyId.length() == 36) {
+
+			return shortyId;
+		}
+
 		final Optional<ShortyId> shortyIdOptional =
 				this.shortyIdAPI.getShorty(shortyId, type);
 
@@ -1757,7 +1763,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						   final User user) throws DotDataException {
 
 		DotPreconditions.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
-				()-> "Workflow-does-not-exists-scheme",
+				()-> {
+					Logger.error(this, "The Workflow Scheme does not exist, id: " + action.getSchemeId());
+					return "Workflow-does-not-exists-scheme";
+				},
 				DoesNotExistException.class);
 
 		try {
@@ -3796,11 +3805,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final List<WorkflowScheme> schemes          = this.findSchemesForContentType(contentType);
 
 		if (UtilMethods.isSet(schemes)) {
-			final List<Map<String, Object>> mappingRows =
+			final List<Map<String, Object>> unsortedMappingRows =
 					this.workFlowFactory.findSystemActionsBySchemes(systemAction, schemes);
 
-			if (UtilMethods.isSet(mappingRows)) {
+			if (UtilMethods.isSet(unsortedMappingRows)) {
 
+				final List<Map<String, Object>> mappingRows = new ArrayList<>(unsortedMappingRows);
 				mappingRows.sort(this::compareScheme);
 				return this.findActionAvailable(contentlet,
 						(String) mappingRows.get(0).get("workflow_action"), user);
