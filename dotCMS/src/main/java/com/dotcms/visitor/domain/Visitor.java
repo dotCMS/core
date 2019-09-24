@@ -11,14 +11,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 import javax.servlet.http.HttpServletRequest;
-
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.tag.model.Tag;
@@ -29,7 +25,6 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
-
 import eu.bitwalker.useragentutils.DeviceType;
 import eu.bitwalker.useragentutils.UserAgent;
 import io.vavr.control.Try;
@@ -47,7 +42,7 @@ public class Visitor implements Serializable {
 
     private Multiset<String> _accruedTags = HashMultiset.create();
     		
-    private List<String> personas = new ArrayList<>();
+    private List<String> possiblePersonas = new ArrayList<>();
     
     private Persona lastPersona=null;
     
@@ -105,35 +100,54 @@ public class Visitor implements Serializable {
     }
 
     
-    
+    /**
+     * Adds a persona to the visitors "possible personas"
+     * without setting the visitor persona
+     * @param personaKeyTag
+     */
     public void accruePersona(String personaKeyTag) {
       if(personaKeyTag != null) {
-        this.personas.add(personaKeyTag);
+        this.possiblePersonas.add(personaKeyTag);
       }
     }
-    
+    /**
+     * Adds a persona to the visitors "possible personas"
+     * without setting the visitor persona
+     * @param persona
+     */
     public void accruePersona(Persona persona) {
       if(persona != null) {
-        this.personas.add(persona.getKeyTag());
+        this.possiblePersonas.add(persona.getKeyTag());
       }
     }
-    
+    /**
+     * Returns a Map of persona keytags and the count for how many
+     * times that persona has been added to the Map
+     * @return
+     */
     public Map<String, Long> getPersonaCounts() {
       
-      return personas
+      return possiblePersonas
           .stream()
           .collect(Collectors.groupingBy(p -> p.toString(), Collectors.counting()))
           .entrySet()
           .stream()
           .collect(Collectors.toMap( e->e.getKey(),  e -> e.getValue()));
     }
-    
+    /**
+     * Returns a the list of past and possible
+     * personas - this will have duplicate values
+     * based on what has been added to past personas
+     */
     public List<String> getPersonas() {
-      return this.personas;
+      return this.possiblePersonas;
     }
-    
+    /**
+     * Clears the list of past and possible
+     * personas
+     */
     public void clearPersonas() {
-       this.personas = new ArrayList<>();
+       this.possiblePersonas = new ArrayList<>();
     }
   /**
    * Returns a map of the persona and the percentage of times that persona 
@@ -152,7 +166,7 @@ public class Visitor implements Serializable {
     return getPersonaCounts()
         .entrySet()
         .stream()
-        .collect(Collectors.toMap( e->e.getKey(),  e -> e.getValue()/new Float(personas.size())));
+        .collect(Collectors.toMap( e->e.getKey(),  e -> e.getValue()/new Float(possiblePersonas.size())));
   }
   
   /**
@@ -337,7 +351,7 @@ public class Visitor implements Serializable {
                 ", ipAddress=" + ipAddress +
                 ", selectedLanguage=" + selectedLanguage +
                 ", locale=" + locale +
-                ", persona=" + personas +
+                ", persona=" + possiblePersonas +
                 ", accruedTags=" + _accruedTags +
                 ", userAgent=" + userAgent +
                 ", device=" + getDevice() +
