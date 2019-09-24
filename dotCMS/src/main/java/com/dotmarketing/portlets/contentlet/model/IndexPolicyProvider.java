@@ -32,7 +32,7 @@ public class IndexPolicyProvider {
 
         if (null == this.singleContentIndexPolicy) {
             this.singleContentIndexPolicy =
-                    IndexPolicy.valueOf(Config.getStringProperty("INDEX_POLICY_SINGLE_CONTENT", "DEFER"));
+                    IndexPolicy.parseIndexPolicy(Config.getStringProperty("INDEX_POLICY_SINGLE_CONTENT", "DEFER"));
         }
 
         return this.singleContentIndexPolicy;
@@ -45,7 +45,7 @@ public class IndexPolicyProvider {
 
         if (null == this.dependenciesIndexPolicy) {
             this.dependenciesIndexPolicy =
-                    IndexPolicy.valueOf(Config.getStringProperty("INDEX_POLICY_DEPENDENCIES", "DEFER"));
+                    IndexPolicy.parseIndexPolicy(Config.getStringProperty("INDEX_POLICY_DEPENDENCIES", "DEFER"));
         }
 
         return this.dependenciesIndexPolicy;
