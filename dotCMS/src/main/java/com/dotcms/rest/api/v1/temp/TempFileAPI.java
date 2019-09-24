@@ -150,12 +150,12 @@ public class TempFileAPI {
    * @return
    * @throws DotSecurityException
    */
-  public DotTempFile createTempFile(final String incomingFileName,final HttpServletRequest request, final InputStream inputStream, long maxLength)
+  public DotTempFile createTempFile(final String incomingFileName,final HttpServletRequest request, final InputStream inputStream)
       throws DotSecurityException {
     
     final DotTempFile dotTempFile = this.createEmptyTempFile(incomingFileName, request);
     final File tempFile = dotTempFile.file;
-    maxLength = maxFileSize(request);
+    final long maxLength = maxFileSize(request);
         
     try (final OutputStream out = new BoundedOutputStream(maxLength,new FileOutputStream(tempFile))) {
 
