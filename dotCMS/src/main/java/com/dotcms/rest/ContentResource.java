@@ -1347,6 +1347,7 @@ public class ContentResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
             MediaType.APPLICATION_XML})
+    @Deprecated
     public Response singlePUT(@Context HttpServletRequest request,
             @Context HttpServletResponse response, @PathParam("params") String params)
             throws URISyntaxException {
@@ -1364,6 +1365,7 @@ public class ContentResource {
      * @return
      * @throws URISyntaxException
      */
+    @Deprecated
     @POST
     @Path("/{params:.*}")
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
