@@ -247,6 +247,14 @@ public interface WorkFlowFactory {
 
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException;
 
+	/**
+	 * Retrieves all WorkflowActionClass entries on the db where name matches the actionClassName
+	 * @param actionClassName
+	 * @return
+	 * @throws DotDataException
+	 */
+	public List<WorkflowActionClass> findActionClassesByClassName(final String actionClassName) throws DotDataException;
+
 	public WorkflowActionClass findActionClass(String id) throws DotDataException;
 
 	public void deleteActionClass(WorkflowActionClass actionClass) throws DotDataException, AlreadyExistException;
