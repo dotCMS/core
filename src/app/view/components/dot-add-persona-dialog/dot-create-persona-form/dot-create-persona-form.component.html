@@ -24,7 +24,7 @@
 
     <div class="form__group">
         <label for="persona-image" class="form__label">{{messagesKey['modes.persona.upload.file']}}</label>
-        <p-fileUpload  *ngIf="!imageName"
+        <p-fileUpload  *ngIf="!tempUploadedFile"
                        id="persona-image"
                        [chooseLabel]="messagesKey['dot.common.choose']"
                        url="/api/v1/temp"
@@ -34,9 +34,16 @@
                        auto="true"
                        mode="basic">
         </p-fileUpload>
-        <div class="form__file-detail" *ngIf="imageName" >
-            <span>{{imageName}}</span>
+        <div class="form__file-detail" *ngIf="tempUploadedFile" >
+            <img [src]="tempUploadedFile.thumbnailUrl">
+            <span>{{tempUploadedFile.fileName}}</span>
             <button tiny pButton secondary [label]="messagesKey['dot.common.remove']" (click)="removeImage()"></button>
         </div>
+    </div>
+    <div class="form__group">
+        <label for="persona-other-tags" class="form__label">{{messagesKey['modes.persona.other.tags']}}</label>
+        <dot-autocomplete-tags id="persona-other-tags" formControlName="tags"
+            [placeholder]="messagesKey['modes.persona.select.tags.placeholder']"
+        ></dot-autocomplete-tags>
     </div>
 </form>

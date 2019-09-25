@@ -7,7 +7,14 @@ p-fileupload {
 
 .form__file-detail {
     margin-top: $basic-padding;
+    display: flex;
+    align-items: center;
+
     span {
-        margin-right: $basic-padding;
+        margin: 0px $basic-padding 0px $basic-padding * 2;
+    }
+    img {
+        border: 1px solid $gray;
+        width: 100px;
     }
 }

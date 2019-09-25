@@ -18,7 +18,7 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
     @Output() isValid: EventEmitter<Boolean> = new EventEmitter();
 
     form: FormGroup;
-    imageName: string;
+    tempUploadedFile: DotCMSTempFile;
     messagesKey: { [key: string]: string } = {};
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -38,7 +38,9 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
                 'dot.common.choose',
                 'dot.common.remove',
                 'modes.persona.host',
-                'modes.persona.name.error.required'
+                'modes.persona.name.error.required',
+                'modes.persona.other.tags',
+                'modes.persona.select.tags.placeholder'
             ])
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
@@ -60,9 +62,8 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
      */
     onFileUpload(event: DotFileUpload) {
         const response = JSON.parse(event.xhr.response);
-        const tempFile: DotCMSTempFile = response.tempFiles[0];
-        this.imageName = event.files[0].name;
-        this.form.get('photo').setValue(tempFile.id);
+        this.tempUploadedFile = response.tempFiles[0];
+        this.form.get('photo').setValue(this.tempUploadedFile.id);
     }
 
     /**
@@ -71,7 +72,7 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
      * @memberof DotCreatePersonaFormComponent
      */
     removeImage(): void {
-        this.imageName = null;
+        this.tempUploadedFile = null;
         this.form.get('photo').setValue('');
     }
 
@@ -90,7 +91,7 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
      * @memberof DotCreatePersonaFormComponent
      */
     resetForm(): void {
-        this.imageName = null;
+        this.tempUploadedFile = null;
         this.form.reset();
         this.form.get('hostFolder').setValue(this.siteService.currentSite.identifier);
     }
@@ -100,7 +101,8 @@ export class DotCreatePersonaFormComponent implements OnInit, OnDestroy {
             hostFolder: [this.siteService.currentSite.identifier, [Validators.required]],
             keyTag: [{ value: '', disabled: true }, [Validators.required]],
             name: [this.personaName, [Validators.required]],
-            photo: null
+            photo: null,
+            tags: null
         });
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.isValid.emit(this.form.valid);

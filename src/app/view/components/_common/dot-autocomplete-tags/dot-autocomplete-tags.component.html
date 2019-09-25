@@ -1,0 +1,17 @@
+<p-autoComplete  [(ngModel)]="value"
+                 [suggestions]="filteredOptions"
+                 field="label"
+                 dataKey="label"
+                 [dropdown]="true"
+                 [multiple]="true"
+                 [placeholder]="placeholder"
+                 (onKeyUp)="checkForTag($event)"
+                 (completeMethod)="filterTags($event)"
+                 (onSelect)="addItem()"
+                 (onUnselect)="removeItem($event)"
+                 [disabled]="disabled"
+                 appendTo="body">
+        <ng-template let-tag pTemplate="selectedItem">
+            <span>{{tag.label}}</span>
+        </ng-template>
+</p-autoComplete>

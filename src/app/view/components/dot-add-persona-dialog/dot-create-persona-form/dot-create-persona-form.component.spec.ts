@@ -13,17 +13,31 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormBuilder } from '@angular/forms';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { SiteService } from 'dotcms-js';
+import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
+import { DotAutocompleteTagsComponent } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
 
 const FROM_INITIAL_VALUE = {
     hostFolder: mockSites[0].identifier,
     keyTag: '',
     name: '',
-    photo: null
+    photo: null,
+    tags: null
+};
+
+const mockDotCMSTempFile = {
+    fileName: 'temp-file_123.jpeg',
+    folder: '',
+    id: 'temp-file_123',
+    image: true,
+    length: 5204,
+    mimeType: 'image/jpeg',
+    referenceUrl: '...temp-file_123.jpeg',
+    thumbnailUrl: '...250/temp-file_123.jpeg'
 };
 
 const mockFileUploadResponse = {
     files: [{ name: 'fileName.png' }],
-    xhr: { response: '{ "tempFiles": [{"id":"temp-file_123"}]}' }
+    xhr: { response: `{ "tempFiles": [${JSON.stringify(mockDotCMSTempFile)}]}` }
 };
 
 describe('DotCreatePersonaFormComponent', () => {
@@ -36,7 +50,8 @@ describe('DotCreatePersonaFormComponent', () => {
         'dot.common.choose': 'Choose',
         'dot.common.remove': 'Remove',
         'modes.persona.host': 'Host',
-        'modes.persona.name.error.required': 'Name is required'
+        'modes.persona.name.error.required': 'Name is required',
+        'modes.persona.select.tags.placeholder': 'Placeholder'
     });
 
     beforeEach(() => {
@@ -49,7 +64,8 @@ describe('DotCreatePersonaFormComponent', () => {
                 FileUploadModule,
                 SiteSelectorFieldModule,
                 DotFieldValidationMessageModule,
-                DotAutofocusModule
+                DotAutofocusModule,
+                DotAutocompleteTagsModule
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -142,24 +158,24 @@ describe('DotCreatePersonaFormComponent', () => {
             expect(component.isValid.emit).toHaveBeenCalledWith(false);
         });
 
-        it('should set the photo id and imageName after image upload', () => {
+        it('should set the photo id and tempUploadedFile after image upload', () => {
             const fileUpload: DebugElement = fixture.debugElement.query(By.css('p-fileUpload'));
             fileUpload.triggerEventHandler('onUpload', mockFileUploadResponse);
             fixture.detectChanges();
             expect(component.form.get('photo').value).toEqual('temp-file_123');
-            expect(component.imageName).toEqual(mockFileUploadResponse.files[0].name);
+            expect(component.tempUploadedFile).toEqual(mockDotCMSTempFile);
         });
 
-        it('should clear photo form value and imageName when remove image', () => {
+        it('should clear photo form value and tempUploadedFile when remove image', () => {
             component.form.get('photo').setValue('test');
-            component.imageName = 'test';
+            component.tempUploadedFile = mockDotCMSTempFile;
             fixture.detectChanges();
 
             const removeButton: DebugElement = fixture.debugElement.query(By.css('button'));
             removeButton.triggerEventHandler('click', {});
             expect(removeButton.nativeElement.innerText).toBe('REMOVE');
             expect(component.form.get('photo').value).toEqual('');
-            expect(component.imageName).toEqual(null);
+            expect(component.tempUploadedFile).toEqual(null);
         });
 
         it('should emit if form is valid after changes', () => {
@@ -168,7 +184,8 @@ describe('DotCreatePersonaFormComponent', () => {
                 photo: 'test',
                 name: 'test',
                 keyTag: 'test',
-                hostFolder: 'test'
+                hostFolder: 'test',
+                tags: 'test'
             });
             expect(component.isValid.emit).toHaveBeenCalledWith(true);
         });
@@ -179,15 +196,22 @@ describe('DotCreatePersonaFormComponent', () => {
             expect(component.isValid.emit).toHaveBeenCalledWith(false);
         });
 
-        it('should reset from to initial value and clear imageName', () => {
-            component.form.reset();
+        it('should reset from to initial value and clear tempUploadedFile', () => {
             component.resetForm();
             expect(component.form.getRawValue()).toEqual({
                 ...FROM_INITIAL_VALUE,
                 name: null,
                 keyTag: null
             });
-            expect(component.imageName).toEqual(null);
+            expect(component.tempUploadedFile).toEqual(null);
+        });
+
+        it('should pass placeholder correctly to DotAutocompleteTags', () => {
+            const autoComplete: DotAutocompleteTagsComponent = fixture.debugElement.query(
+                By.css('dot-autocomplete-tags')
+            ).componentInstance;
+
+            expect(autoComplete.placeholder).toEqual('Placeholder');
         });
     });
 
@@ -201,12 +225,13 @@ describe('DotCreatePersonaFormComponent', () => {
             expect(component.form.valid).toBe(true);
         });
 
-        it('should sey name if passed on initial load', () => {
+        it('should set name if passed on initial load', () => {
             expect(component.form.getRawValue()).toEqual({
                 hostFolder: mockSites[0].identifier,
                 keyTag: 'testB',
                 name: 'Test B',
-                photo: null
+                photo: null,
+                tags: null
             });
         });
     });
