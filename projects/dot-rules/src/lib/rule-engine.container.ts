@@ -187,7 +187,7 @@ export class RuleEngineContainer {
     action._owningRule = rule;
     rule._ruleActions.push(action);
     rule._saved = false;
-    rule._expanded = true;
+    rule._expanded = false;
     this.rules$.emit([rule].concat(this.rules));
   }
 

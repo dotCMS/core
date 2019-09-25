@@ -316,10 +316,12 @@ class RuleComponent {
     }
 
     setRuleExpandedState(expanded: boolean): void {
-        this.updateExpandedState.emit({
-            payload: { rule: this.rule, value: expanded },
-            type: V_RULE_UPDATE_EXPANDED_STATE
-        });
+        if (this.rule.name) {
+            this.updateExpandedState.emit({
+                payload: { rule: this.rule, value: expanded },
+                type: V_RULE_UPDATE_EXPANDED_STATE
+            });
+        }
     }
 
     setRuleEnabledState(event: any): void {
