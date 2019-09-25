@@ -123,9 +123,23 @@ describe('DotAddPersonaDialogComponent', () => {
         });
 
         describe('call to dotWorkflowActionsFireService endpoint', () => {
+            const submitForm = () => {
+                const form = de.query(By.css('dot-create-persona-form'));
+                form.triggerEventHandler('isValid', true);
+                form.componentInstance.form.setValue({
+                    name: 'Freddy',
+                    hostFolder: 'demo',
+                    keyTag: 'freddy',
+                    photo: ''
+                });
+                const accept = dialog.query(By.css('.dialog__button-accept'));
+                accept.triggerEventHandler('click', {});
+            };
+
             let dotHttpErrorManagerService: DotHttpErrorManagerService;
             let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
             let de: DebugElement;
+            let dialog;
 
             beforeEach(() => {
                 de = fixture.debugElement;
@@ -133,15 +147,26 @@ describe('DotAddPersonaDialogComponent', () => {
                 dotWorkflowActionsFireService = de.injector.get(DotWorkflowActionsFireService);
                 spyOn(component.createdPersona, 'emit');
                 spyOnProperty(component.personaForm.form, 'valid').and.returnValue(true);
+                dialog = de.query(By.css('dot-dialog'));
             });
 
-            it('should emit the new persona and close dialog if form is valid', () => {
+            it('should create and emit the new persona and close dialog if form is valid', () => {
                 spyOn(component, 'closeDialog');
-                spyOn(dotWorkflowActionsFireService, 'publishContentlet').and.returnValue(
-                    observableOf(mockDotPersona)
-                );
+                spyOn(
+                    dotWorkflowActionsFireService,
+                    'publishContentletAndWaitForIndex'
+                ).and.returnValue(observableOf(mockDotPersona));
 
-                component.savePersona();
+                submitForm();
+
+                expect(
+                    dotWorkflowActionsFireService.publishContentletAndWaitForIndex
+                ).toHaveBeenCalledWith('persona', {
+                    hostFolder: 'demo',
+                    keyTag: 'freddy',
+                    name: 'Freddy',
+                    photo: ''
+                });
                 expect(component.createdPersona.emit).toHaveBeenCalledWith(mockDotPersona);
                 expect(component.closeDialog).toHaveBeenCalled();
             });
@@ -150,11 +175,13 @@ describe('DotAddPersonaDialogComponent', () => {
                 const fake500Response = mockResponseView(500);
                 spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
 
-                spyOn(dotWorkflowActionsFireService, 'publishContentlet').and.returnValue(
-                    throwError(fake500Response)
-                );
+                spyOn(
+                    dotWorkflowActionsFireService,
+                    'publishContentletAndWaitForIndex'
+                ).and.returnValue(throwError(fake500Response));
 
-                component.savePersona();
+                submitForm();
+
                 expect(component.createdPersona.emit).not.toHaveBeenCalled();
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(fake500Response);
             });

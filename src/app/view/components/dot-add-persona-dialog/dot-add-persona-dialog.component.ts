@@ -45,33 +45,6 @@ export class DotAddPersonaDialogComponent implements OnInit {
     }
 
     /**
-     * Call endpoint to save the persona and emit the value.
-     *
-     * @memberof DotAddPersonaDialogComponent
-     */
-    savePersona(): void {
-        if (this.personaForm.form.valid) {
-            this.dotWorkflowActionsFireService
-                .publishContentlet<DotPersona>(
-                    PERSONA_CONTENT_TYPE,
-                    this.personaForm.form.getRawValue()
-                )
-                .subscribe(
-                    (persona: DotPersona) => {
-                        this.createdPersona.emit(persona);
-                        this.closeDialog();
-                    },
-                    (error: ResponseView) => {
-                        this.dotHttpErrorManagerService
-                            .handle(error)
-                            .pipe(take(1))
-                            .subscribe();
-                    }
-                );
-        }
-    }
-
-    /**
      * Handle if the form is valid or not to set the disable state of the accept button
      *
      * @param {FormGroup} form
@@ -88,9 +61,33 @@ export class DotAddPersonaDialogComponent implements OnInit {
      * @memberof DotAddPersonaDialogComponent
      */
     closeDialog(): void {
+        console.log('closeDialog');
         this.visible = false;
         this.personaForm.resetForm();
         this.dialogActions.accept.disabled = true;
+    }
+
+    private savePersona(): void {
+        if (this.personaForm.form.valid) {
+            this.dotWorkflowActionsFireService
+                .publishContentletAndWaitForIndex<DotPersona>(
+                    PERSONA_CONTENT_TYPE,
+                    this.personaForm.form.getRawValue()
+                )
+                .pipe(take(1))
+                .subscribe(
+                    (persona: DotPersona) => {
+                        this.createdPersona.emit(persona);
+                        this.closeDialog();
+                    },
+                    (error: ResponseView) => {
+                        this.dotHttpErrorManagerService
+                            .handle(error)
+                            .pipe(take(1))
+                            .subscribe();
+                    }
+                );
+        }
     }
 
     private setDialogActions(): void {

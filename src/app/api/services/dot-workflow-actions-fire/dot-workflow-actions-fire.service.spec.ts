@@ -90,6 +90,47 @@ describe('DotWorkflowActionsFireService', () => {
         });
     });
 
+        it('should PUBLISH, wait for index and return a new contentlet', () => {
+        let result;
+        this.dotWorkflowActionsFireService
+            .publishContentletAndWaitForIndex('persona', { name: 'Test' })
+            .subscribe((res) => {
+                result = res;
+            });
+
+        this.lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: [
+                            {
+                                name: 'test'
+                            }
+                        ]
+                    }
+                })
+            )
+        );
+
+        expect(result).toEqual([
+            {
+                name: 'test'
+            }
+        ]);
+
+        expect(this.lastConnection.request.url).toContain(
+            'v1/workflow/actions/default/fire/PUBLISH'
+        );
+        expect(this.lastConnection.request.method).toEqual(RequestMethod.Put);
+        expect(JSON.parse(this.lastConnection.request.getBody())).toEqual({
+            contentlet: {
+                contentType: 'persona',
+                name: 'Test',
+                indexPolicy: 'WAIT_FOR'
+            }
+        });
+    });
+
     it('should create and return a new Content', () => {
         let result;
         this.dotWorkflowActionsFireService.fireTo('123', 'new').subscribe((res) => {

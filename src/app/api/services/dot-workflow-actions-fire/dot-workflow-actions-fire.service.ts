@@ -53,10 +53,10 @@ export class DotWorkflowActionsFireService {
     /**
      * Fire a "PUBLISH" action over the content type received with the specified data
      *
-     * @param {contentType} string
-     * @param {[key: string]: any} data
-     * @returns Observable<T>
-     *
+     * @template T
+     * @param {string} contentType
+     * @param {{ [key: string]: any }} data
+     * @returns {Observable<T>}
      * @memberof DotWorkflowActionsFireService
      */
     publishContentlet<T>(contentType: string, data: { [key: string]: any }): Observable<T> {
@@ -64,6 +64,25 @@ export class DotWorkflowActionsFireService {
             contentType,
             data,
             action: ActionToFire.PUBLISH
+        });
+    }
+
+    /**
+     * Fire a "PUBLISH" action over the content type received and append the wait for index attr
+     *
+     * @template T
+     * @param {string} contentType
+     * @param {{ [key: string]: any }} data
+     * @returns {Observable<T>}
+     * @memberof DotWorkflowActionsFireService
+     */
+    publishContentletAndWaitForIndex<T>(
+        contentType: string,
+        data: { [key: string]: any }
+    ): Observable<T> {
+        return this.publishContentlet(contentType, {
+            ...data,
+            ...{ indexPolicy: 'WAIT_FOR' }
         });
     }
 
