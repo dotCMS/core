@@ -98,21 +98,10 @@ public class VelocityServlet extends HttpServlet {
    * @throws IOException
    */
   private void goToEditPage(final String requestURI, final HttpServletRequest request, final HttpServletResponse response)
-      throws ServletException, IOException {
-
-    final String urlMappedContent = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
-
-    String finalUrl = (null == urlMappedContent) ? requestURI
-        : Try
-            .of(() -> APILocator.getContentletAPI().getUrlMapForContentlet(
-                APILocator.getContentletAPI().find(urlMappedContent, APILocator.systemUser(), false), APILocator.systemUser(), false))
-            .getOrElse(requestURI);
-
-    // pass the query string as well
-    finalUrl = finalUrl.replace("?", "&") + (request.getQueryString() != null ? "&" + request.getQueryString() : "");
+      throws  IOException {
 
     response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    final String url = String.format("/dotAdmin/#/edit-page/content?url=%s", finalUrl);
+    final String url = String.format("/dotAdmin/#/edit-page/content?url=%s", requestURI);
     response.sendRedirect(url);
   }
 

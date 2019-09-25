@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.page;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
@@ -414,7 +415,41 @@ public class PageResourceTest {
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         assertEquals(pageView.getNumberContents(), 1);
+    }
 
+    @Test
+    public void shouldReturnPageByURLPattern() throws DotDataException, DotSecurityException, InterruptedException {
+        final String baseUrl = String.format("/test%s", System.currentTimeMillis());
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        final ContentType contentType = new ContentTypeDataGen().user(systemUser)
+                .host(host)
+                .detailPage(pageAsset.getIdentifier())
+                .urlMapPattern(String.format("%s/{text}", baseUrl))
+                .nextPersisted();
+
+        new FieldDataGen()
+                .name("text")
+                .velocityVarName("text")
+                .type(TextField.class)
+                .contentTypeId(contentType.id())
+                .nextPersisted();
+
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+        contentletDataGen
+                .setProperty("text", "text")
+                .languageId(1)
+                .nextPersisted();
+
+        Thread.sleep(500);
+
+        final Response response = pageResource
+                .render(request, this.response, String.format("%s/text", baseUrl), "PREVIEW_MODE", null,
+                        "1", null);
+
+        RestUtilTest.verifySuccessResponse(response);
     }
 
 

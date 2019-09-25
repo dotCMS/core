@@ -3,6 +3,7 @@ package com.dotmarketing.filters;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.*;
+import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter.IAm;
@@ -181,7 +182,20 @@ public class CMSUrlUtil {
 				return false;
 			}
 		}
-		return false;
+
+		try {
+			final UrlMapContext urlMapContext = new UrlMapContext(
+					PageMode.PREVIEW_MODE,
+					languageId,
+					uri,
+					host,
+					APILocator.getUserAPI().getSystemUser());
+
+			return APILocator.getURLMapAPI().isUrlPattern(urlMapContext);
+		} catch (final DotDataException e){
+			Logger.error(this.getClass(), e.getMessage());
+			return false;
+		}
 	}
 
 	/**

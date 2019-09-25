@@ -102,6 +102,7 @@ abstract class WorkflowSQL {
 	protected static String DELETE_CONTENTLET_STEPS= "delete from workflow_task where status = ? and webasset= ?";
 	static String SELECT_COUNT_CONTENTLES_BY_STEP= "select count(workflow_task.id) as count from workflow_task join workflow_step on workflow_task.status=workflow_step.id where workflow_step.id=?";
 
+	static String SELECT_ACTION_CLASSES_BY_CLASS= "select * from workflow_action_class where clazz = ? order by  my_order";
 	static String SELECT_ACTION_CLASSES_BY_ACTION= "select * from workflow_action_class where action_id = ? order by  my_order";
 	static String SELECT_ACTION_CLASS= "select * from workflow_action_class where id = ? ";
 	static String INSERT_ACTION_CLASS= "insert into workflow_action_class (id, action_id, name, my_order, clazz) values (?,?, ?, ?, ?)";
