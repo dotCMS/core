@@ -9,6 +9,7 @@ import { IframeOverlayService } from './service/iframe-overlay.service';
 import { PIPES } from '../../../../components';
 import { DotIframeEventsHandler } from './iframe-porlet-legacy/services/iframe-events-handler.service';
 import { RouterModule } from '@angular/router';
+import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 
 @NgModule({
     declarations: [IframeComponent, IframePortletLegacyComponent, ...PIPES],
@@ -18,7 +19,8 @@ import { RouterModule } from '@angular/router';
         FormsModule,
         SearchableDropDownModule,
         DotLoadingIndicatorModule,
-        RouterModule
+        RouterModule,
+        DotOverlayMaskModule
     ],
     providers: [IframeOverlayService, DotIframeEventsHandler]
 })

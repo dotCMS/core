@@ -26,23 +26,17 @@ import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.servic
     templateUrl: 'iframe.component.html'
 })
 export class IframeComponent implements OnInit, OnDestroy {
-    @ViewChild('iframeElement')
-    iframeElement: ElementRef;
+    @ViewChild('iframeElement') iframeElement: ElementRef;
 
-    @Input()
-    src: string;
+    @Input() src: string;
 
-    @Input()
-    isLoading = false;
+    @Input() isLoading = false;
 
-    @Output()
-    load: EventEmitter<any> = new EventEmitter();
+    @Output() load: EventEmitter<any> = new EventEmitter();
 
-    @Output()
-    keydown: EventEmitter<KeyboardEvent> = new EventEmitter();
+    @Output() keydown: EventEmitter<KeyboardEvent> = new EventEmitter();
 
-    @Output()
-    custom: EventEmitter<CustomEvent> = new EventEmitter();
+    @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
 
     showOverlay = false;
 
@@ -58,7 +52,9 @@ export class IframeComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        this.iframeOverlayService.overlay.subscribe((val) => (this.showOverlay = val));
+        this.iframeOverlayService.overlay
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((val: boolean) => (this.showOverlay = val));
 
         this.dotIframeService
             .reloaded()
@@ -142,16 +138,13 @@ export class IframeComponent implements OnInit, OnDestroy {
     private handleErrors(error: number): void {
         const errorMapHandler = {
             401: () => {
-                this.loginService.logOutUser().subscribe(
-                    (_data) => {}
-                );
+                this.loginService.logOutUser().subscribe(_data => {});
             }
         };
 
         if (errorMapHandler[error]) {
             errorMapHandler[error]();
         }
-
     }
 
     private handleIframeEvents($event): void {

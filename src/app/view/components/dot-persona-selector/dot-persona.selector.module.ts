@@ -12,6 +12,7 @@ import { PaginatorService } from '@services/paginator';
 import { DotPersonasService } from '@services/dot-personas/dot-personas.service';
 import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize.service';
 import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.module';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 
 @NgModule({
     declarations: [DotPersonaSelectorComponent],
@@ -28,6 +29,6 @@ import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/do
         SharedModule,
         DotAddPersonaDialogModule
     ],
-    providers: [PaginatorService, DotPersonasService, DotPersonalizeService]
+    providers: [PaginatorService, DotPersonasService, DotPersonalizeService, IframeOverlayService]
 })
 export class DotPersonaSelectorModule {}

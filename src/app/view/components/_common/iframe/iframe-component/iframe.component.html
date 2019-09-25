@@ -1,5 +1,5 @@
 <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
-<div class="iframe-overlay" *ngIf="showOverlay" (click)="iframeOverlayService.hide()"></div>
+<dot-overlay-mask *ngIf="showOverlay" (click)="iframeOverlayService.hide()" ></dot-overlay-mask>
 <iframe #iframeElement
     *ngIf="!isLoading"
     frameborder="0"
@@ -10,3 +10,4 @@
     [src]="src | safe"
     (load)="onLoad($event)">
 </iframe>
+

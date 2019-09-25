@@ -49,6 +49,7 @@ import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.servic
 import * as _ from 'lodash';
 import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
+import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 
 @Component({
     selector: 'dot-global-message',
@@ -143,6 +144,7 @@ describe('DotEditContentComponent', () => {
                 DotEditPageInfoModule,
                 DotLoadingIndicatorModule,
                 DotEditPageWorkflowsActionsModule,
+                DotOverlayMaskModule,
                 RouterTestingModule.withRoutes([
                     {
                         component: DotEditContentComponent,

@@ -2,7 +2,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { DotLoadingIndicatorService } from './../dot-loading-indicator/dot-loading-indicator.service';
 import { ComponentFixture, async } from '@angular/core/testing';
-import {Component, DebugElement} from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { SafePipe } from './../../../../pipes/safe-url.pipe';
@@ -12,6 +12,7 @@ import { LoginService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 
 @Component({
     selector: 'dot-loading-indicator',
@@ -28,20 +29,22 @@ describe('IframeComponent', () => {
     let dotUiColorsService: DotUiColorsService;
     let loginService: LoginService;
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [IframeComponent, MockDotLoadingIndicatorComponent, SafePipe],
-            imports: [RouterTestingModule],
-            providers: [
-                DotLoadingIndicatorService,
-                IframeOverlayService,
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                }
-            ]
-        });
-    }));
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [IframeComponent, MockDotLoadingIndicatorComponent, SafePipe],
+                imports: [RouterTestingModule, DotOverlayMaskModule],
+                providers: [
+                    DotLoadingIndicatorService,
+                    IframeOverlayService,
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    }
+                ]
+            });
+        })
+    );
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(IframeComponent);
@@ -204,4 +207,33 @@ describe('IframeComponent', () => {
         });
     });
 
+    describe('dot-overlay-mask', () => {
+        let iframeOverlayService: IframeOverlayService;
+        beforeEach(() => {
+            iframeOverlayService = de.injector.get(IframeOverlayService);
+        });
+
+        it('should not be present onload', () => {
+            expect(de.query(By.css('dot-overlay-mask'))).toBeNull();
+        });
+        it('should show when the service emit true', () => {
+            iframeOverlayService.$overlay.next(true);
+            fixture.detectChanges();
+            const dotOverlayMask = de.query(By.css('dot-overlay-mask'));
+            expect(dotOverlayMask).toBeDefined();
+        });
+
+        it('should hide on click and call hide event', () => {
+            comp.showOverlay = true;
+            spyOn(iframeOverlayService, 'hide').and.callThrough();
+            fixture.detectChanges();
+            let dotOverlayMask = de.query(By.css('dot-overlay-mask'));
+            dotOverlayMask.triggerEventHandler('click', {});
+            fixture.detectChanges();
+
+            dotOverlayMask = de.query(By.css('dot-overlay-mask'));
+            expect(dotOverlayMask).toBeNull();
+            expect(iframeOverlayService.hide).toHaveBeenCalledTimes(1);
+        });
+    });
 });

@@ -78,6 +78,13 @@ dot-whats-changed,
             filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#f2eff2', endColorstr='#ffffff', GradientType=1);
         }
     }
+
+    .dot-edit__iframe-wrapper{
+        display: flex;
+        flex-grow: 1;
+        flex-direction: column;
+        position: relative;
+    }
 }
 
 /*

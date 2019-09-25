@@ -30,6 +30,7 @@ import {
     PageModelChangeEvent,
     PageModelChangeEventType
 } from './services/dot-edit-content-html/models';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 
 /**
  * Edit content page component, render the html of a page and bind all events to make it ediable.
@@ -45,8 +46,7 @@ import {
     styleUrls: ['./dot-edit-content.component.scss']
 })
 export class DotEditContentComponent implements OnInit, OnDestroy {
-    @ViewChild('iframe')
-    iframe: ElementRef;
+    @ViewChild('iframe') iframe: ElementRef;
 
     contentletActionsUrl: SafeResourceUrl;
     pageState$: Observable<DotPageRenderState>;
@@ -55,6 +55,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     showIframe = true;
     reorderMenuUrl = '';
     messagesKey: { [key: string]: string } = {};
+    showOverlay = false;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -74,7 +75,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private siteService: SiteService,
         public dotEditContentHtmlService: DotEditContentHtmlService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
-        public sanitizer: DomSanitizer
+        public sanitizer: DomSanitizer,
+        public iframeOverlayService: IframeOverlayService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -131,6 +133,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.subscribeIframeCustomEvents();
         this.subscribeIframeActions();
         this.subscribePageModelChange();
+        this.subscribeOverlayService();
     }
 
     ngOnDestroy(): void {
@@ -183,7 +186,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @memberof DotEditContentComponent
      */
     onFormSelected(item: DotCMSContentType): void {
-        this.dotEditContentHtmlService.renderAddedForm(item).subscribe((model) => {
+        this.dotEditContentHtmlService.renderAddedForm(item).subscribe(model => {
             if (model) {
                 this.dotEditPageService
                     .save(this.pageStateInternal.page.identifier, model)
@@ -292,7 +295,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     baseTypes: $event.dataset.dotAdd
                 },
                 events: {
-                    load: (event) => {
+                    load: event => {
                         event.target.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents$;
                     }
                 }
@@ -306,7 +309,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 inode: $event.dataset.dotInode
             },
             events: {
-                load: (event) => {
+                load: event => {
                     event.target.contentWindow.ngEditContentletEvents = this.dotEditContentHtmlService.contentletEvents$;
                 }
             }
@@ -350,10 +353,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
 
     private subscribeIframeCustomEvents(): void {
         fromEvent(window.document, 'ng-event')
-            .pipe(
-                pluck('detail'),
-                takeUntil(this.destroy$)
-            )
+            .pipe(pluck('detail'), takeUntil(this.destroy$))
             .subscribe((customEvent: any) => {
                 if (this.customEventsHandler[customEvent.name]) {
                     this.customEventsHandler[customEvent.name](customEvent.data);
@@ -451,5 +451,11 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.reload();
         });
+    }
+
+    private subscribeOverlayService(): void {
+        this.iframeOverlayService.overlay
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((val: boolean) => (this.showOverlay = val));
     }
 }

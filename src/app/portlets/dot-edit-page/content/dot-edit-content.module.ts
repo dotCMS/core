@@ -22,6 +22,8 @@ import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot
 import { DotEditPageViewAsControllerModule } from './components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotEditPageStateControllerModule } from './components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 
 const routes: Routes = [
     {
@@ -47,7 +49,8 @@ const routes: Routes = [
         DotLoadingIndicatorModule,
         DotEditPageToolbarModule,
         DotEditPageViewAsControllerModule,
-        DotEditPageStateControllerModule
+        DotEditPageStateControllerModule,
+        DotOverlayMaskModule
     ],
     exports: [DotEditContentComponent],
     providers: [
@@ -58,7 +61,8 @@ const routes: Routes = [
         DotEditContentToolbarHtmlService,
         DotEditPageService,
         DotPageRenderService,
-        DotWorkflowService
+        DotWorkflowService,
+        IframeOverlayService
     ]
 })
 export class DotEditContentModule {}

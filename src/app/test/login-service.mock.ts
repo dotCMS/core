@@ -69,7 +69,7 @@ export const mockAuth: Auth = {
     user: mockUser
 };
 
-export class LoginServiceMock {
+export class  LoginServiceMock {
     _auth: Subject<Auth> = new Subject();
     private watchUserFunc: Function;
 

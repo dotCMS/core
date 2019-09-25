@@ -11,6 +11,8 @@
     [totalRecords]="paginationService.totalRecords"
     labelPropertyName="name"
     [disabled]="disabled"
+    (hide)="iframeOverlayService.hide()"
+    (show)="iframeOverlayService.show()"
 >
     <ng-template let-persona="item" pTemplate="select">
         <dot-persona-selected-item
