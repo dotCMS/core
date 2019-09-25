@@ -175,6 +175,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1552,7 +1553,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     });
                 }
             }
-            return result;
+
+            return result.parallelStream()
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
         }
 
     }
@@ -1592,7 +1596,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
 
-            return new ArrayList<>(relatedMap.values());
+            return relatedMap.values().parallelStream()
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
         }
     }
 
