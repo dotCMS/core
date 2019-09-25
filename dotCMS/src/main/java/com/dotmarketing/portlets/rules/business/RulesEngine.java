@@ -16,9 +16,12 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
 
 import java.util.*;
 
@@ -139,7 +142,7 @@ public final class RulesEngine {
     }
 	
 	
-	
+	private final static String DOT_RULES_FIRED_ALREADY = "DOT_RULES_FIRED_ALREADY";
 	
 	/**
 	 * Triggers a specific category of Rules associated to the specified parent
@@ -168,6 +171,25 @@ public final class RulesEngine {
         if (!UtilMethods.isSet(req)) {
         	throw new DotRuntimeException("ERROR: HttpServletRequest is null");
         }
+        
+        // do not run rules in admin mode
+        PageMode mode= PageMode.get(req);
+        if(mode.isAdmin) {
+          final boolean fireRules =Try.of(()->Boolean.valueOf(req.getParameter("fireRules"))).getOrElse(false);
+          if(!fireRules) {
+            return;
+          }
+        }
+        
+        final Set<String> alreadyFiredRulesFor =req.getAttribute(DOT_RULES_FIRED_ALREADY)!=null?(Set<String>)req.getAttribute(DOT_RULES_FIRED_ALREADY):new HashSet<String>();
+        final String ruleRunKey = parent.getIdentifier() +"_"+ fireOn.name();
+        if(alreadyFiredRulesFor.contains(ruleRunKey)) {
+          Logger.warn(RulesEngine.class, "we have already run the rules for:" + ruleRunKey);
+          return;
+        }
+        alreadyFiredRulesFor.add(ruleRunKey);
+        req.setAttribute(DOT_RULES_FIRED_ALREADY,alreadyFiredRulesFor);
+        
 		if (SKIP_RULES_EXECUTION.equalsIgnoreCase(req.getParameter(WebKeys.RULES_ENGINE_PARAM))
 				|| SKIP_RULES_EXECUTION.equalsIgnoreCase(String.valueOf(req.getParameter(WebKeys.RULES_ENGINE_PARAM)))) {
 			return;

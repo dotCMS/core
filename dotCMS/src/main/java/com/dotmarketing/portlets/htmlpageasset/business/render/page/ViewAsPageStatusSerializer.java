@@ -31,12 +31,15 @@ public class ViewAsPageStatusSerializer extends JsonSerializer<ViewAsPageStatus>
                         (Contentlet)viewAsPageStatus.getPersona());
                 personaMap.put("personalized", viewAsPageStatus.isPersonalized());
                 viewAsMapBuilder.put("persona", personaMap);
+                
             } catch (DotDataException e) {
 
                 throw new IOException(e);
             }
         }
-
+        if (viewAsPageStatus.getVisitor() != null) {
+          viewAsMapBuilder.put("visitor", viewAsPageStatus.getVisitor());
+        }
         viewAsMapBuilder.put("language", viewAsPageStatus.getLanguage());
 
         if (viewAsPageStatus.getDevice() != null) {

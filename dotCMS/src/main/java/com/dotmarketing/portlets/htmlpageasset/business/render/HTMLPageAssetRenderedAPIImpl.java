@@ -23,10 +23,14 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.rules.business.RulesEngine;
+import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
 
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -122,13 +126,17 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final Host host = resolveSite(context, request);
         final IHTMLPage page = getHtmlPageAsset(context, host, request);
 
+        fireRulesOnPage(page, request, response);
+        
+        
+        
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
                 .setUser(context.getUser())
                 .setRequest(request)
                 .setResponse(response)
                 .setSite(host)
-                .build(false, context.getPageMode());
+                .build(false,  context.getPageMode());
     }
 
     @Override
@@ -168,6 +176,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 ? context.getPage()
                 : (HTMLPageAsset) getHtmlPageAsset(context, host, request);
 
+        fireRulesOnPage(page, request, response);
+                
         return new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
                 .setUser(context.getUser())
@@ -365,4 +375,20 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return site;
 
     }
+    
+    
+    
+    private void fireRulesOnPage(IHTMLPage page,  HttpServletRequest request, HttpServletResponse response) {
+      final boolean fireRules =Try.of(()->Boolean.valueOf(request.getParameter("fireRules"))).getOrElse(false);
+      
+      if(fireRules) {
+        RulesEngine.fireRules(request,  response, page, FireOn.EVERY_PAGE);
+      }
+              
+      
+      
+    }
+    
+    
+    
 }
