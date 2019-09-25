@@ -458,6 +458,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				deleteActionClass(clazz, user);
 			}
 		} catch (Exception e) {
+		    Logger.error(WorkflowAPIImpl.class,String.format("Error removing Actionlet with className `%s`", workFlowActionletName), e);
 			throw new DotRuntimeException(e);
 		}
 	}
