@@ -15,5 +15,19 @@ public enum IndexPolicy {
 
     DEFER,
     WAIT_FOR,
-    FORCE
+    FORCE;
+    
+    
+    
+    public static IndexPolicy parseIndexPolicy (final Object indexPolicyValue) {
+
+      if ("DEFER".equalsIgnoreCase(indexPolicyValue.toString())){
+        return DEFER;
+      }
+      else if("FORCE".equalsIgnoreCase(indexPolicyValue.toString())) {
+        return FORCE;
+      }
+
+      return WAIT_FOR;
+  }
 }
