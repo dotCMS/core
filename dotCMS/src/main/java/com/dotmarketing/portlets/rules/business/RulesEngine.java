@@ -50,7 +50,7 @@ public final class RulesEngine {
 	
 	private static int SLOW_RULE_LOG_MIN=Config.getIntProperty("SLOW_RULE_LOG_MIN", 100);
 	
-	private static final String SKIP_RULES_EXECUTION = "skip"; 
+	public static final String SKIP_RULES_EXECUTION = "skip"; 
 
 	/**
 	 * Triggers a specific category of Rules associated to the site (Host) based
@@ -194,6 +194,11 @@ public final class RulesEngine {
 				|| SKIP_RULES_EXECUTION.equalsIgnoreCase(String.valueOf(req.getParameter(WebKeys.RULES_ENGINE_PARAM)))) {
 			return;
 		}
+        if (SKIP_RULES_EXECUTION.equals((String) req.getAttribute(WebKeys.RULES_ENGINE_PARAM))) {
+            return;
+        }
+
+		
         if (!UtilMethods.isSet(parent)) {
         	return;
         }

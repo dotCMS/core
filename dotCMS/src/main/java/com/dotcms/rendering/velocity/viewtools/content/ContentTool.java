@@ -1,42 +1,35 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotmarketing.exception.DotDataValidationException;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.liferay.util.StringPool;
-import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-
-import com.dotcms.visitor.domain.Visitor;
-import com.dotcms.visitor.domain.Visitor.AccruedTag;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.personalization.query.DefaultQueryPersonalizer;
+import com.dotcms.personalization.query.QueryPersonalizer;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.personas.model.IPersona;
-import com.dotmarketing.portlets.personas.model.Persona;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 
 /**
  * The purpose of this class is to provide a way to easily search and interact with content and dotcms
@@ -52,7 +45,6 @@ import com.liferay.portal.model.User;
  */
 public class ContentTool implements ViewTool {
 
-	private UserWebAPI userAPI;
 
 	private HttpServletRequest req;
 	private User user = null;
@@ -62,6 +54,9 @@ public class ContentTool implements ViewTool {
 	private Context context;
 	private Host currentHost;
 
+	private static QueryPersonalizer personalizer=null;
+	
+	
 	public void init(Object initData) {
 		this.req = ((ViewContext) initData).getRequest();
 
@@ -85,6 +80,19 @@ public class ContentTool implements ViewTool {
 			Logger.error(this, "Error finding current host", e);
 		}
 	}
+	
+	
+	private QueryPersonalizer getPersonalizer() {
+	    if(personalizer==null) {
+	        Class clazz = Try.of(()->Class.forName(Config.getStringProperty("PULLPERSONALIZED_QUERY_PERSONALIZER_CLASS"))).getOrElse((Class) DefaultQueryPersonalizer.class);
+	        personalizer=Try.of(()->(QueryPersonalizer) clazz.newInstance()).getOrElse(new DefaultQueryPersonalizer());
+	    }
+	    return personalizer;
+	    
+	}
+	
+	
+	
 	
 	/**
 	 * Will pull a single piece of content for you based on the inode or identifier. It will always
@@ -487,7 +495,7 @@ public class ContentTool implements ViewTool {
 	public List<ContentMap> pullPersonalized(String query, int limit, int offset, String secondarySort) {	
 		try {
 			
-			query=addPersonalizationToQuery(query);
+			query=getPersonalizer().addPersonalizationToQuery(query, this.req);
 			String sort = secondarySort==null ? "score" : "score " + secondarySort;
 			if (offset > 0){
 				return pullPerPage(query, offset, limit, sort);
@@ -554,67 +562,7 @@ public class ContentTool implements ViewTool {
 	  	return q;
 	}
 	
-    private String addPersonalizationToQuery(String query) {
-        Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(this.req);
-        if (!opt.isPresent() || query == null) {
-            return query;
-        }
-        query = query.toLowerCase();
 
-        // if we are already personalized
-        if (query.indexOf(" tags:") > -1) {
-            return query;
-        }
-
-        final StringWriter buff = new StringWriter().append(query);
-        final Visitor visitor = opt.get();
-        final IPersona p = visitor.getPersona();
-        final String keyTag = (p == null) ? null : p.getKeyTag().toLowerCase();
-        final Map<String, Float> personas = visitor.getWeightedPersonas();
-
-
-        final List<AccruedTag> tags = visitor.getAccruedTags();
-        if (p == null && (tags == null || tags.size() == 0)) {
-            return query;
-        }
-
-        int maxBoost = Config.getIntProperty("PULLPERSONALIZED_PERSONA_WEIGHT", 100);
-
-        // make personas more powerful than the most powerful tag
-        if (!tags.isEmpty()) {
-            maxBoost = tags.get(0).getCount() + maxBoost;
-        }
-
-
-        if (Config.getBooleanProperty("PULLPERSONALIZED_USE_MULTIPLE_PERSONAS", true)) {
-
-            if (personas != null && !personas.isEmpty()) {
-                for (Map.Entry<String, Float> map : personas.entrySet()) {
-                    int boostMe = Math.round(maxBoost * map.getValue());
-                    if (map.getKey().equals(keyTag)) {
-                        boostMe = boostMe + Config.getIntProperty("PULLPERSONALIZED_LAST_PERSONA_WEIGHT", 0);
-                    }
-
-                    buff.append(" tags:\"" + map.getKey().toLowerCase() + "\"^" + boostMe);
-                }
-            }
-
-
-        } else {
-            if (p != null) {
-                buff.append(" tags:\"" + keyTag + "\"^" + maxBoost);
-            }
-        }
-
-
-
-        for (AccruedTag tag : tags) {
-            buff.append(" tags:\"" + tag.getTag().toLowerCase() + "\"^" + (tag.getCount() + 1) + " ");
-        }
-
-        return buff.toString();
-    }
-	
     /**
      * Gets the top viewed contents identifiers and numberOfViews  for a particular structure for a specified date interval
      * 

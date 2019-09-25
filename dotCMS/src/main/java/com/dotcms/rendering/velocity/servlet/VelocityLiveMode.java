@@ -132,14 +132,16 @@ public class VelocityLiveMode extends VelocityModeHandler {
             String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
             String queryString = request.getQueryString();
             String persona = null;
+            String personasHashCode= null;
             Optional<Visitor> v = visitorAPI.getVisitor(request, false);
             if (v.isPresent() && v.get().getPersona() != null) {
                 persona = v.get().getPersona().getKeyTag();
+                personasHashCode=String.valueOf(v.get().getPersonas().hashCode());
             }
             final Context context = VelocityUtil.getInstance().getContext(request, response);
 
             final PageCacheParameters cacheParameters =
-                    new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString, persona);
+                    new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString, personasHashCode);
 
             final String key = VelocityUtil.getPageCacheKey(request, htmlPage);
             if (key != null) {

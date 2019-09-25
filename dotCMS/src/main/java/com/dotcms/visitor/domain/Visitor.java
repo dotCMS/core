@@ -42,7 +42,7 @@ public class Visitor implements Serializable {
 
     private Multiset<String> _accruedTags = HashMultiset.create();
     		
-    private List<String> possiblePersonas = new ArrayList<>();
+    private List<String> _accruedPersonas = new ArrayList<>();
     
     private Persona lastPersona=null;
     
@@ -107,7 +107,7 @@ public class Visitor implements Serializable {
      */
     public void accruePersona(String personaKeyTag) {
       if(personaKeyTag != null) {
-        this.possiblePersonas.add(personaKeyTag);
+        this._accruedPersonas.add(personaKeyTag);
       }
     }
     /**
@@ -117,7 +117,7 @@ public class Visitor implements Serializable {
      */
     public void accruePersona(Persona persona) {
       if(persona != null) {
-        this.possiblePersonas.add(persona.getKeyTag());
+        this._accruedPersonas.add(persona.getKeyTag());
       }
     }
     /**
@@ -127,7 +127,7 @@ public class Visitor implements Serializable {
      */
     public Map<String, Long> getPersonaCounts() {
       
-      return possiblePersonas
+      return _accruedPersonas
           .stream()
           .collect(Collectors.groupingBy(p -> p.toString(), Collectors.counting()))
           .entrySet()
@@ -140,14 +140,14 @@ public class Visitor implements Serializable {
      * based on what has been added to past personas
      */
     public List<String> getPersonas() {
-      return this.possiblePersonas;
+      return this._accruedPersonas;
     }
     /**
      * Clears the list of past and possible
      * personas
      */
     public void clearPersonas() {
-       this.possiblePersonas = new ArrayList<>();
+       this._accruedPersonas = new ArrayList<>();
     }
   /**
    * Returns a map of the persona and the percentage of times that persona 
@@ -163,10 +163,12 @@ public class Visitor implements Serializable {
    */
   public Map<String, Float> getWeightedPersonas() {
     
+
+      
     return getPersonaCounts()
         .entrySet()
         .stream()
-        .collect(Collectors.toMap( e->e.getKey(),  e -> e.getValue()/new Float(possiblePersonas.size())));
+        .collect(Collectors.toMap( e->e.getKey(),  e -> e.getValue()/new Float(_accruedPersonas.size())));
   }
   
   /**
@@ -189,6 +191,9 @@ public class Visitor implements Serializable {
         Logger.error(this, "Unable to retrieve Tags associated to Persona [" + persona.getInode() + "].", e);
       }
       accruePersona(persona);
+      
+    }else {
+        clearPersonas();
     }
     this.lastPersona=persona;
 
@@ -351,7 +356,7 @@ public class Visitor implements Serializable {
                 ", ipAddress=" + ipAddress +
                 ", selectedLanguage=" + selectedLanguage +
                 ", locale=" + locale +
-                ", persona=" + possiblePersonas +
+                ", persona=" + _accruedPersonas +
                 ", accruedTags=" + _accruedTags +
                 ", userAgent=" + userAgent +
                 ", device=" + getDevice() +

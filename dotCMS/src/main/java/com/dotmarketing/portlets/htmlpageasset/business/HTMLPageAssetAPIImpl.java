@@ -37,6 +37,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -841,6 +842,10 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
             requestProxy.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
             requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
+            
+            requestProxy.setAttribute(WebKeys.RULES_ENGINE_PARAM, RulesEngine.SKIP_RULES_EXECUTION);
+            
+            
             return VelocityModeHandler.modeHandler(mode, requestProxy, responseProxy).eval();
 
         } catch (Exception e1) {
