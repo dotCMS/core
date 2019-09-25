@@ -24,7 +24,7 @@ public class TemplateLayoutDataGen  {
 
         for (int i = 0; i < containersIds.size(); i++) {
             final String containersId = containersIds.get(i);
-            containers.add(new ContainerUUID(containersId, String.valueOf(i + 1)));
+            containers.add(new ContainerUUID(containersId, "1"));
         }
 
 

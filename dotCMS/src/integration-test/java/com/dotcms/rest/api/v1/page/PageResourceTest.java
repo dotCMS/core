@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -9,6 +10,7 @@ import com.dotcms.rest.*;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Clickstream;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -551,6 +553,57 @@ public class PageResourceTest {
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         PageRenderVerifier.verifyPageView(pageView, pageRenderTest, user);
 
+        assertNull(pageView.getViewAs().getPersona());
+    }
+
+    /***
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}
+     * Given Scenario: Create a page with two containers and a content in each of then
+     * ExpectedResult: Should render the containers with the contents, the check it look into the render code the
+     * content div <pre>assertTrue(code.indexOf("data-dot-object=\"contentlet\"") != -1)</pre>
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testShouldRenderContainers() throws DotDataException, DotSecurityException, InterruptedException {
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(2, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
+
+        when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
+
+        final Collection<String> containersId = pageRenderTest.getContainersId();
+
+        for (final String id : containersId) {
+            final Container container = pageRenderTest.getContainer(id);
+            pageRenderTest.createContent(container);
+        }
+
+        final Response response = pageResource
+                .render(request, this.response, page.getURI(), "EDIT_MODE", null,
+                        String.valueOf(languageId), null);
+
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        PageRenderVerifier.verifyPageView(pageView, pageRenderTest, APILocator.systemUser());
+
+        final Collection<? extends ContainerRendered> containers = (Collection<ContainerRendered>) pageView.getContainers();
+        assertTrue(containers.size() > 0);
+
+        for (ContainerRendered container : containers) {
+            final Map<String, String> rendered = container.getRendered();
+            final Collection<String> codes = rendered.values();
+            assertTrue(codes.size() > 0);
+
+            for (final String code : codes) {
+                assertTrue(code.indexOf("data-dot-object=\"container\"") != -1);
+                assertTrue(code.indexOf("data-dot-object=\"contentlet\"") != -1);
+            }
+        }
         assertNull(pageView.getViewAs().getPersona());
     }
 }
