@@ -217,12 +217,12 @@ public class HTMLPageAssetRenderedBuilder {
         final IPersona persona     = this.getCurrentPersona();
         final boolean personalized = this.isPersonalized(persona, pagePersonalizationSet);
 
-        return new ViewAsPageStatus()
-            .setPersonalized(personalized)
-            .setPersona(this.getCurrentPersona())
-            .setLanguage(WebAPILocator.getLanguageWebAPI().getLanguage(request))
-            .setDevice(getCurrentDevice())
-            .setPageMode(pageMode);
+        return new ViewAsPageStatus(
+            getVisitor(),
+            WebAPILocator.getLanguageWebAPI().getLanguage(request),
+            this.getCurrentDevice(),
+            pageMode,
+            personalized );
     }
 
     private boolean isPersonalized (final IPersona persona, final Set<String> pagePersonalizationSet) {
@@ -232,6 +232,14 @@ public class HTMLPageAssetRenderedBuilder {
                     (Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag()): false;
     }
 
+    
+    private Visitor getVisitor() {
+      final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
+      return visitor.isPresent() ? visitor.get() : null;
+    }
+    
+    
+    
     private IPersona getCurrentPersona() {
         final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
         return visitor.isPresent() && visitor.get().getPersona() != null ? visitor.get().getPersona() : null;

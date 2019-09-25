@@ -18,6 +18,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -128,8 +130,19 @@ public class MapToContentletPopulator  {
                 // fill fields
                 this.fillFields(contentlet, map, type, fieldMap);
             }
+
+            this.setIndexPolicy (contentlet, map);
         }
     } // processMap.
+
+    private void setIndexPolicy(final Contentlet contentlet, final Map<String, Object> map) {
+
+        final Object indexPolicyValue = map.getOrDefault("indexPolicy", IndexPolicyProvider.getInstance().forSingleContent());
+        
+        contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicyValue));
+        
+    }
+
 
     private void processWorkflow(final Contentlet contentlet, final Map<String,Object> map) {
         if(map.containsKey(WORKFLOW_ASSIGN_KEY)) {

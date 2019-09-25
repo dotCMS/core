@@ -69,10 +69,10 @@ public final class PageRenderVerifier {
             final List<Structure> structures = APILocator.getContainerAPI().getStructuresInContainer(container);
 
             if (pageRenderTest.getContainer(container.getIdentifier()) == null) {
-                fail("Unknown container with id "+container.getIdentifier());
+                fail("Unknown container with id " + container.getIdentifier());
             } else {
                 assertEquals(pageRenderTest.getContainer(container.getIdentifier()).getTitle(), container.getTitle());
-                assertEquals(structures.size(), 1);
+                assertEquals(pageContainer.getContainerStructures().size(), structures.size());
             }
 
             int nPageViewContents = 0;

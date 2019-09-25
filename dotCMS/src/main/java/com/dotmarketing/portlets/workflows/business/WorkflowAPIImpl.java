@@ -2308,10 +2308,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				if (UtilMethods.isSet(processor.getContentlet()) && processor.getContentlet().needsReindex()) {
 
 					Logger.info(this, "Needs reindex, adding the contentlet to the index at the end of the workflow execution");
-				    final Contentlet content = processor.getContentlet();
-				    final IndexPolicy indexPolicy = content.getIndexPolicy()==IndexPolicy.FORCE?IndexPolicy.FORCE:IndexPolicy.WAIT_FOR;
-				    content.setIndexPolicy(indexPolicy);
-				    final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
+				  final Contentlet content = processor.getContentlet();
+				  final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
 					final boolean includeDependencies = null != threadContext && threadContext.isIncludeDependencies();
 					this.contentletIndexAPI.addContentToIndex(content, includeDependencies);
 					Logger.info(this, "Added contentlet to the index at the end of the workflow execution, dependencies: " + includeDependencies);
@@ -2940,6 +2938,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			contentlet.setTags();
 			contentlet.getMap().put(Contentlet.WORKFLOW_BULK_KEY, true);
+			contentlet.setIndexPolicy(IndexPolicy.DEFER);
 			try{
 				final Contentlet afterFireContentlet = fireContentWorkflow(contentlet, dependencies, context);
 				if(afterFireContentlet != null){
@@ -3805,11 +3804,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final List<WorkflowScheme> schemes          = this.findSchemesForContentType(contentType);
 
 		if (UtilMethods.isSet(schemes)) {
-			final List<Map<String, Object>> mappingRows =
+			final List<Map<String, Object>> unsortedMappingRows =
 					this.workFlowFactory.findSystemActionsBySchemes(systemAction, schemes);
 
-			if (UtilMethods.isSet(mappingRows)) {
+			if (UtilMethods.isSet(unsortedMappingRows)) {
 
+				final List<Map<String, Object>> mappingRows = new ArrayList<>(unsortedMappingRows);
 				mappingRows.sort(this::compareScheme);
 				return this.findActionAvailable(contentlet,
 						(String) mappingRows.get(0).get("workflow_action"), user);

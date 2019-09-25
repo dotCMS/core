@@ -28,13 +28,22 @@ import java.util.UUID;
 
 public class VisitorAPIImpl implements VisitorAPI {
 
-    private LanguageWebAPI languageWebAPI = WebAPILocator.getLanguageWebAPI();
+    private final LanguageWebAPI languageWebAPI;
 
-
-    @Override
-    public void setLanguageWebAPI(LanguageWebAPI languageWebAPI) {
-        this.languageWebAPI = languageWebAPI;
+    private final PersonaAPI personaAPI ;
+    
+    
+    public VisitorAPIImpl() {
+      this(WebAPILocator.getLanguageWebAPI(),APILocator.getPersonaAPI());
     }
+    
+    
+    public VisitorAPIImpl(LanguageWebAPI languageWebAPI, PersonaAPI personaAPI) {
+      super();
+      this.languageWebAPI = languageWebAPI;
+      this.personaAPI = personaAPI;
+    }
+
 
     @Override
     public Optional<Visitor> getVisitor(HttpServletRequest request) {
@@ -47,7 +56,7 @@ public class VisitorAPIImpl implements VisitorAPI {
         DotPreconditions.checkNotNull(request, IllegalArgumentException.class, "Null Request");
 
         Optional<Visitor> visitorOpt;
-        final PersonaAPI personaAPI = APILocator.getPersonaAPI();
+
 
         if(!create) {
 

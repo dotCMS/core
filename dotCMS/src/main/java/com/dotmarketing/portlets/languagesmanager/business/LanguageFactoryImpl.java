@@ -244,7 +244,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			language =getDefaultLanguage ();
 		}
 
-		return language.getLanguageCode() + "_" + language.getCountryCode();
+		return language.getLanguageCode() + (UtilMethods.isSet(language.getCountryCode()) ? "_" + language.getCountryCode():"");
 	}
 
 	@Override
