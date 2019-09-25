@@ -53,14 +53,15 @@ public class URLMapAPIImpl implements URLMapAPI {
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
+
+    public boolean isUrlPattern(final UrlMapContext urlMapContext) throws DotDataException {
+        return matchingUrlPattern(urlMapContext.getUri()) && getContentlet(urlMapContext) != null;
+    }
+
     public Optional<URLMapInfo> processURLMap(final UrlMapContext context)
             throws DotSecurityException, DotDataException {
 
-        if (this.shouldLoadPatterns()) {
-            this.loadPatterns();
-        }
-
-        if (containsRegEx(context.getUri())) {
+        if (this.matchingUrlPattern(context.getUri())) {
             final Matches matches = this.findPatternChange(context.getUri());
 
             final Structure structure = CacheLocator.getContentTypeCache()
@@ -80,6 +81,29 @@ public class URLMapAPIImpl implements URLMapAPI {
         } else {
             return Optional.empty();
         }
+    }
+
+    private Contentlet getContentlet(final UrlMapContext urlMapContext){
+        final Matches matches = this.findPatternChange(urlMapContext.getUri());
+
+        final Structure structure = CacheLocator.getContentTypeCache()
+                .getStructureByInode(matches.getPatternChange().getStructureInode());
+
+        final Field hostField = this.findHostField(structure);
+
+        try {
+            return this.getContentlet(matches, structure, hostField, urlMapContext);
+        } catch (DotDataException | DotSecurityException e){
+            return null;
+        }
+    }
+
+    private boolean matchingUrlPattern(final String uri) throws DotDataException {
+        if (this.shouldLoadPatterns()) {
+            this.loadPatterns();
+        }
+
+        return containsRegEx(uri);
     }
 
     private Identifier getDetailtPageUri(final Structure structure) {
@@ -271,7 +295,8 @@ public class URLMapAPIImpl implements URLMapAPI {
         patternsCache = new ArrayList<>();
 
         final List<SimpleStructureURLMap> urlMaps = StructureFactory.findStructureURLMapPatterns();
-        final StringBuilder masterRegEx = new StringBuilder();
+        final StringBuilder masterRegEx = new StringBuilder("^");
+        final int startLength = masterRegEx.length();
 
         for (final SimpleStructureURLMap urlMap : urlMaps) {
             final String regEx = StructureUtil.generateRegExForURLMap(urlMap.getURLMapPattern());
@@ -285,9 +310,10 @@ public class URLMapAPIImpl implements URLMapAPI {
                     urlMap.getURLMapPattern(), getFieldMathed(urlMap)
             ));
 
-            if (masterRegEx.length() > 0) {
+            if (masterRegEx.length() > startLength) {
                 masterRegEx.append('|');
             }
+
             masterRegEx.append(regEx);
         }
 

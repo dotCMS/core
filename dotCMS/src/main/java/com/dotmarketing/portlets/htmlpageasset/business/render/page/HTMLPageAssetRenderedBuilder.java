@@ -1,5 +1,4 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
-
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 
@@ -62,6 +61,7 @@ public class HTMLPageAssetRenderedBuilder {
     private final LayoutAPI      layoutAPI;
     private final VersionableAPI versionableAPI;
     private final MultiTreeAPI   multiTreeAPI;
+    private String pageUrlMapper;
 
     public HTMLPageAssetRenderedBuilder() {
 
@@ -98,6 +98,11 @@ public class HTMLPageAssetRenderedBuilder {
         return this;
     }
 
+    public HTMLPageAssetRenderedBuilder setURLMapper(final String pageUrlMapper) {
+        this.pageUrlMapper = pageUrlMapper;
+        return this;
+    }
+
     @CloseDBIfOpened
     public PageView build(final boolean rendered, final PageMode mode) throws DotDataException, DotSecurityException {
         final ContentletVersionInfo info = APILocator.getVersionableAPI().
@@ -130,7 +135,7 @@ public class HTMLPageAssetRenderedBuilder {
         if (!rendered) {
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
             return new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates,
-                    canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet));
+                    canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper);
         } else {
             final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
@@ -138,7 +143,7 @@ public class HTMLPageAssetRenderedBuilder {
                     pageRenderUtil.getContainersRaw(), velocityContext, mode).build();
             final String pageHTML = this.getPageHTML();
             return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
-                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet)
+                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper
             );
         }
     }
