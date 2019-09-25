@@ -66,8 +66,15 @@ public class RoleResource {
 	public Response loadChildren(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params)
 			throws DotDataException, JSONException {
 
+        //InitDataObject initData = webResource.init(params, request, response, true, null);
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.params(params)
+				.requestAndResponse(request, response)
+				.rejectWhenNoUser(true)
+				.init();
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -170,7 +177,16 @@ public class RoleResource {
 	@Path("/loadbyid/{params:.*}")
 	@Produces("application/json")
 	public Response loadById(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws DotDataException, JSONException {
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+
+        //InitDataObject initData = webResource.init(params, request, response, true, null);
+
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.params(params)
+				.requestAndResponse(request, response)
+				.rejectWhenNoUser(true)
+				.init();
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -234,7 +250,16 @@ public class RoleResource {
 	@Produces("application/json")
 	@SuppressWarnings("unchecked")
 	public Response loadByName(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws DotDataException, JSONException {
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+
+        //InitDataObject initData = webResource.init(params, request, response, true, null);
+
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.params(params)
+				.requestAndResponse(request, response)
+				.rejectWhenNoUser(true)
+				.init();
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
