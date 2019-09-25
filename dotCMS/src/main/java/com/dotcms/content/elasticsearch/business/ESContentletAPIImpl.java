@@ -2677,6 +2677,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
+            CacheLocator.getContentletCache().remove(contentlet.getInode());
             publishRelatedHtmlPages(contentlet);
 
             HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushUnpublishEvent(contentlet), 1000);
