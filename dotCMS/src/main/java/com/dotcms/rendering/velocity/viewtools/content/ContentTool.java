@@ -554,67 +554,66 @@ public class ContentTool implements ViewTool {
 	  	return q;
 	}
 	
-	private String addPersonalizationToQuery(String query){
-		Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(this.req);
-		if(!opt.isPresent() || query==null ){
-			return query;
-		}
-		query=query.toLowerCase();
-		
-		// if we are already personalized
-		if(query.indexOf(" tags:")>-1){
-			return query;
-		}
-
-		StringWriter buff  = new StringWriter().append(query);
-		Visitor visitor = opt.get();
-		IPersona p = visitor.getPersona();
-		
-
-		
-		
-		List<AccruedTag> tags = visitor.getAccruedTags();
-		if(p==null && (tags==null || tags.size()==0)){
-			return query;
-		}
-
-		int maxBoost = Config.getIntProperty("PULLPERSONALIZED_PERSONA_WEIGHT", 100);
-		
-		if(tags.size()>0){
-			maxBoost = tags.get(0).getCount() + maxBoost;
-		}
-		
-
-    if(Config.getBooleanProperty("PULLPERSONALIZED_USE_MULTIPLE_PERSONAS", true)) {
-      Map<String,Float> personas = visitor.getWeightedPersonas();
-      if(personas!=null && !personas.isEmpty()) {
-        for(Map.Entry<String, Float> map: personas.entrySet()) {
-          int boostMe = Math.round(maxBoost*map.getValue()) ;
-          if(map.getKey().equals(p.getKeyTag())) {
-           boostMe = boostMe+Config.getIntProperty("PULLPERSONALIZED_LAST_PERSONA_WEIGHT", 0);
-          }
-          
-          buff.append(" tags:\"" + map.getKey().toLowerCase() + "\"^" + boostMe);
+    private String addPersonalizationToQuery(String query) {
+        Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(this.req);
+        if (!opt.isPresent() || query == null) {
+            return query;
         }
-      }
-      
-      
-    }else {
-      if(p!=null){
-        buff.append(" tags:\"" + p.getKeyTag().toLowerCase() + "\"^" + maxBoost);
-      }
+        query = query.toLowerCase();
+
+        // if we are already personalized
+        if (query.indexOf(" tags:") > -1) {
+            return query;
+        }
+
+        final StringWriter buff = new StringWriter().append(query);
+        final Visitor visitor = opt.get();
+        final IPersona p = visitor.getPersona();
+        final String keyTag = (p == null) ? null : p.getKeyTag().toLowerCase();
+        final Map<String, Float> personas = visitor.getWeightedPersonas();
+
+
+        final List<AccruedTag> tags = visitor.getAccruedTags();
+        if (p == null && (tags == null || tags.size() == 0)) {
+            return query;
+        }
+
+        int maxBoost = Config.getIntProperty("PULLPERSONALIZED_PERSONA_WEIGHT", 100);
+
+        // make personas more powerful than the most powerful tag
+        if (!tags.isEmpty()) {
+            maxBoost = tags.get(0).getCount() + maxBoost;
+        }
+
+
+        if (Config.getBooleanProperty("PULLPERSONALIZED_USE_MULTIPLE_PERSONAS", true)) {
+
+            if (personas != null && !personas.isEmpty()) {
+                for (Map.Entry<String, Float> map : personas.entrySet()) {
+                    int boostMe = Math.round(maxBoost * map.getValue());
+                    if (map.getKey().equals(keyTag)) {
+                        boostMe = boostMe + Config.getIntProperty("PULLPERSONALIZED_LAST_PERSONA_WEIGHT", 0);
+                    }
+
+                    buff.append(" tags:\"" + map.getKey().toLowerCase() + "\"^" + boostMe);
+                }
+            }
+
+
+        } else {
+            if (p != null) {
+                buff.append(" tags:\"" + keyTag + "\"^" + maxBoost);
+            }
+        }
+
+
+
+        for (AccruedTag tag : tags) {
+            buff.append(" tags:\"" + tag.getTag().toLowerCase() + "\"^" + (tag.getCount() + 1) + " ");
+        }
+
+        return buff.toString();
     }
-		
-		
-		
-
-		
-		for(AccruedTag tag : tags){
-			buff.append(" tags:\"" + tag.getTag().toLowerCase() + "\"^" + (tag.getCount()+1) + " ");
-		}
-
-	  	return buff.toString();
-	}
 	
     /**
      * Gets the top viewed contents identifiers and numberOfViews  for a particular structure for a specified date interval

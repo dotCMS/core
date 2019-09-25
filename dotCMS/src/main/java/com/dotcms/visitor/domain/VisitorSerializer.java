@@ -39,7 +39,7 @@ public class VisitorSerializer extends JsonSerializer<Visitor> {
     if (visitor.getDmid() != null) {
       visitorBuilder.put("dmid", visitor.getDmid());
     }
-    visitorBuilder.put("personas", visitor.getPersonas());
+    visitorBuilder.put("personas", visitor.getWeightedPersonas());
     gen.writeObject(visitorBuilder.build());
   }
 
