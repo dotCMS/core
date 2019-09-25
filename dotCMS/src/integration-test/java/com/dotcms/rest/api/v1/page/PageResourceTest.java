@@ -348,24 +348,6 @@ public class PageResourceTest {
     }
 
     /**
-     * Should remove visitors and persona from session
-     *
-     */
-    @Test
-    public void testRemoveVisitorAndPersona() throws DotDataException, DotSecurityException {
-        final String personaId = "1";
-        final String languageId = "1";
-        final String deviceInode = "3";
-
-        final String mode = "PREVIEW_MODE";
-        pageResource.render(request, response, pagePath, mode, personaId, languageId, deviceInode);
-        pageResource.render(request, response, pagePath, null, null, languageId, null);
-
-        verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
-        verify(session).removeAttribute(WebKeys.VISITOR);
-    }
-
-    /**
      * Should return haveContent equals to true for a page with MultiTree linked
      *
      * @throws DotDataException
