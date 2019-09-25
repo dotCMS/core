@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.component.FieldFormRenderer;
 import com.dotcms.contenttype.model.component.FieldValueRenderer;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
@@ -177,12 +178,12 @@ public abstract class Field implements FieldIf, Serializable {
     return false;
   }
 
+  @CloseDBIfOpened
   @JsonIgnore
   @Value.Lazy
   public List<FieldVariable> fieldVariables() {
     if (innerFieldVariables == null) {
       try {
-        //System.err.println("loading field.variables:" + this.variable() + ":"+ System.identityHashCode(this));
         innerFieldVariables = FactoryLocator.getFieldFactory().loadVariables(this);
       } catch (DotDataException e) {
         throw new DotStateException("unable to load field variables:" + e.getMessage(), e);

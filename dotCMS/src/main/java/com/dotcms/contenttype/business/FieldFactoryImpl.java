@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.business;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.sql.FieldSql;
 import com.dotcms.contenttype.exception.DotDataValidationException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -96,10 +95,8 @@ public class FieldFactoryImpl implements FieldFactory {
   }
 
   @Override
-  @CloseDBIfOpened
   public List<FieldVariable> loadVariables(Field field) throws DotDataException {
-    List<FieldVariable> l = selectFieldVarsInDb(field);
-    return l;
+      return selectFieldVarsInDb(field);
   }
 
   @Override
