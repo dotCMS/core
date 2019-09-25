@@ -306,16 +306,18 @@ public class PageRenderUtil implements Serializable {
                     continue;
                 }
 
-                final Set<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId)
+                final Collection<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId)
                         .stream()
                         .filter(Objects::nonNull)
                         .filter(personalizedContentlet -> personalizedContentlet.getPersonalization().equals(includeContentFor))
-                        .collect(Collectors.toSet());
+                        .collect(Collectors.toList());
 
                 final List<Map<String, Object>> personalizedContentletMap = Lists.newArrayList();
 
                 for (final PersonalizedContentlet
                         personalizedContentlet : personalizedContentletSet) {
+
+
                     final Contentlet contentlet = getContentlet(personalizedContentlet);
 
                     if (contentlet == null) {
@@ -356,7 +358,7 @@ public class PageRenderUtil implements Serializable {
 
                 final Collection<String> contentsId = personalizedContentletMap.stream()
                         .map(contentletMap -> (String) contentletMap.get("identifier"))
-                        .collect(Collectors.toSet());
+                        .collect(Collectors.toList());
 
                 contentMaps.put((uniqueId.startsWith(CONTAINER_UUID_PREFIX)) ? uniqueId : CONTAINER_UUID_PREFIX + uniqueId, personalizedContentletMap);
                 this.setContentletList(uniqueId, contentsId, container.getIdentifier());
