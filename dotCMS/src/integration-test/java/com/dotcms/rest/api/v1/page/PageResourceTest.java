@@ -557,7 +557,10 @@ public class PageResourceTest {
     }
 
     /***
-     * Should render containers
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}
+     * Given Scenario: Create a page with two containers and a content in each of then
+     * ExpectedResult: Should render the containers with the contents, the check it look into the render code the
+     * content div <pre>assertTrue(code.indexOf("data-dot-object=\"contentlet\"") != -1)</pre>
      *
      * @throws DotDataException
      * @throws DotSecurityException
