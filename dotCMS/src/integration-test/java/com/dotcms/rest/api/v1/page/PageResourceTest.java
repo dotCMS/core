@@ -563,7 +563,7 @@ public class PageResourceTest {
      * @throws DotSecurityException
      */
     @Test
-    public void testShoudrendercContainers() throws DotDataException, DotSecurityException, InterruptedException {
+    public void testShouldRenderContainers() throws DotDataException, DotSecurityException, InterruptedException {
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
 
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
@@ -580,8 +580,6 @@ public class PageResourceTest {
             final Container container = pageRenderTest.getContainer(id);
             pageRenderTest.createContent(container);
         }
-
-        Thread.sleep(500);
 
         final Response response = pageResource
                 .render(request, this.response, page.getURI(), "EDIT_MODE", null,

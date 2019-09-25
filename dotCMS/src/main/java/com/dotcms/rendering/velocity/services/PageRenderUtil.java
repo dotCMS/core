@@ -43,10 +43,7 @@ import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
+import com.dotmarketing.util.*;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
@@ -330,6 +327,7 @@ public class PageRenderUtil implements Serializable {
                         contentPrintableMap.put("contentType", contentlet.getContentType().variable());
                         personalizedContentletMap.add(contentPrintableMap);
                     } catch (IOException e) {
+                        Logger.error(PageRenderUtil.class, e);
                         throw new DotStateException(e);
                     }
 
