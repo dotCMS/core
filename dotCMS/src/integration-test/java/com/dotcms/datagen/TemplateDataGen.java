@@ -15,9 +15,11 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.util.StringPool;
-
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Class used to create {@link Template} objects for test purposes
@@ -168,15 +170,8 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     }
 
     public TemplateDataGen withContainer(final String containerId) {
-        final Set<String> containerIds = containers.stream()
-                .map(map -> map.get("containerId"))
-                .collect(Collectors.toSet());
-
         Map<String, String> containerMap = new ImmutableMap.Builder<String, String>()
-                .put("containerId", containerId)
-                .put("uuid", String.valueOf(containerIds.size() + 1))
-                .build();
-
+                .put("containerId", containerId).put("uuid", UUID.randomUUID().toString()).build();
         containers.add(containerMap);
         return this;
     }
