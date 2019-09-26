@@ -358,51 +358,51 @@ public class ContentTool implements ViewTool {
 	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, boolean pullParents, int limit, String sort) {
 		return pullRelated(relationshipName, contentletIdentifier, null, pullParents, limit, sort);
 	}
-	
-	/**
-	 * Will return a ContentMap object which can be used on dotCMS front end. 
-	 * This method is better then the old #pullRelatedContent macro because it doesn't have to 
-	 * parse all the velocity content object that are returned.  If you are building large pulls
-	 * and depending on the types of fields on the content this can get expensive especially
-	 * with large data sets.<br />
-	 * EXAMPLE:<br />
-	 * #foreach($con in $dotcontent.pullRelated('myRelationship','asbd-asd-asda-asd','+myField:someValue',false,5,'modDate desc'))<br />
-	 * 		$con.title<br />
-	 * #end<br />
-	 * The method will figure out language, working and live for you if not passed in with the condition
-	 * Returns empty List if no results are found
-	 * @param relationshipName - Name of the relationship as defined in the structure.
-	 * @param contentletIdentifier - Identifier of the contentlet
-	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
-	 * @param pullParents Should the related pull be based on Parents or Children
-	 * @param limit 0 is the dotCMS max limit which is 10000. Be careful when searching for unlimited amount as all content will load into memory
-	 * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
-	 * @return Returns empty List if no results are found
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
-	 * @return Returns empty List if no results are found
-	 */
-	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort) {	
-		try {
-    		PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
-    		
-    		condition = condition==null ? condition : addDefaultsToQuery(condition);
 
-    		
-    		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, condition, pullParents, limit, sort, user, tmDate,language.getId(),mode.respectAnonPerms);
-    
-    		for(Contentlet cc : cons) {
-    			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
-    		}
-    		return ret;
-		}
-		catch(Throwable ex) {
-            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-                Logger.error(this,"error in ContentTool.pullRelated. URL: "+req.getRequestURL().toString(),ex);
+    /**
+     * Will return a ContentMap object which can be used on dotCMS front end. This method is better
+     * then the old #pullRelatedContent macro because it doesn't have to parse all the velocity
+     * content object that are returned.  If you are building large pulls and depending on the types
+     * of fields on the content this can get expensive especially with large data sets.<br />
+     * EXAMPLE:<br /> #foreach($con in $dotcontent.pullRelated('myRelationship','asbd-asd-asda-asd','+myField:someValue',false,5,'modDate
+     * desc'))<br /> $con.title<br /> #end<br /> The method will figure out language, working and
+     * live for you if not passed in with the condition Returns empty List if no results are found
+     *
+     * @param relationshipName - Name of the relationship as defined in the structure.
+     * @param contentletIdentifier - Identifier of the contentlet
+     * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be
+     * Null
+     * @param pullParents Should the related pull be based on Parents or Children
+     * @param limit 0 is the dotCMS max limit which is 10000. Be careful when searching for
+     * unlimited amount as all content will load into memory
+     * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple
+     * values "sort1 acs, sort2 desc". Can be Null
+     * @return Returns empty List if no results are found
+     */
+    public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier,
+            String condition, boolean pullParents, int limit, String sort) {
+        try {
+            PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
+
+            condition = condition == null ? condition : addDefaultsToQuery(condition);
+
+            List<Contentlet> cons = ContentUtils
+                    .pullRelated(relationshipName, contentletIdentifier, condition, pullParents,
+                            limit, sort, user, tmDate, language.getId(), mode.respectAnonPerms);
+
+            for (Contentlet cc : cons) {
+                ret.add(new ContentMap(cc, user, EDIT_OR_PREVIEW_MODE, currentHost, context));
+            }
+            return ret;
+        } catch (Throwable ex) {
+            if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this,
+                        "error in ContentTool.pullRelated. URL: " + req.getRequestURL().toString(),
+                        ex);
             }
             throw new RuntimeException(ex);
         }
-	}
+    }
 
 	/**
 	 * Returns a list of related content given a RelationshipField and additional filtering criteria
