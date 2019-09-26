@@ -16,8 +16,8 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.LANGUAGE_TYPE;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.PUBLISH_TYPE;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.LANGUAGE_TYPE_FILTER;
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.PUBLISH_TYPE_FILTER;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -74,67 +74,108 @@ public class ContentUtilsTest {
 
     public static class TestCase {
 
-        enum LANGUAGE_TYPE {ENGLISH, SPANISH, ALL}
+        enum LANGUAGE_TYPE_FILTER {ENGLISH, SPANISH, DEFAULT}
 
-        enum PUBLISH_TYPE {LIVE, WORKING, ALL}
+        enum PUBLISH_TYPE_FILTER {LIVE, WORKING, DEFAULT}
 
-        LANGUAGE_TYPE languageType;
-        PUBLISH_TYPE publishType;
+        LANGUAGE_TYPE_FILTER languageType;
+        PUBLISH_TYPE_FILTER publishType;
         boolean pullByParent;
         boolean addCondition;
+        boolean publishAll;
         int resultsSize;
 
-        public TestCase(final LANGUAGE_TYPE languageType, final PUBLISH_TYPE publishType,
-                final boolean pullByParent, final boolean addCondition, final int resultsSize) {
+        public TestCase(final LANGUAGE_TYPE_FILTER languageType, final PUBLISH_TYPE_FILTER publishType,
+                final boolean pullByParent, final boolean addCondition, final int resultsSize, final boolean publishAll) {
             this.languageType = languageType;
             this.publishType = publishType;
             this.pullByParent = pullByParent;
             this.addCondition = addCondition;
             this.resultsSize = resultsSize;
+            this.publishAll  = publishAll;
         }
     }
 
     @DataProvider
     public static Object[] testCases() {
         return new TestCase[]{
-                new TestCase(LANGUAGE_TYPE.ALL, PUBLISH_TYPE.ALL, false, false, 2),
-                new TestCase(LANGUAGE_TYPE.ALL, PUBLISH_TYPE.ALL, false, true, 2),
-                new TestCase(LANGUAGE_TYPE.ALL, PUBLISH_TYPE.ALL, true, false, 2),
-                new TestCase(LANGUAGE_TYPE.ALL, PUBLISH_TYPE.ALL, true, true, 2),
-                new TestCase(LANGUAGE_TYPE.ALL, PUBLISH_TYPE.LIVE, false, false, 1),
-                new TestCase(LANGUAGE_TYPE.ALL, PUBLISH_TYPE.LIVE, false, true, 1),
-                new TestCase(LANGUAGE_TYPE.ALL, PUBLISH_TYPE.LIVE, true, false, 1),
-                new TestCase(LANGUAGE_TYPE.ALL, PUBLISH_TYPE.LIVE, true, true, 1),
-                new TestCase(LANGUAGE_TYPE.ALL, PUBLISH_TYPE.WORKING, false, false, 1),
-                new TestCase(LANGUAGE_TYPE.ALL, PUBLISH_TYPE.WORKING, false, true, 1),
-                new TestCase(LANGUAGE_TYPE.ALL, PUBLISH_TYPE.WORKING, true, false, 1),
-                new TestCase(LANGUAGE_TYPE.ALL, PUBLISH_TYPE.WORKING, true, true, 1),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, false, false, 2, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 2, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 2, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 2, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, false, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, false, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, true, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, true, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, false, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, false, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, true, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, true, true, 1, false),
 
-                new TestCase(LANGUAGE_TYPE.ENGLISH, PUBLISH_TYPE.ALL, false, false, 1),
-                new TestCase(LANGUAGE_TYPE.ENGLISH, PUBLISH_TYPE.ALL, false, true, 1),
-                new TestCase(LANGUAGE_TYPE.ENGLISH, PUBLISH_TYPE.ALL, true, false, 1),
-                new TestCase(LANGUAGE_TYPE.ENGLISH, PUBLISH_TYPE.ALL, true, true, 1),
-                new TestCase(LANGUAGE_TYPE.ENGLISH, PUBLISH_TYPE.LIVE, false, false, 1),
-                new TestCase(LANGUAGE_TYPE.ENGLISH, PUBLISH_TYPE.LIVE, false, true, 1),
-                new TestCase(LANGUAGE_TYPE.ENGLISH, PUBLISH_TYPE.LIVE, true, false, 1),
-                new TestCase(LANGUAGE_TYPE.ENGLISH, PUBLISH_TYPE.LIVE, true, true, 1),
-                new TestCase(LANGUAGE_TYPE.ENGLISH, PUBLISH_TYPE.WORKING, false, false, 0),
-                new TestCase(LANGUAGE_TYPE.ENGLISH, PUBLISH_TYPE.WORKING, false, true, 0),
-                new TestCase(LANGUAGE_TYPE.ENGLISH, PUBLISH_TYPE.WORKING, true, false, 0),
-                new TestCase(LANGUAGE_TYPE.ENGLISH, PUBLISH_TYPE.WORKING, true, true, 0),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.DEFAULT, false, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, false, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, false, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, true, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, true, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, false, false, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, false, true, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, true, false, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, true, true, 0, false),
 
-                new TestCase(LANGUAGE_TYPE.SPANISH, PUBLISH_TYPE.ALL, false, false, 1),
-                new TestCase(LANGUAGE_TYPE.SPANISH, PUBLISH_TYPE.ALL, false, true, 1),
-                new TestCase(LANGUAGE_TYPE.SPANISH, PUBLISH_TYPE.ALL, true, false, 1),
-                new TestCase(LANGUAGE_TYPE.SPANISH, PUBLISH_TYPE.ALL, true, true, 1),
-                new TestCase(LANGUAGE_TYPE.SPANISH, PUBLISH_TYPE.LIVE, false, false, 0),
-                new TestCase(LANGUAGE_TYPE.SPANISH, PUBLISH_TYPE.LIVE, false, true, 0),
-                new TestCase(LANGUAGE_TYPE.SPANISH, PUBLISH_TYPE.LIVE, true, false, 0),
-                new TestCase(LANGUAGE_TYPE.SPANISH, PUBLISH_TYPE.LIVE, true, true, 0),
-                new TestCase(LANGUAGE_TYPE.SPANISH, PUBLISH_TYPE.WORKING, false, false, 1),
-                new TestCase(LANGUAGE_TYPE.SPANISH, PUBLISH_TYPE.WORKING, false, true, 1),
-                new TestCase(LANGUAGE_TYPE.SPANISH, PUBLISH_TYPE.WORKING, true, false, 1),
-                new TestCase(LANGUAGE_TYPE.SPANISH, PUBLISH_TYPE.WORKING, true, true, 1)
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, false, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, false, false, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, false, true, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, true, false, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, true, true, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, false, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, false, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, true, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, true, true, 1, false),
+
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, false, false, 2, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 2, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, false, false, 2, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, false, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, true, false, 2, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, true, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, false, false, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, false, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, true, false, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, true, true, 0, true),
+
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.DEFAULT, false, false, 1, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 1, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, false, false, 1, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, false, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, true, false, 1, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, true, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, false, false, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, false, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, true, false, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, true, true, 0, true),
+
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, false, false, 1, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 1, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, false, false, 1, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, false, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, true, false, 1, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, true, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, false, false, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, false, true, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, true, false, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, true, true, 0, true)
 
         };
     }
@@ -161,18 +202,17 @@ public class ContentUtilsTest {
                             .name("childContentType" + time)
                             .owner(user.getUserId()).build());
 
-            //Add a relationship field
-            Field parentTypeRelationshipField = FieldBuilder.builder(RelationshipField.class)
-                    .name("newRel")
-                    .contentTypeId(parentContentType.id())
-                    .values(String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
-                    .relationType(childContentType.id()).build();
-
-            parentTypeRelationshipField = fieldAPI.save(parentTypeRelationshipField, user);
+            //Adding a RelationshipField to the parent
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("myChildren",
+                    parentContentType.id(), childContentType.variable(), RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
 
             final String fullFieldVar =
-                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField
-                            .variable();
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
+
+            //Adding a RelationshipField to the child
+            createAndSaveManyToManyRelationshipField("myParents",
+                    childContentType.id(), fullFieldVar, RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+
 
             final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
 
@@ -186,6 +226,10 @@ public class ContentUtilsTest {
             final Contentlet childInSpanish = new ContentletDataGen(childContentType.id())
                     .languageId(spanishLanguage.getId())
                     .setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            if (testCase.publishAll){
+                ContentletDataGen.publish(childInSpanish);
+            }
 
             //Save parents content
             Contentlet parentInEnglish = new ContentletDataGen(parentContentType.id())
@@ -207,6 +251,10 @@ public class ContentUtilsTest {
 
             parentInEnglish = ContentletDataGen.publish(parentInEnglish);
 
+            if (testCase.publishAll){
+                ContentletDataGen.publish(parentInSpanish);
+            }
+
             //Clean up cache
             CacheLocator.getContentletCache().remove(childInEnglish);
             CacheLocator.getContentletCache().remove(childInSpanish);
@@ -216,13 +264,13 @@ public class ContentUtilsTest {
             //Define content to be sent as param for the pullRelated method
             Contentlet contentletToPullFrom;
             if (testCase.pullByParent) {
-                if (testCase.languageType == LANGUAGE_TYPE.SPANISH) {
+                if (testCase.languageType == LANGUAGE_TYPE_FILTER.SPANISH) {
                     contentletToPullFrom = parentInSpanish;
                 } else {
                     contentletToPullFrom = parentInEnglish;
                 }
             } else {
-                if (testCase.languageType == LANGUAGE_TYPE.SPANISH) {
+                if (testCase.languageType == LANGUAGE_TYPE_FILTER.SPANISH) {
                     contentletToPullFrom = childInSpanish;
                 } else {
                     contentletToPullFrom = childInEnglish;
@@ -233,43 +281,38 @@ public class ContentUtilsTest {
             long languageParam = -1;
             Boolean liveParam = null;
 
-            if (testCase.languageType == LANGUAGE_TYPE.SPANISH) {
+            if (testCase.languageType == LANGUAGE_TYPE_FILTER.SPANISH) {
                 languageParam = spanishLanguage.getId();
-            } else if (testCase.languageType == LANGUAGE_TYPE.ENGLISH) {
+            } else if (testCase.languageType == LANGUAGE_TYPE_FILTER.ENGLISH) {
                 languageParam = defaultLanguage.getId();
             }
 
-            if (testCase.publishType != PUBLISH_TYPE.ALL) {
-                liveParam = testCase.publishType == PUBLISH_TYPE.LIVE;
+            if (testCase.publishType != PUBLISH_TYPE_FILTER.DEFAULT) {
+                liveParam = testCase.publishType == PUBLISH_TYPE_FILTER.LIVE;
+            }
+
+            String condition = null;
+            if (testCase.addCondition){
+               condition = testCase.publishAll? "+live:false":"+working:true";
             }
 
             final List<Contentlet> results = ContentUtils
                     .pullRelated(fullFieldVar, contentletToPullFrom.getIdentifier(),
-                            testCase.addCondition ? "+working:true" : null,
+                            condition,
                             testCase.pullByParent, -1, null, user, null,
                             languageParam, liveParam);
 
             //Validate results
-            assertNotNull(results);
-            assertEquals(testCase.resultsSize, results.size());
+            validateResults(testCase, defaultLanguage, spanishLanguage, results);
 
-            if (testCase.languageType != LANGUAGE_TYPE.ALL) {
-                assertTrue(results.stream().allMatch(contentlet -> contentlet.getLanguageId() == (
-                        testCase.languageType == LANGUAGE_TYPE.ENGLISH ? defaultLanguage.getId()
-                                : spanishLanguage.getId())));
-            }
+            //Validate results for cached results
+            if (!testCase.addCondition){
+                final List<Contentlet> cachedResults = ContentUtils
+                        .pullRelated(fullFieldVar, contentletToPullFrom.getIdentifier(),null,
+                                testCase.pullByParent, -1, null, user, null,
+                                languageParam, liveParam);
 
-            if (testCase.publishType != PUBLISH_TYPE.ALL) {
-                assertTrue(results.stream().allMatch(contentlet -> {
-                    try {
-                        return testCase.publishType == PUBLISH_TYPE.LIVE && contentlet.isLive()
-                                || testCase.publishType == PUBLISH_TYPE.WORKING && !contentlet
-                                .isLive();
-                    } catch (DotDataException | DotSecurityException e) {
-                        e.printStackTrace();
-                    }
-                    return false;
-                }));
+                validateResults(testCase, defaultLanguage, spanishLanguage, cachedResults);
             }
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -279,6 +322,57 @@ public class ContentUtilsTest {
             if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
                 contentTypeAPI.delete(childContentType);
             }
+        }
+    }
+
+    /**
+     * @param relationshipName
+     * @param parentTypeId
+     * @param childTypeVar
+     * @param cardinality
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Field createAndSaveManyToManyRelationshipField(final String relationshipName, final String parentTypeId,
+            final String childTypeVar, final int cardinality)
+            throws DotSecurityException, DotDataException {
+
+        final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
+                .contentTypeId(parentTypeId).values(String.valueOf(cardinality))
+                .relationType(childTypeVar).build();
+
+        return fieldAPI.save(field, user);
+    }
+
+    /**
+     * @param testCase
+     * @param defaultLanguage
+     * @param spanishLanguage
+     * @param results
+     */
+    private void validateResults(TestCase testCase, Language defaultLanguage,
+            Language spanishLanguage, List<Contentlet> results) {
+        assertNotNull(results);
+        assertEquals(testCase.resultsSize, results.size());
+
+        if (testCase.languageType != LANGUAGE_TYPE_FILTER.DEFAULT) {
+            assertTrue(results.stream().allMatch(contentlet -> contentlet.getLanguageId() == (
+                    testCase.languageType == LANGUAGE_TYPE_FILTER.ENGLISH ? defaultLanguage.getId()
+                            : spanishLanguage.getId())));
+        }
+
+        if (testCase.publishType != PUBLISH_TYPE_FILTER.DEFAULT) {
+            assertTrue(results.stream().allMatch(contentlet -> {
+                try {
+                    return testCase.publishType == PUBLISH_TYPE_FILTER.LIVE && contentlet.isLive()
+                            || testCase.publishType == PUBLISH_TYPE_FILTER.WORKING && !contentlet
+                            .isLive();
+                } catch (DotDataException | DotSecurityException e) {
+                    e.printStackTrace();
+                }
+                return false;
+            }));
         }
     }
 

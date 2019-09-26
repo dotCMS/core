@@ -175,6 +175,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -182,6 +183,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -2979,26 +2981,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Contentlet> relatedContentlet;
 
             if (relatedIds.containsKey(variableName)) {
-                relatedContentlet = getCachedRelatedContentlets(relatedIds, variableName);
+                relatedContentlet = getCachedRelatedContentlets(relatedIds, variableName, language, live);
             } else {
                 relatedContentlet = getNonCachedRelatedContentlets(contentlet, relatedIds,
                         variableName, pullByParents,
-                        limit, offset, sortBy);
-            }
-
-            //Filter by language if set
-            if (language != -1) {
-                relatedContentlet = relatedContentlet.stream()
-                        .filter(currentContent -> currentContent.getLanguageId() == language)
-                        .collect(Collectors.toList());
-            }
-
-            //Filter by live if set
-            if (live != null){
-                relatedContentlet = relatedContentlet.stream()
-                        .filter(currentContent -> Sneaky.sneak(() -> currentContent.isLive())
-                                .equals(live))
-                        .collect(Collectors.toList());
+                        limit, offset, sortBy, language, live);
             }
 
             //Restricts contentlet according to user permissions
@@ -3029,12 +3016,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private List<Contentlet> getNonCachedRelatedContentlets(final Contentlet contentlet,
             final Map<String, List<String>> relatedIds, final String variableName,
             final Boolean pullByParent, final int limit, final int offset,
-            final String sortBy)
+            final String sortBy, final long language, final Boolean live)
             throws DotDataException, DotSecurityException {
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         com.dotcms.contenttype.model.field.Field field = null;
-        final List<Contentlet> relatedList;
+        List<Contentlet> relatedList;
         Relationship relationship;
 
         try {
@@ -3056,9 +3043,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         relatedList = filterRelatedContent(contentlet, relationship, systemUser, false,
                 pullByParent, limit, offset, sortBy);
 
-
         //Cache related content only if it is a relationship field
-        if (field != null && limit == -1 && offset == 0 && sortBy == null) {
+        if (field != null && limit == -1 && offset <= 0 && sortBy == null) {
             if (UtilMethods.isSet(relatedList)) {
                 relatedIds.put(variableName,
                         relatedList.stream().map(Contentlet::getIdentifier).distinct()
@@ -3069,6 +3055,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             //refreshing cache when related content map is updated
             CacheLocator.getRelationshipCache().putRelatedContentMap(contentlet.getIdentifier(), relatedIds);
+        }
+
+        //Filter by language if set
+        if (language != -1) {
+            relatedList = relatedList.stream()
+                    .filter(currentContent -> currentContent.getLanguageId() == language)
+                    .collect(Collectors.toList());
+        }
+
+        //Filter by live if set
+        if (live != null){
+            relatedList = relatedList.stream()
+                    .filter(currentContent -> Sneaky.sneak(() -> currentContent.isLive())
+                            .equals(live))
+                    .collect(Collectors.toList());
         }
 
         return relatedList;
@@ -3082,21 +3083,41 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     @NotNull
     private List<Contentlet> getCachedRelatedContentlets(final Map<String, List<String>> relatedIds,
-            final String variableName) {
-        final List<Contentlet> relatedList = relatedIds
+            final String variableName, final long language, final Boolean live) {
+        return relatedIds
                 .get(variableName).stream()
-                .map(identifier -> {
-                    try {
-                        return APILocator.getContentletAPI()
-                                .findContentletByIdentifierAnyLanguage(identifier);
-                    } catch (DotDataException | DotSecurityException e) {
-                        Logger.warn(this, "No content found with id " + identifier,
-                                e);
-                        throw new DotStateException(e);
-                    }
-                }).collect(Collectors.toList());
+                .flatMap(identifier -> filterRelatedMap(language, live, identifier))
+                .filter(Objects::nonNull).collect(Collectors.toList());
+    }
 
-        return relatedList;
+    /**
+     *
+     * @param language
+     * @param live
+     * @param identifier
+     * @return
+     */
+    private Stream<? extends Contentlet> filterRelatedMap(final long language, final Boolean live,
+            final String identifier) {
+        try {
+            final StringBuilder query = new StringBuilder();
+
+            query.append("+identifier:").append(identifier);
+            if (language != -1) {
+                query.append(" +languageid:").append(language);
+            }
+            if (live != null) {
+                query.append(" +live:").append(live);
+            }
+            List<Contentlet> search = search(query.toString(), -1, -1, null,
+                    APILocator.systemUser(), false);
+            return search.stream();
+
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.warn(this, "No content found with id " + identifier,
+                    e);
+            throw new DotStateException(e);
+        }
     }
 
     @WrapInTransaction
