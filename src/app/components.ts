@@ -9,14 +9,13 @@ import { DotLoginPageComponent } from '@components/login/main/dot-login-page.com
 // CUSTOM PIPES
 import { CapitalizePipe, SafePipe } from '@pipes/index';
 
-
 export const COMPONENTS = [
     MainCoreLegacyComponent,
     MainComponentLegacyComponent,
     DotLoginPageComponent,
     DotLogOutContainerComponent,
     GlobalSearchComponent,
-    DotAlertConfirmComponent,
+    DotAlertConfirmComponent
 ];
 
 export const PIPES = [CapitalizePipe, SafePipe];
