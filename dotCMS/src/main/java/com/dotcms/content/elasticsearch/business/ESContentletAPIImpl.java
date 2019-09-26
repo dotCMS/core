@@ -1460,15 +1460,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 offset, sortBy),
                                 getRelatedParents(contentlet, rel, user, respectFrontendRoles,
                                         limit, offset, sortBy)).stream()
+                        .filter(Objects::nonNull)
                         .collect(CollectionsUtils.toImmutableList());
             }
             if (pullByParent) {
                 return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit,
                         offset, sortBy).stream()
+                                .filter(Objects::nonNull)
                         .collect(CollectionsUtils.toImmutableList());
             } else {
                 return getRelatedParents(contentlet, rel, user, respectFrontendRoles, limit, offset,
                         sortBy).stream()
+                                .filter(Objects::nonNull)
                         .collect(CollectionsUtils.toImmutableList());
             }
         } else {

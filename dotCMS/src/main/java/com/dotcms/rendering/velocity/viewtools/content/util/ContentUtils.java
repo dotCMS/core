@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -535,46 +536,52 @@ public class ContentUtils {
 
             if (UtilMethods.isSet(condition)){
 
-                if ((selfRelated && pullByParent) || (!selfRelated && relationship
+                if (language != -1){
+                    pullQuery.append(" ").append(" +languageId:").append(language);
+                }
+                if (!user.isBackendUser() || live ==null){
+                    pullQuery.append(" ").append(" +live:true ");
+                } else {
+                    pullQuery.append(" ").append(" +live:").append(live);
+                }
+ 
+                pullQuery.append(" AND ").append(condition);
+                
+                
+                if ((selfRelated && !pullByParent) || (!selfRelated && relationship
                         .getParentStructureInode().equals(contentlet.getContentTypeId()))) {
                     //pulling children
                     final List<Contentlet> relatedContent = conAPI
-                            .getRelatedContent(contentlet, relationship, pullByParent, user,
-                                    false, language, live);
+                            .getRelatedContent(contentlet, relationship, !pullByParent, user,
+                                    true, language, live);
 
                     if (relatedContent.isEmpty()) {
                         return Collections.emptyList();
                     }
 
-                    pullQuery.append("+identifier:(").append(String.join(" OR ", relatedContent
+                    pullQuery.append(" +identifier:(").append(String.join(" OR ", relatedContent
                             .stream().map(cont -> cont.getIdentifier()).collect(
                                     Collectors.toList()))).append(")");
 
-                    if (UtilMethods.isSet(condition)) {
-                        pullQuery.append(" AND ").append(condition);
-                    }
-                } else {
-                    //pulling parents
-                    pullQuery.append("+" + relationshipName + ":"
-                            + contentletIdentifier);
-                }
-
-                if (language != -1){
-                    pullQuery.append(" ").append("+languageId:").append(language);
-                }
-
-                if (user.equals(APILocator.getUserAPI().getAnonymousUser())){
-                    pullQuery.append(" ").append("+live:true");
-                } else if (live != null) {
-                    pullQuery.append(" ").append("+live:").append(live);
-                }
+                    final List<String> results = conAPI.searchIndex(pullQuery.toString(), limit,offset, null, user, true)
+                                    .stream()
+                                    .map(cs-> cs.getIdentifier()).collect(Collectors.toList());
+                    
+                    return relatedContent.stream().filter(c->results.contains(c.getIdentifier())).collect(Collectors.toList());
+                    
+                } 
+                
+                //pulling parents
+                pullQuery.append("+" + relationshipName + ":"
+                        + contentletIdentifier);
+                
+                return pull(pullQuery.toString(), offset, limit, sort, user, tmDate, true);
 
 
-                pullQuery.append(" ").append(condition);
-                return pull(pullQuery.toString(), offset, limit, sort, user, tmDate);
+
             } else {
                 return conAPI
-                        .getRelatedContent(contentlet, relationship, pullByParent, user, false, limit, offset, sort, language, live);
+                        .getRelatedContent(contentlet, relationship, !pullByParent, user, true, limit, offset, sort, language, live);
             }
 
         } catch (Exception e) {

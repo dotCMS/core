@@ -27,6 +27,7 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Config;
@@ -61,7 +62,8 @@ public class ContentTool implements ViewTool {
 	private String tmDate;
 	private Context context;
 	private Host currentHost;
-
+	private PageMode mode;
+	private Language language;
 	public void init(Object initData) {
 		this.req = ((ViewContext) initData).getRequest();
 
@@ -70,9 +72,9 @@ public class ContentTool implements ViewTool {
 		this.context = ((ViewContext) initData).getVelocityContext();
 
 		tmDate=null;
-
+		language = WebAPILocator.getLanguageWebAPI().getLanguage(req);
 		HttpSession session = req.getSession(false);
-		PageMode mode = PageMode.get(req);
+		mode = PageMode.get(req);
 		EDIT_OR_PREVIEW_MODE=!mode.showLive;
 		if(session!=null){
 			tmDate = (String) session.getAttribute("tm_date");
@@ -383,7 +385,11 @@ public class ContentTool implements ViewTool {
 	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort) {	
 		try {
     		PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
-    		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, addDefaultsToQuery(condition), pullParents, limit, sort, user, tmDate);
+    		
+    		condition = condition==null ? condition : addDefaultsToQuery(condition);
+
+    		
+    		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, condition, pullParents, limit, sort, user, tmDate,language.getId(),mode.respectAnonPerms);
     
     		for(Contentlet cc : cons) {
     			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
