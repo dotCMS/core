@@ -3,6 +3,9 @@
 <%@ page import="com.dotmarketing.portlets.links.model.Link" %>
 <%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@ page import="com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset" %>
+<%@ page import="com.dotmarketing.portlets.fileassets.business.FileAsset" %>
+<%@ page import="com.dotmarketing.business.APILocator" %>
 
 <%
 	String referer = request.getParameter("referer");
@@ -73,9 +76,11 @@ function cancel() {
 									</td>
 									<td>
 										<%
-											String title = "";
+											String title;
 											if(con != null){
-												title = "Contentlet Title";
+												title = UtilMethods.isSet(con.getTitle())
+														? con.getTitle()
+														:"Contentlet Title";
 											}
 											else if (webasset instanceof Link) {
 												title = ((Link)webasset).getProtocal() + ((Link)webasset).getUrl();
@@ -90,11 +95,22 @@ function cancel() {
 								</table>
 							</td>
 							<td>
-								<% if(con != null){ %>
-								<%=con.getTitle()%>
-								<% } else { %>
-								<%=webasset.getFriendlyName()%>
-								<% } %>
+								<%
+									String description="";
+
+									if(con != null) {
+										if (con.isHTMLPage()) {
+											description = APILocator.getHTMLPageAssetAPI()
+													.fromContentlet(con).getFriendlyName();
+										} else if (con.isFileAsset()) {
+											description = APILocator.getFileAssetAPI()
+													.fromContentlet(con).getFileName();
+										}
+									} else {
+										description = webasset.getFriendlyName();
+									}
+								%>
+								<%=description%>
 							</td>
 						</tr>
 					<%}%>
