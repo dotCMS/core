@@ -413,14 +413,14 @@ public class ContentUtils {
 		 * Returns empty List if no results are found
 		 * @param relationshipName - Name of the relationship as defined in the structure.
 		 * @param contentletIdentifier - Identifier of the contentlet
-		 * @param pullParents Should the related pull be based on Parents or Children
+		 * @param gettingParents Should the related pull be based on Parents or Children
 		 * @param limit 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
 		 * @return Returns empty List if no results are found
 		 * @throws DotSecurityException 
 		 * @throws DotDataException 
 		 */
-		public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier, boolean pullParents, int limit, User user, String tmDate) {
-			return pullRelated(relationshipName, contentletIdentifier, null, pullParents, limit, null, user, tmDate);
+		public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier, boolean gettingParents, int limit, User user, String tmDate) {
+			return pullRelated(relationshipName, contentletIdentifier, null, gettingParents, limit, null, user, tmDate);
 		}
 		
 		/**
@@ -437,15 +437,15 @@ public class ContentUtils {
 		 * Returns empty List if no results are found
 		 * @param relationshipName - Name of the relationship as defined in the structure.
 		 * @param contentletIdentifier - Identifier of the contentlet
-		 * @param pullParents Should the related pull be based on Parents or Children
+		 * @param gettingParents Should the related pull be based on Parents or Children
 		 * @param limit 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
 		 * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
 		 * @return Returns empty List if no results are found
 		 * @throws DotSecurityException 
 		 * @throws DotDataException 
 		 */
-		public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier, boolean pullParents, int limit, String sort, User user, String tmDate) {
-			return pullRelated(relationshipName, contentletIdentifier, null, pullParents, limit, sort, user, tmDate);
+		public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier, boolean gettingParents, int limit, String sort, User user, String tmDate) {
+			return pullRelated(relationshipName, contentletIdentifier, null, gettingParents, limit, sort, user, tmDate);
 		}
 
     /**
@@ -461,7 +461,7 @@ public class ContentUtils {
      * @param contentletIdentifier - Identifier of the contentlet
      * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be
      * Null
-     * @param pullParents Should the related pull be based on Parents or Children
+     * @param gettingParents Should the related pull be based on Parents or Children
      * @param limit 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited
      * amount as all content will load into memory
      * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple
@@ -471,13 +471,13 @@ public class ContentUtils {
      * @return Returns empty List if no results are found
      */
     public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier,
-            String condition, boolean pullParents, int limit, String sort, User user,
+            String condition, boolean gettingParents, int limit, String sort, User user,
             String tmDate) {
         final Relationship relationship = FactoryLocator.getRelationshipFactory()
                 .byTypeValue(relationshipName);
 
         return getPullResults(relationship, contentletIdentifier, condition, limit, -1, sort,
-                user, tmDate, pullParents, -1, null);
+                user, tmDate, gettingParents, -1, null);
     }
 
     /**
@@ -493,7 +493,7 @@ public class ContentUtils {
      * @param contentletIdentifier - Identifier of the contentlet
      * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be
      * Null
-     * @param pullParents Should the related pull be based on Parents or Children
+     * @param gettingParents Should the related pull be based on Parents or Children
      * @param limit 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited
      * amount as all content will load into memory
      * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple
@@ -505,13 +505,13 @@ public class ContentUtils {
      * @return Returns empty List if no results are found
      */
     public static List<Contentlet> pullRelated(String relationshipName, String contentletIdentifier,
-            String condition, boolean pullParents, int limit, String sort, User user, String tmDate,
+            String condition, boolean gettingParents, int limit, String sort, User user, String tmDate,
             final long language, final Boolean live) {
         final Relationship relationship = FactoryLocator.getRelationshipFactory()
                 .byTypeValue(relationshipName);
 
         return getPullResults(relationship, contentletIdentifier, condition, limit, -1, sort,
-                user, tmDate, pullParents, language, live);
+                user, tmDate, gettingParents, language, live);
     }
 
     /**
@@ -519,7 +519,7 @@ public class ContentUtils {
      */
     private static List<Contentlet> getPullResults(final Relationship relationship,
             String contentletIdentifier, final String condition, final int limit, final int offset,
-            String sort, final User user, final String tmDate, final boolean pullByParent,
+            String sort, final User user, final String tmDate, final boolean gettingParents,
             final long language, final Boolean live) {
 
 
@@ -535,11 +535,11 @@ public class ContentUtils {
 
             if (UtilMethods.isSet(condition)){
 
-                if ((selfRelated && pullByParent) || (!selfRelated && relationship
+                if ((selfRelated && gettingParents) || (!selfRelated && relationship
                         .getParentStructureInode().equals(contentlet.getContentTypeId()))) {
                     //pulling children
                     final List<Contentlet> relatedContent = conAPI
-                            .getRelatedContent(contentlet, relationship, pullByParent, user,
+                            .getRelatedContent(contentlet, relationship, gettingParents, user,
                                     false, language, live);
 
                     if (relatedContent.isEmpty()) {
@@ -574,7 +574,7 @@ public class ContentUtils {
                 return pull(pullQuery.toString(), offset, limit, sort, user, tmDate);
             } else {
                 return conAPI
-                        .getRelatedContent(contentlet, relationship, pullByParent, user, false, limit, offset, sort, language, live);
+                        .getRelatedContent(contentlet, relationship, gettingParents, user, false, limit, offset, sort, language, live);
             }
 
         } catch (Exception e) {
@@ -607,9 +607,9 @@ public class ContentUtils {
 
     public static List<Contentlet> pullRelatedField(final Relationship relationship,
             final String contentletIdentifier, final String condition, final int limit,
-            final int offset, final String sort, final User user, final String tmDate, final boolean pullByParent) {
+            final int offset, final String sort, final User user, final String tmDate, final boolean gettingParents) {
         return getPullResults(relationship, contentletIdentifier, condition, limit, offset, sort,
-                user, tmDate, pullByParent, -1, null);
+                user, tmDate, gettingParents, -1, null);
     }
 		
 }

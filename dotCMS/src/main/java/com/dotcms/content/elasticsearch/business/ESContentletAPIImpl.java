@@ -1443,7 +1443,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @CloseDBIfOpened
     @Override
     public List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
-            User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
+            User user, boolean respectFrontendRoles, Boolean gettingParents, int limit, int offset,
             String sortBy)
             throws DotDataException, DotSecurityException {
 
@@ -1455,7 +1455,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 .sameParentAndChild(rel);
 
         if (isSameStructureRelationship) {
-            if (pullByParent == null) {
+            if (gettingParents == null) {
                 return (List<Contentlet>) CollectionsUtils
                         .join(getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit,
                                 offset, sortBy),
@@ -1463,7 +1463,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                         limit, offset, sortBy)).stream()
                         .collect(CollectionsUtils.toImmutableList());
             }
-            if (pullByParent) {
+            if (gettingParents) {
                 return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit,
                         offset, sortBy).stream()
                         .collect(CollectionsUtils.toImmutableList());
@@ -1601,22 +1601,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
-            Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
+            Boolean gettingParents, User user, boolean respectFrontendRoles, int limit, int offset,
             String sortBy) throws DotDataException {
-        return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, limit, offset, sortBy, -1, null);
+        return getRelatedContent(contentlet, rel, gettingParents, user, respectFrontendRoles, limit, offset, sortBy, -1, null);
     }
 
     @CloseDBIfOpened
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
-            Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
+            Boolean gettingParents, User user, boolean respectFrontendRoles, int limit, int offset,
             String sortBy, final long language, final Boolean live)
             throws DotDataException {
         try {
             String fieldVariable = rel.getRelationTypeValue();
 
             if(rel.isRelationshipField()){
-                if ((relationshipAPI.sameParentAndChild(rel) && pullByParent!= null && pullByParent) || (relationshipAPI
+                if ((relationshipAPI.sameParentAndChild(rel) && gettingParents!= null && gettingParents) || (relationshipAPI
                         .isParent(rel, contentlet.getContentType()) && !relationshipAPI.sameParentAndChild(rel))) {
                     if(rel.getChildRelationName()!= null) {
                         fieldVariable = rel.getChildRelationName();
@@ -1626,13 +1626,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
 
-            return getRelatedContent(contentlet, fieldVariable, user, respectFrontendRoles, pullByParent, limit,
+            return getRelatedContent(contentlet, fieldVariable, user, respectFrontendRoles, gettingParents, limit,
                             offset, sortBy, language, live);
         } catch (Exception e) {
+            
+            final String conId = contentlet !=null ? contentlet.getIdentifier() : "null";
+            final String relId = rel !=null ? rel.getRelationTypeValue() : "null";
+            
             final String errorMessage =
                     "Unable to look up related content for contentlet with identifier "
-                            + contentlet.getIdentifier() + ". Relationship name: " + rel
-                            .getRelationTypeValue();
+                            + conId + ". Relationship name: " + relId;
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class,
@@ -1646,17 +1649,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
-            Boolean pullByParent, User user, boolean respectFrontendRoles, final long language, final Boolean live)
+            Boolean gettingParents, User user, boolean respectFrontendRoles, final long language, final Boolean live)
             throws DotDataException, DotSecurityException {
-        return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, -1, -1,
+        return getRelatedContent(contentlet, rel, gettingParents, user, respectFrontendRoles, -1, -1,
                 null, language, live);
     }
 
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
-            Boolean pullByParent, User user, boolean respectFrontendRoles)
+            Boolean gettingParents, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
-        return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, -1, -1,
+        return getRelatedContent(contentlet, rel, gettingParents, user, respectFrontendRoles, -1, -1,
                 null);
     }
 
@@ -1664,7 +1667,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @deprecated Use {@link ContentletAPI#getRelatedContent(Contentlet, Relationship, Boolean, User, boolean)} instead
      * @param contentlet
      * @param rel
-     * @param pullByParent
+     * @param gettingParents
      * @param user
      * @param respectFrontendRoles
      * @return
@@ -1672,12 +1675,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotSecurityException
      */
     @Deprecated
-    public List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, boolean pullByParent,
+    public List<Contentlet> getRelatedContentFromIndex(Contentlet contentlet,Relationship rel, boolean gettingParents,
                                                        User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
         try {
-            return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, -1, -1, null);
+            return getRelatedContent(contentlet, rel, gettingParents, user, respectFrontendRoles, -1, -1, null);
         } catch (Exception e){
             final String errorMessage = "Unable to look up related content for contentlet with identifier "
                     + contentlet.getIdentifier() + ". Relationship Name: " + rel.getRelationTypeValue();
@@ -2886,20 +2889,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public List<Contentlet> getRelatedContent(final Contentlet contentlet, final String variableName,
             final User user,
-            final boolean respectFrontendRoles, Boolean pullByParents, final int limit,
+            final boolean respectFrontendRoles, Boolean gettingParents, final int limit,
             final int offset, final String sortBy){
         return getRelatedContent(contentlet, variableName, user, respectFrontendRoles,
-                pullByParents, limit, offset, sortBy, -1, null);
+                        gettingParents, limit, offset, sortBy, -1, null);
     }
 
 
 
     
-    private List<String> loadRelatedContent(Contentlet contentlet, String variableName, final Boolean pullByParents) throws DotDataException{
+    private List<String> loadRelatedContent(Contentlet contentlet, String variableName, final Boolean gettingParents) throws DotDataException{
         if (contentlet==null || UtilMethods.isEmpty(contentlet.getIdentifier()) || UtilMethods.isEmpty(variableName)) {
             return null;
         }
-        final String key = variableName + (pullByParents!=null ? pullByParents : "" );
+        final String key = variableName + (gettingParents!=null ? gettingParents : "" );
         List<String> cachedValues = CacheLocator.getRelationshipCache().getRelatedContent(contentlet, key);
         
         
@@ -2918,14 +2921,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     
                     for(Map<String,Object> m : db.loadObjectResults()) {
                         Object val = null;
-                        if(pullByParents==null) {
+                        if(gettingParents==null) {
                             val = m.get("child").equals(contentlet.getIdentifier()) ? m.get("parent") : m.get("child");
                         }
-                        else if(pullByParents) {
-                            val =  m.get("child");
+                        else if(gettingParents) {
+                            val =  m.get("parent");
                         }
                         else {
-                            val =  m.get("parent");
+                            val =  m.get("child");
                         }
                         if(val!=null && !val.equals(contentlet.getIdentifier())) {
                             cachedValues.add((String) val);
@@ -2950,10 +2953,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public List<Contentlet> getRelatedContent(final Contentlet contentlet,
             final String variableName,
             final User user,
-            final boolean respectFrontendRoles, Boolean pullByParents, final int limit,
+            final boolean respectFrontendRoles, Boolean gettingParents, final int limit,
             final int offset, final String sortBy, final long language, final Boolean live) {
 
-        if (variableName == null){
+        if (variableName == null || contentlet==null){
             return Collections.EMPTY_LIST;
         }
 
@@ -2968,7 +2971,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             
             
             List<Contentlet> relatedContentlet=new ArrayList<>();
-            List<String> relatedIds=loadRelatedContent(contentlet, variableName, pullByParents);
+            List<String> relatedIds=loadRelatedContent(contentlet, variableName, gettingParents);
             int start = (offset<0) ? 0:offset;
             int end= limit < 0 ? relatedIds.size() : Math.min(limit,relatedIds.size());
             for(int i=start;i<end;i++ ) {
@@ -2997,7 +3000,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentlet
      * @param relatedIds
      * @param variableName
-     * @param pullByParent
+     * @param gettingParents
      * @param limit
      * @param offset
      * @param sortBy
@@ -3007,7 +3010,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     @Nullable
     private List<Contentlet> getNonCachedRelatedContentlets(final Contentlet contentlet, final String variableName,
-            final Boolean pullByParent, final int limit, final int offset,
+            final Boolean gettingParents, final int limit, final int offset,
             final String sortBy)
             throws DotDataException, DotSecurityException {
 
@@ -3033,7 +3036,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotStateException("No relationship found");
         }
         relatedList = filterRelatedContent(contentlet, relationship, systemUser, false,
-                pullByParent, limit, offset, sortBy);
+                gettingParents, limit, offset, sortBy);
 
 
         //Cache related content only if it is a relationship field
@@ -5739,7 +5742,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     for (final Contentlet contentInRelationship : contentsInRelationship) {
                         try {
                             // In order to get the related content we should use method getRelatedContent
-                            // that has -boolean pullByParent- as parameter so we can pass -false-
+                            // that has -boolean gettingParents- as parameter so we can pass -false-
                             // to get related content where we are parents.
                             final List<Contentlet> relatedContents = getRelatedContentFromIndex(
                                     contentInRelationship, relationship, false, APILocator.getUserAPI()

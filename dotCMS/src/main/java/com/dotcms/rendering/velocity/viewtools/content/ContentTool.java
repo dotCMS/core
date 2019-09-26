@@ -322,14 +322,14 @@ public class ContentTool implements ViewTool {
 	 * Returns empty List if no results are found
 	 * @param relationshipName - Name of the relationship as defined in the structure.
 	 * @param contentletIdentifier - Identifier of the contentlet
-	 * @param pullParents Should the related pull be based on Parents or Children
+	 * @param gettingParents Should the related pull be based on Parents or Children
 	 * @param limit 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
 	 * @return Returns empty List if no results are found
 	 * @throws DotSecurityException 
 	 * @throws DotDataException 
 	 */
-	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, boolean pullParents, int limit) {
-		return pullRelated(relationshipName, contentletIdentifier, null, pullParents, limit, null);
+	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, boolean gettingParents, int limit) {
+		return pullRelated(relationshipName, contentletIdentifier, null, gettingParents, limit, null);
 	}
 	
 	/**
@@ -346,15 +346,15 @@ public class ContentTool implements ViewTool {
 	 * Returns empty List if no results are found
 	 * @param relationshipName - Name of the relationship as defined in the structure.
 	 * @param contentletIdentifier - Identifier of the contentlet
-	 * @param pullParents Should the related pull be based on Parents or Children
+	 * @param gettingParents Should the related pull be based on Parents or Children
 	 * @param limit 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
 	 * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
 	 * @return Returns empty List if no results are found
 	 * @throws DotSecurityException 
 	 * @throws DotDataException 
 	 */
-	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, boolean pullParents, int limit, String sort) {
-		return pullRelated(relationshipName, contentletIdentifier, null, pullParents, limit, sort);
+	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, boolean gettingParents, int limit, String sort) {
+		return pullRelated(relationshipName, contentletIdentifier, null, gettingParents, limit, sort);
 	}
 	
 	/**
@@ -372,7 +372,7 @@ public class ContentTool implements ViewTool {
 	 * @param relationshipName - Name of the relationship as defined in the structure.
 	 * @param contentletIdentifier - Identifier of the contentlet
 	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
-	 * @param pullParents Should the related pull be based on Parents or Children
+	 * @param gettingParents Should the related pull be based on Parents or Children
 	 * @param limit 0 is the dotCMS max limit which is 10000. Be careful when searching for unlimited amount as all content will load into memory
 	 * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
 	 * @return Returns empty List if no results are found
@@ -380,12 +380,12 @@ public class ContentTool implements ViewTool {
 	 * @throws DotDataException 
 	 * @return Returns empty List if no results are found
 	 */
-	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort) {	
+	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean gettingParents, int limit, String sort) {	
 		try {
     		PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
     		
     		condition=condition==null ? null : addDefaultsToQuery(condition);
-    		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, condition, pullParents, limit, sort, user, tmDate);
+    		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, condition, gettingParents, limit, sort, user, tmDate);
     
     		for(Contentlet cc : cons) {
     			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
