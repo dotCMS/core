@@ -153,16 +153,21 @@ public class MenuLinkAPITest extends IntegrationTestBase {
     public void testFind_InodeNotExists_ReturnNotFoundInDBException()
             throws DotSecurityException, DotDataException {
 
-        final Link menuLink = new LinkDataGen(fAPI.findSystemFolder()).hostId(host.getIdentifier()).showOnMenu(true).nextPersisted();
+        final Link link = mAPI.find("inodeNotExists",user,false);
+    }
+
+    @Test
+    public void testFind_returnLink()
+            throws DotSecurityException, DotDataException {
+        final Link menuLink = new LinkDataGen(fAPI.findSystemFolder()).hostId(host.getIdentifier())
+                .showOnMenu(true).nextPersisted();
         APILocator.getVersionableAPI().setLive(menuLink);
 
-        Link link = mAPI.find(menuLink.getInode(),user,false);
+        final Link link = mAPI.find(menuLink.getInode(), user, false);
 
-        assertEquals(menuLink.getInode(),link.getInode());
-        assertEquals(menuLink.getLinkType(),link.getLinkType());
-        assertEquals(menuLink.getUrl(),link.getUrl());
-
-        link = mAPI.find("inodeNotExists",user,false);
+        assertEquals(menuLink.getInode(), link.getInode());
+        assertEquals(menuLink.getLinkType(), link.getLinkType());
+        assertEquals(menuLink.getUrl(), link.getUrl());
     }
 
 }
