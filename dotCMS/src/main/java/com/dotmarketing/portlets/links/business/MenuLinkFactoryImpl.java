@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.links.business;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -31,12 +32,15 @@ public class MenuLinkFactoryImpl implements MenuLinkFactory {
 
 	
 	@Override
-	public Link load(String inode) throws DotDataException {
+	public Link load(final String inode) throws DotDataException {
 		
 		final DotConnect dc = new DotConnect();
 		dc.setSQL("select * from links join inode on links.inode = inode.inode where links.inode = ?");
 		dc.addParam(inode);
 		final List<Map<String, Object>> results = dc.loadObjectResults();
+		if(results.isEmpty()){
+			throw new NotFoundInDbException("Menu Link with inode: " + inode + " not found");
+		}
 		return TransformerLocator.createLinkTransformer(results).asList().get(0);
 	}
 	
