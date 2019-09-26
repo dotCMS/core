@@ -154,7 +154,6 @@ import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
-import io.vavr.control.Try;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -2893,11 +2892,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     
     
-    private List<String> loadRelatedContent(Contentlet contentlet, String variableName){
+    private List<String> loadRelatedContent(Contentlet contentlet, String variableName, Boolean pullByParents){
         if (contentlet==null || UtilMethods.isEmpty(contentlet.getIdentifier()) || UtilMethods.isEmpty(variableName)) {
             return null;
         }
-        List<String> cachedValues = CacheLocator.getRelationshipCache().getRelatedContent(contentlet, variableName);
+        final String key = variableName + String.valueOf(pullByParents);
+        List<String> cachedValues = CacheLocator.getRelationshipCache().getRelatedContent(contentlet, key);
         if(cachedValues==null) {
             synchronized (contentlet) {
                 cachedValues = CacheLocator.getRelationshipCache().getRelatedContent(contentlet, variableName);
@@ -2913,7 +2913,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .stream()
                     .map(m-> (String) (m.get("child").equals(contentlet.getIdentifier()) ? m.get("parent") : m.get("child")))
                     .collect(Collectors.toList()));
-                    CacheLocator.getRelationshipCache().putRelatedContent(contentlet, variableName, cachedValues);
+                    CacheLocator.getRelationshipCache().putRelatedContent(contentlet, key, cachedValues);
                 }
             }
         }
@@ -2942,24 +2942,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         try {
-            User currentUser;
 
-            if (user != null){
-                currentUser = user;
-            } else{
-                currentUser = APILocator.getUserAPI().getAnonymousUser();
-            }
+            final User currentUser =  (user != null) ? user :  APILocator.getUserAPI().getAnonymousUser();
             
-            List<Contentlet> relatedContentlet = new ArrayList<>();
-            List<String> ids = loadRelatedContent(contentlet, variableName);
-            for(String id : ids) {
-                Contentlet c =  Try.of(()-> findContentletByIdentifier( id, live, language,  user, respectFrontendRoles)).getOrNull();
-                if(c!=null)
-                    relatedContentlet.add(c);
-                
-            }
+            final boolean realLive=(live==null) ? !currentUser.isBackendUser() : live;
             
 
+            
+            
+            
+            List<Contentlet> relatedContentlet=loadRelatedContent(contentlet, variableName, pullByParents)
+                            .stream()
+                            .map(id-> Sneaky.sneak(()-> findContentletByIdentifier( id, realLive, language,  currentUser, respectFrontendRoles)))
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
                        
 
 
