@@ -519,7 +519,7 @@ public class ContentUtils {
      */
     private static List<Contentlet> getPullResults(final Relationship relationship,
             String contentletIdentifier, final String condition, final int limit, final int offset,
-            String sort, final User user, final String tmDate, final boolean gettingParents,
+            String sort, final User user, final String tmDate, final boolean pullByParent,
             final long language, final Boolean live) {
 
 
@@ -535,11 +535,11 @@ public class ContentUtils {
 
             if (UtilMethods.isSet(condition)){
 
-                if ((selfRelated && gettingParents) || (!selfRelated && relationship
+                if ((selfRelated && pullByParent) || (!selfRelated && relationship
                         .getParentStructureInode().equals(contentlet.getContentTypeId()))) {
                     //pulling children
                     final List<Contentlet> relatedContent = conAPI
-                            .getRelatedContent(contentlet, relationship, gettingParents, user,
+                            .getRelatedContent(contentlet, relationship, pullByParent, user,
                                     false, language, live);
 
                     if (relatedContent.isEmpty()) {
@@ -574,7 +574,7 @@ public class ContentUtils {
                 return pull(pullQuery.toString(), offset, limit, sort, user, tmDate);
             } else {
                 return conAPI
-                        .getRelatedContent(contentlet, relationship, gettingParents, user, false, limit, offset, sort, language, live);
+                        .getRelatedContent(contentlet, relationship, pullByParent, user, true, limit, offset, sort, language, live);
             }
 
         } catch (Exception e) {
@@ -607,9 +607,9 @@ public class ContentUtils {
 
     public static List<Contentlet> pullRelatedField(final Relationship relationship,
             final String contentletIdentifier, final String condition, final int limit,
-            final int offset, final String sort, final User user, final String tmDate, final boolean gettingParents) {
+            final int offset, final String sort, final User user, final String tmDate, final boolean pullByParent) {
         return getPullResults(relationship, contentletIdentifier, condition, limit, offset, sort,
-                user, tmDate, gettingParents, -1, null);
+                user, tmDate, pullByParent, -1, null);
     }
 		
 }

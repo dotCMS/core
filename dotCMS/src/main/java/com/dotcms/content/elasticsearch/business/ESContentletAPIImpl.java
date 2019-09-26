@@ -2925,10 +2925,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             val = m.get("child").equals(contentlet.getIdentifier()) ? m.get("parent") : m.get("child");
                         }
                         else if(gettingParents) {
-                            val =  m.get("parent");
+                            val =  m.get("child");
                         }
                         else {
-                            val =  m.get("child");
+                            val =  m.get("parent");
                         }
                         if(val!=null && !val.equals(contentlet.getIdentifier())) {
                             cachedValues.add((String) val);

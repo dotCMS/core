@@ -27,6 +27,7 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Config;
@@ -383,9 +384,10 @@ public class ContentTool implements ViewTool {
 	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean gettingParents, int limit, String sort) {	
 		try {
     		PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
-    		
+    		PageMode mode = PageMode.get(req);
+    		Language lang = WebAPILocator.getLanguageWebAPI().getLanguage(req);
     		condition=condition==null ? null : addDefaultsToQuery(condition);
-    		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, condition, gettingParents, limit, sort, user, tmDate);
+    		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, condition, gettingParents, limit, sort, user, tmDate,lang.getId(), mode.respectAnonPerms);
     
     		for(Contentlet cc : cons) {
     			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
