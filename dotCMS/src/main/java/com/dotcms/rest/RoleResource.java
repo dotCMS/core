@@ -66,8 +66,6 @@ public class RoleResource {
 	public Response loadChildren(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params)
 			throws DotDataException, JSONException {
 
-        //InitDataObject initData = webResource.init(params, request, response, true, null);
-
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requiredFrontendUser(false)
@@ -178,8 +176,6 @@ public class RoleResource {
 	@Produces("application/json")
 	public Response loadById(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws DotDataException, JSONException {
 
-        //InitDataObject initData = webResource.init(params, request, response, true, null);
-
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requiredFrontendUser(false)
@@ -250,8 +246,6 @@ public class RoleResource {
 	@Produces("application/json")
 	@SuppressWarnings("unchecked")
 	public Response loadByName(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws DotDataException, JSONException {
-
-        //InitDataObject initData = webResource.init(params, request, response, true, null);
 
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
