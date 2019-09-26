@@ -143,6 +143,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
@@ -154,6 +155,7 @@ import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.vavr.control.Try;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -2890,30 +2892,47 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 pullByParents, limit, offset, sortBy, -1, null);
     }
 
+
+
     
-    
-    private List<String> loadRelatedContent(Contentlet contentlet, String variableName, Boolean pullByParents){
+    private List<String> loadRelatedContent(Contentlet contentlet, String variableName, final Boolean pullByParents) throws DotDataException{
         if (contentlet==null || UtilMethods.isEmpty(contentlet.getIdentifier()) || UtilMethods.isEmpty(variableName)) {
             return null;
         }
-        final String key = variableName + String.valueOf(pullByParents);
+        final String key = variableName + (pullByParents!=null ? pullByParents : "" );
         List<String> cachedValues = CacheLocator.getRelationshipCache().getRelatedContent(contentlet, key);
+        
+        
         if(cachedValues==null) {
             synchronized (contentlet) {
-                cachedValues = CacheLocator.getRelationshipCache().getRelatedContent(contentlet, variableName);
+                cachedValues = CacheLocator.getRelationshipCache().getRelatedContent(contentlet, key);
                 if(cachedValues==null) {
                     final DotConnect db = new DotConnect();
                     db.setSQL(
-                            "select child,parent, relation_type from tree where (parent = ? or child =?) and relation_type =? order by tree_order asc");
+                            "select child,parent,relation_type from tree where (parent = ? or child =?) and relation_type =? order by tree_order asc");
                     db.addParam(contentlet.getIdentifier());
                     db.addParam(contentlet.getIdentifier());
                     db.addParam(variableName);
 
-                    cachedValues = Sneaky.sneak( () -> db.loadObjectResults()
-                    .stream()
-                    .map(m-> (String) (m.get("child").equals(contentlet.getIdentifier()) ? m.get("parent") : m.get("child")))
-                    .collect(Collectors.toList()));
-                    CacheLocator.getRelationshipCache().putRelatedContent(contentlet, key, cachedValues);
+                    cachedValues = new ArrayList<>();
+                    
+                    for(Map<String,Object> m : db.loadObjectResults()) {
+                        Object val = null;
+                        if(pullByParents==null) {
+                            val = m.get("child").equals(contentlet.getIdentifier()) ? m.get("parent") : m.get("child");
+                        }
+                        else if(pullByParents) {
+                            val =  m.get("child");
+                        }
+                        else {
+                            val =  m.get("parent");
+                        }
+                        if(val!=null && !val.equals(contentlet.getIdentifier())) {
+                            cachedValues.add((String) val);
+                        }
+                    }
+
+                    CacheLocator.getRelationshipCache().putRelatedContent(contentlet, key, ImmutableList.copyOf( cachedValues));
                 }
             }
         }
@@ -2947,15 +2966,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
             
             final boolean realLive=(live==null) ? !currentUser.isBackendUser() : live;
             
-
             
-            
-            
-            List<Contentlet> relatedContentlet=loadRelatedContent(contentlet, variableName, pullByParents)
-                            .stream()
-                            .map(id-> Sneaky.sneak(()-> findContentletByIdentifier( id, realLive, language,  currentUser, respectFrontendRoles)))
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList());
+            List<Contentlet> relatedContentlet=new ArrayList<>();
+            List<String> relatedIds=loadRelatedContent(contentlet, variableName, pullByParents);
+            int start = (offset<0) ? 0:offset;
+            int end= limit < 0 ? relatedIds.size() : Math.min(limit,relatedIds.size());
+            for(int i=start;i<end;i++ ) {
+                final String id=relatedIds.get(i);
+                Contentlet con = Try.of(()-> findContentletByIdentifier( id, realLive, language,  currentUser, respectFrontendRoles)).getOrNull();
+                if(con!=null) {
+                    relatedContentlet.add(con);
+                }
+            }
+                            
                        
 
 

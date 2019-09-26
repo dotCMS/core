@@ -384,8 +384,8 @@ public class ContentTool implements ViewTool {
 		try {
     		PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
     		
-    		
-    		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, addDefaultsToQuery(condition), pullParents, limit, sort, user, tmDate);
+    		condition=condition==null ? null : addDefaultsToQuery(condition);
+    		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, condition, pullParents, limit, sort, user, tmDate);
     
     		for(Contentlet cc : cons) {
     			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
