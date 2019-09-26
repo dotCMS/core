@@ -145,7 +145,7 @@ public class ContentletCacheImpl extends ContentletCache {
         }
 
         //Invalidating relationship cache
-        CacheLocator.getRelationshipCache().removeRelatedContentMap(contentlet.getIdentifier());
+        CacheLocator.getRelationshipCache().removeRelatedContentMap(contentlet);
     }
 	/* (non-Javadoc)
      * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)

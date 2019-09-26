@@ -1,18 +1,19 @@
 package com.dotmarketing.portlets.structure.factories;
 
-import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
-import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 
 
 public class RelationshipCacheImpl extends RelationshipCache {
@@ -93,39 +94,40 @@ public class RelationshipCacheImpl extends RelationshipCache {
 	}
 
     @Override
-    public Map<String, List<String>> getRelatedContentMap(final String contentletIdentifier)
-            throws DotCacheException {
-        return UtilMethods.isSet(contentletIdentifier) ? (Map<String, List<String>>) cache
-                .get(contentletIdentifier, tertiaryGroup) : Collections.emptyMap();
+    public List<String> getRelatedContent(final Contentlet contentlet, final String fieldOrType) {
+        if (contentlet==null || UtilMethods.isEmpty(contentlet.getIdentifier()) || UtilMethods.isEmpty(fieldOrType)) {
+            return null;
+        }
+        Map<String, List<String>> map = (Map<String, List<String>>) cache.getNoThrow(contentlet.getIdentifier(), tertiaryGroup);
+        if (map == null) {
+            return null;
+        }
+        return map.get(fieldOrType);
     }
+    
+
 
     @Override
-    public void putRelatedContentMap(final String contentletIdentifier, final Map<String, List<String>> relatedContent){
-	    if(UtilMethods.isSet(contentletIdentifier)) {
-            cache.put(contentletIdentifier, ImmutableMap.copyOf(relatedContent), tertiaryGroup);
+    public void removeRelatedContentMap(final Contentlet contentlet)  {
+        if (contentlet!=null && UtilMethods.isSet(contentlet.getIdentifier())) {
+            cache.remove(contentlet.getIdentifier(), tertiaryGroup);
         }
     }
 
     @Override
-    public void removeRelatedContentMap(final String contentletIdentifier)  {
-        if (UtilMethods.isSet(contentletIdentifier)) {
-            cache.remove(contentletIdentifier, tertiaryGroup);
+    public void putRelatedContent(final Contentlet contentlet, final String relationshipFieldVar, List<String> values) {
+        if (contentlet==null && UtilMethods.isEmpty(contentlet.getIdentifier())) {
+            return;
         }
-    }
+        Map<String,List<String>> map = (Map<String, List<String>>) cache
+                        .getNoThrow(contentlet.getIdentifier(), tertiaryGroup);
+        map = (map==null) ? new ConcurrentHashMap<>() : map;
 
-    @Override
-    public void removeRelatedContentFromMap(final String contentletIdentifier, final String relationshipFieldVar)
-            throws DotCacheException {
-        if (UtilMethods.isSet(contentletIdentifier) && UtilMethods.isSet(relationshipFieldVar)
-                && UtilMethods.isSet(getRelatedContentMap(contentletIdentifier))) {
-            final Map<String, List<String>> relatedContent = new ConcurrentHashMap(
-                    getRelatedContentMap(contentletIdentifier));
-            if (UtilMethods.isSet(relatedContent) && relatedContent
-                    .containsKey(relationshipFieldVar)) {
-                relatedContent.remove(relationshipFieldVar);
-                putRelatedContentMap(contentletIdentifier, relatedContent);
-            }
+        if(map.containsKey(relationshipFieldVar)) {
+            throw new DotStateException("Content Relationship Map " + contentlet.getIdentifier() + "  already has values for:" + relationshipFieldVar + " and should be invalidated before adding");
         }
+        map.put(relationshipFieldVar, values);
+        cache.put(contentlet.getIdentifier(), map, tertiaryGroup);
     }
 
 	public String[] getGroups() {
@@ -135,5 +137,13 @@ public class RelationshipCacheImpl extends RelationshipCache {
 	public String getPrimaryGroup() {
 		return primaryGroup;
 	}
+
+
+	
+
+	
+	
+	
+	
 
 }
