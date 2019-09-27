@@ -388,7 +388,7 @@ public class ContentTool implements ViewTool {
 
             List<Contentlet> cons = ContentUtils
                     .pullRelated(relationshipName, contentletIdentifier, condition, pullParents,
-                            limit, sort, user, tmDate, language.getId(), mode.respectAnonPerms);
+                            limit, sort, user, tmDate, language.getId(), true);
 
             for (Contentlet cc : cons) {
                 ret.add(new ContentMap(cc, user, EDIT_OR_PREVIEW_MODE, currentHost, context));
