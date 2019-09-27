@@ -86,6 +86,10 @@ public class URLMapAPIImpl implements URLMapAPI {
     private Contentlet getContentlet(final UrlMapContext urlMapContext){
         final Matches matches = this.findPatternChange(urlMapContext.getUri());
 
+        if (matches == null) {
+            return null;
+        }
+
         final Structure structure = CacheLocator.getContentTypeCache()
                 .getStructureByInode(matches.getPatternChange().getStructureInode());
 
