@@ -186,6 +186,12 @@ describe('SearchableDropdownComponent', () => {
         expect(pdataview.style).toEqual({ width: '650px' });
     }));
 
+    it('should reset Panel Min Height', (() => {
+        comp.overlayPanelMinHeight = '456';
+        comp.resetPanelMinHeight();
+        expect(comp.overlayPanelMinHeight).toBe('');
+    }));
+
     it('should display Action button', () => {
         hostFixture.componentInstance.action = () => {};
 

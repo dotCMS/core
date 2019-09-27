@@ -205,12 +205,14 @@ describe('DotPersonaSelectorComponent', () => {
         it('should emit persona and refresh the list on Add new persona', () => {
             spyOn(component.selected, 'emit');
             spyOn(paginatorService, 'getWithOffset');
+            spyOn(dropdown.componentInstance, 'resetPanelMinHeight');
 
             personaDialog.createdPersona.emit(defaultPersona);
 
             expect(component.selected.emit).toHaveBeenCalledWith(defaultPersona);
             expect(paginatorService.filter).toEqual('');
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
+            expect(dropdown.componentInstance.resetPanelMinHeight).toHaveBeenCalled();
         });
     });
 

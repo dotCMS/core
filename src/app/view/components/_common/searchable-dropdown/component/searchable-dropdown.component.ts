@@ -82,7 +82,7 @@ export class SearchableDropdownComponent
 
     @Input()
     disabled = false;
-    
+
     @Output()
     change: EventEmitter<any> = new EventEmitter();
 
@@ -130,9 +130,9 @@ export class SearchableDropdownComponent
     }
 
     ngOnInit(): void {
-        this.searchPlaceholder$ = this.dotMessageService.getMessages(['search']).pipe(
-            map((messages) => messages['search'])
-        );
+        this.searchPlaceholder$ = this.dotMessageService
+            .getMessages(['search'])
+            .pipe(map((messages) => messages['search']));
         fromEvent(this.searchInput.nativeElement, 'keyup')
             .pipe(debounceTime(500))
             .subscribe((keyboardEvent: Event) => {
@@ -170,7 +170,10 @@ export class SearchableDropdownComponent
      * @memberof SearchableDropdownComponent
      */
     showOverlayHandler(): void {
-        this.cssClass += this.totalRecords > this.rows ? ' searchable-dropdown paginator' : ' searchable-dropdown';
+        this.cssClass +=
+            this.totalRecords > this.rows
+                ? ' searchable-dropdown paginator'
+                : ' searchable-dropdown';
         setTimeout(() => {
             if (!this.overlayPanelMinHeight) {
                 this.overlayPanelMinHeight = this.searchPanelRef.container
@@ -281,6 +284,15 @@ export class SearchableDropdownComponent
      */
     setDisabledState(isDisabled: boolean): void {
         this.disabled = isDisabled;
+    }
+
+    /**
+     * Resets height value from Overlay Panel
+     *
+     * @memberof SearchableDropdownComponent
+     */
+    resetPanelMinHeight(): void {
+        this.overlayPanelMinHeight = '';
     }
 
     private setLabel(): void {
