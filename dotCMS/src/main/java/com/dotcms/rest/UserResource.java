@@ -49,7 +49,12 @@ public class UserResource {
 	public Response getLoggedInUser(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws DotDataException,
 			DotRuntimeException, PortalException, SystemException, JSONException {
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.params(params)
+				.requestAndResponse(request, response)
+				.rejectWhenNoUser(true).init();
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
