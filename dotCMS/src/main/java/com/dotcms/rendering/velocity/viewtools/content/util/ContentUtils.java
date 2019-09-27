@@ -581,9 +581,9 @@ public class ContentUtils {
             }
 
         } catch (Exception e) {
-            Logger.error(ContentUtils.class,
-                    "Error pulling related content with identifier " + contentletIdentifier
-                            + ". Relationship Name: " + relationshipName, e);
+            Logger.warnAndDebug(ContentUtils.class,
+                    "Error pullRelated identifier " + contentletIdentifier
+                            + ". Relationship: " + relationshipName + " : " + e.getMessage(), e);
         }
 
         return Collections.emptyList();
