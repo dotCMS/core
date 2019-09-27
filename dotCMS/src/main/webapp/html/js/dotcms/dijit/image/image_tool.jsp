@@ -86,6 +86,12 @@
 		dojo.require("dijit.form.ComboBox");
 		dojo.require("dijit.form.Select");
 		dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
+		dojo.extend(dijit.form.Button, {
+			scrollOnFocus:false
+		});
+		dojo.extend(dijit.form.Select, {
+			scrollOnFocus:false
+		});
 
 		var imageEditor = window.top._dotImageEditor;
 		
@@ -215,7 +221,8 @@
                     maximum="100" minimum="1" 
                     discreteValues="100" 
                     showButtons="true" 
-                    intermediateChanges="true">
+                    intermediateChanges="true"
+					scrollOnFocus=false>
 
                   <div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height: 5px;"></div>
                   <ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height: 1em; font-size: 75%; color: gray;">
@@ -302,8 +309,9 @@
                         maximum="200" 
                         minimum="1" 
                         showButtons="true"
-                        intermediateChanges="true"> 
-                            
+                        intermediateChanges="true"
+						scrollOnFocus=false>
+
                     <div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height:5px;"></div>
                     <ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height:1em;font-size:75%;color:gray;">
                         <li>0</li>
@@ -329,7 +337,7 @@
             <td class="leftCol"><%=LanguageUtil.get(pageContext, "Rotate")%> :</td>
             <td class="rightCol"><input id="rotate" class="textInputClass" type="text" dojoType="dijit.form.NumberTextBox" name="rotate"
                value="0" constraints="{min:-360,max:360,places:0}" required="false" maxlength="3" onchange="imageEditor.doRotate()"
-               invalidMessage="Angle is between -360 and 360" style="width: 55px;"></td>
+               invalidMessage="Angle is between -360 and 360" style="width: 55px;" scrollOnFocus="false"></td>
          </tr>
 
          <tr>
@@ -409,6 +417,7 @@
 						onchange="imageEditor.changeHSB()"
 						intermediateChanges="true"
 						class="colorSlider"
+	s					scrollOnFocus=false
 							id="brightSlider"> 
 						<div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=5 style="height:5px;"></div>
 						<ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height:1em;font-size:75%;color:gray;">
@@ -441,6 +450,7 @@
 						value="0"
 						onchange="imageEditor.changeHSB()"
 						intermediateChanges="true"
+						scrollOnFocus=false
 						class="colorSlider"
 						id="hueSlider"> 
 					<div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=5 style="height:5px;"></div>
@@ -474,6 +484,7 @@
 						value="0"
 						onchange="imageEditor.changeHSB()"
 						intermediateChanges="true"
+						scrollOnFocus=false
 						class="colorSlider"
 							id="satSlider"> 
 						<div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=5 style="height:5px;"></div>
