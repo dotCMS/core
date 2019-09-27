@@ -229,13 +229,13 @@ public class RoleFactoryImpl extends RoleFactory {
 
 	@Override
 	protected void addRoleToUser(Role role, User user) throws DotDataException {
-	  if(!doesUserHaveRole(user,role)) {
+
   		UsersRoles ur = new UsersRoles();
   		ur.setRoleId(role.getId());
   		ur.setUserId(user.getUserId());
   		HibernateUtil.save(ur);
   		rc.remove(user.getUserId());
-	  }
+
 	}
 
 	@Override
