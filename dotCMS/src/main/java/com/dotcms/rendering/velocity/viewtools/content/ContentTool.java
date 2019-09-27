@@ -89,11 +89,11 @@ public class ContentTool implements ViewTool {
 	 * try to retrieve the live content unless in EDIT_MODE in the backend of dotCMS when passing in an
 	 * identifier.  If it is an inode this is ignored.
 	 * Will return NULL if not found
-	 * @param inodeOrIdentifier Can be either an Inode or Indentifier of content.
+	 * @param inodeOrIdentifier Can be either an Inode or Identifier of content.
 	 * @return NULL if not found
 	 */
 	public ContentMap find(String inodeOrIdentifier) {
-		long sessionLang=WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
+		final long sessionLang = language.getId();
 		
 	    try {
     		Contentlet c = ContentUtils.find(inodeOrIdentifier, user, EDIT_OR_PREVIEW_MODE, sessionLang);
@@ -154,7 +154,7 @@ public class ContentTool implements ViewTool {
 	public PaginatedArrayList<ContentMap> pull(String query, int offset,int limit, String sort){
 	    try {
     	    PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
-    	    
+
     	    PaginatedArrayList<Contentlet> cons = ContentUtils.pull(addDefaultsToQuery(query), offset, limit, sort, user, tmDate);
     	    for(Contentlet cc : cons) {
     	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
@@ -384,7 +384,7 @@ public class ContentTool implements ViewTool {
                     .pullRelated(relationshipName, contentletIdentifier,
                             condition == null ? condition : addDefaultsToQuery(condition),
                             pullParents,
-                            limit, sort, user, tmDate, language.getId(), mode.respectAnonPerms);
+                            limit, sort, user, tmDate, language.getId(), true);
 
             for (Contentlet cc : cons) {
                 ret.add(new ContentMap(cc, user, EDIT_OR_PREVIEW_MODE, currentHost, context));
@@ -530,32 +530,32 @@ public class ContentTool implements ViewTool {
 	
 	private String addDefaultsToQuery(String query){
 		String q = "";
-		
+
 		if(query != null)
 			q = query;
 		else
 			query = q;
-		
+
 		if(!query.contains("languageId")){
 			q += " +languageId:" + WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 		}
-	  
-	  	if(!(query.contains("live:") || query.contains("working:") )){      
+
+	  	if(!(query.contains("live:") || query.contains("working:") )){
 			if(EDIT_OR_PREVIEW_MODE){
 				q +=" +working:true ";
 			}else{
 				q +=" +live:true ";
 			}
-				
+
 	  	}
-		
-		  
-	  	if(!UtilMethods.contains(query,"deleted:")){      
+
+
+	  	if(!UtilMethods.contains(query,"deleted:")){
 			q+=" +deleted:false ";
 		}
 	  	return q;
 	}
-	
+
     private String addPersonalizationToQuery(String query) {
         Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(this.req);
         if (!opt.isPresent() || query == null) {

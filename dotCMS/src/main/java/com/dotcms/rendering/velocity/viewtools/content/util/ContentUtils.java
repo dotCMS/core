@@ -533,19 +533,19 @@ public class ContentUtils {
             final Contentlet contentlet = conAPI
                 .findContentletByIdentifierAnyLanguage(contentletIdentifier);
 
-            final StringBuilder pullQuery = new StringBuilder();
-
-            if (language != -1){
-                pullQuery.append(" ").append(" +languageId:").append(language);
-            }
-            if (!user.isBackendUser() || live ==null){
-                pullQuery.append(" ").append(" +live:true ");
-            } else {
-                pullQuery.append(" ").append(" +live:").append(live);
-            }
-
             if (UtilMethods.isSet(condition)){
- 
+
+                final StringBuilder pullQuery = new StringBuilder();
+
+                if (language != -1){
+                    pullQuery.append(" ").append(" +languageId:").append(language);
+                }
+                if (!user.isBackendUser() || live ==null){
+                    pullQuery.append(" ").append(" +live:true ");
+                } else {
+                    pullQuery.append(" ").append(" +live:").append(live);
+                }
+
                 pullQuery.append(" AND ").append(condition);
 
                 if ((selfRelated && !pullParents) || (!selfRelated && relationship
