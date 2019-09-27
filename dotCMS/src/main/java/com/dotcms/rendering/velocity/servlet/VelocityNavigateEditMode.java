@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import com.dotmarketing.beans.MultiTree;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotmarketing.beans.Host;
@@ -24,10 +25,6 @@ import java.io.OutputStream;
  */
 public class VelocityNavigateEditMode  extends VelocityModeHandler {
 
-    protected final HttpServletRequest request;
-    protected final HttpServletResponse response;
-    protected final String uri;
-    private final Host host;
     private final User user;
 
     private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI = APILocator.getHTMLPageAssetRenderedAPI();
@@ -45,17 +42,14 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
     public VelocityNavigateEditMode(final HttpServletRequest request,
                                     final HttpServletResponse response,
                                     final String uri,
-                                    final Host host) {
-        super();
-        this.request = request;
-        this.response = response;
-        this.uri = uri;
-        this.host = host;
+                                    final Host host,
+                                    final String personaTagToIncludeContent) {
+        super(request, response, uri, host, personaTagToIncludeContent);
         this.user = WebAPILocator.getUserWebAPI().getUser(request);
     }
 
     public VelocityNavigateEditMode(HttpServletRequest request, HttpServletResponse response) {
-        this(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request));
+        this(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request), MultiTree.DOT_PERSONALIZATION_DEFAULT);
     }
 
     @Override

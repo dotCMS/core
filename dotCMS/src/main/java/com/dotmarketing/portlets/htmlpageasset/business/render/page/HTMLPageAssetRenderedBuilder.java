@@ -157,7 +157,8 @@ public class HTMLPageAssetRenderedBuilder {
             APILocator.getPermissionAPI().checkPermission(htmlPageAsset, PermissionLevel.READ, user);
         }
 
-        return VelocityModeHandler.modeHandler(mode, request, response, htmlPageAsset.getURI(), site).eval();
+        final String personaTagToIncludeContent = PageRenderUtil.getPersonaTagToIncludeContent(htmlPageAsset);
+        return VelocityModeHandler.modeHandler(mode, request, response, htmlPageAsset.getURI(), site, personaTagToIncludeContent).eval();
     }
 
     private Template getTemplate(final PageMode mode) throws DotDataException {

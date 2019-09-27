@@ -6,6 +6,7 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -23,26 +24,24 @@ import java.io.*;
 
 public class VelocityEditMode extends VelocityModeHandler {
 
-    protected final HttpServletRequest request;
-    protected final HttpServletResponse response;
     private static final PageMode mode = PageMode.EDIT_MODE;
-    protected final String uri;
-    private final Host host;
+
     private final User user;
     private final static String REORDER_MENU_URL="/c/portal/layout?p_l_id={0}&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu";
     
-    public VelocityEditMode(HttpServletRequest request, HttpServletResponse response, String uri, Host host) {
-        this.request = request;
-        this.response = response;
-        this.uri = uri;
-        this.host = host;
+    public VelocityEditMode(
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final String uri,
+            final Host host,
+            final String personaTagToIncludeContent) {
+        super(request, response, uri, host, personaTagToIncludeContent);
         this.user = WebAPILocator.getUserWebAPI().getUser(request);
     }
 
     public VelocityEditMode(HttpServletRequest request, HttpServletResponse response) {
-        this(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request));
+        this(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request), MultiTree.DOT_PERSONALIZATION_DEFAULT);
     }
-
 
     public void serve(final OutputStream out) throws DotDataException, IOException, DotSecurityException {
 
@@ -69,7 +68,7 @@ public class VelocityEditMode extends VelocityModeHandler {
 
 
         try(final Writer outStr = new BufferedWriter(new OutputStreamWriter(out))){
-            this.getTemplate(htmlPage, mode).merge(context, outStr);
+            this.getTemplate(htmlPage, mode, personaTagToIncludeContent).merge(context, outStr);
         } catch (PreviewEditParseErrorException e) {
             this.processException(user, htmlPage.getName(), e);
         }

@@ -62,6 +62,7 @@ import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.*;
 
+
 /**
  * Util class for rendering a Page
  */
@@ -467,7 +468,7 @@ public class PageRenderUtil implements Serializable {
         return this.containersRaw;
     }
 
-    private String getPersonaTagToIncludeContent(final HttpServletRequest request, final Set<String> personalizationsForPage) {
+    private static String getPersonaTagToIncludeContent(final HttpServletRequest request, final Set<String> personalizationsForPage) {
         IPersona iPersona = null;
 
         if (request != null) {
@@ -481,5 +482,12 @@ public class PageRenderUtil implements Serializable {
         final boolean hasPersonalizations = personalizationsForPage.contains(currentPersonaTag);
 
         return hasPersonalizations ? currentPersonaTag : MultiTree.DOT_PERSONALIZATION_DEFAULT;
+    }
+
+    public static String getPersonaTagToIncludeContent(final IHTMLPage page) throws DotDataException {
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final Set<String> personalizationsForPage = APILocator.getMultiTreeAPI().getPersonalizationsForPage(page.getIdentifier());
+
+        return getPersonaTagToIncludeContent(request, personalizationsForPage );
     }
 }

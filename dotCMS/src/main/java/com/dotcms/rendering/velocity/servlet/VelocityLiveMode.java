@@ -5,6 +5,7 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.BlockPageCache;
@@ -34,26 +35,20 @@ import java.util.Optional;
 public class VelocityLiveMode extends VelocityModeHandler {
 
 
-
-    private final HttpServletRequest request;
-    private final HttpServletResponse response;
     private static final PageMode mode = PageMode.LIVE;
-    private final String uri;
-    private final Host host;
 
+    public VelocityLiveMode(final HttpServletRequest request,
+                            final HttpServletResponse response,
+                            final String uri,
+                            final Host host,
+                            final String personaTagToIncludeContent) {
 
-
-    public VelocityLiveMode(HttpServletRequest request, HttpServletResponse response, String uri, Host host) {
-        this.request = request;
-        this.response = response;
-        this.uri = uri;
-        this.host = host;
+        super(request, response, uri, host, personaTagToIncludeContent);
     }
 
     public VelocityLiveMode(HttpServletRequest request, HttpServletResponse response) {
-        this(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request));
+        this(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request), MultiTree.DOT_PERSONALIZATION_DEFAULT);
     }
-
 
     @Override
     public final void serve() throws DotDataException, IOException, DotSecurityException {
@@ -153,7 +148,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
             try (Writer tmpOut = (key != null) ? new StringWriter(4096) : new BufferedWriter(new OutputStreamWriter(out))) {
 
-                this.getTemplate(htmlPage, mode).merge(context, tmpOut);
+                this.getTemplate(htmlPage, mode, personaTagToIncludeContent).merge(context, tmpOut);
 
                 if (key != null) {
                     String trimmedPage = tmpOut.toString().trim();
