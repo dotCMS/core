@@ -17,11 +17,15 @@ public class VisitorSerializer extends JsonSerializer<Visitor> {
     if (visitor.getPersona() != null) {
       Persona persona = visitor.getPersona();
       ImmutableMap.Builder<String,Object> builder =ImmutableMap.builder();
-      builder.put("keyTag", persona.getKeyTag());
-      builder.put("identifier", persona.getIdentifier());
-      
-      builder.put("title", persona.getTitle());
-      
+      if(persona.getKeyTag() !=null) {
+          builder.put("keyTag", persona.getKeyTag());
+      }
+      if(persona.getIdentifier() !=null) {
+          builder.put("identifier", persona.getIdentifier());
+      }
+      if(persona.getTitle() !=null) {
+          builder.put("title", persona.getTitle());
+      }
       if(persona.getTitleImage().isPresent()) {
           builder.put("titleImage", persona.getTitleImage().get());
       }
