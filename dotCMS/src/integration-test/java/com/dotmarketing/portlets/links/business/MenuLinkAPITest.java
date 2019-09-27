@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.links.business;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.datagen.LinkDataGen;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import java.util.List;
@@ -146,4 +148,26 @@ public class MenuLinkAPITest extends IntegrationTestBase {
         assertNotNull(result);
         assertTrue(!result.isEmpty());
     }
+
+    @Test (expected = NotFoundInDbException.class)
+    public void testFind_InodeNotExists_ReturnNotFoundInDBException()
+            throws DotSecurityException, DotDataException {
+
+        final Link link = mAPI.find("inodeNotExists",user,false);
+    }
+
+    @Test
+    public void testFind_returnLink()
+            throws DotSecurityException, DotDataException {
+        final Link menuLink = new LinkDataGen(fAPI.findSystemFolder()).hostId(host.getIdentifier())
+                .showOnMenu(true).nextPersisted();
+        APILocator.getVersionableAPI().setLive(menuLink);
+
+        final Link link = mAPI.find(menuLink.getInode(), user, false);
+
+        assertEquals(menuLink.getInode(), link.getInode());
+        assertEquals(menuLink.getLinkType(), link.getLinkType());
+        assertEquals(menuLink.getUrl(), link.getUrl());
+    }
+
 }

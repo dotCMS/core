@@ -116,16 +116,7 @@ public class RelationshipCacheImpl extends RelationshipCache {
     @Override
     public void removeRelatedContentFromMap(final String contentletIdentifier, final String relationshipFieldVar)
             throws DotCacheException {
-        if (UtilMethods.isSet(contentletIdentifier) && UtilMethods.isSet(relationshipFieldVar)
-                && UtilMethods.isSet(getRelatedContentMap(contentletIdentifier))) {
-            final Map<String, List<String>> relatedContent = new ConcurrentHashMap(
-                    getRelatedContentMap(contentletIdentifier));
-            if (UtilMethods.isSet(relatedContent) && relatedContent
-                    .containsKey(relationshipFieldVar)) {
-                relatedContent.remove(relationshipFieldVar);
-                putRelatedContentMap(contentletIdentifier, relatedContent);
-            }
-        }
+           this.removeRelatedContentMap(contentletIdentifier);
     }
 
 	public String[] getGroups() {
