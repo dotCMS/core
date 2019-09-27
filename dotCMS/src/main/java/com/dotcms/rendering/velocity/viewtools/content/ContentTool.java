@@ -2,21 +2,7 @@ package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotmarketing.exception.DotDataValidationException;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.liferay.util.StringPool;
-import java.io.StringWriter;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
-
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.beans.Host;
@@ -25,19 +11,29 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
-import com.dotmarketing.portlets.personas.model.Persona;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.io.StringWriter;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
 
 /**
  * The purpose of this class is to provide a way to easily search and interact with content and dotcms
@@ -379,15 +375,15 @@ public class ContentTool implements ViewTool {
      * values "sort1 acs, sort2 desc". Can be Null
      * @return Returns empty List if no results are found
      */
-    public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier,
-            String condition, boolean pullParents, int limit, String sort) {
+    public List<ContentMap> pullRelated(final String relationshipName, final String contentletIdentifier,
+            final String condition, final boolean pullParents, final int limit, final String sort) {
         try {
-            PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
+            final PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
 
-            condition = condition == null ? condition : addDefaultsToQuery(condition);
-
-            List<Contentlet> cons = ContentUtils
-                    .pullRelated(relationshipName, contentletIdentifier, condition, pullParents,
+            final List<Contentlet> cons = ContentUtils
+                    .pullRelated(relationshipName, contentletIdentifier,
+                            condition == null ? condition : addDefaultsToQuery(condition),
+                            pullParents,
                             limit, sort, user, tmDate, language.getId(), mode.respectAnonPerms);
 
             for (Contentlet cc : cons) {

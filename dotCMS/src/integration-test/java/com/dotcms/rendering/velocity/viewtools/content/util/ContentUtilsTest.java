@@ -350,8 +350,8 @@ public class ContentUtilsTest {
      * @param spanishLanguage
      * @param results
      */
-    private void validateResults(TestCase testCase, Language defaultLanguage,
-            Language spanishLanguage, List<Contentlet> results) {
+    private void validateResults(final TestCase testCase, final Language defaultLanguage,
+            final Language spanishLanguage, final List<Contentlet> results) {
         assertNotNull(results);
         assertEquals(testCase.resultsSize, results.size());
 
