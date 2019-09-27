@@ -6191,9 +6191,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         Contentlet con = contentFactory.find(contentletInode);
 
-        if(!permissionAPI.doesUserHavePermission(con,PermissionAPI.PERMISSION_READ,user))
-            throw new DotSecurityException("Unauthorized Access");
-
+        if (!permissionAPI.doesUserHavePermission(con, PermissionAPI.PERMISSION_READ, user)) {
+            if (null != user) {
+                throw new DotSecurityException(String.format(
+                        "Unauthorized Access user [%s , %s] trying to access contentlet identified by `%s`.",
+                        user.getUserId(), user.getEmailAddress(), con.getIdentifier()));
+            } else {
+                throw new DotSecurityException(
+                        "Unauthorized Access null user trying to access contentlet. ");
+            }
+        }
 
         File binaryFile = null;
         String binaryFilePath = null;

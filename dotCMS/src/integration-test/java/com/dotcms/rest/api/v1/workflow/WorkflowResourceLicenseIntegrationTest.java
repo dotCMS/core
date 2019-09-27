@@ -124,7 +124,7 @@ public class WorkflowResourceLicenseIntegrationTest {
                 workflowImportExportUtil);
         ResponseUtil responseUtil = ResponseUtil.INSTANCE;
 
-        userAdmin = APILocator.systemUser();
+        userAdmin = TestUserUtils.getAdminUser();
         billIntranet = TestUserUtils.getBillIntranetUser();
         publisher = TestUserUtils.getOrCreatePublisherRole();
 
