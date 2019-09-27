@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -581,9 +582,17 @@ public class ContentUtils {
             }
 
         } catch (Exception e) {
+            // throw stack when admin
+            if(PageMode.get().isAdmin) {
+                Logger.warn(ContentUtils.class,
+                                "Error pullRelated identifier " + contentletIdentifier
+                                        + ". Relationship: " + relationshipName + " : " + e.getMessage(), e);
+            }
+            else {
             Logger.warnAndDebug(ContentUtils.class,
                     "Error pullRelated identifier " + contentletIdentifier
                             + ". Relationship: " + relationshipName + " : " + e.getMessage(), e);
+            }
         }
 
         return Collections.emptyList();
