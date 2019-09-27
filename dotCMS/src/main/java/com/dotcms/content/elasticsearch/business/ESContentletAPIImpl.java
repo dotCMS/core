@@ -1631,10 +1631,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return getRelatedContent(contentlet, fieldVariable, user, respectFrontendRoles, pullByParent, limit,
                             offset, sortBy, language, live);
         } catch (Exception e) {
+            final String id = contentlet!=null ? contentlet.getIdentifier() : "null";
+            final String relName = rel!=null ? rel.getRelationTypeValue() : "null";
+            
             final String errorMessage =
                     "Unable to look up related content for contentlet with identifier "
-                            + contentlet.getIdentifier() + ". Relationship name: " + rel
-                            .getRelationTypeValue();
+                            + id + ". Relationship name: " + relName;
+            
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class,
