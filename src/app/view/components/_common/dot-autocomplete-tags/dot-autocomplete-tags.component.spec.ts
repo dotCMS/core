@@ -93,6 +93,11 @@ describe('DotAutocompleteTagsComponent', () => {
                     expect(component.value.length).toEqual(2);
                 });
 
+                it('should NOT add the tag because label is just white spaces', () => {
+                    autoComplete.onKeyup({ key: 'Enter', currentTarget: { value: '        ' } });
+                    expect(component.value.length).toEqual(2);
+                });
+
                 it('should NOT add the tag because is duplicate if the user hit enter', () => {
                     autoComplete.onKeyup({ ...enterEvent });
                     expect(component.value[1].label).toEqual(preLoadedTags[1].label);

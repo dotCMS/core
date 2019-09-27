@@ -137,6 +137,7 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
     }
 
     private addItemOnEnter(input: HTMLInputElement): void {
+        input.value = input.value.trim();
         if (this.isUniqueTag(input.value)) {
             this.value.unshift(this.createNewTag(input.value));
             this.propagateChange(this.getStringifyLabels());
