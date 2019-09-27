@@ -107,14 +107,9 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
                 .pipe(map((res: any) => this.jsonEntriesToOptions(res)));
         }
 
-        if (
-            change.value &&
-            change.value.currentValue &&
-            change.value.currentValue.indexOf(',') > -1
-        ) {
-            this._modelValue = change.value.currentValue.includes(',')
-                ? change.value.currentValue.split(',')
-                : change.value.currentValue;
+        if (change.value && typeof change.value.currentValue === 'string' && this.maxSelections > 1) {
+            this._modelValue =
+                    change.value.currentValue.split(',');
         }
     }
 
@@ -122,9 +117,9 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
         const valuesJson = res.json();
         let ary = [];
         if (Verify.isArray(valuesJson)) {
-            ary = valuesJson.map(valueJson => this.jsonEntryToOption(valueJson));
+            ary = valuesJson.map((valueJson) => this.jsonEntryToOption(valueJson));
         } else {
-            ary = Object.keys(valuesJson).map(key => {
+            ary = Object.keys(valuesJson).map((key) => {
                 return this.jsonEntryToOption(valuesJson[key], key);
             });
         }
