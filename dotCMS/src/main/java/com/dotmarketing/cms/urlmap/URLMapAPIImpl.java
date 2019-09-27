@@ -85,11 +85,6 @@ public class URLMapAPIImpl implements URLMapAPI {
 
     private Contentlet getContentlet(final UrlMapContext urlMapContext){
         final Matches matches = this.findPatternChange(urlMapContext.getUri());
-
-        if (matches == null) {
-            return null;
-        }
-
         final Structure structure = CacheLocator.getContentTypeCache()
                 .getStructureByInode(matches.getPatternChange().getStructureInode());
 
@@ -299,7 +294,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         patternsCache = new ArrayList<>();
 
         final List<SimpleStructureURLMap> urlMaps = StructureFactory.findStructureURLMapPatterns();
-        final StringBuilder masterRegEx = new StringBuilder("^");
+        final StringBuilder masterRegEx = new StringBuilder("^(");
         final int startLength = masterRegEx.length();
 
         for (final SimpleStructureURLMap urlMap : urlMaps) {
@@ -321,7 +316,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             masterRegEx.append(regEx);
         }
 
-
+        masterRegEx.append(")");
         CacheLocator.getContentTypeCache().addURLMasterPattern(masterRegEx.toString());
     }
 
