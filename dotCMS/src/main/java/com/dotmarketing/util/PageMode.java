@@ -3,6 +3,7 @@ package com.dotmarketing.util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -54,6 +55,12 @@ public enum PageMode {
     }
 
 
+    public static PageMode get() {
+        final HttpServletRequest req = Try.of(()->HttpServletRequestThreadLocal.INSTANCE.getRequest()).getOrNull();
+        return (req==null) ? DEFAULT_PAGE_MODE : get(req);
+
+    }
+    
     public static PageMode get(final HttpSession ses) {
 
         PageMode mode = PageMode.isPageModeSet(ses)

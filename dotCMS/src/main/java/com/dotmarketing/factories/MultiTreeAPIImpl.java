@@ -1,6 +1,7 @@
 package com.dotmarketing.factories;
 
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -28,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -42,6 +44,7 @@ import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
@@ -224,24 +227,30 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
     }
 
-
     @CloseDBIfOpened
     @Override
-    public Set<String> getPersonalizationsForPage(final String pageId) throws DotDataException {
-
-        final Set<String> personalizationSet = new HashSet<>();
-        final List<Map<String, Object>>  personalizationMaps =
-                 new DotConnect().setSQL(SELECT_UNIQUE_PERSONALIZATION_PER_PAGE).addParam(pageId).loadObjectResults();
-
-        for (final Map<String, Object> personalizationMap : personalizationMaps) {
-
-            personalizationSet.add(personalizationMap.values()
-                    .stream().findFirst().orElse(StringPool.BLANK).toString());
-        }
-
-        return personalizationSet;
+    public Set<String> getPersonalizationsForPage(final String pageID) throws DotDataException {
+        IHTMLPage pageId=APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageID));
+        return getPersonalizationsForPage(pageId);
     }
-
+    
+    @CloseDBIfOpened
+    @Override
+    public Set<String> getPersonalizationsForPage(final IHTMLPage page) throws DotDataException {
+        Set<String> personas=new HashSet<>();
+        final boolean live = Try.of(()->PageMode.get().showLive).getOrElse(false);
+        final Table<String, String, Set<PersonalizedContentlet>> pageContents = Try.of(()-> getPageMultiTrees(page, live)).getOrElseThrow(e->new DotRuntimeException(e));
+        for (final String containerId : pageContents.rowKeySet()) {
+            for (final String uniqueId : pageContents.row(containerId).keySet()) {
+                pageContents.get(containerId, uniqueId).forEach(p->personas.add(p.getPersonalization()));
+            }
+        }
+        return personas;
+    }
+    
+    
+    
+    
     @CloseDBIfOpened
     @Override
     public Set<String> getPersonalizations () throws DotDataException {
@@ -777,7 +786,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             Contentlet contentlet = null;
             try {
                 contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(multiTree.getContentlet());
-            } catch (DotDataException | DotSecurityException | DotContentletStateException e) {
+            } catch (DotDataException  | DotContentletStateException e) {
                 Logger.debug(this.getClass(), "invalid contentlet on multitree:" + multiTree
                         + ", msg: " + e.getMessage(), e);
                 Logger.warn(this.getClass(), "invalid contentlet on multitree:" + multiTree);

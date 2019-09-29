@@ -170,7 +170,7 @@ public class ContainerLoader implements DotLoader {
 
         // let's write this puppy out to our file
         velocityCodeBuilder.append("#set ($SERVER_NAME =$host.getHostname() )");
-        velocityCodeBuilder.append("#set ($CONTAINER_IDENTIFIER_INODE = '")
+        velocityCodeBuilder.append("#set ($CONTAINER_IDENTIFIER = '")
             .append(container.getIdentifier())
             .append("')");
         velocityCodeBuilder.append("#set ($CONTAINER_UNIQUE_ID = '")
@@ -263,17 +263,15 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#end");
             }
 
-            // sb.append("$contentletList" + identifier.getId() + uuid + "<br>");
-
+   
             // START CONTENT LOOP
-            velocityCodeBuilder.append("#foreach ($contentletId in $contentletList")
-                .append(container.getIdentifier())
-                .append(uuid)
-                .append(")");
 
-                // sb.append("\n#if($webapi.canParseContent($contentletId,"+EDIT_MODE+")) ");
+            // the viewtool call to get the list of contents for the container
+            String apiCall="$containerAPI.getPersonalizedContentList(\"$!HTMLPAGE_IDENTIFIER\",\"$!CONTAINER_IDENTIFIER\", \"$!CONTAINER_UNIQUE_ID\")";
+
+            velocityCodeBuilder.append("#foreach ($contentletId in " + apiCall+ " )");
+            
                 velocityCodeBuilder.append("#set($_show_working_=false)");
-    
                 // if timemachine future enabled
                 velocityCodeBuilder.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
                 velocityCodeBuilder.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\"))))");
