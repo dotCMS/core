@@ -57,10 +57,11 @@ public enum PageMode {
 
     public static PageMode get() {
         final HttpServletRequest req = Try.of(()->HttpServletRequestThreadLocal.INSTANCE.getRequest()).getOrNull();
-        return (req==null) ? DEFAULT_PAGE_MODE : get(req);
+        return get(req);
 
     }
     
+
     public static PageMode get(final HttpSession ses) {
 
         PageMode mode = PageMode.isPageModeSet(ses)
