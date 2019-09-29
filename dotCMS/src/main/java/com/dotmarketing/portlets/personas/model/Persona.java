@@ -63,10 +63,6 @@ public class Persona extends Contentlet implements IPersona{
 	@Override
 	public String toString() {
 	    return this.getName() + " : " + this.getKeyTag();
-	    
-	    
 	}
-	
-	
 
 }

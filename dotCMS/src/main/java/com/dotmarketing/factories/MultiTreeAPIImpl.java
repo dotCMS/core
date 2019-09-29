@@ -237,7 +237,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @CloseDBIfOpened
     @Override
     public Set<String> getPersonalizationsForPage(final IHTMLPage page) throws DotDataException {
-        Set<String> personas=new HashSet<>();
+        final Set<String> personas=new HashSet<>();
         final boolean live = Try.of(()->PageMode.get().showLive).getOrElse(false);
         final Table<String, String, Set<PersonalizedContentlet>> pageContents = Try.of(()-> getPageMultiTrees(page, live)).getOrElseThrow(e->new DotRuntimeException(e));
         for (final String containerId : pageContents.rowKeySet()) {
@@ -247,9 +247,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
         return personas;
     }
-    
-    
-    
     
     @CloseDBIfOpened
     @Override
