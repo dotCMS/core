@@ -186,15 +186,17 @@ public class ContainerLoader implements DotLoader {
             .append(container.getInode())
             .append("')");
 
-        velocityCodeBuilder.append("#set ($CONTENTLETS = $contentletList")
-            .append(container.getIdentifier())
-            .append(uuid)
-            .append(")");
-        velocityCodeBuilder.append("#set ($CONTAINER_NUM_CONTENTLETS = $totalSize")
-            .append(container.getIdentifier())
-            .append(uuid)
-            .append(")");
+        // START CONTENT LOOP
 
+        // the viewtool call to get the list of contents for the container
+        String apiCall="$containerAPI.getPersonalizedContentList(\"$!HTMLPAGE_IDENTIFIER\",\"$!CONTAINER_IDENTIFIER\", \"$!CONTAINER_UNIQUE_ID\")";
+        
+        velocityCodeBuilder.append("#set ($CONTENTLETS = ")
+        .append(apiCall)
+        .append(")");
+        
+        velocityCodeBuilder.append("#set ($CONTAINER_NUM_CONTENTLETS = ${CONTENTLETS.size()})");
+        velocityCodeBuilder.append("CONTAINER_NUM_CONTENTLETS : $CONTAINER_NUM_CONTENTLETS");
         velocityCodeBuilder.append("#if(!$CONTAINER_NUM_CONTENTLETS)")
             .append("#set($CONTAINER_NUM_CONTENTLETS = 0)")
             .append("#end");
@@ -263,13 +265,9 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#end");
             }
 
-   
-            // START CONTENT LOOP
+            // FOR LOOP
 
-            // the viewtool call to get the list of contents for the container
-            String apiCall="$containerAPI.getPersonalizedContentList(\"$!HTMLPAGE_IDENTIFIER\",\"$!CONTAINER_IDENTIFIER\", \"$!CONTAINER_UNIQUE_ID\")";
-
-            velocityCodeBuilder.append("#foreach ($contentletId in " + apiCall+ " )");
+            velocityCodeBuilder.append("#foreach ($contentletId in $CONTENTLETS )");
             
                 velocityCodeBuilder.append("#set($_show_working_=false)");
                 // if timemachine future enabled
