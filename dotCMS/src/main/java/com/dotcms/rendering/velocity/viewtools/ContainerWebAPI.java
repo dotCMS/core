@@ -106,31 +106,6 @@ public class ContainerWebAPI implements ViewTool {
 		return "";
 
 	}
-	
-    public List<String> getPersonalizationPrefix(String pageId, String containerId, String uuid) {
-        Set<String> availablePersonalizations = UtilMethods.isSet(pageId)
-                        ? Try.of(() -> APILocator.getMultiTreeAPI().getPersonalizationsForPage(pageId))
-                                        .getOrElse(ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT))
-                        : ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT);
-
-        String pTag = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request);
-
-        pTag = (!availablePersonalizations.contains(pTag)) ? MultiTree.DOT_PERSONALIZATION_DEFAULT : pTag;
-
-        // if live mode, the content list will not have a colon in the key
-        List<String> contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag.replace(":", ""));
-
-        // if edit or preview mode, the content list WILL have a colon in the key
-        contentlets = contentlets != null ? contentlets : (List<String>) ctx.get("contentletList" + containerId + uuid + pTag);
-
-        // if called through the ContainerResource, the content list will appear under the default UUID
-        return contentlets != null ? contentlets
-                        : (List<String>) ctx.get("contentletList" + containerId + Container.LEGACY_RELATION_TYPE);
-
-    }
-	
-	
-	
 	/**
 	 * This method returns the personalized list of content ids that match
 	 * the persona of the visitor
@@ -156,9 +131,10 @@ public class ContainerWebAPI implements ViewTool {
         contentlets = contentlets != null ? contentlets : (List<String>) ctx.get("contentletList" + containerId + uuid + pTag);
 
         // if called through the ContainerResource, the content list will appear under the default UUID
-        return contentlets != null ? contentlets
+        contentlets = contentlets != null ? contentlets
                         : (List<String>) ctx.get("contentletList" + containerId + Container.LEGACY_RELATION_TYPE);
 
+        return contentlets != null ? contentlets : new ArrayList<>();
     }
 	
 	/**

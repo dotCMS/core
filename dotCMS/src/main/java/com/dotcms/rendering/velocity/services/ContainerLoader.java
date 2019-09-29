@@ -196,10 +196,7 @@ public class ContainerLoader implements DotLoader {
         .append(")");
         
         velocityCodeBuilder.append("#set ($CONTAINER_NUM_CONTENTLETS = ${CONTENTLETS.size()})");
-        velocityCodeBuilder.append("CONTAINER_NUM_CONTENTLETS : $CONTAINER_NUM_CONTENTLETS");
-        velocityCodeBuilder.append("#if(!$CONTAINER_NUM_CONTENTLETS)")
-            .append("#set($CONTAINER_NUM_CONTENTLETS = 0)")
-            .append("#end");
+
 
         velocityCodeBuilder.append("#set ($CONTAINER_NAME = \"")
             .append(UtilMethods.espaceForVelocity(container.getTitle()))
