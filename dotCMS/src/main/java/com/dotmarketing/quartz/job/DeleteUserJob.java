@@ -1,10 +1,12 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -12,17 +14,12 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import org.quartz.*;
+
 import java.text.MessageFormat;
 import java.util.Date;
 import java.util.UUID;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
-import org.quartz.StatefulJob;
 
 /**
  * Created by nollymar on 7/19/16.
@@ -100,7 +97,6 @@ public class DeleteUserJob implements StatefulJob {
 
     }
 
-    @WrapInTransaction
     @Override
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 
@@ -127,11 +123,16 @@ public class DeleteUserJob implements StatefulJob {
 
             notfAPI.info(startMessage, user.getUserId());
 
+            HibernateUtil.startTransaction();
+
             uAPI.delete(userToDelete, replacementUser, user, respectFrontEndRoles);
+            HibernateUtil.closeAndCommitTransaction();
 
             notfAPI.info(finishMessage, user.getUserId());
         } catch (Exception e) {
             try {
+                HibernateUtil.rollbackTransaction();
+
                 //Rolling back of user status (deleteInProgress)
                 userToDelete.setDeleteDate(null);
                 userToDelete.setDeleteInProgress(false);
@@ -144,6 +145,14 @@ public class DeleteUserJob implements StatefulJob {
                 userToDelete.getUserId() + "/" + userToDelete.getFullName()), e);
 
             notfAPI.error(errorMessage, user.getUserId());
+        } finally {
+            try {
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, "exception while calling HibernateUtil.closeSession()", e);
+            } finally {
+                DbConnectionFactory.closeConnection();
+            }
         }
     }
 }

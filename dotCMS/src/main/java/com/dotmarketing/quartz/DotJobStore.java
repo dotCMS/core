@@ -157,6 +157,8 @@ public class DotJobStore extends JobStoreCMT {
 	}
 
 	protected void closeConnection(Connection con) {
-	    CloseUtils.closeQuietly(con);
+		DbConnectionFactory.closeSilently();
+		CloseUtils.closeQuietly(con);
 	}
+
 }

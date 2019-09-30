@@ -14,6 +14,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
@@ -85,7 +86,7 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		String cmd = req.getParameter(Constants.CMD);
 		String referer = req.getParameter("referer");
-		
+
 
 		//wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
@@ -103,8 +104,10 @@ public class EditTemplateAction extends DotPortletAction implements
 			return;
 		}
 
+		HibernateUtil.startTransaction();
+
 		User user = _getUser(req);
-		
+
 		// Old template used to compare against edited version
 		Template oldTemplate = new Template();
 		try {
@@ -477,6 +480,8 @@ public class EditTemplateAction extends DotPortletAction implements
 			_sendToReferral(req, res, referer);
 		} else
 			Logger.debug(this, "Unspecified Action");
+
+		HibernateUtil.closeAndCommitTransaction();
 
 		_setupEditTemplatePage(reqImpl, res, config, form, user);
 

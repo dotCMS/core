@@ -326,6 +326,8 @@ public class DotInitScheduler {
 				}
 			}
 
+
+
 			if(UtilMethods.isSet(Config.getStringProperty("DASHBOARD_POPULATE_TABLES_CRON_EXPRESSION"))) {
 				try {
 					isNew = false;
@@ -340,9 +342,9 @@ public class DotInitScheduler {
 						job = new JobDetail("DashboardJobImpl", DOTCMS_JOB_GROUP_NAME, DashboardProxy.getDashboardJobImplClass());
 						isNew = true;
 					}catch(IllegalArgumentException e){
-						//Only enter here in case of "Job class must implement the Job interface." exception after version migration 
+						//Only enter here in case of "Job class must implement the Job interface." exception after version migration
 						job = new JobDetail("DashboardJobImpl", DOTCMS_JOB_GROUP_NAME, DashboardProxy.getDashboardJobImplClass());
-						isNew = false;						
+						isNew = false;
 					}
 					calendar = GregorianCalendar.getInstance();
 				    trigger = new CronTrigger("trigger15", "group15", "DashboardJobImpl", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,Config.getStringProperty("DASHBOARD_POPULATE_TABLES_CRON_EXPRESSION"));
@@ -425,13 +427,7 @@ public class DotInitScheduler {
 				} catch (Exception e) {
 					Logger.info(DotInitScheduler.class, e.toString());
 				}
-			} else {
-                Logger.info(DotInitScheduler.class, "DeleteOldClickstreams Job schedule disabled on this server");
-                Logger.info(DotInitScheduler.class, "Deleting DeleteOldClickstreams Job");
-                if ((job = sched.getJobDetail("DeleteOldClickstreams", DOTCMS_JOB_GROUP_NAME)) != null) {
-                    sched.deleteJob("DeleteOldClickstreams", DOTCMS_JOB_GROUP_NAME);
-                }
-            }
+			}
 
 			//SCHEDULE PUBLISH QUEUE JOB
 			if(Config.getBooleanProperty("ENABLE_PUBLISHER_QUEUE_THREAD")) {
@@ -509,7 +505,6 @@ public class DotInitScheduler {
                 }
             }
 
-
 			if(Config.getBooleanProperty("org.dotcms.XMLSitemap.ENABLE",false)) {
                 try {
 
@@ -578,11 +573,6 @@ public class DotInitScheduler {
                 } catch ( Exception e ) {
                     Logger.error( DotInitScheduler.class, e.getMessage(), e );
                 }
-            }  else {
-                Logger.info(DotInitScheduler.class, "ServerHeartbeatJob schedule disabled on this server");
-                if ((job = sched.getJobDetail("ServerHeartbeatJob", DOTCMS_JOB_GROUP_NAME)) != null) {
-                    sched.deleteJob("ServerHeartbeatJob", DOTCMS_JOB_GROUP_NAME);
-                }
             }
 
 			//SCHEDULE ESCALATION THREAD JOB
@@ -618,7 +608,6 @@ public class DotInitScheduler {
 					Logger.error(DotInitScheduler.class, e.getMessage(),e);
 				}
 			} else {
-                Logger.info(DotInitScheduler.class, "EscalationThreadJob schedule disabled on this server");
 				if ((sched.getJobDetail(ETjobName, ETjobGroup)) != null) {
 					sched.deleteJob(ETjobName, ETjobGroup);
 				}
@@ -657,7 +646,6 @@ public class DotInitScheduler {
 					Logger.error(DotInitScheduler.class, e.getMessage(),e);
 				}
 			} else {
-                Logger.info(DotInitScheduler.class, "FreeServerFromClusterJob schedule disabled on this server");
 				if ((sched.getJobDetail(FSCjobName, FSCobGroup)) != null) {
 					sched.deleteJob(FSCjobName, FSCobGroup);
 				}
@@ -697,7 +685,6 @@ public class DotInitScheduler {
                     Logger.error(DotInitScheduler.class, e.getMessage(),e);
                 }
             } else {
-                Logger.info(DotInitScheduler.class, "CleanUnDeletedUsersJob schedule disabled on this server");
                 if ((sched.getJobDetail(CUUjobName, CUUjobGroup)) != null) {
                     sched.deleteJob(CUUjobName, CUUjobGroup);
                 }
@@ -714,7 +701,7 @@ public class DotInitScheduler {
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
 		} catch (SchedulerException e) {
-			Logger.fatal(DotInitScheduler.class, "An error as occurred scheduling critical startup task of dotCMS, the system will shutdown immediately, " + e.toString(), e);
+			Logger.fatal(DotInitScheduler.class, "An error as ocurred scheduling critical startup task of dotCMS, the system will shutdown immediately, " + e.toString(), e);
 			throw e;
 		}
 	}

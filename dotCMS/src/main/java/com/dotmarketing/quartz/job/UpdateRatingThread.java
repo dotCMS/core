@@ -1,14 +1,18 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.business.WrapInTransaction;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
+
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -26,15 +30,18 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
+
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
+
+import com.liferay.portal.model.User;
 
 public class UpdateRatingThread implements StatefulJob {
 
@@ -51,7 +58,7 @@ public class UpdateRatingThread implements StatefulJob {
 
 
 	@SuppressWarnings("unchecked")
-	@WrapInTransaction
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		Logger.debug(this, "Running Ratings Statistics");
 		DotConnect dc = new DotConnect();
@@ -220,6 +227,7 @@ public class UpdateRatingThread implements StatefulJob {
 					}
 
 					conAPI.checkinWithoutVersioning(c, contentRelationships, cats, APILocator.getPermissionAPI().getPermissions(c), user, true);
+					HibernateUtil.closeAndCommitTransaction();
 				}
 
 
@@ -229,6 +237,11 @@ public class UpdateRatingThread implements StatefulJob {
 					dc.setSQL("delete from content_rating where identifier = ?");
 					dc.addParam((String) map.get("identifier"));
 					dc.getResult();
+					try {
+						HibernateUtil.closeAndCommitTransaction();
+					} catch (DotHibernateException e1) {
+						Logger.error(this, e.getMessage(), e);
+					}
 				}
 			} catch (Exception e) {
 				Logger.warn(UpdateRatingThread.class,e.getMessage(), e);
@@ -243,6 +256,10 @@ public class UpdateRatingThread implements StatefulJob {
 	 * @see java.lang.Thread#destroy()
 	 */
 	public void destroy() {
-
+		try {
+			HibernateUtil.closeSession();
+		} catch (DotHibernateException e) {
+			Logger.error(this, e.getMessage(), e);
+		}
 	}
 }
