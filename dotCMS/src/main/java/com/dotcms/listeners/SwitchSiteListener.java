@@ -55,7 +55,7 @@ public class SwitchSiteListener implements HttpSessionAttributeListener {
             try {
                 final User loggedInUser = APILocator.getLoginServiceAPI().getLoggedInUser();
 
-                if (loggedInUser != null) {
+                if (loggedInUser != null && loggedInUser.hasConsoleAccess()) {
                     final Host host = APILocator.getHostAPI().find(currentHostNewValue, loggedInUser, false);
 
                     APILocator.getSystemEventsAPI().push(SystemEventType.SWITCH_SITE,
