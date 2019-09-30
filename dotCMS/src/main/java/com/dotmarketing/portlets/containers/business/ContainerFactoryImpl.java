@@ -213,7 +213,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
                 if(container==null) {
                     container = FileAssetContainerUtil.getInstance().fromAssets (host, folder, this.findContainerAssets(folder, user, showLive), showLive, includeHostOnPath);
                     if(container!=null && container.getInode()!=null) {
-                        //containerCache.add(container);
+                        containerCache.add(container);
                     }
                 }
             }
