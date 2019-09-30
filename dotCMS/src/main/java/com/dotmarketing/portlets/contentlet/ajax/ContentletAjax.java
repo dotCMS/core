@@ -606,7 +606,7 @@ public class ContentletAjax {
 						fieldValue = fieldValue.replace("  ", " ");
 		            }
 					fieldValue =fieldValue.replaceAll(specialCharsToEscape, "\\\\$1");
-		            luceneQuery.append("title:" + fieldValue + " ");
+		            luceneQuery.append("title:" + fieldValue + "* ");
 		            break;
 		        }
 		    }
