@@ -75,14 +75,4 @@ public abstract class RelationshipCache implements Cachable {
      */
     public abstract void removeRelatedContentMap(String contentletIdentifier);
 
-    /**
-     * Removes related content from cache given a contentlet identifier and the velocity var name of
-     * the relationship field
-     * @param contentletIdentifier
-     * @param relationshipFieldVar
-     * @throws DotCacheException
-     */
-    public abstract void removeRelatedContentFromMap(String contentletIdentifier,
-            String relationshipFieldVar)
-            throws DotCacheException;
 }

@@ -2889,49 +2889,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
             boolean hasParent) {
 
-        String fieldVariable = null;
-        try {
-            //If relationship field, related content cache must be invalidated
-            if (relationship.isRelationshipField()) {
+        //If relationship field, related content cache must be invalidated
+        if (relationship.isRelationshipField()) {
 
-                if (relationshipAPI.sameParentAndChild(relationship)) {
-                    if (relationship.getParentRelationName() != null) {
-                        fieldVariable = relationship.getParentRelationName();
-                        contentlet.setRelated(relationship.getParentRelationName(), null);
-                        CacheLocator.getRelationshipCache()
-                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
-                                        relationship.getParentRelationName());
-                    }
+            if (relationshipAPI.sameParentAndChild(relationship)) {
+                if (relationship.getParentRelationName() != null) {
+                    contentlet.setRelated(relationship.getParentRelationName(), null);
+                    CacheLocator.getRelationshipCache()
+                            .removeRelatedContentMap(contentlet.getIdentifier());
+                }
 
-                    if (relationship.getChildRelationName() != null) {
-                        fieldVariable = relationship.getChildRelationName();
-                        contentlet.setRelated(relationship.getChildRelationName(), null);
-                        CacheLocator.getRelationshipCache()
-                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
-                                        relationship.getChildRelationName());
-                    }
-                } else {
-                    if (!hasParent && relationship.getParentRelationName() != null) {
-                        fieldVariable = relationship.getParentRelationName();
-                        contentlet.setRelated(relationship.getParentRelationName(), null);
-                        CacheLocator.getRelationshipCache()
-                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
-                                        relationship.getParentRelationName());
-                    } else if (hasParent && relationship.getChildRelationName() != null) {
-                        fieldVariable = relationship.getChildRelationName();
-                        contentlet.setRelated(relationship.getChildRelationName(), null);
-                        CacheLocator.getRelationshipCache()
-                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
-                                        relationship.getChildRelationName());
-                    }
+                if (relationship.getChildRelationName() != null) {
+                    contentlet.setRelated(relationship.getChildRelationName(), null);
+                    CacheLocator.getRelationshipCache()
+                            .removeRelatedContentMap(contentlet.getIdentifier());
+                }
+            } else {
+                if (!hasParent && relationship.getParentRelationName() != null) {
+                    contentlet.setRelated(relationship.getParentRelationName(), null);
+                    CacheLocator.getRelationshipCache()
+                            .removeRelatedContentMap(contentlet.getIdentifier());
+                } else if (hasParent && relationship.getChildRelationName() != null) {
+                    contentlet.setRelated(relationship.getChildRelationName(), null);
+                    CacheLocator.getRelationshipCache()
+                            .removeRelatedContentMap(contentlet.getIdentifier());
                 }
             }
-
-        } catch (DotCacheException e) {
-            Logger.debug(this, String.format(
-                    "Cache entry with key %s was not found for contentlet with identifier %s.",
-                    fieldVariable, contentlet.getIdentifier()),
-                    e);
         }
     }
 
