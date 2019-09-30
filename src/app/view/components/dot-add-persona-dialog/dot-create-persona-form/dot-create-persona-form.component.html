@@ -10,7 +10,7 @@
 
     <div class="form__group">
         <label for="persona-name" class="form__label">{{messagesKey['modes.persona.name']}}</label>
-        <input id="persona-name" dotAutofocus type="text" (change)="setKeyTag()" formControlName="name" name="name" pInputText />
+        <input id="persona-name" dotAutofocus type="text" (keyup)="setKeyTag()" formControlName="name" name="name" pInputText />
         <dot-field-validation-message
             [message]="messagesKey['modes.persona.name.error.required']"
             [field]="form.get('name')">

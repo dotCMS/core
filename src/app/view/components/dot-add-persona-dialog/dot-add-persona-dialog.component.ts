@@ -61,7 +61,6 @@ export class DotAddPersonaDialogComponent implements OnInit {
      * @memberof DotAddPersonaDialogComponent
      */
     closeDialog(): void {
-        console.log('closeDialog');
         this.visible = false;
         this.personaForm.resetForm();
         this.dialogActions.accept.disabled = true;
@@ -69,6 +68,7 @@ export class DotAddPersonaDialogComponent implements OnInit {
 
     private savePersona(): void {
         if (this.personaForm.form.valid) {
+            this.dialogActions.accept.disabled = true;
             this.dotWorkflowActionsFireService
                 .publishContentletAndWaitForIndex<DotPersona>(
                     PERSONA_CONTENT_TYPE,

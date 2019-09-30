@@ -136,7 +136,7 @@ describe('DotCreatePersonaFormComponent', () => {
             const nameInput: DebugElement = fixture.debugElement.query(By.css('#persona-name'));
             const keyTagInput: DebugElement = fixture.debugElement.query(By.css('#persona-keyTag'));
             component.form.get('name').setValue('John Doe');
-            nameInput.triggerEventHandler('change', {});
+            nameInput.triggerEventHandler('keyup', {});
             fixture.detectChanges();
             expect(keyTagInput.nativeElement.value).toEqual('johnDoe');
         });

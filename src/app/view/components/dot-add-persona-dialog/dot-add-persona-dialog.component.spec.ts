@@ -130,7 +130,8 @@ describe('DotAddPersonaDialogComponent', () => {
                     name: 'Freddy',
                     hostFolder: 'demo',
                     keyTag: 'freddy',
-                    photo: ''
+                    photo: '',
+                    tags: null
                 });
                 const accept = dialog.query(By.css('.dialog__button-accept'));
                 accept.triggerEventHandler('click', {});
@@ -150,7 +151,7 @@ describe('DotAddPersonaDialogComponent', () => {
                 dialog = de.query(By.css('dot-dialog'));
             });
 
-            it('should create and emit the new persona and close dialog if form is valid', () => {
+            it('should create and emit the new persona, disable accept button and close dialog if form is valid', () => {
                 spyOn(component, 'closeDialog');
                 spyOn(
                     dotWorkflowActionsFireService,
@@ -159,16 +160,19 @@ describe('DotAddPersonaDialogComponent', () => {
 
                 submitForm();
 
+                fixture.detectChanges();
                 expect(
                     dotWorkflowActionsFireService.publishContentletAndWaitForIndex
                 ).toHaveBeenCalledWith('persona', {
                     hostFolder: 'demo',
                     keyTag: 'freddy',
                     name: 'Freddy',
-                    photo: ''
+                    photo: '',
+                    tags: null
                 });
                 expect(component.createdPersona.emit).toHaveBeenCalledWith(mockDotPersona);
                 expect(component.closeDialog).toHaveBeenCalled();
+                expect(component.dialogActions.accept.disabled).toEqual(true);
             });
 
             it('should call dotHttpErrorManagerService if endpoint fails', () => {
