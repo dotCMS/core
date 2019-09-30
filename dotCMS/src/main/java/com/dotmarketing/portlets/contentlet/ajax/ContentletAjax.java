@@ -600,16 +600,13 @@ public class ContentletAjax {
 		    for(int i=0;i<fields.size();i++){
 		        String x = fields.get(i);
 		        if(Structure.STRUCTURE_TYPE_ALL.equals(x)){
-		            String next =  fields.get(i+1);
-		            next = next.replaceAll("\\*", "");
-		            while(next.contains("  ")){
-		            	next = next.replace("  ", " ");
+		            String fieldValue =  fields.get(i+1);
+					fieldValue = fieldValue.replaceAll("\\*", "");
+		            while(fieldValue.contains("  ")){
+						fieldValue = fieldValue.replace("  ", " ");
 		            }
-		            String y[] = next.split(" ");
-		            for(int j=0;j<y.length;j++){
-		            	y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
-		                luceneQuery.append("title:" + y[j] + "* ");
-		            }
+					fieldValue =fieldValue.replaceAll(specialCharsToEscape, "\\\\$1");
+		            luceneQuery.append("title:" + fieldValue + " ");
 		            break;
 		        }
 		    }
@@ -839,30 +836,18 @@ public class ContentletAjax {
 						else if( fieldbcontentname.startsWith("date") ){
 							luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue + " ");
 						} else {
-							if(isStructField==false){
-							    String next =  fieldValue.toString();
-							    if(!next.contains("'") && ! next.contains("\"")){
-							        next = next.replaceAll("\\*", "");
-							        while(next.contains("  ")){
-							        	next = next.replace("  ", " ");
+							if(!isStructField){
+							    String fieldValueStr =  fieldValue.toString();
+							    if(!fieldValueStr.contains("'") || fieldValueStr.contains("\"")){
+							        fieldValueStr = fieldValueStr.replaceAll("\\*", "");
+							        while(fieldValueStr.contains("  ")){
+							        	fieldValueStr = fieldValueStr.replace("  ", " ");
 							        }
-							        String y[] = next.split(" ");
-							        for(int j=0;j<y.length;j++){
-							        	y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
-										luceneQuery.append("+" + fieldName +":" + y[j] + " ");
-							        }
-							    }else if(next.contains("\"")){
-							    	 next = next.replaceAll("\\*", "");
-								        while(next.contains("  ")){
-								        	next = next.replace("  ", " ");
-								        }
-								        String y[] = next.split(" ");
-								        for(int j=0;j<y.length;j++){
-								        	y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
-								        	luceneQuery.append("+" + fieldName +":" + y[j] + " ");
-								        }
-							    }else{
-							        luceneQuery.append("+" + fieldName +":" + next + " ");
+
+									fieldValueStr = fieldValueStr.replaceAll(specialCharsToEscape, "\\\\$1");
+							        luceneQuery.append("+" + fieldName +":" +fieldValueStr + " ");
+							    } else{
+							        luceneQuery.append("+" + fieldName +":" + fieldValueStr + " ");
 							   }
 							}
 							else {
