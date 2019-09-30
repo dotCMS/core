@@ -112,6 +112,7 @@
 </head>
 <body class="dmundra"  >
 <!--  top button bar -->
+	<div class="imageToolContainer">
 <div class="imageToolButtonBar">
 	<table style="width:100%;margin:0px">
 		<tr>
@@ -393,7 +394,6 @@
 
 
 
-	</div>
 
 
 
@@ -563,15 +563,16 @@
 			</tr>
 		</table>
 	</div>
-    <div style="position:absolute;left:-50000px">
+    <div style="position:absolute;top:-50000px">
         <input type="file" name="hiddenFileUploader" id="hiddenFileUploader">
     
     
     
     </div>
 	 
-	 	<img src="<%=baseImage%>" style="position:absolute;left:-50000px" id="baseImage" />
+	 	<img src="<%=baseImage%>" style="position:absolute;top:-50000px;left:-50000px;" id="baseImage" />
 	 	<iframe id="actionJackson" src="/html/images/shim.gif" frameborder="0" width="0" height="0"></iframe>
+	</div>
 	</body>
 
 </html>
