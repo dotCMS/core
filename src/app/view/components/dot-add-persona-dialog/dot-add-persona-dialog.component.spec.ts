@@ -175,10 +175,10 @@ describe('DotAddPersonaDialogComponent', () => {
                 expect(component.dialogActions.accept.disabled).toEqual(true);
             });
 
-            it('should call dotHttpErrorManagerService if endpoint fails', () => {
+            it('should call dotHttpErrorManagerService if endpoint fails, since form is valid, accept button should not be enable', () => {
                 const fake500Response = mockResponseView(500);
                 spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-
+                component.dialogActions.accept.disabled = true;
                 spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
@@ -187,6 +187,7 @@ describe('DotAddPersonaDialogComponent', () => {
                 submitForm();
 
                 expect(component.createdPersona.emit).not.toHaveBeenCalled();
+                expect(component.dialogActions.accept.disabled).toEqual(false);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(fake500Response);
             });
         });
