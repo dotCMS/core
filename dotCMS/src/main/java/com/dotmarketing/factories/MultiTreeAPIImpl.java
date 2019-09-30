@@ -242,15 +242,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         final Set<String> personas=new HashSet<>();
 
         final Table<String, String, Set<PersonalizedContentlet>> pageContents = Try.of(()-> getPageMultiTrees(page, false)).getOrElseThrow(e->new DotRuntimeException(e));
-        try{
-            System.out.println(new ObjectMapper().writeValueAsString(pageContents));
-        }
-        catch(Exception e) {
-            
-        }
-        
-        
-        
+
         for (final String containerId : pageContents.rowKeySet()) {
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
                 pageContents.get(containerId, uniqueId).forEach(p->personas.add(p.getPersonalization()));

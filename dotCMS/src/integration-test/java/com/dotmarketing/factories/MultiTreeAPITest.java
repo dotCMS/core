@@ -443,16 +443,24 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @Test
     public void testMultiTreesSaveAndPersonalizationForPage() throws Exception {
 
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
+        final Contentlet content = new ContentletDataGen(structure.getInode()).nextPersisted();
+
+        
+        
+        
         final MultiTreeAPI multiTreeAPI = new MultiTreeAPIImpl();
-        final String htmlPage           = UUIDGenerator.generateUuid();
-        final String container          = UUIDGenerator.generateUuid();
-        final String content            = UUIDGenerator.generateUuid();
+
         final String personalization    = "dot:persona:somepersona";
 
-        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
-        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
+        multiTreeAPI.saveMultiTree(new MultiTree(page.getIdentifier(), container.getIdentifier(), content.getIdentifier(), UUIDGenerator.generateUuid(), 1)); // dot:default
+        multiTreeAPI.saveMultiTree(new MultiTree(page.getIdentifier(), container.getIdentifier(), content.getIdentifier(), UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
 
-        final Set<String> personalizationSet = multiTreeAPI.getPersonalizationsForPage(htmlPage);
+        final Set<String> personalizationSet = multiTreeAPI.getPersonalizationsForPage(page);
 
         org.junit.Assert.assertNotNull(personalizationSet);
         org.junit.Assert.assertEquals(2, personalizationSet.size());
