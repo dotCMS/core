@@ -22,6 +22,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -58,6 +59,8 @@ public class ContentUtilsTest {
     private static FieldAPI fieldAPI;
     private static RelationshipAPI relationshipAPI;
 
+    private static Language defaultLanguage;
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment.
@@ -70,6 +73,8 @@ public class ContentUtilsTest {
         contentTypeAPI = APILocator.getContentTypeAPI(user, false);
         fieldAPI = APILocator.getContentTypeFieldAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
+
+        defaultLanguage = languageAPI.getDefaultLanguage();
     }
 
     public static class TestCase {
@@ -179,13 +184,30 @@ public class ContentUtilsTest {
         };
     }
 
+    public static class LegacyTestCase {
+
+        boolean selfRelated;
+
+        public LegacyTestCase(final boolean selfRelated) {
+            this.selfRelated = selfRelated;
+        }
+    }
+
+    @DataProvider
+    public static Object[] legacyTestCases() {
+        return new LegacyTestCase[]{
+                new LegacyTestCase(true),
+                new LegacyTestCase(false)
+        };
+    }
+
     @Test
     @UseDataProvider("testCases")
     public void testPullRelated(final TestCase testCase) throws DotDataException, DotSecurityException {
         final long time = System.currentTimeMillis();
         ContentType parentContentType = null;
         ContentType childContentType = null;
-        final Language defaultLanguage = languageAPI.getDefaultLanguage();
+
         final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
         try {
 
@@ -350,8 +372,8 @@ public class ContentUtilsTest {
      * @param spanishLanguage
      * @param results
      */
-    private void validateResults(TestCase testCase, Language defaultLanguage,
-            Language spanishLanguage, List<Contentlet> results) {
+    private void validateResults(final TestCase testCase, final Language defaultLanguage,
+            final Language spanishLanguage, final List<Contentlet> results) {
         assertNotNull(results);
         assertEquals(testCase.resultsSize, results.size());
 
@@ -373,6 +395,109 @@ public class ContentUtilsTest {
                 return false;
             }));
         }
+    }
+
+    @UseDataProvider("legacyTestCases")
+    @Test
+    public void testPullRelatedForLegacyRelationship(final LegacyTestCase testCase)
+            throws DotSecurityException, DotDataException {
+        final long time = System.currentTimeMillis();
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try {
+            //Create content types
+            parentContentType = contentTypeAPI
+                    .save(ContentTypeBuilder.builder(SimpleContentType.class)
+                            .folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                            .name("parentContentType" + time)
+                            .owner(user.getUserId()).build());
+
+            if (!testCase.selfRelated){
+                childContentType = contentTypeAPI
+                        .save(ContentTypeBuilder.builder(SimpleContentType.class)
+                                .folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                                .name("childContentType" + time)
+                                .owner(user.getUserId()).build());
+            }
+
+            final Relationship relationship = createLegacyRelationship(parentContentType.id(),
+                    testCase.selfRelated ? parentContentType.id() : childContentType.id(),
+                    RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+
+            //Save children content
+            final Contentlet firstChild = new ContentletDataGen(
+                    testCase.selfRelated ? parentContentType.id() : childContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            ContentletDataGen.publish(firstChild);
+
+            final Contentlet secondChild = new ContentletDataGen(
+                    testCase.selfRelated ? parentContentType.id() : childContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            ContentletDataGen.publish(secondChild);
+
+            //Save parent content and relate children
+            Contentlet parent = new ContentletDataGen(parentContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setPolicy(IndexPolicy.FORCE).next();
+
+            parent = contentletAPI.checkin(parent,
+                    map(relationship, list(firstChild, secondChild)),
+                    null, user, false);
+
+            ContentletDataGen.publish(parent);
+
+            //Pulling children
+            List<Contentlet> results = ContentUtils
+                    .pullRelated(relationship.getRelationTypeValue(),
+                            parent.getIdentifier(), false, -1, user, null);
+
+            assertEquals(2, results.size());
+            assertEquals(firstChild.getInode(), results.get(0).getInode());
+            assertEquals(secondChild.getInode(), results.get(1).getInode());
+
+            //Pulling parent
+            results = ContentUtils
+                    .pullRelated(relationship.getRelationTypeValue(),
+                            firstChild.getIdentifier(),
+                            true, -1, user, null);
+
+            assertEquals(1, results.size());
+            assertEquals(parent.getInode(), results.get(0).getInode());
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+
+    }
+
+    private Relationship createLegacyRelationship(String parentStructureInode,
+            String childStructureInode, int cardinality) throws DotDataException {
+
+        final long time = System.currentTimeMillis();
+        final Relationship relationship = new Relationship();
+        //Set Parent Info
+        relationship.setParentStructureInode( parentStructureInode );
+        relationship.setParentRelationName( "parent" );
+        //Set Child Info
+        relationship.setChildStructureInode( childStructureInode );
+        relationship.setChildRelationName( "child" );
+        //Set general info
+        relationship.setRelationTypeValue( "parent-child" + time);
+        relationship.setCardinality(cardinality);
+
+        //Save it
+        FactoryLocator.getRelationshipFactory().save( relationship );
+
+        return relationship;
     }
 
 }
