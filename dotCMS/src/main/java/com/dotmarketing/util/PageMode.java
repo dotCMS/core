@@ -53,7 +53,12 @@ public enum PageMode {
         this.respectAnonPerms = respectAnonPerms;
     }
 
-
+    public static PageMode get() {
+        return PageMode.get(HttpServletRequestThreadLocal.INSTANCE.getRequest());
+    }
+    
+    
+    
     public static PageMode get(final HttpSession ses) {
 
         PageMode mode = PageMode.isPageModeSet(ses)

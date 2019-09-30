@@ -1,18 +1,16 @@
 package com.dotmarketing.portlets.structure.factories;
 
-import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableMap;
-import java.util.Collections;
-import java.util.List;
-
 import com.dotcms.contenttype.model.type.ContentTypeIf;
-import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 public class RelationshipCacheImpl extends RelationshipCache {
@@ -110,21 +108,6 @@ public class RelationshipCacheImpl extends RelationshipCache {
     public void removeRelatedContentMap(final String contentletIdentifier)  {
         if (UtilMethods.isSet(contentletIdentifier)) {
             cache.remove(contentletIdentifier, tertiaryGroup);
-        }
-    }
-
-    @Override
-    public void removeRelatedContentFromMap(final String contentletIdentifier, final String relationshipFieldVar)
-            throws DotCacheException {
-        if (UtilMethods.isSet(contentletIdentifier) && UtilMethods.isSet(relationshipFieldVar)
-                && UtilMethods.isSet(getRelatedContentMap(contentletIdentifier))) {
-            final Map<String, List<String>> relatedContent = new ConcurrentHashMap(
-                    getRelatedContentMap(contentletIdentifier));
-            if (UtilMethods.isSet(relatedContent) && relatedContent
-                    .containsKey(relationshipFieldVar)) {
-                relatedContent.remove(relationshipFieldVar);
-                putRelatedContentMap(contentletIdentifier, relatedContent);
-            }
         }
     }
 

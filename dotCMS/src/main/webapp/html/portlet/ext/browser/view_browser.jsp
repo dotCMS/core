@@ -5,7 +5,9 @@
 <%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language" %>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 
-<% 
+<%
+request.getSession().removeAttribute(com.dotmarketing.util.WebKeys.CURRENT_DEVICE);
+APILocator.getVisitorAPI().removeVisitor(request);
 
 com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); 
 Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
