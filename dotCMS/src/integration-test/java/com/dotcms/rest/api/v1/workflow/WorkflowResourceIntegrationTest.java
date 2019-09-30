@@ -113,7 +113,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         when(user.getEmailAddress()).thenReturn(ADMIN_DEFAULT_MAIL);
         when(user.getFullName()).thenReturn(ADMIN_NAME);
         when(user.getLocale()).thenReturn(Locale.getDefault());
-
+        when(user.isBackendUser()).thenReturn(true);
         final WebResource webResource = mock(WebResource.class);
         final InitDataObject dataObject = mock(InitDataObject.class);
         when(dataObject.getUser()).thenReturn(user);
@@ -392,7 +392,6 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
     }
 
     @Test
-    @WrapInTransaction
     public void testCreateSchemeThenAddStepsThenDeleteSteps() {
         final int numSteps = 5;
         final WorkflowScheme savedScheme = createScheme(workflowResource);
