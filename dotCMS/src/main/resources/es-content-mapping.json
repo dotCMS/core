@@ -49,7 +49,7 @@
             {
                 "keywordmapping" : {
                     "match_pattern": "regex",
-                    "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap",
+                    "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|.*urltitle",
                     "mapping": {
                         "type": "keyword"
                     }
