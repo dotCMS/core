@@ -4,7 +4,6 @@ import static com.dotcms.util.CollectionsUtils.list;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.context.Context;
@@ -13,7 +12,6 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -26,16 +24,12 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.personas.model.IPersona;
-import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 public class ContainerWebAPI implements ViewTool {
@@ -124,17 +118,27 @@ public class ContainerWebAPI implements ViewTool {
 
         pTag = (!availablePersonalizations.contains(pTag)) ? MultiTree.DOT_PERSONALIZATION_DEFAULT : pTag;
 
-        // if live mode, the content list will not have a colon in the key
+        // if live mode, the content list will not have a colon in the key- as it was a velocity variable
         List<String> contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag.replace(":", ""));
-
-        // if edit or preview mode, the content list WILL have a colon in the key
-        contentlets = contentlets != null ? contentlets : (List<String>) ctx.get("contentletList" + containerId + uuid + pTag);
-
-        // if called through the ContainerResource, the content list will appear under the default UUID
-        contentlets = contentlets != null ? contentlets
-                        : (List<String>) ctx.get("contentletList" + containerId + Container.LEGACY_RELATION_TYPE);
-
-        return contentlets != null ? contentlets : new ArrayList<>();
+        if(contentlets !=null ) {
+            return contentlets;
+        }
+        
+        // if edit or preview mode, the content list WILL have a colon in the key, as this is 
+        // a map in memory
+        contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag);
+        if(contentlets !=null ) {
+            return contentlets;
+        }
+        
+        // if called through the ContainerResource, the content list will appear under the default UUID, 
+        // as the content is just being rendered in the container and is not associated with any page
+        contentlets = (List<String>) ctx.get("contentletList" + containerId + Container.LEGACY_RELATION_TYPE);
+        if(contentlets !=null ) {
+            return contentlets;
+        }
+        
+        return new ArrayList<>();
     }
 	
 	/**
