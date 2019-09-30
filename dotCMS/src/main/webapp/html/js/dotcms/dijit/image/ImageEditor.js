@@ -137,7 +137,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         
         this.imageEditor = document.createElement('div');
         this.imageEditor.id = 'dotImageDialog';
-        this.imageEditor.innerHTML="<iframe scrolling='no' src='" + url+ "' id='imageToolIframe' frameborder='0' style='width:100%;height:100%;overflow:hidden;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);'></iframe>";
+        this.imageEditor.innerHTML="<iframe scrolling='yes' src='" + url+ "' id='imageToolIframe' frameborder='0' style='width:100%;height:100%;overflow:hidden;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);'></iframe>";
         this.imageEditor.style="position:absolute;top:10px;bottom:20px;left:20px;right:20px;padding:0;margin:0;border:1px silver solid;background:white;z-index: 99999;";
         document.body.insertBefore(this.imageEditor, document.body.firstChild);
 
