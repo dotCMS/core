@@ -845,7 +845,12 @@ public class ContentletAjax {
 							        }
 
 									fieldValueStr = fieldValueStr.replaceAll(specialCharsToEscape, "\\\\$1");
-							        luceneQuery.append("+" + fieldName +":" +fieldValueStr + " ");
+
+							        if(fieldName.equals("languageId")){
+										luceneQuery.append("+" + fieldName +":" + fieldValueStr + " ");
+									}else{
+										luceneQuery.append("+" + fieldName +":" + fieldValueStr + "* ");
+									}
 							    } else{
 							        luceneQuery.append("+" + fieldName +":" + fieldValueStr + " ");
 							   }
