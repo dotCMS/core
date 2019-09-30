@@ -158,8 +158,9 @@ describe('DotEditContentHtmlService', () => {
             is not a good architecture.
         */
 
-        const pageState: DotPageRenderState = new DotPageRenderState(mockUser,
-            new DotPageRender ({
+        const pageState: DotPageRenderState = new DotPageRenderState(
+            mockUser,
+            new DotPageRender({
                 ...mockDotRenderedPage,
                 page: {
                     ...mockDotPage,
@@ -338,7 +339,6 @@ describe('DotEditContentHtmlService', () => {
             'div[data-dot-object="contentlet"][data-dot-inode="456"]'
         );
 
-
         this.dotEditContentHtmlService.contentletEvents$.next({
             name: 'relocate',
             data: {
@@ -372,8 +372,9 @@ describe('DotEditContentHtmlService', () => {
             }
         };
 
-        const pageState: DotPageRenderState = new DotPageRenderState(mockUser,
-            new DotPageRender ({
+        const pageState: DotPageRenderState = new DotPageRenderState(
+            mockUser,
+            new DotPageRender({
                 ...mockDotRenderedPage,
                 page: {
                     ...mockDotPage,
@@ -506,6 +507,10 @@ describe('DotEditContentHtmlService', () => {
         this.dotEditContentHtmlService.pageModel$.subscribe((model) => (currentModel = model));
 
         this.dotEditContentHtmlService.renderAddedContentlet(contentlet);
+
+        const doc = this.dotEditContentHtmlService.iframe.nativeElement.contentDocument;
+
+        expect(doc.querySelector('.loader__overlay')).toBeNull();
 
         expect(dotEditContentToolbarHtmlService.getContentletToContainer).not.toHaveBeenCalled();
         expect(this.dotEditContentHtmlService.currentContainer).toBeNull(
@@ -862,7 +867,6 @@ describe('DotEditContentHtmlService', () => {
 
             this.dotEditContentHtmlService.renderAddedForm(form).subscribe((model) => {
                 currentModel = model;
-
             });
 
             expect(dotEditContentToolbarHtmlService.getFormToContainer).toHaveBeenCalledWith(

@@ -205,12 +205,11 @@ export class DotEditContentHtmlService {
             `div[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${this.currentContainer.uuid}"]`
         );
 
-        const contentletPlaceholder = this.getContentletPlaceholder();
-        containerEl.appendChild(contentletPlaceholder);
-
         if (this.isContentExistInContainer(contentlet, containerEl)) {
             this.showContentAlreadyAddedError();
         } else {
+            const contentletPlaceholder = this.getContentletPlaceholder();
+            containerEl.appendChild(contentletPlaceholder);
             this.dotContainerContentletService
                 .getContentletToContainer(this.currentContainer, contentlet)
                 .subscribe((contentletHtml: string) => {
