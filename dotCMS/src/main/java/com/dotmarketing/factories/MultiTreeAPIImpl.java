@@ -37,6 +37,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -45,6 +46,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
+import org.apache.bcel.generic.NEW;
 import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
@@ -238,8 +240,17 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     public Set<String> getPersonalizationsForPage(final IHTMLPage page) throws DotDataException {
         final Set<String> personas=new HashSet<>();
-        final boolean live = Try.of(()->PageMode.get().showLive).getOrElse(false);
-        final Table<String, String, Set<PersonalizedContentlet>> pageContents = Try.of(()-> getPageMultiTrees(page, live)).getOrElseThrow(e->new DotRuntimeException(e));
+
+        final Table<String, String, Set<PersonalizedContentlet>> pageContents = Try.of(()-> getPageMultiTrees(page, false)).getOrElseThrow(e->new DotRuntimeException(e));
+        try{
+            System.out.println(new ObjectMapper().writeValueAsString(pageContents));
+        }
+        catch(Exception e) {
+            
+        }
+        
+        
+        
         for (final String containerId : pageContents.rowKeySet()) {
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
                 pageContents.get(containerId, uniqueId).forEach(p->personas.add(p.getPersonalization()));
