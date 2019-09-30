@@ -1,4 +1,4 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { of, Observable } from 'rxjs';
 import { async } from '@angular/core/testing';
 import { DotEditContentHtmlService, DotContentletAction } from './dot-edit-content-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
@@ -28,7 +28,7 @@ import { DotPageRender } from '@portlets/dot-edit-page/shared/models';
 @Injectable()
 class MockDotLicenseService {
     isEnterprise(): Observable<boolean> {
-        return observableOf(false);
+        return of(false);
     }
 }
 
@@ -59,6 +59,7 @@ describe('DotEditContentHtmlService', () => {
                         data-dot-identifier="456"
                         data-dot-inode="456"
                         data-dot-type="NewsWidgets"
+                        data-dot-content-type-id="2"
                         data-dot-basetype="CONTENT"
                         data-dot-has-page-lang-version="true">
                         <div class="large-column">
@@ -332,7 +333,7 @@ describe('DotEditContentHtmlService', () => {
     it('should show loading indicator on relocate contentlet', () => {
         const dotContainerContentletService = this.injector.get(DotContainerContentletService);
         spyOn(dotContainerContentletService, 'getContentletToContainer').and.returnValue(
-            observableOf('<div></div>')
+            of('<div></div>')
         );
 
         const contentlet = this.dotEditContentHtmlService.iframe.nativeElement.contentDocument.querySelector(
@@ -413,7 +414,7 @@ describe('DotEditContentHtmlService', () => {
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
         spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
-            observableOf('<i>testing</i>')
+            of('<i>testing</i>')
         );
 
         const contentlet: DotPageContent = {
@@ -491,7 +492,7 @@ describe('DotEditContentHtmlService', () => {
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
         spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
-            observableOf('<i>testing</i>')
+            of('<i>testing</i>')
         );
 
         const dotDialogService = this.injector.get(DotAlertConfirmService);
@@ -543,7 +544,7 @@ describe('DotEditContentHtmlService', () => {
 
         const dotEditContentToolbarHtmlService = this.injector.get(DotContainerContentletService);
         spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
-            observableOf(`
+            of(`
         <div data-dot-object="contentlet" data-dot-identifier="456">
             <script>
                 console.log('First');
@@ -604,7 +605,7 @@ describe('DotEditContentHtmlService', () => {
 
     describe('document click', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(true));
+            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
         });
 
         it('should open sub menu', () => {
@@ -838,40 +839,41 @@ describe('DotEditContentHtmlService', () => {
             this.dotEditContentHtmlService.currentContainer = currentContainer;
         });
 
-        // this tests is incomplete, can't find a way to test the form rendering in the contentlet
-        // because I can't moch the node-fecth in the DorFormApi
-        xit('should render added form', () => {
+        it('should render added form', () => {
             const modelExpected = [
                 {
                     identifier: '123',
                     uuid: '456',
-                    contentletsId: ['3', '4']
+                    contentletsId: ['3']
                 }
             ];
-
-            let currentModel;
 
             const dotEditContentToolbarHtmlService = this.injector.get(
                 DotContainerContentletService
             );
 
             spyOn(dotEditContentToolbarHtmlService, 'getFormToContainer').and.returnValue(
-                observableOf({
+                of({
                     render: '<i>testing</i>',
                     content: {
-                        identifier: '4',
+                        identifier: '2',
                         inode: '123'
                     }
                 })
             );
 
-            this.dotEditContentHtmlService.renderAddedForm(form).subscribe((model) => {
-                currentModel = model;
-            });
+            this.dotEditContentHtmlService
+                .renderAddedForm({ ...form, id: 4 })
+                .subscribe((model) => {
+                    expect(model).toEqual(modelExpected, 'should tigger model change event');
+                });
 
             expect(dotEditContentToolbarHtmlService.getFormToContainer).toHaveBeenCalledWith(
                 currentContainer,
-                form
+                {
+                    ...form,
+                    id: 4
+                }
             );
 
             expect(this.dotEditContentHtmlService.currentContainer).toEqual(
@@ -881,8 +883,29 @@ describe('DotEditContentHtmlService', () => {
                 },
                 'currentContainer must be the same after add form'
             );
+        });
 
-            expect(currentModel).toEqual(modelExpected, 'should tigger model change event');
+        it('should show content added message', () => {
+            const dotEditContentToolbarHtmlService = this.injector.get(
+                DotContainerContentletService
+            );
+
+            spyOn(dotEditContentToolbarHtmlService, 'getFormToContainer').and.returnValue(
+                of({
+                    render: '<i>testing</i>',
+                    content: {
+                        identifier: '4',
+                        inode: '123'
+                    }
+                })
+            );
+
+            this.dotEditContentHtmlService.renderAddedForm(form).subscribe((model) => {
+                expect(model).toBeNull();
+            });
+
+            const doc = this.dotEditContentHtmlService.iframe.nativeElement.contentDocument;
+            expect(doc.querySelector('.loader__overlay')).toBeNull();
         });
     });
 });

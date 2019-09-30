@@ -1,10 +1,4 @@
-import {
-    fromEvent as observableFromEvent,
-    of as observableOf,
-    Observable,
-    Subject,
-    Subscription
-} from 'rxjs';
+import { fromEvent, of, Observable, Subject, Subscription } from 'rxjs';
 
 import { map, take } from 'rxjs/operators';
 import { Injectable, ElementRef } from '@angular/core';
@@ -212,6 +206,7 @@ export class DotEditContentHtmlService {
             containerEl.appendChild(contentletPlaceholder);
             this.dotContainerContentletService
                 .getContentletToContainer(this.currentContainer, contentlet)
+                .pipe(take(1))
                 .subscribe((contentletHtml: string) => {
                     const contentletEl: HTMLElement = this.generateNewContentlet(contentletHtml);
                     containerEl.replaceChild(contentletEl, contentletPlaceholder);
@@ -242,13 +237,12 @@ export class DotEditContentHtmlService {
             ].join('')
         );
 
-        const contentletPlaceholder = this.getContentletPlaceholder();
-        containerEl.appendChild(contentletPlaceholder);
-
         if (this.isFormExistInContainer(form, containerEl)) {
             this.showContentAlreadyAddedError();
-            return observableOf(null);
+            return of(null);
         } else {
+            const contentletPlaceholder = this.getContentletPlaceholder();
+            containerEl.appendChild(contentletPlaceholder);
             return this.dotContainerContentletService
                 .getFormToContainer(this.currentContainer, form)
                 .pipe(
@@ -365,19 +359,17 @@ export class DotEditContentHtmlService {
             this.docClickSubscription.unsubscribe();
         }
 
-        this.docClickSubscription = observableFromEvent(doc, 'click').subscribe(
-            ($event: MouseEvent) => {
-                const target = <HTMLElement>$event.target;
-                const method = this.docClickHandlers[target.dataset.dotObject];
-                if (method) {
-                    method(target);
-                }
-
-                if (!target.classList.contains('dotedit-menu__button')) {
-                    this.closeContainersToolBarMenu();
-                }
+        this.docClickSubscription = fromEvent(doc, 'click').subscribe(($event: MouseEvent) => {
+            const target = <HTMLElement>$event.target;
+            const method = this.docClickHandlers[target.dataset.dotObject];
+            if (method) {
+                method(target);
             }
-        );
+
+            if (!target.classList.contains('dotedit-menu__button')) {
+                this.closeContainersToolBarMenu();
+            }
+        });
     }
 
     private getCurrentContentlet(target: HTMLElement): DotPageContent {
@@ -471,6 +463,7 @@ export class DotEditContentHtmlService {
         const currentContentlets: HTMLElement[] = <HTMLElement[]>(
             Array.from(containerEL.querySelectorAll(contentsSelector).values())
         );
+
         return currentContentlets.some(
             (contentElement) => contentElement.dataset.dotContentTypeId === form.id
         );
