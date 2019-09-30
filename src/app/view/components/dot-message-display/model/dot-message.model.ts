@@ -11,7 +11,7 @@ import { DotMessageType } from './dot-message-type.model';
 export interface DotMessage {
     life: number;
     message: string;
-    portletIdList: string[];
+    portletIdList?: string[];
     severity: DotMessageSeverity;
     type: DotMessageType;
 }

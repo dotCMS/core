@@ -17,6 +17,7 @@
         <dot-content-type-fields-variables-table-row #tableRow
             [fieldVariable]="fieldVariable"
             [variableIndex]="rowIndex"
+            [variablesList]="fieldVariables"
             (cancel)="onCancel($event)"
             (delete)="deleteVariable(fieldVariables[$event], $event)"
             (save)="saveVariable($event)">

@@ -83,6 +83,8 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     it('should load the component with data', () => {
         fixture.detectChanges();
         const dataTable = de.query(By.css('p-table'));
+        tableRow = de.query(By.css('dot-content-type-fields-variables-table-row')).componentInstance;
+        expect(tableRow.variablesList).toEqual(mockFieldVariables);
         expect(dataTable.componentInstance.value).toEqual(mockFieldVariables);
         expect(dataTable.listeners[0].name).toBe('keydown.enter');
     });

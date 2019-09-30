@@ -12,6 +12,8 @@ import {
 import { DotMessageService } from '@services/dot-messages-service';
 import { take } from 'rxjs/operators';
 import { DotFieldVariable } from '../../models/dot-field-variable.interface';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 
 @Component({
     selector: 'dot-content-type-fields-variables-table-row',
@@ -30,6 +32,8 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit, O
     fieldVariable: DotFieldVariable;
     @Input()
     variableIndex: number;
+    @Input()
+    variablesList: DotFieldVariable[] = [];
 
     @Output()
     save: EventEmitter<number> = new EventEmitter(false);
@@ -45,7 +49,10 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit, O
     elemRef: ElementRef;
     isEditing = false;
 
-    constructor(public dotMessageService: DotMessageService) {}
+    constructor(
+        public dotMessageService: DotMessageService,
+        private dotMessageDisplayService: DotMessageDisplayService
+    ) {}
 
     ngOnInit(): void {
         this.dotMessageService
@@ -53,13 +60,17 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit, O
                 'contenttypes.field.variables.key_input.placeholder',
                 'contenttypes.field.variables.value_input.placeholder',
                 'contenttypes.action.save',
-                'contenttypes.action.cancel'
+                'contenttypes.action.cancel',
+                'contenttypes.field.variables.error.duplicated.variable'
             ])
             .pipe(take(1))
             .subscribe((messages: { [key: string]: string }) => {
                 this.messages = messages;
                 if (!this.isEditing) {
-                    this.keyCell.nativeElement.click();
+                    // "setTimeout" needs to be set so "keyCell" DOM gets rendered and tests don't fail
+                    setTimeout(() => {
+                        this.keyCell.nativeElement.click();
+                    }, 0);
                 }
             });
     }
@@ -80,12 +91,26 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit, O
 
     /**
      * Sets initial fields properties
+     *
+     * @param {Event} $event
      * @memberof DotContentTypeFieldsVariablesTableRowComponent
      */
-    editFieldInit(): void {
+    editFieldInit($event: Event): void {
         this.rowActiveHighlight = true;
         this.showEditMenu = true;
-        this.saveDisabled = this.isFieldDisabled();
+        const isKeyVariableDuplicated = this.isFieldVariableKeyDuplicated();
+        this.saveDisabled = this.isFieldDisabled() || isKeyVariableDuplicated;
+
+        if (this.shouldDisplayDuplicatedVariableError(isKeyVariableDuplicated, $event)) {
+            this.dotMessageDisplayService.push({
+                life: 3000,
+                message: this.messages[
+                    'contenttypes.field.variables.error.duplicated.variable'
+                ].replace('{0}', (<HTMLInputElement>$event.target).value),
+                severity: DotMessageSeverity.ERROR,
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+        }
     }
 
     /**
@@ -124,7 +149,22 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit, O
     }
 
     private isFieldDisabled(): boolean {
-        return this.fieldVariable.key === '' || this.fieldVariable.value === '' ? true : false;
+        return this.fieldVariable.key === '' || this.fieldVariable.value === '';
+    }
+
+    private shouldDisplayDuplicatedVariableError(
+        isKeyVariableDuplicated: boolean,
+        $event: Event
+    ): boolean {
+        return isKeyVariableDuplicated && $event && $event.type === 'blur';
+    }
+
+    private isFieldVariableKeyDuplicated(): boolean {
+        return (
+            this.variablesList.filter(
+                (variable: DotFieldVariable) => variable.key === this.fieldVariable.key
+            ).length > 1
+        );
     }
 
     private keyInputInvalid($event: KeyboardEvent): boolean {

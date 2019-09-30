@@ -49,6 +49,15 @@ describe('DotMessageDisplayService', () => {
         mockDotcmsEventsService.triggerSubscribeTo('MESSAGE', messageExpected);
     });
 
+    it('should push a message', (done) => {
+        dotMessageDisplayService.messages().subscribe((message: DotMessage) => {
+            expect(message).toEqual(messageExpected);
+            done();
+        });
+
+        dotMessageDisplayService.push(messageExpected);
+    });
+
     it('should unsubscribe', () => {
         let wasCalled = false;
 
