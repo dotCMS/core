@@ -1,13 +1,15 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.enterprise.license.DotLicenseRepoEntry;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import java.io.IOException;
 import java.util.List;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -28,7 +30,6 @@ import org.quartz.StatefulJob;
 public class FreeServerFromClusterJob implements StatefulJob {
 
     @Override
-    @WrapInTransaction
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
         try {
             List<Server> inactiveServers = APILocator.getServerAPI().getInactiveServers();
@@ -43,7 +44,34 @@ public class FreeServerFromClusterJob implements StatefulJob {
         } catch (Exception exception) {
             Logger.error(FreeServerFromClusterJob.class,
                     "Error trying to Free Server from Cluster", exception);
+        } finally {
+            DbConnectionFactory.closeSilently();
         }
+    }
+
+    /**
+     * Removes the specified license serial number from a specific server.
+     * @throws Exception
+     *
+     */
+    private boolean freeLicense(final String inactiveServerID)
+            throws Exception {
+
+        boolean needsRewire = false;
+
+        for (DotLicenseRepoEntry lic : LicenseUtil.getLicenseRepoList()) {
+            if (inactiveServerID.equals(lic.serverId)) {
+            	if(APILocator.getServerAPI().readServerId().equals(inactiveServerID)){
+            		LicenseUtil.pickLicense(lic.dotLicense.serial);
+            	}
+            	else{
+	                LicenseUtil.freeLicenseOnRepo(lic.dotLicense.serial, inactiveServerID);
+	                needsRewire = true;
+	                break;
+            	}
+            }
+        }
+        return needsRewire;
     }
 
     /**

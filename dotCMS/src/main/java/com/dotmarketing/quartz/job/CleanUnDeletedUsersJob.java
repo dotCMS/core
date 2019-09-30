@@ -1,16 +1,19 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import java.util.List;
+
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
+
+import java.util.List;
 
 /**
  * Clean user_ table when an user deletion could no be completed for any reason.
@@ -27,11 +30,11 @@ public class CleanUnDeletedUsersJob implements StatefulJob {
         userAPI = APILocator.getUserAPI();
     }
 
-    @WrapInTransaction
     @Override
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
         try {
             User systemUser = userAPI.getSystemUser();
+            HibernateUtil.startTransaction();
 
             //Search for dirty registers
             List<User> users = userAPI.getUnDeletedUsers();
@@ -42,7 +45,13 @@ public class CleanUnDeletedUsersJob implements StatefulJob {
                 user.setDeleteInProgress(false);
                 userAPI.save(user, systemUser, false);
             }
+            HibernateUtil.closeAndCommitTransaction();
         } catch (DotDataException | DotSecurityException e) {
+            try {
+                HibernateUtil.rollbackTransaction();
+            } catch (DotHibernateException e1) {
+                Logger.error(CleanUnDeletedUsersJob.class, "Error executing rollback", e1);
+            }
             Logger.error(CleanUnDeletedUsersJob.class, "Error executing CleanUnDeletedUsersJob", e);
         }
     }

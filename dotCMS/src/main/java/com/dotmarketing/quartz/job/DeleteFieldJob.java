@@ -1,6 +1,17 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.business.WrapInTransaction;
+import java.util.Date;
+import java.util.Locale;
+import java.util.UUID;
+
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
+
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -10,7 +21,10 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -22,16 +36,6 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
-import java.util.Date;
-import java.util.Locale;
-import java.util.UUID;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
 
 /**
  * This Quartz Job is in charge of deleting a field from a specified Content
@@ -167,7 +171,6 @@ public class DeleteFieldJob extends DotStatefulJob {
 	 * @throws JobExecutionException
 	 *             An error occurred when deleting the Field.
 	 */
-    @WrapInTransaction
 	@Override
 	public void run(JobExecutionContext jobContext) throws JobExecutionException {
 		final JobDataMap map = jobContext.getJobDetail().getJobDataMap();
@@ -210,6 +213,11 @@ public class DeleteFieldJob extends DotStatefulJob {
             this.deleteFieldJobHelper.generateNotificationEndDeleting(this.notfAPI, userLocale, user.getUserId(),
                     field.getVelocityVarName(), field.getInode(), contentType.getInode());
         } catch (Exception e) {
+            try {
+                HibernateUtil.rollbackTransaction();
+            } catch (DotHibernateException e1) {
+                Logger.error(this, "Error in rollback transaction", e);
+            }
             Logger.error(this, String.format("Unable to delete field '%s'. Field Inode: %s, Content Type Inode: %s, Content Type name: %s",
                     field.getVelocityVarName(), field.getInode(), contentType.getInode(), contentType.getName()), e);
 
@@ -222,6 +230,14 @@ public class DeleteFieldJob extends DotStatefulJob {
 
             throw new JobExecutionException(String.format("Unable to delete field '%s'. Field Inode: %s, Content Type Inode: %s, Content Type name: %s",
                     field.getVelocityVarName(), field.getInode(), contentType.getInode(), contentType.getName()), e);
+        } finally {
+            try {
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, "exception while calling HibernateUtil.closeSession()", e);
+            } finally {
+                DbConnectionFactory.closeConnection();
+            }
         }
 	}
 

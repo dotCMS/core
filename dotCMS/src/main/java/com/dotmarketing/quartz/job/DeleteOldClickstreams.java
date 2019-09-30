@@ -1,7 +1,5 @@
 package com.dotmarketing.quartz.job;
 
-import com.dotcms.business.WrapInTransaction;
-import com.dotmarketing.util.Logger;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
@@ -15,19 +13,18 @@ import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.util.Config;
 
 public class DeleteOldClickstreams extends DotStatefulJob {
-	
+
 	public DeleteOldClickstreams() {
 	}
 
 	@Override
-    @WrapInTransaction
 	public void run(JobExecutionContext jobContext)
 			throws JobExecutionException {
-		int days = Config.getIntProperty("DELETE_CLICKSTREAMS_OLDER_THAN", 1);	
-		String sdate = null;	
+		int days = Config.getIntProperty("DELETE_CLICKSTREAMS_OLDER_THAN", 1);
+		String sdate = null;
 		SimpleDateFormat df_oracle = new SimpleDateFormat("dd-MMM-yy");
 		SimpleDateFormat df_other = new SimpleDateFormat("yyyy-MM-dd");
-		Calendar now = Calendar.getInstance();			
+		Calendar now = Calendar.getInstance();
 		now.add(Calendar.DATE, -(days-1));
 
 		try {
@@ -36,12 +33,20 @@ public class DeleteOldClickstreams extends DotStatefulJob {
 			}else{
 				sdate =df_other.format(now.getTime());
 			}
+			HibernateUtil.startTransaction();
 			HibernateUtil.delete("from clickstream_request in class com.dotmarketing.beans.ClickstreamRequest where timestampper < '"+sdate+"'");
 			HibernateUtil.delete("from clickstream in class com.dotmarketing.beans.Clickstream where start_date < '"+sdate+"'");
 			HibernateUtil.delete("from clickstream_404 in class com.dotmarketing.beans.Clickstream404 where timestampper < '"+sdate+"'");
+			HibernateUtil.closeAndCommitTransaction();
 
 		} catch (Exception e) {
-            Logger.warnAndDebug(DeleteOldClickstreams.class, e.getMessage(), e);
+			try {
+				HibernateUtil.rollbackTransaction();
+			} catch (DotHibernateException e1) {
+				e1.printStackTrace();
+			}
+		} finally {
+			HibernateUtil.closeSessionSilently();
 		}
 
 	}

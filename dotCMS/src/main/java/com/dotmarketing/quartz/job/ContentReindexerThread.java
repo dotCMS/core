@@ -51,6 +51,12 @@ public class ContentReindexerThread implements Runnable, Job {
 			run();
 		} catch (Exception e) {
 			Logger.info(this, e.toString());
+		} finally {
+			try {
+				HibernateUtil.closeSession();
+			} catch (DotHibernateException e) {
+				Logger.error(ContentReindexerThread.class, e.getMessage(), e);
+			}
 		}
 	}
 }
