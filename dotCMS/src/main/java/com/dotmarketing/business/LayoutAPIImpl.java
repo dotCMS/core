@@ -150,7 +150,9 @@ public class LayoutAPIImpl implements LayoutAPI {
 
 	@Override
 	public boolean doesUserHaveAccessToPortlet(final String portletId, final User user) throws DotDataException {
-	  if(user.isBackendUser() && "content".equals(portletId)) return true;
+          if(portletId==null || user==null || !user.isBackendUser()) {
+              return false;
+          }
 		if(loadLayoutsForUser(user).stream(). anyMatch(layout -> layout.getPortletIds().contains(portletId))){
 			return true;
 		}

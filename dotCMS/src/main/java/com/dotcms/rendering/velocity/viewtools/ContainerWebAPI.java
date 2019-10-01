@@ -1,39 +1,36 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.cms.login.LoginServiceAPI;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.InodeUtils;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.util.StringUtil;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
-
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-
-import static com.dotcms.util.CollectionsUtils.list;
+import io.vavr.control.Try;
 
 public class ContainerWebAPI implements ViewTool {
 
@@ -103,7 +100,47 @@ public class ContainerWebAPI implements ViewTool {
 		return "";
 
 	}
+	/**
+	 * This method returns the personalized list of content ids that match
+	 * the persona of the visitor
+	 * @param pageId
+	 * @param containerId
+	 * @param uuid
+	 * @return
+	 */
+    public List<String> getPersonalizedContentList(String pageId, String containerId, String uuid) {
+        Set<String> availablePersonalizations = UtilMethods.isSet(pageId)
+                        ? Try.of(() -> APILocator.getMultiTreeAPI().getPersonalizationsForPage(pageId))
+                                        .getOrElse(ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT))
+                        : ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT);
 
+        String pTag = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request);
+
+        pTag = (!availablePersonalizations.contains(pTag)) ? MultiTree.DOT_PERSONALIZATION_DEFAULT : pTag;
+
+        // if live mode, the content list will not have a colon in the key- as it was a velocity variable
+        List<String> contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag.replace(":", ""));
+        if(contentlets !=null ) {
+            return contentlets;
+        }
+        
+        // if edit or preview mode, the content list WILL have a colon in the key, as this is 
+        // a map in memory
+        contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag);
+        if(contentlets !=null ) {
+            return contentlets;
+        }
+        
+        // if called through the ContainerResource, the content list will appear under the default UUID, 
+        // as the content is just being rendered in the container and is not associated with any page
+        contentlets = (List<String>) ctx.get("contentletList" + containerId + Container.LEGACY_RELATION_TYPE);
+        if(contentlets !=null ) {
+            return contentlets;
+        }
+        
+        return new ArrayList<>();
+    }
+	
 	/**
 	 * This method checks if the logged in user (frontend) has the required permission over
 	 * the passed container id

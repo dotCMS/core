@@ -170,7 +170,7 @@ public class ContainerLoader implements DotLoader {
 
         // let's write this puppy out to our file
         velocityCodeBuilder.append("#set ($SERVER_NAME =$host.getHostname() )");
-        velocityCodeBuilder.append("#set ($CONTAINER_IDENTIFIER_INODE = '")
+        velocityCodeBuilder.append("#set ($CONTAINER_IDENTIFIER = '")
             .append(container.getIdentifier())
             .append("')");
         velocityCodeBuilder.append("#set ($CONTAINER_UNIQUE_ID = '")
@@ -186,18 +186,17 @@ public class ContainerLoader implements DotLoader {
             .append(container.getInode())
             .append("')");
 
-        velocityCodeBuilder.append("#set ($CONTENTLETS = $contentletList")
-            .append(container.getIdentifier())
-            .append(uuid)
-            .append(")");
-        velocityCodeBuilder.append("#set ($CONTAINER_NUM_CONTENTLETS = $totalSize")
-            .append(container.getIdentifier())
-            .append(uuid)
-            .append(")");
+        // START CONTENT LOOP
 
-        velocityCodeBuilder.append("#if(!$CONTAINER_NUM_CONTENTLETS)")
-            .append("#set($CONTAINER_NUM_CONTENTLETS = 0)")
-            .append("#end");
+        // the viewtool call to get the list of contents for the container
+        String apiCall="$containerAPI.getPersonalizedContentList(\"$!HTMLPAGE_IDENTIFIER\",\"$!CONTAINER_IDENTIFIER\", \"$!CONTAINER_UNIQUE_ID\")";
+        
+        velocityCodeBuilder.append("#set ($CONTENTLETS = ")
+        .append(apiCall)
+        .append(")");
+        
+        velocityCodeBuilder.append("#set ($CONTAINER_NUM_CONTENTLETS = ${CONTENTLETS.size()})");
+
 
         velocityCodeBuilder.append("#set ($CONTAINER_NAME = \"")
             .append(UtilMethods.espaceForVelocity(container.getTitle()))
@@ -263,17 +262,11 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#end");
             }
 
-            // sb.append("$contentletList" + identifier.getId() + uuid + "<br>");
+            // FOR LOOP
 
-            // START CONTENT LOOP
-            velocityCodeBuilder.append("#foreach ($contentletId in $contentletList")
-                .append(container.getIdentifier())
-                .append(uuid)
-                .append(")");
-
-                // sb.append("\n#if($webapi.canParseContent($contentletId,"+EDIT_MODE+")) ");
+            velocityCodeBuilder.append("#foreach ($contentletId in $CONTENTLETS )");
+            
                 velocityCodeBuilder.append("#set($_show_working_=false)");
-    
                 // if timemachine future enabled
                 velocityCodeBuilder.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
                 velocityCodeBuilder.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\"))))");

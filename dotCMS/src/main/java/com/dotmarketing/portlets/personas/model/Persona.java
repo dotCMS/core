@@ -59,5 +59,10 @@ public class Persona extends Contentlet implements IPersona{
 	public void setTags(List<String> tags) {
 		setStringProperty(PersonaAPI.TAGS_FIELD,tags.toString());
 	}
+	
+	@Override
+	public String toString() {
+	    return this.getName() + " : " + this.getKeyTag();
+	}
 
 }

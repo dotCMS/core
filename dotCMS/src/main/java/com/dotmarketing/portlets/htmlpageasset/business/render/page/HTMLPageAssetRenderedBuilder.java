@@ -109,7 +109,7 @@ public class HTMLPageAssetRenderedBuilder {
                 getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
 
         final HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
-        final Set<String> pagePersonalizationSet  = this.multiTreeAPI.getPersonalizationsForPage(htmlPageAsset.getIdentifier());
+        final Set<String> pagePersonalizationSet  = this.multiTreeAPI.getPersonalizationsForPage(htmlPageAsset);
         final Template template = getTemplate(mode);
         if(!UtilMethods.isSet(template) && mode.equals(PageMode.ADMIN_MODE)){
             throw new DotStateException(
@@ -234,7 +234,7 @@ public class HTMLPageAssetRenderedBuilder {
 
     
     private Visitor getVisitor() {
-      final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
+      final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
       return visitor.isPresent() ? visitor.get() : null;
     }
     

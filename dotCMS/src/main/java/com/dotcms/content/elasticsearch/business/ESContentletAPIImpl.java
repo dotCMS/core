@@ -435,11 +435,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     
     @CloseDBIfOpened
     @Override
-    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException {
         try {
             return contentFactory.findContentletByIdentifierAnyLanguage(identifier);
-        } catch (DotSecurityException se) {
-            throw se;
+
         } catch (Exception e) {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
         }

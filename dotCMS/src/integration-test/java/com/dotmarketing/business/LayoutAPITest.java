@@ -8,7 +8,8 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableMap;
-
+import com.liferay.portal.model.User;
+import static org.junit.Assert.assertTrue;
 import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Assert;
@@ -108,7 +109,28 @@ public class LayoutAPITest extends IntegrationTestBase {
   }
     
     
+  /**
+   * this test insures that a null user or portletId 
+   * passed to the LayoutAPI.doesUserHaveAccessToPortlet
+   * does not throw an error and instead returns false
+   * @throws DotDataException
+   */
+  @Test
+  public void test_doesUserHaveAccessToPortlet() throws DotDataException {
+    Layout layout1, layout2 = null;
+    User user = APILocator.systemUser();
+    User anonUser = APILocator.getUserAPI().getAnonymousUserNoThrow();
+
+
+    assertTrue("null user returns false" , !layoutAPI.doesUserHaveAccessToPortlet("content", null));
     
+    assertTrue("null portlet returns false" , !layoutAPI.doesUserHaveAccessToPortlet(null, user));
+    
+    assertTrue("anonUser has no layouts returns false" , !layoutAPI.doesUserHaveAccessToPortlet(null, anonUser));
+    
+    assertTrue("systemUser has all layouts returns true" , !layoutAPI.doesUserHaveAccessToPortlet("content", anonUser));
+    
+  }
     
     
     

@@ -18,10 +18,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
@@ -169,28 +171,46 @@ public class PageResourceTest {
     public void testGetPersonalizedPersonasOnPage()
             throws Exception {
 
-        final Host  host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
         final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
         final String  htmlPage            = UUIDGenerator.generateUuid();
-        final String  container           = UUIDGenerator.generateUuid();
-        final String  content             = UUIDGenerator.generateUuid();
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+
+        final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
+        final HTMLPageAsset pagetest = pageRenderTest.getPage();
+        final Container container = pageRenderTest.getFirstContainer();
+        //Create Contentlet in English
+        final Contentlet content = new ContentletDataGen(contentGenericType.id())
+                .languageId(1)
+                .folder(APILocator.getFolderAPI().findSystemFolder())
+                .host(host)
+                .setProperty("title", "content1")
+                .setProperty("body", "content1")
+                .nextPersisted();
+
         final Persona persona    = new PersonaDataGen().keyTag("persona"+System.currentTimeMillis()).hostFolder(host.getIdentifier()).nextPersisted();
         final String personaTag  = persona.getKeyTag();
         final String personalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
 
-        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
-        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
+        multiTreeAPI.saveMultiTree(new MultiTree(pagetest.getIdentifier(), container.getIdentifier(), content.getIdentifier(), UUIDGenerator.generateUuid(), 1)); // dot:default
+        multiTreeAPI.saveMultiTree(new MultiTree(pagetest.getIdentifier(), container.getIdentifier(), content.getIdentifier(), UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
 
+
+        
+        
+        
         persona.setIndexPolicy(IndexPolicy.WAIT_FOR);
         APILocator.getContentletAPI().publish(persona, user, false);
 
-        when(request.getRequestURI()).thenReturn("/index");
+        when(request.getRequestURI()).thenReturn(pagetest.getURI());
         final Response response = pageResource.getPersonalizedPersonasOnPage(request, new EmptyHttpResponse(),
-                null, 0, 10, "title", "ASC", host.getIdentifier(), htmlPage);
+                null, 0, 10, "title", "ASC", host.getIdentifier(), pagetest.getIdentifier());
 
         final ResponseEntityView entityView = (ResponseEntityView) response.getEntity();
         assertNotNull(entityView);
-
+        System.out.println(entityView);
         final PaginatedArrayList<PersonalizationPersonaPageView> paginatedArrayList = (PaginatedArrayList) entityView.getEntity();
         assertNotNull(paginatedArrayList);
 
