@@ -12,17 +12,13 @@ import { DotPageRenderState, DotPageMode } from '@portlets/dot-edit-page/shared/
     styleUrls: ['./dot-edit-page-toolbar.component.scss']
 })
 export class DotEditPageToolbarComponent implements OnInit, OnChanges {
-    @Input()
-    pageState: DotPageRenderState;
+    @Input() pageState: DotPageRenderState;
 
-    @Output()
-    cancel = new EventEmitter<boolean>();
+    @Output() cancel = new EventEmitter<boolean>();
 
-    @Output()
-    actionFired = new EventEmitter<boolean>();
+    @Output() actionFired = new EventEmitter<boolean>();
 
-    @Output()
-    whatschange = new EventEmitter<boolean>();
+    @Output() whatschange = new EventEmitter<boolean>();
 
     isEnterpriseLicense$: Observable<boolean>;
     showWhatsChanged: boolean;
@@ -44,7 +40,9 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges(): void {
-        this.showWhatsChanged = this.pageState.state.mode === DotPageMode.PREVIEW;
+        this.showWhatsChanged =
+            this.pageState.state.mode === DotPageMode.PREVIEW &&
+            !('persona' in this.pageState.viewAs);
     }
 
     /**

@@ -26,6 +26,7 @@ import { SiteServiceMock } from '@tests/site-service.mock';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { LoginServiceMock } from '@tests/login-service.mock';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
+import { mockDotPersona } from '@tests/dot-persona.mock';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -236,6 +237,15 @@ describe('DotEditPageToolbarComponent', () => {
                 expect(whatsChangedElem).toBeDefined();
                 expect(whatsChangedElem.componentInstance.label).toBe('Whats');
             });
+
+            it("should hide what's change selector when is not default user", () => {
+                componentHost.pageState.state.mode = DotPageMode.PREVIEW;
+                componentHost.pageState.viewAs.persona = mockDotPersona;
+                fixtureHost.detectChanges();
+
+                const whatsChangedElem = de.query(By.css('p-checkbox'));
+                expect(whatsChangedElem).toBeNull();
+            });
         });
     });
 
@@ -246,6 +256,7 @@ describe('DotEditPageToolbarComponent', () => {
             spyOn(component.whatschange, 'emit');
 
             componentHost.pageState.state.mode = DotPageMode.PREVIEW;
+            delete componentHost.pageState.viewAs.persona;
             fixtureHost.detectChanges();
             whatsChangedElem = de.query(By.css('p-checkbox'));
         });
