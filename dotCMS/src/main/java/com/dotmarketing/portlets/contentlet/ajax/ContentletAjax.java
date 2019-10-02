@@ -806,16 +806,16 @@ public class ContentletAjax {
 								if(hasQuotes){
 									fieldValue = CharMatcher.is('\"').trimFrom(fieldValue);
 								}
-								final String valueForQuery = ESUtils.escape(fieldValue);
+
 								String valueDelimiter = wildCard;
-								if (valueForQuery.startsWith("\"") && valueForQuery.endsWith("\"")) {
+								if (fieldValue.startsWith("\"") && fieldValue.endsWith("\"")) {
 									valueDelimiter = "";
 								} else if (hasQuotes) {
 									valueDelimiter = "\"";
 								}
 
 								luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":"
-										+ valueDelimiter + valueForQuery + valueDelimiter + " ");
+										+ valueDelimiter + fieldValue + valueDelimiter + " ");
 							}
 						}
 						else if(fieldbcontentname.startsWith("system")
