@@ -161,7 +161,7 @@ public class ViewContentletAction extends DotPortletAction {
     }
     
     contentTypesList.removeIf(t->t.variable().equalsIgnoreCase(Host.HOST_VELOCITY_VAR_NAME));
-    
+    contentTypesList.removeIf(t->t.variable().equalsIgnoreCase("forms"));
     
     request.setAttribute("contentTypesJs", buildJsArray(contentTypesList));
     return contentTypesList;
