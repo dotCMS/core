@@ -1104,14 +1104,6 @@ public class BrowserAjax {
                 else {
                 	newContentlet=APILocator.getContentletAPI().copyContentlet(cont, host, user, false);
                 }
-                /*copy page associated contentlets*/
-                List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(cont.getIdentifier());
-                for(MultiTree m : pageContents){
-                   	MultiTree mt = new MultiTree(newContentlet.getIdentifier(), m.getParent2(), m.getChild());
-                   	mt.setTreeOrder(m.getTreeOrder());
-                   	APILocator.getMultiTreeAPI().saveMultiTree(mt);
-                }
-
 
             result.put("status", "success");
             result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Page-copied")));
