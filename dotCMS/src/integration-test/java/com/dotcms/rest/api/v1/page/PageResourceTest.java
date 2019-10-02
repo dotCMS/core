@@ -456,6 +456,56 @@ public class PageResourceTest {
 
 
     /**
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}
+     * Given Scenario: Create a page with URL Pattern, with a no publish content, and try to get it in ADMIN_MODE
+     * ExpectedResult: Should return a 404 HTTP error
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws InterruptedException
+     */
+    @Test
+    public void shouldReturn404ForPageWithURLPatternWithNotLIVEContent() throws DotDataException, DotSecurityException, InterruptedException {
+        final String baseUrl = String.format("/test%s", System.currentTimeMillis());
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        final ContentType contentType = new ContentTypeDataGen().user(systemUser)
+                .host(host)
+                .detailPage(pageAsset.getIdentifier())
+                .urlMapPattern(String.format("%s/{text}", baseUrl))
+                .nextPersisted();
+
+        new FieldDataGen()
+                .name("text")
+                .velocityVarName("text")
+                .type(TextField.class)
+                .contentTypeId(contentType.id())
+                .nextPersisted();
+
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+        contentletDataGen
+                .setProperty("text", "text")
+                .languageId(1)
+                .nextPersisted();
+
+        Thread.sleep(500);
+
+        Response response = pageResource
+                .render(request, this.response, String.format("%s/text", baseUrl), PageMode.ADMIN_MODE.toString(), null,
+                        "1", null);
+
+        assertEquals(404, response.getStatus());
+
+        response = pageResource
+                .render(request, this.response, String.format("%s/text", baseUrl), PageMode.LIVE.toString(), null,
+                        "1", null);
+
+        assertEquals(404, response.getStatus());
+    }
+
+    /**
      * Should return about-us/index page
      *
      * @throws JSONException
