@@ -76,7 +76,9 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit, O
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        this.isEditing = changes.fieldVariable && !!changes.fieldVariable.currentValue.value;
+        if (changes.fieldVariable) {
+            this.isEditing = !!changes.fieldVariable.currentValue.value;
+        }
     }
 
     /**
