@@ -63,11 +63,21 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
      */
     checkForTag(event: KeyboardEvent): void {
         if (event.key === 'Enter') {
-            this.addItemOnEnter(event.currentTarget as HTMLInputElement);
+            this.addItemOnEvent(event.currentTarget as HTMLInputElement);
         } else if (event.key === 'Backspace') {
             //  PrimeNG p-autoComplete remove elements on Backspace keydown, we don't want that in our component so we're fixing this here.
             this.recoverDeletedElement();
         }
+    }
+
+    /**
+     * Check if the autocomplete has a value on blur, if so, add the new tag.
+     *
+     * @param KeyboardEvent event
+     * @memberof DotAutocompleteTagsComponent
+     */
+    checkForTagOnBlur(event: KeyboardEvent): void {
+        this.addItemOnEvent(event.currentTarget as HTMLInputElement);
     }
 
     /**
@@ -129,14 +139,14 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
     registerOnTouched(): void {}
 
     private isUniqueTag(label: string): boolean {
-        return !!label && !this.value.filter((tag: DotTag) => tag.label === label).length;
+        return !!label.trim() && !this.value.filter((tag: DotTag) => tag.label === label).length;
     }
 
     private getStringifyLabels(): string {
         return this.value.map((tag: DotTag) => tag.label).join(',');
     }
 
-    private addItemOnEnter(input: HTMLInputElement): void {
+    private addItemOnEvent(input: HTMLInputElement): void {
         input.value = input.value.trim();
         if (this.isUniqueTag(input.value)) {
             this.value.unshift(this.createNewTag(input.value));

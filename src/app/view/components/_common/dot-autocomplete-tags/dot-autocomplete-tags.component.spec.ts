@@ -130,6 +130,22 @@ describe('DotAutocompleteTagsComponent', () => {
                 });
             });
 
+            describe('onBlur', () => {
+                const newTag = { currentTarget: { value: 'newTag' } };
+                const duplicateTag = { currentTarget: { value: 'Dotcms' } };
+
+                it('should add the tag because onBlur', () => {
+                    autoComplete.onInputBlur(newTag);
+                    fixture.detectChanges();
+                    expect(component.value.length).toEqual(3);
+                });
+
+                it('should NOT add the tag because is duplicate', () => {
+                    autoComplete.onInputBlur(duplicateTag);
+                    expect(component.value.length).toEqual(2);
+                });
+            });
+
             it('should call filterTags on completeMethod and remove already selected', () => {
                 spyOn(component, 'filterTags').and.callThrough();
                 component.value.push({

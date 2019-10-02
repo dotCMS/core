@@ -10,6 +10,7 @@
                  (keydown.enter)="$event.stopPropagation()"
                  (onSelect)="addItem()"
                  (onUnselect)="removeItem($event)"
+                 (onBlur)="checkForTagOnBlur($event)"
                  [disabled]="disabled"
                  appendTo="body">
         <ng-template let-tag pTemplate="selectedItem">
