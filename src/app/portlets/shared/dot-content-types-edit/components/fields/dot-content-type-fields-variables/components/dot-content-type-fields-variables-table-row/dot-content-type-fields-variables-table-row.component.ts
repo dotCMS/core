@@ -67,10 +67,7 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit, O
             .subscribe((messages: { [key: string]: string }) => {
                 this.messages = messages;
                 if (!this.isEditing) {
-                    // "setTimeout" needs to be set so "keyCell" DOM gets rendered and tests don't fail
-                    setTimeout(() => {
-                        this.keyCell.nativeElement.click();
-                    }, 0);
+                    this.keyCell.nativeElement.click();
                 }
             });
     }
@@ -101,7 +98,7 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit, O
         this.rowActiveHighlight = true;
         this.showEditMenu = true;
         const isKeyVariableDuplicated = this.isFieldVariableKeyDuplicated();
-        this.saveDisabled = this.isFieldDisabled() || isKeyVariableDuplicated;
+        this.saveDisabled = this.isSaveDisabled(isKeyVariableDuplicated);
 
         if (this.shouldDisplayDuplicatedVariableError(isKeyVariableDuplicated, $event)) {
             this.dotMessageDisplayService.push({
@@ -150,6 +147,10 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit, O
         this.save.emit(this.variableIndex);
     }
 
+    private isSaveDisabled(isKeyVariableDuplicated: boolean) {
+        return this.isFieldDisabled() || (isKeyVariableDuplicated && !this.isEditing);
+    }
+
     private isFieldDisabled(): boolean {
         return this.fieldVariable.key === '' || this.fieldVariable.value === '';
     }
@@ -164,8 +165,9 @@ export class DotContentTypeFieldsVariablesTableRowComponent implements OnInit, O
     private isFieldVariableKeyDuplicated(): boolean {
         return (
             this.variablesList.filter(
-                (variable: DotFieldVariable) => variable.key === this.fieldVariable.key
-            ).length > 1
+                (variable: DotFieldVariable) =>
+                    variable.id && variable.key === this.fieldVariable.key
+            ).length > 0
         );
     }
 
