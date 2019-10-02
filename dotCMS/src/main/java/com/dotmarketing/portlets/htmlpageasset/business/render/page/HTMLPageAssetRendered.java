@@ -25,9 +25,10 @@ public class HTMLPageAssetRendered extends PageView {
                                  final boolean canCreateTemplate,
                                  final boolean canEditTemplate,
                                  final ViewAsPageStatus viewAs,
-                                 final String pageUrlMapper) {
+                                 final String pageUrlMapper,
+                                 final boolean live) {
 
-        super(site, template, containers, page, layout, canCreateTemplate, canEditTemplate, viewAs, pageUrlMapper);
+        super(site, template, containers, page, layout, canCreateTemplate, canEditTemplate, viewAs, pageUrlMapper, live);
         this.html = html;
 
 
