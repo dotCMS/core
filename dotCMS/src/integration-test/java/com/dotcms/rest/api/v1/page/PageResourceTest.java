@@ -39,6 +39,8 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONException;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
@@ -206,7 +208,7 @@ public class PageResourceTest {
 
         when(request.getRequestURI()).thenReturn(pagetest.getURI());
         final Response response = pageResource.getPersonalizedPersonasOnPage(request, new EmptyHttpResponse(),
-                null, 0, 10, "title", "ASC", host.getIdentifier(), pagetest.getIdentifier());
+                null, 0, 10, "title", "ASC", host.getIdentifier(), pagetest.getIdentifier(), null);
 
         final ResponseEntityView entityView = (ResponseEntityView) response.getEntity();
         assertNotNull(entityView);
@@ -224,6 +226,42 @@ public class PageResourceTest {
                         Boolean.TRUE.equals(personalizationPersonaPageView.getPersona().get("personalized"))));
     }
 
+    /**
+     * methodToTest {@link PageResource#getPersonalizedPersonasOnPage(HttpServletRequest, HttpServletResponse, String, int, int, String, String, String, String, Boolean)}
+     * Given Scenario: Resuqest persona list with a limited user
+     * ExpectedResult: Should respect front end roles when the parameter is set to true and not respect it when the
+     * parameter is set to false
+     */
+    @Test
+    public void getPersonasForLimitedUser() throws DotDataException, DotSecurityException, PortalException, SystemException {
+        final Persona persona    = new PersonaDataGen().keyTag("persona"+System.currentTimeMillis()).hostFolder(host.getIdentifier()).nextPersisted();
+        persona.setIndexPolicy(IndexPolicy.WAIT_FOR);
+
+
+        final User user = new UserDataGen().nextPersisted();
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
+        final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
+        final HTMLPageAsset pagetest = pageRenderTest.getPage();
+
+        when(request.getRequestURI()).thenReturn(pagetest.getURI());
+
+        Response response = pageResource.getPersonalizedPersonasOnPage(request, new EmptyHttpResponse(),
+                null, 0, 10, "title", "ASC", host.getIdentifier(),
+                pagetest.getIdentifier(), true);
+
+        List<PersonalizationPersonaPageView> personas = (List<PersonalizationPersonaPageView> ) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertEquals(2, personas.size());
+        assertEquals("dot:persona", ((PersonalizationPersonaPageView) personas.get(0)).getPersona().get("keyTag"));
+        assertEquals(persona.getKeyTag(), ((PersonalizationPersonaPageView) personas.get(1)).getPersona().get("keyTag"));
+
+        response = pageResource.getPersonalizedPersonasOnPage(request, new EmptyHttpResponse(),
+                null, 0, 10, "title", "ASC", host.getIdentifier(),
+                pagetest.getIdentifier(), false);
+
+         personas = (List<PersonalizationPersonaPageView> ) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertEquals(1, personas.size());
+    }
 
     /**
      * Should return about-us/index page

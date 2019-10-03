@@ -540,10 +540,11 @@ public class PageResource {
                                                    @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
                                                    @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
                                                    @QueryParam("hostId") final String  hostId,
-                                                   @PathParam("pageId")  final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
+                                                   @PathParam("pageId")  final String  pageId,
+                                                   @QueryParam("respectFrontEndRoles") Boolean respectFrontEndRolesParams) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(request, response, true).getUser();
-        final boolean respectFrontEndRoles = PageMode.get(request).respectAnonPerms;
+        final boolean respectFrontEndRoles = respectFrontEndRolesParams != null ? respectFrontEndRolesParams : PageMode.get(request).respectAnonPerms;
 
         Logger.debug(this, ()-> "Getting page personas per page: " + pageId);
 
