@@ -34,7 +34,7 @@ public class Task05160MultiTreeAddPersonalizationColumnAndChangingPKTest {
         try{
             final Task05160MultiTreeAddPersonalizationColumnAndChangingPK treeAddPersonalizationColumnAndChangingPK =
                     new Task05160MultiTreeAddPersonalizationColumnAndChangingPK();
-
+/*
             if (!treeAddPersonalizationColumnAndChangingPK.forceRun()) {
 
                 this.removePersonalizationColumnAndPK();
@@ -43,6 +43,7 @@ public class Task05160MultiTreeAddPersonalizationColumnAndChangingPKTest {
             if (treeAddPersonalizationColumnAndChangingPK.forceRun()) {
                 treeAddPersonalizationColumnAndChangingPK.executeUpgrade();
             }
+            */
         } catch (Exception e) {
             final String  errMessage = "Could not modify multi tree table on db of type: " + dbType + " Err: " +  e.toString() ;
             Logger.info (getClass(), errMessage + "\n" + ExceptionUtil.exceptionAsString(e, 30));
