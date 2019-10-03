@@ -51,11 +51,9 @@ jobs:
   include:
     - stage: build image
       script: bash travis/submit.sh
-    - stage: unit tests
-      if: commit_message !~ /(\[travis postgres\]|\[travis mysql\]|\[travis oracle\]|\[travis mssql\])/ OR commit_message =~ /(\[travis\]|\[travis unit\])/
+    - stage: tests
+      name: unit tests
       script: bash travis/unit.sh
-    - stage: integration tests
-      name: init
     - script: bash travis/integration.sh
       if: >-
         commit_message !~ /(\[travis mysql\]|\[travis oracle\]|\[travis mssql\]|\[travis unit\])/ OR commit_message =~ /(\[travis\]|\[travis postgres\])/
