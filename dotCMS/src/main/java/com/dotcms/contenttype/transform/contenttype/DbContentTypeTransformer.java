@@ -5,10 +5,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.contenttype.model.field.Field;
+
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -25,6 +26,9 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 		List<ContentType> newList = new ArrayList<ContentType>();
 		for(Map<String, Object> map : initList){
 			newList.add(transform(map));
+		}
+		if(LicenseManager.getInstance().isCommunity()) {
+		    newList.removeIf(t->(t.baseType()==BaseContentType.FORM || t.baseType() == BaseContentType.PERSONA));
 		}
 		this.list= ImmutableList.copyOf(newList);
 	}
