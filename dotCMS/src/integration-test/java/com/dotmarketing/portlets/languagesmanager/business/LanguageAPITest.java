@@ -54,6 +54,11 @@ public class LanguageAPITest {
 		APILocator.getLanguageAPI().getLanguages();
 		Assert.assertEquals(existingLanguagesCount,CacheLocator.getLanguageCache().getLanguages().size());
 		
+		
+		
+		
+		
+		
 		Language lan = new Language();
 		lan.setCountry("Italy");
 		lan.setCountryCode("IT");
@@ -67,7 +72,7 @@ public class LanguageAPITest {
 		APILocator.getLanguageAPI().getLanguages();
 		Assert.assertEquals(existingLanguagesCount, CacheLocator.getLanguageCache().getLanguages().size());
 		
-		APILocator.getLanguageAPI().deleteLanguage(lan);
+		//APILocator.getLanguageAPI().deleteLanguage(lan);
 		
 		existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
 		CacheLocator.getLanguageCache().clearCache();
