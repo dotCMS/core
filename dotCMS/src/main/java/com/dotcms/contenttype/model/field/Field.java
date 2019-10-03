@@ -61,16 +61,12 @@ import org.immutables.value.Value.Derived;
 })
 public abstract class Field implements FieldIf, Serializable {
 
-  public static int SORT_ORDER_DEFAULT_VALUE = -1;
+  public final static int SORT_ORDER_DEFAULT_VALUE = -1;
 
   @Value.Check
   public void check() {
 	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
 
-    /*if (iDate().after(legacyFieldDate)) {
-      Preconditions.checkArgument(acceptedDataTypes().contains(dataType()),
-          this.getClass().getSimpleName() + " must have DataType:" + acceptedDataTypes());
-    }*/
   }
 
 
