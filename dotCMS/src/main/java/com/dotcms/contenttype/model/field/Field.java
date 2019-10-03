@@ -67,10 +67,7 @@ public abstract class Field implements FieldIf, Serializable {
   public void check() {
 	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
 
-    /*if (iDate().after(legacyFieldDate)) {
-      Preconditions.checkArgument(acceptedDataTypes().contains(dataType()),
-          this.getClass().getSimpleName() + " must have DataType:" + acceptedDataTypes());
-    }*/
+
   }
 
 
