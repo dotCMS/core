@@ -67,7 +67,6 @@ public abstract class Field implements FieldIf, Serializable {
   public void check() {
 	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
 
-
   }
 
 
