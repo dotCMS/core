@@ -1,8 +1,10 @@
-import { Component, forwardRef, Input, OnInit } from '@angular/core';
+import { Component, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
 import { DotTagsService } from '@services/dot-tags/dot-tags.service';
 import { DotTag } from '@models/dot-tag';
 import { take } from 'rxjs/operators';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { DotMessageService } from '@services/dot-messages-service';
+import { AutoComplete } from 'primeng/autocomplete';
 
 /**
  * The DotAutocompleteTagsComponent provide a dropdown to select tags,
@@ -28,14 +30,26 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
     value: DotTag[] = [];
     filteredOptions: DotTag[];
     disabled = false;
+    messagesKey: { [key: string]: string } = {};
+    inputReference: HTMLInputElement;
+    @ViewChild('autoComplete') autoComplete: AutoComplete;
 
     private lastDeletedTag: DotTag;
 
-    constructor(private dotTagsService: DotTagsService) {}
+    constructor(
+        private dotTagsService: DotTagsService,
+        public dotMessageService: DotMessageService
+    ) {}
 
     propagateChange = (_: any) => {};
 
     ngOnInit() {
+        this.dotMessageService
+            .getMessages(['dot.common.press'])
+            .pipe(take(1))
+            .subscribe((messages: { [key: string]: string }) => {
+                this.messagesKey = messages;
+            });
         this.filterTags();
     }
 
@@ -62,22 +76,13 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
      * @memberof DotAutocompleteTagsComponent
      */
     checkForTag(event: KeyboardEvent): void {
+        this.inputReference = event.currentTarget as HTMLInputElement;
         if (event.key === 'Enter') {
-            this.addItemOnEvent(event.currentTarget as HTMLInputElement);
+            this.addItemOnEvent(this.inputReference);
         } else if (event.key === 'Backspace') {
             //  PrimeNG p-autoComplete remove elements on Backspace keydown, we don't want that in our component so we're fixing this here.
             this.recoverDeletedElement();
         }
-    }
-
-    /**
-     * Check if the autocomplete has a value on blur, if so, add the new tag.
-     *
-     * @param KeyboardEvent event
-     * @memberof DotAutocompleteTagsComponent
-     */
-    checkForTagOnBlur(event: KeyboardEvent): void {
-        this.addItemOnEvent(event.currentTarget as HTMLInputElement);
     }
 
     /**
@@ -153,6 +158,7 @@ export class DotAutocompleteTagsComponent implements OnInit, ControlValueAccesso
             this.propagateChange(this.getStringifyLabels());
             this.filterTags({ query: input.value });
             input.value = null;
+            this.autoComplete.hide();
         }
     }
 
