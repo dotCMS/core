@@ -25,6 +25,7 @@ public class Task05160MultiTreeAddPersonalizationColumnAndChangingPKTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    
     @Ignore
     @Test
     public void testExecuteUpgrade() {
