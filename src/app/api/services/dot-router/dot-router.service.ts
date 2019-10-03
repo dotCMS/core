@@ -136,6 +136,7 @@ export class DotRouterService {
     }
 
     getPortletId(url: string): string {
+        url = decodeURIComponent(url);
         if (url.indexOf('?') > 0) {
             url = url.substring(0, url.indexOf('?'));
         }

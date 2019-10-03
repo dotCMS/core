@@ -123,6 +123,7 @@ describe('DotRouterService', () => {
     it('should return the correct  Portlet Id', () => {
         expect(service.getPortletId('#/c/content?test=value')).toBe('content');
         expect(service.getPortletId('/c/add/content?fds=ds')).toBe('content');
+        expect(service.getPortletId('c/content%3Ffilter%3DProducts/19d3aecc-5b68-4d98-ba1b-297d5859403c')).toBe('content');
     });
 
 });
