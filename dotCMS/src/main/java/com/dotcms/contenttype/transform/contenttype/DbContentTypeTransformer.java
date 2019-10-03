@@ -19,7 +19,7 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 	final List<ContentType> list;
 
 	public DbContentTypeTransformer(Map<String, Object> map){
-		this(ImmutableList.of(map));
+		this.list = ImmutableList.of(transform(map));
 	}
 	
 	public DbContentTypeTransformer(List<Map<String, Object>> initList){
