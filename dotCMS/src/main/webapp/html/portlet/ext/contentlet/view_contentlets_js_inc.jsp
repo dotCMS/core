@@ -505,7 +505,7 @@
                     if (type=='multi_select')
                                 result = result+"<select onchange='doSearch()' dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n";
                         else
-                                result = result+"<select onchange='doSearch()' dojoType='dijit.form.FilteringSelect' id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" style=\"width:160px;\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n<option value=\"\"></option>";
+                                result = result+"<select onchange='doSearch()' dojoType='dijit.form.FilteringSelect' id=\"" + selectedStruct+"."+ fieldContentlet + "Field\"  name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n<option value=\"\"></option>";
 
                     for(var i = 0; i < option.length; i++){
                        var actual_option = option[i].split("|");
