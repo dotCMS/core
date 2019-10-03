@@ -61,7 +61,7 @@ import org.immutables.value.Value.Derived;
 })
 public abstract class Field implements FieldIf, Serializable {
 
-  public static int SORT_ORDER_DEFAULT_VALUE = -1;
+  public final static int SORT_ORDER_DEFAULT_VALUE = -1;
 
   @Value.Check
   public void check() {
