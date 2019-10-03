@@ -70,6 +70,7 @@ public class VTLResourceIntegrationTest {
 
     private final User systemUser = APILocator.systemUser();
     private static final String ANONYMOUS_USER_ID = "anonymous";
+    private static final String KNOWN_EMPLOYEE_ID = "{EMPLOYEE_ID_TO_REPLACE}";
 
     @BeforeClass
     public static void prepare() throws Exception{
@@ -80,25 +81,9 @@ public class VTLResourceIntegrationTest {
     @DataProvider
     public static Object[] getTestCases() throws Exception {
 
-        //Setting web app environment
-        IntegrationTestInitService.getInstance().init();
-
-        final ContentType employeeContentType = getEmployeeLikeContentType();
-        final Contentlet employee = getEmployeeContent(employeeContentType.id());
-        ContentletDataGen.publish(employee);
-        final String KNOWN_EMPLOYEE_ID = employee.getInode();
-        //Assign permissions
-        APILocator.getPermissionAPI().save(
-                new Permission(employee.getPermissionId(),
-                        APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
-                        PermissionAPI.PERMISSION_READ),
-                employee, APILocator.systemUser(), false);
-
         String expectedJSONResponse = FileUtil
                 .read(new File(
                         ConfigTestHelper.getUrlToTestResource(ONE_EMPLOYEE_JSON_RESPONSE).toURI()));
-        expectedJSONResponse = expectedJSONResponse
-                .replace("{IDENTIFIER_TO_REPLACE}", employee.getIdentifier());
 
         final MultivaluedMap<String, String> queryParameters = new MultivaluedHashMap<>();
         queryParameters.put("key1", Collections.singletonList("value1"));
@@ -178,11 +163,22 @@ public class VTLResourceIntegrationTest {
 
         final Folder vtlFolder = createVTLFolder(testCase.getFolderName(), site);
 
+        final ContentType employeeContentType = getEmployeeLikeContentType();
+        final Contentlet employee = getEmployeeContent(employeeContentType.id());
+        ContentletDataGen.publish(employee);
+
+        //Assign permissions
+        APILocator.getPermissionAPI().save(
+                new Permission(employee.getPermissionId(),
+                        APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                        PermissionAPI.PERMISSION_READ),
+                employee, APILocator.systemUser(), false);
+
         try {
             final Response response = getResponseFromVTLResource(testCase, vtlFolder,
-                    site.getHostname());
+                    site.getHostname(), employee);
 
-            final String expectedOutput = expectedOutput(testCase);
+            final String expectedOutput = expectedOutput(testCase, employee);
             final String actualOutput = actualOutput(testCase, response);
             assertEquals(expectedOutput, actualOutput);
         } finally {
@@ -191,7 +187,7 @@ public class VTLResourceIntegrationTest {
     }
 
     private Response getResponseFromVTLResource(final VTLResourceTestCase testCase,
-            final Folder vtlFolder, final String hostName)
+            final Folder vtlFolder, final String hostName, final Contentlet employee)
             throws IOException, DotSecurityException, DotDataException {
         createVTLFile(testCase.getVtlFile(), vtlFolder);
 
@@ -209,7 +205,7 @@ public class VTLResourceIntegrationTest {
                 .setRequest(request)
                 .setServletResponse(response)
                 .setUriInfo(uriInfo)
-                .setPathParam(testCase.getPathParameter())
+                .setPathParam(testCase.getPathParameter().replace(KNOWN_EMPLOYEE_ID, employee.getIdentifier()))
                 .setBodyMap(testCase.getBodyMap())
                 .setBodyMapString(testCase.getBodyMapString())
                 .setFolderName(testCase.getFolderName())
@@ -220,13 +216,15 @@ public class VTLResourceIntegrationTest {
         return methodToTest.execute(params);
     }
 
-    private String expectedOutput(final VTLResourceTestCase testCase) {
+    private String expectedOutput(final VTLResourceTestCase testCase, final Contentlet employee) {
         String expectedOutput;
 
         if(testCase.getExpectedException()>0) {
             expectedOutput = Integer.toString(testCase.getExpectedException());
         } else if(UtilMethods.isSet(testCase.getExpectedJSON())) {
             expectedOutput = testCase.getExpectedJSON();
+            expectedOutput =expectedOutput
+                    .replace("{IDENTIFIER_TO_REPLACE}", employee.getIdentifier());
         } else {
             expectedOutput = testCase.getExpectedOutput();
         }
