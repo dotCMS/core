@@ -1467,11 +1467,26 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public void deleteSystemActionsByWorkflowAction(final WorkflowAction action) throws DotDataException {
 
 		Logger.debug(this, ()->"Removing system action mappings associated to the action: " + action.getId());
+
+		final List<Map<String, Object>> mappingsToClean = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION).
+				addParam(action.getId())
+				.loadObjectResults();
+
 		new DotConnect().setSQL(sql.DELETE_SYSTEM_ACTION_BY_WORKFLOW_ACTION_ID)
 				.addParam(action.getId())
 				.loadResult();
 
 		this.cache.removeSystemActionsByWorkflowAction(action.getId());
+
+		if (UtilMethods.isSet(mappingsToClean)) {
+
+			for (final Map<String, Object> mappingRow : mappingsToClean) {
+
+				final String owner = (String)mappingRow.get("scheme_or_content_type");
+				this.cache.removeSystemActionsByContentType(owner);
+				this.cache.removeSystemActionsByScheme(owner);
+			}
+		}
 	}
 
 	private String createQueryIn (final Collection list) {
