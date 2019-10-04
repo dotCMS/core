@@ -93,7 +93,7 @@ public class PersonalizationResource {
 
         Logger.debug(this, ()-> "Personalizing all containers on the page personas per page: " + personalizationPersonaPageForm.getPageId());
 
-        if (!this.personaAPI.findPersonaByTag(personalizationPersonaPageForm.getPersonaTag(), user, respectFrontEndRoles).isPresent()) {
+        if (!this.personaAPI.findPersonaByTag(personalizationPersonaPageForm.getPersonaTag(), user, true).isPresent()) {
 
             throw new BadRequestException("Does not exists a Persona with the tag: " + personalizationPersonaPageForm.getPersonaTag());
         }
