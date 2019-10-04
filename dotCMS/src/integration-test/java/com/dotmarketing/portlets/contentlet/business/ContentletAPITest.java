@@ -3298,7 +3298,6 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see Contentlet
      */
     @Test
-    @Ignore
     public void getRelatedContent() throws DotSecurityException, DotDataException {
 
         Relationship testRelationship = null;
