@@ -498,8 +498,18 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
   public Optional<Persona> findPersonaByTag(final String personaTag, final User user, final boolean respectFrontEndRoles)
       throws DotSecurityException, DotDataException {
 
-    final StringBuilder query = new StringBuilder(" +baseType:").append(BaseContentType.PERSONA.getType())
-        .append(" +").append(PERSONA_KEY_TAG).append(":").append(personaTag);
+    final StringBuilder query = new StringBuilder(" +baseType:").append(BaseContentType.PERSONA.getType());
+    
+    
+    List<ContentType> types = APILocator.getContentTypeAPI(APILocator.systemUser()).findByBaseType(BaseContentType.PERSONA, "mod_date", 500, 0);
+    
+    query.append(" +(");
+    
+    for(final ContentType type:types) {
+        query.append(type.variable()).append(".").append(KEY_TAG_FIELD).append(":").append(personaTag).append(" ");
+    }
+    query.append(") ");
+
 
     final List<Contentlet> contentlets =
         APILocator.getContentletAPI().search(query.toString(), -1, 0, StringPool.BLANK, user, respectFrontEndRoles);
