@@ -364,7 +364,7 @@ public  class WebResource {
 
             if(!hasARequiredRole) {
               throw new SecurityException(
-                  String.format("User lacks one of the required role %s", builder.requiredRolesSet.toString()),
+                  String.format("User " + (user!=null ? user.getFullName() + ":" + user.getEmailAddress() : user) +" lacks one of the required role %s", builder.requiredRolesSet.toString()),
                   Response.Status.UNAUTHORIZED);
             }
         }
