@@ -30,12 +30,18 @@ import org.mockito.Mockito;
 public class LanguageAPITest {
 	private static User systemUser;
 	
+	private static Language language;
+	
+	
 	@BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
 		systemUser = APILocator.systemUser();
+		
+		language= new LanguageDataGen().nextPersisted();
+		
 	}
 
 	/*
@@ -47,33 +53,34 @@ public class LanguageAPITest {
 	 * 6- Clear cache
 	 * 
 	 */
-	@Test
-	public void languageCache() throws Exception{
+    @Test
+    public void languageCache() throws Exception {
 
-		int existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
-		APILocator.getLanguageAPI().getLanguages();
-		Assert.assertEquals(existingLanguagesCount,CacheLocator.getLanguageCache().getLanguages().size());
-		
-		Language lan = new Language();
-		lan.setCountry("Italy");
-		lan.setCountryCode("IT");
-		lan.setLanguageCode("it");
-		lan.setLanguage("Italian");
-		APILocator.getLanguageAPI().saveLanguage(lan);
-		lan = APILocator.getLanguageAPI().getLanguage("it", "IT");
-		
-		existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
-		CacheLocator.getLanguageCache().clearCache();
-		APILocator.getLanguageAPI().getLanguages();
-		Assert.assertEquals(existingLanguagesCount, CacheLocator.getLanguageCache().getLanguages().size());
-		
-		APILocator.getLanguageAPI().deleteLanguage(lan);
-		
-		existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
-		CacheLocator.getLanguageCache().clearCache();
-		APILocator.getLanguageAPI().getLanguages();
-		Assert.assertEquals(existingLanguagesCount,CacheLocator.getLanguageCache().getLanguages().size());		
-	}
+        int existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
+        APILocator.getLanguageAPI().getLanguages();
+        Assert.assertEquals(existingLanguagesCount, CacheLocator.getLanguageCache().getLanguages().size());
+
+
+
+        Language lan = new LanguageDataGen().nextPersisted();
+
+        existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
+        CacheLocator.getLanguageCache().clearCache();
+        APILocator.getLanguageAPI().getLanguages();
+        Assert.assertEquals(existingLanguagesCount, CacheLocator.getLanguageCache().getLanguages().size());
+
+        APILocator.getLanguageAPI().deleteLanguage(lan);
+        Assert.assertEquals(existingLanguagesCount - 1, APILocator.getLanguageAPI().getLanguages().size());
+        Assert.assertEquals(existingLanguagesCount - 1, CacheLocator.getLanguageCache().getLanguages().size());
+
+
+
+
+        existingLanguagesCount = APILocator.getLanguageAPI().getLanguages().size();
+        CacheLocator.getLanguageCache().clearCache();
+        APILocator.getLanguageAPI().getLanguages();
+        Assert.assertEquals(existingLanguagesCount, CacheLocator.getLanguageCache().getLanguages().size());
+    }
 
 	/**
 	 * This test is for a language key that exist as a content,
@@ -89,10 +96,10 @@ public class LanguageAPITest {
 			final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser)
 					.find(LanguageVariableAPI.LANGUAGEVARIABLE);
 			contentletEnglish = createTestKeyValueContent(
-					KEY_1, VALUE_1, 1,
+					KEY_1, VALUE_1, language.getId(),
 					languageVariableContentType, systemUser);
 
-			final String value = APILocator.getLanguageAPI().getStringKey(APILocator.getLanguageAPI().getDefaultLanguage(),KEY_1);
+			final String value = APILocator.getLanguageAPI().getStringKey(language,KEY_1);
 
 			Assert.assertEquals(VALUE_1,value);
 

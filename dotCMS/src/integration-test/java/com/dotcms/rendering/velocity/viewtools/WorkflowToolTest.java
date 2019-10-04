@@ -41,8 +41,10 @@ public class WorkflowToolTest {
     }
 
     @DataProvider
-    public static Object[] fireTestCases() {
+    public static Object[] fireTestCases() throws Exception {
 
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
 
         long spaninsh = TestDataUtils.getSpanishLanguage().getId();
 
