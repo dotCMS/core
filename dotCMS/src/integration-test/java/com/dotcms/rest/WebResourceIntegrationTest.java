@@ -31,7 +31,7 @@ public class WebResourceIntegrationTest {
 
   @CloseDB
   @BeforeClass
-  public void init() throws Exception {
+  public static void init() throws Exception {
 
     // Setting web app environment
     IntegrationTestInitService.getInstance().init();
