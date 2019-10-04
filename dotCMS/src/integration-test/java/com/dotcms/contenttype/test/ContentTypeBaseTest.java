@@ -32,6 +32,7 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.google.common.collect.ImmutableList;
@@ -69,6 +70,11 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 		fieldFactory = new FieldFactoryImpl();
 		fieldApi = new FieldAPIImpl();
 
+		
+		CacheLocator.getContentTypeCache2().clearCache();
+		
+		
+		
 
 		HttpServletRequest pageRequest = new MockSessionRequest(
 				new MockAttributeRequest(
