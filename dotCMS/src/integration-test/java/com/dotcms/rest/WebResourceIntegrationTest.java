@@ -23,7 +23,7 @@ public class WebResourceIntegrationTest {
   private static final String READ = "READ";
   private static final String NONE = "None";
 
-  private HttpServletResponse response;
+  private static HttpServletResponse response;
   private static User frontEndUser = null;
   private static User backEndUser = null;
   private static User cmsAnon = null;
