@@ -3945,11 +3945,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 workingContentlet = contentlet;
             }
 
-            boolean movedContentDependencies = false;
-            if (createNewVersion || (!createNewVersion && (contentRelationships != null || cats != null))) {
+            final boolean movedContentDependencies = (createNewVersion || contentRelationships != null
+                    || cats != null);
+
+            if (movedContentDependencies) {
                 contentlet.setBoolProperty(CHECKIN_IN_PROGRESS, Boolean.TRUE);
                 moveContentDependencies(workingContentlet, contentlet, contentRelationships, cats, user, respectFrontendRoles);
-                movedContentDependencies = true;
             }
 
             // Refreshing permissions
