@@ -76,7 +76,7 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 			ContentType contentType1 = contentTypeFactory.find(type.id());
 			ContentType contentType2 = contentTypeFactory.find(type.variable());
 			try {
-				assertThat("contentType:" + contentType1 +" == " + contentType2 + " .equals " + type, contentType1.equals(contentType2) && contentType1.equals(type));
+				assertThat("testing equals:\ncontentType1:" + contentType1 +"\ncontentType2" + contentType2 + "\ntype in list " + type, contentType1.equals(contentType2) && contentType1.equals(type));
 				
 			} catch (Throwable t) {
 
