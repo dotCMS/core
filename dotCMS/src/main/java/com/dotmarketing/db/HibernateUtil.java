@@ -9,6 +9,7 @@ import com.dotcms.repackage.net.sf.hibernate.dialect.Dialect;
 import com.dotcms.repackage.net.sf.hibernate.impl.SessionFactoryImpl;
 import com.dotcms.repackage.net.sf.hibernate.type.Type;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -107,7 +108,7 @@ public class HibernateUtil {
 		return mappings.getClass(c).getTable().getName();
 	}
 
-	public static Dialect getDialect() throws DotHibernateException{
+	public static Dialect getDialect() {
 		if (sessionFactory == null) {
 			buildSessionFactory();
 		}
@@ -611,7 +612,7 @@ public class HibernateUtil {
         public void preFlush(Iterator arg0) throws CallbackException { }
     }
 
-	private static void buildSessionFactory() throws DotHibernateException{
+	private static void buildSessionFactory() {
 		long start = System.currentTimeMillis();
 		try {
 			// Initialize the Hibernate environment
@@ -668,7 +669,7 @@ public class HibernateUtil {
 			System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_DB, String.valueOf(System.currentTimeMillis() - start));
 			
 		}catch (Exception e) {
-			throw new DotHibernateException("Unable to build Session Factory ", e);
+			throw new DotStateException("Unable to build Session Factory ", e);
 		}
 	}
 
@@ -720,7 +721,7 @@ public class HibernateUtil {
 	 * Attempts to find a session associated with the Thread. If there isn't a
 	 * session, it will create one.
 	 */
-	public static Session getSession() throws DotHibernateException{
+	public static Session getSession() {
 		try{
 			if (sessionFactory == null) {
 				buildSessionFactory();
@@ -763,7 +764,7 @@ public class HibernateUtil {
 			session.setFlushMode(FlushMode.NEVER);
 			return session;
 		}catch (Exception e) {
-			throw new DotHibernateException("Unable to get Hibernate Session ", e);
+			throw new DotStateException("Unable to get Hibernate Session ", e);
 		}
 	}
 

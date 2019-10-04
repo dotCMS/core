@@ -962,13 +962,8 @@ public class ImportExportUtil {
         try {
             /* get a list of all our tables */
             final ArrayList<String> _tablesToDelete = new ArrayList<String>();
-            Map map =null;
-
-            try {
-                map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
-            } catch (DotHibernateException e) {
-                Logger.error(this,e.getMessage(),e);
-            }
+            Map map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
+   
 
             Iterator it = map.entrySet().iterator();
             while (it.hasNext()) {

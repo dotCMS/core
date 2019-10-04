@@ -926,7 +926,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	 * @param response
 	 * @throws IOException
 	 */
-	private void doUpload(HttpServletRequest request, HttpServletResponse response, UploadPortletRequest upr) throws IOException {
+	private void doUpload(HttpServletRequest request, HttpServletResponse response, UploadPortletRequest upr) throws Exception {
 		Logger.info(this, "Uploading File");
 		File importFile = upr.getFile("fileUpload");
 		PrintWriter out = response.getWriter();
