@@ -2,7 +2,11 @@ package com.dotcms.rest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import com.dotcms.business.CloseDB;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -12,10 +16,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.junit.Before;
-import org.junit.Test;
 
 public class WebResourceIntegrationTest {
 
@@ -24,12 +24,13 @@ public class WebResourceIntegrationTest {
   private static final String NONE = "None";
 
   private HttpServletResponse response;
-  private User frontEndUser = null;
-  private User backEndUser = null;
-  private User cmsAnon = null;
+  private static User frontEndUser = null;
+  private static User backEndUser = null;
+  private static User cmsAnon = null;
   private User apiUser = null;
 
-  @Before
+  @CloseDB
+  @BeforeClass
   public void init() throws Exception {
 
     // Setting web app environment
@@ -60,12 +61,14 @@ public class WebResourceIntegrationTest {
   
   private HttpServletRequest frontEndRequest() {
     final HttpServletRequest request = anonymousRequest();
+    assertTrue("frontEndUser has frontEnd role", frontEndUser.isFrontendUser());
     request.setAttribute(WebKeys.USER, frontEndUser);
     return request;
   }
   
   private HttpServletRequest backEndRequest() {
     final HttpServletRequest request = anonymousRequest();
+    assertTrue("backEndUser has backend role", backEndUser.isBackendUser());
     request.setAttribute(WebKeys.USER, backEndUser);
     return request;
   }
