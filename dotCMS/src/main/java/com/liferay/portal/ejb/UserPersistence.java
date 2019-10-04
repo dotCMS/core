@@ -27,6 +27,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.user.LiferayUserTransformer;
 import com.dotcms.util.user.UserTransformer;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -36,6 +37,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.HibernateUtil;
 import com.liferay.util.dao.hibernate.OrderByComparator;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -108,9 +110,9 @@ public class UserPersistence extends BasePersistence {
 		try {
 			if (user.isNew() || user.isModified()) {
 				session = openSession();
-
+				UserHBM userHBM = null;
 				if (user.isNew()) {
-					UserHBM userHBM = new UserHBM(user.getUserId(),
+					userHBM = new UserHBM(user.getUserId(),
 							user.getCompanyId(), user.getPassword(),
 							user.getPasswordEncrypted(),
 							user.getPasswordExpirationDate(),
@@ -135,13 +137,11 @@ public class UserPersistence extends BasePersistence {
 							user.getAgreedToTermsOfUse(), user.getActive(),
 							user.getDeleteInProgress(), user.getDeleteDate());
 
-					userHBM.setModDate(user.getModificationDate());
-					session.save(userHBM);
-					session.flush();
+
 				}
 				else {
 					try {
-						UserHBM userHBM = (UserHBM)session.load(UserHBM.class,
+						userHBM = (UserHBM)session.load(UserHBM.class,
 								user.getPrimaryKey());
 						userHBM.setCompanyId(user.getCompanyId());
 						userHBM.setPassword(user.getPassword());
@@ -185,11 +185,11 @@ public class UserPersistence extends BasePersistence {
 						userHBM.setActive(user.getActive());
 						userHBM.setDeleteInProgress(user.getDeleteInProgress());
 						userHBM.setDeleteDate(user.getDeleteDate());
-						userHBM.setModDate(user.getModificationDate());
-						session.flush();
+
+	
 					}
 					catch (ObjectNotFoundException onfe) {
-						UserHBM userHBM = new UserHBM(user.getUserId(),
+						userHBM = new UserHBM(user.getUserId(),
 								user.getCompanyId(), user.getPassword(),
 								user.getPasswordEncrypted(),
 								user.getPasswordExpirationDate(),
@@ -215,12 +215,17 @@ public class UserPersistence extends BasePersistence {
 								user.getAgreedToTermsOfUse(), user.getActive(),
 								user.getDeleteInProgress(), user.getDeleteDate());
 
-						userHBM.setModDate(user.getModificationDate());
-						session.save(userHBM);
-						session.flush();
+
+	
 					}
 				}
-
+                userHBM.setModDate(new Date());
+                try {
+                    com.dotmarketing.db.HibernateUtil.save(userHBM);
+                }
+                catch(Exception e) {
+                    throw new DotStateException(e);
+                }
 				user.setNew(false);
 				user.setModified(false);
 				user.protect();

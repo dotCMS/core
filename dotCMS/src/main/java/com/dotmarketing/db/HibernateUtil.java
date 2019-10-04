@@ -5,6 +5,8 @@ import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.repackage.net.sf.hibernate.*;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
+import com.dotcms.repackage.net.sf.hibernate.dialect.Dialect;
+import com.dotcms.repackage.net.sf.hibernate.impl.SessionFactoryImpl;
 import com.dotcms.repackage.net.sf.hibernate.type.Type;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -37,7 +39,7 @@ public class HibernateUtil {
     private final static String LISTENER_SUBMITTER = "dotListenerSubmitter";
     public static final  String NETWORK_CACHE_FLUSH_DELAY = "NETWORK_CACHE_FLUSH_DELAY";
 
-	private static String dialect;
+	private static Dialect dialect;
 	private static SessionFactory sessionFactory;
 
 	private static ThreadLocal sessionHolder = new ThreadLocal();
@@ -105,7 +107,7 @@ public class HibernateUtil {
 		return mappings.getClass(c).getTable().getName();
 	}
 
-	public static String getDialect() throws DotHibernateException{
+	public static Dialect getDialect() throws DotHibernateException{
 		if (sessionFactory == null) {
 			buildSessionFactory();
 		}
@@ -622,7 +624,11 @@ public class HibernateUtil {
 			*/
 			Configuration cfg = new Configuration().configure();
 			cfg.setProperty("hibernate.cache.provider_class", "com.dotmarketing.db.NoCacheProvider");
-			
+			cfg.addResource("META-INF/portal-hbm.xml");
+			final String[] additionalConfigs = Config.getStringArrayProperty("additional.hibernate.configs",new String[] {});
+		    for(String config:additionalConfigs) {
+		        cfg.addResource(config);
+		    }
 
 			if (DbConnectionFactory.isMySql()) {
 				//http://jira.dotmarketing.net/browse/DOTCMS-4937
@@ -658,7 +664,7 @@ public class HibernateUtil {
 			mappings = cfg.createMappings();
 			
 			sessionFactory = cfg.buildSessionFactory();
-			dialect = cfg.getProperty("hibernate.dialect");
+			dialect = ((SessionFactoryImpl)sessionFactory).getDialect();
 			System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_DB, String.valueOf(System.currentTimeMillis() - start));
 			
 		}catch (Exception e) {

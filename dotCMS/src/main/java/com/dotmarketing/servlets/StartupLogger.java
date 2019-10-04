@@ -26,7 +26,7 @@ public class StartupLogger {
         Logger.info(this, "InitServlet: Setting Default Timezone: " + companyTimeZone.getDisplayName());
 
         String dbType = DbConnectionFactory.getDBType();
-        String dailect = "";
+        Object dailect =null;
         try {
             dailect = HibernateUtil.getDialect();
         } catch (DotHibernateException e3) {
@@ -38,7 +38,7 @@ public class StartupLogger {
         Logger.info(this, "");
         Logger.info(this, "   Initializing dotCMS");
         Logger.info(this, "   Using database: " + dbType);
-        Logger.info(this, "   Using dialect : " + dailect);
+        Logger.info(this, "   Using dialect : " + dailect.getClass().getCanonicalName());
         Logger.info(this, "   Company Name  : " + companyId);
         Logger.info(this, "");
         Logger.info(this, "   License       : " + license.getLevelName(license.getLevel()));
