@@ -846,7 +846,7 @@ public class ContentletAjax {
 
 									fieldValueStr = fieldValueStr.replaceAll(specialCharsToEscape, "\\\\$1");
 
-							        if(fieldName.equals("languageId")){
+							        if(fieldName.equals("languageId") || fieldValueStr.contains("-")){
 										luceneQuery.append("+" + fieldName +":" + fieldValueStr + " ");
 									}else{
 										luceneQuery.append("+" + fieldName +":" + fieldValueStr + "* ");
