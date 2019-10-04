@@ -37,7 +37,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.publisher.endpoint.business.PublishingEndPointFactoryImplTest.class,
         com.dotcms.publisher.assets.business.PushedAssetsAPITest.class,
         com.dotcms.notification.business.NotificationAPITest.class,
-        com.dotcms.IntegrationTestBase.class,
         com.dotcms.business.LocalTransactionAndCloseDBIfOpenedFactoryTest.class,
         com.dotcms.content.elasticsearch.util.ESClientIntegrationTest.class,
         com.dotcms.content.elasticsearch.util.ESUtilTest.class,
