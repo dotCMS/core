@@ -64,7 +64,11 @@ then
     sleep ${WAIT_DB_FOR}
 fi
 
+echo ""
+echo "================================================================================"
 echo "Executhing... [./gradlew integrationTest ${GRADLE_PARAMS}]"
+echo "================================================================================"
+echo ""
 
 cd /build/src/core/dotCMS \
 && ./gradlew integrationTest ${GRADLE_PARAMS}
