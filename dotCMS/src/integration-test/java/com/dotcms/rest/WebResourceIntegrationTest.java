@@ -27,7 +27,7 @@ public class WebResourceIntegrationTest {
   private static User frontEndUser = null;
   private static User backEndUser = null;
   private static User cmsAnon = null;
-  private User apiUser = null;
+  private static User apiUser = null;
 
   @CloseDB
   @BeforeClass
