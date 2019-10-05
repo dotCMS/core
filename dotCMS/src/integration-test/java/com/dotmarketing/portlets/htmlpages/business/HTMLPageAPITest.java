@@ -10,6 +10,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.CloseDB;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -18,6 +19,7 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
@@ -363,13 +365,14 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
 	}
 
+	@CloseDB
 	@DataProvider
 	public static Object[] testCasesFindByIdLanguageFallback() throws Exception {
 	      IntegrationTestInitService.getInstance().init();
 		//Setting web app environment
 		IntegrationTestInitService.getInstance().init();
 		long en = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-		long es = TestDataUtils.getSpanishLanguage().getId();
+		long es = new LanguageDataGen().nextPersisted().getId();
 
 		return new Object[] {
 			new TestCaseFindByIdLanguageFallback(en, en, en, null, false, new User()),
