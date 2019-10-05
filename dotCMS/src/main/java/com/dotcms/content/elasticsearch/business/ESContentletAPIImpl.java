@@ -3945,7 +3945,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 workingContentlet = contentlet;
             }
 
-            if (createNewVersion || (!createNewVersion && (contentRelationships != null || cats != null))) {
+            final boolean movedContentDependencies = (createNewVersion || contentRelationships != null
+                    || cats != null);
+
+            if (movedContentDependencies) {
                 contentlet.setBoolProperty(CHECKIN_IN_PROGRESS, Boolean.TRUE);
                 moveContentDependencies(workingContentlet, contentlet, contentRelationships, cats, user, respectFrontendRoles);
             }
@@ -4266,7 +4269,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 }
 
-                if (ThreadContextUtil.isReindex()) {
+                if (movedContentDependencies) {
+                    final Contentlet newContentlet = contentlet;
+                    ThreadContextUtil.ifReindex(
+                            () -> indexAPI.addContentToIndex(newContentlet, INCLUDE_DEPENDENCIES),
+                            INCLUDE_DEPENDENCIES);
+                } else if (ThreadContextUtil.isReindex()) {
                     indexAPI.addContentToIndex(contentlet, false);
                 }
             }

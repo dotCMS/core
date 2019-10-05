@@ -364,7 +364,7 @@ public  class WebResource {
 
             if(!hasARequiredRole) {
               throw new SecurityException(
-                  String.format("User lacks one of the required role %s", builder.requiredRolesSet.toString()),
+                  String.format("User " + (user!=null ? user.getFullName() + ":" + user.getEmailAddress() : user) +" lacks one of the required role %s", builder.requiredRolesSet.toString()),
                   Response.Status.UNAUTHORIZED);
             }
         }
@@ -376,12 +376,12 @@ public  class WebResource {
                     if (!layoutAPI.doesUserHaveAccessToPortlet(requiredPortlet, user)) {
                         throw new SecurityException(
                                 String.format(
-                                        "User does not have access to required Portlet %s",
+                                        "User " + (user!=null ? user.getFullName() + ":" + user.getEmailAddress() : user) +" does not have access to required Portlet %s",
                                         requiredPortlet),
                                 Response.Status.UNAUTHORIZED);
                     }
                 } catch (DotDataException e) {
-                    throw new SecurityException("User does not have access to required Portlet",
+                    throw new SecurityException("User " + (user!=null ? user.getFullName() + ":" + user.getEmailAddress() : user) +" does not have access to required Portlet",
                             Response.Status.UNAUTHORIZED);
                 }
             }

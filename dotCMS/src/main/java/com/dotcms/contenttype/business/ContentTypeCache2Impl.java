@@ -87,7 +87,7 @@ public class ContentTypeCache2Impl implements ContentTypeCache2 {
 
     @Override
 	public void remove(ContentType type) {
-        
+        if(type==null)return;
         cache.remove( type.id(),primaryGroup);
         cache.remove( type.variable(),primaryGroup);
         clearURLMasterPattern();
