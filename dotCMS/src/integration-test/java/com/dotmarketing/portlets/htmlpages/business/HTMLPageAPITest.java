@@ -365,20 +365,20 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
 	@DataProvider
 	public static Object[] testCasesFindByIdLanguageFallback() throws Exception {
-
+	      IntegrationTestInitService.getInstance().init();
 		//Setting web app environment
 		IntegrationTestInitService.getInstance().init();
-
-		long spanishLanguageId = TestDataUtils.getSpanishLanguage().getId();
+		long en = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		long es = TestDataUtils.getSpanishLanguage().getId();
 
 		return new Object[] {
-			new TestCaseFindByIdLanguageFallback(1, 1, 1, null, false, new User()),
-			new TestCaseFindByIdLanguageFallback(2,1, 1, null, true, new User()),
-				new TestCaseFindByIdLanguageFallback(1, -1, spanishLanguageId,
+			new TestCaseFindByIdLanguageFallback(en, en, en, null, false, new User()),
+			new TestCaseFindByIdLanguageFallback(es,en, en, null, true, new User()),
+				new TestCaseFindByIdLanguageFallback(en, -1, es,
 						ResourceNotFoundException.class, false, new User()),
-				new TestCaseFindByIdLanguageFallback(1, -1, spanishLanguageId,
+				new TestCaseFindByIdLanguageFallback(en, -1, es,
 						ResourceNotFoundException.class, false, new User()),
-			new TestCaseFindByIdLanguageFallback(1, 1, 1, DotSecurityException.class, false, null),
+			new TestCaseFindByIdLanguageFallback(en, en, en, DotSecurityException.class, false, null),
 		};
 	}
 
