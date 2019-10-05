@@ -66,7 +66,7 @@ fi
 
 echo ""
 echo "================================================================================"
-echo "Executhing... [./gradlew integrationTest ${GRADLE_PARAMS}]"
+echo "Executing... [./gradlew integrationTest ${GRADLE_PARAMS}]"
 echo "================================================================================"
 echo ""
 
