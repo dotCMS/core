@@ -1245,12 +1245,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     assertTrue(isLive);
                 } else if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testN)) {
                     assertNotNull(task);
-                    assertFalse(isLive);
                     assertEquals(task.getStatus(), step2.getId());
+                    assertFalse(isLive);
                 } else {
                     assertNotNull(task);
-                    assertTrue(isLive);
                     assertEquals(task.getStatus(), step3.getId());
+                    assertTrue(isLive);
                 }
             }
 
