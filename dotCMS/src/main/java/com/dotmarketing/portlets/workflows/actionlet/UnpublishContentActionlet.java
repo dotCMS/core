@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import java.util.List;
 import java.util.Map;
+import sun.rmi.runtime.Log;
 
 @Actionlet(unpublish = true)
 public class UnpublishContentActionlet extends WorkFlowActionlet {
@@ -34,7 +35,11 @@ public class UnpublishContentActionlet extends WorkFlowActionlet {
 			boolean hasLiveVersion = APILocator.getVersionableAPI()
 					.hasLiveVersion(processor.getContentlet());
 			if (hasLiveVersion) {
+
+				Logger.info(this, "Unpublishing: " + processor.getContentlet().getIdentifier());
 				APILocator.getContentletAPI().unpublish(processor.getContentlet(), processor.getUser(), false);
+				Logger.info(this, "Unpublished: " + processor.getContentlet().getIdentifier());
+				Logger.info(this, "Unpublished: " + processor.getContentlet().isLive());
 			}
 
 		} catch (Exception e) {
