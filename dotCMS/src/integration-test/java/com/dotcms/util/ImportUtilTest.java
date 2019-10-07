@@ -273,6 +273,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         addWhoCanUseToAction(unpublishAction, rolesIds);
         rolesIds.remove(publisherRole.getId());
         workflowAPI.saveAction(unpublishAction.getId(), initialStep.getId(), APILocator.systemUser());
+        workflowAPI.saveAction(publishAction.getId(), step1.getId(), APILocator.systemUser());
+        workflowAPI.saveAction(publishAction.getId(), step3.getId(), APILocator.systemUser());
 
         //step1 publishAction configuration
         schemeResultTemp = createActionActionlet(schemeStepActionResult2.getScheme().getId(),
@@ -284,6 +286,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         addWhoCanUseToAction(publishAction, rolesIds);
         rolesIds.remove(publisherRole.getId());
         workflowAPI.saveAction(publishAction.getId(), initialStep.getId(), APILocator.systemUser());
+        workflowAPI.saveAction(publishAction.getId(), step2.getId(), APILocator.systemUser());
         workflowAPI.saveAction(publishAction.getId(), step3.getId(), APILocator.systemUser());
 
         //Step3 publish2Action configuration
