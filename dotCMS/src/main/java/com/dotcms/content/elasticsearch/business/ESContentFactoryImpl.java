@@ -1484,7 +1484,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if(UtilMethods.isSet(sortBy) ) {
             	sortBy = sortBy.toLowerCase();
                 if(sortBy.startsWith("score")){
-            		String[] test = sortBy.split("\\s+");
+            		String[] test = sortBy.split("[,|\\s+]");
             		String defaultSecondarySort = "moddate";
             		SortOrder defaultSecondardOrder = SortOrder.DESC;
 
