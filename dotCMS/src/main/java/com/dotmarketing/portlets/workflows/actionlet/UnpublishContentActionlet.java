@@ -31,13 +31,17 @@ public class UnpublishContentActionlet extends WorkFlowActionlet {
 		try {
 
 			//Verify if there is something to unpublish
-			boolean hasLiveVersion = APILocator.getVersionableAPI()
+			final boolean hasLiveVersion = APILocator.getVersionableAPI()
 					.hasLiveVersion(processor.getContentlet());
 			if (hasLiveVersion) {
 
 				Logger.info(this, "Unpublishing: " + processor.getContentlet().getIdentifier());
 				APILocator.getContentletAPI().unpublish(processor.getContentlet(), processor.getUser(), false);
 				Logger.info(this, "Unpublished: " + processor.getContentlet().getIdentifier());
+				Logger.info(this, "Unpublished: " + processor.getContentlet().isLive());
+			} else {
+
+				Logger.info(this, "Unpublishing, already unpublish does not need: " + processor.getContentlet().getIdentifier());
 				Logger.info(this, "Unpublished: " + processor.getContentlet().isLive());
 			}
 
