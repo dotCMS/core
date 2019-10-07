@@ -1014,65 +1014,54 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @WrapInTransaction
     @Override
-    public void cleanField(Structure structure, Field field, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+    public void cleanField(Structure structure, Field oldField, User user, boolean respectFrontendRoles)
+                    throws DotSecurityException, DotDataException {
 
-        if(!permissionAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
+        if (!permissionAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)) {
             throw new DotSecurityException("Must be able to publish structure to clean all the fields with user: "
-                    + (user != null ? user.getUserId() : "Unknown"));
+                            + (user != null ? user.getUserId() : "Unknown"));
         }
 
-        String type = field.getFieldType();
-        if(Field.FieldType.LINE_DIVIDER.toString().equals(type) ||
-                Field.FieldType.TAB_DIVIDER.toString().equals(type) ||
-                Field.FieldType.RELATIONSHIPS_TAB.toString().equals(type) ||
-                Field.FieldType.RELATIONSHIP.toString().equals(type) ||
-                Field.FieldType.CATEGORIES_TAB.toString().equals(type) ||
-                Field.FieldType.PERMISSIONS_TAB.toString().equals(type))
-        {
-            throw new DotDataException("Unable to clean a " + type + " system field");
-        }
+        com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
 
-        boolean localTransaction = false;
-        boolean isNewConnection  = false;
 
-        try {
 
-            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-            isNewConnection  = !DbConnectionFactory.connectionExists();
-
-            if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
-                List<Contentlet> contentlets = contentFactory.findByStructure(structure.getInode(),0,0);
-
-                HibernateUtil.addCommitListener(() -> moveBinaryFilesToTrash(contentlets,field));
-
-                // Binary fields have nothing to do with database.
-            } else if(Field.FieldType.TAG.toString().equals(field.getFieldType())){
-                List<Contentlet> contentlets = contentFactory.findByStructure(structure.getInode(),0,0);
-
+        
+        // Binary fields have nothing to do with database.
+        if (field instanceof BinaryField) {
+            int batchSize=500;
+            int offset=0;
+            final List<Contentlet> contentlets = new ArrayList<>();
+            contentlets.addAll(contentFactory.findByStructure(structure.getInode(), batchSize, offset));
+            while(!contentlets.isEmpty()) {
+                HibernateUtil.addCommitListener(() -> moveBinaryFilesToTrash(contentlets, oldField));
+                offset+=batchSize;
+                contentlets.clear();
+                contentlets.addAll(contentFactory.findByStructure(structure.getInode(), batchSize, offset));
+            }
+        } else if (field instanceof TagField) {
+            int batchSize=500;
+            int offset=0;
+            final List<Contentlet> contentlets = new ArrayList<>();
+            contentlets.addAll(contentFactory.findByStructure(structure.getInode(), batchSize, offset));
+            while(!contentlets.isEmpty()) {
                 for(Contentlet contentlet : contentlets) {
-                    tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.getVelocityVarName());
+                    tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.variable());
                 }
-
-            } else {
-
-                contentFactory.clearField(structure.getInode(), field);
+                offset+=batchSize;
+                contentlets.clear();
+                contentlets.addAll(contentFactory.findByStructure(structure.getInode(), batchSize, offset));
             }
+        }else if(field.dataType() == DataTypes.SYSTEM || field.dataType()== DataTypes.NONE) {
+            return;
+        } else {
 
-            if(localTransaction){
-                HibernateUtil.commitTransaction();
-            }
-        } catch (Exception e) {
-            if(localTransaction){
-                HibernateUtil.rollbackTransaction();
-            }
-            throw e;
-        } finally {
-
-            if(localTransaction && isNewConnection){
-                HibernateUtil.closeSessionSilently();
-            }
+            contentFactory.clearField(structure.getInode(), oldField);
         }
+
+
     }
 
     @Override
