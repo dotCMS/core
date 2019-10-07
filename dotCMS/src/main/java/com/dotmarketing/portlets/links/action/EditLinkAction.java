@@ -183,7 +183,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 					if (link.isLocked()) {
 					    versionableAPI.setLocked(link, false, user);
 					}
-					_sendToReferral(req, res, referer);
+					_sendToReferral(req, res, referer+ "&p_p_state="+ WindowState.MAXIMIZED + "&p_p_id=site-browser&p_p_action=1");
 				}
 			} catch (Exception ae) {
 				_handleException(ae, req);
@@ -358,7 +358,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 				_handleException(ae, req);
 				return;
 			}
-			_sendToReferral(req, res, referer);
+			_sendToReferral(req, res, referer + "&p_p_state="+ WindowState.MAXIMIZED + "&p_p_id=site-browser&p_p_action=1");
 
 		}
 		/*
