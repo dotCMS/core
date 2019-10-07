@@ -111,7 +111,10 @@ export class DotPageStateService {
      */
     setLock(options: DotPageRenderOptions, lock: boolean = null): void {
         this.getLockMode(this.currentState.page.inode, lock)
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                catchError(() => of(null))
+            )
             .subscribe(() => {
                 this.get(options);
             });

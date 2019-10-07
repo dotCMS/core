@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { DotPersona } from '@models/dot-persona/dot-persona.model';
 import { DotLanguage } from '@models/dot-language/dot-language.model';
 import { DotDevice } from '@models/dot-device/dot-device.model';
@@ -10,7 +10,6 @@ import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize
 import { take } from 'rxjs/operators';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotPageRenderState, DotPageMode } from '@portlets/dot-edit-page/shared/models';
-import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
 
 @Component({
     selector: 'dot-edit-page-view-as-controller',
@@ -18,8 +17,6 @@ import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/do
     styleUrls: ['./dot-edit-page-view-as-controller.component.scss']
 })
 export class DotEditPageViewAsControllerComponent implements OnInit {
-    @ViewChild('personaSelector') personaSelector: DotPersonaSelectorComponent;
-
     isEnterpriseLicense$: Observable<boolean>;
     messages: { [key: string]: string } = {};
 
@@ -102,11 +99,6 @@ export class DotEditPageViewAsControllerComponent implements OnInit {
                             },
                             false
                         );
-
-                        this.personaSelector.updatePersonaInCurrentList({
-                            ...persona,
-                            personalized: false
-                        });
                     });
             }
         });
