@@ -1235,10 +1235,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             Thread.sleep(1000);
 
-            savedData = contentletAPI
-                    .findByStructure(contentType.inode(), user, false, 0, 0);
-
-            for (final Contentlet cont : savedData) {
+            for (final Contentlet cont1 : savedData) {
+                final Contentlet cont = contentletAPI.findContentletByIdentifierAnyLanguage(cont1.getIdentifier());
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
                 if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
                     assertNotNull(task);
