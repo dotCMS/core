@@ -1189,7 +1189,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             APILocator.getContentletIndexAPI().addContentToIndex(savedData);
 
             //Update ContentType
-            Thread.sleep(1500);
+            Thread.sleep(1000);
             String tempFile = "Identifier," + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
                     + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
                     savedData.get(0).getIdentifier() + "," + testM + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publishAction.getId())
@@ -1229,8 +1229,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             for (final Contentlet cont : savedData) {
 
                 cont.setIndexPolicy(IndexPolicy.FORCE);
-                APILocator.getContentletIndexAPI().addContentToIndex(cont, false);
+                APILocator.getContentletIndexAPI().addContentToIndex(cont, true);
             }
+
+            Thread.sleep(1000);
+            
+            savedData = contentletAPI
+                    .findByStructure(contentType.inode(), user, false, 0, 0);
 
             for (final Contentlet cont : savedData) {
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
