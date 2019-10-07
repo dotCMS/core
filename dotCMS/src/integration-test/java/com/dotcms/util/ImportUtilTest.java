@@ -297,6 +297,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         rolesIds.remove(publisherRole.getId());
         workflowAPI.saveAction(publish2Action.getId(), initialStep.getId(), APILocator.systemUser());
         workflowAPI.saveAction(publish2Action.getId(), step1.getId(), APILocator.systemUser());
+        workflowAPI.saveAction(publish2Action.getId(), step2.getId(), APILocator.systemUser());
 
 
         //Special Users
@@ -1210,6 +1211,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     null);
             //Validations
             validate(results, false, false, true);
+            Logger.info(this, "results.get(\"warnings\"): " + results.get("warnings"));
             assertEquals(results.get("warnings").size(), 3);
             assertEquals(results.get("errors").size(), 0);
 
