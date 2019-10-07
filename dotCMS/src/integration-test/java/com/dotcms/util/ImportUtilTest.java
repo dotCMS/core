@@ -1238,17 +1238,18 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             for (final Contentlet cont1 : savedData) {
                 final Contentlet cont = contentletAPI.findContentletByIdentifierAnyLanguage(cont1.getIdentifier());
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
+                boolean isLive = APILocator.getVersionableAPI().hasLiveVersion(cont);
                 if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step1.getId());
-                    assertTrue(cont.isLive());
+                    assertTrue(isLive);
                 } else if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testN)) {
                     assertNotNull(task);
-                    assertFalse(cont.isLive());
+                    assertFalse(isLive);
                     assertEquals(task.getStatus(), step2.getId());
                 } else {
                     assertNotNull(task);
-                    assertTrue(cont.isLive());
+                    assertTrue(isLive);
                     assertEquals(task.getStatus(), step3.getId());
                 }
             }
