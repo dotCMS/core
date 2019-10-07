@@ -1382,7 +1382,7 @@ public class ImportUtil {
                         if (userCanExecuteAction) {
                           cont.setIndexPolicy(IndexPolicy.DEFER);
 
-                          Logger.info(ImportUtil.class, "fireContentWorkflow");
+                          Logger.info(ImportUtil.class, "fireContentWorkflow: " + executeWfAction.getId());
                             cont = workflowAPI.fireContentWorkflow(cont,
                                     new ContentletDependencies.Builder()
                                             .respectAnonymousPermissions(Boolean.FALSE)
