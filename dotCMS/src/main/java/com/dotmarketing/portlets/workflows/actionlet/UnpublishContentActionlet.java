@@ -9,7 +9,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import java.util.List;
 import java.util.Map;
-import sun.rmi.runtime.Log;
 
 @Actionlet(unpublish = true)
 public class UnpublishContentActionlet extends WorkFlowActionlet {
