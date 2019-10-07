@@ -1229,11 +1229,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             for (final Contentlet cont : savedData) {
 
                 cont.setIndexPolicy(IndexPolicy.FORCE);
-                APILocator.getContentletIndexAPI().addContentToIndex(cont, true);
             }
 
+            APILocator.getContentletIndexAPI().addContentToIndex(savedData);
+
             Thread.sleep(1000);
-            
+
             savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
 
