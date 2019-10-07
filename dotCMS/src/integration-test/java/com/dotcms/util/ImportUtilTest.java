@@ -1222,7 +1222,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertEquals(results.get("errors").size(), 0);
 
             Thread.sleep(2000);
-            
+
             savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
@@ -1242,6 +1242,10 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 final Contentlet cont = contentletAPI.findContentletByIdentifierAnyLanguage(cont1.getIdentifier());
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
                 boolean isLive = APILocator.getVersionableAPI().hasLiveVersion(cont);
+
+                Logger.info(this, "Contentlet id:    " + cont.getIdentifier());
+                Logger.info(this, "Contentlet inode: " + cont.getInode());
+
                 if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step1.getId());
