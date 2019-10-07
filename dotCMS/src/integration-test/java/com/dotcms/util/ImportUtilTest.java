@@ -64,6 +64,7 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.swagger.annotations.Api;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -1183,11 +1184,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 }
 
                 cont.setIndexPolicy(IndexPolicy.FORCE);
-                APILocator.getContentletIndexAPI().addContentToIndex(cont);
             }
 
+            APILocator.getContentletIndexAPI().addContentToIndex(savedData);
+
             //Update ContentType
-            Thread.sleep(1000);
+            Thread.sleep(1500);
             String tempFile = "Identifier," + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
                     + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
                     savedData.get(0).getIdentifier() + "," + testM + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publishAction.getId())
