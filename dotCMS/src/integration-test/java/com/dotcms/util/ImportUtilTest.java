@@ -1215,13 +1215,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     chrisPublisher, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
                                     null);
-
             //Validations
             validate(results, false, false, true);
             Logger.info(this, "results.get(\"warnings\"): " + results.get("warnings"));
             assertEquals(results.get("warnings").size(), 3);
             assertEquals(results.get("errors").size(), 0);
 
+            Thread.sleep(2000);
+            
             savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
@@ -1235,7 +1236,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             APILocator.getContentletIndexAPI().addContentToIndex(savedData);
 
-            Thread.sleep(1000);
+            Thread.sleep(2000);
 
             for (final Contentlet cont1 : savedData) {
                 final Contentlet cont = contentletAPI.findContentletByIdentifierAnyLanguage(cont1.getIdentifier());
