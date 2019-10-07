@@ -3290,55 +3290,125 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     /**
-     * Testing {@link ContentletAPI#getRelatedContent(com.dotmarketing.portlets.contentlet.model.Contentlet, com.dotmarketing.portlets.structure.model.Relationship, com.liferay.portal.model.User, boolean)}
+     * Testing {@link ContentletAPI#getRelatedContent(com.dotmarketing.portlets.contentlet.model.Contentlet,
+     * com.dotmarketing.portlets.structure.model.Relationship, com.liferay.portal.model.User,
+     * boolean)}
      *
-     * @throws DotSecurityException
-     * @throws DotDataException
      * @see ContentletAPI
      * @see Contentlet
      */
-    @Ignore ( "Not Ready to Run." )
     @Test
-    public void getRelatedContent () throws DotSecurityException, DotDataException {
+    public void getRelatedContent() throws DotSecurityException, DotDataException {
 
         Relationship testRelationship = null;
-        Structure testStructure       = null;
-        try{
+        Structure testStructure = null;
+        final long timeMillis = new Date().getTime();
+        try {
             //First lets create a test structure
-            testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ), "junit_test_structure_" + String.valueOf( new Date().getTime() ) );
+            testStructure = createStructure("JUnit Test Structure_" + timeMillis,
+                    "junit_test_structure_" + timeMillis);
 
             //Now a new test contentlets
-            Contentlet parentContentlet = createContentlet( testStructure, null, false );
-            Contentlet childContentlet = createContentlet( testStructure, null, false );
+            final Contentlet parentContentlet = createContentlet(testStructure, null, false);
+            final Contentlet childContentlet = createContentlet(testStructure, null, false);
 
             //Create the relationship
-            testRelationship = createRelationShip( testStructure, false );
+            testRelationship = createRelationShip(testStructure, false);
 
             //Create the contentlet relationships
-            List<Contentlet> contentRelationships = new ArrayList<>();
-            contentRelationships.add( childContentlet );
+            final List<Contentlet> contentRelationships = new ArrayList<>();
+            contentRelationships.add(childContentlet);
 
             //Relate the content
-            contentletAPI.relateContent( parentContentlet, testRelationship, contentRelationships, user, false );
+            contentletAPI
+                    .relateContent(parentContentlet, testRelationship, contentRelationships, user,
+                            false);
 
-            List<Relationship> relationships = FactoryLocator.getRelationshipFactory().byContentType( parentContentlet.getStructure() );
+            final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+                    .byContentType(testStructure);
             //Validations
-            assertTrue( relationships != null && !relationships.isEmpty() );
+            assertTrue(relationships != null && !relationships.isEmpty());
 
-            List<Contentlet> foundContentlets = null;
-            for ( Relationship relationship : relationships ) {
-                foundContentlets = contentletAPI.getRelatedContent( parentContentlet, relationship, user, true );
+            List<Contentlet> foundContentlets;
+            for (Relationship relationship : relationships) {
+                foundContentlets = contentletAPI
+                        .getRelatedContent(parentContentlet, relationship, user, true);
+                //Validations
+                assertTrue(foundContentlets != null && !foundContentlets.isEmpty());
             }
-
-            //Validations
-            assertTrue( foundContentlets != null && !foundContentlets.isEmpty() );
-
-        }finally {
-            if (testRelationship != null && testRelationship.getInode() != null){
+        } finally {
+            if (testRelationship != null && testRelationship.getInode() != null) {
                 relationshipAPI.delete(testRelationship);
             }
 
-            if (testStructure != null && testStructure.getInode() != null){
+            if (testStructure != null && testStructure.getInode() != null) {
+                APILocator.getStructureAPI().delete(testStructure, user);
+            }
+        }
+    }
+
+    @Test
+    public void testCheckInWithSelfRelationInBothParentsAndChildren()
+            throws DotSecurityException, DotDataException {
+
+        Relationship testRelationship = null;
+        Structure testStructure = null;
+        final long timeMillis = new Date().getTime();
+        try {
+            //First lets create a test structure
+            testStructure = createStructure(
+                    "JUnit Test Structure_" + timeMillis,
+                    "junit_test_structure_" +timeMillis);
+
+            //Now a new test contentlets
+            final Contentlet grandParentContentlet = createContentlet(testStructure, null, false);
+            Contentlet parentContentlet = new ContentletDataGen(testStructure.id())
+                    .setPolicy(IndexPolicy.FORCE)
+                    .next();//createContentlet( testStructure, null, false );
+            final Contentlet childContentlet = createContentlet(testStructure, null, false);
+
+            //Create the relationship
+            testRelationship = createRelationShip(testStructure, false);
+
+            //Create the contentlet relationships
+            final ContentletRelationships contentletRelationships = new ContentletRelationships(
+                    parentContentlet);
+            final List<ContentletRelationshipRecords> records = new ArrayList<>();
+
+            final ContentletRelationshipRecords grandParentRel = contentletRelationships.new ContentletRelationshipRecords(
+                    testRelationship, false);
+            grandParentRel.setRecords(CollectionsUtils.list(grandParentContentlet));
+            records.add(grandParentRel);
+
+            final ContentletRelationshipRecords childRel = contentletRelationships.new ContentletRelationshipRecords(
+                    testRelationship, true);
+            childRel.setRecords(CollectionsUtils.list(childContentlet));
+            records.add(childRel);
+
+            contentletRelationships.setRelationshipsRecords(records);
+
+            parentContentlet = contentletAPI
+                    .checkin(parentContentlet, contentletRelationships, null, null, user, false);
+
+            //Validate child content was added correctly
+            List<Contentlet> foundContentlets = contentletAPI
+                    .getRelatedContent(parentContentlet, testRelationship, true, user, true);
+            assertTrue(foundContentlets != null && !foundContentlets.isEmpty());
+            assertEquals(childContentlet.getIdentifier(), foundContentlets.get(0).getIdentifier());
+
+            //Validate grandParent content was added correctly
+            foundContentlets = contentletAPI
+                    .getRelatedContent(parentContentlet, testRelationship, false, user, true);
+            assertTrue(foundContentlets != null && !foundContentlets.isEmpty());
+            assertEquals(grandParentContentlet.getIdentifier(),
+                    foundContentlets.get(0).getIdentifier());
+
+        } finally {
+            if (testRelationship != null && testRelationship.getInode() != null) {
+                relationshipAPI.delete(testRelationship);
+            }
+
+            if (testStructure != null && testStructure.getInode() != null) {
                 APILocator.getStructureAPI().delete(testStructure, user);
             }
         }
@@ -3352,28 +3422,27 @@ public class ContentletAPITest extends ContentletBaseTest {
      * @see ContentletAPI
      * @see Contentlet
      */
-    @Ignore ( "Not Ready to Run." )
     @Test
     public void getRelatedContentPullByParent () throws DotSecurityException, DotDataException {
 
         Relationship testRelationship = null;
         Structure testStructure       = null;
-        APILocator.getStructureAPI().delete(testStructure, user);
+        final long timeMillis = new Date().getTime();
         try {
             //First lets create a test structure
             testStructure = createStructure(
-                    "JUnit Test Structure_" + String.valueOf(new Date().getTime()),
-                    "junit_test_structure_" + String.valueOf(new Date().getTime()));
+                    "JUnit Test Structure_" + timeMillis,
+                    "junit_test_structure_" + timeMillis);
 
             //Now a new test contentlets
-            Contentlet parentContentlet = createContentlet(testStructure, null, false);
-            Contentlet childContentlet = createContentlet(testStructure, null, false);
+            final Contentlet parentContentlet = createContentlet(testStructure, null, false);
+            final Contentlet childContentlet = createContentlet(testStructure, null, false);
 
             //Create the relationship
             testRelationship = createRelationShip(testStructure, false);
 
             //Create the contentlet relationships
-            List<Contentlet> contentRelationships = new ArrayList<>();
+            final List<Contentlet> contentRelationships = new ArrayList<>();
             contentRelationships.add(childContentlet);
 
             //Relate the content
@@ -3381,11 +3450,11 @@ public class ContentletAPITest extends ContentletBaseTest {
                     .relateContent(parentContentlet, testRelationship, contentRelationships, user,
                             false);
 
-            Boolean hasParent = FactoryLocator.getRelationshipFactory()
+            final boolean hasParent = FactoryLocator.getRelationshipFactory()
                     .isParent(testRelationship, parentContentlet.getStructure());
 
-            List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
-                    .byContentType(parentContentlet.getStructure());
+            final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
+                    .byContentType(testStructure);
             //Validations
             assertTrue(relationships != null && !relationships.isEmpty());
 
@@ -3393,10 +3462,11 @@ public class ContentletAPITest extends ContentletBaseTest {
             for (Relationship relationship : relationships) {
                 foundContentlets = contentletAPI
                         .getRelatedContent(parentContentlet, relationship, hasParent, user, true);
+                //Validations
+                assertTrue(foundContentlets != null && !foundContentlets.isEmpty());
             }
 
-            //Validations
-            assertTrue(foundContentlets != null && !foundContentlets.isEmpty());
+
         }finally {
             if (testRelationship != null && testRelationship.getInode() != null){
                 relationshipAPI.delete(testRelationship);
