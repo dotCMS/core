@@ -823,8 +823,12 @@ public class ContentletAjax {
                                     }
                               }else {
                                   for(String x : fieldValue.split("[,|\\s+]")) {
-                                      luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":")
+                                      luceneQuery.append("+(" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":")
                                       .append(valueDelimiter + x + valueDelimiter + " ");
+                                      luceneQuery.append(" " + st.getVelocityVarName() + "." + fieldVelocityVarName + "_dotraw:")
+                                      .append(valueDelimiter + x + valueDelimiter + ") ");
+                                      
+                                      
                                   }
                               }
 							}
