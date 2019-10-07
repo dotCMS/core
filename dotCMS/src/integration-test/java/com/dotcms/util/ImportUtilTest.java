@@ -1212,6 +1212,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     chrisPublisher, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
                                     null);
+
             //Validations
             validate(results, false, false, true);
             Logger.info(this, "results.get(\"warnings\"): " + results.get("warnings"));
@@ -1222,6 +1223,13 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
             assertEquals(3, savedData.size());
+
+            for (final Contentlet cont : savedData) {
+
+                cont.setIndexPolicy(IndexPolicy.FORCE);
+                APILocator.getContentletIndexAPI().addContentToIndex(cont, false);
+            }
+
             for (final Contentlet cont : savedData) {
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
                 if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
