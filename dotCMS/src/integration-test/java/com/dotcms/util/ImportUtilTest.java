@@ -1201,14 +1201,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             contentletToPublish.setIndexPolicy(IndexPolicy.FORCE);
             APILocator.getContentletIndexAPI().addContentToIndex(contentletToPublish, true);
 
+            final String identifier1 = savedData.get(0).getIdentifier();
+            final String identifier2 = savedData.get(1).getIdentifier();
+            final String identifier3 = savedData.get(2).getIdentifier();
+
             String tempFile = "Identifier," + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
                     + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
-                    savedData.get(0).getIdentifier() + "," + testM + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publishAction.getId())
+                    identifier1 + "," + testM + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publishAction.getId())
                     + "\r\n" +
-                    savedData.get(1).getIdentifier() + "," + testN + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(unpublishAction.getId())
+                    identifier2 + "," + testN + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(unpublishAction.getId())
                     + "\r\n" +
-                    savedData.get(2).getIdentifier() + "," + testO + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publish2Action
-                    .getId());
+                    identifier3 + "," + testO + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publish2Action.getId());
 
             Logger.info(this, "tempFile: " + tempFile);
             final Reader reader2 = createTempFile(tempFile);
@@ -1248,19 +1251,20 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
                 boolean isLive = APILocator.getVersionableAPI().hasLiveVersion(cont);
 
-                Logger.info(this, "Contentlet id:    " + cont.getIdentifier());
-                Logger.info(this, "Contentlet inode: " + cont.getInode());
+                Logger.info(this, "Contentlet id:    "  + cont.getIdentifier());
+                Logger.info(this, "Contentlet inode: "  + cont.getInode());
                 Logger.info(this, "Contentlet isLive: " + isLive);
+                Logger.info(this, "Contentlet isLive: " + cont.getStringProperty(TITLE_FIELD_NAME));
 
-                if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
+                if (cont.getIdentifier().equals(identifier1)) {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step1.getId());
                     assertTrue("the contentlet: " + cont.getIdentifier() + " should be live", isLive);
-                } else if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testN)) {
+                } else if (cont.getIdentifier().equals(identifier2)) {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step2.getId());
                     assertFalse("the contentlet: " + cont.getIdentifier() + " should NOT be live", isLive);
-                } else if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testO)) {
+                } else if (cont.getIdentifier().equals(identifier3)) {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step3.getId());
                     assertTrue("the contentlet: " + cont.getIdentifier() + " should be live", isLive);
