@@ -1237,37 +1237,30 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             assertEquals(3, savedData.size());
 
             for (final Contentlet cont : savedData) {
-
-                CacheLocator.getContentletCache().remove(cont);
-                cont.setIndexPolicy(IndexPolicy.FORCE);
-            }
-
-            APILocator.getContentletIndexAPI().addContentToIndex(savedData);
-
-            Thread.sleep(2000);
-
-            for (final Contentlet cont1 : savedData) {
-                final Contentlet cont = contentletAPI.findContentletByIdentifierAnyLanguage(cont1.getIdentifier());
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
                 boolean isLive = APILocator.getVersionableAPI().hasLiveVersion(cont);
 
                 Logger.info(this, "Contentlet id:    "  + cont.getIdentifier());
                 Logger.info(this, "Contentlet inode: "  + cont.getInode());
                 Logger.info(this, "Contentlet isLive: " + isLive);
-                Logger.info(this, "Contentlet isLive: " + cont.getStringProperty(TITLE_FIELD_NAME));
+                Logger.info(this, "Contentlet name: " + cont.getStringProperty(TITLE_FIELD_NAME));
+                Logger.info(this, "Contentlet task: " + task.getStatus());
+                Logger.info(this, "Contentlet step1: " + step1.getId());
+                Logger.info(this, "Contentlet step2: " + step2.getId());
+                Logger.info(this, "Contentlet step3: " + step3.getId());
 
                 if (cont.getIdentifier().equals(identifier1)) {
                     assertNotNull(task);
-                    assertEquals(task.getStatus(), step1.getId());
                     assertTrue("the contentlet: " + cont.getIdentifier() + " should be live", isLive);
+                    assertEquals(task.getStatus(), step1.getId());
                 } else if (cont.getIdentifier().equals(identifier2)) {
                     assertNotNull(task);
-                    assertEquals(task.getStatus(), step2.getId());
                     assertFalse("the contentlet: " + cont.getIdentifier() + " should NOT be live", isLive);
+                    assertEquals(task.getStatus(), step2.getId());
                 } else if (cont.getIdentifier().equals(identifier3)) {
                     assertNotNull(task);
-                    assertEquals(task.getStatus(), step3.getId());
                     assertTrue("the contentlet: " + cont.getIdentifier() + " should be live", isLive);
+                    assertEquals(task.getStatus(), step3.getId());
                 }
             }
 
