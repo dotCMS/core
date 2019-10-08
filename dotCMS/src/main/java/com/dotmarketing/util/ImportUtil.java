@@ -1339,7 +1339,7 @@ public class ImportUtil {
                             executeWfAction = validateWorkflowAction(user, cont);
                         } catch (Exception e) {
 
-                            Logger.debug(ImportUtil.class, ()->results + ", cont: " + cont + ", user: " +  user + ", lineNumber " +  lineNumber +
+                            Logger.debug(ImportUtil.class, results + ", cont: " + cont + ", user: " +  user + ", lineNumber " +  lineNumber +
                                     "validateWorkflowAction, message.import.contentlet.invalid.action.selected: " + e.getMessage());
                             setActionWarning(results, cont, user, lineNumber,
                                     "message.import.contentlet.invalid.action.found.in.csv",
@@ -1362,7 +1362,7 @@ public class ImportUtil {
                             executeWfAction = validateWorkflowAction(user, cont);
                         } catch (Exception e) {
 
-                            Logger.debug(ImportUtil.class, ()->results + ", cont: " + cont + ", user: " +  user + ", lineNumber " +  lineNumber +
+                            Logger.debug(ImportUtil.class, results + ", cont: " + cont + ", user: " +  user + ", lineNumber " +  lineNumber +
                                     "message.import.contentlet.invalid.action.selected: " + e.getMessage());
                             setActionWarning(results, cont, user, lineNumber,
                                     "message.import.contentlet.invalid.action.selected",
