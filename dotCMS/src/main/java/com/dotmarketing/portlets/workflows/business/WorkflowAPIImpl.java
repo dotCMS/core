@@ -3147,7 +3147,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					if (null == this.findAction(action.getId(), workflowTask.getStatus(), user)) {
 
 						throw new IllegalArgumentException(LanguageUtil
-								.get(user.getLocale(), "Invalid-Action-Step-Error", actionId));
+								.get(user.getLocale(), "Invalid-Action-Step-Error", actionId,
+										workflowTask.getStatus()));
 					}
 				} else {  // if the content is not in any step (may be is new), will check the first step.
 
