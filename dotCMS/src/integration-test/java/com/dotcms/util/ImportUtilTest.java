@@ -1141,14 +1141,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
 
             //Creating csv
-            reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
+            String tempFile = TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
                     + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
                     testM + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(saveAction.getId())
                     + "\r\n" +
                     testN + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(saveAndPublishAction
                     .getId()) + "\r\n" +
                     testO + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(saveAsDraftAction
-                    .getId()));
+                    .getId());
+
+            Logger.info(this, "tempFile1: " + tempFile);
+            reader = createTempFile(tempFile);
 
             csvreader = new CsvReader(reader);
             csvreader.setSafetySwitch(false);
@@ -1171,20 +1174,28 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
             assertEquals(3, savedData.size());
+
+            String identifier1 = savedData.get(0).getIdentifier();
+            String identifier2 = savedData.get(1).getIdentifier();
+            String identifier3 = savedData.get(2).getIdentifier();
+
             for (final Contentlet cont : savedData) {
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
                 if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
                     assertNotNull(task);
                     assertFalse(cont.isLive());
                     assertEquals(task.getStatus(), step1.getId());
+                    identifier1 = cont.getIdentifier();
                 } else if(cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testN)) {
                     assertNotNull(task);
                     assertTrue(cont.isLive());
                     assertEquals(task.getStatus(), step2.getId());
+                    identifier2 = cont.getIdentifier();
                 } else if(cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testO)) {
                     assertNotNull(task);
                     assertFalse(cont.isLive());
                     assertEquals(task.getStatus(), step3.getId());
+                    identifier3 = cont.getIdentifier();
                 }
 
                 cont.setIndexPolicy(IndexPolicy.FORCE);
@@ -1194,18 +1205,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             //Update ContentType
             Thread.sleep(1000);
-            // enforce the publish for the second one.
-            final Contentlet contentletToPublish = savedData.get(1);
-            contentletAPI.publish(contentletToPublish, user, false);
-            CacheLocator.getContentletCache().remove(contentletToPublish);
-            contentletToPublish.setIndexPolicy(IndexPolicy.FORCE);
-            APILocator.getContentletIndexAPI().addContentToIndex(contentletToPublish, true);
 
-            final String identifier1 = savedData.get(0).getIdentifier();
-            final String identifier2 = savedData.get(1).getIdentifier();
-            final String identifier3 = savedData.get(2).getIdentifier();
-
-            String tempFile = "Identifier," + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
+            tempFile = "Identifier," + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
                     + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
                     identifier1 + "," + testM + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publishAction.getId())
                     + "\r\n" +
@@ -1213,7 +1214,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     + "\r\n" +
                     identifier3 + "," + testO + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publish2Action.getId());
 
-            Logger.info(this, "tempFile: " + tempFile);
+            Logger.info(this, "tempFile2: " + tempFile);
             final Reader reader2 = createTempFile(tempFile);
 
             final CsvReader csvreader2 = new CsvReader(reader2);
@@ -1252,15 +1253,15 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 if (cont.getIdentifier().equals(identifier1)) {
                     assertNotNull(task);
                     assertTrue("the contentlet: " + cont.getIdentifier() + " should be live", isLive);
-                    assertEquals(task.getStatus(), step1.getId());
+                    assertEquals( "the contentlet: " + cont.getIdentifier() + ":" + cont.getStringProperty(TITLE_FIELD_NAME) + " is on wrong step", step1.getId(), task.getStatus());
                 } else if (cont.getIdentifier().equals(identifier2)) {
                     assertNotNull(task);
                     assertFalse("the contentlet: " + cont.getIdentifier() + " should NOT be live", isLive);
-                    assertEquals(task.getStatus(), step2.getId());
+                    assertEquals( "the contentlet: " + cont.getIdentifier() + ":" + cont.getStringProperty(TITLE_FIELD_NAME) + " is on wrong step", step2.getId(), task.getStatus());
                 } else if (cont.getIdentifier().equals(identifier3)) {
                     assertNotNull(task);
                     assertTrue("the contentlet: " + cont.getIdentifier() + " should be live", isLive);
-                    assertEquals(task.getStatus(), step3.getId());
+                    assertEquals( "the contentlet: " + cont.getIdentifier() + ":" + cont.getStringProperty(TITLE_FIELD_NAME) + " is on wrong step", step3.getId(), task.getStatus());
                 }
             }
 
