@@ -2458,6 +2458,7 @@ ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_language FOREIGN KEY (
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);
+ALTER TABLE workflow_task ADD CONSTRAINT unique_workflow_task unique (webasset,language_id);
 
 CREATE index idx_workflow_step_escalation_action on workflow_step(escalation_action);
 alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);
