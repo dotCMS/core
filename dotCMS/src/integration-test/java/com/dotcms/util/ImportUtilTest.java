@@ -1209,9 +1209,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     -1, -1, reader,
                                     null);
             //Validations
+            results.get("warnings").forEach((warning)->Logger.error(this, warning));
+
             validate(results, false, false, true);
-            assertEquals(results.get("warnings").size(), 3);
-            assertEquals(results.get("errors").size(), 0);
+            assertEquals(3, results.get("warnings").size());
+            assertEquals(0, results.get("errors").size());
 
             savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
