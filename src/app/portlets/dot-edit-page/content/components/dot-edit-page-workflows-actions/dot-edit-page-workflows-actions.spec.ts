@@ -24,6 +24,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-workflows-actions.service';
 import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -104,7 +105,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
             DotWorkflowActionsFireService
         );
         dotWorkflowsActionsService = workflowActionDebugEl.injector.get(DotWorkflowsActionsService);
-        spyOn(dotWorkflowActionsFireService, 'fireTo').and.callThrough();
+        spyOn(dotWorkflowActionsFireService, 'fireTo').and.returnValue(of(dotcmsContentletMock));
     });
 
     describe('button', () => {
@@ -147,7 +148,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
                 beforeEach(() => {
                     const mainButton: DebugElement = de.query(By.css('button'));
-                    mainButton.triggerEventHandler('click', {});
+                    mainButton.triggerEventHandler('click', { currentTarget: mainButton.nativeElement });
                     fixture.detectChanges();
 
                     splitButtons = de.queryAll(By.css('.ui-menuitem-link'));
