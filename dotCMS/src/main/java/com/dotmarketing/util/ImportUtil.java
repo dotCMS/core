@@ -525,7 +525,7 @@ public class ImportUtil {
         }
 
         if (keyFieldsInodes.length == 0) {
-            Logger.info(ImportUtil.class, "Warning: No-key-fields-were-choosen-it-could-give-to-you-duplicated-content");
+            Logger.debug(ImportUtil.class, ()->"Warning: No-key-fields-were-choosen-it-could-give-to-you-duplicated-content");
             results.get("warnings").add(
                     LanguageUtil.get(user,
                             "No-key-fields-were-choosen-it-could-give-to-you-duplicated-content"));
@@ -534,7 +534,7 @@ public class ImportUtil {
         if(!uniqueFields.isEmpty()){
             for(Field f : uniqueFields){
 
-                Logger.info(ImportUtil.class, "the-structure-field" + " " + f.getVelocityVarName() +  " " + "is-unique");
+                Logger.debug(ImportUtil.class, ()->"the-structure-field" + " " + f.getVelocityVarName() +  " " + "is-unique");
                 results.get("warnings").add(LanguageUtil.get(user, "the-structure-field")+ " " + f.getVelocityVarName() +  " " +LanguageUtil.get(user, "is-unique"));
             }
         }
@@ -553,7 +553,7 @@ public class ImportUtil {
                         LanguageUtil.get(user, "No-headers-found-on-the-file-that-match-any-of-the-structure-fields"));
             }
 
-            Logger.info(ImportUtil.class, "Not-all-the-structure-fields-were-matched-against-the-file-headers-Some-content-fields-could-be-left-empty");
+            Logger.debug(ImportUtil.class, ()->"Not-all-the-structure-fields-were-matched-against-the-file-headers-Some-content-fields-could-be-left-empty");
             results
             .get("warnings")
             .add(LanguageUtil.get(user, "Not-all-the-structure-fields-were-matched-against-the-file-headers-Some-content-fields-could-be-left-empty"));
@@ -1339,7 +1339,7 @@ public class ImportUtil {
                             executeWfAction = validateWorkflowAction(user, cont);
                         } catch (Exception e) {
 
-                            Logger.info(ImportUtil.class, results + ", cont: " + cont + ", user: " +  user + ", lineNumber " +  lineNumber +
+                            Logger.debug(ImportUtil.class, ()->results + ", cont: " + cont + ", user: " +  user + ", lineNumber " +  lineNumber +
                                     "validateWorkflowAction, message.import.contentlet.invalid.action.selected: " + e.getMessage());
                             setActionWarning(results, cont, user, lineNumber,
                                     "message.import.contentlet.invalid.action.found.in.csv",
@@ -1362,7 +1362,7 @@ public class ImportUtil {
                             executeWfAction = validateWorkflowAction(user, cont);
                         } catch (Exception e) {
 
-                            Logger.info(ImportUtil.class, results + ", cont: " + cont + ", user: " +  user + ", lineNumber " +  lineNumber +
+                            Logger.debug(ImportUtil.class, ()->results + ", cont: " + cont + ", user: " +  user + ", lineNumber " +  lineNumber +
                                     "message.import.contentlet.invalid.action.selected: " + e.getMessage());
                             setActionWarning(results, cont, user, lineNumber,
                                     "message.import.contentlet.invalid.action.selected",
