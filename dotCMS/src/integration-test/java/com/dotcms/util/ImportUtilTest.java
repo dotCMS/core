@@ -1137,6 +1137,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //create content type
             contentType = createTestContentType(contentTypeName, contentTypeVarName);
             titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
             //Creating csv
             reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
                     + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
@@ -1191,6 +1192,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             //Update ContentType
             Thread.sleep(1000);
+            // enforce the publish for the second one.
+            contentletAPI.publish(savedData.get(1), user, false);
+
             String tempFile = "Identifier," + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
                     + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
                     savedData.get(0).getIdentifier() + "," + testM + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publishAction.getId())
