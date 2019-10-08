@@ -1181,7 +1181,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     assertNotNull(task);
                     assertTrue(cont.isLive());
                     assertEquals(task.getStatus(), step2.getId());
-                } else {
+                } else if(cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testO)) {
                     assertNotNull(task);
                     assertFalse(cont.isLive());
                     assertEquals(task.getStatus(), step3.getId());
@@ -1259,8 +1259,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 } else if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testN)) {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step2.getId());
-                    assertFalse("the contentlet: " + cont.getIdentifier() + " should nOT be live", isLive);
-                } else {
+                    assertFalse("the contentlet: " + cont.getIdentifier() + " should NOT be live", isLive);
+                } else if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testO)) {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step3.getId());
                     assertTrue("the contentlet: " + cont.getIdentifier() + " should be live", isLive);
