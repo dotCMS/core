@@ -383,6 +383,8 @@ integrationTest {
     def singleTest = System.getProperty("test.single")
     if (null != singleTest && singleTest == "com.dotcms.MainSuite"){
         include "**/MainSuite.class"
+    } else {
+        exclude "**/MainSuite.class"
     }
 
     // https://docs.gradle.org/current/dsl/org.gradle.api.tasks.testing.logging.TestLoggingContainer.html
