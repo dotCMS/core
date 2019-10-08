@@ -34,6 +34,7 @@ import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -74,6 +75,7 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1116,7 +1118,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      */
     @Test
     public void importFile_success_when_importLinesUpdateExistingContent()
-            throws DotSecurityException, DotDataException, IOException, InterruptedException {
+            throws Exception {
 
         ContentType contentType = null;
         CsvReader csvreader;
@@ -1209,20 +1211,15 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .getId());
 
             Logger.info(this, "tempFile: " + tempFile);
-            reader = createTempFile(tempFile);
+            final Reader reader2 = createTempFile(tempFile);
 
-            csvreader = new CsvReader(reader);
-            csvreader.setSafetySwitch(false);
-            csvHeaders = csvreader.getHeaders();
+            final CsvReader csvreader2 = new CsvReader(reader2);
+            csvreader2.setSafetySwitch(false);
 
             //Preview=false
+            final String inode = contentType.inode();
             results =
-                    ImportUtil
-                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
-                                    new String[]{titleField.id()}, false, false,
-                                    chrisPublisher, defaultLanguage.getId(), csvHeaders, csvreader,
-                                    -1, -1, reader,
-                                    null);
+                    LocalTransaction.wrapReturnWithListeners( ()-> importFile(inode, titleField, csvreader2, reader2));
             //Validations
             validate(results, false, false, true);
             Logger.info(this, "results.get(\"warnings\"): " + results.get("warnings"));
@@ -1253,19 +1250,20 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
                 Logger.info(this, "Contentlet id:    " + cont.getIdentifier());
                 Logger.info(this, "Contentlet inode: " + cont.getInode());
+                Logger.info(this, "Contentlet isLive: " + isLive);
 
                 if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step1.getId());
-                    assertTrue(isLive);
+                    assertTrue("the contentlet: " + cont.getIdentifier() + " should be live", isLive);
                 } else if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testN)) {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step2.getId());
-                    assertFalse(isLive);
+                    assertFalse("the contentlet: " + cont.getIdentifier() + " should nOT be live", isLive);
                 } else {
                     assertNotNull(task);
                     assertEquals(task.getStatus(), step3.getId());
-                    assertTrue(isLive);
+                    assertTrue("the contentlet: " + cont.getIdentifier() + " should be live", isLive);
                 }
             }
 
@@ -1275,6 +1273,24 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     contentTypeApi.delete(contentType);
                 }
             }catch (Exception e) {e.printStackTrace();}
+        }
+    }
+
+    private HashMap<String, List<String>>  importFile (final String inode, com.dotcms.contenttype.model.field.Field titleField,
+            final CsvReader csvreader, final Reader reader) {
+        try  {
+            return ImportUtil
+                    .importFile(0L, defaultSite.getInode(), inode,
+                            new String[]{titleField.id()}, false, false,
+                            chrisPublisher, defaultLanguage.getId(),
+                            csvreader.getHeaders(), csvreader,
+                            -1, -1, reader,
+                            null);
+        }catch (Exception e) {
+
+            return new HashMap<>();
+        } finally {
+            CloseUtils.closeQuietly(reader);
         }
     }
 
