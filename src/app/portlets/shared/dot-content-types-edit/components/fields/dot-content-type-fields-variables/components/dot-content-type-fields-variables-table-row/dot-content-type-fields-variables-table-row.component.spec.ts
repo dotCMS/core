@@ -1,5 +1,5 @@
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture } from '@angular/core/testing';
 import {
     DebugElement,
     Component,
@@ -18,6 +18,24 @@ import { mockFieldVariables } from '@tests/field-variable-service.mock';
 import { DotMessageService } from '@services/dot-messages-service';
 import { PrimeTemplate } from 'primeng/primeng';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFieldVariable } from '../../models/dot-field-variable.interface';
+
+@Component({
+    selector: 'dot-test-host-component',
+    template: `
+        <dot-content-type-fields-variables-table-row
+            [fieldVariable]="fieldVariable"
+            [variableIndex]="variableIndex"
+            [variablesList]="variablesList"
+        >
+        </dot-content-type-fields-variables-table-row>
+    `
+})
+class TestHostComponent {
+    @Input() fieldVariable: DotFieldVariable;
+    @Input() variableIndex: number;
+    @Input() variablesList: DotFieldVariable[];
+}
 
 @Directive({
     // tslint:disable-next-line:directive-selector
@@ -60,19 +78,10 @@ class MockCellEditorComponent implements AfterContentInit {
     }
 }
 
-function showEditMenu(
-    fixture: ComponentFixture<DotContentTypeFieldsVariablesTableRowComponent>
-) {
-    fixture.componentInstance.fieldVariable = { key: '', value: '' };
-    fixture.detectChanges();
-    fixture.debugElement.query(By.css('.field-variable-key-input')).triggerEventHandler('focus', {
-        target: { value: '' }
-    });
-}
-
 describe('DotContentTypeFieldsVariablesTableRowComponent', () => {
     let comp: DotContentTypeFieldsVariablesTableRowComponent;
-    let fixture: ComponentFixture<DotContentTypeFieldsVariablesTableRowComponent>;
+    let hostComponent: TestHostComponent;
+    let hostComponentfixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let dotMessageDisplayService: DotMessageDisplayService;
 
@@ -89,7 +98,8 @@ describe('DotContentTypeFieldsVariablesTableRowComponent', () => {
             declarations: [
                 DotContentTypeFieldsVariablesTableRowComponent,
                 MockCellEditorComponent,
-                MockEditableColumnDirective
+                MockEditableColumnDirective,
+                TestHostComponent
             ],
             imports: [DotIconButtonModule],
             providers: [
@@ -98,64 +108,78 @@ describe('DotContentTypeFieldsVariablesTableRowComponent', () => {
             ]
         }).compileComponents();
 
-        fixture = DOTTestBed.createComponent(DotContentTypeFieldsVariablesTableRowComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
+        hostComponentfixture = DOTTestBed.createComponent(TestHostComponent);
+        hostComponent = hostComponentfixture.componentInstance;
+        comp = hostComponentfixture.debugElement.query(
+            By.css('dot-content-type-fields-variables-table-row')
+        ).componentInstance;
+        de = hostComponentfixture.debugElement.query(
+            By.css('dot-content-type-fields-variables-table-row')
+        );
 
         dotMessageDisplayService = de.injector.get(DotMessageDisplayService);
-        comp.fieldVariable = mockFieldVariables[0];
-        comp.variableIndex = 0;
+        hostComponent.variableIndex = 0;
+        hostComponent.variablesList = mockFieldVariables;
     });
 
     it('should load the component', () => {
-        showEditMenu(fixture);
-        fixture.detectChanges();
+        hostComponent.fieldVariable = mockFieldVariables[0];
+        hostComponentfixture.detectChanges();
         const inputs = de.queryAll(By.css('input'));
         const btns = de.queryAll(By.css('button'));
-        expect(inputs[0].nativeElement.placeholder).toContain('Enter Key');
-        expect(inputs[1].nativeElement.placeholder).toContain('Enter Value');
-        expect(btns[0].nativeElement.innerText).toContain('CANCEL');
-        expect(btns[1].nativeElement.innerText).toContain('SAVE');
-        expect(comp.saveDisabled).toBe(true);
+        expect(inputs[0].nativeElement.placeholder).toContain('Enter Value');
+        expect(btns[0].nativeElement.innerText).toContain('delete_outline');
+        expect(btns[1].nativeElement.innerText).toContain('edit');
+        expect(comp.saveDisabled).toBe(false);
     });
 
-    it('should focus on "Key" input when an empty variable is added', fakeAsync(() => {
-        comp.fieldVariable = { key: '', value: '' };
-        fixture.detectChanges();
+    it('should focus on "Key" input when an empty variable is added', (done) => {
+        hostComponent.fieldVariable = {
+            key: '',
+            value: ''
+        };
+        hostComponentfixture.detectChanges();
+        de.query(By.css('.field-variable-key-input')).triggerEventHandler('focus', {});
         spyOn(comp.keyCell.nativeElement, 'click');
-        tick();
-        expect(comp.saveDisabled).toBe(false);
-        expect(comp.keyCell.nativeElement.click).toHaveBeenCalled();
-    }));
+        hostComponentfixture.detectChanges();
+        setTimeout(() => {
+            expect(comp.saveDisabled).toBe(true);
+            expect(comp.keyCell.nativeElement.click).toHaveBeenCalled();
+            done();
+        }, 0);
+    });
 
     it('should focus on "Value" input when "Edit" button clicked', () => {
-        comp.fieldVariable = { key: 'TestKey', value: 'TestValue' };
+        hostComponent.fieldVariable = { key: 'TestKey', value: 'TestValue' };
         spyOn(comp.valueCell.nativeElement, 'click');
-        fixture.detectChanges();
+        hostComponentfixture.detectChanges();
         de.queryAll(
             By.css('.content-type-fields__variables-actions dot-icon-button')
         )[1].triggerEventHandler('click', {
             stopPropagation: () => {}
         });
+        hostComponentfixture.detectChanges();
         expect(comp.valueCell.nativeElement.click).toHaveBeenCalled();
     });
 
     it('should show edit menu when focus/key.up on a field', () => {
-        showEditMenu(fixture);
-        expect(comp.rowActiveHighlight).toBe(true);
-        expect(comp.showEditMenu).toBe(true);
-        expect(comp.saveDisabled).toBe(true);
-        de.query(By.css('.field-variable-key-input')).triggerEventHandler('key.up', {
-            target: { value: '' }
+        hostComponent.fieldVariable = mockFieldVariables[0];
+        hostComponentfixture.detectChanges();
+        expect(comp.rowActiveHighlight).toBe(false);
+        expect(comp.showEditMenu).toBe(false);
+        expect(comp.saveDisabled).toBe(false);
+        de.query(By.css('.field-variable-value-input')).triggerEventHandler('keyup', {
+            target: { value: 'a' }
         });
+        hostComponentfixture.detectChanges();
         expect(comp.rowActiveHighlight).toBe(true);
         expect(comp.showEditMenu).toBe(true);
-        expect(comp.saveDisabled).toBe(true);
+        expect(comp.saveDisabled).toBe(false);
     });
 
     it('should focus on "Value" field, if entered valid "Key"', () => {
-        comp.fieldVariable = { key: 'test', value: '' };
-        fixture.detectChanges();
+        hostComponent.fieldVariable = { key: 'test', value: '' };
+        hostComponentfixture.detectChanges();
         de.query(By.css('.field-variable-key-input')).nativeElement.dispatchEvent(
             new KeyboardEvent('keydown', { key: 'Enter' })
         );
@@ -163,72 +187,65 @@ describe('DotContentTypeFieldsVariablesTableRowComponent', () => {
     });
 
     it('should focus on "Key" field, if entered invalid "Key"', () => {
-        comp.fieldVariable = { key: '', value: '' };
-        fixture.detectChanges();
+        hostComponent.fieldVariable = { key: '', value: '' };
+        hostComponentfixture.detectChanges();
         de.query(By.css('.field-variable-key-input')).nativeElement.dispatchEvent(
             new KeyboardEvent('keydown', { key: 'Enter' })
         );
         expect(comp.elemRef).toBe(comp.keyCell);
     });
 
-    it('should focus on "Save" button, if entered valid "Key" & "Value"', () => {
-        showEditMenu(fixture);
-        comp.fieldVariable = { key: 'TestKey', value: 'TestValue' };
-        fixture.detectChanges();
-        de.query(By.css('.field-variable-value-input')).nativeElement.dispatchEvent(
-            new KeyboardEvent('keydown', { key: 'Enter' })
-        );
-        expect(comp.elemRef).toBe(comp.saveButton);
-    });
-
     it('should emit cancel event when press "Escape"', () => {
-        showEditMenu(fixture);
+        hostComponent.fieldVariable = mockFieldVariables[0];
+        hostComponentfixture.detectChanges();
         spyOn(comp.cancel, 'emit');
-        fixture.detectChanges();
-        de.query(By.css('.field-variable-key-input')).nativeElement.dispatchEvent(
+        hostComponentfixture.detectChanges();
+        de.query(By.css('.field-variable-value-input')).nativeElement.dispatchEvent(
             new KeyboardEvent('keydown', { key: 'Escape' })
         );
         expect(comp.cancel.emit).toHaveBeenCalledWith(comp.variableIndex);
     });
 
     it('should disabled save button when new variable key added is duplicated', () => {
-        showEditMenu(fixture);
-        comp.fieldVariable = { key: 'Key1', value: '' };
-        comp.variablesList = [comp.fieldVariable, ...mockFieldVariables];
-        fixture.detectChanges();
-        comp.keyCell.nativeElement.dispatchEvent(new MouseEvent('click'));
+        hostComponent.fieldVariable = { key: 'Key1', value: '' };
+        hostComponent.variablesList = [hostComponent.fieldVariable, ...mockFieldVariables];
         spyOn(dotMessageDisplayService, 'push');
-        fixture.detectChanges();
-        const inputKey = de.query(By.css('.field-variable-key-input')).nativeElement;
-        inputKey.value = 'Key1';
+        hostComponentfixture.detectChanges();
         de.query(By.css('.field-variable-key-input')).triggerEventHandler('blur', {
             type: 'blur',
             target: { value: 'Key1' }
         });
+        hostComponentfixture.detectChanges();
         const saveBtn = de.query(By.css('.content-type-fields__variables-actions-edit-save'))
             .nativeElement;
-        fixture.detectChanges();
+        hostComponentfixture.detectChanges();
         expect(saveBtn.disabled).toBe(true);
         expect(dotMessageDisplayService.push).toHaveBeenCalled();
     });
 
-    it('should emit save event when button clicked', () => {
-        showEditMenu(fixture);
-        comp.fieldVariable = { key: 'TestKey', value: 'TestValue' };
+    it('should emit save event when button clicked and not modify "isEditing" variable when component gets updated', () => {
+        hostComponent.fieldVariable = { key: 'Key1', value: 'Value1' };
+        hostComponentfixture.detectChanges();
         spyOn(comp.save, 'emit');
-        fixture.detectChanges();
+        de.query(By.css('.field-variable-value-input')).triggerEventHandler('focus', {});
+        hostComponentfixture.detectChanges();
         de.query(By.css('.content-type-fields__variables-actions-edit-save')).triggerEventHandler(
             'click',
             {}
         );
+        hostComponent.variablesList = [];
+        hostComponentfixture.detectChanges();
         expect(comp.save.emit).toHaveBeenCalledWith(comp.variableIndex);
+        expect(comp.isEditing).toBe(true);
     });
 
     it('should emit cancel event when button clicked', () => {
-        showEditMenu(fixture);
-        comp.fieldVariable = { key: 'TestKey', value: 'TestValue' };
+        hostComponent.fieldVariable = { key: 'Key1', value: 'Value1' };
+        hostComponentfixture.detectChanges();
+        spyOn(comp.save, 'emit');
+        de.query(By.css('.field-variable-value-input')).triggerEventHandler('focus', {});
         spyOn(comp.cancel, 'emit');
-        fixture.detectChanges();
+        hostComponentfixture.detectChanges();
         de.query(By.css('.content-type-fields__variables-actions-edit-cancel')).triggerEventHandler(
             'click',
             { stopPropagation: () => {} }
@@ -237,9 +254,9 @@ describe('DotContentTypeFieldsVariablesTableRowComponent', () => {
     });
 
     it('should emit delete event when button clicked', () => {
-        comp.fieldVariable = { key: 'TestKey', value: 'TestValue' };
+        hostComponent.fieldVariable = { key: 'TestKey', value: 'TestValue' };
         spyOn(comp.delete, 'emit');
-        fixture.detectChanges();
+        hostComponentfixture.detectChanges();
         de.queryAll(
             By.css('.content-type-fields__variables-actions dot-icon-button')
         )[0].triggerEventHandler('click', {});
