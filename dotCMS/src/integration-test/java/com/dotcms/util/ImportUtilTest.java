@@ -1193,7 +1193,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //Update ContentType
             Thread.sleep(1000);
             // enforce the publish for the second one.
-            contentletAPI.publish(savedData.get(1), user, false);
+            final Contentlet contentletToPublish = savedData.get(1);
+            contentletAPI.publish(contentletToPublish, user, false);
+            CacheLocator.getContentletCache().remove(contentletToPublish);
+            contentletToPublish.setIndexPolicy(IndexPolicy.FORCE);
+            APILocator.getContentletIndexAPI().addContentToIndex(contentletToPublish, true);
 
             String tempFile = "Identifier," + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
                     + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
