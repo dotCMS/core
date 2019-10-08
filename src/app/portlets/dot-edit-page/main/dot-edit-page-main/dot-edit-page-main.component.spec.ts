@@ -29,6 +29,8 @@ class MockDotContentletEditorService {
 @Injectable()
 class MockDotPageStateService {
     reload$ = new Subject();
+    state$ = new Subject();
+    get(): void {}
     reload(): void {
         this.reload$.next(new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage)));
     }
@@ -127,17 +129,17 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should call reload pageSte when IframeClose evt happens', () => {
-        spyOn(dotPageStateService, 'reload').and.callThrough();
+        spyOn(dotPageStateService, 'get').and.callThrough();
 
         component.pageState$.subscribe((res) => {
             expect(res).toEqual(new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage)));
         });
 
         dotContentletEditorService.close$.next(true);
-        expect(dotPageStateService.reload).toHaveBeenCalledWith({
+        expect(dotPageStateService.get).toHaveBeenCalledWith({
             url: '/about-us/index',
             viewAs: {
-                language_id: mockDotRenderedPage.page.languageId
+                language: mockDotRenderedPage.page.languageId
             }
         });
     });
