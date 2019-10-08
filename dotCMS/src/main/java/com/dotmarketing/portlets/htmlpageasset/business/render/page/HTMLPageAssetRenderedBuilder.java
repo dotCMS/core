@@ -62,6 +62,7 @@ public class HTMLPageAssetRenderedBuilder {
     private final VersionableAPI versionableAPI;
     private final MultiTreeAPI   multiTreeAPI;
     private String pageUrlMapper;
+    private boolean live;
 
     public HTMLPageAssetRenderedBuilder() {
 
@@ -71,6 +72,11 @@ public class HTMLPageAssetRenderedBuilder {
         this.layoutAPI      = APILocator.getLayoutAPI();
         this.versionableAPI = APILocator.getVersionableAPI();
         this.multiTreeAPI   = APILocator.getMultiTreeAPI();
+    }
+
+    public HTMLPageAssetRenderedBuilder setLive(final boolean live) {
+        this.live = live;
+        return this;
     }
 
     public HTMLPageAssetRenderedBuilder setHtmlPageAsset(final IHTMLPage htmlPageAsset) {
@@ -135,7 +141,7 @@ public class HTMLPageAssetRenderedBuilder {
         if (!rendered) {
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
             return new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates,
-                    canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper);
+                    canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live);
         } else {
             final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
@@ -143,7 +149,7 @@ public class HTMLPageAssetRenderedBuilder {
                     pageRenderUtil.getContainersRaw(), velocityContext, mode).build();
             final String pageHTML = this.getPageHTML();
             return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
-                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper
+                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live
             );
         }
     }

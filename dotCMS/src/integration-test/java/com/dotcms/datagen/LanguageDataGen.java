@@ -12,7 +12,7 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
 
     private final long currentTime = System.currentTimeMillis();
 
-    private String languageCode = "testLanguageCode" + currentTime;
+    private String languageCode = org.apache.commons.lang.RandomStringUtils.randomAlphanumeric(5);
     private String languageName = "testLanguage" + currentTime;
     private String countryCode = "testCountryCode" + currentTime;
     private String country = "testCountry" + currentTime;

@@ -252,7 +252,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         query.append("+structureName:").append(structure.getVelocityVarName())
              .append(" +deleted:false ");
 
-        if (context.getMode().isAdmin || context.getMode() == PageMode.EDIT_MODE) {
+        if (context.getMode() == PageMode.PREVIEW_MODE || context.getMode() == PageMode.EDIT_MODE) {
             query.append("+working:true ");
         } else {
             query.append("+live:true ");

@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -39,6 +40,8 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONException;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
@@ -206,7 +209,7 @@ public class PageResourceTest {
 
         when(request.getRequestURI()).thenReturn(pagetest.getURI());
         final Response response = pageResource.getPersonalizedPersonasOnPage(request, new EmptyHttpResponse(),
-                null, 0, 10, "title", "ASC", host.getIdentifier(), pagetest.getIdentifier());
+                null, 0, 10, "title", "ASC", host.getIdentifier(), pagetest.getIdentifier(), null);
 
         final ResponseEntityView entityView = (ResponseEntityView) response.getEntity();
         assertNotNull(entityView);
@@ -219,9 +222,56 @@ public class PageResourceTest {
         Logger.info(this, "************ PaginatedArrayList2: " + paginatedArrayList.stream()
                 .map(p -> Tuple.of(p.getPersona().get(PersonaAPI.KEY_TAG_FIELD), p.getPersona().get("personalized"))).collect(Collectors.toList()));
 
-        assertTrue(paginatedArrayList.stream().anyMatch(personalizationPersonaPageView ->
-                personalizationPersonaPageView.getPersona().get(PersonaAPI.KEY_TAG_FIELD).equals(personaTag) &&
-                        Boolean.TRUE.equals(personalizationPersonaPageView.getPersona().get("personalized"))));
+        paginatedArrayList.stream()
+                .anyMatch(personalizationPersonaPageView ->
+                        personalizationPersonaPageView.getPersona().get(PersonaAPI.KEY_TAG_FIELD).equals(personaTag) &&
+                                Boolean.TRUE.equals(personalizationPersonaPageView.getPersona().get("personalized")));
+    }
+
+    /**
+     * methodToTest {@link PageResource#getPersonalizedPersonasOnPage(HttpServletRequest, HttpServletResponse, String, int, int, String, String, String, String, Boolean)}
+     * Given Scenario: Resuqest persona list with a limited user
+     * ExpectedResult: Should respect front end roles when the parameter is set to true and not respect it when the
+     * parameter is set to false
+     */
+    @Test
+    public void getPersonasForLimitedUser() throws DotDataException, DotSecurityException, PortalException, SystemException {
+        final Persona persona    = new PersonaDataGen()
+                .keyTag("persona"+System.currentTimeMillis())
+                .hostFolder(host.getIdentifier())
+                .host(host)
+                .nextPersisted();
+        persona.setIndexPolicy(IndexPolicy.WAIT_FOR);
+
+        APILocator.getContentletAPI().publish(persona, user, false);
+
+
+        final User user = new UserDataGen().nextPersisted();
+        when(initDataObject.getUser()).thenReturn(user);
+
+        final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
+        final HTMLPageAsset pagetest = pageRenderTest.getPage();
+
+        when(request.getRequestURI()).thenReturn(pagetest.getURI());
+
+        Response response = pageResource.getPersonalizedPersonasOnPage(request, new EmptyHttpResponse(),
+                null, 0, 10, "title", "ASC", host.getIdentifier(),
+                pagetest.getIdentifier(), true);
+
+        List<PersonalizationPersonaPageView> personas = (List<PersonalizationPersonaPageView> ) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertTrue(personas.size() > 1);
+        assertEquals("dot:persona", ((PersonalizationPersonaPageView) personas.get(0)).getPersona().get("keyTag"));
+        personas.stream()
+                .anyMatch(personalizationPersonaPageView ->
+                        personalizationPersonaPageView.getPersona().get(PersonaAPI.KEY_TAG_FIELD).equals(persona.getKeyTag())
+                );
+
+        response = pageResource.getPersonalizedPersonasOnPage(request, new EmptyHttpResponse(),
+                null, 0, 10, "title", "ASC", host.getIdentifier(),
+                pagetest.getIdentifier(), false);
+
+         personas = (List<PersonalizationPersonaPageView> ) ((ResponseEntityView) response.getEntity()).getEntity();
+         assertEquals(1, personas.size());
     }
 
 
@@ -454,6 +504,90 @@ public class PageResourceTest {
         RestUtilTest.verifySuccessResponse(response);
     }
 
+
+    /**
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}
+     * Given Scenario: Create a page with URL Pattern, with a no publish content, and try to get it in ADMIN_MODE
+     * ExpectedResult: Should return a 404 HTTP error
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws InterruptedException
+     */
+    @Test(expected = HTMLPageAssetNotFoundException.class)
+    public void shouldReturn404ForPageWithURLPatternWithNotLIVEContentInAdminMode() throws DotDataException, DotSecurityException, InterruptedException {
+        final String baseUrl = String.format("/test%s", System.currentTimeMillis());
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        final ContentType contentType = new ContentTypeDataGen().user(systemUser)
+                .host(host)
+                .detailPage(pageAsset.getIdentifier())
+                .urlMapPattern(String.format("%s/{text}", baseUrl))
+                .nextPersisted();
+
+        new FieldDataGen()
+                .name("text")
+                .velocityVarName("text")
+                .type(TextField.class)
+                .contentTypeId(contentType.id())
+                .nextPersisted();
+
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+        contentletDataGen
+                .setProperty("text", "text")
+                .languageId(1)
+                .nextPersisted();
+
+        Thread.sleep(500);
+
+        pageResource
+                .render(request, this.response, String.format("%s/text", baseUrl), PageMode.ADMIN_MODE.toString(), null,
+                        "1", null);
+    }
+
+    /**
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}
+     * Given Scenario: Create a page with URL Pattern, with a no publish content, and try to get it in ADMIN_MODE
+     * ExpectedResult: Should return a 404 HTTP error
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws InterruptedException
+     */
+    @Test(expected = HTMLPageAssetNotFoundException.class)
+    public void shouldReturn404ForPageWithURLPatternWithNotLIVEContentInLiveMode() throws DotDataException, DotSecurityException, InterruptedException {
+        final String baseUrl = String.format("/test%s", System.currentTimeMillis());
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+
+        final ContentType contentType = new ContentTypeDataGen().user(systemUser)
+                .host(host)
+                .detailPage(pageAsset.getIdentifier())
+                .urlMapPattern(String.format("%s/{text}", baseUrl))
+                .nextPersisted();
+
+        new FieldDataGen()
+                .name("text")
+                .velocityVarName("text")
+                .type(TextField.class)
+                .contentTypeId(contentType.id())
+                .nextPersisted();
+
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+        contentletDataGen
+                .setProperty("text", "text")
+                .languageId(1)
+                .nextPersisted();
+
+        Thread.sleep(500);
+
+        pageResource
+                .render(request, this.response, String.format("%s/text", baseUrl), PageMode.LIVE.toString(), null,
+                        "1", null);
+    }
 
     /**
      * Should return about-us/index page

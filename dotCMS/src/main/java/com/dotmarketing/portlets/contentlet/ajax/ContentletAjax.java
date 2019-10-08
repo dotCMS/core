@@ -814,8 +814,23 @@ public class ContentletAjax {
 									valueDelimiter = "\"";
 								}
 
-								luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":"
-										+ valueDelimiter + fieldValue + valueDelimiter + " ");
+								// if part of the urlmap pattern, use the raw field to match
+                              if(st.getUrlMapPattern()!=null && st.getUrlMapPattern().contains("{" +fieldVelocityVarName + "}" )) {
+                                    
+                                    for(String x : fieldValue.split("[,|\\s+]")) {
+                                        luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName +"_dotraw:")
+                                        .append(valueDelimiter + x + valueDelimiter + " ");
+                                    }
+                              }else {
+                                  for(String x : fieldValue.split("[,|\\s+]")) {
+                                      luceneQuery.append("+(" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":")
+                                      .append(valueDelimiter + x + valueDelimiter + " ");
+                                      luceneQuery.append(" " + st.getVelocityVarName() + "." + fieldVelocityVarName + "_dotraw:")
+                                      .append(valueDelimiter + x + valueDelimiter + ") ");
+                                      
+                                      
+                                  }
+                              }
 							}
 						}
 						else if(fieldbcontentname.startsWith("system")
@@ -846,11 +861,23 @@ public class ContentletAjax {
 
 									fieldValueStr = fieldValueStr.replaceAll(specialCharsToEscape, "\\\\$1");
 
-							        if(fieldName.equals("languageId")){
+							        if(fieldName.equals("languageId") || fieldValueStr.contains("-")){
 										luceneQuery.append("+" + fieldName +":" + fieldValueStr + " ");
 									}else{
 										luceneQuery.append("+" + fieldName +":" + fieldValueStr + "* ");
 									}
+							        
+							        if("catchall".equals(fieldName)) {
+							           
+							            luceneQuery.append(" title:'" + fieldValueStr + "'^15 ");
+							            for(String x : fieldValueStr.split("[,|\\s+]")) {
+							                luceneQuery.append(" title:" + x + "^5 ");
+							                
+							            }
+							            luceneQuery.append(" title_dotraw:*" + fieldValueStr + "*^5 ");
+							        }
+							        
+							        
 							    } else{
 							        luceneQuery.append("+" + fieldName +":" + fieldValueStr + " ");
 							   }

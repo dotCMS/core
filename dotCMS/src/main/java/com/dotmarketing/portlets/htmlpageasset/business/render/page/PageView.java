@@ -42,6 +42,7 @@ public class PageView implements Serializable {
     private final boolean canEditTemplate;
     private int numberContents = 0;
     final String pageUrlMapper;
+    final boolean live;
 
     /**
      * Creates an instance of this class.
@@ -61,7 +62,8 @@ public class PageView implements Serializable {
              final boolean canCreateTemplate,
              final boolean canEditTemplate,
              final ViewAsPageStatus viewAs,
-             final String pageUrlMapper) {
+             final String pageUrlMapper,
+             final boolean live) {
 
         this.site = site;
         this.template = template;
@@ -73,6 +75,7 @@ public class PageView implements Serializable {
         this.canEditTemplate = canEditTemplate;
         this.pageUrlMapper = pageUrlMapper;
         this.numberContents = getContentsNumber();
+        this.live = live;
     }
 
     private int getContentsNumber() {
