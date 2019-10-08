@@ -89,7 +89,8 @@ describe('ContentTypesLayoutComponent', () => {
             'contenttypes.action.edit': 'Edit',
             'contenttypes.content.variable': 'Variable',
             'contenttypes.form.identifier': 'Identifier',
-            'contenttypes.dropzone.rows.add': 'Add Row'
+            'contenttypes.dropzone.rows.add': 'Add Row',
+            'contenttypes.content.row': 'Row'
         });
 
         DOTTestBed.configureTestingModule({
@@ -246,7 +247,7 @@ describe('ContentTypesLayoutComponent', () => {
                 });
 
                 it('should have the correct label', () => {
-                    expect(splitButton.componentInstance.label).toEqual('Add Row');
+                    expect(splitButton.componentInstance.label).toEqual('Row');
                 });
 
                 it('should have the correct icon', () => {
