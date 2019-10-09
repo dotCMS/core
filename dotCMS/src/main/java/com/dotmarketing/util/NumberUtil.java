@@ -46,6 +46,22 @@ public class NumberUtil {
 		} catch(NumberFormatException e) {
 			return defaultOne.get();
 		}
-	} // toInt.
+	} // toLong.
+
+    /**
+     * try to convert to boolean the string, if any error will return the defaultOne.
+     * @param sBoolean {@link String}
+     * @param defaultOne supplier boolean
+     * @return Boolean
+     */
+    public static Boolean toBoolean (final String sBoolean, final Supplier<Boolean> defaultOne) {
+
+        try {
+            return UtilMethods.isSet(sBoolean)?
+                    Boolean.valueOf(sBoolean):defaultOne.get();
+        } catch(NumberFormatException e) {
+            return defaultOne.get();
+        }
+    } // toBoolean.
 	
 } // E:O:F:NumberUtil

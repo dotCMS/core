@@ -379,6 +379,14 @@ task testDev(type: Test) {
 
 integrationTest {
 
+    // Check if we want to run the tests suite
+    def singleTest = System.getProperty("test.single")
+    if (null != singleTest && singleTest == "com.dotcms.MainSuite"){
+        include "**/MainSuite.class"
+    } else {
+        exclude "**/MainSuite.class"
+    }
+
     // https://docs.gradle.org/current/dsl/org.gradle.api.tasks.testing.logging.TestLoggingContainer.html
     // show standard out and standard error of the test JVM(s) on the console
     //testLogging.showStandardStreams = true

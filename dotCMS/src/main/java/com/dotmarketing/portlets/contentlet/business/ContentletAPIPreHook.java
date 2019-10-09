@@ -1849,4 +1849,18 @@ public interface ContentletAPIPreHook {
             String sortBy){
         return true;
     }
+
+    default boolean getRelatedContent(Contentlet contentlet, String variableName, User user, boolean respectFrontendRoles, Boolean pullByParents, int limit, int offset, String sortBy,
+            long language, Boolean live){
+        return true;
+    }
+
+    default boolean getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset, String sortBy,
+            long language, Boolean live){
+        return true;
+    }
+
+    default boolean getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles, long language, Boolean live){
+        return true;
+    }
 }

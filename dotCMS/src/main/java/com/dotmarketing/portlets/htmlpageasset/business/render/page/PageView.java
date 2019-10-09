@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 import java.io.Serializable;
 import java.util.*;
 
-import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotmarketing.beans.Host;
@@ -42,6 +41,8 @@ public class PageView implements Serializable {
     private final boolean canCreateTemplate;
     private final boolean canEditTemplate;
     private int numberContents = 0;
+    final String pageUrlMapper;
+    final boolean live;
 
     /**
      * Creates an instance of this class.
@@ -60,7 +61,9 @@ public class PageView implements Serializable {
              final TemplateLayout layout,
              final boolean canCreateTemplate,
              final boolean canEditTemplate,
-             final ViewAsPageStatus viewAs) {
+             final ViewAsPageStatus viewAs,
+             final String pageUrlMapper,
+             final boolean live) {
 
         this.site = site;
         this.template = template;
@@ -70,7 +73,9 @@ public class PageView implements Serializable {
         this.viewAs = viewAs;
         this.canCreateTemplate = canCreateTemplate;
         this.canEditTemplate = canEditTemplate;
+        this.pageUrlMapper = pageUrlMapper;
         this.numberContents = getContentsNumber();
+        this.live = live;
     }
 
     private int getContentsNumber() {
@@ -170,5 +175,9 @@ public class PageView implements Serializable {
 
     public int getNumberContents() {
         return numberContents;
+    }
+
+    public String getPageUrlMapper() {
+        return pageUrlMapper;
     }
 }

@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -1360,7 +1361,8 @@ public class ImportUtil {
                         cont.setLowIndexPriority(true);
 
                         if (userCanExecuteAction) {
-
+                          cont.setIndexPolicy(IndexPolicy.DEFER);
+                          
                             cont = workflowAPI.fireContentWorkflow(cont,
                                     new ContentletDependencies.Builder()
                                             .respectAnonymousPermissions(Boolean.FALSE)

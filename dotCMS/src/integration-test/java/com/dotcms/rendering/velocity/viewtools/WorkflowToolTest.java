@@ -11,9 +11,11 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -41,10 +43,12 @@ public class WorkflowToolTest {
     }
 
     @DataProvider
-    public static Object[] fireTestCases() {
+    public static Object[] fireTestCases() throws Exception {
 
-
-        long spaninsh = TestDataUtils.getSpanishLanguage().getId();
+        //Setting web app environment
+        IntegrationTestInitService.getInstance().init();
+        long english = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        long spaninsh = new LanguageDataGen().nextPersisted().getId();
 
         ContentType contentType = TestDataUtils.getEmployeeLikeContentType();
         Contentlet employeeContent = TestDataUtils.getEmployeeContent(true,1,contentType.id());
@@ -54,7 +58,7 @@ public class WorkflowToolTest {
 
         HashMap<String, Object> case1Properties = new HashMap<>();
         case1Properties.put("contentType", contentType.name());
-        case1Properties.put("languageId", 1);
+        case1Properties.put("languageId", english);
         case1Properties.put("host1", "demo.dotcms.com");
         case1Properties.put("firstName", "Daniel");
         case1Properties.put("lastName", "Silva");

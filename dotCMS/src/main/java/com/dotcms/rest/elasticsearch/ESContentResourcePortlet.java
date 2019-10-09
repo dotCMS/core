@@ -110,7 +110,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 						ContentResource
 								.addRelationshipsToJSON(request, response, "false", user, depth,
 										true, c,
-										jsonObject, null);
+										jsonObject, null, -1, liveParam);
 					}
 
 				} catch (Exception e) {

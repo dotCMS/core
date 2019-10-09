@@ -33,7 +33,7 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         final Template template = pageView.getTemplate();
 
         final Map<String, Object> pageViewMap = new TreeMap<>();
-        pageViewMap.put("page", this.asMap(pageView.getPageInfo()));
+        pageViewMap.put("page", this.asPageMap(pageView));
         pageViewMap.put("containers", pageView.getContainersMap());
 
         final Map<Object, Object> templateMap = this.asMap(template);
@@ -51,12 +51,31 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         return pageViewMap;
     }
 
+    private Map<Object, Object> asPageMap(final PageView pageView)  {
+        final Map<Object, Object> pageMap = this.asMap(pageView.getPageInfo());
+
+        final String pageUrlMapper = pageView.getPageUrlMapper();
+
+        if (pageUrlMapper != null) {
+            pageMap.put("pageURI", pageUrlMapper);
+        }
+
+        pageMap.put("live", pageView.live);
+
+        if (!pageView.live) {
+            pageMap.put("liveInode", null);
+        }
+
+        return pageMap;
+    }
+
     private Map<Object, Object> asMap(final Object object)  {
         final ObjectWriter objectWriter = JsonMapper.mapper.writer().withDefaultPrettyPrinter();
 
         try {
             final String json = objectWriter.writeValueAsString(object);
             final Map map = JsonMapper.mapper.readValue(new CharArrayReader(json.toCharArray()), Map.class);
+
             map.values().removeIf(Objects::isNull);
             return map;
         } catch (IOException e) {

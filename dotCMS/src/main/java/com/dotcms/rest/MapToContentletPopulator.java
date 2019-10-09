@@ -5,17 +5,21 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -59,7 +63,7 @@ public class MapToContentletPopulator  {
             this.processMap(contentlet, stringObjectMap);
         } catch (DotDataException | DotSecurityException e) {
 
-            throw new DotRuntimeException(e);
+            throw new DotStateException(e);
         }
 
         return contentlet;
@@ -126,8 +130,19 @@ public class MapToContentletPopulator  {
                 // fill fields
                 this.fillFields(contentlet, map, type, fieldMap);
             }
+
+            this.setIndexPolicy (contentlet, map);
         }
     } // processMap.
+
+    private void setIndexPolicy(final Contentlet contentlet, final Map<String, Object> map) {
+
+        final Object indexPolicyValue = map.getOrDefault("indexPolicy", IndexPolicyProvider.getInstance().forSingleContent());
+        
+        contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicyValue));
+        
+    }
+
 
     private void processWorkflow(final Contentlet contentlet, final Map<String,Object> map) {
         if(map.containsKey(WORKFLOW_ASSIGN_KEY)) {
@@ -286,6 +301,9 @@ public class MapToContentletPopulator  {
     @CloseDBIfOpened
     public List<Category> getCategories (final Contentlet contentlet, final User user,
                                          final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        DotPreconditions.checkNotNull(contentlet, IllegalArgumentException.class, "Invalid Contentlet");
+        DotPreconditions.checkNotNull(contentlet.getContentType(), IllegalArgumentException.class, "Invalid Content Type");
 
         final List<Category> categories = new ArrayList<>();
         final List<Field> fields = new LegacyFieldTransformer(

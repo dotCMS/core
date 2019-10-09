@@ -58,6 +58,7 @@ import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
@@ -68,6 +69,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -83,6 +85,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import javax.swing.text.AbstractDocument.Content;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -574,6 +577,52 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
     }
 
+    @Test()
+    public void delete_action_and_dependencies_Test()
+            throws DotDataException, DotSecurityException, AlreadyExistException {
+
+        // 1 create the step with one step and one action
+        // 2 create a content type
+        // 3 associated this action to scheme and content type
+        // 4 check if mappings exists
+        // 5 deletes the action
+        // check mappings are gone and cache clean
+
+        final long time               = System.currentTimeMillis();
+        final String myWorkflowName   = "workflow"+time;
+        final String myStep1Name      = "Step1"+time;
+        final String myActionName     = "Action1"+time;
+        final WorkflowScheme myWorkflowScheme       = addWorkflowScheme(myWorkflowName);
+        final WorkflowStep   myWorkflowSchemeStep1  = addWorkflowStep(myStep1Name, 1, false, false, myWorkflowScheme.getId());
+        final WorkflowAction myWorkflowSchemeAction = addWorkflowAction(myActionName, 1, myWorkflowSchemeStep1.getId(), true, myWorkflowSchemeStep1.getId(), reviewer, myWorkflowScheme.getId());
+        final String      myContentTypeName         = "CTWorkflowTesting_" + time;
+        final ContentType myContentType             = insertContentType(myContentTypeName, BaseContentType.CONTENT);
+
+        workflowAPI.saveSchemeIdsForContentType                     (myContentType, CollectionsUtils.set(myWorkflowScheme.getId()));
+        workflowAPI.mapSystemActionToWorkflowActionForContentType   (SystemAction.NEW, myWorkflowSchemeAction, myContentType);
+        workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(SystemAction.NEW, myWorkflowSchemeAction, myWorkflowScheme);
+
+        final List<SystemActionWorkflowActionMapping> contentTypeMappings = workflowAPI.findSystemActionsByContentType(myContentType, user);
+        final List<SystemActionWorkflowActionMapping> schemeMappings      = workflowAPI.findSystemActionsByScheme     (myWorkflowScheme, user);
+
+        assertNotNull("contentTypeMappings can not be null", contentTypeMappings);
+        assertNotNull("schemeMappings can not be null",      schemeMappings);
+
+        assertEquals("contentTypeMappings must have 1 record", 1, contentTypeMappings.size());
+        assertEquals("schemeMappings must have 1 record",      1, schemeMappings.size());
+
+        workflowAPI.deleteAction(myWorkflowSchemeAction, user);
+
+        final List<SystemActionWorkflowActionMapping> contentTypeMappings2 = workflowAPI.findSystemActionsByContentType(myContentType, user);
+        final List<SystemActionWorkflowActionMapping> schemeMappings2      = workflowAPI.findSystemActionsByScheme     (myWorkflowScheme, user);
+
+        assertFalse("contentTypeMappings2 and contentTypeMappings must be diff", contentTypeMappings == contentTypeMappings2);
+        assertFalse("schemeMappings2 and schemeMappings must be diff", schemeMappings == schemeMappings2);
+        assertFalse("contentTypeMappings2 must be null", UtilMethods.isSet(contentTypeMappings2));
+        assertFalse("schemeMappings2 must be null", UtilMethods.isSet(schemeMappings2));
+
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void mapSystemActionToWorkflowActionForContentType_Null_SystemAction_Test() throws DotDataException {
 
@@ -768,6 +817,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
         assertNotNull(systemActionByContentTypeDeletedOpt);
         assertFalse(systemActionByContentTypeDeletedOpt.isPresent());
     }
+
+
 
     /////
     @Test(expected = IllegalArgumentException.class)
@@ -1459,6 +1510,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
             testContentlet2Checkout = contentletAPI.checkout(testContentlet2.getInode(), user, false);
             testContentlet2Checkout.setStringProperty(FIELD_VAR_NAME, "WorkflowContentTest_" + System.currentTimeMillis());
             testContentlet2Checkout.setIndexPolicy(IndexPolicy.FORCE);
+            testContentlet1Checkout.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             testContentletTop = contentletAPI.checkin(testContentlet2Checkout, user, false);
             APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(testContentlet2Checkout, user);
 
@@ -2979,9 +3031,7 @@ public class WorkflowAPITest extends IntegrationTestBase {
      * @param schemeId Scheme Id
      * @return The created step
      */
-    protected static WorkflowStep
-
-    addWorkflowStep(final String name, final int order,
+    protected static WorkflowStep addWorkflowStep(final String name, final int order,
             final boolean resolved,
             final boolean enableEscalation, final String schemeId)
             throws DotDataException, DotSecurityException {

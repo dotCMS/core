@@ -115,7 +115,7 @@ import org.jetbrains.annotations.NotNull;
  * For example, the <b>Content Search</b> portlet uses this class to display the
  * Contentlet data to the users, which can be filtered by certain criteria
  * depending on the selected Content Type.
- * 
+ *
  * @author root
  * @version 1.0
  * @since Mar 22, 2012
@@ -544,7 +544,7 @@ public class ContentletAjax {
         int offset = 0;
         if (page != 0)
             offset = perPage * (page - 1);
-    
+
 		if(!InodeUtils.isSet(structureInode)) {
 			Logger.error(this, "An invalid structure inode =  \"" + structureInode + "\" was passed");
 			throw new DotRuntimeException("a valid structureInode need to be passed");
@@ -552,12 +552,12 @@ public class ContentletAjax {
 
 		// Building search params and lucene query
 		StringBuffer luceneQuery = new StringBuffer("-contentType:forms ");
-		
+
     if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
       luceneQuery.append(" -baseType:" + BaseContentType.PERSONA.getType() + " ");
       luceneQuery.append(" -basetype:" + BaseContentType.FORM.getType() + " ");
     }
-		
+
 		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
 		String specialCharsToEscapeForMetaData = "([+\\-!\\(\\){}\\[\\]^\"~?:/\\\\]{2})";
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
@@ -600,16 +600,13 @@ public class ContentletAjax {
 		    for(int i=0;i<fields.size();i++){
 		        String x = fields.get(i);
 		        if(Structure.STRUCTURE_TYPE_ALL.equals(x)){
-		            String next =  fields.get(i+1);
-		            next = next.replaceAll("\\*", "");
-		            while(next.contains("  ")){
-		            	next = next.replace("  ", " ");
+		            String fieldValue =  fields.get(i+1);
+					fieldValue = fieldValue.replaceAll("\\*", "");
+		            while(fieldValue.contains("  ")){
+						fieldValue = fieldValue.replace("  ", " ");
 		            }
-		            String y[] = next.split(" ");
-		            for(int j=0;j<y.length;j++){
-		            	y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
-		                luceneQuery.append("title:" + y[j] + "* ");
-		            }
+					fieldValue =fieldValue.replaceAll(specialCharsToEscape, "\\\\$1");
+		            luceneQuery.append("title:" + fieldValue + "* ");
 		            break;
 		        }
 		    }
@@ -809,16 +806,31 @@ public class ContentletAjax {
 								if(hasQuotes){
 									fieldValue = CharMatcher.is('\"').trimFrom(fieldValue);
 								}
-								final String valueForQuery = ESUtils.escape(fieldValue);
+
 								String valueDelimiter = wildCard;
-								if (valueForQuery.startsWith("\"") && valueForQuery.endsWith("\"")) {
+								if (fieldValue.startsWith("\"") && fieldValue.endsWith("\"")) {
 									valueDelimiter = "";
 								} else if (hasQuotes) {
 									valueDelimiter = "\"";
 								}
 
-								luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":"
-										+ valueDelimiter + valueForQuery + valueDelimiter + " ");
+								// if part of the urlmap pattern, use the raw field to match
+                              if(st.getUrlMapPattern()!=null && st.getUrlMapPattern().contains("{" +fieldVelocityVarName + "}" )) {
+                                    
+                                    for(String x : fieldValue.split("[,|\\s+]")) {
+                                        luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName +"_dotraw:")
+                                        .append(valueDelimiter + x + valueDelimiter + " ");
+                                    }
+                              }else {
+                                  for(String x : fieldValue.split("[,|\\s+]")) {
+                                      luceneQuery.append("+(" + st.getVelocityVarName() + "." + fieldVelocityVarName + ":")
+                                      .append(valueDelimiter + x + valueDelimiter + " ");
+                                      luceneQuery.append(" " + st.getVelocityVarName() + "." + fieldVelocityVarName + "_dotraw:")
+                                      .append(valueDelimiter + x + valueDelimiter + ") ");
+                                      
+                                      
+                                  }
+                              }
 							}
 						}
 						else if(fieldbcontentname.startsWith("system")
@@ -839,34 +851,35 @@ public class ContentletAjax {
 						else if( fieldbcontentname.startsWith("date") ){
 							luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue + " ");
 						} else {
-							if(isStructField==false){
-							    String next =  fieldValue.toString();
-							    if(!next.contains("'") && ! next.contains("\"")){
-							        next = next.replaceAll("\\*", "");
-							        while(next.contains("  ")){
-							        	next = next.replace("  ", " ");
+							if(!isStructField){
+							    String fieldValueStr =  fieldValue.toString();
+							    if(!fieldValueStr.contains("'") || fieldValueStr.contains("\"")){
+							        fieldValueStr = fieldValueStr.replaceAll("\\*", "");
+							        while(fieldValueStr.contains("  ")){
+							        	fieldValueStr = fieldValueStr.replace("  ", " ");
 							        }
-							        String y[] = next.split(" ");
-							        for(int j=0;j<y.length;j++){
-							        	y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
-							        	if(fieldName.equals("languageId")){
-							        		luceneQuery.append("+" + fieldName +":" + y[j] + " ");
-							        	}else{
-							        		luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
-							        	}
+
+									fieldValueStr = fieldValueStr.replaceAll(specialCharsToEscape, "\\\\$1");
+
+							        if(fieldName.equals("languageId") || fieldValueStr.contains("-")){
+										luceneQuery.append("+" + fieldName +":" + fieldValueStr + " ");
+									}else{
+										luceneQuery.append("+" + fieldName +":" + fieldValueStr + "* ");
+									}
+							        
+							        if("catchall".equals(fieldName)) {
+							           
+							            luceneQuery.append(" title:'" + fieldValueStr + "'^15 ");
+							            for(String x : fieldValueStr.split("[,|\\s+]")) {
+							                luceneQuery.append(" title:" + x + "^5 ");
+							                
+							            }
+							            luceneQuery.append(" title_dotraw:*" + fieldValueStr + "*^5 ");
 							        }
-							    }else if(next.contains("\"")){
-							    	 next = next.replaceAll("\\*", "");
-								        while(next.contains("  ")){
-								        	next = next.replace("  ", " ");
-								        }
-								        String y[] = next.split(" ");
-								        for(int j=0;j<y.length;j++){
-								        	y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
-								        	luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
-								        }
-							    }else{
-							        luceneQuery.append("+" + fieldName +":" + next + " ");
+							        
+							        
+							    } else{
+							        luceneQuery.append("+" + fieldName +":" + fieldValueStr + " ");
 							   }
 							}
 							else {
@@ -1154,8 +1167,8 @@ public class ContentletAjax {
 
 				// Workflow Actions
 				final JSONArray wfActionMapList = this.getAvailableWorkflowActionsListingJson(currentUser, con);
-				
-				
+
+
 				searchResult.put("wfActionMapList", wfActionMapList.toString());
 				// End Workflow Actions
 
@@ -1316,7 +1329,7 @@ public class ContentletAjax {
 
                 try {
                     final String actionNameStr = (showScheme) ? LanguageUtil.get(currentUser, action.getName()) +" ( "+LanguageUtil.get(currentUser,wfScheme.getName())+" )" : LanguageUtil.get(currentUser, action.getName());
-                    
+
                     wfActionMap.put("wfActionNameStr", actionNameStr);
                 } catch (LanguageException e) {
                     Logger.error(this, "Could not load language key : " + action.getName());
@@ -1452,7 +1465,7 @@ public class ContentletAjax {
 	public Map<String,Object> saveContent(List<String> formData, boolean isAutoSave,boolean isCheckin, boolean publish) throws LanguageException, PortalException, SystemException {
 	  Map<String,Object> contentletFormData = new HashMap<String,Object>();
 	  Map<String,Object> callbackData = new HashMap<String,Object>();
-	  List<String> saveContentErrors = new ArrayList<String>(); 
+	  List<String> saveContentErrors = new ArrayList<String>();
 	  User user = null;
       boolean clearBinary = true;//flag to check if the binary field needs to be cleared or not
       HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -1530,12 +1543,12 @@ public class ContentletAjax {
 			if(elementName.equalsIgnoreCase("hostId")){
 				callbackData.put("hostOrFolder",true);
 			}
-			
+
 			if(elementName.startsWith("text")){
 				elementValue = elementValue.toString().trim();
 			}
-			
-			//http://jira.dotmarketing.net/browse/DOTCMS-3463			
+
+			//http://jira.dotmarketing.net/browse/DOTCMS-3463
 			if(elementName.startsWith("binary")){
 				String binaryFileValue = (String) elementValue;
 				File binaryFile = null;
@@ -1650,7 +1663,7 @@ public class ContentletAjax {
                     callbackData.put("htmlPageReferer", page.getURI() + "?" + WebKeys.HTMLPAGE_LANGUAGE + "=" + page.getLanguageId() + "&host_id=" + page.getHost());
                     boolean contentLocked = false;
                     boolean iCanLock = false;
-                    
+
                     try{
                     	contentLocked = page.isLocked();
                         iCanLock = APILocator.getContentletAPI().canLock(contentlet, user);
@@ -1806,7 +1819,7 @@ public class ContentletAjax {
 		  }
 		}
 		finally{
-			
+
 		    if(saveContentErrors.size()>0) {
                 try {
                     HibernateUtil.rollbackTransaction();
@@ -1831,7 +1844,7 @@ public class ContentletAjax {
 
 			}
 		    if(clearBinary){//if an error occur with any other field (was unique, required, length, pattern or bad type) when saving the contentlet, do not clear the binary field
-			// If an error occurred, manually delete all other uploaded binary 
+			// If an error occurred, manually delete all other uploaded binary
 		    // files since they were not included in the Hibernate transaction
 			try {
 				HttpSession ses = req.getSession();
@@ -2147,7 +2160,7 @@ public class ContentletAjax {
 				Contentlet draftContentlet = conAPI.saveDraft(cont, contentRelationships,
 					APILocator.getCategoryAPI().getParents(cont, user, false),
 					APILocator.getPermissionAPI().getPermissions(cont, false, true), user, false);
-				
+
                 callbackData.put("isNewContentletInodeHtmlPage", draftContentlet.isHTMLPage());
 				callbackData.put("newContentletInode", draftContentlet.getInode());
 			}

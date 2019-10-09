@@ -2,21 +2,7 @@ package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotmarketing.exception.DotDataValidationException;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.liferay.util.StringPool;
-import java.io.StringWriter;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
-
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.beans.Host;
@@ -25,17 +11,29 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import java.io.StringWriter;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.context.ViewContext;
+import org.apache.velocity.tools.view.tools.ViewTool;
 
 /**
  * The purpose of this class is to provide a way to easily search and interact with content and dotcms
@@ -60,7 +58,8 @@ public class ContentTool implements ViewTool {
 	private String tmDate;
 	private Context context;
 	private Host currentHost;
-
+	private PageMode mode;
+	private Language language;
 	public void init(Object initData) {
 		this.req = ((ViewContext) initData).getRequest();
 
@@ -69,9 +68,9 @@ public class ContentTool implements ViewTool {
 		this.context = ((ViewContext) initData).getVelocityContext();
 
 		tmDate=null;
-
+		language = WebAPILocator.getLanguageWebAPI().getLanguage(req);
 		HttpSession session = req.getSession(false);
-		PageMode mode = PageMode.get(req);
+		mode = PageMode.get(req);
 		EDIT_OR_PREVIEW_MODE=!mode.showLive;
 		if(session!=null){
 			tmDate = (String) session.getAttribute("tm_date");
@@ -90,11 +89,11 @@ public class ContentTool implements ViewTool {
 	 * try to retrieve the live content unless in EDIT_MODE in the backend of dotCMS when passing in an
 	 * identifier.  If it is an inode this is ignored.
 	 * Will return NULL if not found
-	 * @param inodeOrIdentifier Can be either an Inode or Indentifier of content.
+	 * @param inodeOrIdentifier Can be either an Inode or Identifier of content.
 	 * @return NULL if not found
 	 */
 	public ContentMap find(String inodeOrIdentifier) {
-		long sessionLang=WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
+		final long sessionLang = language.getId();
 		
 	    try {
     		Contentlet c = ContentUtils.find(inodeOrIdentifier, user, EDIT_OR_PREVIEW_MODE, sessionLang);
@@ -155,7 +154,7 @@ public class ContentTool implements ViewTool {
 	public PaginatedArrayList<ContentMap> pull(String query, int offset,int limit, String sort){
 	    try {
     	    PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
-    	    
+
     	    PaginatedArrayList<Contentlet> cons = ContentUtils.pull(addDefaultsToQuery(query), offset, limit, sort, user, tmDate);
     	    for(Contentlet cc : cons) {
     	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
@@ -355,47 +354,51 @@ public class ContentTool implements ViewTool {
 	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, boolean pullParents, int limit, String sort) {
 		return pullRelated(relationshipName, contentletIdentifier, null, pullParents, limit, sort);
 	}
-	
-	/**
-	 * Will return a ContentMap object which can be used on dotCMS front end. 
-	 * This method is better then the old #pullRelatedContent macro because it doesn't have to 
-	 * parse all the velocity content object that are returned.  If you are building large pulls
-	 * and depending on the types of fields on the content this can get expensive especially
-	 * with large data sets.<br />
-	 * EXAMPLE:<br />
-	 * #foreach($con in $dotcontent.pullRelated('myRelationship','asbd-asd-asda-asd','+myField:someValue',false,5,'modDate desc'))<br />
-	 * 		$con.title<br />
-	 * #end<br />
-	 * The method will figure out language, working and live for you if not passed in with the condition
-	 * Returns empty List if no results are found
-	 * @param relationshipName - Name of the relationship as defined in the structure.
-	 * @param contentletIdentifier - Identifier of the contentlet
-	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
-	 * @param pullParents Should the related pull be based on Parents or Children
-	 * @param limit 0 is the dotCMS max limit which is 10000. Be careful when searching for unlimited amount as all content will load into memory
-	 * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
-	 * @return Returns empty List if no results are found
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
-	 * @return Returns empty List if no results are found
-	 */
-	public List<ContentMap> pullRelated(String relationshipName, String contentletIdentifier, String condition, boolean pullParents, int limit, String sort) {	
-		try {
-    		PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
-    		List<Contentlet> cons = ContentUtils.pullRelated(relationshipName, contentletIdentifier, addDefaultsToQuery(condition), pullParents, limit, sort, user, tmDate);
-    
-    		for(Contentlet cc : cons) {
-    			ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
-    		}
-    		return ret;
-		}
-		catch(Throwable ex) {
-            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-                Logger.error(this,"error in ContentTool.pullRelated. URL: "+req.getRequestURL().toString(),ex);
+
+    /**
+     * Will return a ContentMap object which can be used on dotCMS front end. This method is better
+     * then the old #pullRelatedContent macro because it doesn't have to parse all the velocity
+     * content object that are returned.  If you are building large pulls and depending on the types
+     * of fields on the content this can get expensive especially with large data sets.<br />
+     * EXAMPLE:<br /> #foreach($con in $dotcontent.pullRelated('myRelationship','asbd-asd-asda-asd','+myField:someValue',false,5,'modDate
+     * desc'))<br /> $con.title<br /> #end<br /> The method will figure out language, working and
+     * live for you if not passed in with the condition Returns empty List if no results are found
+     *
+     * @param relationshipName - Name of the relationship as defined in the structure.
+     * @param contentletIdentifier - Identifier of the contentlet
+     * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be
+     * Null
+     * @param pullParents Should the related pull be based on Parents or Children
+     * @param limit 0 is the dotCMS max limit which is 10000. Be careful when searching for
+     * unlimited amount as all content will load into memory
+     * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple
+     * values "sort1 acs, sort2 desc". Can be Null
+     * @return Returns empty List if no results are found
+     */
+    public List<ContentMap> pullRelated(final String relationshipName, final String contentletIdentifier,
+            final String condition, final boolean pullParents, final int limit, final String sort) {
+        try {
+            final PaginatedArrayList<ContentMap> ret = new PaginatedArrayList<ContentMap>();
+
+            final List<Contentlet> cons = ContentUtils
+                    .pullRelated(relationshipName, contentletIdentifier,
+                            condition == null ? condition : addDefaultsToQuery(condition),
+                            pullParents,
+                            limit, sort, user, tmDate, language.getId(), true);
+
+            for (Contentlet cc : cons) {
+                ret.add(new ContentMap(cc, user, EDIT_OR_PREVIEW_MODE, currentHost, context));
+            }
+            return ret;
+        } catch (Throwable ex) {
+            if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this,
+                        "error in ContentTool.pullRelated. URL: " + req.getRequestURL().toString(),
+                        ex);
             }
             throw new RuntimeException(ex);
         }
-	}
+    }
 
 	/**
 	 * Returns a list of related content given a RelationshipField and additional filtering criteria
@@ -527,67 +530,92 @@ public class ContentTool implements ViewTool {
 	
 	private String addDefaultsToQuery(String query){
 		String q = "";
-		
+
 		if(query != null)
 			q = query;
 		else
 			query = q;
-		
+
 		if(!query.contains("languageId")){
 			q += " +languageId:" + WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 		}
-	  
-	  	if(!(query.contains("live:") || query.contains("working:") )){      
+
+	  	if(!(query.contains("live:") || query.contains("working:") )){
 			if(EDIT_OR_PREVIEW_MODE){
 				q +=" +working:true ";
 			}else{
 				q +=" +live:true ";
 			}
-				
+
 	  	}
-		
-		  
-	  	if(!UtilMethods.contains(query,"deleted:")){      
+
+
+	  	if(!UtilMethods.contains(query,"deleted:")){
 			q+=" +deleted:false ";
 		}
 	  	return q;
 	}
-	
-	private String addPersonalizationToQuery(String query){
-		Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(this.req);
-		if(!opt.isPresent() || query==null ){
-			return query;
-		}
-		query=query.toLowerCase();
-		
-		// if we are already personalized
-		if(query.indexOf(" tags:")>-1){
-			return query;
-		}
 
-		StringWriter buff  = new StringWriter().append(query);
-		Visitor visitor = opt.get();
-		IPersona p = visitor.getPersona();
-		List<AccruedTag> tags = visitor.getAccruedTags();
-		if(p==null && (tags==null || tags.size()==0)){
-			return query;
-		}
+    private String addPersonalizationToQuery(String query) {
+        Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(this.req);
+        if (!opt.isPresent() || query == null) {
+            return query;
+        }
+        query = query.toLowerCase();
 
-		int maxBoost = Config.getIntProperty("PULLPERSONALIZED_PERSONA_WEIGHT", 100);
-		
-		if(tags.size()>0){
-			maxBoost = tags.get(0).getCount() + maxBoost;
-		}
-		if(p!=null){
-			buff.append(" tags:\"" + p.getKeyTag().toLowerCase() + "\"^" + maxBoost);
-		}
-		
-		for(AccruedTag tag : tags){
-			buff.append(" tags:\"" + tag.getTag().toLowerCase() + "\"^" + (tag.getCount()+1) + " ");
-		}
+        // if we are already personalized
+        if (query.indexOf(" tags:") > -1) {
+            return query;
+        }
 
-	  	return buff.toString();
-	}
+        final StringWriter buff = new StringWriter().append(query);
+        final Visitor visitor = opt.get();
+        final IPersona p = visitor.getPersona();
+        final String keyTag = (p == null) ? null : p.getKeyTag().toLowerCase();
+        final Map<String, Float> personas = visitor.getWeightedPersonas();
+
+
+        final List<AccruedTag> tags = visitor.getAccruedTags();
+        if (p == null && (tags == null || tags.size() == 0)) {
+            return query;
+        }
+
+        int maxBoost = Config.getIntProperty("PULLPERSONALIZED_PERSONA_WEIGHT", 100);
+
+        // make personas more powerful than the most powerful tag
+        if (!tags.isEmpty()) {
+            maxBoost = tags.get(0).getCount() + maxBoost;
+        }
+
+
+        if (Config.getBooleanProperty("PULLPERSONALIZED_USE_MULTIPLE_PERSONAS", true)) {
+
+            if (personas != null && !personas.isEmpty()) {
+                for (Map.Entry<String, Float> map : personas.entrySet()) {
+                    int boostMe = Math.round(maxBoost * map.getValue());
+                    if (map.getKey().equals(keyTag)) {
+                        boostMe = boostMe + Config.getIntProperty("PULLPERSONALIZED_LAST_PERSONA_WEIGHT", 0);
+                    }
+
+                    buff.append(" tags:\"" + map.getKey().toLowerCase() + "\"^" + boostMe);
+                }
+            }
+
+
+        } else {
+            if (p != null) {
+                buff.append(" tags:\"" + keyTag + "\"^" + maxBoost);
+            }
+        }
+
+
+
+        for (AccruedTag tag : tags) {
+            buff.append(" tags:\"" + tag.getTag().toLowerCase() + "\"^" + (tag.getCount() + 1) + " ");
+        }
+
+        return buff.toString();
+    }
 	
     /**
      * Gets the top viewed contents identifiers and numberOfViews  for a particular structure for a specified date interval

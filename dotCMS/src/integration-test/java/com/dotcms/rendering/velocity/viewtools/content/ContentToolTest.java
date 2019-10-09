@@ -162,18 +162,23 @@ public class ContentToolTest extends IntegrationTestBase {
         //One side of the relationship is set parentContentType --> childContentType
         field = fieldAPI.save(field, user);
 
-        //creates a new parent contentlet
+        //creates a new parent contentlet and publishes it
         ContentletDataGen contentletDataGen = new ContentletDataGen(parentContentType.id());
+
         final Contentlet parentContentlet = contentletDataGen.languageId(defaultLanguage.getId())
                 .nextPersisted();
+        ContentletDataGen.publish(parentContentlet);
 
-        //creates children contentlets
+        //creates children contentlets and publishes them
         contentletDataGen = new ContentletDataGen(childContentType.id());
         final Contentlet childContentlet1 = contentletDataGen.languageId(defaultLanguage.getId())
                 .nextPersisted();
 
         final Contentlet childContentlet2 = contentletDataGen.languageId(defaultLanguage.getId())
                 .nextPersisted();
+
+        ContentletDataGen.publish(childContentlet1);
+        ContentletDataGen.publish(childContentlet2);
 
         final String fullFieldVar =
                 parentContentType.variable() + StringPool.PERIOD + field.variable();
@@ -193,7 +198,7 @@ public class ContentToolTest extends IntegrationTestBase {
 
         final List<ContentMap> result = contentTool
                 .pullRelated(relationship.getRelationTypeValue(),
-                        parentContentlet.getIdentifier(), "+working:true", false, -1, null);
+                        parentContentlet.getIdentifier(), "+live:true", false, -1, null);
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -225,10 +230,14 @@ public class ContentToolTest extends IntegrationTestBase {
         final Contentlet parentContentlet = contentletDataGen.languageId(defaultLanguage.getId())
                 .nextPersisted();
 
+        ContentletDataGen.publish(parentContentlet);
+
         //creates a new child contentlet
         contentletDataGen = new ContentletDataGen(childContentType.id());
         final Contentlet childContentlet = contentletDataGen.languageId(defaultLanguage.getId())
                 .nextPersisted();
+
+        ContentletDataGen.publish(childContentlet);
 
         final String fullFieldVar =
                 parentContentType.variable() + StringPool.PERIOD + field.variable();

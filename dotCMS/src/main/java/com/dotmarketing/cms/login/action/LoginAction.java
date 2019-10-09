@@ -10,7 +10,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.cms.SecureAction;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
@@ -23,7 +22,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import java.util.List;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -84,13 +82,12 @@ public class LoginAction extends SecureAction {
 	        	if(!UtilMethods.isSet(referrer))
 	        		referrer = "/";
 
-	            User u = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
+	            final User u = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 
-	            List<Role> userRoles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(u.getUserId());
-	            Role defaultRole = com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(Role.DOTCMS_FRONT_END_USER);
-	            if (!userRoles.contains(defaultRole)) {
-	            	com.dotmarketing.business.APILocator.getRoleAPI().addRoleToUser(defaultRole.getId(), u);
-	            }
+				if(!u.isFrontendUser()){
+				   Logger.warn(this.getClass(), () -> String.format("User `%s` does not have a front-end role. Login attempt was rejected. ",u.getUserId()));
+                   return handleMissingFrontEndRole(mapping, referrer, request, response);
+				}
 
 	            UserProxy userproxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(u,APILocator.getUserAPI().getSystemUser(), false);
 	            if (UtilMethods.isSet(userproxy.getLongLivedCookie())) {
@@ -186,6 +183,20 @@ public class LoginAction extends SecureAction {
 	        	return mapping.findForward("loginPage");
 		}
 
+    }
+
+    private ActionForward handleMissingFrontEndRole(final ActionMapping mapping, final String referrer, final HttpServletRequest request, final HttpServletResponse response){
+		LoginFactory.doLogout(request, response);
+		final ActionErrors errors = new ActionErrors();
+		errors.add(Globals.ERROR_KEY, new ActionMessage("errors.user.front-end-role.missing"));
+		request.setAttribute(Globals.ERROR_KEY, errors);
+		if(referrer != null && !referrer.equals("/")) {
+			ActionForward af = new ActionForward(SecurityUtils.stripReferer(request, referrer));
+			af.setRedirect(true);
+			return af;
+		} else {
+			return mapping.findForward("loginPage");
+		}
     }
 
     /**

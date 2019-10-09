@@ -227,7 +227,9 @@ public class PageResource {
 
         PageMode.setPageMode(request, mode);
 
-        setDeviceAndPersona(request, personaId, deviceInode, modeParam);
+        if (deviceInode != null) {
+            request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
+        }
 
         final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
                 PageContextBuilder.builder()
@@ -249,25 +251,6 @@ public class PageResource {
         return res;
     }
 
-    private void setDeviceAndPersona(
-            final HttpServletRequest request,
-            final String personaId,
-            final String deviceInode,
-            final String modeParam)
-    {
-
-        if (modeParam == null){
-            if (deviceInode != null) {
-                request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
-            } else {
-                request.getSession().removeAttribute(WebKeys.CURRENT_DEVICE);
-            }
-
-            if (personaId == null) {
-                APILocator.getVisitorAPI().removeVisitor(request);
-            }
-        }
-    }
 
     /**
      * Save a template and link it with a page, If the page already has a anonymous template linked then it is updated,
@@ -557,10 +540,11 @@ public class PageResource {
                                                    @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
                                                    @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
                                                    @QueryParam("hostId") final String  hostId,
-                                                   @PathParam("pageId")  final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
+                                                   @PathParam("pageId")  final String  pageId,
+                                                   @QueryParam("respectFrontEndRoles") Boolean respectFrontEndRolesParams) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(request, response, true).getUser();
-        final boolean respectFrontEndRoles = PageMode.get(request).respectAnonPerms;
+        final boolean respectFrontEndRoles = respectFrontEndRolesParams != null ? respectFrontEndRolesParams : PageMode.get(request).respectAnonPerms;
 
         Logger.debug(this, ()-> "Getting page personas per page: " + pageId);
 

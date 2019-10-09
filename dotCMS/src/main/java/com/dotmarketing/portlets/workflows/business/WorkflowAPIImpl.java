@@ -359,6 +359,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 */
 	private String getLongId (final String shortyId, final ShortyIdAPI.ShortyInputType type) {
 
+		//  it is already long
+		if (null != shortyId && shortyId.length() == 36) {
+
+			return shortyId;
+		}
+
 		final Optional<ShortyId> shortyIdOptional =
 				this.shortyIdAPI.getShorty(shortyId, type);
 
@@ -430,6 +436,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		Logger.debug(this,
 				() -> "Adding actionlet class: " + workFlowActionletClass);
 
+        //Prevent dupes
+        removeActionlet(workFlowActionletClass);
 		actionletClasses.add(workFlowActionletClass);
 		refreshWorkFlowActionletMap();
 		return workFlowActionletClass.getCanonicalName();
@@ -442,8 +450,36 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				() -> "Removing actionlet: " + workFlowActionletName);
 
 		final WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
-		actionletClasses.remove(actionlet.getClass());
+		removeActionlet(actionlet.getClass());
 		refreshWorkFlowActionletMap();
+
+		try {
+		    final User user = APILocator.systemUser();
+			final List<WorkflowActionClass> actionClasses = findActionClassesByClassName(actionlet.getActionClass());
+            for(final WorkflowActionClass clazz:actionClasses) {
+				deleteActionClass(clazz, user);
+			}
+		} catch (Exception e) {
+		    Logger.error(WorkflowAPIImpl.class,String.format("Error removing Actionlet with className `%s`", workFlowActionletName), e);
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * This method applies an additional "remove-code" in case the first direct remove attempt reports to have failed.
+	 * The reason is that the same class could have been loaded from different ClassLoaders (When they come from OSGI)
+	 * If removing the class directly from the class instance fails then we look it up by name.
+	 * @param workFlowActionletClass
+	 */
+	private void removeActionlet(final Class<? extends WorkFlowActionlet> workFlowActionletClass) {
+		final boolean found = actionletClasses.remove(workFlowActionletClass);
+		if (!found) {
+			final String canonicalName = workFlowActionletClass.getCanonicalName();
+			final Optional<Class<? extends WorkFlowActionlet>> optionalClass = actionletClasses
+					.stream().filter(s -> s.getCanonicalName().equals(canonicalName))
+					.findFirst();
+			optionalClass.ifPresent(actionletClasses::remove);
+		}
 	}
 
 	@Override
@@ -1759,7 +1795,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						   final User user) throws DotDataException {
 
 		DotPreconditions.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
-				()-> "Workflow-does-not-exists-scheme",
+				()-> {
+					Logger.error(this, "The Workflow Scheme does not exist, id: " + action.getSchemeId());
+					return "Workflow-does-not-exists-scheme";
+				},
 				DoesNotExistException.class);
 
 		try {
@@ -1991,6 +2030,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return  workFlowFactory.findActionClasses(action);
 	}
 
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowActionClass> findActionClassesByClassName(final String actionClassName) throws DotDataException {
+
+		return  workFlowFactory.findActionClassesByClassName(actionClassName);
+	}
+
 	private void refreshWorkFlowActionletMap() {
 		actionletMap = null;
 		if (actionletMap == null) {
@@ -2028,7 +2074,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					}
 
 					Collections.sort(actionletList, new ActionletComparator());
-					actionletMap = new LinkedHashMap<String, WorkFlowActionlet>();
+					actionletMap = new LinkedHashMap<>();
 					for(WorkFlowActionlet actionlet : actionletList){
 
 						try {
@@ -2301,10 +2347,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				if (UtilMethods.isSet(processor.getContentlet()) && processor.getContentlet().needsReindex()) {
 
 					Logger.info(this, "Needs reindex, adding the contentlet to the index at the end of the workflow execution");
-				    final Contentlet content = processor.getContentlet();
-				    final IndexPolicy indexPolicy = content.getIndexPolicy()==IndexPolicy.FORCE?IndexPolicy.FORCE:IndexPolicy.WAIT_FOR;
-				    content.setIndexPolicy(indexPolicy);
-				    final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
+				  final Contentlet content = processor.getContentlet();
+				  final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
 					final boolean includeDependencies = null != threadContext && threadContext.isIncludeDependencies();
 					this.contentletIndexAPI.addContentToIndex(content, includeDependencies);
 					Logger.info(this, "Added contentlet to the index at the end of the workflow execution, dependencies: " + includeDependencies);
@@ -2933,6 +2977,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			contentlet.setTags();
 			contentlet.getMap().put(Contentlet.WORKFLOW_BULK_KEY, true);
+			contentlet.setIndexPolicy(IndexPolicy.DEFER);
 			try{
 				final Contentlet afterFireContentlet = fireContentWorkflow(contentlet, dependencies, context);
 				if(afterFireContentlet != null){
@@ -3798,11 +3843,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final List<WorkflowScheme> schemes          = this.findSchemesForContentType(contentType);
 
 		if (UtilMethods.isSet(schemes)) {
-			final List<Map<String, Object>> mappingRows =
+			final List<Map<String, Object>> unsortedMappingRows =
 					this.workFlowFactory.findSystemActionsBySchemes(systemAction, schemes);
 
-			if (UtilMethods.isSet(mappingRows)) {
+			if (UtilMethods.isSet(unsortedMappingRows)) {
 
+				final List<Map<String, Object>> mappingRows = new ArrayList<>(unsortedMappingRows);
 				mappingRows.sort(this::compareScheme);
 				return this.findActionAvailable(contentlet,
 						(String) mappingRows.get(0).get("workflow_action"), user);

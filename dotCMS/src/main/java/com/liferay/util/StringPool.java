@@ -77,4 +77,10 @@ public class StringPool {
 
 	public static final String UNDERLINE = "_";
 
+	public static final String OPEN_PARENTHESES = "(";
+
+	public static final String CLOSE_PARENTHESES = ")";
+
+	public static final String PLUS = "+";
+
 }

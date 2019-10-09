@@ -197,11 +197,13 @@ public class RoleAPIImpl implements RoleAPI {
 	public void addRoleToUser(final Role role, final User user) throws DotDataException, DotStateException {
 		if(role==null || user==null)return;
 	  final Role currentRole = loadRoleById(role.getId());
+	  if(!roleFactory.doesUserHaveRole(user, currentRole)) {
 		if(!currentRole.isEditUsers()){
 			throw new DotStateException("Cannot alter users on this role.  Name:" + role.getName() + ", id:" + role.getId());
 		}
 		SecurityLogger.logInfo(this.getClass(), "Adding role:'" + role.getName() + "' to user:" + user.getUserId() + " email:" + user.getEmailAddress());
 		roleFactory.addRoleToUser(role, user);
+	  }
 	}
 	
 	public void addRoleToUser(String roleId, User user)	throws DotDataException, DotStateException {

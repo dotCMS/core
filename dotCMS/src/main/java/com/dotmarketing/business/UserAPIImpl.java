@@ -16,7 +16,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
@@ -32,9 +31,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
-
 import io.vavr.control.Try;
-
 import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -146,10 +143,23 @@ public class UserAPIImpl implements UserAPI {
 
     @CloseDBIfOpened
     @Override
+    public long getCountUsersByName(String filter, List<Role> roles) throws DotDataException {
+        return userFactory.getCountUsersByName(filter, roles);
+    }
+
+    @CloseDBIfOpened
+    @Override
     public List<User> getUsersByName(String filter, int start,int limit, User user, boolean respectFrontEndRoles) throws DotDataException {
         return userFactory.getUsersByName(filter, start, limit);
     }
 
+    @CloseDBIfOpened
+    @Override
+    public List<User> getUsersByName(String filter, List<Role> roles, int start,int limit) throws DotDataException {
+        return userFactory.getUsersByName(filter, roles ,start, limit);
+    }
+
+    @WrapInTransaction
     @Override
     public User createUser(String userId, String email) throws DotDataException, DuplicateUserException {
         return userFactory.createUser(userId, email);

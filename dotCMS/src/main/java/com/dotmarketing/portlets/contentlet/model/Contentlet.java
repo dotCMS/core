@@ -78,81 +78,79 @@ import org.apache.commons.lang.builder.ToStringBuilder;
  */
 public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Treeable, Ruleable  {
 
-    private static final long serialVersionUID = 1L;
-    public static final String TITTLE_KEY = "title";
-    public static final String HAS_TITLE_IMAGE_KEY = "hasTitleImage";
-    public static final String INODE_KEY = "inode";
-    public static final String LANGUAGEID_KEY = "languageId";
-    public static final String STRUCTURE_INODE_KEY = "stInode";
-    public static final String STRUCTURE_NAME_KEY = "stName";
-    public static final String CONTENT_TYPE_KEY = "contentType";
-    public static final String BASE_TYPE_KEY = "baseType";
-    public static final String LAST_REVIEW_KEY = "lastReview";
-    public static final String NEXT_REVIEW_KEY = "nextReview";
-    public static final String REVIEW_INTERNAL_KEY = "reviewInternal";
-    public static final String DISABLED_WYSIWYG_KEY = "disabledWYSIWYG";
-    public static final String LOCKED_KEY = "locked";
-    public static final String ARCHIVED_KEY = "archived";
-    public static final String LIVE_KEY = "live";
-    public static final String WORKING_KEY = "working";
-    public static final String MOD_DATE_KEY = "modDate";
-    public static final String MOD_USER_KEY = "modUser";
-    public static final String OWNER_KEY = "owner";
-    public static final String IDENTIFIER_KEY = "identifier";
-    public static final String SORT_ORDER_KEY = "sortOrder";
-    public static final String HOST_KEY = "host";
-    public static final String HOST_NAME = "hostName";
-    public static final String FOLDER_KEY = "folder";
-	public static final String NULL_PROPERTIES = "nullProperties";
-	public static final String WORKFLOW_ACTION_KEY = "wfActionId";
-	public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
-	public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
-	public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
-    public static final String DOT_NAME_KEY = "__DOTNAME__";
+  private static final long serialVersionUID = 1L;
+  public static final String TITTLE_KEY = "title";
+  public static final String HAS_TITLE_IMAGE_KEY = "hasTitleImage";
+  public static final String INODE_KEY = "inode";
+  public static final String LANGUAGEID_KEY = "languageId";
+  public static final String STRUCTURE_INODE_KEY = "stInode";
+  public static final String STRUCTURE_NAME_KEY = "stName";
+  public static final String CONTENT_TYPE_KEY = "contentType";
+  public static final String BASE_TYPE_KEY = "baseType";
+  public static final String LAST_REVIEW_KEY = "lastReview";
+  public static final String NEXT_REVIEW_KEY = "nextReview";
+  public static final String REVIEW_INTERNAL_KEY = "reviewInternal";
+  public static final String DISABLED_WYSIWYG_KEY = "disabledWYSIWYG";
+  public static final String LOCKED_KEY = "locked";
+  public static final String ARCHIVED_KEY = "archived";
+  public static final String LIVE_KEY = "live";
+  public static final String WORKING_KEY = "working";
+  public static final String MOD_DATE_KEY = "modDate";
+  public static final String MOD_USER_KEY = "modUser";
+  public static final String OWNER_KEY = "owner";
+  public static final String IDENTIFIER_KEY = "identifier";
+  public static final String SORT_ORDER_KEY = "sortOrder";
+  public static final String HOST_KEY = "host";
+  public static final String HOST_NAME = "hostName";
+  public static final String FOLDER_KEY = "folder";
+  public static final String NULL_PROPERTIES = "nullProperties";
+  public static final String WORKFLOW_ACTION_KEY = "wfActionId";
+  public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
+  public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
+  public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
+  public static final String DOT_NAME_KEY = "__DOTNAME__";
 
-    public static final String TITLE_IMAGE_KEY="titleImage";
+  public static final String TITLE_IMAGE_KEY = "titleImage";
 
-    public static final String URL_MAP_FOR_CONTENT_KEY = "URL_MAP_FOR_CONTENT";
+  public static final String URL_MAP_FOR_CONTENT_KEY = "URL_MAP_FOR_CONTENT";
 
+  public static final String DONT_VALIDATE_ME = "_dont_validate_me";
+  public static final String DISABLE_WORKFLOW = "__disable_workflow__";
 
+  // means the contentlet is being used on unit test mode.
+  // this is only for unit test. do not use on production.
+  @VisibleForTesting
+  public static final String IS_TEST_MODE = "_is_test_mode";
 
-    public static final String DONT_VALIDATE_ME = "_dont_validate_me";
-    public static final String DISABLE_WORKFLOW = "__disable_workflow__";
+  /**
+   * Flag to avoid to trigger the workflow again on the checkin when it is already in progress.
+   */
+  public static final String WORKFLOW_IN_PROGRESS = "__workflow_in_progress__";
+  public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
+  public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
+  public static final String AUTO_ASSIGN_WORKFLOW = "AUTO_ASSIGN_WORKFLOW";
 
-    // means the contentlet is being used on unit test mode.
-	// this is only for unit test. do not use on production.
-	@VisibleForTesting
-	public static final String IS_TEST_MODE = "_is_test_mode";
+  public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
+  public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
+  public static final String WORKFLOW_EXPIRE_DATE = "wfExpireDate";
+  public static final String WORKFLOW_EXPIRE_TIME = "wfExpireTime";
+  public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
+  public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
+  public static final String RELATIONSHIP_KEY = "__##relationships##__";
 
-	/**
-	 * Flag to avoid to trigger the workflow again on the checkin when it is already in progress.
-	 */
-	public static final String WORKFLOW_IN_PROGRESS = "__workflow_in_progress__";
-	public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
-	public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
-	public static final String AUTO_ASSIGN_WORKFLOW = "AUTO_ASSIGN_WORKFLOW";
+  private transient ContentType contentType;
+  protected Map<String, Object> map = new ContentletHashMap();
 
-    public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
-    public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
-    public static final String WORKFLOW_EXPIRE_DATE = "wfExpireDate";
-    public static final String WORKFLOW_EXPIRE_TIME = "wfExpireTime";
-    public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
-	public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
-	public static final String RELATIONSHIP_KEY = "__##relationships##__";
+  private boolean lowIndexPriority = false;
 
-	private transient ContentType contentType;
-    protected Map<String, Object> map = new ContentletHashMap();
+  private transient ContentletAPI contentletAPI;
+  private transient UserAPI userAPI;
+  private transient IndexPolicy indexPolicy = null;
+  private transient IndexPolicy indexPolicyDependencies = null;
 
-	private boolean lowIndexPriority = false;
+  private transient boolean needsReindex = false;
 
-    private transient ContentletAPI contentletAPI;
-    private transient UserAPI userAPI;
-	private transient IndexPolicy indexPolicy = IndexPolicy.DEFER;
-	private transient IndexPolicy indexPolicyDependencies = IndexPolicy.DEFER;
-
-	private transient boolean needsReindex = false;
-
-	private transient boolean loadedTags = false;
+  private transient boolean loadedTags = false;
 
 	/**
 	 * Returns true if this contentlet needs reindex
@@ -184,8 +182,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	@JsonIgnore
 	public IndexPolicy getIndexPolicy() {
 
-		return (null == this.indexPolicy)?
-				IndexPolicy.DEFER:indexPolicy;
+		return (null == this.indexPolicy)
+		    ? IndexPolicyProvider.getInstance().forSingleContent()
+		        :indexPolicy;
 	}
 
 	/**
@@ -199,16 +198,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @param indexPolicy
 	 */
 	public void setIndexPolicy(final IndexPolicy indexPolicy) {
-
-		if (null != indexPolicy) {
 			this.indexPolicy = indexPolicy;
-		}
 	}
 
 	public IndexPolicy getIndexPolicyDependencies() {
 
 		return (null == this.indexPolicyDependencies)?
-				IndexPolicy.DEFER:indexPolicyDependencies;
+		    IndexPolicyProvider.getInstance().forContentDependencies():indexPolicyDependencies;
 	}
 
 	/**
@@ -223,9 +219,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setIndexPolicyDependencies(final IndexPolicy indexPolicy) {
 
-		if (null != indexPolicy) {
+
 			this.indexPolicyDependencies = indexPolicy;
-		}
+
 	}
 
 	@Override
@@ -242,7 +238,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     this();
     mapIn.values().removeIf(Objects::isNull);
     this.map.putAll(mapIn);
-    this.indexPolicy = IndexPolicy.DEFER;
   }
 
 	/**
@@ -251,9 +246,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public Contentlet(final Contentlet contentlet) {
 		this(contentlet.getMap());
-		if (null != contentlet.getIndexPolicy()) {
-			this.indexPolicy = contentlet.getIndexPolicy();
-		}
+		this.setIndexPolicy(contentlet.getIndexPolicy());
+		
 	}
 
   /**
@@ -267,7 +261,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     setContentTypeId("");
     setSortOrder(0);
     setDisabledWysiwyg(new ArrayList<>());
-    this.indexPolicy = IndexPolicy.DEFER;
     getWritableNullProperties();
   }
 
@@ -1199,13 +1192,37 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 		Object value=map.get(key);
 
-		if(isMetadataFieldCached(getStructureInode(), key, value))
+		if(isMetadataFieldCached(getStructureInode(), key, value)) {
 		    return lazyMetadataLoad(getInode(),getStructureInode());
-
+		}
+		if(value==null) {
+  		 value=Try.of(()-> getConstantValue(key)).getOrNull();
+		}
+		
 		return value;
 
 	}
 
+	public String getConstantValue(final String key) {
+	  try {
+      if(this.getContentType()!=null && this.getContentType().fieldMap().containsKey(key)) {
+        com.dotcms.contenttype.model.field.Field field = this.getContentType().fieldMap().get(key);
+        if(field!=null && field instanceof ConstantField ) {
+          // cache it in map for future use
+          map.put(key, field.values());
+          return field.values();
+        }
+      }
+	  }
+	  catch(Throwable t) {
+	    Logger.warnAndDebug(this.getClass(), t.getMessage(),t);
+	  }
+    return null;
+	}
+	
+	
+	
+	
 	/**
 	 * @param lowIndexPriority the lowIndexPriority to set
 	 */
@@ -1600,6 +1617,23 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return APILocator.getContentletAPI()
                 .getRelatedContent(this, variableName, user, respectFrontendRoles, pullByParents,
                         -1, 0, null);
+    }
+
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @param language
+     * @param live
+     * @return
+     */
+    public List<Contentlet> getRelated(final String variableName, final User user,
+            final boolean respectFrontendRoles, Boolean pullByParents, final long language, final Boolean live) {
+        return APILocator.getContentletAPI()
+                .getRelatedContent(this, variableName, user, respectFrontendRoles, pullByParents,
+                        -1, 0, null, language, live);
     }
 
     /**
