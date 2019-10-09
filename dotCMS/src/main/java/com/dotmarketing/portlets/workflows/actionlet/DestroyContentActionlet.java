@@ -30,7 +30,7 @@ public class DestroyContentActionlet extends WorkFlowActionlet {
     
     @Override
     public String getHowTo() {
-        return "This action will destroy the content. Warning: this can't be undone!";
+        return "This will destroy the content in ALL languages that exist and cannot be undone";
     }
     
     @Override
