@@ -6,7 +6,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.language.LanguageUtil;
 import java.util.List;
 import java.util.Map;
 

@@ -273,6 +273,7 @@ public class TaskLocatorUtil {
 		ret.add(Task05175AssignDefaultActionsToTheSystemWorkflow.class);
     ret.add(Task05180UpdateFriendlyNameField.class);
     ret.add(Task05190UpdateFormsWidgetCodeField.class);
+		ret.add(Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflow.class);
 		return ret;
 	}
 
