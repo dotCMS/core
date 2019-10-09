@@ -141,7 +141,6 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	            Logger.warn(this.getClass(), noLicenseMessage);
 	            return Response.status(Status.FORBIDDEN)
 	                    .entity(map("message", noLicenseMessage))
-	                    .header("error-message", noLicenseMessage)
 	                    .build();
 	        }
             Logger.warn(this.getClass(), "Error processing :" + dse.getMessage(), dse);
