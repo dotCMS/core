@@ -901,7 +901,7 @@ public class ImportUtil {
 
                 if ( (contentsSearch == null) || (contentsSearch.size() == 0) ) {
 
-                    Logger.info(ImportUtil.class, "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
+                    Logger.warn(ImportUtil.class, "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
                     throw new DotRuntimeException( "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n" );
                 } else {
 
@@ -911,7 +911,7 @@ public class ImportUtil {
                         if ( (contentlet != null) && InodeUtils.isSet( contentlet.getInode() ) ) {
                             contentlets.add( contentlet );
                         } else {
-                            Logger.info(ImportUtil.class, "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
+                            Logger.warn(ImportUtil.class, "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
                             throw new DotRuntimeException( "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n" );
                         }
                     }
