@@ -208,7 +208,7 @@ public class PageResource {
                                    @PathParam("uri") final String uri,
                                    @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
                                    @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
-                                   @QueryParam("language_id") final String languageId,
+                                   @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
                                    @QueryParam("device_inode") final String deviceInode) throws DotSecurityException, DotDataException {
 
         Logger.debug(this, ()->String.format(
@@ -220,49 +220,37 @@ public class PageResource {
         final User user = auth.getUser();
         Response res;
 
-        try {
 
-            final PageMode mode = modeParam != null
-                    ? PageMode.get(modeParam)
-                    : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri);
+        final PageMode mode = modeParam != null
+                ? PageMode.get(modeParam)
+                : this.htmlPageAssetRenderedAPI.getDefaultEditPageMode(user, request,uri);
 
-            PageMode.setPageMode(request, mode);
+        PageMode.setPageMode(request, mode);
 
-            if (deviceInode != null) {
-                request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
-            }
-
-            final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
-                    PageContextBuilder.builder()
-                            .setUser(user)
-                            .setPageUri(uri)
-                            .setPageMode(mode)
-                            .build(),
-                    request,
-                    response
-            );
-
-            final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
-                    PageMode.get(request.getSession()).respectAnonPerms);
-            request.setAttribute(WebKeys.CURRENT_HOST, host);
-            request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
-
-            res = Response.ok(new ResponseEntityView(pageRendered)).build();
-        } catch (HTMLPageAssetNotFoundException e) {
-            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.render, parameters:  %s, %s %s: ",
-                    request, uri, modeParam);
-            Logger.error(this, errorMsg, e);
-            res = ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
-        } catch (Exception e) {
-
-            final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.render, parameters:  %s, %s %s: ",
-                    request, uri, modeParam);
-            Logger.error(this, errorMsg, e);
-            res = ResponseUtil.mapExceptionResponse(e);
+        if (deviceInode != null) {
+            request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
         }
+
+        final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(
+                PageContextBuilder.builder()
+                        .setUser(user)
+                        .setPageUri(uri)
+                        .setPageMode(mode)
+                        .build(),
+                request,
+                response
+        );
+
+        final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
+                PageMode.get(request.getSession()).respectAnonPerms);
+        request.setAttribute(WebKeys.CURRENT_HOST, host);
+        request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
+
+        res = Response.ok(new ResponseEntityView(pageRendered)).build();
 
         return res;
     }
+
 
     /**
      * Save a template and link it with a page, If the page already has a anonymous template linked then it is updated,
@@ -552,10 +540,11 @@ public class PageResource {
                                                    @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
                                                    @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
                                                    @QueryParam("hostId") final String  hostId,
-                                                   @PathParam("pageId")  final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
+                                                   @PathParam("pageId")  final String  pageId,
+                                                   @QueryParam("respectFrontEndRoles") Boolean respectFrontEndRolesParams) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(request, response, true).getUser();
-        final boolean respectFrontEndRoles = PageMode.get(request).respectAnonPerms;
+        final boolean respectFrontEndRoles = respectFrontEndRolesParams != null ? respectFrontEndRolesParams : PageMode.get(request).respectAnonPerms;
 
         Logger.debug(this, ()-> "Getting page personas per page: " + pageId);
 

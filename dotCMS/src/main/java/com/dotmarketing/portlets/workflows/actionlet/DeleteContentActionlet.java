@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 
+@Actionlet(delete = true)
 public class DeleteContentActionlet extends WorkFlowActionlet {
     
     private static final long serialVersionUID = -2314685590620626801L;

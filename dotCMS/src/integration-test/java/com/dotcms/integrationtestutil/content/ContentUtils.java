@@ -39,12 +39,13 @@ public class ContentUtils {
      */
     public static void deleteContentlets(final User user, final Contentlet... contentlets)
                     throws DotContentletStateException, DotDataException, DotSecurityException {
-        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         for (Contentlet contentlet : contentlets) {
             if (null != contentlet) {
-                contentletAPI.unpublish(contentlet, user, Boolean.FALSE);
-                contentletAPI.archive(contentlet, user, Boolean.FALSE);
-                contentletAPI.delete(contentlet, user, Boolean.FALSE);
+                try {
+                    APILocator.getContentletAPI().destroy(contentlet, user, false );
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -67,7 +68,7 @@ public class ContentUtils {
     public static Contentlet createTestKeyValueContent(final String key, final String value, final long languageId,
             final ContentType keyValueContentType, final User user)
             throws DotContentletStateException, IllegalArgumentException, DotDataException, DotSecurityException {
-
+        
         return createTestKeyValueContent(null, key, value, languageId, keyValueContentType, user);
     }
 
@@ -87,8 +88,10 @@ public class ContentUtils {
         contentletAPI.setContentletProperty(contentlet, asOldField(fields.get(KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR)),
                 value);
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         contentlet = contentletAPI.checkin(contentlet, user, Boolean.FALSE);
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         contentletAPI.publish(contentlet, user, Boolean.FALSE);
 
         return contentlet;
@@ -121,6 +124,8 @@ public class ContentUtils {
         final Contentlet checkoutContentlet =
                 contentletAPI.checkout(contentlet.getInode(), user, false);
         final String inode = checkoutContentlet.getInode();
+        checkoutContentlet.setIndexPolicy(IndexPolicy.FORCE);
+
         contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
         checkoutContentlet.setInode(inode);
 
@@ -129,6 +134,8 @@ public class ContentUtils {
         contentletAPI.setContentletProperty(checkoutContentlet, asOldField(fields.get(KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR)),
                 newValue);
 
+
+        checkoutContentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         return contentletAPI.checkin(checkoutContentlet, user, Boolean.FALSE);
     }
 

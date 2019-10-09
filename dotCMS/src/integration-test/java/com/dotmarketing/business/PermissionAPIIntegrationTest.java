@@ -1,10 +1,16 @@
 package com.dotmarketing.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -26,15 +32,12 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * This class tests the creation, copy, update, verification and setting of
@@ -201,9 +204,8 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     public void issue11850() throws DotSecurityException, DotDataException {
 
     	// Create test host
-    	Host host = new Host();
-    	host.setHostname("issue11850.demo.dotcms.com");
-    	host=hostAPI.save(host, systemUser, false);
+    	final Host host = new SiteDataGen().nextPersisted();
+
     	try {
     		long time = System.currentTimeMillis();
 
@@ -219,9 +221,9 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     		type = contentTypeAPI.save(type, null, null);
 
     		try {
-    			// Check no permissions exists over test content-type
+    			//Should be inherited from system-host if no individual permissions had been added.
     			List<Permission> permissions = permissionAPI.getPermissions(type);
-    			assertTrue(permissions.isEmpty());
+    			assertFalse(permissions.isEmpty());
 
     			// Assign 5 different permissions over test host (to be inherited to test content-type)
     			final Role role = roleAPI.loadCMSAnonymousRole();
@@ -236,6 +238,8 @@ public class PermissionAPIIntegrationTest extends IntegrationTestBase {
     			);
     			permissionAPI.save(inheritedPermission, host, systemUser, true);
 
+    			permissionAPI.resetPermissionsUnder(host);
+    			
     			// Check the permissions for content-type are now inherited from test host
     			permissions = permissionAPI.getPermissions(type);
     			assertFalse(permissions.isEmpty());

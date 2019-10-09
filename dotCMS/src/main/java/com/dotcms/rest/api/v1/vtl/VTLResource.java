@@ -508,7 +508,7 @@ public class VTLResource {
                     (null, request, response, false, null);
 
             final User user = initDataObject.getUser();
-            setUserInSession(request.getSession(false), user);
+
 
             final DotJSONCache cache = DotJSONCacheFactory.getCache(httpMethod);
             final Optional<DotJSON> dotJSONOptional = cache.get(request, user);
@@ -542,12 +542,6 @@ public class VTLResource {
         }
     }
 
-    private void setUserInSession(final HttpSession session, final User user) {
-        DotPreconditions.checkNotNull(session);
-        DotPreconditions.checkNotNull(user);
-        session.setAttribute(WebKeys.CMS_USER, user);
-    }
-
     private Response evalVelocity(final HttpServletRequest request, final HttpServletResponse response,
                                   final Reader velocityReader, final Map<String, Object> contextParams,
                                   final User user, final DotJSONCache cache)
@@ -569,7 +563,19 @@ public class VTLResource {
         final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
 
         if(dotJSON.size()==0) { // If dotJSON is not used let's return the raw evaluation of the velocity file
-            return Response.ok(evalResult.toString()).build();
+            final HttpServletResponse velocityResponse = (HttpServletResponse) context.get("response");
+            
+            final String contentType = (velocityResponse!=null && velocityResponse.getContentType()!=null) ? velocityResponse.getContentType() : MediaType.TEXT_PLAIN_TYPE.toString();
+            if(velocityResponse!=null && velocityResponse.getHeaderNames()!=null){
+              for(final String  headerName : velocityResponse.getHeaderNames()) {
+                response.setHeader(headerName, velocityResponse.getHeader(headerName));
+              }
+            }
+
+            return UtilMethods.isSet(contentType)
+                    ? Response.ok(evalResult.toString()).type(contentType).build()
+                    : Response.ok(evalResult.toString()).type(MediaType.TEXT_PLAIN_TYPE).build();
+
         } else {
             // let's add it to cache
             if(UtilMethods.isSet(dotJSON.get("errors"))) {

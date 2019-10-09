@@ -1,10 +1,17 @@
 package com.dotmarketing.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -35,14 +42,15 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.io.FileWriter;
-import java.util.*;
-
-import static org.junit.Assert.*;
 
 /**
  * This class tests the creation, copy, update, verification and setting of
@@ -181,19 +189,30 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void removePermissions() throws DotDataException, DotSecurityException {
-        APILocator.getFolderAPI().createFolders("/f1/", host, sysuser, false);
-        Folder f=APILocator.getFolderAPI().findFolderByPath("/f1/", host, sysuser, false);
+
+        final Host newHost = new SiteDataGen().nextPersisted();
+        Role newRole = getRole("Role" + System.currentTimeMillis());
+
+        // Adding permissions to the just created host
+        Permission permission = new Permission();
+        permission.setPermission(PermissionAPI.PERMISSION_EDIT);
+        permission.setRoleId(newRole.getId());
+        permission.setInode(newHost.getIdentifier());
+        permissionAPI.save(permission, newHost, sysuser, false);
+
+        APILocator.getFolderAPI().createFolders("/f1/", newHost, sysuser, false);
+        Folder f = APILocator.getFolderAPI().findFolderByPath("/f1/", newHost, sysuser, false);
 
         assertTrue(permissionAPI.isInheritingPermissions(f));
-        assertTrue(f.getParentPermissionable().equals(host));
+        assertEquals(f.getParentPermissionable().getPermissionId(), newHost.getPermissionId());
 
-        permissionAPI.permissionIndividually(host, f, sysuser);
+        permissionAPI.permissionIndividually(newHost, f, sysuser);
         assertFalse(permissionAPI.isInheritingPermissions(f));
 
         permissionAPI.removePermissions(f);
 
         assertTrue(permissionAPI.isInheritingPermissions(f));
-        assertTrue(f.getParentPermissionable().equals(host));
+        assertEquals(f.getParentPermissionable().getPermissionId(), newHost.getPermissionId());
     }
 
     @Test
@@ -578,8 +597,12 @@ public class PermissionAPITest extends IntegrationTestBase {
             assertTrue(permissionAPI.findParentPermissionable(cc).equals(folderA));
         }
         finally {
-            APILocator.getHostAPI().archive(hh, sysuser, false);
-            APILocator.getHostAPI().delete(hh, sysuser, false);
+            try {
+                APILocator.getHostAPI().archive(hh, sysuser, false);
+                APILocator.getHostAPI().delete(hh, sysuser, false);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -652,14 +675,20 @@ public class PermissionAPITest extends IntegrationTestBase {
             assertTrue(found2);
         }
         finally {
-            if(cont1!=null)
-                APILocator.getContentletAPI().archive(cont1, sysuser, false);
-                APILocator.getContentletAPI().delete(cont1, sysuser, false);
-            if (s != null) {
-            	APILocator.getStructureAPI().delete(s, sysuser);
+            try {
+
+                if (cont1 != null) {
+
+                    APILocator.getContentletAPI().destroy(cont1, sysuser, false);
+                }
+                if (s != null) {
+                    APILocator.getStructureAPI().delete(s, sysuser);
+                }
+                APILocator.getHostAPI().archive(hh, sysuser, false);
+                APILocator.getHostAPI().delete(hh, sysuser, false);
+            }catch (Exception e) {
+                e.printStackTrace();
             }
-            APILocator.getHostAPI().archive(hh, sysuser, false);
-            APILocator.getHostAPI().delete(hh, sysuser, false);
         }
     }
 
@@ -971,11 +1000,36 @@ public class PermissionAPITest extends IntegrationTestBase {
 
 
         } finally {
-            roleAPI.delete(childRole);
-            roleAPI.delete(childSiblingRole);
-            roleAPI.delete(parentRole);
-            APILocator.getHostAPI().archive(testSite, systemUser, false);
-            APILocator.getHostAPI().delete(testSite, systemUser, false);
+            try {
+                roleAPI.delete(childRole);
+                roleAPI.delete(childSiblingRole);
+                roleAPI.delete(parentRole);
+                APILocator.getHostAPI().archive(testSite, systemUser, false);
+                APILocator.getHostAPI().delete(testSite, systemUser, false);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    @Test
+    public void testAnonymousUserCannotReadNonLiveContent() throws DotDataException {
+        Contentlet content = TestDataUtils.getDocumentLikeContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(), null);
+
+        try {
+
+            //Anonymous user should not read non-live content
+            assertFalse(permissionAPI.doesUserHavePermission(content, PermissionAPI.PERMISSION_READ,
+                    APILocator.getUserAPI().getAnonymousUser(), true));
+
+            //Once the content is published, anonymous user can read it
+            content = ContentletDataGen.publish(content);
+            assertTrue(permissionAPI.doesUserHavePermission(content, PermissionAPI.PERMISSION_READ,
+                    APILocator.getUserAPI().getAnonymousUser(), true));
+        } finally {
+            ContentletDataGen.destroy(content);
         }
 
     }

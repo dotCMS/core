@@ -1,5 +1,14 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.FORCE_PUSH;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_DATE;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_EXPIRE_TIME;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_NEVER_EXPIRE;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_PUBLISH_DATE;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WF_PUBLISH_TIME;
+import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WHERE_TO_SEND;
+
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -7,13 +16,22 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
-import com.dotcms.util.*;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.model.Subscriber;
+import com.dotcms.util.AnnotationUtils;
+import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.FriendClass;
+import com.dotcms.util.LicenseValiditySupplier;
+import com.dotcms.util.ThreadContext;
+import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.workflow.form.AdditionalParamsBean;
@@ -21,12 +39,25 @@ import com.dotcms.workflow.form.AssignCommentBean;
 import com.dotcms.workflow.form.PushPublishBean;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
@@ -35,25 +66,84 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageDeletedEvent;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.LargeMessageActionlet;
 import com.dotmarketing.portlets.workflows.MessageActionlet;
-import com.dotmarketing.portlets.workflows.actionlet.*;
-import com.dotmarketing.portlets.workflows.model.*;
-import com.dotmarketing.util.*;
+import com.dotmarketing.portlets.workflows.actionlet.Actionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.BatchAction;
+import com.dotmarketing.portlets.workflows.actionlet.CheckURLAccessibilityActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckinContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyAssigneeActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.NotifyUsersActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ReindexContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.ResetTaskActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SendFormEmailActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TranslationActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.TwitterActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnarchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.LuceneQueryUtils;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.apache.commons.lang.time.StopWatch;
-import org.apache.commons.lang3.concurrent.ConcurrentUtils;
-import org.elasticsearch.search.query.QueryPhaseExecutionException;
-import org.osgi.framework.BundleContext;
-
-import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -63,11 +153,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isHost;
-import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.*;
+import javax.annotation.Nullable;
+import org.apache.commons.lang.time.StopWatch;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.elasticsearch.search.query.QueryPhaseExecutionException;
+import org.osgi.framework.BundleContext;
 
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
@@ -82,6 +175,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	private final RoleAPI roleAPI				  = APILocator.getRoleAPI();
 
 	private final ShortyIdAPI shortyIdAPI		  = APILocator.getShortyAPI();
+
+	private final LocalSystemEventsAPI localSystemEventsAPI =
+			APILocator.getLocalSystemEventsAPI();
 
 	private final WorkflowStateFilter workflowStatusFilter =
 			new WorkflowStateFilter();
@@ -160,7 +256,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CopyActionlet.class,
 				MessageActionlet.class,
 				VelocityScriptActionlet.class,
-				LargeMessageActionlet.class
+				LargeMessageActionlet.class,
+				SendFormEmailActionlet.class
 		));
 
 		refreshWorkFlowActionletMap();
@@ -170,6 +267,42 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			workflowActionUtils = new WorkflowActionUtils();
 		} catch (DotDataException e) {
 			throw new DotRuntimeException(e);
+		}
+
+		this.localSystemEventsAPI.subscribe(this);
+	}
+
+	@Subscriber
+	@WrapInTransaction
+	public void onDeleteContentType (final ContentTypeDeletedEvent contentTypeDeletedEvent) {
+
+		try {
+
+			Logger.debug(this, ()-> "Deleting system mapping actions associated to the content type: "
+					+ contentTypeDeletedEvent.getContentTypeVar() );
+
+			this.workFlowFactory.deleteSystemActionsByContentType(contentTypeDeletedEvent.getContentTypeVar());
+		} catch (DotDataException e) {
+
+			Logger.error(this, "Can not delete the system mapping actions associated to the content type: "
+					+ contentTypeDeletedEvent.getContentTypeVar() + ", msg: " + e.getMessage(), e);
+		}
+	}
+
+	@Subscriber
+	@WrapInTransaction
+	public void onLanguageDeletedEvent (final LanguageDeletedEvent languageDeletedEvent) {
+
+		try {
+
+			Logger.debug(this, ()-> "Deleting workflow tasks associated to the language: "
+					+ languageDeletedEvent.getLanguage() );
+
+			this.workFlowFactory.deleteWorkflowTaskByLanguage(languageDeletedEvent.getLanguage());
+		} catch (DotDataException e) {
+
+			Logger.error(this, "Can not delete the workflow tasks associated to the language: "
+					+ languageDeletedEvent.getLanguage() + ", msg: " + e.getMessage(), e);
 		}
 	}
 
@@ -181,6 +314,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public WorkflowAPIImpl(final LicenseValiditySupplier licenseValiditySupplierSupplier) {
 		this();
 		this.licenseValiditySupplierSupplier = licenseValiditySupplierSupplier;
+
 	}
 
 	public boolean hasValidLicense(){
@@ -222,6 +356,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	 * @return String id
 	 */
 	private String getLongId (final String shortyId, final ShortyIdAPI.ShortyInputType type) {
+
+		//  it is already long
+		if (null != shortyId && shortyId.length() == 36) {
+
+			return shortyId;
+		}
 
 		final Optional<ShortyId> shortyIdOptional =
 				this.shortyIdAPI.getShorty(shortyId, type);
@@ -294,6 +434,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		Logger.debug(this,
 				() -> "Adding actionlet class: " + workFlowActionletClass);
 
+        //Prevent dupes
+        removeActionlet(workFlowActionletClass);
 		actionletClasses.add(workFlowActionletClass);
 		refreshWorkFlowActionletMap();
 		return workFlowActionletClass.getCanonicalName();
@@ -306,8 +448,36 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				() -> "Removing actionlet: " + workFlowActionletName);
 
 		final WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
-		actionletClasses.remove(actionlet.getClass());
+		removeActionlet(actionlet.getClass());
 		refreshWorkFlowActionletMap();
+
+		try {
+		    final User user = APILocator.systemUser();
+			final List<WorkflowActionClass> actionClasses = findActionClassesByClassName(actionlet.getActionClass());
+            for(final WorkflowActionClass clazz:actionClasses) {
+				deleteActionClass(clazz, user);
+			}
+		} catch (Exception e) {
+		    Logger.error(WorkflowAPIImpl.class,String.format("Error removing Actionlet with className `%s`", workFlowActionletName), e);
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * This method applies an additional "remove-code" in case the first direct remove attempt reports to have failed.
+	 * The reason is that the same class could have been loaded from different ClassLoaders (When they come from OSGI)
+	 * If removing the class directly from the class instance fails then we look it up by name.
+	 * @param workFlowActionletClass
+	 */
+	private void removeActionlet(final Class<? extends WorkFlowActionlet> workFlowActionletClass) {
+		final boolean found = actionletClasses.remove(workFlowActionletClass);
+		if (!found) {
+			final String canonicalName = workFlowActionletClass.getCanonicalName();
+			final Optional<Class<? extends WorkFlowActionlet>> optionalClass = actionletClasses
+					.stream().filter(s -> s.getCanonicalName().equals(canonicalName))
+					.findFirst();
+			optionalClass.ifPresent(actionletClasses::remove);
+		}
 	}
 
 	@Override
@@ -461,10 +631,44 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			if(schemesIds.isEmpty()){
 				contentTypeAPI.updateModDate(contentType);
 			}
-		} catch(DotDataException e) {
+
+			this.cleanInvalidDefaultActionForContentType(contentType, schemesIds);
+		} catch(DotDataException | DotSecurityException e) {
 
 			Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas: %s for Content type %s",
 					String.join(",", schemesIds), contentType.inode()));
+		}
+	}
+
+	private void cleanInvalidDefaultActionForContentType(final ContentType contentType,
+			final Set<String> schemesIds) throws DotDataException, DotSecurityException {
+
+		if (UtilMethods.isSet(schemesIds)) {
+
+			final List<Map<String, Object>> mappings = this.workFlowFactory
+					.findSystemActionsByContentType(contentType);
+			if (UtilMethods.isSet(mappings)) {
+
+				for (final Map<String, Object> mappingRow : mappings) {
+
+					final SystemActionWorkflowActionMapping mapping =
+							this.toSystemActionWorkflowActionMapping(mappingRow, contentType, APILocator.systemUser());
+					if (UtilMethods.isSet(mapping) && UtilMethods.isSet(mapping.getWorkflowAction())) {
+
+						if (!schemesIds.contains(mapping.getWorkflowAction().getSchemeId())) {
+
+							Logger.info(this, "Removing invalid system default action: " + mapping.getWorkflowAction() +
+									" on content type: " + contentType.variable() + ", the scheme: " + mapping.getWorkflowAction().getSchemeId() +
+									" is not longer valid on the content type schemes: " + schemesIds);
+							this.workFlowFactory.deleteSystemAction(mapping);
+						}
+					}
+				}
+			}
+		} else {
+
+			// no scheme remove all content type default actions.
+			this.workFlowFactory.deleteSystemActionsByContentType(contentType.variable());
 		}
 	}
 
@@ -768,6 +972,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<WorkflowStep> findSteps(final WorkflowScheme scheme) throws DotDataException {
 		return workFlowFactory.findSteps(scheme);
+	}
+
+	@CloseDBIfOpened
+	public Optional<WorkflowStep> findFirstStepForAction(final WorkflowAction workflowAction) throws DotDataException {
+
+		return workFlowFactory.findFirstStep (workflowAction.getId(), workflowAction.getSchemeId());
+	}
+
+	@CloseDBIfOpened
+	public Optional<WorkflowStep> findFirstStep(final String schemeId) throws DotDataException {
+
+		DotPreconditions.isTrue(UtilMethods.isSet(schemeId),
+				()-> "Scheme is required", DotStateException.class);
+
+		return workFlowFactory.findFirstStep (this.getLongIdForScheme(schemeId));
 	}
 
 	@WrapInTransaction
@@ -1088,6 +1307,64 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				+ " has been deleted by the user: " + user.getUserId());
 	}
 
+	@Override
+	@WrapInTransaction
+	public void deleteWorkflowTaskByContentletIdAnyLanguage(final Contentlet contentlet, final User user) throws DotDataException {
+
+		SecurityLogger.logInfo(this.getClass(),
+				"The Removing Workflow Tasks with the contentlet:" + contentlet);
+
+		if(contentlet==null || !UtilMethods.isSet(contentlet.getIdentifier())) {
+			return;
+		}
+
+		this.workFlowFactory.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet.getIdentifier());
+
+		try {
+			HibernateUtil.addCommitListener(() -> {
+				try {
+					this.contentletIndexAPI.addContentToIndex(contentlet);
+				} catch (DotDataException e) {
+					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+				}
+			});
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		SecurityLogger.logInfo(this.getClass(), ()-> "The Removed the tasks with the contentlet"
+				+ contentlet + " has been deleted by the user: " + user.getUserId());
+	}
+
+	@Override
+	@WrapInTransaction
+	public void deleteWorkflowTaskByContentlet(final Contentlet contentlet, final long languageId, final User user) throws DotDataException {
+
+		SecurityLogger.logInfo(this.getClass(),
+				"The Removing Workflow Tasks with the contentlet:" + contentlet.getIdentifier());
+
+		if(contentlet==null || !UtilMethods.isSet(contentlet.getIdentifier())) {
+			return;
+		}
+
+		this.workFlowFactory.deleteWorkflowTaskByContentletIdAndLanguage(contentlet.getIdentifier(), languageId);
+
+		try {
+			HibernateUtil.addCommitListener(() -> {
+				try {
+					this.contentletIndexAPI.addContentToIndex(contentlet);
+				} catch (DotDataException e) {
+					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
+				}
+			});
+		} catch (Exception e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		SecurityLogger.logInfo(this.getClass(), ()-> "The Removed the tasks with the contentlet" + contentlet
+				+ " has been deleted by the user: " + user.getUserId());
+	}
+
 	@CloseDBIfOpened
 	public WorkflowTask findWorkFlowTaskById(final String id) throws DotDataException {
 		return workFlowFactory.findWorkFlowTaskById(id);
@@ -1291,6 +1568,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	    boolean isSave        = false;
 	    boolean isPublish     = false;
+		boolean isUnPublish   = false;
+		boolean isArchive     = false;
+		boolean isUnArchive   = false;
+		boolean isDelete      = false;
+		boolean isDestroy     = false;
         boolean isPushPublish = false;
 
         for (final WorkflowActionClass actionClass : actionClasses) {
@@ -1300,11 +1582,21 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
                 isSave        |= (null != actionlet) && actionlet.save();
                 isPublish     |= (null != actionlet) && actionlet.publish();
+			    isUnPublish   |= (null != actionlet) && actionlet.unpublish();
+			    isArchive     |= (null != actionlet) && actionlet.archive();
+			    isUnArchive   |= (null != actionlet) && actionlet.unarchive();
+			    isDelete      |= (null != actionlet) && actionlet.delete();
+			    isDestroy     |= (null != actionlet) && actionlet.destroy();
                 isPushPublish |= (null != actionlet) && actionlet.pushPublish();
         }
 
 	    action.setSaveActionlet(isSave);
         action.setPublishActionlet(isPublish);
+		action.setUnpublishActionlet(isUnPublish);
+		action.setArchiveActionlet(isArchive);
+		action.setUnarchiveActionlet(isUnArchive);
+		action.setDeleteActionlet(isDelete);
+		action.setDestroyActionlet(isDestroy);
         action.setPushPublishActionlet(isPushPublish);
     }
 
@@ -1343,6 +1635,24 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return this.findAvailableActions(contentlet, user, RenderMode.EDITING);
 	}
 
+	@Override
+	@CloseDBIfOpened
+	public boolean isActionAvailable(final Contentlet contentlet, final User user, final String actionId) {
+
+		final Set<WorkflowAction> workflowActions = new HashSet<>();
+
+		try {
+			final List<WorkflowAction> editingActions = this.findAvailableActions(contentlet, user, RenderMode.EDITING);
+			final List<WorkflowAction> listingActions = this.findAvailableActions(contentlet, user, RenderMode.LISTING);
+			workflowActions.addAll(editingActions);
+			workflowActions.addAll(listingActions);
+		} catch (DotDataException | DotSecurityException e) {
+			Logger.error(this, e.getMessage(), e);
+		}
+
+		return UtilMethods.isSet(workflowActions) &&
+				workflowActions.stream().anyMatch(workflowAction -> actionId.equals(workflowAction.getId()));
+	}
 
 	private List<WorkflowAction> doFilterActions(final ImmutableList.Builder<WorkflowAction> actions,
 								 final boolean isNew,
@@ -1444,6 +1754,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 			}
 		}
 
+		if (null != workflowAction) {
+			this.fillActionInfo(workflowAction, this.workFlowFactory.findActionClasses(workflowAction));
+		}
+
 		return workflowAction;
 	}
 
@@ -1464,6 +1778,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 		}
+
+		if (null != workflowAction) {
+			this.fillActionInfo(workflowAction, this.workFlowFactory.findActionClasses(workflowAction));
+		}
+
 		return workflowAction;
 	}
 
@@ -1474,7 +1793,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						   final User user) throws DotDataException {
 
 		DotPreconditions.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
-				()-> "Workflow-does-not-exists-scheme",
+				()-> {
+					Logger.error(this, "The Workflow Scheme does not exist, id: " + action.getSchemeId());
+					return "Workflow-does-not-exists-scheme";
+				},
 				DoesNotExistException.class);
 
 		try {
@@ -1581,7 +1903,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				throw new DotWorkflowException("Workflow-action-already-exists", e);
 			} else {
 
-				Logger.error(WorkflowAPIImpl.class, e.getMessage());
+				Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 				Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 				throw new DotWorkflowException("Workflow-could-not-save-action", e);
 			}
@@ -1603,11 +1925,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		DotPreconditions.isTrue(UtilMethods.isSet(action.getSchemeId()) && this.existsScheme(action.getSchemeId()),
 				()-> "Workflow-does-not-exists-scheme", DoesNotExistException.class);
 
-		if (!this.isValidShowOn(action.getShowOn())) {
-
-			Logger.error(this, "No show On data on workflow action record, bad data?");
-			action.setShowOn(WorkflowAPI.DEFAULT_SHOW_ON);
-		}
 
 		action.setSchemeId(this.getLongIdForScheme(action.getSchemeId()));
 		if (UtilMethods.isSet(action.getId())) {
@@ -1675,6 +1992,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}
 
 		Logger.debug(this,
+				() -> "Removing the System Action Mappings, for action: " + action.getId() + ", name:"
+						+ action.getName());
+		this.workFlowFactory.deleteSystemActionsByWorkflowAction(action);
+
+		Logger.debug(this,
 				() -> "Removing the WorkflowAction and Step Dependencies, for action: " + action
 						.getId() + ", name:" + action.getName());
 		this.workFlowFactory.deleteAction(action);
@@ -1704,6 +2026,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public List<WorkflowActionClass> findActionClasses(final WorkflowAction action) throws DotDataException {
 
 		return  workFlowFactory.findActionClasses(action);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowActionClass> findActionClassesByClassName(final String actionClassName) throws DotDataException {
+
+		return  workFlowFactory.findActionClassesByClassName(actionClassName);
 	}
 
 	private void refreshWorkFlowActionletMap() {
@@ -1743,7 +2072,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					}
 
 					Collections.sort(actionletList, new ActionletComparator());
-					actionletMap = new LinkedHashMap<String, WorkFlowActionlet>();
+					actionletMap = new LinkedHashMap<>();
 					for(WorkFlowActionlet actionlet : actionletList){
 
 						try {
@@ -2015,11 +2344,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 				if (UtilMethods.isSet(processor.getContentlet()) && processor.getContentlet().needsReindex()) {
 
-				    final Contentlet content = processor.getContentlet();
-				    content.setIndexPolicy(IndexPolicy.WAIT_FOR);
-				    final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
+					Logger.info(this, "Needs reindex, adding the contentlet to the index at the end of the workflow execution");
+				  final Contentlet content = processor.getContentlet();
+				  final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
 					final boolean includeDependencies = null != threadContext && threadContext.isIncludeDependencies();
 					this.contentletIndexAPI.addContentToIndex(content, includeDependencies);
+					Logger.info(this, "Added contentlet to the index at the end of the workflow execution, dependencies: " + includeDependencies);
 				}
 			}
 		} catch(Exception e) {
@@ -2645,6 +2975,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 			contentlet.setTags();
 			contentlet.getMap().put(Contentlet.WORKFLOW_BULK_KEY, true);
+			contentlet.setIndexPolicy(IndexPolicy.DEFER);
 			try{
 				final Contentlet afterFireContentlet = fireContentWorkflow(contentlet, dependencies, context);
 				if(afterFireContentlet != null){
@@ -2706,6 +3037,10 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		if (null != processor.getContentlet()) {
 			processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.FALSE);
+		} else {
+
+			Logger.info(this, "The Contentlet: " + (null != contentlet? contentlet.getIdentifier():"Unknown") +
+					"the action: " + (null != contentlet? contentlet.getActionId():"Unknown") + " was not executed");
 		}
 
 		return processor.getContentlet();
@@ -3298,5 +3633,411 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 .sorted(Comparator.comparing(WorkflowTimelineItem::createdDate))
                 .collect(CollectionsUtils.toImmutableList());
 	}
+
+
+	/**
+	 * Maps a {@link SystemAction} to a {@link WorkflowAction} for a {@link ContentType}
+	 * @param systemAction   {@link SystemAction}   System Action to mapping
+	 * @param workflowAction {@link WorkflowAction} Workflow Action to map to the SystemAction
+	 * @param contentType    {@link ContentType}    The Map is associated to a content type
+	 * @throws DotDataException
+	 */
+	@Override
+	@WrapInTransaction
+	public SystemActionWorkflowActionMapping mapSystemActionToWorkflowActionForContentType (final SystemAction systemAction, final WorkflowAction workflowAction,
+														final ContentType contentType) throws DotDataException {
+
+		DotPreconditions.checkArgument(null != systemAction, "System Action can not be null");
+		DotPreconditions.checkArgument(null != contentType, "Content Type can not be null");
+		DotPreconditions.checkArgument(null != workflowAction, "Workflow Action can not be null");
+		DotPreconditions.checkArgument(!Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable()), "The Content Type can not be a Host");
+
+		final  List<WorkflowScheme> contentTypeSchemes = this.findSchemesForContentType(contentType);
+
+		if (UtilMethods.isSet(contentTypeSchemes)) {
+
+			if (contentTypeSchemes.stream().noneMatch(scheme -> scheme.getId().equals(workflowAction.getSchemeId()))) {
+				throw new IllegalArgumentException(
+						"The workflow action: " + workflowAction.getId() +
+								" does not belong to any of the content type schemes");
+			}
+		} else {
+
+			throw new IllegalArgumentException("The content type action: " + contentType.variable() +
+					" does not have any scheme associated");
+		}
+
+		Logger.info(this, "Mapping the systemAction: " + systemAction +
+				", workflowAction: " + workflowAction.getName() + " and contentType: " + contentType.variable());
+
+		final SystemActionWorkflowActionMapping mapping =
+				new SystemActionWorkflowActionMapping(UUIDGenerator.generateUuid(),
+						systemAction, workflowAction, contentType);
+		return this.workFlowFactory.saveSystemActionWorkflowActionMapping(mapping);
+	}
+
+
+	/**
+	 * Maps a {@link SystemAction} to a {@link WorkflowAction} for a {@link WorkflowScheme}
+	 * @param systemAction   {@link SystemAction}   System Action to mapping
+	 * @param workflowAction {@link WorkflowAction} Workflow Action to map to the SystemAction
+	 * @param workflowScheme {@link WorkflowScheme} The Map is associated to a scheme
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	@Override
+	@WrapInTransaction
+	public SystemActionWorkflowActionMapping mapSystemActionToWorkflowActionForWorkflowScheme (final SystemAction systemAction, final WorkflowAction workflowAction,
+														   final WorkflowScheme workflowScheme) throws DotDataException {
+
+		DotPreconditions.checkArgument(null != systemAction, "System Action can not be null");
+		DotPreconditions.checkArgument(null != workflowScheme, "Workflow Scheme can not be null");
+		DotPreconditions.checkArgument(null != workflowAction, "Workflow Action can not be null");
+		DotPreconditions.checkArgument(workflowAction.getSchemeId().equals(workflowScheme.getId()), "The Workflow Action has to belong the workflow Scheme");
+		final SystemActionWorkflowActionMapping mapping =
+				new SystemActionWorkflowActionMapping(UUIDGenerator.generateUuid(),
+						systemAction, workflowAction, workflowScheme);
+
+		return this.workFlowFactory.saveSystemActionWorkflowActionMapping(mapping);
+	}
+
+	/**
+	 * Finds the {@link SystemActionWorkflowActionMapping}'s associated to a {@link ContentType}
+	 * @param contentType {@link ContentType} to be processed
+	 * @param user {@link User} t user used to check permissions
+	 * @return List of SystemActionWorkflowActionMapping
+	 */
+	@Override
+	@CloseDBIfOpened
+	public List<SystemActionWorkflowActionMapping> findSystemActionsByContentType (final ContentType contentType, final User user) throws DotSecurityException, DotDataException {
+
+		final List<Map<String, Object>> mappings = this.workFlowFactory.findSystemActionsByContentType (contentType);
+		final ImmutableList.Builder<SystemActionWorkflowActionMapping> actionsBuilder =
+				new ImmutableList.Builder<>();
+
+		for (final Map<String, Object> rowMap : mappings) {
+
+            actionsBuilder.add(this.toSystemActionWorkflowActionMapping(rowMap, contentType, user));
+		}
+
+		return actionsBuilder.build();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public Map<String, List<WorkflowScheme>> findSchemesMapForContentType(final List<ContentType> contentTypes)  throws DotDataException {
+
+		final ImmutableMap.Builder<String, List<WorkflowScheme>> schemesMapBuilder =
+				new ImmutableMap.Builder<>();
+
+		for (final ContentType contentType : contentTypes) {
+
+			schemesMapBuilder.put(contentType.variable(), this.findSchemesForContentType(contentType));
+		}
+
+		return schemesMapBuilder.build();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public Map<String, List<SystemActionWorkflowActionMapping>> findSystemActionsMapByContentType(final List<ContentType> contentTypes,
+																								  final User user)
+			throws DotDataException, DotSecurityException {
+
+		final Map<String, List<Map<String, Object>>> mappingsMap =
+				this.workFlowFactory.findSystemActionsMapByContentType (contentTypes);
+		final ImmutableMap.Builder<String, List<SystemActionWorkflowActionMapping>> actionsMapBuilder =
+				new ImmutableMap.Builder<>();
+		final Map<String, ContentType> contentTypeMap = contentTypes.stream()
+				.collect(Collectors.toMap(contentType->contentType.variable(), contentType -> contentType));
+
+		for (final Map.Entry<String, List<Map<String, Object>>> entry : mappingsMap.entrySet()) {
+
+			final ImmutableList.Builder<SystemActionWorkflowActionMapping> mappingListBuilder =
+					new ImmutableList.Builder<>();
+
+			for (final Map<String, Object> rowMap : entry.getValue()) {
+
+				mappingListBuilder.add(this.toSystemActionWorkflowActionMapping(
+						rowMap, contentTypeMap.get(entry.getKey()), user));
+			}
+
+			actionsMapBuilder.put(entry.getKey(), mappingListBuilder.build());
+		}
+
+		return actionsMapBuilder.build();
+	}
+
+	/**
+	 * Finds the {@link SystemActionWorkflowActionMapping}'s associated to a {@link WorkflowScheme}
+	 * @param workflowScheme {@link WorkflowScheme}
+	 * @param user {@link User}  user used to check permissions
+	 * @return List of SystemActionWorkflowActionMapping
+	 */
+	@Override
+	@CloseDBIfOpened
+	public List<SystemActionWorkflowActionMapping> findSystemActionsByScheme(final WorkflowScheme workflowScheme, final User user) throws DotDataException, DotSecurityException {
+
+        final List<Map<String, Object>> mappings = this.workFlowFactory.findSystemActionsByScheme (workflowScheme);
+        final ImmutableList.Builder<SystemActionWorkflowActionMapping> actionsBuilder =
+                new ImmutableList.Builder<>();
+
+        for (final Map<String, Object> rowMap : mappings) {
+
+            actionsBuilder.add(this.toSystemActionWorkflowActionMapping(rowMap, workflowScheme, user));
+        }
+
+        return actionsBuilder.build();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public Optional<SystemActionWorkflowActionMapping> findSystemActionByContentType(final WorkflowAPI.SystemAction systemAction,
+																			  final ContentType contentType, final User user)
+			throws DotDataException, DotSecurityException {
+
+		final Map<String, Object> mappingRow = this.workFlowFactory.findSystemActionByContentType(systemAction, contentType);
+		return Optional.ofNullable(this.toSystemActionWorkflowActionMapping(mappingRow, contentType, user));
+	}
+
+	/**
+	 * Tries to find a {@link WorkflowAction} based on a {@link Contentlet} and {@link SystemAction}, first will find a workflow action
+	 * associated to the {@link Contentlet} {@link ContentType}, if there is not any match, will tries to find by {@link WorkflowScheme}
+	 * if not any, Optional returned will be empty.
+	 * @param contentlet    {@link Contentlet}   contentlet will helps to find by content type or associated schemes
+	 * @param systemAction  {@link SystemAction} action to find possible mapped actions
+	 * @param user {@link User} user used to check permissions
+	 * @return Optional WorkflowAction, present if exists action associated to the search criterias
+	 */
+	@Override
+	@CloseDBIfOpened
+	public Optional<WorkflowAction> findActionMappedBySystemActionContentlet (final Contentlet contentlet,
+                                                                              final SystemAction systemAction,
+                                                                              final User user) throws DotDataException, DotSecurityException {
+
+	    final ContentType contentType        = contentlet.getContentType();
+        final Map<String, Object> mappingRow =
+                this.workFlowFactory.findSystemActionByContentType(systemAction, contentType);
+        if (UtilMethods.isSet(mappingRow)) {
+
+        	final String workflowActionId       = (String)mappingRow.get("workflow_action");
+			final Optional<WorkflowAction> workflowAction = this.findActionAvailable(contentlet, workflowActionId, user);
+			if (workflowAction.isPresent()) {
+				return workflowAction;
+			} else {
+
+				Logger.warn(this, "The Workflow Action Id: " + workflowActionId +
+						", used as default for: " + contentType.variable() + " does not exists, or is not available");
+			}
+        }
+
+		return this.findActionAvailableOnSchemes(contentlet, contentType, systemAction, user);
+	}
+
+	private Optional<WorkflowAction> findActionAvailableOnSchemes (final Contentlet contentlet, final ContentType contentType,
+																   final SystemAction systemAction,
+																   final User user) throws DotSecurityException, DotDataException {
+
+		final List<WorkflowScheme> schemes          = this.findSchemesForContentType(contentType);
+
+		if (UtilMethods.isSet(schemes)) {
+			final List<Map<String, Object>> unsortedMappingRows =
+					this.workFlowFactory.findSystemActionsBySchemes(systemAction, schemes);
+
+			if (UtilMethods.isSet(unsortedMappingRows)) {
+
+				final List<Map<String, Object>> mappingRows = new ArrayList<>(unsortedMappingRows);
+				mappingRows.sort(this::compareScheme);
+				return this.findActionAvailable(contentlet,
+						(String) mappingRows.get(0).get("workflow_action"), user);
+			}
+		}
+
+		return Optional.empty();
+	}
+
+	/*
+	 * This comparator will give precedence to the System Workflow to the rest of them
+	 */
+	private int compareScheme (final Map<String, Object> map1, final Map<String, Object> map2) {
+
+		final String schemeId1 = (String) map1.get("scheme_or_content_type");
+		final String schemeId2 = (String) map2.get("scheme_or_content_type");
+		final boolean isSystemWorkflow1 = SystemWorkflowConstants.SYSTEM_WORKFLOW_ID.equals(schemeId1);
+		final boolean isSystemWorkflow2 = SystemWorkflowConstants.SYSTEM_WORKFLOW_ID.equals(schemeId2);
+
+		return  isSystemWorkflow1? -1:
+				isSystemWorkflow2? 1: 0;
+	}
+
+	private Optional<WorkflowAction> findActionAvailable (final Contentlet contentlet,
+														  final String workflowActionId, final User user) throws DotSecurityException, DotDataException {
+
+		final WorkflowAction workflowAction = this.findAction(workflowActionId, user);
+		return null != workflowAction && this.isActionAvailable(contentlet, user, workflowActionId)?
+					Optional.of(workflowAction):Optional.empty();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public Optional<SystemActionWorkflowActionMapping> findSystemActionByIdentifier(final String identifier, final User user)
+			throws DotDataException, DotSecurityException {
+
+		final Map<String, Object> mapping =
+				this.workFlowFactory.findSystemActionByIdentifier (identifier);
+
+		return UtilMethods.isSet(mapping)?
+				Optional.ofNullable(toSystemActionWorkflowActionMapping(
+						mapping, this.toOwner((String)mapping.get("scheme_or_content_type")), user))
+				:Optional.empty();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public List<SystemActionWorkflowActionMapping> findSystemActionsByWorkflowAction(final WorkflowAction workflowAction, final User user)
+			throws DotDataException, DotSecurityException {
+
+		final ImmutableList.Builder<SystemActionWorkflowActionMapping> mappingBuilder =
+				new ImmutableList.Builder<>();
+		final List<Map<String, Object>> mappings =
+				this.workFlowFactory.findSystemActionsByWorkflowAction (workflowAction);
+
+		if(UtilMethods.isSet(mappings)) {
+
+			for (final Map<String, Object> mappingRow : mappings) {
+
+				final SystemActionWorkflowActionMapping mapping = toSystemActionWorkflowActionMapping(
+						mappingRow, this.toOwner((String) mappingRow.get("scheme_or_content_type")), user);
+
+				if (null != mapping) {
+
+					mappingBuilder.add(mapping);
+				}
+			}
+		}
+
+		return mappingBuilder.build();
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasSaveActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::save);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasPublishActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::publish);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasUnpublishActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::unpublish);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasArchiveActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::archive);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasUnarchiveActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::unarchive);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasDeleteActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::delete);
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public boolean hasDestroyActionlet(final WorkflowAction action) {
+
+		return this.hasActionlet(action, Actionlet::destroy);
+	}
+
+	@Override
+	public WorkflowTask createWorkflowTask(final Contentlet contentlet, final User user,
+									final WorkflowStep workflowStep, final String title, String description) throws DotDataException {
+
+		final WorkflowTask task = new WorkflowTask();
+		final Date now          = new Date();
+		
+		task.setTitle(title);
+		task.setDescription(description);
+		task.setAssignedTo(APILocator.getRoleAPI().getUserRole(user).getId());
+		task.setModDate(now);
+		task.setCreationDate(now);
+		task.setCreatedBy(user.getUserId());
+		task.setStatus(workflowStep.getId());
+		task.setDueDate(null);
+		task.setWebasset(contentlet.getIdentifier());
+		task.setLanguageId(contentlet.getLanguageId());
+
+		return task;
+	}
+
+	private boolean hasActionlet(final WorkflowAction action, final Predicate<Actionlet> successFilter) {
+
+		try {
+
+			final List<WorkflowActionClass> actionClasses = this.workFlowFactory.findActionClasses(action);
+			if (UtilMethods.isSet(actionClasses)) {
+
+				for (final WorkflowActionClass actionClass : actionClasses) {
+
+					final Actionlet actionlet = AnnotationUtils.
+							getBeanAnnotation(this.getActionletClass(actionClass.getClazz()), Actionlet.class);
+					if (null != actionlet && successFilter.test(actionlet)) {
+						return true;
+					}
+				}
+			}
+		} catch (DotDataException e) {
+			return false;
+		}
+
+		return false;
+	}
+
+	@Override
+	@WrapInTransaction
+	public Optional<SystemActionWorkflowActionMapping> deleteSystemAction(final SystemActionWorkflowActionMapping mapping)  throws DotDataException  {
+
+		return this.workFlowFactory.deleteSystemAction(mapping)?Optional.ofNullable(mapping):Optional.empty();
+	}
+
+	private Object toOwner(final String schemeOrContentType) throws DotSecurityException, DotDataException {
+
+		return UUIDUtil.isUUID(schemeOrContentType)?
+				this.findScheme(schemeOrContentType):this.contentTypeAPI.find(schemeOrContentType);
+	}
+
+	private SystemActionWorkflowActionMapping toSystemActionWorkflowActionMapping(final Map<String, Object> rowMap, final Object owner, final User user)
+            throws DotSecurityException, DotDataException {
+
+		if (UtilMethods.isSet(rowMap)) {
+
+			final String identifier = (String) rowMap.get("id");
+			final SystemAction systemAction = SystemAction.fromString((String) rowMap.get("action"));
+			final WorkflowAction workflowAction = this.findAction((String) rowMap.get("workflow_action"), user);
+
+			return new SystemActionWorkflowActionMapping(identifier, systemAction, workflowAction, owner);
+		}
+
+		return null;
+    }
 
 }

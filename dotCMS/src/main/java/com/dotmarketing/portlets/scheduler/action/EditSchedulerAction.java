@@ -3,6 +3,8 @@ package com.dotmarketing.portlets.scheduler.action;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portal.struts.DotPortletAction;
@@ -24,8 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
+
 /**
  * @author Maria
  */

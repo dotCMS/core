@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.dotcms.UnitTestBase;
+import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import org.junit.Assert;
@@ -17,6 +18,34 @@ import static org.junit.Assert.*;
  * @author jsanca
  */
 public class CollectionsUtilsTest extends UnitTestBase {
+
+    @Test
+    public void join_null() {
+
+        final String string = CollectionsUtils.join(null, null, null);
+        Assert.assertEquals(StringPool.BLANK, string);
+    }
+
+    @Test
+    public void join_empty() {
+
+        final String string = CollectionsUtils.join(StringPool.BLANK, StringPool.BLANK, Collections.emptyList());
+        Assert.assertEquals(StringPool.BLANK, string);
+    }
+
+    @Test
+    public void join_one_element() {
+
+        final String string = CollectionsUtils.join(StringPool.COMMA, "one", Collections.emptyList());
+        Assert.assertEquals("one", string);
+    }
+
+    @Test
+    public void join_elements() {
+
+        final String string = CollectionsUtils.join(StringPool.COMMA, "one", Arrays.asList("two","three","four"));
+        Assert.assertEquals("one,two,three,four", string);
+    }
 
     @Test
     public void classified_by_id_computeSubValueIfAbsentTest() {

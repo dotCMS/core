@@ -1,0 +1,165 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>dotCMS Form Email</title>
+</head>
+<body bgcolor="#ffffff">
+
+
+   <table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" bgcolor="#f5f8fa" style="font-family:Helvetica Neue,Helvetica,Arial,sans-serif;font-size:16px;color:#425b76;line-height:1.5;width:100%;min-width:100%;background-color:#f5f8fa">
+       <tbody>
+           <tr>
+               <td align="center" valign="top">
+               <table border="0" cellpadding="20" cellspacing="0" width="660" style="width:660px">
+                   <tbody>
+                       <tr>
+                           <td align="center" valign="top" width="100%" style="width:100%;min-width:100%">
+                           <table cellpadding="12" border="0" cellspacing="0" width="100%" bgcolor="#ff7a59" style="width:100%;min-width:100%">
+                               <tbody>
+                                   <tr>
+                                       <td  valign="middle" width="100%" style="background:#eeeeee;width:100%;padding:20px;min-width:100%;color:#ffffff">
+                                          <img style="font-size: 18px; color: #ffffff; font-style: italic; font-weight: bold; height: 24; width: 128px;" alt="dotCMS" src="https://dotcms.com/application/themes/dotcms/img/dotcms.png" width="128" height="24" />
+                                       </td>
+                                   </tr>
+                               </tbody>
+                           </table>
+                           <table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" bgcolor="#ffffff" style="width:100%;min-width:100%">
+                               <tbody>
+                                   <tr>
+                                       <td align="left" valign="top" style="font-size:16px;padding:0 50px">
+                                       <table cellpadding="0" border="0" cellspacing="0" width="100%">
+                                           <tbody>
+                                               <tr>
+                                                   <td align="center" valign="middle" style="padding:0">
+                                                   <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size:0;height:50px;width:100%;min-width:100%;line-height:0">
+                                                       <tbody>
+                                                           <tr>
+                                                               <td height="50"><span style="color:transparent;background:none;text-overflow:ellipsis;opacity:0;width:100%;min-width:100%;height:1;padding:0;font-size:0"> &nbsp;</span></td>
+                                                           </tr>
+                                                       </tbody>
+                                                   </table>
+                                                   <h1 style="font-size:24px;font-weight:600;margin:0;text-align:center">
+                                                       $!{contentType.name()}
+                                                   </h1>
+                                                   
+                                                   <h3 style="font-size:14px;;margin:0;text-align:center">
+                                                       Workflow: &quot;$!{actionName}&quot;<br>$!{stepName} ⟶ $!{nextStepName}
+                                                   </h3>
+                                                   
+                                                   
+                                                   #if($!{linkToContent})
+                                                      <br>&nbsp;
+                                                      <table border="0" cellspacing="0" cellpadding="0" width="170px">
+                                                        <tr>
+                                                          <td bgcolor="#2a2941" style="padding: 8px; -webkit-border-radius:3px; border-radius:3px" align="center">
+                                                             <a href="$linkToContent" target="dotCMSWindow" style="font-size: 14px; font-family: Helvetica, Arial, sans-serif; font-weight: normal; color: #ffffff; text-decoration: none;">View in dotCMS</a>
+                                                             </td>
+                                                        </tr>
+                                                      </table>
+                                                   #end
+                                                   
+                                                   
+                                                   
+                                                   
+                                                   <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size:0;height:30px;width:100%;min-width:100%;line-height:0">
+                                                       <tbody>
+                                                           <tr>
+                                                               <td height="30"><span style="color:transparent;background:none;text-overflow:ellipsis;opacity:0;width:100%;min-width:100%;height:1;padding:0;font-size:0"> &nbsp;</span></td>
+                                                           </tr>
+                                                       </tbody>
+                                                   </table>
+                                                   <hr style="height:1px;color:#eaf0f6;background-color:#eaf0f6;border:none;margin:0px;padding:0px">
+                                                   <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size:0;height:30px;width:100%;min-width:100%;line-height:0">
+                                                       <tbody>
+                                                           <tr>
+                                                               <td height="30"><span style="color:transparent;background:none;text-overflow:ellipsis;opacity:0;width:100%;min-width:100%;height:1;padding:0;font-size:0"> &nbsp;</span></td>
+                                                           </tr>
+                                                       </tbody>
+                                                   </table>
+                                                   </td>
+                                               </tr>
+                                           </tbody>
+                                       </table>
+                                       
+                                       
+                     
+                                       #foreach($entry in $formMap.entrySet())
+                 
+                                        
+                                          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size:0;height:30px;width:100%;min-width:100%;line-height:0">
+                                              <tbody>
+                                                  <tr>
+                                                      <td height="30"><span style="color:transparent;background:none;text-overflow:ellipsis;opacity:0;width:100%;min-width:100%;height:1;padding:0;font-size:0"> &nbsp;</span></td>
+                                                  </tr>
+                                              </tbody>
+                                          </table>
+                                          <p style="margin:0">
+                                              <strong>$entry.key:</strong>
+                                          </p>
+                                          
+                                          <table cellpadding="0" border="0" cellspacing="0" width="100%">
+                                              <tbody>
+                                                  <tr>
+                                                      <td align="left" valign="middle" style="padding:0">$entry.value</td>
+                                                  </tr>
+                                              </tbody>
+                                          </table>
+                      
+                                       #end
+   
+                                          <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size:0;height:60px;width:100%;min-width:100%;line-height:0">
+                                              <tbody>
+                                                  <tr>
+                                                      <td height="60"><span style="color:transparent;background:none;text-overflow:ellipsis;opacity:0;width:100%;min-width:100%;height:1;padding:0;font-size:0"> &nbsp;</span></td>
+                                                  </tr>
+                                              </tbody>
+                                          </table>
+   
+                                       </td>
+                                   </tr>
+                               </tbody>
+                           </table>
+                           
+                           <table border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" bgcolor="#f5f8fa" style="width:100%;min-width:100%">
+                               <tbody>
+                                   <tr>
+                                       <td align="center" valign="top">
+                                       <table cellpadding="0" border="0" cellspacing="0" width="100%">
+                                           <tbody>
+                                               <tr>
+                                                   <td align="center" valign="middle" style="padding:20px 0 65px"><a href="//dotcms.com" target="_blank">dotcms.com</a><br>
+   
+                                                   <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size:0;height:5px;width:100%;min-width:100%;line-height:0">
+                                                       <tbody>
+                                                           <tr>
+                                                               <td height="5"><span style="color:transparent;background:none;text-overflow:ellipsis;opacity:0;width:100%;min-width:100%;height:1;padding:0;font-size:0"> &nbsp;</span></td>
+                                                           </tr>
+                                                       </tbody>
+                                                   </table>
+                                                   dotCMS, LLC.<br>
+                                                   3059 Grand Avenue, Suite 300<br>
+                                                   Miami, FL, 33133<br>&nbsp;<br>
+                                                   from: $!{ipAddress}
+                                                   
+                                                   </td>
+                                               </tr>
+                                           </tbody>
+                                       </table>
+                                       </td>
+                                   </tr>
+                               </tbody>
+                           </table>
+                           </td>
+                       </tr>
+                   </tbody>
+               </table>
+               </td>
+           </tr>
+       </tbody>
+   </table>
+
+</body>
+</html>
+
+
+

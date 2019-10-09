@@ -17,7 +17,8 @@
 
 package org.apache.velocity.tools.struts;
 
-import org.apache.struts.action.ActionErrors;
+
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 
 /**
  * <p>View tool to work with the Struts error messages.</p>
@@ -124,7 +125,7 @@ public class ErrorsTool extends ActionMessagesTool
      * Overrides {@link ActionMessagesTool#getGlobalName()}
      * to return the "global" key for action errors.
      *
-     * @see org.apache.struts.action.ActionErrors.GLOBAL_ERROR
+     * @see {@link ActionErrors#GLOBAL_ERROR}
      * @deprecated This will be removed after VelocityTools 1.1.
      */
     public String getGlobalName()

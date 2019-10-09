@@ -21,6 +21,7 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -40,7 +41,6 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import java.io.IOException;
 import java.util.Map;
 import org.apache.felix.framework.OSGIUtil;
-import org.apache.struts.Globals;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -73,7 +73,6 @@ public class PublisherTest extends IntegrationTestBase {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
-        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
 
         when(Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY))
                 .thenReturn(new MultiMessageResources( MultiMessageResourcesFactory.createFactory(),""));
@@ -150,8 +149,8 @@ public class PublisherTest extends IntegrationTestBase {
             assertNotNull(bundleData.get(PublisherTestUtil.FILE));
 
             // Test content to be replaced using unique field match
-            APILocator.getContentletAPI().archive(contentlet, adminUser, false);
-            APILocator.getContentletAPI().delete(contentlet, adminUser, false);
+            APILocator.getContentletAPI().destroy(contentlet, adminUser, false );
+
             final Contentlet contentToReplace = new ContentletDataGen(testContentType.id())
                     .setProperty(TEST_TITLE, uniqueValue)
                     .setProperty(TEST_DESCRIPTION, "Other value").nextPersisted();
@@ -172,9 +171,7 @@ public class PublisherTest extends IntegrationTestBase {
         } finally {
 
             if (UtilMethods.isSet(resultContentlet)) {
-                APILocator.getContentletAPI().archive(resultContentlet, systemUser, false);
-                APILocator.getContentletAPI().delete(resultContentlet, systemUser, false);
-
+                APILocator.getContentletAPI().destroy(resultContentlet, systemUser, false );
             }
 
             if (UtilMethods.isSet(ppBean)) {

@@ -39,6 +39,7 @@ public class KeyValueCacheImpl implements KeyValueCache {
     private static final String BY_LANGUAGE_GROUP = "KeyValueCacheByLanguage";
     private static final String BY_CONTENT_TYPE_GROUP = "KeyValueCacheByContentType";
     private static final String BY_LANGUAGE_CONTENT_TYPE_GROUP = "KeyValueCacheByLanguageContentType";
+    private static final String BY_LANGUAGE_CONTENT_TYPE_LIVE_GROUP = "KeyValueCacheByLanguageContentTypeLive";
     private static final String[] GROUP_NAMES = {PRIMARY_GROUP, BY_LANGUAGE_GROUP, BY_LANGUAGE_CONTENT_TYPE_GROUP};
     private final static KeyValue KEY_VALUE_404=new KeyValue404();
     /**
@@ -72,7 +73,17 @@ public class KeyValueCacheImpl implements KeyValueCache {
                 imap(languageId, imap(contentTypeId, keyValue));
         this.cache.put(keyValue.getKey(), data, BY_LANGUAGE_CONTENT_TYPE_GROUP);
     }
-    
+
+    @Override
+    public void add(final long languageId,
+                    final String contentTypeId,
+                    final boolean live,
+                    final KeyValue keyValue) {
+        final Map<Long, Map<String, Map<String, KeyValue>>> data =
+                imap(languageId, imap(contentTypeId, imap(live, keyValue)));
+        this.cache.put(keyValue.getKey(), data, BY_LANGUAGE_CONTENT_TYPE_LIVE_GROUP);
+    }
+
     @Override
     public void add404ByLanguageAndContentType(final long languageId, final String contentTypeId,  final String key) {
         final Map<Long, Map<String, KeyValue>> data =
@@ -139,11 +150,36 @@ public class KeyValueCacheImpl implements KeyValueCache {
     }
 
     @Override
+    public KeyValue get(
+            final String key,
+            final long languageId,
+            final String contentTypeId,
+            final boolean  live) {
+
+        KeyValue keyValue = null;
+
+       try {
+
+            @SuppressWarnings("unchecked")
+            final Map<Long, Map<String, Map<String, KeyValue>>> cachedValues = Map.class.cast(this.cache.get(key, BY_LANGUAGE_CONTENT_TYPE_LIVE_GROUP));
+            keyValue = (null != cachedValues && cachedValues.containsKey(languageId))?
+                    cachedValues.get(languageId).get(contentTypeId) != null
+                            ? cachedValues.get(languageId).get(contentTypeId).get(live):null
+                    :null;
+        } catch (DotCacheException e) {
+            Logger.debug(this, String.format("Cache entry with key %s was not found.", key), e);
+        }
+
+        return keyValue;
+    }
+
+    @Override
     public void clearCache() {
         this.cache.flushGroup(PRIMARY_GROUP);
         this.cache.flushGroup(BY_LANGUAGE_GROUP);
         this.cache.flushGroup(BY_CONTENT_TYPE_GROUP);
         this.cache.flushGroup(BY_LANGUAGE_CONTENT_TYPE_GROUP);
+        this.cache.flushGroup(BY_LANGUAGE_CONTENT_TYPE_LIVE_GROUP);
     }
 
     @Override
@@ -163,6 +199,7 @@ public class KeyValueCacheImpl implements KeyValueCache {
             this.cache.remove(keyValueId, BY_LANGUAGE_GROUP);
             this.cache.remove(keyValueId, BY_CONTENT_TYPE_GROUP);
             this.cache.remove(keyValueId, BY_LANGUAGE_CONTENT_TYPE_GROUP);
+            this.cache.remove(keyValueId, BY_LANGUAGE_CONTENT_TYPE_LIVE_GROUP);
         } catch (Exception e) {
             Logger.debug(this, String.format("Cache entry with ID %s could not be removed.", keyValueId), e);
         }

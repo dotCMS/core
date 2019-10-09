@@ -5,6 +5,10 @@ import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -15,10 +19,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
 import javax.servlet.http.HttpSession;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
 
 public class ViewCategoryAction extends DotPortletAction {
 
@@ -34,7 +34,7 @@ public class ViewCategoryAction extends DotPortletAction {
 	}
 
 	public ActionForward render(ActionMapping mapping, ActionForm form, PortletConfig config, RenderRequest req,
-            RenderResponse res) throws Exception {
+								RenderResponse res) throws Exception {
         
 		_viewCategory(form,req,res);
 

@@ -411,7 +411,8 @@ public class ESMappingAPITest {
 
             esMappingAPI.loadCategories(content, esMap);
 
-            final List<String> expectedCatList = list("categoryA", "categoryB");
+            //Categories must be indexed in lower case
+            final List<String> expectedCatList = list("categorya", "categoryb");
 
             assertEquals("All cats present as List of varnames in ES mapping under variable of cat field",
                     expectedCatList, esMap.get(contentType.variable() + "." + catField.variable()));

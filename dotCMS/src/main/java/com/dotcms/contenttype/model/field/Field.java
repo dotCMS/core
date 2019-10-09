@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.component.FieldFormRenderer;
 import com.dotcms.contenttype.model.component.FieldValueRenderer;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
@@ -60,16 +61,12 @@ import org.immutables.value.Value.Derived;
 })
 public abstract class Field implements FieldIf, Serializable {
 
-  public static int SORT_ORDER_DEFAULT_VALUE = -1;
+  public final static int SORT_ORDER_DEFAULT_VALUE = -1;
 
   @Value.Check
   public void check() {
 	Preconditions.checkArgument(StringUtils.isNotEmpty(name()), "Name cannot be empty for " + this.getClass());
 
-    /*if (iDate().after(legacyFieldDate)) {
-      Preconditions.checkArgument(acceptedDataTypes().contains(dataType()),
-          this.getClass().getSimpleName() + " must have DataType:" + acceptedDataTypes());
-    }*/
   }
 
 
@@ -177,12 +174,12 @@ public abstract class Field implements FieldIf, Serializable {
     return false;
   }
 
+  @CloseDBIfOpened
   @JsonIgnore
   @Value.Lazy
   public List<FieldVariable> fieldVariables() {
     if (innerFieldVariables == null) {
       try {
-        //System.err.println("loading field.variables:" + this.variable() + ":"+ System.identityHashCode(this));
         innerFieldVariables = FactoryLocator.getFieldFactory().loadVariables(this);
       } catch (DotDataException e) {
         throw new DotStateException("unable to load field variables:" + e.getMessage(), e);

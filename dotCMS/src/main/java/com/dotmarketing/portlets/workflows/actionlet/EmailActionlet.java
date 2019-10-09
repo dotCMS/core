@@ -127,7 +127,7 @@ public class EmailActionlet extends WorkFlowActionlet {
                 ctx.put("workflowTaskTitle",  processor.getContentlet().getTitle());
                 ctx.put("modDate",  processor.getContentlet().getModDate());
             }
-            ctx.put("structureName", processor.getContentlet().getStructure().getName());
+            ctx.put("contentType", processor.getContentlet().getContentType());
 
             ctx.put("contentlet", c);
             ctx.put("content", c);

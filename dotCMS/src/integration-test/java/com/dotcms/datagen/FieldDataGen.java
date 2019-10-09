@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.TextField;
@@ -144,6 +145,7 @@ public class FieldDataGen extends AbstractDataGen<Field> {
                 .build();
     }
 
+    @WrapInTransaction
     @Override
     public Field persist(Field field) {
 
@@ -166,6 +168,7 @@ public class FieldDataGen extends AbstractDataGen<Field> {
         return persist(next());
     }
 
+    @WrapInTransaction
     public static void remove(Field field) {
         try {
             APILocator.getContentTypeFieldAPI().delete(field);

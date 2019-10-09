@@ -864,7 +864,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
                     cell.style.width = '50%';
                 }
 
-				cell.setAttribute("onClick","javascript: toggleCheckbox("+i+")");
 				var value = cellData[header["fieldVelocityVarName"]];
 				if (value != null)
 					cell.innerHTML = value;
@@ -872,9 +871,11 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 			for(var l = 0; l < this.availableLanguages.length; l++){
 				if(this.availableLanguages[l]['id'] == cellData['languageId']){
-					var cell = row.insertCell (row.cells.length);
-					var langStr = "<img src=\"/html/images/languages/" + this.availableLanguages[l]['languageCode'] + "_" + this.availableLanguages[l]['countryCode'] + ".gif\" width=\"16px\" height=\"11px\" />&nbsp;"
-					cell.innerHTML = langStr + this.availableLanguages[l]['language']+"&nbsp;("+this.availableLanguages[l]['countryCode']+")";
+                    var cell = row.insertCell (row.cells.length);
+                    var imgName = this.availableLanguages[l]['languageCode'] + (this.availableLanguages[l]['countryCode'] ? "_" + this.availableLanguages[l]['countryCode'] : '');
+                    var flagLabel = this.availableLanguages[l]['language'] + (this.availableLanguages[l]['countryCode'] ? "&nbsp;("+this.availableLanguages[l]['countryCode']+")" : '');
+					var langStr = "<img src=\"/html/images/languages/" + imgName + ".gif\" width=\"16px\" height=\"11px\" />&nbsp;"
+					cell.innerHTML = langStr + flagLabel;
 				}
 			}
 

@@ -581,6 +581,7 @@ var cmsfile=null;
 		
 		//console.log(file);
 		var pattern = "<%=Config.getStringProperty("WYSIWYG_IMAGE_URL_PATTERN", "{path}{name}?language_id={languageId}")%>";
+
 		var assetURI = replaceUrlPattern(pattern, file);
 
 	    // console.log("assetURI:" + assetURI)
@@ -611,11 +612,10 @@ var cmsfile=null;
 	
 	
 	function replaceUrlPattern(pattern, file){
-		
-		
+
 	     return pattern
-          .replace(/{name}/g        ,file.name)
-          .replace(/{fileName}/g        ,file.name)
+          .replace(/{name}/g        ,file.fileName)
+          .replace(/{fileName}/g        ,file.fileName)
           .replace(/{path}/g        ,file.path)
           .replace(/{extension}/g   ,file.extension)
           .replace(/{languageId}/g   ,file.languageId)

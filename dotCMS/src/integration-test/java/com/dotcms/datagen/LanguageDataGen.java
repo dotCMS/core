@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
@@ -11,7 +12,7 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
 
     private final long currentTime = System.currentTimeMillis();
 
-    private String languageCode = "testLanguageCode" + currentTime;
+    private String languageCode = org.apache.commons.lang.RandomStringUtils.randomAlphanumeric(5);
     private String languageName = "testLanguage" + currentTime;
     private String countryCode = "testCountryCode" + currentTime;
     private String country = "testCountry" + currentTime;
@@ -51,6 +52,7 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
         return language;
     }
 
+    @WrapInTransaction
     @Override
     public Language persist(final Language language) {
         try {
@@ -75,6 +77,7 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
         remove(language, true);
     }
 
+    @WrapInTransaction
     public static void remove(final Language language, final Boolean failSilently) {
 
         if (null != language) {

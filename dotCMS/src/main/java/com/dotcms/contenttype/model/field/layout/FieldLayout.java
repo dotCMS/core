@@ -4,8 +4,10 @@ import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,23 +43,29 @@ import java.util.stream.Collectors;
  * @see FieldLayoutColumn
  * @see FieldLayoutRow
  */
+@JsonSerialize(using = FieldLayoutSerializer.class)
 public class FieldLayout {
     private final ContentType contentType;
     private final List<Field> fields;
     private NotStrictFieldLayoutRowSyntaxValidator notStrictFieldLayoutRowSyntaxValidator;
     private StrictFieldLayoutRowSyntaxValidator strictFieldLayoutRowSyntaxValidator;
+    private ContentTypeInternationalization contentTypeInternationalization;
 
     /**
      *
      * @param fields set of fields to build the layout
      */
-    public FieldLayout(final ContentType contentType, final Collection<Field> fields) {
+    public FieldLayout(
+            final ContentType contentType,
+            final Collection<Field> fields) {
+
         this.fields = new ArrayList<>(fields);
         this.fields.sort(Comparator.comparingInt(Field::sortOrder));
         this.contentType = contentType;
     }
 
     public FieldLayout(final ContentType contentType) {
+
         this(contentType, contentType.fields());
     }
 
@@ -242,5 +250,13 @@ public class FieldLayout {
      */
     public FieldLayout getLayoutFixed() {
         return new FieldLayout(contentType, this.getFields());
+    }
+
+    public ContentTypeInternationalization getContentTypeInternationalization() {
+        return contentTypeInternationalization;
+    }
+
+    public void setContentTypeInternationalization(final ContentTypeInternationalization contentTypeInternationalization) {
+        this.contentTypeInternationalization = contentTypeInternationalization;
     }
 }

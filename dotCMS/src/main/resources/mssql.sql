@@ -1314,6 +1314,31 @@ create table workflow_task (
    language_id NUMERIC(19,0) null,
    primary key (id)
 );
+
+create table workflow_action_mappings (
+   id NVARCHAR(36) primary key,
+   action NVARCHAR(36) not null,
+   workflow_action NVARCHAR(255) not null,
+   scheme_or_content_type  NVARCHAR(255) not null
+);
+
+CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);
+
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('3d6be719-6b61-4ef8-a594-a9764e461597','NEW'      ,'ceca71a0-deee-4999-bd47-b01baa1bcfc8','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('63865890-c863-43a1-ab61-4b495dba5eb5','EDIT'     ,'ceca71a0-deee-4999-bd47-b01baa1bcfc8','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('2016a72e-85c7-4ee0-936f-36ce52df355e','PUBLISH'  ,'000ec468-0a63-4283-beb7-fcb36c107b2f','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('3ec446c8-a9b6-47fe-830f-1e623493090c','UNPUBLISH','38efc763-d78f-4e4b-b092-59cd8c579b93','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('e7b8c8a3-e605-473c-8680-6d95cac15c9b','ARCHIVE'  ,'4da13a42-5d59-480c-ad8f-94a3adf809fe','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('99019118-df2c-4297-a5aa-2fe3fe0f52ce','UNARCHIVE','c92f9aa1-9503-4567-ac30-d3242b54d02d','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('d073436e-3c10-4e4c-8c97-225e9cddf320','DELETE'   ,'777f1c6b-c877-4a37-ba4b-10627316c2cc','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+
 create table tag_inode (
    tag_id NVARCHAR(100) not null,
    inode NVARCHAR(100) not null,
@@ -2383,10 +2408,18 @@ create table workflow_action(
     scheme_id NVARCHAR(36) NOT NULL
 );
 
-CREATE TABLE workflow_action_step ( action_id NVARCHAR(36) NOT NULL, step_id NVARCHAR(36) NOT NULL, action_order INT default 0, CONSTRAINT pk_workflow_action_step PRIMARY KEY NONCLUSTERED (action_id, step_id) );
+CREATE TABLE workflow_action_step (
+    action_id    NVARCHAR(36) NOT NULL,
+    step_id      NVARCHAR(36) NOT NULL,
+    action_order INT default 0,
+    CONSTRAINT pk_workflow_action_step PRIMARY KEY NONCLUSTERED (action_id, step_id)
+);
+
+CREATE index idx_workflow_action_step_action_id on workflow_action_step(action_id);
+CREATE index idx_workflow_action_step_step_id on workflow_action_step(step_id);
 ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_action_id foreign key (action_id) references workflow_action(id);
 ALTER  TABLE workflow_action_step ADD CONSTRAINT fk_w_action_step_step_id   foreign key (step_id)   references workflow_step  (id);
-
+CREATE index idx_workflow_action_step on workflow_action(step_id);
 
 create table workflow_action_class(
     id NVARCHAR(36) primary key,
@@ -2425,6 +2458,8 @@ ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_language FOREIGN KEY (
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);
+
+CREATE index idx_workflow_step_escalation_action on workflow_step(escalation_action);
 alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);
 
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);

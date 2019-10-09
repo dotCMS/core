@@ -105,7 +105,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
     /**
      * The map where the JSONObject's properties are kept.
      */
-    private Map map = new HashMap();;
+    private Map<String,Object> map = new HashMap<>();;
 
 
     /**
@@ -213,12 +213,12 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
      *  the JSONObject.
      * @throws JSONException 
      */
-    public JSONObject(Map map) {
-        this.map = new HashMap();
-        if (map != null) {
-            Iterator i = map.entrySet().iterator();
+    public JSONObject(Map<String,Object> incomingMap) {
+        this.map = new HashMap<String,Object>();
+        if (incomingMap != null) {
+            Iterator i = incomingMap.entrySet().iterator();
             while (i.hasNext()) {
-                Map.Entry e = (Map.Entry)i.next();
+                Map.Entry<String,Object> e = (Map.Entry)i.next();
                 this.map.put(e.getKey(), wrap(e.getValue()));
             }
         }
@@ -487,6 +487,11 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
     }
 
 
+    public Map getAsMap() {
+      return this.map;
+      
+      
+    }
     /**
      * Get the long value associated with a key. 
      *

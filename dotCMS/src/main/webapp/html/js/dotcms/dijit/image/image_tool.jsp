@@ -86,6 +86,12 @@
 		dojo.require("dijit.form.ComboBox");
 		dojo.require("dijit.form.Select");
 		dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
+		dojo.extend(dijit.form.Button, {
+			scrollOnFocus:false
+		});
+		dojo.extend(dijit.form.Select, {
+			scrollOnFocus:false
+		});
 
 		var imageEditor = window.top._dotImageEditor;
 		
@@ -106,6 +112,7 @@
 </head>
 <body class="dmundra"  >
 <!--  top button bar -->
+	<div class="imageToolContainer">
 <div class="imageToolButtonBar">
 	<table style="width:100%;margin:0px">
 		<tr>
@@ -116,7 +123,7 @@
 							<%= LanguageUtil.get(pageContext, "Address") %>: 
 						</td>
 						<td width="100%;" style="white-space: nowrap;padding-right:25px;">
-							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;" onchange="imageEditor.changeViewingUrl()">
+							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;" onkeypress="if (event.which == 13 || event.keyCode == 13) {imageEditor.changeViewingUrl()}" onchange="imageEditor.changeViewingUrl()">
 						</td>
 					</tr>
 				</table>
@@ -191,6 +198,7 @@
             <td class="rightCol"><select dojoType="dijit.form.Select" name="compression" id="compression"
                style="width: 70px; margin-left: 2.6px;" onchange="imageEditor.toggleCompression()" >
                   <option value="none" selected>none</option>
+                  <option value="auto">auto</option>
                   <option value="jpeg">jpeg</option>
                   <option value="webp">webp</option>
             </select></td>
@@ -214,7 +222,8 @@
                     maximum="100" minimum="1" 
                     discreteValues="100" 
                     showButtons="true" 
-                    intermediateChanges="true">
+                    intermediateChanges="true"
+					scrollOnFocus=false>
 
                   <div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height: 5px;"></div>
                   <ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height: 1em; font-size: 75%; color: gray;">
@@ -301,8 +310,9 @@
                         maximum="200" 
                         minimum="1" 
                         showButtons="true"
-                        intermediateChanges="true"> 
-                            
+                        intermediateChanges="true"
+						scrollOnFocus=false>
+
                     <div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height:5px;"></div>
                     <ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height:1em;font-size:75%;color:gray;">
                         <li>0</li>
@@ -328,7 +338,7 @@
             <td class="leftCol"><%=LanguageUtil.get(pageContext, "Rotate")%> :</td>
             <td class="rightCol"><input id="rotate" class="textInputClass" type="text" dojoType="dijit.form.NumberTextBox" name="rotate"
                value="0" constraints="{min:-360,max:360,places:0}" required="false" maxlength="3" onchange="imageEditor.doRotate()"
-               invalidMessage="Angle is between -360 and 360" style="width: 55px;"></td>
+               invalidMessage="Angle is between -360 and 360" style="width: 55px;" scrollOnFocus="false"></td>
          </tr>
 
          <tr>
@@ -384,7 +394,6 @@
 
 
 
-	</div>
 
 
 
@@ -408,6 +417,7 @@
 						onchange="imageEditor.changeHSB()"
 						intermediateChanges="true"
 						class="colorSlider"
+	s					scrollOnFocus=false
 							id="brightSlider"> 
 						<div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=5 style="height:5px;"></div>
 						<ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height:1em;font-size:75%;color:gray;">
@@ -440,6 +450,7 @@
 						value="0"
 						onchange="imageEditor.changeHSB()"
 						intermediateChanges="true"
+						scrollOnFocus=false
 						class="colorSlider"
 						id="hueSlider"> 
 					<div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=5 style="height:5px;"></div>
@@ -473,6 +484,7 @@
 						value="0"
 						onchange="imageEditor.changeHSB()"
 						intermediateChanges="true"
+						scrollOnFocus=false
 						class="colorSlider"
 							id="satSlider"> 
 						<div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=5 style="height:5px;"></div>
@@ -551,15 +563,16 @@
 			</tr>
 		</table>
 	</div>
-    <div style="position:absolute;left:-50000px">
+    <div style="position:absolute;top:-50000px">
         <input type="file" name="hiddenFileUploader" id="hiddenFileUploader">
     
     
     
     </div>
 	 
-	 	<img src="<%=baseImage%>" style="position:absolute;left:-50000px" id="baseImage" />
+	 	<img src="<%=baseImage%>" style="position:absolute;top:-50000px;left:-50000px;" id="baseImage" />
 	 	<iframe id="actionJackson" src="/html/images/shim.gif" frameborder="0" width="0" height="0"></iframe>
+	</div>
 	</body>
 
 </html>

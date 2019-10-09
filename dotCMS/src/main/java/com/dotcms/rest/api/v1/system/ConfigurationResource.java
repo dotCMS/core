@@ -25,6 +25,8 @@ import com.liferay.util.LocaleUtil;
  * {@code dotcms-config-cluster.properties}. By default, <b>not all
  * configuration properties are available through this end-point</b>, they must
  * be programmatically read and returned.
+ *
+ * This is a public endpoint and requires no authentiction
  * 
  * @author Jose Castro
  * @version 3.7

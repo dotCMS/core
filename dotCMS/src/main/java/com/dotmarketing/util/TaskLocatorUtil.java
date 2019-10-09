@@ -268,8 +268,11 @@ public class TaskLocatorUtil {
 		ret.add(Task05080RecreateIdentifierIndex.class);
 		ret.add(Task05150CreateIndicesForContentVersionInfoMSSQL.class);
 		ret.add(Task05160MultiTreeAddPersonalizationColumnAndChangingPK.class);
+		ret.add(Task05165CreateContentTypeWorkflowActionMappingTable.class);
 		ret.add(Task05170DefineFrontEndAndBackEndRoles.class);
-
+		ret.add(Task05175AssignDefaultActionsToTheSystemWorkflow.class);
+    ret.add(Task05180UpdateFriendlyNameField.class);
+    ret.add(Task05190UpdateFormsWidgetCodeField.class);
 		return ret;
 	}
 

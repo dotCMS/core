@@ -40,6 +40,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.Lists;
@@ -53,6 +54,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.felix.framework.OSGIUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -82,7 +85,6 @@ public class PublisherAPITest extends IntegrationTestBase {
 
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-
         LicenseTestUtil.getLicense();
 
         hostAPI = APILocator.getHostAPI();

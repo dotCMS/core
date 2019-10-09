@@ -4,6 +4,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -27,17 +32,20 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Object>>{
 
     private static final String N_ENTRIES_FIELD_NAME = "nEntries";
-    public static final String TYPE_PARAMETER_NAME = "type";
+    public  static final String TYPE_PARAMETER_NAME  = "type";
 
     private final ContentTypeAPI contentTypeAPI;
+    private final WorkflowAPI    workflowAPI;
 
     @VisibleForTesting
-    public ContentTypesPaginator (ContentTypeAPI contentTypeAPI) {
+    public ContentTypesPaginator (final ContentTypeAPI contentTypeAPI) {
         this.contentTypeAPI = contentTypeAPI;
+        this.workflowAPI    = APILocator.getWorkflowAPI();
+
     }
 
     public ContentTypesPaginator () {
-        this.contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        this(APILocator.getContentTypeAPI(APILocator.systemUser()));
     }
     /**
      * Return the total
@@ -52,42 +60,67 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, final int limit, final int offset, final String orderBy,
             final OrderDirection direction, final Map<String, Object> extraParams) {
 
-        final String typeName =  UtilMethods.isSet(extraParams) && extraParams.containsKey(TYPE_PARAMETER_NAME) ? extraParams.get(TYPE_PARAMETER_NAME).toString().replaceAll("\\[","").replaceAll("\\]", "") : "ANY";
+        final String typeName =  UtilMethods.isSet(extraParams) && extraParams.containsKey(TYPE_PARAMETER_NAME) ?
+                extraParams.get(TYPE_PARAMETER_NAME).toString().replaceAll("\\[","").replaceAll("\\]", "") : "ANY";
          
         String orderByString = UtilMethods.isSet(orderBy) ? orderBy : "mod_date desc";
         
-        orderByString =  orderByString.trim().toLowerCase().endsWith(" asc") || orderByString.trim().toLowerCase().endsWith(" desc")
+        orderByString =  orderByString.trim().toLowerCase().endsWith(" asc") ||
+                orderByString.trim().toLowerCase().endsWith(" desc")
                 ? orderByString
                 : orderByString + " " + (UtilMethods.isSet(direction) ? direction.toString().toLowerCase(): OrderDirection.ASC.name());
         try {
+
             final BaseContentType type = BaseContentType.getBaseContentType(typeName);
 
-            final List<ContentType> contentTypes = (type != null) ? this.contentTypeAPI.search(filter,type,  orderByString , limit, offset) : this.contentTypeAPI.search(filter,  orderByString , limit, offset);
+            final List<ContentType> contentTypes = type != null?
+                    this.contentTypeAPI.search(filter,type,  orderByString , limit, offset):
+                    this.contentTypeAPI.search(filter,  orderByString , limit, offset);
 
             final List<Map<String, Object>> contentTypesTransform = transformContentTypesToMap(contentTypes);
 
-            setEntriesAttribute(user, contentTypesTransform);
+            setEntriesAttribute(user, contentTypesTransform,
+                    this.workflowAPI.findSchemesMapForContentType(contentTypes),
+                    this.workflowAPI.findSystemActionsMapByContentType (contentTypes, user));
 
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
             result.addAll(contentTypesTransform);
             result.setTotalResults(this.getTotalRecords(filter, type));
 
             return result;
-        } catch (DotDataException e) {
+        } catch (DotDataException | DotSecurityException e) {
+
+            Logger.error(this, e.getMessage(), e);
             throw new DotRuntimeException(e);
         }
     }
 
+    private void setEntriesAttribute(final User user, final List<Map<String, Object>> contentTypesTransform,
+                                     final Map<String, List<WorkflowScheme>> workflowSchemes,
+                                     final Map<String, List<SystemActionWorkflowActionMapping>> systemActionMappings) throws DotDataException {
 
-    private void setEntriesAttribute(final User user, final List<Map<String, Object>> contentTypesTransform) throws DotDataException {
-        Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI(user, true).getEntriesByContentTypes();
+        final Map<String, Long> entriesByContentTypes = APILocator.getContentTypeAPI
+                (user, true).getEntriesByContentTypes();
 
         for (final Map<String, Object> contentTypeEntry : contentTypesTransform) {
+
+            final String variable = (String) contentTypeEntry.get("variable");
             if (entriesByContentTypes != null) {
-                String key = ((String) contentTypeEntry.get("variable")).toLowerCase();
-                Long contentTypeEntriesNumber = entriesByContentTypes.get(key) == null ? 0l :
+
+                final String key = variable.toLowerCase();
+                final Long contentTypeEntriesNumber = entriesByContentTypes.get(key) == null ? 0l :
                         entriesByContentTypes.get(key);
                 contentTypeEntry.put(N_ENTRIES_FIELD_NAME, contentTypeEntriesNumber);
+            }
+
+            if (workflowSchemes.containsKey(variable)) {
+
+                contentTypeEntry.put("workflows", workflowSchemes.get(variable));
+            }
+
+            if (systemActionMappings.containsKey(variable)) {
+
+                contentTypeEntry.put("systemActionMappings", workflowSchemes.get(variable));
             }
         }
     }

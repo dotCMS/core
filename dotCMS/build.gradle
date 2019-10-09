@@ -111,6 +111,7 @@ idea {
 
         name = 'dotCMS'
         contentRoot = file('..')
+        excludeDirs += file('../docker/tests/integration/output')
         excludeDirs += file('build')
         excludeDirs += file('.idea')
         excludeDirs += file('.gradle')
@@ -158,8 +159,8 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    starter group: 'com.dotcms', name: 'starter', version: '20190725', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20190730', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: '20190911', ext: 'zip'
+    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20190911', ext: 'zip'
     
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
@@ -377,6 +378,14 @@ task testDev(type: Test) {
 }
 
 integrationTest {
+
+    // Check if we want to run the tests suite
+    def singleTest = System.getProperty("test.single")
+    if (null != singleTest && singleTest == "com.dotcms.MainSuite"){
+        include "**/MainSuite.class"
+    } else {
+        exclude "**/MainSuite.class"
+    }
 
     // https://docs.gradle.org/current/dsl/org.gradle.api.tasks.testing.logging.TestLoggingContainer.html
     // show standard out and standard error of the test JVM(s) on the console

@@ -342,9 +342,9 @@ public class DotInitScheduler {
 						job = new JobDetail("DashboardJobImpl", DOTCMS_JOB_GROUP_NAME, DashboardProxy.getDashboardJobImplClass());
 						isNew = true;
 					}catch(IllegalArgumentException e){
-						//Only enter here in case of "Job class must implement the Job interface." exception after version migration 
+						//Only enter here in case of "Job class must implement the Job interface." exception after version migration
 						job = new JobDetail("DashboardJobImpl", DOTCMS_JOB_GROUP_NAME, DashboardProxy.getDashboardJobImplClass());
-						isNew = false;						
+						isNew = false;
 					}
 					calendar = GregorianCalendar.getInstance();
 				    trigger = new CronTrigger("trigger15", "group15", "DashboardJobImpl", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null,Config.getStringProperty("DASHBOARD_POPULATE_TABLES_CRON_EXPRESSION"));

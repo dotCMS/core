@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -12,6 +13,8 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.SystemProperties;
+
+import io.vavr.control.Try;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -168,6 +171,7 @@ public class RoleAPIImpl implements RoleAPI {
             for ( Layout l : layoutAPI.loadLayoutsForRole( role ) ) {
                 removeLayoutFromRole( l, role );
             }
+            SecurityLogger.logInfo(this.getClass(), "Deleting role:'" + role.getName() + "' " + role);
             roleFactory.delete( role );
 
         } catch ( Exception e ) {
@@ -191,11 +195,15 @@ public class RoleAPIImpl implements RoleAPI {
 	@WrapInTransaction
 	@Override
 	public void addRoleToUser(final Role role, final User user) throws DotDataException, DotStateException {
-		final Role currentRole = loadRoleById(role.getId());
+		if(role==null || user==null)return;
+	  final Role currentRole = loadRoleById(role.getId());
+	  if(!roleFactory.doesUserHaveRole(user, currentRole)) {
 		if(!currentRole.isEditUsers()){
 			throw new DotStateException("Cannot alter users on this role.  Name:" + role.getName() + ", id:" + role.getId());
 		}
+		SecurityLogger.logInfo(this.getClass(), "Adding role:'" + role.getName() + "' to user:" + user.getUserId() + " email:" + user.getEmailAddress());
 		roleFactory.addRoleToUser(role, user);
+	  }
 	}
 	
 	public void addRoleToUser(String roleId, User user)	throws DotDataException, DotStateException {
@@ -231,8 +239,8 @@ public class RoleAPIImpl implements RoleAPI {
 		if(dupRole != null && !dupRole.getId().equals(role.getId()))
 			throw new DuplicateRoleException("A role with id = " + dupRole.getId() + " and name = " + dupRole.getName());
 			
-		
-		return roleFactory.save(role);
+		SecurityLogger.logInfo(this.getClass(), "Saving role:'" + role.getName() + "' " + role);
+    return roleFactory.save(role);
 	}
 
 	@WrapInTransaction
@@ -266,7 +274,7 @@ public class RoleAPIImpl implements RoleAPI {
 	@Override
 	public Role loadCMSAnonymousRole() throws DotDataException {
 		if(CMS_ANON == null){
-			CMS_ANON =  roleFactory.loadRoleByKey(Config.getStringProperty("CMS_ANONYMOUS_ROLE"));
+			CMS_ANON =  roleFactory.loadRoleByKey(Role.CMS_ANONYMOUS_ROLE);
 		}
 		return CMS_ANON;
 	}
@@ -275,7 +283,7 @@ public class RoleAPIImpl implements RoleAPI {
 	@Override
 	public Role loadCMSOwnerRole() throws DotDataException {
 		if(CMS_OWNER == null){
-			CMS_OWNER =  roleFactory.loadRoleByKey(Config.getStringProperty("CMS_OWNER_ROLE"));
+			CMS_OWNER =  roleFactory.loadRoleByKey(Role.CMS_OWNER_ROLE);
 		}
 		return CMS_OWNER;
 	}
@@ -288,12 +296,27 @@ public class RoleAPIImpl implements RoleAPI {
 		}
 		return LOGGEDIN_SITE_USER;
 	}
+	
+  @CloseDBIfOpened
+  @Override
+  public Role loadFrontEndUserRole() throws DotDataException {
 
+    return this.loadLoggedinSiteRole() ;
+  }
+	
+	
+  @CloseDBIfOpened
+  @Override
+  public Role loadBackEndUserRole() throws DotDataException {
+    return roleFactory.loadRoleByKey(Role.DOTCMS_BACK_END_USER);
+
+  }
+  
 	@CloseDBIfOpened
 	@Override
 	public Role loadCMSAdminRole() throws DotDataException {
 		if(CMS_ADMIN == null){
-			CMS_ADMIN = roleFactory.loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE"));
+			CMS_ADMIN = roleFactory.loadRoleByKey(Role.CMS_ADMINISTRATOR_ROLE);
 		}
 		return CMS_ADMIN;		
 	}

@@ -72,7 +72,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
 
-  @CloseDBIfOpened
+  @WrapInTransaction
   @Override
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
     perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
@@ -178,6 +178,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
 
 
+  @WrapInTransaction
   @Override
   public ContentType save(ContentType type) throws DotDataException, DotSecurityException {
     return save(type, null, null);
@@ -385,12 +386,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return contentTypeFactory.findUrlMapped();
   }
 
+  @WrapInTransaction
   @Override
   public ContentType save(ContentType contentType, List<Field> newFields)
       throws DotDataException, DotSecurityException {
     return save(contentType, newFields, null);
   }
 
+  @WrapInTransaction
   @Override
   public ContentType save(ContentType contentType, List<Field> newFields, List<FieldVariable> newFieldVariables)
       throws DotDataException, DotSecurityException {
@@ -479,17 +482,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     contentTypeToSave = this.contentTypeFactory.save(contentTypeToSave);
 
     if (oldType != null) {
-      final ContentType oldOldType = oldType;
-      if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
-        DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
-          IdentifierDateJob.triggerJobImmediately(oldOldType, user);
-        });
-      } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
-        DotConcurrentFactory.getInstance().getSubmitter().submit(()->{
-          IdentifierDateJob.triggerJobImmediately(oldOldType, user);
-        });
-      }
-      perms.resetPermissionReferences(contentTypeToSave);
+
+        final ContentType oldOldType = oldType;
+        if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
+            IdentifierDateJob.triggerJobImmediately(oldOldType, user);
+        } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
+            IdentifierDateJob.triggerJobImmediately(oldOldType, user);
+        }
+        perms.resetPermissionReferences(contentTypeToSave);
     }
     ActivityLogger.logInfo(getClass(), "Save ContentType Action",
         "User " + user.getUserId() + "/" + user.getFullName() + " added ContentType " + contentTypeToSave.name()

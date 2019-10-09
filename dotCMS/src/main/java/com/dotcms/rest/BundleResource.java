@@ -46,8 +46,14 @@ public class BundleResource {
     public Response getUnsendBundles (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params )
             throws DotDataException, JSONException {
 
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
@@ -112,8 +118,16 @@ public class BundleResource {
 	@Produces("application/json")
 	public Response updateBundle(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) throws IOException {
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
-	    //Creating an utility response object
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+
+        //Creating an utility response object
 	    ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 	
 		String bundleId = initData.getParamsMap().get("bundleid");
@@ -141,7 +155,14 @@ public class BundleResource {
 	@Produces("application/json")
 	public Response deletePushHistory(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
@@ -168,7 +189,14 @@ public class BundleResource {
 	@Produces("application/json")
 	public Response deleteEnvironmentPushHistory(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 

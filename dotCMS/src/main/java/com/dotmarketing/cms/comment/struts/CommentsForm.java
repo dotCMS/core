@@ -1,5 +1,9 @@
 package com.dotmarketing.cms.comment.struts;
 
+import com.dotcms.repackage.org.apache.struts.action.ActionError;
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -13,10 +17,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.struts.action.ActionError;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.validator.ValidatorForm;
 
 /**
  * This class manage the comments beans
@@ -134,7 +134,7 @@ public class CommentsForm extends ValidatorForm
 	}
 	
 	@SuppressWarnings("deprecation")
-	public ActionErrors validate(ActionMapping arg0, HttpServletRequest request) 
+	public ActionErrors validate(ActionMapping arg0, HttpServletRequest request)
 	{
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		ActionErrors errors = new ActionErrors(); 
@@ -149,7 +149,7 @@ public class CommentsForm extends ValidatorForm
 		}
 		
 		if(parentContentlet==null || !InodeUtils.isSet(parentContentlet.getInode())){
-			errors.add(ActionErrors.GLOBAL_ERROR, new ActionError("message.contentlet.required","Contentlet Inode"));    		
+			errors.add(ActionErrors.GLOBAL_ERROR, new ActionError("message.contentlet.required","Contentlet Inode"));
 			return errors;
 		}
 		if (!UtilMethods.isSet(name)) 

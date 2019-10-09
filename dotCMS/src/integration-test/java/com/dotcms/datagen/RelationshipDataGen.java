@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -58,6 +59,7 @@ public class RelationshipDataGen extends AbstractDataGen<Relationship> {
         return relationship;
     }
 
+    @WrapInTransaction
     @Override
     public Relationship persist(final Relationship relationship) {
 

@@ -16,7 +16,7 @@
 	
 
 	if(sess != null){
-	 	locale = (Locale) sess.getAttribute(org.apache.struts.Globals.LOCALE_KEY);
+	 	locale = (Locale) sess.getAttribute(com.dotcms.repackage.org.apache.struts.Globals.LOCALE_KEY);
 	}
 	if (locale == null && user != null) {
 		// Locale should never be null except when the TCK tests invalidate the session

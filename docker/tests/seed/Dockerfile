@@ -7,10 +7,24 @@ LABEL com.dotcms.contact = "info@dotcms.com"
 LABEL com.dotcms.vendor = "dotCMS LLC"
 LABEL com.dotcms.description = "dotCMS Content Management System"
 
-WORKDIR /srv
-
 # Build env dependencies
-RUN apk update && apk --no-cache add bash grep git nodejs-current nodejs-current-dev sed curl coreutils
+RUN apk update && apk --no-cache add bash grep python py-crcmod openssh-client gnupg libc6-compat git nodejs-current nodejs-current-dev sed curl coreutils
+
+# Installing gcloud
+# (https://github.com/GoogleCloudPlatform/cloud-sdk-docker/blob/master/alpine/Dockerfile)
+# https://cloud.google.com/sdk/docs/
+ARG CLOUD_SDK_VERSION=256.0.0
+ENV CLOUD_SDK_VERSION=$CLOUD_SDK_VERSION
+ENV PATH /google-cloud-sdk/bin:$PATH
+RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz && \
+    tar xzf google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz && \
+    rm google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz && \
+    gcloud config set core/disable_usage_reporting true && \
+    gcloud config set component_manager/disable_update_check true && \
+    gcloud config set metrics/environment github_docker_image && \
+    gcloud --version
+
+WORKDIR /srv
 
 # Cloning the repository
 RUN mkdir -p /build/src \

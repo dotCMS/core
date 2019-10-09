@@ -1007,7 +1007,8 @@ public class BrowserAjax {
         if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
 
             //Getting the contentlet file
-            Contentlet contentlet = APILocator.getContentletAPI().find( inode, user, false );
+            final Contentlet contentlet = APILocator.getContentletAPI().find( inode, user, false );
+            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true); // on move we do not want to run a workflow
             Folder srcFolder = APILocator.getFolderAPI().find(contentlet.getFolder(),user,false);
 
             if(contentlet.getFolder().equals("SYSTEM_FOLDER")) {
@@ -1103,14 +1104,6 @@ public class BrowserAjax {
                 else {
                 	newContentlet=APILocator.getContentletAPI().copyContentlet(cont, host, user, false);
                 }
-                /*copy page associated contentlets*/
-                List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(cont.getIdentifier());
-                for(MultiTree m : pageContents){
-                   	MultiTree mt = new MultiTree(newContentlet.getIdentifier(), m.getParent2(), m.getChild());
-                   	mt.setTreeOrder(m.getTreeOrder());
-                   	APILocator.getMultiTreeAPI().saveMultiTree(mt);
-                }
-
 
             result.put("status", "success");
             result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "Page-copied")));

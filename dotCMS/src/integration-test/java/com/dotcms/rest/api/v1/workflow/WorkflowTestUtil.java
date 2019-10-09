@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.workflow.form.WorkflowActionForm;
@@ -16,7 +17,9 @@ import com.dotcms.workflow.form.WorkflowSchemeImportObjectForm;
 import com.dotcms.workflow.form.WorkflowStepAddForm;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -207,6 +210,22 @@ public abstract class WorkflowTestUtil {
         return List.class.cast(findResponseEv.getEntity());
     }
 
+    protected static Role roleAdmin () {
+
+        //Creating a test role
+        Role adminRole = null;
+        try {
+
+            adminRole = APILocator.getRoleAPI().loadRoleByKey(ADMINISTRATOR);
+            if (adminRole == null) {
+                adminRole = new RoleDataGen().key(ADMINISTRATOR).nextPersisted();
+            }
+        } catch (DotDataException e) {
+            e.printStackTrace();
+        }
+
+        return adminRole;
+    }
 
     static WorkflowSchemeImportObjectForm createImportExportObjectForm() throws Exception {
 
@@ -256,7 +275,7 @@ public abstract class WorkflowTestUtil {
         workflowAction1.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED,
                 WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         workflowAction1.setNextStep(workflowStep2.getId());
-        workflowAction1.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
+        workflowAction1.setNextAssign(roleAdmin().getId());
         workflowAction1.setSchemeId(scheme.getId());
         workflowAction1.setName("save");
         workflowAction1.setOrder(0);
@@ -269,7 +288,7 @@ public abstract class WorkflowTestUtil {
         workflowAction2.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED,
                 WorkflowState.UNPUBLISHED, WorkflowState.EDITING);
         workflowAction2.setNextStep(workflowStep2.getId());
-        workflowAction2.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
+        workflowAction2.setNextAssign(roleAdmin().getId());
         workflowAction2.setSchemeId(scheme.getId());
         workflowAction2.setName("save/publish");
         workflowAction2.setOrder(1);
@@ -281,7 +300,7 @@ public abstract class WorkflowTestUtil {
         workflowAction3.setId(UUIDGenerator.generateUuid());
         workflowAction3.setShowOn(WorkflowState.LOCKED, WorkflowState.PUBLISHED, WorkflowState.EDITING);
         workflowAction3.setNextStep(WorkflowAction.CURRENT_STEP);
-        workflowAction3.setNextAssign(roleAPI.loadRoleByKey(ADMINISTRATOR).getId());
+        workflowAction3.setNextAssign(roleAdmin().getId());
         workflowAction3.setSchemeId(scheme.getId());
         workflowAction3.setName("finish");
         workflowAction3.setOrder(2);
@@ -331,7 +350,7 @@ public abstract class WorkflowTestUtil {
         final WorkflowSchemeImportObjectForm exportObjectForm =
                 new WorkflowSchemeImportObjectForm(
                         new WorkflowSchemeImportExportObjectView(WorkflowResource.VERSION, schemes, steps, actions,
-                                actionSteps, Collections.emptyList(), Collections.emptyList()),
+                                actionSteps, Collections.emptyList(), Collections.emptyList(), Collections.emptyList()),
                         permissions);
 
         return exportObjectForm;

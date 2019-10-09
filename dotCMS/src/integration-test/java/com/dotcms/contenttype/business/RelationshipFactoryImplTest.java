@@ -53,14 +53,20 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
             assertEquals(relationship,
                     cache.getRelationshipByName(relationship.getRelationTypeValue()));
         } finally {
-            contentTypeAPI.delete(parentContentType);
-            contentTypeAPI.delete(childContentType);
+            try {
+                contentTypeAPI.delete(parentContentType);
+                contentTypeAPI.delete(childContentType);
+            } catch (Exception e) {}
         }
     }
 
     @Test
     public void testdbAll() throws DotDataException, DotSecurityException {
         try {
+            for(int i=0; i<3; i++) {
+                saveRelationship();
+            }
+
             List<Relationship> relationshipList = relationshipFactory.dbAll();
             final int amountOriginalRelationships = relationshipList.size();
             assertTrue(amountOriginalRelationships > 0);
@@ -73,8 +79,10 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
             relationshipList = relationshipFactory.dbAll();
             assertEquals(amountOriginalRelationships,relationshipList.size());
         }finally {
-            contentTypeAPI.delete(parentContentType);
-            contentTypeAPI.delete(childContentType);
+            try {
+                contentTypeAPI.delete(parentContentType);
+                contentTypeAPI.delete(childContentType);
+            } catch (Exception e) {}
         }
 
 
@@ -91,8 +99,10 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
             relationshipList = relationshipFactory.byContentType(childContentType.inode());
             assertEquals(0,relationshipList.size());
         }finally {
-            contentTypeAPI.delete(parentContentType);
-            contentTypeAPI.delete(childContentType);
+            try {
+                contentTypeAPI.delete(parentContentType);
+                contentTypeAPI.delete(childContentType);
+            } catch (Exception e) {}
         }
     }
 
@@ -107,8 +117,10 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
             relationshipList = relationshipFactory.byContentType(childContentType.inode());
             assertEquals(0,relationshipList.size());
         }finally {
-            contentTypeAPI.delete(parentContentType);
-            contentTypeAPI.delete(childContentType);
+            try {
+                contentTypeAPI.delete(parentContentType);
+                contentTypeAPI.delete(childContentType);
+            } catch (Exception e) {}
         }
     }
 
@@ -131,8 +143,10 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
 
 
         }finally {
-            contentTypeAPI.delete(parentContentType);
-            contentTypeAPI.delete(childContentType);
+            try {
+                contentTypeAPI.delete(parentContentType);
+                contentTypeAPI.delete(childContentType);
+            }catch (Exception e) {}
         }
     }
 
@@ -155,8 +169,12 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
 
 
         }finally {
-            contentTypeAPI.delete(parentContentType);
-            contentTypeAPI.delete(childContentType);
+            try {
+                contentTypeAPI.delete(parentContentType);
+                contentTypeAPI.delete(childContentType);
+            } catch (Exception e) {
+                // Quiet
+            }
         }
     }
 

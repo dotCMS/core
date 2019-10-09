@@ -6,6 +6,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.KeyValueContentType;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -61,7 +62,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
                         .fixed(Boolean.FALSE).owner(systemUser.getUserId()).build();
         keyValueContentType = contentTypeApi.save(keyValueContentType);
         englishLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        spanishLanguageId = APILocator.getLanguageAPI().getLanguage("es", "ES").getId();
+        spanishLanguageId = TestDataUtils.getSpanishLanguage().getId();
         setDebugMode(Boolean.FALSE);
     }
 
@@ -135,7 +136,7 @@ public class KeyValueAPITest extends IntegrationTestBase {
 
         final KeyValueAPI keyValueAPI = APILocator.getKeyValueAPI();
         final KeyValueCache cache = CacheLocator.getKeyValueCache();
-        final Contentlet contentlet = LocalTransaction.wrapReturn( ()->createTestKeyValueContent(key1, value1, englishLanguageId,
+        final Contentlet contentlet = LocalTransaction.wrapReturnWithListeners( ()->createTestKeyValueContent(key1, value1, englishLanguageId,
                 keyValueContentType, systemUser));
 
         Assert.assertTrue("Failed creating a new Contentlet using the Key/Value Content Type.",
@@ -145,15 +146,15 @@ public class KeyValueAPITest extends IntegrationTestBase {
         KeyValue keyValue =
                         keyValueAPI.get(testKeyValue.getKey(), englishLanguageId, keyValueContentType, systemUser, Boolean.FALSE);
         KeyValue cachedKeyValue = cache
-                .getByLanguageAndContentType(key1, englishLanguageId, keyValueContentType.id());
+                .get(key1, englishLanguageId, keyValueContentType.id(), true);
 
         Assert.assertNotNull("Key/Value cache MUST NOT be null.", cachedKeyValue);
 
         final String newValue = keyValue.getValue() + ".updatedvalue";
-        final Contentlet newContentlet = LocalTransaction.wrapReturn(
+        final Contentlet newContentlet = LocalTransaction.wrapReturnWithListeners(
                 ()->updateTestKeyValueContent(contentlet, keyValue.getKey(), newValue, englishLanguageId, keyValueContentType,systemUser));
         cachedKeyValue = cache
-                .getByLanguageAndContentType(key1, englishLanguageId, keyValueContentType.id());
+                .get(key1, englishLanguageId, keyValueContentType.id(), true);
 
         System.out.print("cachedKeyValue: " + cachedKeyValue + "\n");
         Assert.assertNull("Key/Value cache MUST BE null.", cachedKeyValue);
@@ -326,8 +327,8 @@ public class KeyValueAPITest extends IntegrationTestBase {
 
         Assert.assertNotNull("Key/Value object MUST NOT be null.", keyValue);
         Assert.assertNotNull("Key/Value cache MUST NOT be null.",
-                cache.getByLanguageAndContentType(key1, englishLanguageId,
-                        keyValueContentType.id()));
+                cache.get(key1, englishLanguageId,
+                        keyValueContentType.id(), true));
 
         deleteContentlets(systemUser, contentlet);
     }

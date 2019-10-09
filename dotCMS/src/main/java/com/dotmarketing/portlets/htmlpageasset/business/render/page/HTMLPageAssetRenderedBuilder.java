@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
-
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
+import io.vavr.control.Try;
 import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,10 +42,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import org.apache.velocity.context.Context;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -63,6 +61,8 @@ public class HTMLPageAssetRenderedBuilder {
     private final LayoutAPI      layoutAPI;
     private final VersionableAPI versionableAPI;
     private final MultiTreeAPI   multiTreeAPI;
+    private String pageUrlMapper;
+    private boolean live;
 
     public HTMLPageAssetRenderedBuilder() {
 
@@ -72,6 +72,11 @@ public class HTMLPageAssetRenderedBuilder {
         this.layoutAPI      = APILocator.getLayoutAPI();
         this.versionableAPI = APILocator.getVersionableAPI();
         this.multiTreeAPI   = APILocator.getMultiTreeAPI();
+    }
+
+    public HTMLPageAssetRenderedBuilder setLive(final boolean live) {
+        this.live = live;
+        return this;
     }
 
     public HTMLPageAssetRenderedBuilder setHtmlPageAsset(final IHTMLPage htmlPageAsset) {
@@ -99,14 +104,24 @@ public class HTMLPageAssetRenderedBuilder {
         return this;
     }
 
+    public HTMLPageAssetRenderedBuilder setURLMapper(final String pageUrlMapper) {
+        this.pageUrlMapper = pageUrlMapper;
+        return this;
+    }
+
     @CloseDBIfOpened
     public PageView build(final boolean rendered, final PageMode mode) throws DotDataException, DotSecurityException {
         final ContentletVersionInfo info = APILocator.getVersionableAPI().
                 getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
 
         final HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
-        final Set<String> pagePersonalizationSet  = this.multiTreeAPI.getPersonalizationsForPage(htmlPageAsset.getIdentifier());
+        final Set<String> pagePersonalizationSet  = this.multiTreeAPI.getPersonalizationsForPage(htmlPageAsset);
         final Template template = getTemplate(mode);
+        if(!UtilMethods.isSet(template) && mode.equals(PageMode.ADMIN_MODE)){
+            throw new DotStateException(
+                    Try.of(() -> LanguageUtil.get(user.getLocale(), "template.archived.page.live.mode.error"))
+                            .getOrElse("This page cannot be viewed on Live Mode because the template is unpublished or archived"));
+        }
         final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
         final TemplateLayout layout = template != null && template.isDrawed() && !LicenseManager.getInstance().isCommunity()
@@ -126,7 +141,7 @@ public class HTMLPageAssetRenderedBuilder {
         if (!rendered) {
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
             return new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates,
-                    canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet));
+                    canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live);
         } else {
             final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
@@ -134,7 +149,7 @@ public class HTMLPageAssetRenderedBuilder {
                     pageRenderUtil.getContainersRaw(), velocityContext, mode).build();
             final String pageHTML = this.getPageHTML();
             return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
-                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet)
+                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live
             );
         }
     }
@@ -208,12 +223,12 @@ public class HTMLPageAssetRenderedBuilder {
         final IPersona persona     = this.getCurrentPersona();
         final boolean personalized = this.isPersonalized(persona, pagePersonalizationSet);
 
-        return new ViewAsPageStatus()
-            .setPersonalized(personalized)
-            .setPersona(this.getCurrentPersona())
-            .setLanguage(WebAPILocator.getLanguageWebAPI().getLanguage(request))
-            .setDevice(getCurrentDevice())
-            .setPageMode(pageMode);
+        return new ViewAsPageStatus(
+            getVisitor(),
+            WebAPILocator.getLanguageWebAPI().getLanguage(request),
+            this.getCurrentDevice(),
+            pageMode,
+            personalized );
     }
 
     private boolean isPersonalized (final IPersona persona, final Set<String> pagePersonalizationSet) {
@@ -223,20 +238,24 @@ public class HTMLPageAssetRenderedBuilder {
                     (Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag()): false;
     }
 
+    
+    private Visitor getVisitor() {
+      final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
+      return visitor.isPresent() ? visitor.get() : null;
+    }
+    
+    
+    
     private IPersona getCurrentPersona() {
         final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
         return visitor.isPresent() && visitor.get().getPersona() != null ? visitor.get().getPersona() : null;
     }
 
     private Contentlet getCurrentDevice() throws DotDataException {
-        final String deviceInode = (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE);
+        final String currentDeviceId = (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE);
         Contentlet currentDevice = null;
 
         try {
-
-            final String currentDeviceId = deviceInode == null ?
-                    (String) request.getSession().getAttribute(WebKeys.CURRENT_DEVICE)
-                    : deviceInode;
 
             if (currentDeviceId != null) {
                 currentDevice = contentletAPI.find(currentDeviceId, user, false);

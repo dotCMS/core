@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -53,15 +54,7 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
@@ -678,7 +671,7 @@ public class ImportUtil {
         try {
             //Building a values HashMap based on the headers/columns position
             HashMap<Integer, Object> values = new HashMap<Integer, Object>();
-            Set<Category> categories = new HashSet<Category>();
+            Set<Category> categories = new HashSet<>();
             boolean headersIncludeHostField = false;
             for ( Integer column : headers.keySet() ) {
                 Field field = headers.get( column );
@@ -1368,7 +1361,8 @@ public class ImportUtil {
                         cont.setLowIndexPriority(true);
 
                         if (userCanExecuteAction) {
-
+                          cont.setIndexPolicy(IndexPolicy.DEFER);
+                          
                             cont = workflowAPI.fireContentWorkflow(cont,
                                     new ContentletDependencies.Builder()
                                             .respectAnonymousPermissions(Boolean.FALSE)
@@ -1380,19 +1374,8 @@ public class ImportUtil {
                                             .categories(new ArrayList<>(categories))
                                             .generateSystemEvent(Boolean.FALSE).build());
                         } else {
-                            // If the User doesn't have permissions to execute the wfActionId or
-                            // not action Id is set on the CSV/Import select box then use the old
-                            // checking method
-                            cont.setProperty(Contentlet.DONT_VALIDATE_ME, true);
-                            cont.setProperty(Contentlet.DISABLE_WORKFLOW, true);
-                            cont = conAPI.checkin(cont, contentletRelationships,
-                                    new ArrayList<>(categories), contentTypePermissions,
-                                    user, false);
-
-                            if (Config.getBooleanProperty(
-                                    "PUBLISH_CSV_IMPORTED_CONTENT_AUTOMATICALLY", false)) {
-                                APILocator.getContentletAPI().publish(cont, user, false);
-                            }
+                            cont = runWorkflowIfCould(user, contentTypePermissions,
+                                    categories, cont, contentletRelationships);
                         }
 
                         for (Integer column : headers.keySet()) {
@@ -1465,6 +1448,90 @@ public class ImportUtil {
         }
     }
 
+    private static Contentlet runWorkflowIfCould(final User user, final List<Permission> contentTypePermissions,
+                                                 final Set<Category> categories, final Contentlet contentlet,
+                                                 final ContentletRelationships contentletRelationships) throws DotDataException, DotSecurityException {
+        // If the User doesn't have permissions to execute the wfActionId or
+        // not action Id is set on the CSV/Import select box then use the old
+        // checking method
+        final boolean live = Config.getBooleanProperty(
+                "PUBLISH_CSV_IMPORTED_CONTENT_AUTOMATICALLY", false);
+        final Optional<WorkflowAction> workflowActionSaveOpt =
+                workflowAPI.findActionMappedBySystemActionContentlet
+                        (contentlet, WorkflowAPI.SystemAction.NEW, user);
+        final List<Category> categoryList = new ArrayList<>(categories);
+
+        if (workflowActionSaveOpt.isPresent()) {
+
+            if (workflowActionSaveOpt.get().hasSaveActionlet()) {
+
+                Logger.debug(ImportUtil.class,
+                        ()-> "Importing a contentlet with the save action: "
+                        + workflowActionSaveOpt.get().getName());
+                final Contentlet savedContent = workflowAPI.fireContentWorkflow
+                        (contentlet, new ContentletDependencies.Builder()
+                                .workflowActionId(workflowActionSaveOpt.get().getId())
+                                .relationships(contentletRelationships).categories(new ArrayList<>(categoryList))
+                                .permissions(contentTypePermissions).modUser(user).build());
+                return live && !workflowActionSaveOpt.get().hasPublishActionlet()?
+                        runWorkflowPublishIfCould(contentletRelationships,
+                                categoryList, contentTypePermissions, user, savedContent):
+                        savedContent;
+            } else {
+
+                contentlet.setActionId(workflowActionSaveOpt.get().getId());
+            }
+        }
+
+        if (null == contentlet.getActionId()) {
+            contentlet.setProperty(Contentlet.DISABLE_WORKFLOW, true); // it is needed to avoid recursive call
+        }
+        contentlet.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+        final Contentlet contentletSaved = conAPI.checkin(contentlet, contentletRelationships,
+                categoryList, contentTypePermissions,
+                user, false);
+
+        if (live) {
+            APILocator.getContentletAPI().publish(contentletSaved, user, false);
+        }
+        return contentletSaved;
+    }
+
+    private static Contentlet runWorkflowPublishIfCould(final ContentletRelationships contentletRelationships,
+                                                 final List<Category>   categories,
+                                                 final List<Permission> permissions,
+                                                 final User user,
+                                                 final Contentlet savedContent) throws DotDataException, DotSecurityException {
+
+        final Optional<WorkflowAction> workflowActionPublishOpt =
+                workflowAPI.findActionMappedBySystemActionContentlet
+                        (savedContent, WorkflowAPI.SystemAction.PUBLISH, user);
+
+        if (workflowActionPublishOpt.isPresent()) {
+
+            if (workflowActionPublishOpt.get().hasPublishActionlet()) {
+
+                Logger.debug(ImportUtil.class,
+                        () -> "Importing a contentlet with the publish action: "
+                        + workflowActionPublishOpt.get().getName());
+                return workflowAPI.fireContentWorkflow
+                        (savedContent, new ContentletDependencies.Builder()
+                                .workflowActionId(workflowActionPublishOpt.get().getId())
+                                .relationships(contentletRelationships).categories(categories)
+                                .permissions(permissions).modUser(user).build());
+            } else {
+
+                savedContent.setActionId(workflowActionPublishOpt.get().getId());
+            }
+        }
+
+        if (null == savedContent.getActionId()) {
+            savedContent.setProperty(Contentlet.DISABLE_WORKFLOW, true); // it is needed to avoid recursive call
+        }
+
+        conAPI.publish(savedContent, user, false);
+        return savedContent;
+    }
     /**
      *
      * @param csvRelationshipRecordsParentOnly

@@ -74,7 +74,7 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
 
             //Forbidden properties Must Not be part of the result
             for(final String property : ContentletToMapTransformer.privateInternalProperties){
-                assertFalse(transformed.containsKey(property));
+                assertFalse("found private property:" + property,transformed.containsKey(property));
             }
         }
 

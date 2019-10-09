@@ -19,6 +19,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.business.WorkflowFactoryTest;
 import com.liferay.portal.model.User;
 import java.util.Date;
 import java.util.List;
@@ -502,7 +503,7 @@ public class DeleteFieldJobTest extends IntegrationTestBase {
             }
             if (contentlet != null) {
                 try {
-                    contentletAPI.delete(contentlet, systemUser, true);
+                    contentletAPI.destroy(contentlet, systemUser, false);
                 } catch (Exception e1) {
                     // Do nothing
                 }

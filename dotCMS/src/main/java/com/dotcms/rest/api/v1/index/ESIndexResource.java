@@ -105,7 +105,13 @@ public class ESIndexResource {
                                   final HttpServletRequest httpServletRequest,
                                   final HttpServletResponse httpServletResponse) throws DotSecurityException, DotDataException {
 
-        final InitDataObject init = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
+        final InitDataObject init = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .rejectWhenNoUser(true).init();
+
         if(!this.layoutAPI.doesUserHaveAccessToPortlet("maintenance", init.getUser())) {
             throw new DotSecurityException("unauthorized");
         }

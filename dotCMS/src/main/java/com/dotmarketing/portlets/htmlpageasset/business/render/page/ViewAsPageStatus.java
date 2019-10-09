@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
@@ -11,32 +12,30 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
  */
 @JsonSerialize(using = ViewAsPageStatusSerializer.class)
 public class ViewAsPageStatus {
-    private IPersona   persona;
-    private Language   language;
-    private Contentlet device;
-    private PageMode   pageMode;
-    private boolean    personalized;
+    private final IPersona   persona;
+    private final Language   language;
+    private final Contentlet device;
+    private final PageMode   pageMode;
+    private final boolean    personalized;
+    private final Visitor   visitor;
 
-    ViewAsPageStatus(){}
 
-    ViewAsPageStatus setPersonalized(final boolean personalized) {
-        this.personalized = personalized;
-        return this;
-    }
 
-    ViewAsPageStatus setPersona(IPersona persona) {
-        this.persona = persona;
-        return this;
-    }
-
-    ViewAsPageStatus setLanguage(Language language) {
-        this.language = language;
-        return this;
-    }
-
-    ViewAsPageStatus setDevice(Contentlet device) {
-        this.device = device;
-        return this;
+    public ViewAsPageStatus(
+        final Visitor   visitor,
+        Language language, 
+        Contentlet device, 
+        PageMode pageMode, 
+        boolean personalized
+        ) {
+      super();
+      this.visitor=visitor;
+      this.persona=visitor!=null ? visitor.getPersona():null;
+      this.language = language;
+      this.device = device;
+      this.pageMode = pageMode;
+      this.personalized = personalized;
+      
     }
 
     public IPersona getPersona() {
@@ -51,10 +50,6 @@ public class ViewAsPageStatus {
         return device;
     }
 
-    ViewAsPageStatus setPageMode(PageMode pageMode) {
-        this.pageMode = pageMode;
-        return this;
-    }
 
     public PageMode getPageMode() {
         return pageMode;
@@ -63,4 +58,8 @@ public class ViewAsPageStatus {
     public boolean isPersonalized() {
         return personalized;
     }
+    
+    public Visitor getVisitor() {
+      return visitor;
+  }
 }

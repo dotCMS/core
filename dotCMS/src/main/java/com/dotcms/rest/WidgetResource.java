@@ -111,11 +111,14 @@ public class WidgetResource {
 			context = VelocityUtil.getWebContext(context, request, response);
 
   			Field field = contStructure.getFieldVar("widgetPreexecute");
-  			String fval = field.getValues()!=null ? field.getValues().trim() : "";
-			widgetExecuteCode.append(fval + "\n");
+
+  			if(field!=null) {
+    			String fval = field.getValues()!=null ? field.getValues().trim() : "";
+    			widgetExecuteCode.append(fval + "\n");
+  			}
 
 			field = contStructure.getFieldVar("widgetCode");
-			fval = field.getValues()!=null ? field.getValues().trim() : "";
+			String fval = field.getValues()!=null ? field.getValues().trim() : "";
 			widgetExecuteCode.append(fval + "\n");
 
 			VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());

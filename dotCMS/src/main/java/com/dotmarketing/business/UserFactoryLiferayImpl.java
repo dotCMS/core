@@ -1,14 +1,6 @@
 package com.dotmarketing.business;
 
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
@@ -23,6 +15,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.DuplicateUserEmailAddressException;
 import com.liferay.portal.DuplicateUserIdException;
 import com.liferay.portal.PortalException;
@@ -33,6 +26,15 @@ import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.logging.log4j.util.Strings;
 
 /**
  * @author Jason Tesser
@@ -159,13 +161,23 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	}
 
 	@Override
-	public long getCountUsersByName(String filter) throws DotDataException {
+	public long getCountUsersByName(final String filter) throws DotDataException {
+		return getCountUsersByName(filter, ImmutableList.of());
+	}
+
+    @Override
+	protected long getCountUsersByName(String filter, final List<Role> roles) throws DotDataException{
 		filter = SQLUtil.sanitizeParameter(filter);
 		DotConnect dotConnect = new DotConnect();
 		boolean isFilteredByName = UtilMethods.isSet(filter);
-		filter = (isFilteredByName ? filter : "");
+		filter = (isFilteredByName ? filter : Strings.EMPTY);
 		StringBuilder baseSql = new StringBuilder("select count(*) as count from user_ where companyid = ? and userid <> 'system' ");
-		String userFullName = dotConnect.concat( new String[]{ "firstname", "' '", "lastname" } );
+		if(UtilMethods.isSet(roles)){
+			final String joinedRoleKeys = roles.stream().map(Role::getRoleKey).map(s -> String.format("'%s'",s)).collect(Collectors.joining(","));
+			final String backendRoleFilter = String.format(" and exists ( select ur.user_id from users_cms_roles ur join cms_role r on ur.role_id = r.id where r.role_key in (%s) and ur.user_id = user_.userId )", joinedRoleKeys);
+			baseSql.append(backendRoleFilter);
+		}
+		String userFullName = DotConnect.concat( new String[]{ "firstname", "' '", "lastname" } );
 
 		if( isFilteredByName ) {
 			baseSql.append(" and lower(");
@@ -190,13 +202,22 @@ public class UserFactoryLiferayImpl extends UserFactory {
 
 	@Override
 	public List<User> getUsersByName(final String filter, final int start, final int limit) throws DotDataException {
+		return getUsersByName(filter, ImmutableList.of(), start,limit);
+	}
 
+	@Override
+	public List<User> getUsersByName(final String filter, final List<Role> roles ,final int start, final int limit) throws DotDataException {
 		String sanitizeFilter = SQLUtil.sanitizeParameter(filter);
 		DotConnect dotConnect = new DotConnect();
 		boolean isFilteredByName = UtilMethods.isSet(sanitizeFilter);
-		sanitizeFilter = (isFilteredByName ? sanitizeFilter : "");
-		StringBuffer baseSql = new StringBuffer("select user_.userId from user_ where companyid = ? and userid <> 'system' ");
-		String userFullName = dotConnect.concat( new String[]{ "firstname", "' '", "lastname" } );
+		sanitizeFilter = (isFilteredByName ? sanitizeFilter : Strings.EMPTY);
+		final StringBuilder baseSql = new StringBuilder("select user_.userId from user_ where companyid = ? and userid <> 'system' ");
+		if(UtilMethods.isSet(roles)){
+			final String joinedRoleKeys = roles.stream().map(Role::getRoleKey).map(s -> String.format("'%s'",s)).collect(Collectors.joining(","));
+			final String backendRoleFilter = String.format(" and exists ( select ur.user_id from users_cms_roles ur join cms_role r on ur.role_id = r.id where r.role_key in (%s) and ur.user_id = user_.userId )", joinedRoleKeys);
+			baseSql.append(backendRoleFilter);
+		}
+		final String userFullName = DotConnect.concat( new String[]{ "firstname", "' '", "lastname" } );
 
 		if( isFilteredByName ) {
 			baseSql.append(" and lower(");
@@ -210,7 +231,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		baseSql.append(" order by ");
 		baseSql.append(userFullName);
 
-		String sql = baseSql.toString();
+		final String sql = baseSql.toString();
 		dotConnect.setSQL(sql);
 		Logger.debug( UserFactoryLiferayImpl.class,"::getUsersByName -> query: " + dotConnect.getSQL() );
 
@@ -219,28 +240,27 @@ public class UserFactoryLiferayImpl extends UserFactory {
 			dotConnect.addParam("%"+sanitizeFilter.toLowerCase()+"%");
 		}
 
-		if(start > -1)
+		if(start > -1){
 			dotConnect.setStartRow(start);
-		if(limit > -1)
+		}
+		if(limit > -1) {
 			dotConnect.setMaxRows(limit);
-
-		ArrayList<Map<String, Object>> results = dotConnect.loadResults();
+		}
+		final List<Map<String, Object>> results = dotConnect.loadResults();
 
 		// Since limit is a small number, convert each row to appropriate entity
-		ArrayList<User> users = new ArrayList<User>();
+		final List<User> users = new ArrayList<User>();
 
-		int length = results.size();
-		for(int i = 0;i < length; i++ ) {
-			Map<String, Object> hash = (Map<String, Object>) results.get(i);
-			String userId = (String) hash.get("userid");
-			User u = loadUserById(userId);
+		for (final Map<String, Object> hash : results) {
+			final String userId = (String) hash.get("userid");
+			final User u = loadUserById(userId);
 			users.add(u);
 			uc.add(u.getUserId(), u);
 		}
 
 		return users;
 	}
-	
+
 	@Override
 	public User saveUser(User user) throws DotDataException,DuplicateUserException {
 		if (user.getUserId() == null) {
@@ -386,25 +406,52 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		return getCountUsersByNameOrEmailOrUserID(filter, true, true);
 	}
 
+	
+	 @Override
+	  public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault)  throws DotDataException {
+	   return getCountUsersByNameOrEmailOrUserID(filter, true, true, null);
+	 }
+	
+	
 	@Override
-	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault)
+	public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault, String roleId)
 			throws DotDataException {
-		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
-		filter = SQLUtil.sanitizeParameter(filter);
-		StringBuilder query = new StringBuilder("SELECT COUNT(*) AS count FROM user_ WHERE ");
-		query.append("(LOWER(userid) LIKE '%").append(filter).append("%' ");
-		query.append("OR LOWER(firstName) LIKE '%").append(filter).append("%' ");
-		query.append("OR LOWER(lastName) LIKE '%").append(filter).append("%' ");
-		query.append("OR LOWER(emailAddress) LIKE '%").append(filter).append("%' ");
-		query.append("OR ").append(DotConnect.concat(new String[] { "LOWER(firstName)", "' '", "LOWER(lastName)" }))
-				.append(" LIKE '%").append(filter).append("%') ");
-		query.append((!includeAnonymous) ? "AND userid <> 'anonymous' " : " ");
-		query.append((!includeDefault) ? "AND userid <> 'dotcms.org.default' " : " ");
-		query.append("AND userid <> 'system' ");
-		query.append("AND delete_in_progress = ");
-		query.append(DbConnectionFactory.getDBFalse());
-		DotConnect dotConnect = new DotConnect();
-		dotConnect.setSQL(query.toString());
+    filter = (UtilMethods.isSet(filter) ? "%" + filter.toLowerCase() + "%" :null);
+
+		
+    DotConnect dotConnect = new DotConnect();
+    StringBuilder sql = new StringBuilder("select count(*) as count from user_ ");
+    if(roleId!=null) {
+      sql.append(", users_cms_roles ");
+    }
+    
+    sql.append(" where 1=1 ");
+    if(filter!=null) {
+      sql.append(" AND (lower(userid) like ? or lower(firstName) like ? or lower(lastName) like ? or lower(emailAddress) like ?) ");
+    }
+    sql.append(" AND userid <> 'system' ");
+    sql.append(((!includeAnonymous) ? "AND userid <> 'anonymous'" : " "));
+    sql.append(((!includeDefault) ? "AND userid <> 'dotcms.org.default'" : " "));
+    sql.append(" AND delete_in_progress = ");
+    sql.append(DbConnectionFactory.getDBFalse());
+    if(roleId!=null) {
+      sql.append(" AND role_id = ? " );
+      sql.append(" AND users_cms_roles.user_id=user_.userid " );
+      
+    }
+
+
+    dotConnect.setSQL(sql.toString());
+    if(filter!=null) {
+      dotConnect.addParam(filter);
+      dotConnect.addParam(filter);
+      dotConnect.addParam(filter);
+      dotConnect.addParam(filter);
+    }
+    if(roleId!=null) {
+      dotConnect.addParam(roleId);
+    }
+    
 		return dotConnect.getInt("count");
 	}
 
@@ -417,38 +464,59 @@ public class UserFactoryLiferayImpl extends UserFactory {
 	public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous) throws DotDataException {
 		return getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, true);
 	}
-
+  @Override
+  protected List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
+      int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
+    return getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault, null);
+    
+  }
 	@Override
 	protected List<User> getUsersByNameOrEmailOrUserID(String filter, int page,
-			int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
+			int pageSize, boolean includeAnonymous, boolean includeDefault, String roleId) throws DotDataException {
+	  
+
 		List<User> users = new ArrayList<>(pageSize);
-		DotConnect dotConnect = new DotConnect();
+		
 		if (page == 0) {
 			page = 1;
 		}
 		int bottom = ((page - 1) * pageSize);
 		int top = (page * pageSize);
-		filter = (UtilMethods.isSet(filter) ? filter.toLowerCase() : "");
-		filter = SQLUtil.sanitizeParameter(filter);
-		StringBuilder sql = new StringBuilder("select userid from user_ where (lower(userid) like '%");
-		sql.append(filter);
-		sql.append("%' or lower(firstName) like '%");
-		sql.append(filter);
-		sql.append("%' or lower(lastName) like '%");
-		sql.append(filter);
-		sql.append("%' or lower(emailAddress) like '%");
-		sql.append(filter);
-		sql.append("%'  or ");
-		sql.append(DotConnect.concat(new String[]{"lower(firstName)", "' '", "lower(lastName)"}));
-		sql.append(" like '%");
-		sql.append(filter);
-		sql.append("%') AND userid <> 'system' ");
-		sql.append(((!includeAnonymous) ? "AND userid <> 'anonymous'" : " "));
-		sql.append(((!includeDefault) ? "AND userid <> 'dotcms.org.default'" : " "));
+		filter = (UtilMethods.isSet(filter) ? "%" + filter.toLowerCase() + "%" :null);
+		
+		DotConnect dotConnect = new DotConnect();
+		StringBuilder sql = new StringBuilder("select userid from user_ ");
+		if(roleId!=null) {
+		  sql.append(", users_cms_roles ");
+		}
+		
+		sql.append(" where 1=1 ");
+		if(filter!=null) {
+		  sql.append(" AND (lower(userid) like ? or lower(firstName) like ? or lower(lastName) like ? or lower(emailAddress) like ?) ");
+		}
+		sql.append(" AND userid <> 'system' ");
+		sql.append(((!includeAnonymous) ? " AND userid <> 'anonymous'" : " "));
+		sql.append(((!includeDefault) ? " AND userid <> 'dotcms.org.default'" : " "));
 		sql.append(" AND delete_in_progress = ");
 		sql.append(DbConnectionFactory.getDBFalse());
+		if(roleId!=null) {
+		  sql.append(" AND role_id = ? " );
+		  sql.append(" AND users_cms_roles.user_id=user_.userid " );
+		}
+
 		sql.append(" order by firstName asc,lastname asc");
 		dotConnect.setSQL(sql.toString());
+		if(filter!=null) {
+		  dotConnect.addParam(filter);
+		  dotConnect.addParam(filter);
+		  dotConnect.addParam(filter);
+		  dotConnect.addParam(filter);
+		}
+		if(roleId!=null) {
+		  dotConnect.addParam(roleId);
+		}
+		
+		
 		dotConnect.setMaxRows(top);
 		List<?> results = dotConnect.getResults();
 		int lenght = results.size();
@@ -465,6 +533,12 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		}
 		return users;
 	}
+	
+
+	
+	
+	
+	
 
 	@Override
 	protected List<User> getUnDeletedUsers() throws DotDataException {

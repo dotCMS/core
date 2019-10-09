@@ -3,12 +3,14 @@ package com.dotcms.workflow.helper;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.v1.workflow.*;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.workflow.form.*;
@@ -377,7 +379,72 @@ public class WorkflowHelper {
         }
     }
 
+    @WrapInTransaction
+    public SystemActionWorkflowActionMapping deleteSystemAction(final String identifier, final User user) throws DotDataException, DotSecurityException {
 
+        final Optional<SystemActionWorkflowActionMapping> mapping = this.workflowAPI.findSystemActionByIdentifier(identifier, user);
+
+        if (mapping.isPresent()) {
+            if (!this.workflowAPI.deleteSystemAction(mapping.get()).isPresent()) {
+
+                throw new InternalServerException("Could not delete the system action: " + identifier +
+                        ", it may not exists");
+            }
+        } else {
+
+            throw new NotFoundInDbException("Could not delete the system action: " + identifier + ", because it does not exists");
+        }
+
+        return mapping.get();
+    }
+
+    @WrapInTransaction
+    public SystemActionWorkflowActionMapping deleteSystemAction(final WorkflowAPI.SystemAction systemAction, final ContentType contentType, final User user) throws DotDataException, DotSecurityException {
+
+        final Optional<SystemActionWorkflowActionMapping> mapping = this.workflowAPI.findSystemActionByContentType(systemAction, contentType, user);
+
+        if (mapping.isPresent()) {
+            this.workflowAPI.deleteSystemAction(mapping.get()).isPresent();
+            return mapping.get();
+        }
+
+        return null;
+    }
+
+    @CloseDBIfOpened
+    public List<WorkflowAction> findActions(final Set<String> schemes, final WorkflowAPI.SystemAction systemAction, final User user)
+            throws DotDataException, DotSecurityException {
+
+        switch (systemAction) {
+
+            case NEW:
+                return findActionsOnNew (schemes, user);
+            default:
+                // todo: implement rest of them here
+                break;
+        }
+
+        return Collections.emptyList();
+    }
+
+    private List<WorkflowAction> findActionsOnNew(final Set<String> schemes, final User user) throws DotDataException, DotSecurityException {
+
+        final ImmutableList.Builder<WorkflowAction> actions = new ImmutableList.Builder<>();
+
+        for (final String schemeId : schemes) {
+
+            final Optional<WorkflowStep> workflowStep = this.workflowAPI.findFirstStep(schemeId);
+            if (workflowStep.isPresent()) {
+                actions.addAll(this.workflowAPI.findActions(workflowStep.get(), user));
+            }
+        }
+
+        return actions.build();
+    }
+
+    public List<SystemActionWorkflowActionMapping> findSystemActionsByContentType(final ContentType contentType, final User user) throws DotDataException, DotSecurityException {
+        return this.workflowAPI.findSystemActionsByContentType(contentType, user);
+    }
 
     private static class SingletonHolder {
         private static final WorkflowHelper INSTANCE = new WorkflowHelper();
@@ -1000,8 +1067,8 @@ public class WorkflowHelper {
      * @return WorkflowStep
      */
     @WrapInTransaction
-    public WorkflowStep deleteAction(final @NotNull String actionId,
-                                     final @NotNull String stepId,
+    public WorkflowStep deleteAction(final String actionId,
+                                     final String stepId,
                                      final User user) {
 
         if (!UtilMethods.isSet(actionId)) {
@@ -1296,6 +1363,54 @@ public class WorkflowHelper {
     }
 
     /**
+     * Save the mapping between the System Action and the Workflow Action for a Content Type or Scheme
+     * @param workflowSystemActionForm {@link WorkflowSystemActionForm}
+     * @param user {@link User}
+     * @return SystemActionWorkflowActionMapping
+     */
+    @WrapInTransaction
+    public SystemActionWorkflowActionMapping mapSystemActionToWorkflowAction(
+            final WorkflowSystemActionForm workflowSystemActionForm, final User user) throws DotSecurityException, DotDataException {
+
+        SystemActionWorkflowActionMapping mapping = null;
+        final WorkflowAction workflowAction = this.workflowAPI.findAction(workflowSystemActionForm.getActionId(), user);
+
+        if (null != workflowAction) {
+            if (UtilMethods.isSet(workflowSystemActionForm.getSchemeId())) {
+
+                final WorkflowScheme workflowScheme = this.workflowAPI.findScheme(workflowSystemActionForm.getSchemeId());
+                mapping = this.workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(workflowSystemActionForm.getSystemAction(),
+                        workflowAction, workflowScheme);
+            } else if (UtilMethods.isSet(workflowSystemActionForm.getContentTypeVariable())) {
+
+                final ContentType contentType = this.findContentType(workflowSystemActionForm.getContentTypeVariable(), user);
+                mapping = this.workflowAPI.mapSystemActionToWorkflowActionForContentType(workflowSystemActionForm.getSystemAction(),
+                        workflowAction, contentType);
+            } else {
+
+                throw new BadRequestException("SchemeId or Content Type Variable are required");
+            }
+        } else {
+
+            throw new DoesNotExistException("The workflow action with the id: " + workflowSystemActionForm.getActionId() + " does not exists");
+        }
+
+
+        return mapping;
+    }
+
+    private ContentType findContentType (final String variable, final User user)
+            throws DotDataException, DotSecurityException {
+
+        try {
+            return APILocator.getContentTypeAPI(user)
+                    .find(variable);
+        } catch (NotFoundInDbException e) {
+            throw new BadRequestException("The content type: " + variable + " does not exists");
+        }
+    }
+
+    /**
      * Save a WorkflowActionForm returning the WorkflowAction created.
      * A WorkflowActionForm can send a stepId in that case the Action will be associated to the Step in the same transaction.
      * @param actionId When present an update operation takes place otherwise an insert is executed
@@ -1322,8 +1437,7 @@ public class WorkflowHelper {
         newAction.setSchemeId   (workflowActionForm.getSchemeId());
         newAction.setCondition  (workflowActionForm.getActionCondition());
         newAction.setRequiresCheckout(false);
-        newAction.setShowOn((null != workflowActionForm.getShowOn() && !workflowActionForm.getShowOn().isEmpty())?
-                workflowActionForm.getShowOn():WorkflowAPI.DEFAULT_SHOW_ON);
+        newAction.setShowOn(workflowActionForm.getShowOn());
         newAction.setRoleHierarchyForAssign(workflowActionForm.isRoleHierarchyForAssign());
 
         try {

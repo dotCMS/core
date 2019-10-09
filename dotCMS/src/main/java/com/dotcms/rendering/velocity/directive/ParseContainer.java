@@ -38,28 +38,9 @@ public class ParseContainer extends DotDirective {
 		final TemplatePathStrategyResolver templatePathResolver = TemplatePathStrategyResolver.getInstance();
 		final Optional<TemplatePathStrategy> strategy           = templatePathResolver.get(context, params, arguments);
 
-		this.processContentletListPerPersona(context, params, arguments);
-
 		return strategy.isPresent()?
 				strategy.get().apply(context, params, arguments):
 				templatePathResolver.getDefaultStrategy().apply(context, params, arguments);
-	}
-
-	// depending on the persona selected (if any) will set the contentlist default
-	private void processContentletListPerPersona (final Context context, final RenderParams params, final String... arguments) {
-
-		final String id 			 = arguments[0];
-		final String personalization = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization();
-		final String uniqueId        = arguments.length > 1 && UtilMethods.isSet(arguments[1])? arguments[1] :  DEFAULT_UUID_VALUE;
-		final String containerId     = (String) context.get("containerIdentifier"+VelocityUtil.escapeContextTokenIdentifier(id));
-		final String key 			 = "contentletList" +(null != containerId ?containerId:id) + uniqueId;
-		final Object personalizationPayload =
-				context.get(key + VelocityUtil.escapeContextTokenIdentifier(personalization));
-		if (null != personalizationPayload) {
-			context.put(key, personalizationPayload);
-		} else {
-			context.put(key, context.get(key + VelocityUtil.escapeContextTokenIdentifier(MultiTree.DOT_PERSONALIZATION_DEFAULT)));
-		}
 	}
 
 }

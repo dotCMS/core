@@ -1,12 +1,5 @@
 package com.dotmarketing.business;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -15,17 +8,12 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.TimeUtil;
-import com.dotmarketing.beans.ContainerStructure;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -52,26 +40,26 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -474,7 +462,7 @@ public class UserAPITest extends IntegrationTestBase {
 		 * Relate content to page
 		 */
 		MultiTree m = new MultiTree(contentAsset.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
-		MultiTreeFactory.saveMultiTree(m);
+		APILocator.getMultiTreeAPI().saveMultiTree(m);
 
 		/**
 		 * Add menu link
@@ -533,7 +521,10 @@ public class UserAPITest extends IntegrationTestBase {
 
 		WorkflowTask task = workflowAPI.findTaskByContentlet(contentAsset2);
 		assertTrue(task.getAssignedTo().equals(newUserUserRole.getId()));
-		assertTrue(task.getCreatedBy().equals(newUserUserRole.getId()));
+		Logger.info(this,"******* userToDelete: " + userToDelete);
+		Logger.info(this,"******* task.getCreatedBy(): " + task.getCreatedBy());
+		Logger.info(this,"******* newUserUserRole.getId(): " + newUserUserRole.getId());
+		assertTrue(task.getCreatedBy().equals(userToDelete.getUserId()));
 
 		WorkflowStep  step =  workflowAPI.findStepByContentlet(contentAsset2);
 		assertNotNull(step);
@@ -592,53 +583,53 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(userAPI.loadByUserByEmail(replacementUser.getEmailAddress(),systemUser,false));
 
 		link = APILocator.getMenuLinkAPI().find(link.getInode(), systemUser, false);
-		assertTrue(link.getOwner().equals(replacementUser.getUserId()));
-		assertTrue(link.getModUser().equals(replacementUser.getUserId()));
+		assertEquals(replacementUser.getUserId(), link.getOwner());
+		assertEquals(replacementUser.getUserId(), link.getModUser());
 
 		page =htmlPageAssetAPI.getPageByPath(testFolder.getPath()+page0Str, host, langId, true);
 		Logger.info(this, "Page inode:" + page.getInode());
 		Logger.info(this, "Page identifier:" + page.getIdentifier());
-		assertTrue("Page Owner " + page.getOwner(), page.getOwner().equals(replacementUser.getUserId()));
-		assertTrue(page.getModUser().equals(replacementUser.getUserId()));
+		assertEquals("Page Owner " + page.getOwner(), replacementUser.getUserId(), page.getOwner());
+		assertEquals(replacementUser.getUserId(), page.getModUser());
 
 		List<Contentlet> contentAssets = conAPI.findByStructure(st, systemUser, false, 100,0);
 		for(Contentlet content: contentAssets){
-			assertTrue(content.getOwner().equals(replacementUser.getUserId()));
-			assertTrue(content.getModUser().equals(replacementUser.getUserId()));
+			assertEquals(replacementUser.getUserId(), content.getOwner());
+			assertEquals(replacementUser.getUserId(), content.getModUser());
 
 			task = workflowAPI.findTaskByContentlet(content);
-			assertTrue(task.getAssignedTo().equals(replacementUserUserRole.getId()));
-			assertTrue(task.getCreatedBy().equals(replacementUserUserRole.getId()));
+			assertEquals(replacementUserUserRole.getId(), task.getAssignedTo());
+			Logger.info(this, "task.getCreatedBy() = " + task.getCreatedBy());
+			Logger.info(this, "replacementUserUserRole.getId() = " + replacementUserUserRole.getId());
+			assertEquals(replacementUser.getUserId(), task.getCreatedBy());
 
 			step = workflowAPI.findStepByContentlet(content);
 			assertNotNull(step);
 			action =  workflowAPI.findActions(step, systemUser).get(0);
-			assertTrue(action.getNextAssign().equals(replacementUserUserRole.getId()));
+			assertEquals(replacementUserUserRole.getId(), action.getNextAssign());
 
 			comments = workflowAPI.findWorkFlowComments(task);
 			for(WorkflowComment comm : comments){
-				assertTrue(comm.getPostedBy().equals(replacementUser.getUserId()));
+				assertEquals(replacementUser.getUserId(), comm.getPostedBy());
 			}
 		}
 
 		container = containerAPI.getLiveContainerById(container.getIdentifier(), systemUser, false);
-		assertTrue(container.getOwner().equals(replacementUser.getUserId()));
-		assertTrue(container.getModUser().equals(replacementUser.getUserId()));
+		assertEquals(replacementUser.getUserId(), container.getOwner());
+		assertEquals(replacementUser.getUserId(), container.getModUser());
 
 		template = templateAPI.find(template.getInode(), systemUser, false);
-		assertTrue(template.getOwner().equals(replacementUser.getUserId()));
-		assertTrue(template.getModUser().equals(replacementUser.getUserId()));
+		assertEquals(replacementUser.getUserId(), template.getOwner());
+		assertEquals(replacementUser.getUserId(), template.getModUser());
 
 		CacheLocator.getFolderCache().removeFolder(testFolder, identifierAPI.find(testFolder.getIdentifier()));
 		testFolder = folderAPI.findFolderByPath(testFolder.getPath(), host, systemUser, false);
-		assertTrue(testFolder.getOwner().equals(replacementUser.getUserId()));
+		assertEquals(replacementUser.getUserId(), testFolder.getOwner());
 
 		hostVariable = hostVariableAPI.getVariablesForHost(host.getIdentifier(),replacementUser,false).get(0);
-		assertTrue(hostVariable.getLastModifierId().equals(replacementUser.getUserId()));
+		assertEquals(replacementUser.getUserId(), hostVariable.getLastModifierId());
 
-		APILocator.getContentTypeAPI(systemUser).delete(new StructureTransformer(st).from());
-		conAPI.archive(contentAsset,systemUser,false);
-		conAPI.delete(contentAsset,systemUser,false);
+
 	}
 
 	private void waitForDeleteCompletedNotification(User userToDelete) throws DotDataException, InterruptedException {
@@ -717,7 +708,8 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), systemUser, false);}
+
+		}
 
 	@Test
 	public void testGetUsersByNameOrEmailOrUserIDDeleted() throws DotDataException, DotSecurityException {
@@ -736,7 +728,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -779,8 +771,7 @@ public class UserAPITest extends IntegrationTestBase {
 			fail("The user saved was not found in the retrieved list.");
 		}
 
-		//Clean up the created user
-		userAPI.delete(newUser, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -801,7 +792,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -822,7 +813,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -843,7 +834,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -864,7 +855,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(users.size() == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -884,7 +875,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(count == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 
 	}
 
@@ -905,7 +896,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(count == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -925,7 +916,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(count == 1);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -945,7 +936,7 @@ public class UserAPITest extends IntegrationTestBase {
 
 		assertTrue(count == 0);
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -958,6 +949,99 @@ public class UserAPITest extends IntegrationTestBase {
 		assertTrue(users.size() > 0);
 
 	}
+	
+	
+	
+	static List<User> frontEndUsers = null;
+  static List<User> backEndUsers = null;
+  static String uniqueUserKey = UUIDGenerator.shorty();
+	
+	private void loadEndUsers() throws DotStateException, DotDataException {
+	  if(frontEndUsers!=null) {
+	    return;
+	  }
+    UserAPI userAPI = APILocator.getUserAPI();
+    String unique = uniqueUserKey;
+    List<User> userList = new ArrayList<>();
+    
+    for (int i = 0; i < 10; i++) {
+      User user = new UserDataGen().firstName("frontend" + unique + i).nextPersisted();
+      roleAPI.addRoleToUser(roleAPI.loadFrontEndUserRole(), user);
+      userList.add(user);
+    }
+    frontEndUsers = userList;
+    userList = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      User user = new UserDataGen().firstName("backend" + unique + i).nextPersisted();
+      roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), user);
+      userList.add(user);
+    }
+    backEndUsers=userList;
+	  
+	  
+	}
+	
+	/***
+	 * this method tests that the count of users we get when searching users
+	 * by a text filter and role membership
+	 * returns proper values
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+  @Test
+  public void testUserApiGetCount() throws DotDataException, DotSecurityException {
+
+    loadEndUsers();
+
+    long frontEndCount =
+        userAPI.getCountUsersByNameOrEmailOrUserID("frontend" + uniqueUserKey, false, false, roleAPI.loadFrontEndUserRole().getId());
+    long backEndCount =
+        userAPI.getCountUsersByNameOrEmailOrUserID("backend" + uniqueUserKey, false, false, roleAPI.loadBackEndUserRole().getId());
+
+    assertTrue("should have 10 frontend users, got " + frontEndCount, frontEndCount == 10);
+
+    assertTrue("should have 10 backend users, got " + backEndCount, backEndCount == 10);
+    
+    long uniqueBackEndUser =
+        userAPI.getCountUsersByNameOrEmailOrUserID("backend" + uniqueUserKey + "5", false, false, roleAPI.loadBackEndUserRole().getId());
+
+    assertTrue("should have 1 matching user, got " + uniqueBackEndUser, uniqueBackEndUser == 1);
+    
+    
+  }
+	
+	
+  /***
+   * this method tests that the list of users we get when searching users
+   * by a text filter and role membership is correct - based on filter and the the role
+   * id passed in
+   * returns proper values
+   * @throws DotDataException
+   * @throws DotSecurityException
+   */
+  @Test
+  public void testUserApiFilterUsersByNameAndRole() throws DotDataException, DotSecurityException {
+
+    loadEndUsers();
+
+    List<User> frontEndUsers =
+        userAPI.getUsersByNameOrEmailOrUserID("frontend" + uniqueUserKey, 0,20,false, false, roleAPI.loadFrontEndUserRole().getId());
+    
+    List<User> backEndUsers =
+        userAPI.getUsersByNameOrEmailOrUserID("backend" + uniqueUserKey,  0,20,false, false, roleAPI.loadBackEndUserRole().getId());
+
+    assertTrue("should have 10 frontend users, got " + frontEndUsers.size(), frontEndUsers.size() == 10);
+
+    assertTrue("should have 10 backend users, got " + backEndUsers.size(), backEndUsers.size() == 10);
+    
+    List<User>  uniqueBackEndUser =
+        userAPI.getUsersByNameOrEmailOrUserID("backend" + uniqueUserKey + "5",  0,20, false, false, roleAPI.loadBackEndUserRole().getId());
+
+    assertTrue("should have 1 matching user, got " + uniqueBackEndUser.size(), uniqueBackEndUser.size() == 1);
+    
+    
+  }
+	
 
 	@Test
 	public void testGetUsersIdsByCreationDateDeleted() throws DotDataException, DotSecurityException {
@@ -981,7 +1065,7 @@ public class UserAPITest extends IntegrationTestBase {
 		assertNotNull(users);
 		assertTrue(!users.contains(user.getUserId()));
 
-		userAPI.delete(user, userAPI.getDefaultUser(), userAPI.getSystemUser(), false);
+
 	}
 
 	@Test
@@ -991,21 +1075,23 @@ public class UserAPITest extends IntegrationTestBase {
 
         assertTrue(backendUser.isBackendUser());
 		assertFalse(backendUser.isFrontendUser());
+		final Role frontEndRole = TestUserUtils.getFrontendRole();
+		final Role backendRole = TestUserUtils.getBackendRole();
 
-		final User frontendUser = new UserDataGen().roles(TestUserUtils.getFrontendRole()).nextPersisted();
+		final User frontendUser = new UserDataGen().roles(frontEndRole).nextPersisted();
 
 		assertTrue(frontendUser.isFrontendUser());
 		assertFalse(frontendUser.isBackendUser());
 
-		final User frontendAndBackendUser = new UserDataGen().roles(TestUserUtils.getFrontendRole()).nextPersisted();
+		final User frontendAndBackendUser = new UserDataGen().roles(frontEndRole).nextPersisted();
 
 		assertTrue(frontendAndBackendUser.isFrontendUser());
 		assertFalse(frontendAndBackendUser.isBackendUser());
 
-        APILocator.getRoleAPI().removeRoleFromUser(TestUserUtils.getBackendRole(),backendUser);
+        APILocator.getRoleAPI().removeRoleFromUser(backendRole,backendUser);
 		assertFalse(backendUser.isBackendUser());
 
-		APILocator.getRoleAPI().removeRoleFromUser(TestUserUtils.getFrontendRole(),frontendUser);
+		APILocator.getRoleAPI().removeRoleFromUser(frontEndRole,frontendUser);
 		assertFalse(frontendUser.isFrontendUser());
 
 	}

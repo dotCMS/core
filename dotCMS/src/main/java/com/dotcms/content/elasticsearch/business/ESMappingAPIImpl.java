@@ -12,6 +12,8 @@ import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.CustomField;
+import com.dotcms.contenttype.model.field.FieldType;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -79,6 +81,9 @@ import org.elasticsearch.client.indices.GetMappingsResponse;
 import org.elasticsearch.client.indices.PutMappingRequest;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
+import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
 
 /**
  * Implementation class for the {@link ContentMappingAPI}.
@@ -403,8 +408,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	    List<Category> cats = APILocator.getCategoryAPI().getParents(con, APILocator.systemUser(), false);
 
-        List<String> catsVarNames = cats.stream().map(Category::getCategoryVelocityVarName).collect(
-				Collectors.toList());
+        List<String> catsVarNames = cats.stream().map(Category::getCategoryVelocityVarName).map(
+                String::toLowerCase).collect(Collectors.toList());
 
         m.put(ESMappingConstants.CATEGORIES, catsVarNames);
         
@@ -620,6 +625,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						m.put(ESMappingConstants.PERSONAS, personaTagsNames);
 					}
 
+				} else if(f.getFieldType().equals(CUSTOM_FIELD.legacyValue())
+						&& f.getVelocityVarName().equals(PERSONA_KEY_TAG_FIELD_VAR)) {
+					m.put(PERSONA_KEY_TAG,valueObj.toString());
+					m.put(keyName, valueObj.toString());
 				} else {
 					if (f.getFieldContentlet()
 							.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {

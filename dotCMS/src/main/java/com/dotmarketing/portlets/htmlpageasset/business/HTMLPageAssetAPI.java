@@ -36,7 +36,7 @@ public interface HTMLPageAssetAPI {
     static final String TITLE_FIELD="title";
     static final String TITLE_FIELD_NAME="Title";
     
-    static final String FRIENDLY_NAME_FIELD="friendlyname";
+    static final String FRIENDLY_NAME_FIELD="friendlyName";
     static final String FRIENDLY_NAME_FIELD_NAME="Friendly Name";
     
     static final String SORT_ORDER_FIELD = "sortOrder";

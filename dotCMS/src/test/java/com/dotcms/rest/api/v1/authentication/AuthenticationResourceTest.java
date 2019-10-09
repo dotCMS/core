@@ -1,37 +1,45 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.cms.login.LoginServiceAPI;
-import javax.ws.rs.core.Response;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.UserUtilTest;
 import com.dotmarketing.business.LoginAsAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.logConsole.model.LogMapper;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
-import com.liferay.portal.*;
+import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.RequiredLayoutException;
+import com.liferay.portal.UserActiveException;
+import com.liferay.portal.UserEmailAddressException;
+import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import java.lang.reflect.InvocationTargetException;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import java.util.Map;
+import javax.ws.rs.core.Response;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class AuthenticationResourceTest extends UnitTestBase {
 
@@ -44,6 +52,11 @@ public class AuthenticationResourceTest extends UnitTestBase {
     public void testEmptyParameter() throws JSONException{
 
         try {
+
+            LogMapper mockLogMapper = mock(LogMapper.class);
+            when(mockLogMapper.isLogEnabled(any())).thenReturn(false);
+            LogMapper.setLogMapper(mockLogMapper);
+
             final AuthenticationForm authenticationForm =
                     new AuthenticationForm.Builder().build();
 
@@ -365,7 +378,9 @@ public class AuthenticationResourceTest extends UnitTestBase {
         LoginAsAPI loginAsAPI = mock( LoginAsAPI.class );
         LoginServiceAPI loginService = mock( LoginServiceAPI.class );
 
-        User user = UserUtilTest.createUser();
+        User user = mock(User.class);
+        UserUtilTest.set(user);
+
         when( loginService.getLoggedInUser( mockHttpRequest ) ).thenReturn( user );
 
         AuthenticationHelper helper = new AuthenticationHelper(loginAsAPI, loginService);
@@ -392,8 +407,11 @@ public class AuthenticationResourceTest extends UnitTestBase {
 
         LoginServiceAPI loginService = mock( LoginServiceAPI.class );
 
-        User user = UserUtilTest.createUser();
-        User loginAsUser = UserUtilTest.createUser();
+        User user = mock(User.class);
+        UserUtilTest.set(user);
+
+        User loginAsUser = mock(User.class);
+        UserUtilTest.set(loginAsUser);
 
         when( loginService.getLoggedInUser( mockHttpRequest ) ).thenReturn( loginAsUser );
         when(loginAsAPI.getPrincipalUser(WebSessionContext.getInstance(mockHttpRequest))).thenReturn(user);

@@ -1,6 +1,9 @@
 package com.dotmarketing.portlets.contentlet.struts;
 
 
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -24,9 +27,6 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.validator.ValidatorForm;
 
 public class ContentletForm extends ValidatorForm {
 
@@ -319,8 +319,8 @@ public class ContentletForm extends ValidatorForm {
 	}
 
 	/**
-	 * Sets the deleted.
-	 * @param deleted The deleted to set
+	 * Sets the archived.
+	 * @param archived The archived to set
 	 */
 	public void setArchived(boolean archived) {
 		map.put(ARCHIVED_KEY, archived);
@@ -404,7 +404,7 @@ public class ContentletForm extends ValidatorForm {
 	
 	/**
 	 * Sets the sort_order.
-	 * @param sort_order The sort_order to set
+	 * @param sortOrder The sort_order to set
 	 */
 	public void setSortOrder(long sortOrder) {
 		map.put(SORT_ORDER_KEY, sortOrder);

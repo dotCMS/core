@@ -1,0 +1,20 @@
+# https://docs.docker.com/compose/compose-file/compose-versioning/
+version: "3.7"
+
+# https://docs.docker.com/compose/compose-file/
+# https://docs.docker.com/compose/extends/
+
+services:
+
+  unit-tests:
+    image: "${IMAGE_BASE_NAME}"
+    command: ["unit"]
+    environment:
+      EXTRA_PARAMS:
+      GOOGLE_CREDENTIALS_BASE64:
+      EXPORT_REPORTS:
+      PULL_REQUEST:
+      GITHUB_USER:
+      GITHUB_USER_TOKEN:
+    ports:
+      - "15005:5005"

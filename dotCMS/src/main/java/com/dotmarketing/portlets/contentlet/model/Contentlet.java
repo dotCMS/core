@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
@@ -24,6 +26,7 @@ import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -44,6 +47,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,6 +60,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,78 +78,79 @@ import org.apache.commons.lang.builder.ToStringBuilder;
  */
 public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Treeable, Ruleable  {
 
-    private static final long serialVersionUID = 1L;
-    public static final String TITTLE_KEY = "title";
-    public static final String HAS_TITLE_IMAGE_KEY = "hasTitleImage";
-    public static final String INODE_KEY = "inode";
-    public static final String LANGUAGEID_KEY = "languageId";
-    public static final String STRUCTURE_INODE_KEY = "stInode";
-    public static final String STRUCTURE_NAME_KEY = "stName";
-    public static final String CONTENT_TYPE_KEY = "contentType";
-    public static final String BASE_TYPE_KEY = "baseType";
-    public static final String LAST_REVIEW_KEY = "lastReview";
-    public static final String NEXT_REVIEW_KEY = "nextReview";
-    public static final String REVIEW_INTERNAL_KEY = "reviewInternal";
-    public static final String DISABLED_WYSIWYG_KEY = "disabledWYSIWYG";
-    public static final String LOCKED_KEY = "locked";
-    public static final String ARCHIVED_KEY = "archived";
-    public static final String LIVE_KEY = "live";
-    public static final String WORKING_KEY = "working";
-    public static final String MOD_DATE_KEY = "modDate";
-    public static final String MOD_USER_KEY = "modUser";
-    public static final String OWNER_KEY = "owner";
-    public static final String IDENTIFIER_KEY = "identifier";
-    public static final String SORT_ORDER_KEY = "sortOrder";
-    public static final String HOST_KEY = "host";
-    public static final String HOST_NAME = "hostName";
-    public static final String FOLDER_KEY = "folder";
-	public static final String NULL_PROPERTIES = "nullProperties";
-	public static final String WORKFLOW_ACTION_KEY = "wfActionId";
-	public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
-	public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
-	public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
-    public static final String DOT_NAME_KEY = "__DOTNAME__";
+  private static final long serialVersionUID = 1L;
+  public static final String TITTLE_KEY = "title";
+  public static final String HAS_TITLE_IMAGE_KEY = "hasTitleImage";
+  public static final String INODE_KEY = "inode";
+  public static final String LANGUAGEID_KEY = "languageId";
+  public static final String STRUCTURE_INODE_KEY = "stInode";
+  public static final String STRUCTURE_NAME_KEY = "stName";
+  public static final String CONTENT_TYPE_KEY = "contentType";
+  public static final String BASE_TYPE_KEY = "baseType";
+  public static final String LAST_REVIEW_KEY = "lastReview";
+  public static final String NEXT_REVIEW_KEY = "nextReview";
+  public static final String REVIEW_INTERNAL_KEY = "reviewInternal";
+  public static final String DISABLED_WYSIWYG_KEY = "disabledWYSIWYG";
+  public static final String LOCKED_KEY = "locked";
+  public static final String ARCHIVED_KEY = "archived";
+  public static final String LIVE_KEY = "live";
+  public static final String WORKING_KEY = "working";
+  public static final String MOD_DATE_KEY = "modDate";
+  public static final String MOD_USER_KEY = "modUser";
+  public static final String OWNER_KEY = "owner";
+  public static final String IDENTIFIER_KEY = "identifier";
+  public static final String SORT_ORDER_KEY = "sortOrder";
+  public static final String HOST_KEY = "host";
+  public static final String HOST_NAME = "hostName";
+  public static final String FOLDER_KEY = "folder";
+  public static final String NULL_PROPERTIES = "nullProperties";
+  public static final String WORKFLOW_ACTION_KEY = "wfActionId";
+  public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
+  public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
+  public static final String WORKFLOW_BULK_KEY = "wfActionBulk";
+  public static final String DOT_NAME_KEY = "__DOTNAME__";
 
-    public static final String TITLE_IMAGE_KEY="titleImage";
+  public static final String TITLE_IMAGE_KEY = "titleImage";
 
-    public static final String URL_MAP_FOR_CONTENT_KEY = "URL_MAP_FOR_CONTENT";
+  public static final String URL_MAP_FOR_CONTENT_KEY = "URL_MAP_FOR_CONTENT";
 
+  public static final String DONT_VALIDATE_ME = "_dont_validate_me";
+  public static final String DISABLE_WORKFLOW = "__disable_workflow__";
 
+  // means the contentlet is being used on unit test mode.
+  // this is only for unit test. do not use on production.
+  @VisibleForTesting
+  public static final String IS_TEST_MODE = "_is_test_mode";
 
-    public static final String DONT_VALIDATE_ME = "_dont_validate_me";
-    public static final String DISABLE_WORKFLOW = "__disable_workflow__";
+  /**
+   * Flag to avoid to trigger the workflow again on the checkin when it is already in progress.
+   */
+  public static final String WORKFLOW_IN_PROGRESS = "__workflow_in_progress__";
+  public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
+  public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
+  public static final String AUTO_ASSIGN_WORKFLOW = "AUTO_ASSIGN_WORKFLOW";
 
-    // means the contentlet is being used on unit test mode.
-	public static final String IS_TEST_MODE = "_is_test_mode";
+  public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
+  public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
+  public static final String WORKFLOW_EXPIRE_DATE = "wfExpireDate";
+  public static final String WORKFLOW_EXPIRE_TIME = "wfExpireTime";
+  public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
+  public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
+  public static final String RELATIONSHIP_KEY = "__##relationships##__";
 
-	/**
-	 * Flag to avoid to trigger the workflow again on the checkin when it is already in progress.
-	 */
-	public static final String WORKFLOW_IN_PROGRESS = "__workflow_in_progress__";
-	public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
-	public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
+  private transient ContentType contentType;
+  protected Map<String, Object> map = new ContentletHashMap();
 
-    public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
-    public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
-    public static final String WORKFLOW_EXPIRE_DATE = "wfExpireDate";
-    public static final String WORKFLOW_EXPIRE_TIME = "wfExpireTime";
-    public static final String WORKFLOW_NEVER_EXPIRE = "wfNeverExpire";
-	public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
-	public static final String RELATIONSHIP_KEY = "__##relationships##__";
+  private boolean lowIndexPriority = false;
 
-	private transient ContentType contentType;
-    protected Map<String, Object> map = new ContentletHashMap();
+  private transient ContentletAPI contentletAPI;
+  private transient UserAPI userAPI;
+  private transient IndexPolicy indexPolicy = null;
+  private transient IndexPolicy indexPolicyDependencies = null;
 
-	private boolean lowIndexPriority = false;
+  private transient boolean needsReindex = false;
 
-    private transient ContentletAPI contentletAPI;
-    private transient UserAPI userAPI;
-	private transient IndexPolicy indexPolicy = IndexPolicy.DEFER;
-	private transient IndexPolicy indexPolicyDependencies = IndexPolicy.DEFER;
-
-	private transient boolean needsReindex = false;
-
-	private transient boolean loadedTags = false;
+  private transient boolean loadedTags = false;
 
 	/**
 	 * Returns true if this contentlet needs reindex
@@ -171,10 +179,12 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * Get the indexing policy for the contentlet @see {@link IndexPolicy}
 	 * @return IndexPolicy
 	 */
+	@JsonIgnore
 	public IndexPolicy getIndexPolicy() {
 
-		return (null == this.indexPolicy)?
-				IndexPolicy.DEFER:indexPolicy;
+		return (null == this.indexPolicy)
+		    ? IndexPolicyProvider.getInstance().forSingleContent()
+		        :indexPolicy;
 	}
 
 	/**
@@ -188,16 +198,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @param indexPolicy
 	 */
 	public void setIndexPolicy(final IndexPolicy indexPolicy) {
-
-		if (null != indexPolicy) {
 			this.indexPolicy = indexPolicy;
-		}
 	}
 
 	public IndexPolicy getIndexPolicyDependencies() {
 
 		return (null == this.indexPolicyDependencies)?
-				IndexPolicy.DEFER:indexPolicyDependencies;
+		    IndexPolicyProvider.getInstance().forContentDependencies():indexPolicyDependencies;
 	}
 
 	/**
@@ -212,9 +219,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public void setIndexPolicyDependencies(final IndexPolicy indexPolicy) {
 
-		if (null != indexPolicy) {
+
 			this.indexPolicyDependencies = indexPolicy;
-		}
+
 	}
 
 	@Override
@@ -222,15 +229,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	return getInode();
     }
 
-    /**
-     * Create a contentlet based on a map (makes a copy of it)
-     * @param map
-     */
-    public Contentlet(final Map<String, Object> map) {
-		this.map = new ContentletHashMap();
-    	this.map.putAll(map);
-		this.indexPolicy = IndexPolicy.DEFER;
-    }
+  /**
+   * Create a contentlet based on a map (makes a copy of it)
+   *
+   * @param map
+   */
+  public Contentlet(final Map<String, Object> mapIn) {
+    this();
+    mapIn.values().removeIf(Objects::isNull);
+    this.map.putAll(mapIn);
+  }
 
 	/**
 	 * Create a contentlet based on a map (makes a copy of it)
@@ -238,24 +246,23 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public Contentlet(final Contentlet contentlet) {
 		this(contentlet.getMap());
-		if (null != contentlet.getIndexPolicy()) {
-			this.indexPolicy = contentlet.getIndexPolicy();
-		}
+		this.setIndexPolicy(contentlet.getIndexPolicy());
+		
 	}
 
-    /**
-     * Default class constructor.
-     */
-    public Contentlet() {
-		setInode("");
-		setIdentifier("");
-		setLanguageId(0);
-		setContentTypeId("");
-		setSortOrder(0);
-		setDisabledWysiwyg(new ArrayList<>());
-		this.indexPolicy = IndexPolicy.DEFER;
-		getWritableNullProperties();
-	}
+  /**
+   * Default class constructor.
+   */
+  public Contentlet() {
+    this.map = new ContentletHashMap();
+    setInode("");
+    setIdentifier("");
+    setLanguageId(0);
+    setContentTypeId("");
+    setSortOrder(0);
+    setDisabledWysiwyg(new ArrayList<>());
+    getWritableNullProperties();
+  }
 
     @Override
     public String getName() {
@@ -340,7 +347,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @return
      */
     public String getContentTypeId() {
-      return (String) map.get(STRUCTURE_INODE_KEY);
+      return UtilMethods.isSet(map.get(STRUCTURE_INODE_KEY)) ?( String)  map.get(STRUCTURE_INODE_KEY) : null;
     }
 
     /**
@@ -348,8 +355,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * use instead:
      * {@link #getContentTypeId()}
      */
+
     public String getStructureInode() {
-        return (String) map.get(STRUCTURE_INODE_KEY);
+        return getContentTypeId();
     }
 
 	/**
@@ -358,7 +366,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
     @Deprecated
     public void setStructureInode(String structureInode) {
-    	map.put(STRUCTURE_INODE_KEY, structureInode);
+      setContentTypeId(structureInode);
     }
 
 	/**
@@ -368,14 +376,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 *            - The Content Type ID.
 	 */
     public void setContentTypeId(String id) {
-    	map.put(STRUCTURE_INODE_KEY, id);
+      map.put(STRUCTURE_INODE_KEY,id);
+
     }
+
     /**
      *
      * @param type
      */
     public void setContentType(final ContentType type) {
-        map.put(STRUCTURE_INODE_KEY, type.id());
+      setContentTypeId(type.id());
     }
 	/**
 	 * @deprecated As of dotCMS 4.1.0. Please use the following approach:
@@ -383,6 +393,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 *             {@link #getContentType()}
 	 *             </pre>
 	 */
+    @Deprecated
+    @JsonIgnore
 	public Structure getStructure() {
 		final ContentType type = this.getContentType();
 		return null != type?
@@ -393,6 +405,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      *
      * @return
      */
+    @JsonIgnore
     public boolean hasAssetNameExtension() {
         boolean hasExtension = false;
         if(null != getContentType()){
@@ -405,6 +418,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      *
      * @return
      */
+    @Deprecated
+    @JsonIgnore
     public Date getLastReview() {
     	return (Date)map.get(LAST_REVIEW_KEY);
     }
@@ -413,6 +428,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      *
      * @param lastReview
      */
+    @Deprecated
     public void setLastReview(Date lastReview) {
     	map.put(LAST_REVIEW_KEY, lastReview);
     }
@@ -421,6 +437,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      *
      * @return
      */
+    @Deprecated
+    @JsonIgnore
     public Date getNextReview() {
     	return (Date)map.get(NEXT_REVIEW_KEY);
     }
@@ -429,6 +447,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      *
      * @param nextReview
      */
+    @Deprecated
     public void setNextReview(Date nextReview) {
     	map.put(NEXT_REVIEW_KEY, nextReview);
     }
@@ -437,6 +456,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      *
      * @return
      */
+    @Deprecated
+    @JsonIgnore
     public String getReviewInterval() {
     	return (String)map.get(REVIEW_INTERNAL_KEY);
     }
@@ -445,6 +466,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      *
      * @param reviewInterval
      */
+    @Deprecated
+    @JsonIgnore
     public void setReviewInterval(String reviewInterval) {
     	map.put(REVIEW_INTERNAL_KEY, reviewInterval);
     }
@@ -496,6 +519,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      *
      * @return
      */
+	@JsonIgnore
     public static long getSerialVersionUID() {
         return serialVersionUID;
     }
@@ -504,6 +528,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      *
      * @return
      */
+    @JsonIgnore
 	public List<String> getDisabledWysiwyg() {
 		return (List<String>)map.get(DISABLED_WYSIWYG_KEY);
 	}
@@ -575,10 +600,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public long getLongProperty(String fieldVarName) throws DotRuntimeException {
 		try{
 	    final Object test = map.get(fieldVarName);
-	    return test == null 
-	        ? 0 
-	            : test instanceof String 
-	            ? Long.parseLong((String) test)  
+	    return test == null
+	        ? 0
+	            : test instanceof String
+	            ? Long.parseLong((String) test)
 	                : ((Number) test).longValue();
 		}catch (Exception e) {
 			 throw new DotRuntimeException("Unable to retrive field value", e);
@@ -726,7 +751,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * The keys used in the map will be the velocity variables names
 	 */
 	public Map<String, Object> getMap() throws DotRuntimeException {
-		return map;
+
+        try {
+            setTags();
+        } catch (DotDataException e) {
+            Logger.error(this, e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+        return map;
 	}
 
 	/**
@@ -852,7 +884,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
 	public long getSortOrder(){
-	  return getLongProperty(SORT_ORDER_KEY);        
+	  return getLongProperty(SORT_ORDER_KEY);
 	}
 
 	/**
@@ -932,6 +964,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 * List of permissions it accepts
 	 */
+	@JsonIgnore
 	public List<PermissionSummary> acceptedPermissions() {
 		List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
 		accepted.add(new PermissionSummary("view", "view-permission-description", PermissionAPI.PERMISSION_READ));
@@ -944,6 +977,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 *
 	 */
+	@JsonIgnore
 	public List<RelatedPermissionableGroup> permissionDependencies(
 			int requiredPermission) {
 		return null;
@@ -952,6 +986,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 *
 	 */
+	@JsonIgnore
 	public Permissionable getParentPermissionable() throws DotDataException {
 
 		try {
@@ -960,11 +995,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			FolderAPI fAPI = APILocator.getFolderAPI();
 			HostAPI hostAPI = APILocator.getHostAPI();
 			Host systemHost = hostAPI.findSystemHost(systemUser, false);
-			Structure st = getStructure();
+			ContentType type = Try.of(()->getContentType()).getOrNull();
 
 
 
-			if(st != null && st.getVelocityVarName() != null && st.getVelocityVarName().equals("Host")) {
+			if(type != null && "Host".equalsIgnoreCase(type.variable())) {
 				Host hProxy = new Host(this);
 				return hProxy.getParentPermissionable();
 			}
@@ -981,8 +1016,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			}
 
 			// if this contentlet has a structure, inherit from that
-			if(st != null && InodeUtils.isSet(st.getInode())){
-				return st;
+			if(type != null && InodeUtils.isSet(type.inode())){
+				return type;
 			}
 			return null;
 
@@ -1085,6 +1120,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	/**
 	 *
 	 */
+	@JsonIgnore
 	public boolean isParentPermissionable() {
 		Structure hostStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 		if(this.getStructureInode().equals(hostStructure.getInode()))
@@ -1099,6 +1135,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @param structureInode
 	 * @return
 	 */
+	@JsonIgnore
     public static Object lazyMetadataLoad ( String inode, String structureInode ) {
 
         String cachedMetadata = CacheLocator.getContentletCache().getMetadata( inode );
@@ -1152,15 +1189,40 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		if(map ==null || key ==null){
 			return null;
 		}
+
 		Object value=map.get(key);
 
-		if(isMetadataFieldCached(getStructureInode(), key, value))
+		if(isMetadataFieldCached(getStructureInode(), key, value)) {
 		    return lazyMetadataLoad(getInode(),getStructureInode());
-
+		}
+		if(value==null) {
+  		 value=Try.of(()-> getConstantValue(key)).getOrNull();
+		}
+		
 		return value;
 
 	}
 
+	public String getConstantValue(final String key) {
+	  try {
+      if(this.getContentType()!=null && this.getContentType().fieldMap().containsKey(key)) {
+        com.dotcms.contenttype.model.field.Field field = this.getContentType().fieldMap().get(key);
+        if(field!=null && field instanceof ConstantField ) {
+          // cache it in map for future use
+          map.put(key, field.values());
+          return field.values();
+        }
+      }
+	  }
+	  catch(Throwable t) {
+	    Logger.warnAndDebug(this.getClass(), t.getMessage(),t);
+	  }
+    return null;
+	}
+	
+	
+	
+	
 	/**
 	 * @param lowIndexPriority the lowIndexPriority to set
 	 */
@@ -1214,6 +1276,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * It'll tell you if you're dealing with content of type event
 	 * @return
 	 */
+    @JsonIgnore
 	public boolean isCalendarEvent() {
 		return getStructure().getStructureType() == BaseContentType.CONTENT.getType() &&  "Event".equals(getStructure().getName()) ;
 	}
@@ -1260,9 +1323,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         this.setActionId(null);
     }
 
+
 	/**
 	 * Returns the workflow action id the Contentlet is going to execute
 	 */
+    @JsonIgnore
 	public String getActionId() {
 		return this.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
 	}
@@ -1272,6 +1337,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return boolean
 	 * @throws DotDataException
 	 */
+    @JsonIgnore
 	public boolean hasTags () throws DotDataException {
 
 		final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
@@ -1284,9 +1350,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * Set the tags to the contentlet
      * @throws DotDataException
      */
+    @CloseDBIfOpened
 	public void setTags() throws DotDataException {
 
-		if (!this.loadedTags) {
+		if (!this.loadedTags && UtilMethods.isSet(getContentTypeId())) {
 
 			final boolean hasTagFields = this.getContentType().fields().stream().anyMatch(TagField.class::isInstance);
 
@@ -1301,7 +1368,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 						final String fieldVarName = foundTagInode.getFieldVarName();
 
 						// if the map does not have already this field on the map so populate it. we do not want to override the eventual user values.
-						if (!this.getMap().containsKey(fieldVarName)) {
+						if (!map.containsKey(fieldVarName)) {
 							StringBuilder contentletTagsBuilder = new StringBuilder();
 
 							if (UtilMethods.isSet(fieldVarName)) {
@@ -1369,6 +1436,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
+	@JsonIgnore
 	private Set<String> getWritableNullProperties(){
 		return (Set<String>)map.computeIfAbsent(NULL_PROPERTIES, s -> {
 			return ConcurrentHashMap.newKeySet();
@@ -1379,7 +1447,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * This method returns an immutable copy of the null properties set to the properties map
 	 * @return
 	 */
-	@com.fasterxml.jackson.annotation.JsonIgnore
+	@JsonIgnore
 	@SuppressWarnings("unchecked")
 	public Set<String> getNullProperties(){
 		final Set<String> set = (Set<String>)this.map.get(NULL_PROPERTIES);
@@ -1437,8 +1505,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 *
 	 * @return the contentlet Content Type
 	 */
+	@JsonIgnore
 	public ContentType getContentType() {
-
+	  if(getContentTypeId()==null) return null;
 		try {
 			final ContentType foundContentType =
 					APILocator.getContentTypeAPI(APILocator.systemUser())
@@ -1483,7 +1552,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean isKeyValue() throws DotDataException, DotSecurityException {
         return getContentType().baseType() == BaseContentType.KEY_VALUE;
     }
-
+	@JsonIgnore
 	private ContentletAPI getContentletAPI() {
 		if(contentletAPI==null) {
 			contentletAPI = APILocator.getContentletAPI();
@@ -1508,7 +1577,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	protected void setUserAPI(UserAPI userAPI) {
 		this.userAPI = userAPI;
 	}
-
+	@JsonIgnore
 	public boolean validateMe() {
 		return !UtilMethods.isSet(map.get(Contentlet.DONT_VALIDATE_ME));
 	}
@@ -1548,6 +1617,23 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return APILocator.getContentletAPI()
                 .getRelatedContent(this, variableName, user, respectFrontendRoles, pullByParents,
                         -1, 0, null);
+    }
+
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @param language
+     * @param live
+     * @return
+     */
+    public List<Contentlet> getRelated(final String variableName, final User user,
+            final boolean respectFrontendRoles, Boolean pullByParents, final long language, final Boolean live) {
+        return APILocator.getContentletAPI()
+                .getRelatedContent(this, variableName, user, respectFrontendRoles, pullByParents,
+                        -1, 0, null, language, live);
     }
 
     /**
@@ -1630,4 +1716,26 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             throw new DotStateException(e);
         }
     }
+
+	/**
+	 * Determine if the workflow is disable for this contentlet
+	 * @return boolean true if is disable
+	 */
+	@JsonIgnore
+	public boolean isDisableWorkflow() {
+
+		return null != this.getMap().get(Contentlet.DISABLE_WORKFLOW) &&
+				Boolean.TRUE.equals(this.getMap().get(Contentlet.DISABLE_WORKFLOW));
+	}
+
+	/**
+	 * Determine if the workflow is in progress for this contentlet
+	 * @return
+	 */
+	@JsonIgnore
+	public boolean isWorkflowInProgress () {
+
+		return null != this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) &&
+				Boolean.TRUE.equals(this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
+	}
 }

@@ -1,14 +1,6 @@
 package com.dotcms.rest;
 
 import com.dotcms.publisher.environment.bean.Environment;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
@@ -18,13 +10,20 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
-import org.apache.commons.lang.StringEscapeUtils;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.apache.commons.lang.StringEscapeUtils;
 
 
 @Path("/environment")
@@ -47,8 +46,13 @@ public class EnvironmentResource {
 	public Response loadEnvironments(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params)
 			throws DotDataException, JSONException {
 
-
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.params(params)
+				.requestAndResponse(request, response)
+				.rejectWhenNoUser(true)
+				.init();
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -75,8 +79,9 @@ public class EnvironmentResource {
 			if (isAdmin) {
 				List<Environment> app = APILocator.getEnvironmentAPI()
 						.findEnvironmentsWithServers();
-				for (Environment e : app)
+				for (Environment e : app){
 					environments.add(e);
+				}
 			} else {
 				for (Role r : roles) {
 					environments.addAll(APILocator.getEnvironmentAPI()

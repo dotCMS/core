@@ -3,8 +3,9 @@ steps:
     env:
       - 'COMMIT_SHA=$COMMIT_SHA'
     args: [ 'build', '-t', 'gcr.io/$PROJECT_ID/integration-tests-image:$_CUSTOM_RUN_ID',
-            '--build-arg', 'BUILD_ID=$_GIT_BRANCH_COMMIT',
             '--build-arg', 'BUILD_FROM=COMMIT',
+            '--build-arg', 'BUILD_ID=$_GIT_BRANCH_COMMIT',
+            '--build-arg', 'BUILD_HASH=$COMMIT_SHA',
             '--build-arg', 'LICENSE_KEY=$_LICENSE_KEY',
             './docker/tests/integration/' ]
 images:

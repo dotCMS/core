@@ -56,9 +56,9 @@ public class ContentReviewThread implements Runnable, Job {
         try {
             Logger.debug(this, "Starting ContentsReview");
             HibernateUtil.startTransaction();
-            
+
             HibernateUtil dh = new HibernateUtil(com.dotmarketing.portlets.contentlet.business.Contentlet.class);
-            dh.setSQLQuery("select {contentlet.*} from contentlet join inode contentlet_1_ on (contentlet.inode = contentlet_1_.inode) " 
+            dh.setSQLQuery("select {contentlet.*} from contentlet join inode contentlet_1_ on (contentlet.inode = contentlet_1_.inode) "
             		+ " join structure on (contentlet.structure_inode = structure.inode) "
             		+ " join contentlet_version_info on (contentlet_version_info.working_inode = contentlet.inode) "
                     + " where ? >= contentlet.next_review and "
@@ -75,12 +75,12 @@ public class ContentReviewThread implements Runnable, Job {
                 try {
                 	WorkflowTask task = wapi.findTaskByContentlet(cont);
                 	User systemUser = userAPI.getSystemUser();
-                	
+
                 	if(UtilMethods.isSet(task.getAssignedTo())){
                 		// If a task exists for this content, placing a comment and an email to review the content.
-                		
+
     					String assignedTo = task.getAssignedTo();
-    					
+
     					// add the user if assign is a user
     					Set<String> recipients = new HashSet<String>();
     					User usr=null;
@@ -101,19 +101,19 @@ public class ContentReviewThread implements Runnable, Job {
     					} catch (Exception e) {
 
     					}
-    					
+
     					String[] to = (String[]) recipients.toArray(new String[recipients.size()]);
 
     					WorkflowProcessor processor = new WorkflowProcessor(cont,usr);
                         WorkflowComment comment = new WorkflowComment();
-    					
+
     					// Commenting on task to review
-    					comment.setComment(LanguageUtil.get(PublicCompanyFactory.getDefaultCompany(), "Please-review-this-content-comment"));    					
+    					comment.setComment(LanguageUtil.get(PublicCompanyFactory.getDefaultCompany(), "Please-review-this-content-comment"));
     					comment.setWorkflowtaskId(task.getId());
     					comment.setCreationDate(new Date());
     					comment.setPostedBy(systemUser.getUserId());
     					wapi.saveComment(comment);
-    					
+
     					// Sending Email to review the content
     					WorkflowEmailUtil.sendWorkflowEmail(processor, to, LanguageUtil.get(PublicCompanyFactory.getDefaultCompany(), "Please-review-this-content-comment"), LanguageUtil.get(PublicCompanyFactory.getDefaultCompany(), "Please-review-this-content-email"), true);
                 	}else{
@@ -121,10 +121,10 @@ public class ContentReviewThread implements Runnable, Job {
                 		cont.setActionId(wapi.findEntryAction(cont, systemUser).getId());
                 		if(UtilMethods.isSet(cont.getStructure().getReviewerRole()) && !cont.getStructure().getReviewerRole().equalsIgnoreCase("0"))
                 			cont.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, cont.getStructure().getReviewerRole());
-                		cont.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, "Content \"" + UtilHTML.escapeHTMLSpecialChars(cont.getTitle().trim()) + 
+                		cont.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, "Content \"" + UtilHTML.escapeHTMLSpecialChars(cont.getTitle().trim()) +
             					"\" need to be reviewed ");
                 	}
-                	
+
                 	// updating content NextReview date, in order not to over load the Task if CONTENT_REVIEW_THREAD interval is less than content reviewInterval
                 	cont.setNextReview(conAPI.getNextReview(cont, systemUser, false));
                 	Map<Relationship, List<Contentlet>> contentRelationships = conAPI.findContentRelationships(cont, systemUser);
@@ -158,7 +158,7 @@ public class ContentReviewThread implements Runnable, Job {
 
         try {
             String roleName = APILocator.getRoleAPI().loadRoleById(task.getBelongsTo()).getName();
-            
+
             buffer.append(
                   "<table align=\"center\" border=\"1\" width=\"50%\">" +
                   "    <tr>" +
@@ -176,18 +176,18 @@ public class ContentReviewThread implements Runnable, Job {
                   "    <tr>" +
                   "        <td  nowrap><b>Assignee Group</b></td><td>" + roleName + "</td>" +
                   "    </tr>" +
-                  "</table>"  
+                  "</table>"
             );
         } catch (Exception e) {
             Logger.warn(RoleFactory.class, "_buildWorkflowEmailBody: Error getting role", e);
         }
-        
+
         return buffer.toString();
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Thread#destroy()
      */
     public void destroy() {

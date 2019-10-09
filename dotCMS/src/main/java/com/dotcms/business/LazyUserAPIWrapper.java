@@ -67,8 +67,19 @@ public class LazyUserAPIWrapper implements UserAPI {
     }
 
     @Override
+    public List<User> getUsersByName(String filter, List<Role> roles, int start, int limit)
+            throws DotDataException {
+        return getUserAPI().getUsersByName(filter, roles, start, limit);
+    }
+
+    @Override
     public long getCountUsersByName(String filter) throws DotDataException {
         return this.getUserAPI().getCountUsersByName(filter);
+    }
+
+    @Override
+    public long getCountUsersByName(String filter, List<Role> roles) throws DotDataException {
+        return getUserAPI().getCountUsersByName(filter, roles);
     }
 
     @Override
@@ -115,6 +126,11 @@ public class LazyUserAPIWrapper implements UserAPI {
     public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
         return this.getUserAPI().getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault);
     }
+    
+    @Override
+    public long getCountUsersByNameOrEmailOrUserID(String filter, boolean includeAnonymous, boolean includeDefault, String roleId) throws DotDataException {
+        return this.getUserAPI().getCountUsersByNameOrEmailOrUserID(filter, includeAnonymous, includeDefault, roleId);
+    }
 
     @Override
     public List<User> getUsersByNameOrEmail(String filter, int page, int pageSize) throws DotDataException {
@@ -137,8 +153,8 @@ public class LazyUserAPIWrapper implements UserAPI {
     }
 
     @Override
-    public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous, boolean includeDefault) throws DotDataException {
-        return this.getUserAPI().getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault);
+    public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous, boolean includeDefault, String roleId) throws DotDataException {
+        return this.getUserAPI().getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault, roleId);
     }
 
     @Override
@@ -199,5 +215,17 @@ public class LazyUserAPIWrapper implements UserAPI {
     @Override
     public List<User> getUnDeletedUsers() throws DotDataException {
         return this.getUserAPI().getUnDeletedUsers();
+    }
+
+    @Override
+    public List<User> getUsersByNameOrEmailOrUserID(String filter, int page, int pageSize, boolean includeAnonymous, String roleId)
+        throws DotDataException {
+      return this.getUserAPI().getUsersByNameOrEmailOrUserID(filter,page,pageSize,includeAnonymous,roleId);
+    }
+
+    @Override
+    public User getAnonymousUserNoThrow() {
+      // TODO Auto-generated method stub
+      return null;
     }
 } // E:O:F:LazyUserAPIWrapper.

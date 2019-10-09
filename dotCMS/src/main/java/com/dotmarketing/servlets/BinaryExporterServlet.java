@@ -40,6 +40,11 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+
+import eu.bitwalker.useragentutils.Browser;
+import eu.bitwalker.useragentutils.OperatingSystem;
+import eu.bitwalker.useragentutils.UserAgent;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,6 +61,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TimeZone;
 import javax.imageio.ImageIO;
@@ -367,11 +373,23 @@ public class BinaryExporterServlet extends HttpServlet {
           DbConnectionFactory.closeSilently();
           return;
         }
-        inputFile = APILocator.getTempFileAPI().getTempFile(user, req.getSession().getId(), shorty.longId).get().file;
+        inputFile = APILocator.getTempFileAPI().getTempFile(req, shorty.longId).get().file;
       }
-			
-			
-			
+      
+      final String[] val = params.get("filter");
+      if(val!=null && val[0].contains("Quality")) {
+      	final UserAgent userAgent = new UserAgent(req.getHeader("user-agent"));
+        if(userAgent.getBrowser() == Browser.SAFARI || userAgent.getOperatingSystem().getGroup() == OperatingSystem.IOS){
+          params.put("filter", new String[] {val[0].replace("Quality","Jpeg")});
+          params.put("jpeg_q", params.get("quality_q"));
+          params.put("jpeg_p",  new String[] {"1"});
+        }else {
+          params.put("filter", new String[] {val[0].replace("Quality","WebP")});
+          params.put("webp_q", params.get("quality_q"));
+        }
+      }
+
+
 			
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){
@@ -383,7 +401,7 @@ public class BinaryExporterServlet extends HttpServlet {
       // THIS IS WHERE THE MAGIC HAPPENS
       // this creates a temp resource using the altered file
       if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
-        final DotTempFile temp = APILocator.getTempFileAPI().createEmptyTempFile(inputFile.getName(), user, req.getSession().getId());
+        final DotTempFile temp = APILocator.getTempFileAPI().createEmptyTempFile(inputFile.getName(), req);
         FileUtil.copyFile(data.getDataFile(), temp.file);
         resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
         resp.getWriter().close();

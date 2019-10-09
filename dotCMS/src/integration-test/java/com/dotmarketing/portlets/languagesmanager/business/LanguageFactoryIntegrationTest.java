@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -23,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.struts.Globals;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;

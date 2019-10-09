@@ -1,0 +1,17 @@
+# https://docs.docker.com/compose/compose-file/compose-versioning/
+version: "3.7"
+
+# https://docs.docker.com/compose/compose-file/
+
+services:
+
+  # https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance#running-oracle-database-11gr2-express-edition-in-a-docker-container
+  database:
+    image: "gcr.io/cicd-246518/oracle-db:11.2.0.2-xe"
+    shm_size: '2gb'
+    environment:
+      ORACLE_PWD: oracle
+    ports:
+      - "11521:1521"
+    volumes:
+      - ./setup/db/oracle/init-scripts:/docker-entrypoint-initdb.d/setup

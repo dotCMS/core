@@ -1,8 +1,13 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotmarketing.portlets.templates.model.Template.ANONYMOUS_PREFIX;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -16,6 +21,7 @@ import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -23,9 +29,11 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.job.HostCopyOptions;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -45,7 +53,7 @@ import org.quartz.JobExecutionContext;
  * @since Sep 5, 2013
  *
  */
-public class HostAPITest {
+public class HostAPITest extends IntegrationTestBase  {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -80,6 +88,43 @@ public class HostAPITest {
     @Test
     public void delete_host_with_system_content_type() throws Exception {
         deleteHostWithContentType(false, true);
+    }
+
+    @Test
+    public void testDeleteHostCleanUpTemplates() throws Exception {
+
+
+
+        final User user = APILocator.getUserAPI().getSystemUser();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final DotConnect dc = new DotConnect();
+        final String query = "select inode.inode from inode left outer join template on template.inode = inode.inode where template.inode is null and inode.type='template'";
+
+        //Verifies that the environment is clean
+        dc.setSQL(query);
+        assertTrue(dc.loadObjectResults().isEmpty());
+
+        final String body = "<html><body> I'm mostly empty </body></html>";
+        final String title = ANONYMOUS_PREFIX + UUIDGenerator.generateUuid();
+
+        Template template = new Template();
+        template.setTitle(title);
+        template.setBody(body);
+        template = APILocator.getTemplateAPI().saveTemplate(template, host, user, false);
+
+        assertNotNull(template);
+        assertNotNull(template.getInode());
+
+        assertFalse(template.isShowOnMenu());
+
+        archiveHost(host, user);
+        deleteHost(host, user);
+
+        dc.setSQL(query);
+
+        assertTrue(dc.loadObjectResults().isEmpty());
+
     }
 
     @Test
@@ -166,6 +211,9 @@ public class HostAPITest {
         //Getting the default host
         Host defaultHost = APILocator.getHostAPI().findDefaultHost(user, false);
         defaultHost.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        if (!defaultHost.isLive()) {
+            APILocator.getHostAPI().publish(defaultHost, user, false);
+        }
 
         //Create a new test host
         final String newHostName = "test" + System.currentTimeMillis() + ".dotcms.com";
@@ -181,14 +229,14 @@ public class HostAPITest {
 
         host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
         defaultHost = APILocator.getHostAPI().find(defaultHost.getIdentifier(), user, false);
-        Assert.assertNotNull(host);
-        Assert.assertNotNull(defaultHost);
+        assertNotNull(host);
+        assertNotNull(defaultHost);
 
         /*
          * Validate if the previous default host. Is live and not default
          */
-        Assert.assertTrue(defaultHost.isLive());
-        Assert.assertFalse(defaultHost.isDefault());
+        assertTrue(defaultHost.isLive());
+        assertFalse(defaultHost.isDefault());
 
         /*
          * get Back to default the previous host
@@ -197,17 +245,17 @@ public class HostAPITest {
 
         host = APILocator.getHostAPI().find(host.getIdentifier(), user, false);
         defaultHost = APILocator.getHostAPI().find(defaultHost.getIdentifier(), user, false);
-        Assert.assertNotNull(host);
-        Assert.assertNotNull(defaultHost);
+        assertNotNull(host);
+        assertNotNull(defaultHost);
 
         /*
          * Validate if the new host is not default anymore and if its live
          */
-        Assert.assertTrue(host.isLive());
-        Assert.assertFalse(host.isDefault());
+        assertTrue(host.isLive());
+        assertFalse(host.isDefault());
 
-        Assert.assertTrue(defaultHost.isLive());
-        Assert.assertTrue(defaultHost.isDefault());
+        assertTrue(defaultHost.isLive());
+        assertTrue(defaultHost.isDefault());
 
         //Unpublish, archive and delete the host
         unpublishHost(host, user);
@@ -244,14 +292,14 @@ public class HostAPITest {
         PaginatedArrayList<Host> hosts = APILocator.getHostAPI()
                 .search("demo", Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
         //Validate if the search is bringing the right amount of results
-        Assert.assertTrue(hosts.size() >= 2 && hosts.getTotalResults() >= 2);
-        Assert.assertTrue(hosts.contains(host));
+        assertTrue(hosts.size() >= 2 && hosts.getTotalResults() >= 2);
+        assertTrue(hosts.contains(host));
 
         //Do a more specific search
         hosts = APILocator.getHostAPI()
                 .search(newHostName, Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
         //Validate if the search is bringing the right amount of results
-        Assert.assertTrue(hosts.size() == 1 && hosts.getTotalResults() == 1);
+        assertTrue(hosts.size() == 1 && hosts.getTotalResults() == 1);
         Assert.assertEquals(hosts.get(0).getHostname(), newHostName);
 
         //Unpublish, archive and delete the host
@@ -265,7 +313,7 @@ public class HostAPITest {
         hosts = APILocator.getHostAPI()
                 .search("nothing", Boolean.FALSE, Boolean.FALSE, 0, 0, user, Boolean.TRUE);
         //Validate if the search doesn't bring results
-        Assert.assertTrue(hosts.size() == 0 && hosts.getTotalResults() == 0);
+        assertTrue(hosts.size() == 0 && hosts.getTotalResults() == 0);
     }
 
     /**
@@ -309,7 +357,7 @@ public class HostAPITest {
             try {
                 final ContentType foundContentType = APILocator.getContentTypeAPI(user)
                         .find(testContentType.variable());
-                Assert.assertNotNull(
+                assertNotNull(
                         foundContentType);
                 Assert.assertEquals(system, foundContentType.system());
                 Assert.assertEquals(defaultType, foundContentType.defaultType());
@@ -385,12 +433,12 @@ public class HostAPITest {
 
         final String structureId = structure.id();
         final String structureVarName = structure.getVelocityVarName();
-        Assert.assertNotNull(structureId);
-        Assert.assertNotNull(structureVarName);
+        assertNotNull(structureId);
+        assertNotNull(structureVarName);
 
         //Make sure was created properly
         ContentType foundContentType = APILocator.getContentTypeAPI(user).find(structureVarName);
-        Assert.assertNotNull(foundContentType);
+        assertNotNull(foundContentType);
         Assert.assertEquals(structureId, foundContentType.id());
         Assert.assertEquals(defaultType, foundContentType.defaultType());
         Assert.assertEquals(system, foundContentType.system());

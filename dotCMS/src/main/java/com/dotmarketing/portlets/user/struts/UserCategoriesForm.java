@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.user.struts;
 
-import org.apache.struts.validator.ValidatorForm;
+
+import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
 
 public class UserCategoriesForm extends ValidatorForm {
 

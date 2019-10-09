@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -14,6 +15,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -27,6 +29,8 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionlet;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
@@ -105,14 +109,12 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
 
             if (null != SaveContentDraftActionletTest.contentlet) {
 
-                SaveContentDraftActionletTest.contentletAPI.archive(SaveContentDraftActionletTest.contentlet, APILocator.systemUser(), false);
-                SaveContentDraftActionletTest.contentletAPI.delete(SaveContentDraftActionletTest.contentlet, APILocator.systemUser(), false);
+                SaveContentDraftActionletTest.contentletAPI.destroy(SaveContentDraftActionletTest.contentlet, APILocator.systemUser(), false);
             }
 
             if (null != SaveContentDraftActionletTest.contentlet2) {
 
-                SaveContentDraftActionletTest.contentletAPI.archive(SaveContentDraftActionletTest.contentlet2, APILocator.systemUser(), false);
-                SaveContentDraftActionletTest.contentletAPI.delete(SaveContentDraftActionletTest.contentlet2, APILocator.systemUser(), false);
+                SaveContentDraftActionletTest.contentletAPI.destroy(SaveContentDraftActionletTest.contentlet2, APILocator.systemUser(), false);
             }
         } finally {
 
@@ -120,6 +122,7 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
 
                 if (null != SaveContentDraftActionletTest.schemeStepActionResult) {
 
+                    deleteWorkflowTaskByStep (SaveContentDraftActionletTest.schemeStepActionResult.getStep());
                     SaveContentDraftActionletTest.cleanScheme(SaveContentDraftActionletTest.schemeStepActionResult.getScheme());
                 }
             } finally {
@@ -136,6 +139,17 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
             }
         }
     } // cleanup
+
+    @WrapInTransaction
+    private static void deleteWorkflowTaskByStep(final WorkflowStep step) {
+
+        try {
+            new DotConnect().setSQL("delete from workflow_task where status = ?")
+                    .addParam(step.getId()).loadResult();
+        } catch (DotDataException e) {
+            Logger.error(SaveContentDraftActionletTest.class, e.getMessage(), e);
+        }
+    }
 
     @Test
     public void saveContentDraftTest() throws DotDataException, DotSecurityException {
@@ -156,6 +170,7 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
 
         // first save
         contentlet.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         final Contentlet contentlet1 = SaveContentDraftActionletTest.contentletAPI.checkin(contentlet, user, false);
         SaveContentDraftActionletTest.contentlet = contentlet1;
 
@@ -163,12 +178,14 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
         contentlet1.setStringProperty("txt", "Test Save Text 1");
 
         contentlet1.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet1.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         final Contentlet contentlet2 = SaveContentDraftActionletTest.contentletAPI.checkout(contentlet1.getInode(), user, false);
 
         contentlet2.setStringProperty("title", "Test Save 2");
         contentlet2.setStringProperty("txt", "Test Save Text 2");
 
         contentlet2.setIndexPolicy(IndexPolicy.FORCE);
+        contentlet2.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         final Contentlet contentlet3 = SaveContentDraftActionletTest.contentletAPI.checkin(contentlet2, user, false);
 
         final Contentlet contentlet4 = SaveContentDraftActionletTest.contentletAPI.
@@ -184,6 +201,7 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
             SaveContentDraftActionletTest.contentletAPI.unlock(contentlet4, user, false);
         }
 
+        contentlet4.setIndexPolicy(IndexPolicy.FORCE);
         SaveContentDraftActionletTest.workflowAPI.fireWorkflowNoCheckin(contentlet4, user);
 
         final Contentlet contentlet5 = SaveContentDraftActionletTest.contentletAPI.findContentletByIdentifier

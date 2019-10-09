@@ -1,15 +1,20 @@
 package com.dotcms.rest.api.v1.notification;
 
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.ConversionUtils.toLong;
+
 import com.dotcms.notifications.NotificationConverter;
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.UserNotificationPair;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.view.NotificationView;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import com.dotcms.rest.*;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.MessageEntity;
+import com.dotcms.rest.RESTParams;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
@@ -21,14 +26,18 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotcms.util.ConversionUtils.toLong;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 
 
 
@@ -63,6 +72,8 @@ public class NotificationResource {
         this.notificationConverter  = new NotificationConverter();
     }
 
+
+
     /**
      * Returns a JSON Array with the notifications for the given User
      *
@@ -92,7 +103,13 @@ public class NotificationResource {
                                       @HeaderParam("Range") final String range ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
 
-        final InitDataObject initData = webResource.init(params, request, response, true, null);
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+           .requiredBackendUser(true)
+           .requiredFrontendUser(false)
+           .params(params)
+           .requestAndResponse(request, response)
+           .rejectWhenNoUser(true).init();
+
 
         try {
 
@@ -170,8 +187,15 @@ public class NotificationResource {
     public Response getNewNotificationsCount ( @Context final HttpServletRequest httpServletRequest,
                                                @Context final HttpServletResponse httpServletResponse,
                                                @PathParam ("params") final String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+        
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .rejectWhenNoUser(true).init();
 
-        InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
+
         Long newNotificationsCount = 0l;
         User user;
         Response response;
@@ -214,7 +238,12 @@ public class NotificationResource {
     @Produces ("application/json")
     public Response markAsRead ( @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse )  {
 
-        InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .rejectWhenNoUser(true).init();
+
         Response response;
         User user;
 
@@ -249,7 +278,12 @@ public class NotificationResource {
     @Produces ("application/json")
     public Response delete(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("id") String groupId) {
 
-        InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .rejectWhenNoUser(true).init();
+
         Response response;
         User user;
 
@@ -289,7 +323,12 @@ public class NotificationResource {
     @Produces ("application/json")
     public Response delete ( @Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, final DeleteForm deleteForm )  {
 
-        InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .rejectWhenNoUser(true).init();
+
         Response response;
         User user;
 

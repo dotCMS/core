@@ -301,8 +301,15 @@ public interface MultiTreeAPI {
      * @param pageId String
      * @return unique Set of personalization values per the page
      */
-    Set<String> getPersonalizationsForPage(String pageId) throws DotDataException;
-
+    Set<String> getPersonalizationsForPage(final IHTMLPage page) throws DotDataException;
+    
+    /**
+     * Get an unique set of the personalization for a page
+     * @param pageID
+     * @return
+     * @throws DotDataException
+     */
+    Set<String> getPersonalizationsForPage(String pageID) throws DotDataException;
     /**
      * Get all unique set of the personalization
      * @return unique Set of personalization values
@@ -361,4 +368,6 @@ public interface MultiTreeAPI {
      * @param newPersonalization     {@link String}  new personalization to replace the current one
      */
     void updatePersonalization(String currentPersonalization, String newPersonalization) throws DotDataException;
+
+
 }

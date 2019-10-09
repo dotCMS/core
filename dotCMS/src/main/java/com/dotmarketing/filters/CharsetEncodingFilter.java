@@ -5,13 +5,13 @@
  */
 package com.dotmarketing.filters;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ServletResponseCharacterEncoding;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.PortalException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import java.io.IOException;
@@ -25,7 +25,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import org.apache.struts.Globals;
 
 /**
  * Ensures the proper encoding 

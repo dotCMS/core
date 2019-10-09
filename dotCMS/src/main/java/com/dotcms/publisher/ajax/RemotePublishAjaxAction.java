@@ -47,6 +47,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONArray;
@@ -55,6 +56,8 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import io.vavr.control.Try;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -71,6 +74,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.Arrays;
 
@@ -548,7 +552,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		}
         //Read the parameters
         Map<String, String> map = getURIParams();
-        String bundleId = map.get( "bundleId" );
+        final String bundleId = map.get( "bundleId" );
         String paramOperation = map.get( "operation" );
         if ( bundleId == null || bundleId.isEmpty() ) {
             Logger.error( this.getClass(), "No Bundle Found with id: " + bundleId );
@@ -562,6 +566,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
             operation = PushPublisherConfig.Operation.UNPUBLISH;
         }
 
+        final Bundle dbBundle = Try.of(()->APILocator.getBundleAPI().getBundleById(bundleId)).getOrElseThrow(e->new DotRuntimeException(e));
+        final String bundleName = dbBundle.getName().replaceAll("[^\\w.-]", "_");
+        
+        
         File bundle;
         String generatedBundleId;
         try {
@@ -576,7 +584,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
         }
 
         response.setContentType( "application/x-tgz" );
-        response.setHeader( "Content-Disposition", "attachment; filename=" + bundle.getName() );
+        response.setHeader( "Content-Disposition", "attachment; filename=" + bundleName + "-" + bundle.getName() );
         BufferedInputStream in = null;
         try {
             in = new BufferedInputStream( Files.newInputStream(bundle.toPath()) );
@@ -818,39 +826,31 @@ public class RemotePublishAjaxAction extends AjaxAction {
      */
     public void addToBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
 
-        PublisherAPI publisherAPI = PublisherAPI.getInstance();
-        String _assetId = request.getParameter( "assetIdentifier" );
-        String _contentFilterDate = request.getParameter( "remoteFilterDate" );
-        String bundleName = request.getParameter( "bundleName" );
-        String bundleId = (UtilMethods.isNotSet(request.getParameter( "bundleSelect" ))) ? request.getParameter( "bundleId" ):request.getParameter( "bundleSelect" );
-
-        String query = request.getParameter( "query" );
+        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        final String _assetId = request.getParameter( "assetIdentifier" );
+        final String _contentFilterDate = request.getParameter( "remoteFilterDate" );
+        final String bundleName = request.getParameter( "bundleName" );
+        final String bundleId = (UtilMethods.isNotSet(request.getParameter( "bundleSelect" ))) ? request.getParameter( "bundleId" ):request.getParameter( "bundleSelect" );
+        final String query = request.getParameter( "query" );
+        
         try {
-            Bundle bundle=null;
+          
+          // try by ID
+          Bundle bundle=APILocator.getBundleAPI().getBundleById( bundleId );
+          
+          // if nothing, try by name
+          if(bundle==null) {
+            Optional<Bundle> optBundle = APILocator.getBundleAPI().getUnsendBundlesByName(getUser().getUserId(), bundleName, 1000, 0).stream().filter(b->b.getName().equalsIgnoreCase(bundleName)).findFirst() ;
+            bundle = optBundle.isPresent() ? optBundle.get() : null;
+          }
+          
+          // if nothing, then create a new one
+          if(bundle==null) {
+            bundle = new Bundle( (bundleName!=null)?bundleName:"Bundle:"  +new Date(), null, null, getUser().getUserId() );
+            APILocator.getBundleAPI().saveBundle( bundle );
+          }
 
-            if ( UtilMethods.isNotSet(bundleId) && UtilMethods.isSet(bundleName) ) {
-                // if the user has a unsent bundle with that name just add to it
-                for(Bundle b : APILocator.getBundleAPI().getUnsendBundlesByName(getUser().getUserId(), bundleName, 1000, 0)) {
-                    if(b.getName().equalsIgnoreCase(bundleName)) {
-                        bundle=b;
-                        break;
-                    }
-                }
 
-                if(bundle==null) {
-                    bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
-                    APILocator.getBundleAPI().saveBundle( bundle );
-                }
-            } else {
-                bundle = APILocator.getBundleAPI().getBundleById( bundleId );
-                if(bundle==null){
-                    bundleName = (UtilMethods.isNotSet(bundleName)) ? bundleId : bundleName;
-                    bundle = new Bundle( bundleName, null, null, getUser().getUserId() );
-                    bundle.setId(bundleId);
-                    APILocator.getBundleAPI().saveBundle( bundle );
-                }
-                
-            }
 
             
             //Put the selected bundle in session in order to have last one selected

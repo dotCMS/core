@@ -1,0 +1,11 @@
+#set($hasForm = true)
+## random form id for js
+
+#set($formDOM = "form_" + $date.getSystemDate().getTime())
+#set($structure = $structures.findStructure($formId))
+
+<script src="/custom-elements/dotcmsfields.js"></script>
+<dot-form id="$formDOM" variable='$structure.velocityVarName'></dot-form>
+ <script type="text/javascript">
+     document.getElementById('$formDOM').layout = $structures.getLayoutAsJson($formId);
+ </script>

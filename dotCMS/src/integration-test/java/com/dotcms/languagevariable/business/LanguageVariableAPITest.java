@@ -2,6 +2,7 @@ package com.dotcms.languagevariable.business;
 
 import static com.dotcms.contenttype.model.type.KeyValueContentType.MULTILINGUABLE_FALLBACK_KEY;
 import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
+import static com.dotcms.integrationtestutil.content.ContentUtils.updateTestKeyValueContent;
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 
 import com.dotcms.IntegrationTestBase;
@@ -258,6 +259,67 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         } finally {
             //Clean up
             Config.setProperty(MULTILINGUABLE_FALLBACK_KEY, Boolean.FALSE);
+            if (null != contentlet) {
+                deleteContentlets(systemUser, contentlet);
+            }
+        }
+
+    }
+
+    @Test
+    public void getLanguageVariableLiveVersion() throws DotContentletValidationException,
+            DotContentletStateException, IllegalArgumentException, DotDataException, DotSecurityException {
+
+        final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+
+        String key = KEY_1 + new Date().getTime();
+
+        final Contentlet contentlet = createTestKeyValueContent(key, VALUE_1,
+                englishLanguage.getId(),
+                languageVariableContentType, systemUser);
+
+        try {
+
+            String languageVariable = languageVariableAPI
+                    .getLanguageVariable(key, englishLanguage.getId(), systemUser, true, false);
+
+            Assert.assertNotNull(languageVariable);
+            Assert.assertNotEquals(key, languageVariable);
+            Assert.assertEquals(VALUE_1, languageVariable);
+        } finally {
+            if (null != contentlet) {
+                deleteContentlets(systemUser, contentlet);
+            }
+        }
+
+    }
+
+    @Test
+    public void getLanguageVariableWorkingVersion()
+            throws DotContentletStateException, IllegalArgumentException, DotDataException, DotSecurityException, InterruptedException {
+
+        final String newValue = "NEW_VALUE";
+        final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+
+        String key = KEY_1 + new Date().getTime();
+
+        final Contentlet contentlet = createTestKeyValueContent(key, VALUE_1,
+                englishLanguage.getId(),
+                languageVariableContentType, systemUser);
+
+        updateTestKeyValueContent(contentlet, key, newValue, englishLanguage.getId(), languageVariableContentType, systemUser);
+        Thread.sleep(1000);
+
+        try {
+
+            String languageVariable = languageVariableAPI
+                    .getLanguageVariable(key, englishLanguage.getId(), systemUser, false, false);
+
+            Assert.assertNotNull(languageVariable);
+            Assert.assertNotEquals(key, languageVariable);
+            Assert.assertEquals(newValue, languageVariable);
+        } finally {
+            //Clean up
             if (null != contentlet) {
                 deleteContentlets(systemUser, contentlet);
             }

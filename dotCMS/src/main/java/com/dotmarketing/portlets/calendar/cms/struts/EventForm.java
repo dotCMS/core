@@ -1,5 +1,10 @@
 package com.dotmarketing.portlets.calendar.cms.struts;
 
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
+import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.servlet.UploadServletRequest;
 import java.text.ParseException;
@@ -8,11 +13,6 @@ import java.util.Calendar;
 import java.util.Date;
 import javax.activation.MimetypesFileTypeMap;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.validator.ValidatorForm;
 
 /**
  * Used to manage the data comming doem the submit event frontend page
@@ -182,7 +182,7 @@ public class EventForm extends ValidatorForm
 
 
 	@SuppressWarnings("deprecation")
-	public ActionErrors validate(ActionMapping arg0, HttpServletRequest request) 
+	public ActionErrors validate(ActionMapping arg0, HttpServletRequest request)
 	{
 		ActionErrors errors = new ActionErrors(); 
 		String title = request.getParameter("title") ;

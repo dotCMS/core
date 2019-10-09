@@ -9,8 +9,8 @@ package com.dotmarketing.portal.struts;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.liferay.portal.model.User;
-import org.apache.struts.action.ActionForm;
 
 /**
  * @author Maria
@@ -19,7 +19,7 @@ import org.apache.struts.action.ActionForm;
 public interface DotPortletActionInterface {
 	
 	//the get version back web asset method is different for each asset so it needs to be implemented
-	public abstract void _getVersionBackWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;
+	public abstract void _getVersionBackWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user) throws Exception;
 
 	//the copy web asset method is different for each asset so it needs to be implemented
 	public abstract void _copyWebAsset(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form, User user) throws Exception;

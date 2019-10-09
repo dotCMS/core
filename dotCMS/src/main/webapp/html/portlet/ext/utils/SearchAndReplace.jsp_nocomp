@@ -53,7 +53,7 @@
 			Iterator roles = com.dotmarketing.factories.RoleFactory.getAllRolesForUser(currentUser.getUserId()).iterator();
 			while (roles.hasNext()) {
 				Role role = (Role)roles.next();
-				if (role.getName().equals(Config.getStringProperty("ADMINISTRATOR_ROLE"))) {
+				if (role.getKey().equals("CMS Administrator")) {
 					isAdmin = true;
 					break;
 				}

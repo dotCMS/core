@@ -4,8 +4,11 @@ import static com.dotmarketing.business.ajax.DwrUtil.getLoggedInUser;
 import static com.dotmarketing.business.ajax.DwrUtil.validateUsersPortletPermissions;
 
 import com.dotcms.api.system.user.UserServiceFactory;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.rest.AnonymousAccess;
+import com.dotcms.rest.WebResource;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -45,6 +48,10 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+
+import io.vavr.control.Try;
+import jersey.repackaged.com.google.common.collect.ImmutableMap;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,6 +60,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.velocity.tools.generic.SortTool;
 
 /**
@@ -935,6 +944,52 @@ public class UserAjax {
 		return aRecord;
 	}
 
+	@WrapInTransaction
+  public Map<String, Object> assignUserAccess(Map<String, String> params) throws Exception {
+    final WebContext ctx = WebContextFactory.get();
+    final HttpServletRequest request = ctx.getHttpServletRequest();
+    final HttpServletResponse response = ctx.getHttpServletResponse();
+    final UserAPI uApi=APILocator.getUserAPI();
+    final String access = params.getOrDefault("access", "nope");
+    final User loggedInUser = new WebResource.InitBuilder(request,response)
+        .requiredBackendUser(true)
+        .requiredAnonAccess(AnonymousAccess.NONE)
+        .requiredPortlet("users")
+        .init()
+        .getUser();
+    final User userToModify = uApi.loadUserById(params.get("userid"),loggedInUser,false);
+    final boolean granted = Try.of (()->Boolean.valueOf(params.getOrDefault("granted", "false"))).getOrElse(false);
+
+    
+    if(access.indexOf("userActive")==0) {
+      userToModify.setActive(granted);
+      uApi.save(userToModify, loggedInUser, false);
+      return ImmutableMap.of("granted", granted, "role", "active", "user", userToModify.toMap());
+    }
+    
+    final Role role = access.toLowerCase().indexOf("admin") ==0 && APILocator.getRoleAPI().doesUserHaveRole(loggedInUser, APILocator.getRoleAPI().loadCMSAdminRole()) 
+        ? APILocator.getRoleAPI().loadCMSAdminRole()
+            :  access.toLowerCase().indexOf("backend") ==0 
+              ? APILocator.getRoleAPI().loadBackEndUserRole()
+                  : access.toLowerCase().indexOf("frontend") ==0 
+                    ? APILocator.getRoleAPI().loadFrontEndUserRole()
+                        : null;
+
+    
+    if(role==null) {
+      return ImmutableMap.of();
+    }
+    
+    
+    if(granted) {
+      APILocator.getRoleAPI().addRoleToUser(role, userToModify);
+    }else {
+      APILocator.getRoleAPI().removeRoleFromUser(role, userToModify);
+    }
+    
+    return ImmutableMap.of("granted", granted, "role", role.toMap(), "user", userToModify.toMap());
+  }
+	
 	/**
 	 * 
 	 * @param assetInode

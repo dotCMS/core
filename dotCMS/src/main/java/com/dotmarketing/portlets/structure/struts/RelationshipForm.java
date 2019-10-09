@@ -1,17 +1,17 @@
 package com.dotmarketing.portlets.structure.struts;
 
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
+import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.validator.ValidatorForm;
 
 
 
-public class RelationshipForm extends ValidatorForm 
+public class RelationshipForm extends ValidatorForm
 {
 	private static final long serialVersionUID = 1L;
 

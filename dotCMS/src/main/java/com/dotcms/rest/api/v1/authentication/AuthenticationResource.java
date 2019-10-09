@@ -2,20 +2,12 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.SecurityLogger;
@@ -34,14 +26,21 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
 import java.io.Serializable;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import org.apache.struts.Globals;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * This resource does the authentication, if the authentication is successfully
@@ -102,8 +101,11 @@ public class AuthenticationResource implements Serializable {
 
         try {
 
-            authenticated =
-                    this.loginService.doActionLogin(userId,
+            authenticated = authenticationForm.isBackEndLogin() 
+                ? this.loginService.doBackEndLogin(userId,
+                    authenticationForm.getPassword(),
+                    authenticationForm.isRememberMe(), request, response)
+                : this.loginService.doActionLogin(userId,
                             authenticationForm.getPassword(),
                             authenticationForm.isRememberMe(), request, response);
 
@@ -129,20 +131,20 @@ public class AuthenticationResource implements Serializable {
                 res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED,
                         locale, userId, "authentication-failed");
             }
-        } catch (NoSuchUserException | UserEmailAddressException | UserPasswordException e) {
+        } catch (NoSuchUserException | UserEmailAddressException | UserPasswordException | AuthException e) {
             res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
-        } catch (AuthException e) {
-            res = this.responseUtil.getErrorResponse(request, Response.Status.UNAUTHORIZED, locale, userId, "authentication-failed");
-        } catch (RequiredLayoutException e) {
+        }  catch (RequiredLayoutException e) {
             res = this.responseUtil.getErrorResponse(request, Response.Status.INTERNAL_SERVER_ERROR, locale, userId, "user-without-portlet");
         } catch (UserActiveException e) {
 
             try {
 
                 res = Response.status(Response.Status.UNAUTHORIZED).entity(new ResponseEntityView
-                        (Arrays.asList(new ErrorEntity("your-account-is-not-active",
+                        (Collections.singletonList(new ErrorEntity("your-account-is-not-active",
                                 LanguageUtil.format(locale,
-                                        "your-account-is-not-active", new LanguageWrapper[] {new LanguageWrapper("<b><i>", userId, "</i></b>")}, false)
+                                        "your-account-is-not-active", new LanguageWrapper[]{
+                                                new LanguageWrapper("<b><i>", userId, "</i></b>")},
+                                        false)
                         )))).build();
             } catch (LanguageException e1) {
                 // Quiet

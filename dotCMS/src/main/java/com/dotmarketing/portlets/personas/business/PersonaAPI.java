@@ -17,6 +17,8 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 
+import io.vavr.Tuple2;
+
 public interface PersonaAPI {
 	
 	static final String HOST_FOLDER_FIELD_NAME = "Site/Folder";
@@ -41,6 +43,11 @@ public interface PersonaAPI {
 	static final String DEFAULT_PERSONAS_STRUCTURE_DESCRIPTION = "Default Structure for Personas";
 	static final String DEFAULT_PERSONAS_STRUCTURE_VARNAME = "persona";
 	static final String DEFAULT_PERSONAS_STRUCTURE_INODE = "c938b15f-bcb6-49ef-8651-14d455a97045";
+	
+	
+	static final String DEFAULT_PERSONA_NAME_KEY="modes.persona.no.persona";
+	
+	
 	
 	void createPersonaBaseFields(Structure structure) throws DotDataException, DotStateException;
 	
@@ -78,7 +85,7 @@ public interface PersonaAPI {
 	 */
 	Persona findLive(String id,  User user, boolean respectFrontEndRoles)throws DotDataException, DotSecurityException;
 
-	Persona fromContentlet(Contentlet con) throws DotDataException, DotSecurityException, IllegalAccessException, InvocationTargetException;
+	Persona fromContentlet(Contentlet con) throws DotDataException, DotSecurityException;
 
 	Structure getDefaultPersonaStructure() throws DotSecurityException, DotDataException;
 
@@ -113,4 +120,30 @@ public interface PersonaAPI {
 	 * @param personaListener
 	 */
 	void addPersonaListener (final ContentletListener<Persona> personaListener);
+
+  /**
+   * Returns two things: first, a pageable list of personas that will include the default persona;
+   * second, the total number of matches, needed for paging
+   * 
+   * @param parent
+   * @param filter
+   * @param live
+   * @param limit
+   * @param offset
+   * @param sortBy
+   * @param user
+   * @param respectFrontEndRoles
+   * @return
+   * @throws DotDataException
+   * @throws DotSecurityException
+   */
+  Tuple2<List<Persona>, Integer> getPersonasIncludingDefaultPersona(Treeable parent, String filter, boolean live, int limit, int offset,
+      String sortBy, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
+
+  /**
+   * Returns the Default Persona, which is just a mock object
+   * @return
+   */
+  Persona getDefaultPersona();
+
 }

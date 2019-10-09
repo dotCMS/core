@@ -100,6 +100,10 @@ public class ResponseUtil implements Serializable {
             return createUnAuthorizedResponse(e);
         }
 
+        if(causedBy(e, BAD_REQUEST_EXCEPTIONS)){
+            return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+        }
+
         if(causedBy(e, NOT_FOUND_EXCEPTIONS)){
             return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
         }
@@ -113,10 +117,6 @@ public class ResponseUtil implements Serializable {
         if( rootCause instanceof DotContentletValidationException){
             final DotContentletValidationException ve = DotContentletValidationException.class.cast(rootCause);
             return ExceptionMapperUtil.createResponse(Response.Status.BAD_REQUEST, ve);
-        }
-
-        if(causedBy(e, BAD_REQUEST_EXCEPTIONS)){
-            return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
         }
 
         return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);

@@ -1,19 +1,30 @@
 package com.dotcms.rest.api.v1.user;
 
+import static com.dotcms.util.CollectionsUtils.getMapValue;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.*;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ErrorResponseHelper;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.UserFirstNameException;
+import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -24,17 +35,25 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
@@ -82,8 +101,16 @@ public class UserResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public RestUser self(@Context HttpServletRequest request, final @Context HttpServletResponse response) {
 
-        final User user = webResource.init(request, response, true).getUser();
-        final RestUser.Builder currentUser = new RestUser.Builder();
+        final User user =
+		new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.requestAndResponse(request, response)
+				.rejectWhenNoUser(true)
+				.init().getUser();
+
+
+		final RestUser.Builder currentUser = new RestUser.Builder();
 
         if(user != null) {
             try {
@@ -119,7 +146,14 @@ public class UserResource implements Serializable {
     public final Response update(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,
                                  final UpdateUserForm updateUserForm) throws Exception {
 
-        final User modUser = webResource.init(httpServletRequest, httpServletResponse,true).getUser();
+        final User modUser =
+				new WebResource.InitBuilder(webResource)
+						.requiredBackendUser(true)
+						.requiredFrontendUser(false)
+						.requestAndResponse(httpServletRequest, httpServletResponse)
+						.rejectWhenNoUser(true)
+						.init().getUser();
+
         Response response = null;
         final String date = DateUtil.getCurrentDate();
         final User userToUpdated;
@@ -231,7 +265,16 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response filter(@Context final HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") final String params) {
-		final InitDataObject initData = webResource.init(params, request, response, true, null);
+
+		final InitDataObject initData =
+		new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.params(params)
+				.requestAndResponse(request, response)
+				.rejectWhenNoUser(true)
+				.init();
+
 		final Map<String, String> urlParams = initData.getParamsMap();
 		Map<String, Object> userList = null;
 		try {
@@ -288,8 +331,15 @@ public class UserResource implements Serializable {
 		final String loginAsUserId = loginAsForm.getUserId();
 		final String loginAsUserPwd = loginAsForm.getPassword();
 
-		final InitDataObject initData = webResource.init(loginAsUserId, loginAsUserPwd, request, httpResponse,
-				true, null);
+		final InitDataObject initData =
+		new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.credentials(loginAsUserId,loginAsUserPwd)
+				.requestAndResponse(request, httpResponse)
+				.rejectWhenNoUser(true)
+				.init();
+
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
 		Response response = null;
@@ -379,7 +429,14 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response logoutAs(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse) {
-		webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+
+		new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.requestAndResponse(httpServletRequest, httpServletResponse)
+				.rejectWhenNoUser(true)
+				.init();
+
 		final String serverName = httpServletRequest.getServerName();
 		String principalUserId = null;
 		HttpSession session = httpServletRequest.getSession();
@@ -450,7 +507,15 @@ public class UserResource implements Serializable {
 			@QueryParam("includeUsersCount") boolean includeUsersCount) {
 		Response response = null;
 		try {
-			InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+			InitDataObject initData = //webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+
+			new WebResource.InitBuilder(webResource)
+					.requiredBackendUser(true)
+					.requiredFrontendUser(false)
+					.requestAndResponse(httpServletRequest, httpServletResponse)
+					.rejectWhenNoUser(true)
+					.init();
+
 			User currentUser = initData.getUser();
 
 			response = Response.ok(this.helper.getLoginAsUsers(currentUser, filter, includeUsersCount)).build();

@@ -3,6 +3,8 @@ package com.dotmarketing.portlets.categories.action;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -21,8 +23,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
 import java.lang.reflect.InvocationTargetException;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
 
 
 public class EditCategoryAction extends DotPortletAction {

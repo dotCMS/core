@@ -56,8 +56,8 @@ public abstract class WidgetContentType extends ContentType implements Expireabl
 				.name(WIDGET_PRE_EXECUTE_FIELD_NAME)
 				.variable(WIDGET_PRE_EXECUTE_FIELD_VAR)
 				.sortOrder(4)
-				.fixed(true)
-				.readOnly(true)
+				.fixed(false)
+				.readOnly(false)
 				.searchable(true)
 				.build();
 		
@@ -76,7 +76,7 @@ public abstract class WidgetContentType extends ContentType implements Expireabl
 				.variable(WIDGET_USAGE_FIELD_VAR)
 				.sortOrder(2)
 				.fixed(false)
-				.readOnly(true)
+				.readOnly(false)
 				.searchable(true)
 				.build();
 		

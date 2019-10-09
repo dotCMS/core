@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.ContainerStructure;
@@ -225,6 +226,7 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
     /* (non-Javadoc)
      * @see com.dotcms.datagen.DataGen#persist(java.lang.Object)
      */
+    @WrapInTransaction
     @Override
     public Container persist(Container container) {
 
@@ -262,6 +264,7 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
      * @param container
      *            to be removed
      */
+    @WrapInTransaction
     public static void remove(Container container) {
         try{
             APILocator.getContainerAPI().delete(container, user, false);

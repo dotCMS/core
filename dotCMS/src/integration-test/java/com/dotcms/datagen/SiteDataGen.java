@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -32,12 +33,18 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         return site;
     }
 
+    @WrapInTransaction
     public Host persist(final Host site, boolean publish) {
         try {
+
+            site.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            site.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            site.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             final Host newSite = APILocator.getHostAPI().save(site, user, false);
             if (publish) {
                 newSite.setIndexPolicy(IndexPolicy.WAIT_FOR);
                 newSite.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+                newSite.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
                 APILocator.getHostAPI().publish(newSite, user, false);
             }
 

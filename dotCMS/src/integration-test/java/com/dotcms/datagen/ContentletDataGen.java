@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.beans.Host;
@@ -10,11 +11,15 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import io.vavr.control.Try;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,6 +42,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     protected String modUser = UserAPI.SYSTEM_USER_ID;
     protected List<Category> categories;
     private boolean skipValidation = false;
+    private IndexPolicy policy = null;
 
     public ContentletDataGen(String contentTypeId) {
         this.contentTypeId = contentTypeId;
@@ -142,16 +148,17 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     public Contentlet next(){
 
         final Contentlet contentlet = new Contentlet();
-        contentlet.setFolder(folder.getInode());
-        contentlet.setHost(host.getIdentifier());
-        contentlet.setLanguageId(languageId);
+        contentlet.setFolder(folder ==null ? Folder.SYSTEM_FOLDER : folder.getInode());
+        contentlet.setHost(host == null ? Host.SYSTEM_HOST : host.getIdentifier());
+        contentlet.setLanguageId(languageId==0 ? APILocator.getLanguageAPI().getDefaultLanguage().getId()  : languageId);
         contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        contentlet.setContentTypeId(contentTypeId);
+        contentlet.setContentTypeId(Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeId).id()).getOrNull());
         for(Entry<String, Object> element:properties.entrySet()){
             contentlet.setProperty(element.getKey(), element.getValue());
         }
-        contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+
+        contentlet.setIndexPolicy(null != policy?policy:IndexPolicy.WAIT_FOR);
+        contentlet.setIndexPolicyDependencies(null != policy?policy:IndexPolicy.WAIT_FOR);
         if(skipValidation){
             contentlet.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
         }
@@ -182,7 +189,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     @Override
     public Contentlet persist(Contentlet contentlet) {
-        return checkin(contentlet);
+        return checkin(contentlet, null != policy?policy:IndexPolicy.FORCE);
     }
 
     /**
@@ -240,6 +247,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * instance
      * @return Contentlet instance created from existing one
      */
+    @WrapInTransaction
     public static Contentlet checkout(Contentlet contentletBase) {
         try {
             return APILocator.getContentletAPI().checkout(
@@ -249,26 +257,40 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         }
     }
 
+    @WrapInTransaction
     public static Contentlet checkin(Contentlet contentlet) {
+        return checkin(contentlet, IndexPolicy.FORCE);
+    }
+
+    @WrapInTransaction
+    public static Contentlet checkin(Contentlet contentlet, IndexPolicy policy) {
         try{
+            contentlet.setIndexPolicy(policy);
+            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             return contentletAPI.checkin(contentlet, user, false);
         } catch (DotContentletStateException | IllegalArgumentException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
     }
 
+    @WrapInTransaction
     public static Contentlet checkin(final Contentlet contentlet, final List<Category> categories) {
         try{
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             return contentletAPI.checkin(contentlet, user, false, categories);
         } catch (DotContentletStateException | IllegalArgumentException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
         }
     }
 
+    @WrapInTransaction
     public static Contentlet publish(Contentlet contentlet) {
         try {
             contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             contentletAPI.publish(contentlet, user, false);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -281,6 +303,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * Archives a given {@link Contentlet} instance
      * @param contentlet to be archived
      */
+    @WrapInTransaction
     public static void archive(Contentlet contentlet) {
         try{
             contentletAPI.archive(contentlet, APILocator.systemUser(), false);
@@ -294,6 +317,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * Deletes a given {@link Contentlet} instance
      * @param contentlet to be deleted
      */
+    @WrapInTransaction
     public static void delete(Contentlet contentlet) {
         try{
             contentletAPI.delete(contentlet, APILocator.systemUser(), false);
@@ -306,11 +330,11 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      * Archives and deletes a given {@link Contentlet} instance
      * @param contentlet to be removed
      */
+    @WrapInTransaction
     public static void remove(Contentlet contentlet) {
         try{
-            archive(contentlet);
-            delete(contentlet);
-        } catch (DotContentletStateException e) {
+            destroy(contentlet, true);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -319,6 +343,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         destroy(contentlet, true);
     }
 
+    @WrapInTransaction
     public static void destroy(final Contentlet contentlet, final Boolean failSilently) {
 
         if (null != contentlet) {
@@ -334,4 +359,8 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         }
     }
 
+    public ContentletDataGen setPolicy(final IndexPolicy policy) {
+        this.policy = policy;
+        return this;
+    }
 }

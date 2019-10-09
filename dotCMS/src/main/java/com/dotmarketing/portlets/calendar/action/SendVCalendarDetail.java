@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.calendar.action;
 
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -16,10 +20,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.actions.DispatchAction;
 
 /**
  * 
@@ -47,9 +47,9 @@ public class SendVCalendarDetail extends DispatchAction {
 	 * @param	request HttpServletRequest.
 	 * @param	response HttpServletResponse.
 	 * @return	ActionForward.
-	 * @exception	Exception.
+	 * @exception	Exception
 	 */
-	public ActionForward unspecified(ActionMapping mapping, ActionForm lf, HttpServletRequest request, HttpServletResponse response) throws Exception 
+	public ActionForward unspecified(ActionMapping mapping, ActionForm lf, HttpServletRequest request, HttpServletResponse response) throws Exception
 	{
 		HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
 		try

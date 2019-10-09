@@ -3,37 +3,7 @@ version: "3.7"
 
 # https://docs.docker.com/compose/compose-file/
 
-#volumes:
-#  db:
-#  reports:
-#  logs:
-
-networks:
-  db_net:
-
 services:
-
-  integration-tests:
-    image: "${IMAGE_BASE_NAME}"
-    environment:
-      databaseType: postgres
-      EXTRA_PARAMS:
-    depends_on:
-      - database
-    ports:
-      - "15005:5005"
-    volumes:
-      - type: bind
-        source: ./reports
-        target: /custom/reports
-      - type: bind
-        source: ./logs
-        target: /custom/logs
-#      - type: bind
-#        source: ./license/license.dat
-#        target: /custom/dotsecure/license/license.dat
-    networks:
-      - db_net
 
   # https://hub.docker.com/_/postgres
   database:
@@ -46,5 +16,3 @@ services:
       - "15432:5432"
     volumes:
       - ./setup/db/postgres/init-scripts:/docker-entrypoint-initdb.d/
-    networks:
-      - db_net

@@ -1,6 +1,9 @@
 package com.dotcms.system.event.local.business;
 
+import java.util.List;
+
 import com.dotcms.config.DotInitializer;
+import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.graphql.listener.ContentTypeAndFieldsModsListeners;
 import com.dotcms.services.VanityUrlServices;
 import com.dotmarketing.beans.Host;
@@ -9,11 +12,10 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.ApplicationContainerFolderListener;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.workflows.business.UnassignedWorkflowContentletCheckinListener;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
-import java.util.List;
 
 /**
  * Initializer class that allow us to register Local System Events subscribers
@@ -30,6 +32,8 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         APILocator.getLocalSystemEventsAPI().subscribe(new ContentTypeAndFieldsModsListeners());
 
         this.initApplicationContainerFolderListener();
+
+        APILocator.getLocalSystemEventsAPI().subscribe(ContentletCheckinEvent.class, UnassignedWorkflowContentletCheckinListener.getInstance());
     }
 
     public void initApplicationContainerFolderListener() {

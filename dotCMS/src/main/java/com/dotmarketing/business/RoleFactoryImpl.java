@@ -124,7 +124,7 @@ public class RoleFactoryImpl extends RoleFactory {
 					rolesToProcess.add(r);
 				}
 
-				if(APILocator.getUserAPI().getAnonymousUser().getUserId().equals(userId)
+				if(UserAPI.CMS_ANON_USER_ID.equals(userId)
 						&& !rolesToProcess.contains(APILocator.getRoleAPI().loadCMSAnonymousRole())){
 					rolesToProcess.add(APILocator.getRoleAPI().loadCMSAnonymousRole());
 				}
@@ -229,11 +229,13 @@ public class RoleFactoryImpl extends RoleFactory {
 
 	@Override
 	protected void addRoleToUser(Role role, User user) throws DotDataException {
-		UsersRoles ur = new UsersRoles();
-		ur.setRoleId(role.getId());
-		ur.setUserId(user.getUserId());
-		HibernateUtil.save(ur);
-		rc.remove(user.getUserId());
+
+  		UsersRoles ur = new UsersRoles();
+  		ur.setRoleId(role.getId());
+  		ur.setUserId(user.getUserId());
+  		HibernateUtil.save(ur);
+  		rc.remove(user.getUserId());
+
 	}
 
 	@Override

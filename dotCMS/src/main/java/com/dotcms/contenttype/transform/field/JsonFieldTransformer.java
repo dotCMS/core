@@ -36,11 +36,11 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
 
   final List<Field> list;
 
-  public JsonFieldTransformer(Field field) {
-    this.list = ImmutableList.of(field);
+  public JsonFieldTransformer(final Field field) {
+    this(ImmutableList.of(field));
   }
 
-  public JsonFieldTransformer(List<Field> list) {
+  public JsonFieldTransformer(final List<Field> list) {
     this.list = ImmutableList.copyOf(list);
   }
 
@@ -200,6 +200,6 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     } catch (Exception e) {
       throw new DotStateException(e);
     }
-  } 
+  }
 }
 

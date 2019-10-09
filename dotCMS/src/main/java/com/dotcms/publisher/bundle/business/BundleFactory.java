@@ -8,30 +8,30 @@ import java.util.List;
 
 public abstract class BundleFactory {
 
-    protected static String INSERT_BUNDLE = "INSERT INTO publishing_bundle VALUES (?,?,?,?,?,?)";
+    protected final static String INSERT_BUNDLE = "INSERT INTO publishing_bundle (id,name,publish_date,expire_date,owner,force_push) VALUES (?,?,?,?,?,?)";
 
-    protected static String INSERT_BUNDLE_ENVIRONMENT = "INSERT INTO publishing_bundle_environment VALUES (?,?,?)";
+    protected final static String INSERT_BUNDLE_ENVIRONMENT = "INSERT INTO publishing_bundle_environment (id,bundle_id,environment_id) VALUES (?,?,?)";
 
-    protected static String SELECT_UNSEND_BUNDLES = "SELECT * FROM publishing_bundle where publish_date is null and expire_date is null and owner = ? order by publish_date desc";
+    protected final static String SELECT_UNSEND_BUNDLES = "SELECT * FROM publishing_bundle where publish_date is null and expire_date is null and owner = ? order by id desc";
 
-    protected static String SELECT_UNSEND_BUNDLES_LIKE_NAME = "SELECT * FROM publishing_bundle " +
+    protected final static String SELECT_UNSEND_BUNDLES_LIKE_NAME = "SELECT * FROM publishing_bundle " +
             "where publish_date is null and expire_date is null and owner = ? and UPPER(name) like UPPER(?) order by publish_date desc";
 
-    protected static String SELECT_BUNDLE_BY_NAME = "SELECT * FROM publishing_bundle where UPPER(name) = UPPER(?)";
+    protected final static String SELECT_BUNDLE_BY_NAME = "SELECT * FROM publishing_bundle where UPPER(name) = UPPER(?)";
 
-    protected static String SELECT_BUNDLE_BY_ID = "SELECT * FROM publishing_bundle where id = ?";
+    protected final static String SELECT_BUNDLE_BY_ID = "SELECT * FROM publishing_bundle where id = ?";
 
-    protected static String DELETE_BUNDLE = "DELETE FROM publishing_bundle where id = ?";
+    protected final static String DELETE_BUNDLE = "DELETE FROM publishing_bundle where id = ?";
 
-    protected static String UPDATE_BUNDLE = "UPDATE publishing_bundle SET name = ?, publish_date = ?, expire_date = ?, force_push = ? where id = ?";
+    protected final static String UPDATE_BUNDLE = "UPDATE publishing_bundle SET name = ?, publish_date = ?, expire_date = ?, force_push = ? where id = ?";
 
-    protected static final String UPDATE_BUNDLE_OWNER_REFERENCES = "UPDATE publishing_bundle SET owner = ? where owner = ?";
+    protected final static String UPDATE_BUNDLE_OWNER_REFERENCES = "UPDATE publishing_bundle SET owner = ? where owner = ?";
 
-    protected static String DELETE_ASSET_FROM_BUNDLE = "DELETE from publishing_queue where asset = ? and bundle_id = ?";
+    protected final static String DELETE_ASSET_FROM_BUNDLE = "DELETE from publishing_queue where asset = ? and bundle_id = ?";
 
-    protected static String DELETE_BUNDLE_ENVIRONMENT_BY_ENV = "DELETE from publishing_bundle_environment where environment_id = ?";
+    protected final static String DELETE_BUNDLE_ENVIRONMENT_BY_ENV = "DELETE from publishing_bundle_environment where environment_id = ?";
 
-    protected static String DELETE_BUNDLE_ENVIRONMENT_BY_BUNDLE = "DELETE from publishing_bundle_environment where bundle_id = ?";
+    protected final static String DELETE_BUNDLE_ENVIRONMENT_BY_BUNDLE = "DELETE from publishing_bundle_environment where bundle_id = ?";
 
     public abstract void saveBundle ( Bundle bundle ) throws DotDataException;
 

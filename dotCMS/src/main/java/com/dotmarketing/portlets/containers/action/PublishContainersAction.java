@@ -3,6 +3,8 @@ package com.dotmarketing.portlets.containers.action;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -18,8 +20,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
 import java.net.URLDecoder;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
 
 /**
  * <a href="ViewQuestionsAction.java.html"><b><i>View Source</i></b></a>

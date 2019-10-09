@@ -10,9 +10,8 @@ import com.dotmarketing.util.Logger;
 import java.util.List;
 import java.util.Map;
 
+@Actionlet(unpublish = true)
 public class UnpublishContentActionlet extends WorkFlowActionlet {
-
-
 
 	/**
 	 * 

@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -17,7 +16,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.contentlet.model.ContentletListener;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -124,7 +122,7 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException;
+	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException;
 
 	/**
 	 * Retrieves a contentlet list from the database based on a identifiers array
@@ -763,6 +761,27 @@ public interface ContentletAPI {
             boolean respectFrontendRoles, Boolean pullByParents, int limit, int offset,
             String sortBy);
 
+
+    /**
+     * Returns a list of all contentlets related to this instance given a RelationshipField variable
+     * using pagination
+     * @param contentlet
+     * @param variableName
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParents
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @param language
+     * @param live
+     * @return
+     */
+    List<Contentlet> getRelatedContent(Contentlet contentlet, String variableName,
+            User user,
+            boolean respectFrontendRoles, Boolean pullByParents, int limit,
+            int offset, String sortBy, long language, Boolean live);
+
     /**
 	 * Associates the given list of contentlets using the relationship this
 	 * methods removes old associated content and reset the relationships based
@@ -850,6 +869,60 @@ public interface ContentletAPI {
             Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
             String sortBy)
             throws DotDataException;
+
+    /**
+     * Gets all related content from the same structure (where the parent and child structures are the same type)
+     * the parameter pullByParent if set to true tells the method to pull all children where the passed
+     * contentlet is the parent, if set to false then the passed contentlet is the child and you want to pull
+     * parents
+     *
+     * If this method is invoked using different structures kind of relationships then the parameter
+     * pullByParent will be ignored, and the side of the relationship will be figured out automatically
+     *
+     * This method uses pagination if necessary (limit, offset, sortBy)
+     * @param contentlet
+     * @param rel
+     * @param pullByParent
+     * @param user
+     * @param respectFrontendRoles
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @param language
+     * @param live
+     * @return
+     * @throws DotDataException
+     */
+    List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
+            Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
+            String sortBy, long language, Boolean live)
+            throws DotDataException;
+
+    /**
+     * Gets all related content from the same structure (where the parent and child structures are the same type)
+     * the parameter pullByParent if set to true tells the method to pull all children where the passed
+     * contentlet is the parent, if set to false then the passed contentlet is the child and you want to pull
+     * parents
+     *
+     * If this method is invoked using different structures kind of relationships then the parameter
+     * pullByParent will be ignored, and the side of the relationship will be figured out automatically
+     *
+     * This method uses pagination if necessary (limit, offset, sortBy)
+     * @param contentlet
+     * @param rel
+     * @param pullByParent
+     * @param user
+     * @param respectFrontendRoles
+     * @param language
+     * @param live
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
+            Boolean pullByParent, User user, boolean respectFrontendRoles, long language,
+            Boolean live)
+            throws DotDataException, DotSecurityException;
 
     /**
 	 * Gets all related content from the same structure (where the parent and child structures are the same type)

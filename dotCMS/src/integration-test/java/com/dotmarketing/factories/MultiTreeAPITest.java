@@ -11,6 +11,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
@@ -181,77 +182,124 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Contentlet content = new ContentletDataGen(structure.getInode()).nextPersisted();
 
         
-        try {
-            MultiTree multiTree = new MultiTree();
-            multiTree.setHtmlPage(page);
-            multiTree.setContainer(container);
-            multiTree.setContentlet(content);
-            multiTree.setInstanceId("abc");
-            multiTree.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
-            multiTree.setTreeOrder( 1 );
-            
-            //delete out any previous relation
-            APILocator.getMultiTreeAPI().deleteMultiTree(multiTree);
-            CacheLocator.getMultiTreeCache().clearCache();
-            Table<String, String, Set<PersonalizedContentlet>> trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-            
-            Table<String, String, Set<PersonalizedContentlet>> cachedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-
-            Logger.info(this, "\n\n**** cachedTrees: " + cachedTrees);
-            // should be the same object coming from in memory cache
-            assert(trees==cachedTrees);
-
-            CacheLocator.getMultiTreeCache().removePageMultiTrees(page.getIdentifier());
-
-            trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-            
-            // cache flush forced a cache reload, so different objects in memory
-            assert(trees!=cachedTrees);
-            
-            // but the objects should contain the same data
-            assert(trees.equals(cachedTrees));
-    
-            // there is no container entry 
-            assert(!(cachedTrees.rowKeySet().contains(container.getIdentifier())));
-    
-    
-            // check cache flush on save
-            APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
-            Table<String, String, Set<PersonalizedContentlet>> addedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-            assert(cachedTrees!=addedTrees);
-            
-            // did we get a new object from the cache?
-            Assert.assertNotNull(cachedTrees);
-            Assert.assertNotNull(addedTrees);
-            Logger.info(this, "\n\n**** cachedTrees: " + cachedTrees);
-            Logger.info(this, "\n\n**** addedTrees: " + addedTrees);
-            assertNotEquals(cachedTrees, addedTrees);
-            assert(addedTrees.rowKeySet().contains(container.getIdentifier()));
-            
-            // check cache flush on delete
-            APILocator.getMultiTreeAPI().deleteMultiTree(multiTree );
-            Table<String, String, Set<PersonalizedContentlet>> deletedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
-            
-            // did we get a new object from the cache?
-            assert(!(addedTrees.equals(deletedTrees)));
-            assert(!(deletedTrees.rowKeySet().contains(container.getIdentifier())));
-            
-        }
-        finally {
-            ContentletDataGen.remove(content);
-            ContainerDataGen.remove(container);
-            StructureDataGen.remove(structure);
-            HTMLPageDataGen.remove(page);
-            FolderDataGen.remove(folder);
-            TemplateDataGen.remove(template);
-        }
-
+        MultiTree multiTree = new MultiTree();
+        multiTree.setHtmlPage(page);
+        multiTree.setContainer(container);
+        multiTree.setContentlet(content);
+        multiTree.setInstanceId("abc");
+        multiTree.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+        multiTree.setTreeOrder( 1 );
         
+        //delete out any previous relation
+        APILocator.getMultiTreeAPI().deleteMultiTree(multiTree);
+        CacheLocator.getMultiTreeCache().clearCache();
+        Table<String, String, Set<PersonalizedContentlet>> trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
         
+        Table<String, String, Set<PersonalizedContentlet>> cachedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+
+        Logger.info(this, "\n\n**** cachedTrees: " + cachedTrees);
+        // should be the same object coming from in memory cache
+        assert(trees==cachedTrees);
+
+        CacheLocator.getMultiTreeCache().removePageMultiTrees(page.getIdentifier());
+
+        trees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+        
+        // cache flush forced a cache reload, so different objects in memory
+        assert(trees!=cachedTrees);
+        
+        // but the objects should contain the same data
+        assert(trees.equals(cachedTrees));
+
+        // there is no container entry 
+        assert(!(cachedTrees.rowKeySet().contains(container.getIdentifier())));
+
+
+        // check cache flush on save
+        APILocator.getMultiTreeAPI().saveMultiTree( multiTree );
+        Table<String, String, Set<PersonalizedContentlet>> addedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+        assert(cachedTrees!=addedTrees);
+        
+        // did we get a new object from the cache?
+        Assert.assertNotNull(cachedTrees);
+        Assert.assertNotNull(addedTrees);
+        Logger.info(this, "\n\n**** cachedTrees: " + cachedTrees);
+        Logger.info(this, "\n\n**** addedTrees: " + addedTrees);
+        assertNotEquals(cachedTrees, addedTrees);
+        assert(addedTrees.rowKeySet().contains(container.getIdentifier()));
+        
+        // check cache flush on delete
+        APILocator.getMultiTreeAPI().deleteMultiTree(multiTree );
+        Table<String, String, Set<PersonalizedContentlet>> deletedTrees= APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+        
+        // did we get a new object from the cache?
+        assert(!(addedTrees.equals(deletedTrees)));
+        assert(!(deletedTrees.rowKeySet().contains(container.getIdentifier())));
+
         
     }
 
+    
+    
+  /**
+   * This test makes sure that if you have a container that accepts 1 contentlet, then that container
+   * will take 1 contentlet for each persona and not just 1 contentlet in total.  See:
+   * https://github.com/dotCMS/core/issues/17181
+   * 
+   * @throws Exception
+   */
+  @Test
+  public void test_personalize_page_respects_max_contentlet_value_per_persona() throws Exception {
 
+    final Template template = new TemplateDataGen().body("body").nextPersisted();
+    final Folder folder = new FolderDataGen().nextPersisted();
+    final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+    final Structure structure = new StructureDataGen().nextPersisted();
+    final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+    final Contentlet content1 = new ContentletDataGen(structure.getInode()).nextPersisted();
+    final Contentlet content2 = new ContentletDataGen(structure.getInode()).nextPersisted();
+
+    final Persona persona = new PersonaDataGen().keyTag(UUIDGenerator.shorty()).nextPersisted();
+    final String uniqueId = UUIDGenerator.shorty();
+
+    MultiTree multiTree = new MultiTree();
+    multiTree.setHtmlPage(page);
+    multiTree.setContainer(container);
+    multiTree.setContentlet(content1);
+    multiTree.setInstanceId(uniqueId);
+    multiTree.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+    multiTree.setTreeOrder(1);
+    APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+    multiTree = new MultiTree();
+    multiTree.setHtmlPage(page);
+    multiTree.setContainer(container);
+    multiTree.setContentlet(content2);
+    multiTree.setInstanceId(uniqueId);
+    multiTree.setPersonalization(persona.getKeyTag());
+    multiTree.setTreeOrder(1);
+    APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+    Table<String, String, Set<PersonalizedContentlet>> pageContents = APILocator.getMultiTreeAPI().getPageMultiTrees(page, false);
+
+    for (final String containerId : pageContents.rowKeySet()) {
+      assertEquals("containers match. Saved:" + container.getIdentifier() + ", got:" + containerId, containerId, container.getIdentifier());
+
+      for (final String uuid : pageContents.row(containerId).keySet()) {
+        assertEquals("containers uuids match. Saved:" + uniqueId + ", got:" + uuid, uniqueId, uuid);
+        final Set<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
+
+        assertTrue("container should have 2 personalized contents - got :" + personalizedContentletSet.size(),
+            personalizedContentletSet.size() == 2);
+        assertTrue("container should have contentlet for keyTag:" + MultiTree.DOT_PERSONALIZATION_DEFAULT, personalizedContentletSet
+            .contains(new PersonalizedContentlet(content1.getIdentifier(), MultiTree.DOT_PERSONALIZATION_DEFAULT)));
+        assertTrue("container should have contentlet for persona:" + persona.getKeyTag(),
+            personalizedContentletSet.contains(new PersonalizedContentlet(content2.getIdentifier(), persona.getKeyTag())));
+      }
+
+    }
+
+  }
 
     @Test
     public void testMultiTreeForContainerStructure() throws Exception {
@@ -395,16 +443,24 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     @Test
     public void testMultiTreesSaveAndPersonalizationForPage() throws Exception {
 
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().withStructure(structure, "").nextPersisted();
+        final Contentlet content = new ContentletDataGen(structure.getInode()).nextPersisted();
+
+        
+        
+        
         final MultiTreeAPI multiTreeAPI = new MultiTreeAPIImpl();
-        final String htmlPage           = UUIDGenerator.generateUuid();
-        final String container          = UUIDGenerator.generateUuid();
-        final String content            = UUIDGenerator.generateUuid();
+
         final String personalization    = "dot:persona:somepersona";
 
-        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 1)); // dot:default
-        multiTreeAPI.saveMultiTree(new MultiTree(htmlPage, container, content, UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
+        multiTreeAPI.saveMultiTree(new MultiTree(page.getIdentifier(), container.getIdentifier(), content.getIdentifier(), UUIDGenerator.generateUuid(), 1)); // dot:default
+        multiTreeAPI.saveMultiTree(new MultiTree(page.getIdentifier(), container.getIdentifier(), content.getIdentifier(), UUIDGenerator.generateUuid(), 2, personalization)); // dot:somepersona
 
-        final Set<String> personalizationSet = multiTreeAPI.getPersonalizationsForPage(htmlPage);
+        final Set<String> personalizationSet = multiTreeAPI.getPersonalizationsForPage(page);
 
         org.junit.Assert.assertNotNull(personalizationSet);
         org.junit.Assert.assertEquals(2, personalizationSet.size());
@@ -428,7 +484,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Set<String> allPersonalizationSet = multiTreeAPI.getPersonalizations();
 
         org.junit.Assert.assertNotNull(allPersonalizationSet);
-        org.junit.Assert.assertTrue(allPersonalizationSet.size() == 1);
+        org.junit.Assert.assertTrue(allPersonalizationSet.stream().noneMatch(personalization-> personalization.startsWith("dot:persona:")));
         org.junit.Assert.assertTrue(allPersonalizationSet.contains(MultiTree.DOT_PERSONALIZATION_DEFAULT));
     }
 

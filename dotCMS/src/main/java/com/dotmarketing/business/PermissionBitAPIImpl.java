@@ -354,13 +354,21 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			if(p.matchesPermission(permissionType)){
 				if(respectFrontendRoles){
 					// if we are anonymous
-					if(p.getRoleId().equals(anonRole.getId())){
-						return true;
-						//if logged in site user has permission
-					}else if(!anonUser.getUserId().equals(user.getUserId()) && p.getRoleId().equals(frontEndUserRole.getId())){
-						return true;
-					}
-				} 
+                    try {
+                        //anonymous role should not be able to access non-live contentlet
+                        boolean isContentlet = permissionable instanceof Contentlet;
+                        if (p.getRoleId().equals(anonRole.getId()) && (!isContentlet
+                                || isLiveContentlet(permissionable))) {
+                            return true;
+                            //if logged in site user has permission
+                        }else if(!anonUser.getUserId().equals(user.getUserId()) && p.getRoleId().equals(frontEndUserRole.getId())){
+                            return true;
+                        }
+                    } catch (DotSecurityException e) {
+                        Logger.error(this,"Error getting permissions for user " + user.getUserId(), e);
+                        throw new DotRuntimeException(e.getMessage(), e);
+                    }
+                }
 				// if owner and owner has required permission return true
 				try {
 					if(p.getRoleId().equals(cmsOwnerRole.getId()) && permissionable.getOwner() != null && permissionable.getOwner().equals(user.getUserId()) &&
@@ -421,7 +429,20 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		return doRolesHavePermission(userRoleIds,getPermissions(permissionable, true),permissionType);
 	}
 
-	@WrapInTransaction
+    /**
+     *
+     * @param permissionable
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private boolean isLiveContentlet(Permissionable permissionable)
+            throws DotDataException, DotSecurityException {
+        return permissionable instanceof Contentlet
+                && ((Contentlet) permissionable).isLive();
+    }
+
+    @WrapInTransaction
 	@Override
 	public void removePermissions(Permissionable permissionable) throws DotDataException {
 
@@ -440,8 +461,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public void setDefaultCMSAnonymousPermissions(Permissionable permissionable) throws DotDataException{
 		Role cmsAnonymousRole;
 		try {
-			cmsAnonymousRole = APILocator.getRoleAPI().loadRoleByKey(Config
-					.getStringProperty("CMS_ANONYMOUS_ROLE"));
+			cmsAnonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
@@ -488,7 +508,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	public void setDefaultCMSAdminPermissions (Permissionable permissionable) throws DotDataException {
 		Role cmsAdminRole;
 		try {
-			cmsAdminRole = APILocator.getRoleAPI().loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE"));
+			cmsAdminRole = APILocator.getRoleAPI().loadCMSAdminRole();
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);

@@ -1,8 +1,27 @@
 package com.dotcms.rest;
 
+import static com.liferay.util.StringPool.BLANK;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+
+import org.apache.commons.lang.StringUtils;
+import org.glassfish.jersey.internal.util.Base64;
+import org.glassfish.jersey.server.ContainerRequest;
+
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
@@ -12,6 +31,8 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -20,6 +41,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -27,20 +49,8 @@ import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.CookieUtil;
 import com.liferay.util.StringPool;
+
 import io.vavr.control.Try;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.Response;
-import org.apache.commons.lang.StringUtils;
-import org.glassfish.jersey.internal.util.Base64;
-import org.glassfish.jersey.server.ContainerRequest;
 
 /**
  * The Web Resource is a helper for all authentication and get the current user logged in
@@ -181,9 +191,9 @@ public  class WebResource {
                                final boolean rejectWhenNoUser, final String requiredPortlet) throws SecurityException {
 
         checkForceSSL(request);
-
-        final Map<String, String> paramsMap = buildParamsMap(!UtilMethods.isSet(params)?StringPool.BLANK:params);
-        return initWithMap(paramsMap, request, response, rejectWhenNoUser, requiredPortlet);
+        AnonymousAccess access = (rejectWhenNoUser) ? AnonymousAccess.NONE : AnonymousAccess.systemSetting();
+        final Map<String, String> paramsMap = buildParamsMap(!UtilMethods.isSet(params)?BLANK:params);
+        return initWithMap(paramsMap, request, response, access, requiredPortlet);
     }
 
     /**
@@ -220,11 +230,11 @@ public  class WebResource {
         checkForceSSL(request);
 
         if(!UtilMethods.isSet(params)) {
-            params = StringPool.BLANK;
+            params = BLANK;
         }
-
+        AnonymousAccess access = (rejectWhenNoUser) ? AnonymousAccess.NONE : AnonymousAccess.systemSetting();
         final Map<String, String> paramsMap = buildParamsMap(params);
-        return initWithMap(paramsMap, request, new EmptyHttpResponse(), rejectWhenNoUser, requiredPortlet);
+        return initWithMap(paramsMap, request, new EmptyHttpResponse(), access, requiredPortlet);
     }
 
     /**
@@ -241,7 +251,8 @@ public  class WebResource {
      */
     @Deprecated
     public InitDataObject init(String userId, String password, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser, String requiredPortlet) throws SecurityException {
-        return initWithMap(CollectionsUtils.map("userid", userId, "pwd", password), request, new EmptyHttpResponse(), rejectWhenNoUser, requiredPortlet);
+        AnonymousAccess access = (rejectWhenNoUser) ? AnonymousAccess.NONE : AnonymousAccess.systemSetting();
+        return initWithMap(CollectionsUtils.map("userid", userId, "pwd", password), request, new EmptyHttpResponse(), access, requiredPortlet);
     }
 
     /**
@@ -274,17 +285,21 @@ public  class WebResource {
     public InitDataObject init(final String userId, final String password,
                                final HttpServletRequest request, final HttpServletResponse response,
                                final boolean rejectWhenNoUser, final String requiredPortlet) throws SecurityException {
-        return initWithMap(CollectionsUtils.map("userid", userId, "pwd", password), request, response, rejectWhenNoUser, requiredPortlet);
+      
+      
+        AnonymousAccess access = (rejectWhenNoUser) ? AnonymousAccess.NONE : AnonymousAccess.systemSetting();
+      
+        return initWithMap(CollectionsUtils.map("userid", userId, "pwd", password), request, response, access, requiredPortlet);
     }
 
     private InitDataObject initWithMap(final Map<String, String> paramsMap,
                                        final HttpServletRequest request,
                                        final HttpServletResponse response,
-                                       final boolean rejectWhenNoUser,
+                                       final AnonymousAccess access,
                                        final String requiredPortlet) throws SecurityException {
 
         final InitDataObject initData = new InitDataObject();
-        final User user = getCurrentUser(request, response, paramsMap, rejectWhenNoUser);
+        final User user = getCurrentUser(request, response, paramsMap, access);
 
         if(UtilMethods.isSet(requiredPortlet)) {
 
@@ -304,6 +319,82 @@ public  class WebResource {
     }
 
     /**
+     *
+     * @param builder
+     * @return
+     * @throws SecurityException
+     */
+    @VisibleForTesting
+    public InitDataObject init(final InitBuilder builder) throws SecurityException {
+
+        checkForceSSL(builder.request);
+
+        final InitDataObject initData = new InitDataObject();
+        final Map<String, String> paramsMap = new HashMap<>(
+                buildParamsMap(
+                        UtilMethods.isSet(builder.params) ? builder.params : BLANK
+                )
+        );
+
+        if (UtilMethods.isSet(builder.userId) && UtilMethods.isSet(builder.password)) {
+            paramsMap.putAll(CollectionsUtils
+                    .map("userid", builder.userId, "pwd", builder.password));
+        }
+        
+        final User user = getCurrentUser(builder.request, builder.response, paramsMap,
+                builder.anonAccess);
+
+
+        // make sure we have the right anon permissions
+        if(user.equals(userAPI.getAnonymousUserNoThrow())){
+          if(builder.anonAccess.ordinal()>AnonymousAccess.systemSetting().ordinal()) {
+            throw new SecurityException(
+                String.format(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS +  " permission exceeded - system set to %s but %s was required", AnonymousAccess.systemSetting().name(), builder.anonAccess.name()),
+                Response.Status.UNAUTHORIZED);
+          }
+        } 
+        
+        if (!builder.requiredRolesSet.isEmpty()) {
+            final RoleAPI roleAPI = APILocator.getRoleAPI();
+            
+            boolean hasARequiredRole=builder.requiredRolesSet.stream()
+                .anyMatch(roleKey -> Try.of(()->roleAPI
+                    .doesUserHaveRole(user, roleAPI.loadRoleByKey(roleKey)))
+                    .getOrElse(false));
+
+            if(!hasARequiredRole) {
+              throw new SecurityException(
+                  String.format("User " + (user!=null ? user.getFullName() + ":" + user.getEmailAddress() : user) +" lacks one of the required role %s", builder.requiredRolesSet.toString()),
+                  Response.Status.UNAUTHORIZED);
+            }
+        }
+        
+
+        if (UtilMethods.isSet(builder.requiredPortlet)) {
+            for (final String requiredPortlet : builder.requiredPortlet) {
+                try {
+                    if (!layoutAPI.doesUserHaveAccessToPortlet(requiredPortlet, user)) {
+                        throw new SecurityException(
+                                String.format(
+                                        "User " + (user!=null ? user.getFullName() + ":" + user.getEmailAddress() : user) +" does not have access to required Portlet %s",
+                                        requiredPortlet),
+                                Response.Status.UNAUTHORIZED);
+                    }
+                } catch (DotDataException e) {
+                    throw new SecurityException("User " + (user!=null ? user.getFullName() + ":" + user.getEmailAddress() : user) +" does not have access to required Portlet",
+                            Response.Status.UNAUTHORIZED);
+                }
+            }
+        }
+
+
+        initData.setUser(user);
+        initData.setParamsMap(paramsMap);
+
+        return initData;
+    }
+
+    /**
      * Return the current login user.<br>
      * if exist a user login by login as then return this user not the principal user
      *
@@ -316,16 +407,12 @@ public  class WebResource {
      */
     public User getCurrentUser(final HttpServletRequest  request,
                                final HttpServletResponse response,
-                               final Map<String, String> paramsMap, final boolean rejectWhenNoUser) {
+                               final Map<String, String> paramsMap, final AnonymousAccess access) {
 
-        User user = null;
-        final HttpSession session = request.getSession();
+        User user = PortalUtil.getUser(request);
 
-        if (session!=null && this.isLoggedAsUser(session)){
-            user = Try.of(()->PortalUtil.getUser(request)).getOrNull();
-        }
         if(user==null) {
-            user = authenticate(request, response, paramsMap, rejectWhenNoUser);
+            user = authenticate(request, response, paramsMap, access);
         }
         return user;
     }
@@ -345,25 +432,11 @@ public  class WebResource {
      */
     @Deprecated
     public User getCurrentUser(final HttpServletRequest request, final Map<String, String> paramsMap, final boolean rejectWhenNoUser) {
-
-        return this.getCurrentUser(request, new EmptyHttpResponse(), paramsMap, rejectWhenNoUser);
+        AnonymousAccess access = (rejectWhenNoUser) ? AnonymousAccess.NONE : AnonymousAccess.systemSetting();
+        return this.getCurrentUser(request, new EmptyHttpResponse(), paramsMap, access);
     }
 
-    /**
-     * Validate if the user is logged as another user
-     * 
-     * @param session http session object
-     * @return true is the user is LoggedAs another user
-     */
-    private boolean isLoggedAsUser(final HttpSession session) {
-    	boolean isLoginAsUser = false;
-    	if (session != null 
-        		&& session.getAttribute(com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID) != null 
-        		&& session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID) != null){
-    		isLoginAsUser=true;
-    	}
-    	return isLoginAsUser;
-    }
+
 
     /**
      * @deprecated
@@ -379,8 +452,8 @@ public  class WebResource {
     @Deprecated
     public User authenticate(final HttpServletRequest request,
                              final Map<String, String> params, final boolean rejectWhenNoUser) throws SecurityException {
-
-        return this.authenticate(request, new EmptyHttpResponse(), params, rejectWhenNoUser);
+        AnonymousAccess access = (rejectWhenNoUser) ? AnonymousAccess.NONE : AnonymousAccess.systemSetting();
+        return this.authenticate(request, new EmptyHttpResponse(), params, access);
     }
 
     /**
@@ -393,10 +466,10 @@ public  class WebResource {
      * <br>5) If no user found, tries to get the Frontend logged in user.
      */
     public User authenticate(HttpServletRequest request, final HttpServletResponse response,
-                             final Map<String, String> params, final boolean rejectWhenNoUser) throws SecurityException {
+                             final Map<String, String> params, final AnonymousAccess access) throws SecurityException {
 
         request = ServletPreconditions.checkSslIsEnabledIfRequired(request);
-        boolean forceFrontendAuth = Config.getBooleanProperty("REST_API_FORCE_FRONT_END_SESSION_AUTH", false);
+
         User user = null;
 
         Optional<UsernamePassword> userPass = getAuthCredentialsFromMap(params);
@@ -422,20 +495,23 @@ public  class WebResource {
         }
 
 
-        if(user == null && !forceFrontendAuth) {
+        if(user == null ) {
             user = getBackUserFromRequest(request, userWebAPI);
         }
 
         if(user == null) {
             user = getFrontEndUserFromRequest(request, userWebAPI);
         }
+        
+        if(user==null) {
+          user = this.getAnonymousUser();
+        }
 
-        if(user == null && (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser) ) {
+
+        if( UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
 
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
-        } else if(user == null) {
-            user = this.getAnonymousUser();
-        }
+        } 
 
         request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
         request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
@@ -450,14 +526,8 @@ public  class WebResource {
      */
     public User getAnonymousUser() {
 
-        User user = null;
+        return APILocator.getUserAPI().getAnonymousUserNoThrow();
 
-        try {
-            user = APILocator.getUserAPI().getAnonymousUser();
-        } catch (DotDataException e) {
-            Logger.debug(getClass(), "Could not get Anonymous User. ");
-        }
-        return user;
     } // getAnonymousUser.
 
 
@@ -525,7 +595,7 @@ public  class WebResource {
                                  final HttpServletResponse response,
                                  final UserAPI userAPI) throws SecurityException {
         User user       = null;
-        final String ip = request != null ? request.getRemoteAddr() : StringPool.BLANK;
+        final String ip = request != null ? request.getRemoteAddr() : BLANK;
 
         if(StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) { // providing login and password so let's try to authenticate
 
@@ -676,6 +746,131 @@ public  class WebResource {
             this.username = username;
             this.password = password;
         }
+    }
+
+   public static class InitBuilder {
+
+        private WebResource webResource;
+
+        private String userId = null;
+        private String password = null;
+        private String params = BLANK;
+        private HttpServletRequest request = null;
+        private HttpServletResponse response = null;
+        private String[] requiredPortlet = null;
+        private final Set<String> requiredRolesSet = new HashSet<>();
+        private AnonymousAccess anonAccess=AnonymousAccess.NONE;
+        
+        public InitBuilder() {
+          this(new WebResource());
+
+        }
+
+        public InitBuilder(HttpServletRequest request, HttpServletResponse response) {
+            this();
+            this.request=request;
+            this.response=response;
+        }
+
+        @VisibleForTesting
+        public InitBuilder(final WebResource webResource) {
+            this.webResource = webResource;
+        }
+
+        public InitBuilder credentials(final String userId, final String password) {
+            this.userId = userId;
+            this.password = password;
+            return this;
+        }
+
+        public InitBuilder params(final String params) {
+            this.params = params;
+            return this;
+        }
+
+        public InitBuilder requestAndResponse(final HttpServletRequest request,
+                final HttpServletResponse response) {
+            this.request = request;
+            this.response = response;
+            return this;
+        }
+
+        public InitBuilder requiredBackendUser(final boolean requiredBackendUser) {
+            if (requiredBackendUser) {
+                requiredRolesSet.add(Role.DOTCMS_BACK_END_USER);
+            } else {
+                requiredRolesSet.remove(Role.DOTCMS_BACK_END_USER);
+            }
+            return this;
+        }
+
+        public InitBuilder requiredFrontendUser(final boolean requiredFrontendUser) {
+            if (requiredFrontendUser) {
+                requiredRolesSet.add(Role.DOTCMS_FRONT_END_USER);
+            } else {
+                requiredRolesSet.remove(Role.DOTCMS_FRONT_END_USER);
+            }
+            return this;
+        }
+
+        public InitBuilder requiredRoles(final String... requiredRoles) {
+            requiredRolesSet.addAll(Arrays.asList(requiredRoles));
+            return this;
+        }
+
+        public InitBuilder requiredAnonAccess(final AnonymousAccess access) {
+          this.anonAccess = access;
+          return this;
+        }
+
+
+        public InitBuilder rejectWhenNoUser(final boolean rejectWhenNoUser) {
+            this.anonAccess = (rejectWhenNoUser)  ? AnonymousAccess.NONE : this.anonAccess;
+            return this;
+        }
+
+        public InitBuilder requiredPortlet(final String... requiredPortlet) {
+            this.requiredPortlet = requiredPortlet;
+            return this;
+        }
+
+        public InitDataObject init() {
+
+            response = (response == null ? new EmptyHttpResponse() : response);
+
+            if (UtilMethods.isSet(userId) || UtilMethods.isSet(params)) {
+                if (!UtilMethods.isSet(userId) && !UtilMethods.isSet(params)) {
+                    throw new IllegalArgumentException(
+                            "Missing required value building credentials you need to specify both `user` and `password` or none of them.");
+                }
+            }
+
+            if (!UtilMethods.isSet(request)) {
+                throw new IllegalArgumentException(
+                        "A request is always required and it hasn't been set.");
+            }
+
+
+            if (anonAccess != AnonymousAccess.NONE) {
+
+                if(UtilMethods.isSet(requiredPortlet) || UtilMethods.isSet(requiredRolesSet)){
+                    Logger.debug(InitBuilder.class,
+                            "Setting AnonymousAccess  to `READ` or `WRITE` implies that neither a portlet is required nor a set of roles.");
+                }
+
+                Logger.debug(InitBuilder.class,
+                        () -> request.getRequestURI()+" calling webResource.init(..) with AnonymousAccess set to `" + anonAccess + "`");
+            }
+            
+
+            try {
+                return webResource.init(this);
+            } catch (final Exception e) {
+                 Logger.warnAndDebug(WebResource.class,"InitDataObject Error: uri:" + request.getRequestURI() + " err:" + e.getMessage() ,e);
+                 throw e;
+            }
+        }
+
     }
 
 }

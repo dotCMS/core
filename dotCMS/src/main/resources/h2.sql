@@ -1256,6 +1256,32 @@ create table workflow_task (
    language_id bigint,
    primary key (id)
 );
+
+create table workflow_action_mappings (
+   id varchar(36) not null,
+   action varchar(36) not null,
+   workflow_action varchar(255) not null,
+   scheme_or_content_type  varchar(255) not null,
+   primary key (id)
+);
+
+CREATE UNIQUE INDEX idx_workflow_action_mappings ON workflow_action_mappings (action, workflow_action, scheme_or_content_type);
+
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('3d6be719-6b61-4ef8-a594-a9764e461597','NEW'      ,'ceca71a0-deee-4999-bd47-b01baa1bcfc8','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('63865890-c863-43a1-ab61-4b495dba5eb5','EDIT'     ,'ceca71a0-deee-4999-bd47-b01baa1bcfc8','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('2016a72e-85c7-4ee0-936f-36ce52df355e','PUBLISH'  ,'000ec468-0a63-4283-beb7-fcb36c107b2f','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('3ec446c8-a9b6-47fe-830f-1e623493090c','UNPUBLISH','38efc763-d78f-4e4b-b092-59cd8c579b93','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('e7b8c8a3-e605-473c-8680-6d95cac15c9b','ARCHIVE'  ,'4da13a42-5d59-480c-ad8f-94a3adf809fe','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('99019118-df2c-4297-a5aa-2fe3fe0f52ce','UNARCHIVE','c92f9aa1-9503-4567-ac30-d3242b54d02d','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('d073436e-3c10-4e4c-8c97-225e9cddf320','DELETE'   ,'777f1c6b-c877-4a37-ba4b-10627316c2cc','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+
 create table tag_inode (
    tag_id varchar(100) not null,
    inode varchar(100) not null,

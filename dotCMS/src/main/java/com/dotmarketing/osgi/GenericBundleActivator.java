@@ -10,47 +10,17 @@ import static com.dotmarketing.osgi.ActivatorUtil.moveVelocityResources;
 import static com.dotmarketing.osgi.ActivatorUtil.unfreeze;
 import static com.dotmarketing.osgi.ActivatorUtil.unregisterAll;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-
-import org.apache.felix.framework.OSGIUtil;
-import org.apache.felix.http.proxy.DispatcherTracker;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.config.ActionConfig;
-import org.apache.struts.config.ForwardConfig;
-import org.apache.struts.config.ModuleConfig;
-import org.apache.velocity.tools.view.PrimitiveToolboxManager;
-import org.apache.velocity.tools.view.ToolInfo;
-import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.quartz.SchedulerException;
-import org.tuckey.web.filters.urlrewrite.NormalRule;
-import org.tuckey.web.filters.urlrewrite.Rule;
-
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.config.ActionConfig;
+import com.dotcms.repackage.org.apache.struts.config.ForwardConfig;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Interceptor;
 import com.dotmarketing.business.cache.CacheOSGIService;
 import com.dotmarketing.business.cache.provider.CacheProvider;
-import com.dotmarketing.business.portal.PortletFactory;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -67,18 +37,39 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.ejb.PortletManagerFactory;
 import com.liferay.portal.ejb.PortletManagerUtil;
-import com.liferay.portal.model.Company;
 import com.liferay.portal.model.Portlet;
-import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.Http;
-import com.liferay.util.SimpleCachePool;
-
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.dynamic.ClassFileLocator;
 import net.bytebuddy.dynamic.loading.ClassReloadingStrategy;
+import org.apache.felix.framework.OSGIUtil;
+import org.apache.felix.http.proxy.DispatcherTracker;
+import org.apache.velocity.tools.view.PrimitiveToolboxManager;
+import org.apache.velocity.tools.view.ToolInfo;
+import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.quartz.SchedulerException;
+import org.tuckey.web.filters.urlrewrite.NormalRule;
+import org.tuckey.web.filters.urlrewrite.Rule;
 
 /**
  * Created by Jonathan Gamba
@@ -95,7 +86,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private ClassReloadingStrategy classReloadingStrategy;
 
     private PrimitiveToolboxManager toolboxManager;
-    private WorkflowAPIOsgiService workflowOsgiService;
     private CacheOSGIService cacheOSGIService;
     private ConditionletOSGIService conditionletOSGIService;
     private RuleActionletOSGIService actionletOSGIService;
@@ -421,6 +411,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
             }
 
             Logger.info( this, "Added Portlet: " + portlet.getPortletId() );
+            if(OSGIUtil.getInstance().portletIDsStopped.contains(portlet.getPortletId())){
+                OSGIUtil.getInstance().portletIDsStopped.remove(portlet.getPortletId());
+            }
         }
 
         //Forcing a refresh of the portlets cache
@@ -602,11 +595,14 @@ public abstract class GenericBundleActivator implements BundleActivator {
             actionlets = new ArrayList<>();
         }
 
-        this.workflowOsgiService = (WorkflowAPIOsgiService) context.getService( serviceRefSelected );
-        this.workflowOsgiService.addActionlet( actionlet.getClass() );
+        OSGIUtil.getInstance().workflowOsgiService = (WorkflowAPIOsgiService) context.getService( serviceRefSelected );
+        OSGIUtil.getInstance().workflowOsgiService.addActionlet( actionlet.getClass() );
         actionlets.add( actionlet );
 
         Logger.info( this, "Added actionlet: " + actionlet.getName() );
+        if(OSGIUtil.getInstance().actionletsStopped.contains(actionlet.getClass().getCanonicalName())){
+            OSGIUtil.getInstance().actionletsStopped.remove(actionlet.getClass().getCanonicalName());
+        }
     }
 
     /**
@@ -875,11 +871,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
      */
     protected void unregisterActionlets () {
 
-        if ( this.workflowOsgiService != null && actionlets != null ) {
+        if ( OSGIUtil.getInstance().workflowOsgiService != null && actionlets != null ) {
             for ( WorkFlowActionlet actionlet : actionlets ) {
-
-                this.workflowOsgiService.removeActionlet( actionlet.getClass().getCanonicalName() );
-                Logger.info( this, "Removed actionlet: " + actionlet.getClass().getCanonicalName());
+                if(!OSGIUtil.getInstance().actionletsStopped.contains(actionlet.getClass().getCanonicalName())){
+                    OSGIUtil.getInstance().actionletsStopped.add(actionlet.getClass().getCanonicalName());
+                }
             }
         }
     }
@@ -1021,7 +1017,9 @@ public abstract class GenericBundleActivator implements BundleActivator {
         if ( portlets != null ) {
             
             for ( Portlet portlet : portlets ) {
-              APILocator.getPortletAPI().deletePortlet(portlet.getPortletId());
+                if(!OSGIUtil.getInstance().portletIDsStopped.contains(portlet.getPortletId())){
+                    OSGIUtil.getInstance().portletIDsStopped.add(portlet.getPortletId());
+                }
             }
         }
     }

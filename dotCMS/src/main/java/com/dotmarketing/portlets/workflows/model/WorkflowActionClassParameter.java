@@ -41,6 +41,14 @@ public class WorkflowActionClassParameter implements Serializable {
 			return null;
 		}
 	}
+	 public String getOrDefault(final String defaultValue) {
+	    if(UtilMethods.isSet(value)){
+	      return value;
+	    }
+	    else{
+	      return defaultValue;
+	    }
+	  }
 	public void setValue(String value) {
 		this.value = value;
 	}

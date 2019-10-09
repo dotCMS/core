@@ -22,6 +22,7 @@
 
 package com.liferay.portal.events;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.util.UtilMethods;
@@ -40,7 +41,6 @@ import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import org.apache.struts.Globals;
 
 /**
  * <a href="ServicePreAction.java.html"><b><i>View Source</i></b></a>
@@ -103,10 +103,9 @@ public class ServicePreAction extends Action {
       final List<Layout> layouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
       final Layout layout = APILocator.getLayoutAPI().resolveLayout(req)
               .orElseGet(
-                  () -> UtilMethods.isSet(layouts) ? layouts.get(0) : null
+                      () -> UtilMethods.isSet(layouts) ? layouts.get(0) : null
               );
       final Layout[] layoutsArray = layouts.stream().toArray(Layout[]::new);
-
       req.setAttribute(WebKeys.LAYOUT, layout);
       req.setAttribute(WebKeys.LAYOUTS, layoutsArray);
     } catch (Exception e) {

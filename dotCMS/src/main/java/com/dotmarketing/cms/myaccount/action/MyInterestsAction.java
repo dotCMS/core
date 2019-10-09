@@ -1,5 +1,11 @@
 package com.dotmarketing.cms.myaccount.action;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.SecureAction;
@@ -15,12 +21,6 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.struts.Globals;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 
 @Deprecated
 public class MyInterestsAction extends SecureAction {
@@ -36,7 +36,7 @@ public class MyInterestsAction extends SecureAction {
 	}
 
 	public ActionForward unspecified(ActionMapping mapping, ActionForm lf,
-			HttpServletRequest request, HttpServletResponse response)
+									 HttpServletRequest request, HttpServletResponse response)
 			throws Exception {
 
 		if (request.getSession().getAttribute(WebKeys.CMS_USER) == null) {

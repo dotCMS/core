@@ -1,11 +1,8 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
-import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
-import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
-
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -20,14 +17,17 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
+import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 
 /**
  *
@@ -58,29 +58,7 @@ public class ContentletAjaxTest {
 		 * Creating language
 		 */
 		Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-		language = APILocator.getLanguageAPI().getLanguage(102);
-		if(!UtilMethods.isSet(language) || language.getId() == 0){
-			if(DbConnectionFactory.getDBType().equals("Microsoft SQL Server")){
-				DotConnect dc = new DotConnect();
-				String sql = "insert into language(id,language_code,country_code,language,country) values(102,'it','IT','Italian','Italy');";
-				dc.setSQL(sql);
-				dc.loadResult();
-			}else{
-				language = new Language();
-				language.setCountry("Italy");
-				language.setCountryCode("IT");
-				language.setLanguageCode("it");
-				language.setLanguage("Italian");
-				APILocator.getLanguageAPI().saveLanguage(language);
-				/*
-				 * changing id to recreate possible match between languages
-				 */
-				DotConnect dc = new DotConnect();
-				dc.setSQL("update language set id="+defaultLang.getId()+"02 where language_code='it'");
-				dc.loadResult();
-			}
-			language = APILocator.getLanguageAPI().getLanguage("it", "IT");
-		}
+		language = new LanguageDataGen().nextPersisted();
 
 		/*
 		 * Creating multilanguage contententlet
@@ -162,13 +140,13 @@ public class ContentletAjaxTest {
 		result = (Map<String,Object>)results.get(3);
 		Assert.assertTrue(Long.parseLong(String.valueOf(result.get("languageId")))==language.getId());
 		contentlet = APILocator.getContentletAPI().find(String.valueOf(result.get("inode")),systemUser,false);
-		APILocator.getContentletAPI().archive(contentlet,systemUser,false);
-		APILocator.getContentletAPI().delete(contentlet,systemUser,false);
+		APILocator.getContentletAPI().destroy(contentlet, systemUser, false);
 	}
 
 	@Test
 	public void test_doSearchGlossaryTerm_ReturnsListLanguageVariables()
 			throws Exception {
+	    language = new LanguageDataGen().nextPersisted();
 		Contentlet languageVariable1 = null;
 		Contentlet languageVariable2 = null;
 		Contentlet languageVariable3 = null;
@@ -179,27 +157,27 @@ public class ContentletAjaxTest {
 			final ContentType languageVariableContentType = APILocator.getContentTypeAPI(systemUser)
 					.find(LanguageVariableAPI.LANGUAGEVARIABLE);
 			languageVariable1 = createTestKeyValueContent(
-					"brought.you.by.IT"+time, "hello world", 1,
+					"brought.you.by.IT"+time, "hello world", language.getId(),
 					languageVariableContentType, systemUser);
 			languageVariable2 = createTestKeyValueContent(
-					"brought.you.by.Java"+time, "hello world", 1,
+					"brought.you.by.Java"+time, "hello world", language.getId(),
 					languageVariableContentType, systemUser);
 
 			languageVariable3 = createTestKeyValueContent(
-					"brought.you.by.Jay"+time, "hello world", 1,
+					"brought.you.by.Jay"+time, "hello world", language.getId(),
 					languageVariableContentType, systemUser);
 
 			final ContentletAjax contentletAjax = new ContentletAjax();
 			List<String[]> languageVariablesList =
-					contentletAjax.doSearchGlossaryTerm("brought.you.by.IT","1");
+					contentletAjax.doSearchGlossaryTerm("brought.you.by.IT",String.valueOf(language.getId()));
 			Assert.assertEquals("languageVariablesList: "
 					+ languageVariablesList.toString(),1,languageVariablesList.size());
 			languageVariablesList =
-					contentletAjax.doSearchGlossaryTerm("brought.you.by.J","1");
+					contentletAjax.doSearchGlossaryTerm("brought.you.by.J",String.valueOf(language.getId()));
 			Assert.assertEquals("languageVariablesList: "
 					+ languageVariablesList.toString(),2,languageVariablesList.size());
 			languageVariablesList =
-					contentletAjax.doSearchGlossaryTerm("brought.you.by","1");
+					contentletAjax.doSearchGlossaryTerm("brought.you.by",String.valueOf(language.getId()));
 			Assert.assertEquals("languageVariablesList: "
 					+ languageVariablesList.toString(),3,languageVariablesList.size());
 

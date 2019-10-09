@@ -22,6 +22,7 @@
 
 package com.liferay.portal.events;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.liferay.portal.model.User;
 import com.liferay.portal.model.UserTracker;
 import com.liferay.portal.struts.Action;
@@ -38,7 +39,6 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import org.apache.struts.Globals;
 
 /**
  * <a href="LoginPostAction.java.html"><b><i>View Source</i></b></a>

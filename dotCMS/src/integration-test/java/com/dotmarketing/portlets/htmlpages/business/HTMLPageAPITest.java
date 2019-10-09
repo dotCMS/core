@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.htmlpages.business;
 
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_CACHE_TTL_FIELD_VAR;
+import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TEMPLATE_FIELD;
+import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -7,12 +10,19 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.CloseDB;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -73,9 +83,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
     public void saveHTMLPage() throws Exception {
 
         Host host=APILocator.getHostAPI().findDefaultHost(sysuser, false);
-        String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-        
-        HibernateUtil.startTransaction();
+
         Template template=new Template();
         template.setTitle("a template "+UUIDGenerator.generateUuid());
         template.setBody("<html><body> I'm mostly empty </body></html>");
@@ -86,12 +94,9 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
         HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
         page.setIndexPolicy(IndexPolicy.FORCE);
-        APILocator.getContentletIndexAPI().addContentToIndex(page, true, true);
-        boolean isIndexed = APILocator.getContentletAPI().isInodeIndexed( page.getInode() );
-        assertTrue(isIndexed);
 
         List<IHTMLPage> pages = APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(folder, sysuser, true);
-        assertTrue(pages.size()==1);
+		assertEquals(1, pages.size());
 
         // now with existing inode/identifier
         String existingInode=UUIDGenerator.generateUuid();
@@ -100,14 +105,12 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         folder=APILocator.getFolderAPI().createFolders(
                 "/test_junit/test_"+UUIDGenerator.generateUuid().replaceAll("-", "_"), host, sysuser, false);
 		HTMLPageAsset page2 = new HTMLPageDataGen(folder, template).inode(existingInode).identifier(existingIdentifier).nextPersisted();
-        APILocator.getContentletIndexAPI().addContentToIndex(page2, true, true);
-        isIndexed = APILocator.getContentletAPI().isInodeIndexed( page2.getInode() );
-        assertTrue(isIndexed);
-        assertEquals(existingInode,page2.getInode());
+
+		assertEquals(existingInode,page2.getInode());
         assertEquals(existingIdentifier,page2.getIdentifier());
 
         pages = APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(folder, sysuser, false);
-        assertTrue(pages.size()==1);
+		assertEquals(1, pages.size());
         page2=(HTMLPageAsset) pages.get(0);
         assertEquals(existingInode,page2.getInode());
         assertEquals(existingIdentifier,page2.getIdentifier());
@@ -118,7 +121,7 @@ public class HTMLPageAPITest extends IntegrationTestBase {
         page2.setInode(newInode);
         page2.setTitle("other title");
         Contentlet pageContentlet = APILocator.getContentletAPI().checkin(page2, sysuser, false);
-        HibernateUtil.closeAndCommitTransaction();
+
         assertEquals(newInode,pageContentlet.getInode());
         assertEquals(existingIdentifier,pageContentlet.getIdentifier());
         assertEquals("other title",pageContentlet.getTitle());
@@ -362,22 +365,23 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 
 	}
 
+	@CloseDB
 	@DataProvider
 	public static Object[] testCasesFindByIdLanguageFallback() throws Exception {
-
+	      IntegrationTestInitService.getInstance().init();
 		//Setting web app environment
 		IntegrationTestInitService.getInstance().init();
-
-		long spanishLanguageId = TestDataUtils.getSpanishLanguage().getId();
+		long en = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		long es = new LanguageDataGen().nextPersisted().getId();
 
 		return new Object[] {
-			new TestCaseFindByIdLanguageFallback(1, 1, 1, null, false, new User()),
-			new TestCaseFindByIdLanguageFallback(2,1, 1, null, true, new User()),
-				new TestCaseFindByIdLanguageFallback(1, -1, spanishLanguageId,
+			new TestCaseFindByIdLanguageFallback(en, en, en, null, false, new User()),
+			new TestCaseFindByIdLanguageFallback(es,en, en, null, true, new User()),
+				new TestCaseFindByIdLanguageFallback(en, -1, es,
 						ResourceNotFoundException.class, false, new User()),
-				new TestCaseFindByIdLanguageFallback(1, -1, spanishLanguageId,
+				new TestCaseFindByIdLanguageFallback(en, -1, es,
 						ResourceNotFoundException.class, false, new User()),
-			new TestCaseFindByIdLanguageFallback(1, 1, 1, DotSecurityException.class, false, null),
+			new TestCaseFindByIdLanguageFallback(en, en, en, DotSecurityException.class, false, null),
 		};
 	}
 
@@ -472,8 +476,8 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 				.checkout(cvi.getWorkingInode(), APILocator.systemUser(), true);
 		//Validations
 		assertNotNull(contentlet);
-		assertNotNull(contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD));
-		assertEquals(contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD), page.getPageUrl());
+		assertNotNull(contentlet.getStringProperty(URL_FIELD));
+		assertEquals(contentlet.getStringProperty(URL_FIELD), page.getPageUrl());
 
 		//Saving the content
 		contentlet.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
@@ -497,5 +501,50 @@ public class HTMLPageAPITest extends IntegrationTestBase {
 		assertEquals(id.getAssetName(), page.getPageUrl());
         assertEquals(id.getId(), identifierId);
 	}
+
+    @Test
+    public void testGetHTMLPageAssetWithTagsShouldReturnTags()
+            throws Exception {
+        ContentType testContentType = null;
+        Template template = null;
+        try {
+            testContentType = new ContentTypeDataGen()
+                    .baseContentType(BaseContentType.HTMLPAGE)
+                    .fields(
+                            CollectionsUtils.list(
+                                    new FieldDataGen()
+                                            .name("Tags")
+                                            .velocityVarName("tags")
+                                            .defaultValue(null)
+                                            .type(TagField.class)
+                                            .next()
+                            )
+                    )
+                    .nextPersisted();
+
+            template = new TemplateDataGen().nextPersisted();
+
+            final Contentlet contentlet = new ContentletDataGen(testContentType.id())
+                    .setProperty("tags", "test").setProperty(TEMPLATE_FIELD, template.getInode())
+                    .setProperty(URL_FIELD, "myNewPage").setProperty("title", "myNewPage")
+                    .setProperty(PAGE_CACHE_TTL_FIELD_VAR, "0").nextPersisted();
+
+            HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(
+                    APILocator.getContentletAPI().find(contentlet.getInode(), sysuser, false));
+            assertNotNull(page);
+
+            final String tags = (String) page.getMap().get("tags");
+            assertNotNull(tags);
+            assertEquals("test", tags);
+        }finally {
+	        if (testContentType != null && testContentType.inode() != null) {
+                ContentTypeDataGen.remove(testContentType);
+            }
+
+	        if (template != null && template.getInode() != null){
+	           APILocator.getTemplateAPI().delete(template, sysuser, false);
+            }
+        }
+    }
 
 }

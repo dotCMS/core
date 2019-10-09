@@ -7,7 +7,17 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.REGEX;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.util.HttpRequestDataUtil;
+import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -26,15 +36,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * This conditionlet will allow CMS users to check whether a user has already
@@ -75,35 +76,30 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
 
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response,String index, Instance instance) {
         final String hostId = getHostId(request);
+        
+        boolean returnValue=IS_NOT.getId().equalsIgnoreCase(instance.comparisonValue);
+        
+        
         if (!UtilMethods.isSet(hostId)) {
-            return false;
+            return returnValue;
         }
 
-        HttpSession session = request.getSession(true);
-
-        // Get visited urls from session variable
-        Map<String, Set<String>> visitedUrls = (Map<String, Set<String>>) session
-                .getAttribute(RULES_CONDITIONLET_VISITEDURLS);
-        if (visitedUrls == null) {
-            visitedUrls = new HashMap<String, Set<String>>();
+        HttpSession session = request.getSession(false);
+        if(session==null || session.isNew()) {
+          return returnValue;
         }
+        Clickstream clickstream = (Clickstream) session.getAttribute("clickstream");
+        if (clickstream == null || clickstream.getClickstreamRequests()==null) {
+          return returnValue;
+       }
 
-        // Get visited urls by host id from session variable
-        Set<String> visitedUrlsByHost = visitedUrls.get(hostId);
-        if (visitedUrlsByHost == null) {
-            visitedUrlsByHost = new LinkedHashSet<String>();
-        }
-
+        final List<String> urls = new ArrayList<>();
+        urls.add(request.getRequestURI());
+        clickstream.getClickstreamRequests().forEach(c->urls.add(c.getRequestURI()));
+        
         // Find match with visited urls
-        boolean match = hasMatch(visitedUrlsByHost, index, instance);
+        boolean match = hasMatch(urls, index, instance);
 
-        // Add new url to session is not exist
-        final String uri = getUri(request);
-        if (StringUtils.isNotEmpty(uri) && !visitedUrlsByHost.contains(uri)) {
-            visitedUrlsByHost.add(uri);
-            visitedUrls.put(hostId, visitedUrlsByHost);
-            session.setAttribute(RULES_CONDITIONLET_VISITEDURLS, visitedUrls);
-        }
 
         return match;
     }
@@ -123,7 +119,7 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
      * @param instance
      * @return true is there is a match otherwise false
      */
-    private boolean hasMatch(Set<String> visitedUrlsByHost, String index, Instance instance) {
+    private boolean hasMatch(List<String> urls, String index, Instance instance) {
         final boolean comparisonIS_NOT = instance.comparisonValue.equalsIgnoreCase(IS_NOT.getId());
 
         // Variable must starts with true when IS_NOT comparison
@@ -131,7 +127,11 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
 
         String pattern = processUrl(instance.patternUrl, index, instance.comparison);
 
-        for (String url : visitedUrlsByHost) {
+        
+        
+        
+        
+        for (String url : urls) {
             if (comparisonIS_NOT) {
                 match &= instance.comparison.perform(url, pattern);
             } else {

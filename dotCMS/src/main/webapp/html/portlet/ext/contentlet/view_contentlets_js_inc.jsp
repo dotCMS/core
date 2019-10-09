@@ -37,7 +37,7 @@
         var structureInode;
         var currentStructureFields;
         var currentPage = 1;
-        var currentSortBy = "modDate desc";
+        var currentSortBy = "score,modDate desc";
         var setDotFieldTypeStr = "";
         var DOT_FIELD_TYPE = "dotFieldType";
         var cbContentInodeList = new Array();
@@ -505,7 +505,7 @@
                     if (type=='multi_select')
                                 result = result+"<select onchange='doSearch()' dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n";
                         else
-                                result = result+"<select onchange='doSearch()' dojoType='dijit.form.FilteringSelect' id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" style=\"width:160px;\" name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n<option value=\"\"></option>";
+                                result = result+"<select onchange='doSearch()' dojoType='dijit.form.FilteringSelect' id=\"" + selectedStruct+"."+ fieldContentlet + "Field\"  name=\"" + selectedStruct+"."+ fieldContentlet + "\">\n<option value=\"\"></option>";
 
                     for(var i = 0; i < option.length; i++){
                        var actual_option = option[i].split("|");
@@ -1190,14 +1190,9 @@
                            hasHostField = true;
                         }
 
-                        var isOneOption = data[i]["fieldValues"].split("\r\n").length === 1;
-                        if (type === 'checkbox' && isOneOption || type === 'radio' && isOneOption) {
-                            htmlstr += "<dl class='radio-check-one-line'>";
-                        } else {
-                            htmlstr += "<dl class='vertical'>";
-                        }
+                        htmlstr += "<dl class='vertical'>";
                         htmlstr += "<dt><label>" + fieldName(data[i]) + "</label></dt>";
-                        htmlstr += "<dd>" + renderSearchField(data[i]) + "</dd>";
+                        htmlstr += "<dd style='min-height:0px'>" + renderSearchField(data[i]) + "</dd>";
                         htmlstr += "</dl>";
                         htmlstr += "<div class='clear'></div>";
                 }
@@ -1524,6 +1519,7 @@
                 else {
                         sortBy=document.getElementById('currentSortBy').value;
                 }
+               
 
                 var filterSystemHost = false;
                 if (document.getElementById("filterSystemHostCB").checked && document.getElementById("filterSystemHostTable").style.display != "none") {

@@ -79,7 +79,9 @@ public class WorkflowResourceTest extends UnitTestBase {
 
         //final WorkflowHelper workflowHelper = new WorkflowHelper(workflowAPI, roleAPI, contentletAPI, permissionAPI, WorkflowImportExportUtil.getInstance());
         final WorkflowHelper workflowHelper = mock(WorkflowHelper.class);
-        final ContentHelper contentHelper = mock(ContentHelper.class) ;
+        final ContentHelper contentHelper = mock(ContentHelper.class);
+        final SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
+                mock(SystemActionApiFireCommandFactory.class);
         final WebResource webResource = mock(WebResource.class);
 
         if(throwWorkflowAPIException == 0) {
@@ -98,7 +100,8 @@ public class WorkflowResourceTest extends UnitTestBase {
         final ResponseUtil responseUtil = mock(ResponseUtil.class);
         final WorkflowImportExportUtil exportUtil = mock(WorkflowImportExportUtil.class);
         final FileAssetAPI fileAssetAPI = mock(FileAssetAPI.class);
-        return new WorkflowResource(workflowHelper, contentHelper, workflowAPI, contentletAPI, responseUtil, permissionAPI, exportUtil,new MultiPartUtils(fileAssetAPI), webResource);
+        return new WorkflowResource(workflowHelper, contentHelper, workflowAPI, contentletAPI, responseUtil,
+                permissionAPI, exportUtil,new MultiPartUtils(fileAssetAPI), webResource, systemActionApiFireCommandFactory);
     }
 
     @Test

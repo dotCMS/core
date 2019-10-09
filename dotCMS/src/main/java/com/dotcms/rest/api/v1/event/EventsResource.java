@@ -93,7 +93,13 @@ public class EventsResource implements Serializable {
 
 
         Response response              = null;
-        final InitDataObject initData  = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .rejectWhenNoUser(true).init();
+
         final AppContext appContext    =  WebSessionContext.getInstance(httpServletRequest);
         List<SystemEvent> systemEvents = null;
 
@@ -131,7 +137,12 @@ public class EventsResource implements Serializable {
 
 
         Response response             = null;
-        final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .rejectWhenNoUser(true).init();
+
         //final AppContext appContext =  new SimpleMapAppContext();
         final AppContext appContext   =  WebSessionContext.getInstance(httpServletRequest);
 

@@ -1,8 +1,9 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import java.io.Serializable;
-import java.util.Collection;
+import java.util.*;
 
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
@@ -39,6 +40,10 @@ public class PageView implements Serializable {
     private final ViewAsPageStatus viewAs;
     private final boolean canCreateTemplate;
     private final boolean canEditTemplate;
+    private int numberContents = 0;
+    final String pageUrlMapper;
+    final boolean live;
+
     /**
      * Creates an instance of this class.
      *
@@ -56,7 +61,9 @@ public class PageView implements Serializable {
              final TemplateLayout layout,
              final boolean canCreateTemplate,
              final boolean canEditTemplate,
-             final ViewAsPageStatus viewAs) {
+             final ViewAsPageStatus viewAs,
+             final String pageUrlMapper,
+             final boolean live) {
 
         this.site = site;
         this.template = template;
@@ -66,6 +73,19 @@ public class PageView implements Serializable {
         this.viewAs = viewAs;
         this.canCreateTemplate = canCreateTemplate;
         this.canEditTemplate = canEditTemplate;
+        this.pageUrlMapper = pageUrlMapper;
+        this.numberContents = getContentsNumber();
+        this.live = live;
+    }
+
+    private int getContentsNumber() {
+        final Optional<Integer> contentsNumber = this.getContainersMap().values()
+                .stream()
+                .flatMap(containerRaw -> containerRaw.getContentlets().values().stream())
+                .map(contents -> contents.size())
+                .reduce((currentValue, accumulator) -> currentValue + accumulator);
+
+        return contentsNumber.isPresent() ? contentsNumber.get() : 0;
     }
 
     /**
@@ -104,6 +124,25 @@ public class PageView implements Serializable {
         return this.containers;
     }
 
+    public Map<String, ContainerRaw> getContainersMap() {
+        final Map<String, ContainerRaw> containerRawMap = new HashMap<>();
+
+        containers.stream().forEach(containerRaw -> {
+
+            if (containerRaw.getContainer() instanceof FileAssetContainer) {
+
+                final String path = FileAssetContainer.class.cast(containerRaw.getContainer()).getPath();
+                containerRawMap.put(path, containerRaw);
+            } else {
+
+                final String identifier = containerRaw.getContainer().getIdentifier();
+                containerRawMap.put(identifier, containerRaw);
+            }
+        });
+
+        return containerRawMap;
+    }
+
     /**
      * Returns The {@link HTMLPageAsset} object.
      *
@@ -130,8 +169,15 @@ public class PageView implements Serializable {
         return canCreateTemplate;
     }
 
-
     public boolean canEditTemplate() {
         return canEditTemplate;
+    }
+
+    public int getNumberContents() {
+        return numberContents;
+    }
+
+    public String getPageUrlMapper() {
+        return pageUrlMapper;
     }
 }

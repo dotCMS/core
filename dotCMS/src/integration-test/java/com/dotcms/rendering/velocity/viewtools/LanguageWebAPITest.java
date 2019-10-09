@@ -18,8 +18,6 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -144,20 +142,24 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 	}
 
 	@AfterClass
-	public static void cleanUpData() throws DotSecurityException, DotDataException {
+	public static void cleanUpData() throws Exception {
 		ContentletAPI contentletAPI = APILocator.getContentletAPI();
 		User user = APILocator.systemUser();
-		if(keyValueContentlet != null){
-			contentletAPI.archive(keyValueContentlet,user, false);
-			contentletAPI.delete(keyValueContentlet,user, false);
-		}
-		if(keyValueContentlet1 != null){
-			contentletAPI.archive(keyValueContentlet1,user, false);
-			contentletAPI.delete(keyValueContentlet1,user, false);
-		}
-		if(keyValueContentlet2 != null){
-			contentletAPI.archive(keyValueContentlet2,user, false);
-			contentletAPI.delete(keyValueContentlet2,user, false);
+		try {
+			if (keyValueContentlet != null) {
+
+				contentletAPI.destroy(keyValueContentlet, user, false);
+			}
+			if (keyValueContentlet1 != null) {
+
+				contentletAPI.destroy(keyValueContentlet1, user, false);
+			}
+			if (keyValueContentlet2 != null) {
+
+				contentletAPI.destroy(keyValueContentlet2, user, false);
+			}
+		}catch (Exception e) {
+			e.printStackTrace();
 		}
 		APILocator.getLanguageAPI().deleteLanguage(spanishNoCountryLanguage);
 		APILocator.getLanguageAPI().deleteLanguage(spanishCostaRicaLanguage);

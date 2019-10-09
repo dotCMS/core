@@ -227,8 +227,8 @@ public class ContentletBaseTest extends IntegrationTestBase {
 
         //Delete the contentles
         for ( Contentlet contentlet : contentlets ) {
-            contentletAPI.archive(contentlet,user, false);
-            contentletAPI.delete( contentlet, user, false );
+
+            contentletAPI.destroy(contentlet, user, false);
             contentlets.remove(contentlet);
         }
 
@@ -252,8 +252,8 @@ public class ContentletBaseTest extends IntegrationTestBase {
         for ( Structure structure : structures ) {
             List<Contentlet> structContent = contentletAPI.findByStructure( structure, user, false, 0, 0 );
             for ( Contentlet contentlet : structContent ) {
-                contentletAPI.archive(contentlet, user, false);
-                contentletAPI.delete( contentlet, user, false );
+
+                contentletAPI.destroy(contentlet, user, false);
             }
             contentTypeAPI.delete(new StructureTransformer(structure).from());
         }

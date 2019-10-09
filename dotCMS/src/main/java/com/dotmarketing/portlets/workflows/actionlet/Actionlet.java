@@ -24,6 +24,31 @@ public @interface Actionlet {
     boolean publish() default false;
 
     /**
+     * Set this to true if the actionlet unpublish a content
+     */
+    boolean unpublish() default false;
+
+    /**
+     * Set this to true if the actionlet archive a content
+     */
+    boolean archive() default false;
+
+    /**
+     * Set this to true if the actionlet unarchive a content
+     */
+    boolean unarchive() default false;
+
+    /**
+     * Set this to true if the actionlet deletes a content
+     */
+    boolean delete() default false;
+
+    /**
+     * Set this to true if the actionlet destroy (delete all versions) a content
+     */
+    boolean destroy() default false;
+
+    /**
      * Set this to true if the actionlet push publish a content
      */
     boolean pushPublish() default false;

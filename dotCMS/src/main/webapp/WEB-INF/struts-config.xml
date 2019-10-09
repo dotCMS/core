@@ -445,14 +445,14 @@
 
 	<!-- Tiles Plugin -->
 
-	<plug-in className="org.apache.struts.tiles.TilesPlugin" >
+	<plug-in className="com.dotcms.repackage.org.apache.struts.tiles.TilesPlugin" >
 		<set-property property="definitions-config" value="/WEB-INF/tiles-defs.xml,/WEB-INF/tiles-defs-ext.xml" />
 		<set-property property="moduleAware" value="true" />
 		<set-property property="definitions-parser-validate" value="true" />
 	</plug-in>
 
 	<!-- Validation Plug-In DOTMARKETING -->
-   <plug-in className="org.apache.struts.validator.ValidatorPlugIn">
+   <plug-in className="com.dotcms.repackage.org.apache.struts.validator.ValidatorPlugIn">
       <set-property property="pathnames" value="/WEB-INF/validator-rules.xml, /WEB-INF/validation.xml" />
    </plug-in>
    <!-- Validation Plug-In DOTMARKETING -->

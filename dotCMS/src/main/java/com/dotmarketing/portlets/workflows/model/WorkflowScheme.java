@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Objects;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WorkflowScheme implements Serializable {
@@ -136,7 +137,20 @@ public class WorkflowScheme implements Serializable {
         return this.entryStep;
 
     }
-	
+
+	@Override
+	public boolean equals(final Object obj) {
+		if(obj ==null || ! (obj instanceof WorkflowScheme)) {
+			return false;
+		}
+		return ((WorkflowScheme)obj).getId().equals(this.getId());
+	}
+
+	@Override
+	public int hashCode() {
+
+		return Objects.hash(id);
+	}
 	
 	
 }

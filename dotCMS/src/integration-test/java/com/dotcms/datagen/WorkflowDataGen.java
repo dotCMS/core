@@ -86,6 +86,7 @@ public class WorkflowDataGen extends AbstractDataGen<WorkflowScheme> {
      *
      * @return
      */
+    @WrapInTransaction
     public WorkflowDataGen stepAndAction(
             final List<Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>>> workflowStepsAndActions) {
         for (Tuple2<String, List<Tuple3<String, String, Set<WorkflowState>>>> workflowStepAndActions : workflowStepsAndActions) {
@@ -109,6 +110,7 @@ public class WorkflowDataGen extends AbstractDataGen<WorkflowScheme> {
         return workflowScheme;
     }
 
+    @WrapInTransaction
     @Override
     public WorkflowScheme persist(final WorkflowScheme workflowScheme) {
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
@@ -134,6 +136,7 @@ public class WorkflowDataGen extends AbstractDataGen<WorkflowScheme> {
         remove(workflowScheme, true);
     }
 
+    @WrapInTransaction
     public static void remove(final WorkflowScheme workflowScheme, final Boolean failSilently) {
         try {
             APILocator.getWorkflowAPI().deleteScheme(workflowScheme, APILocator.systemUser());

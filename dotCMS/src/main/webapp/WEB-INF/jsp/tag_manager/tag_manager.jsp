@@ -33,8 +33,8 @@
 
 <%@page import="java.lang.Exception"%>
 
-<%@ page import="org.apache.struts.action.ActionForm"%>
-<%@ page import="org.apache.struts.action.ActionMapping"%>
+<%@ page import="com.dotcms.repackage.org.apache.struts.action.ActionForm"%>
+<%@ page import="com.dotcms.repackage.org.apache.struts.action.ActionMapping"%>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
 
@@ -146,7 +146,7 @@ td {font-size: 100%;}
         if(params==null) params = '';
 
         tagStore = new dojox.data.QueryReadStore({
-            url : '/JSONTags'+ convertStringToUnicode(params) 
+            url : '/JSONTags'+ encodeURI(convertStringToUnicode(params))
         });
     }
 
@@ -254,6 +254,7 @@ td {font-size: 100%;}
             dojo.byId('tagsGrid').innerHTML='';
             var globalFilter = (document.getElementById("globalFilter").value == '1') ? '1' :'0';
             var tagNameFilter = document.getElementById("filterBox").value;
+
             var params = "?tagname="+tagNameFilter+"&global="+globalFilter;
             tagsGrid.destroy(true);
             createStore(params);

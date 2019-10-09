@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
@@ -36,7 +37,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.struts.Globals;
 /**
  * Implementation class for the {@link LanguageFactory}.
  *
@@ -244,7 +244,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			language =getDefaultLanguage ();
 		}
 
-		return language.getLanguageCode() + "_" + language.getCountryCode();
+		return language.getLanguageCode() + (UtilMethods.isSet(language.getCountryCode()) ? "_" + language.getCountryCode():"");
 	}
 
 	@Override

@@ -6,18 +6,12 @@ import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
-import com.dotmarketing.portlets.workflows.model.WorkflowStep;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -38,7 +32,27 @@ public interface WorkFlowFactory {
 
 	public void deleteWorkflowHistory(WorkflowHistory history) throws DotDataException;
 
+	/**
+	 * Deletes the workflow task
+	 * @param task {@link WorkflowTask}
+	 * @throws DotDataException
+	 */
 	public void deleteWorkflowTask(WorkflowTask task) throws DotDataException;
+
+	/**
+	 * Deletes the workflow task associated to a web asset and workflow task dependencies
+	 * @param webAsset {@link String}
+	 * @throws DotDataException
+	 */
+	void deleteWorkflowTaskByContentletIdAnyLanguage(String webAsset) throws DotDataException;
+
+	/**
+	 * Deletes the workflow task associated to a web asset + language and workflow task dependencies
+	 * @param webAsset    {@link String}
+	 * @param languageId  {@link Long}
+	 * @throws DotDataException
+	 */
+	void deleteWorkflowTaskByContentletIdAndLanguage(final String webAsset, final long languageId) throws DotDataException;
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException;
 
@@ -188,6 +202,12 @@ public interface WorkFlowFactory {
 	 */
 	void saveAction(WorkflowAction workflowAction, WorkflowStep workflowStep)  throws DotDataException,AlreadyExistException;
 
+	/**
+	 * Finds a step by given id
+	 * @param id {@link String} workflow step id
+	 * @return WorkflowStep
+	 * @throws DotDataException
+	 */
 	public WorkflowStep findStep(String id) throws DotDataException;
 
 	/**
@@ -226,6 +246,14 @@ public interface WorkFlowFactory {
 	public int getCountContentletsReferencingStep(WorkflowStep step) throws DotDataException;
 
 	public List<WorkflowActionClass> findActionClasses(WorkflowAction action) throws DotDataException;
+
+	/**
+	 * Retrieves all WorkflowActionClass entries on the db where name matches the actionClassName
+	 * @param actionClassName
+	 * @return
+	 * @throws DotDataException
+	 */
+	public List<WorkflowActionClass> findActionClassesByClassName(final String actionClassName) throws DotDataException;
 
 	public WorkflowActionClass findActionClass(String id) throws DotDataException;
 
@@ -316,6 +344,19 @@ public interface WorkFlowFactory {
 	public void deleteScheme(WorkflowScheme scheme) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Deletes the system actions associated to the scheme
+	 * @param scheme {@link WorkflowScheme}
+	 * @throws DotDataException
+	 */
+	public void deleteSystemActionsByScheme(final WorkflowScheme scheme) throws DotDataException;
+
+	/**
+	 * Deletes the system actions associated to the content type
+	 * @param contentTypeVariable {@link ContentType}
+	 * @throws DotDataException
+	 */
+	public void deleteSystemActionsByContentType(final String contentTypeVariable) throws DotDataException;
+	/**
 	 * finds all contentlets with a null task for a specific Workflow
 	 * In other words all contents on which a workflow has been reset or hasn't been kicked off.
 	 * @param workflowSchemeId
@@ -330,4 +371,108 @@ public interface WorkFlowFactory {
 	 * @throws DotDataException
 	 */
 	public WorkflowScheme findSystemWorkflow() throws DotDataException;
+
+	/**
+	 * Finds the first step for the actionId, if the action is not associated to any action, returns the first step for the action scheme id
+	 * @param actionId {@link String} workflow action id
+	 * @param actionSchemeId {@link String} scheme id for the given action
+	 * @return WorkflowStep
+	 * @throws DotDataException
+	 */
+	Optional<WorkflowStep> findFirstStep(String actionId, String actionSchemeId)  throws DotDataException;
+
+	/**
+	 * Finds the first step for a scheme (based on the my_order)
+	 * @param schemeId {@link String} scheme id
+	 * @return WorkflowStep
+	 * @throws DotDataException
+	 */
+	Optional<WorkflowStep> findFirstStep(final String schemeId) throws DotDataException;
+
+	/**
+	 * Saves a {@link SystemActionWorkflowActionMapping}
+	 * @param systemActionWorkflowActionMapping {@link SystemActionWorkflowActionMapping}
+	 * @return SystemActionWorkflowActionMapping
+	 * @throws DotDataException
+	 */
+	SystemActionWorkflowActionMapping saveSystemActionWorkflowActionMapping(SystemActionWorkflowActionMapping systemActionWorkflowActionMapping) throws DotDataException;
+
+	/**
+	 * Finds the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}'s by {@link ContentType}
+	 * @param contentType {@link ContentType}
+	 * @return List of Rows
+	 */
+	List<Map<String, Object>> findSystemActionsByContentType(ContentType contentType) throws DotDataException;
+
+	/**
+	 * Finds the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}'s by {@link WorkflowScheme}
+	 * @param workflowScheme {@link WorkflowScheme}
+	 * @return List of Rows
+	 * @throws DotDataException
+	 */
+	List<Map<String, Object>> findSystemActionsByScheme(WorkflowScheme workflowScheme) throws DotDataException;
+
+	/**
+	 * Finds the {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * and {@link ContentType}
+	 * @param systemAction  {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * @param contentType   {@link ContentType}
+	 * @return Map<String, Object>
+	 * @throws DotDataException
+	 */
+	Map<String, Object> findSystemActionByContentType(WorkflowAPI.SystemAction systemAction, ContentType contentType) throws DotDataException;
+
+	/**
+	 * Finds the {@link SystemActionWorkflowActionMapping}'s  associated to the {@link WorkflowAction}
+	 * @param workflowAction  {@link WorkflowAction}
+	 * @return Map<String, Object>
+	 * @throws DotDataException
+	 */
+	List<Map<String, Object>> findSystemActionsByWorkflowAction(WorkflowAction workflowAction) throws DotDataException;
+
+	/**
+	 * Finds the list of {@link SystemActionWorkflowActionMapping}  associated to the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * and {@link List} of {@link WorkflowScheme}'s
+	 * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
+	 * @param schemes      {@link List} of {@link WorkflowScheme}'s
+	 * @return List<Map<String, Object>>
+	 */
+	List<Map<String, Object>> findSystemActionsBySchemes(WorkflowAPI.SystemAction systemAction, List<WorkflowScheme> schemes) throws DotDataException;
+
+	/**
+	 * Returns not empty map if the System Action Mapping exists by identifier
+	 * @param identifier {@link String}
+	 * @return Map
+	 * @throws DotDataException
+	 */
+	Map<String, Object>  findSystemActionByIdentifier(String identifier) throws DotDataException;
+
+	/**
+	 * Returns true if the system action is successfully deleted.
+	 * @param mapping {@link SystemActionWorkflowActionMapping}
+	 * @return boolean
+	 * @throws DotDataException
+	 */
+	boolean deleteSystemAction(SystemActionWorkflowActionMapping mapping) throws DotDataException;
+
+	/**
+	 * Deletes the system actions associated to the workflow action
+	 * @param action {@link WorkflowAction}
+	 * @throws DotDataException
+	 */
+	void deleteSystemActionsByWorkflowAction(WorkflowAction action) throws DotDataException;
+
+	/**
+	 * Based on a list of a content types, returns the list of system actions associated, indexed by content type variable
+	 * @param contentTypes {@link List} of ContentType
+	 * @return Map of rows, indexed by variable
+	 * @throws DotDataException
+	 */
+	Map<String, List<Map<String, Object>>> findSystemActionsMapByContentType(List<ContentType> contentTypes) throws DotDataException;
+
+	/**
+	 * Deletes the workflow tasks associated to a language
+	 * @param language {@link Language}
+	 */
+    void deleteWorkflowTaskByLanguage(Language language) throws DotDataException;
 }

@@ -10,10 +10,17 @@ import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldAPIImpl;
 import com.dotcms.contenttype.business.FieldFactoryImpl;
+import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableConstantField;
+import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
@@ -25,8 +32,10 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +44,8 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 public class ContentTypeBaseTest extends IntegrationTestBase {
 
@@ -59,6 +70,11 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 		fieldFactory = new FieldFactoryImpl();
 		fieldApi = new FieldAPIImpl();
 
+		
+		CacheLocator.getContentTypeCache2().clearCache();
+		
+		
+		
 
 		HttpServletRequest pageRequest = new MockSessionRequest(
 				new MockAttributeRequest(
@@ -70,6 +86,7 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 
 		DotConnect dc = new DotConnect();
 		String structsToDelete = "(select inode from structure where structure.velocity_var_name like 'velocityVarNameTesting%' )";
+		String contentsStructsToDelete = "(select identifier from contentlet c inner join structure s on c.structure_inode = s.inode where s.velocity_var_name like 'velocityVarNameTesting%')";
 
 		dc.setSQL("delete from field where structure_inode in " + structsToDelete);
 		dc.loadResult();
@@ -80,6 +97,22 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 		dc.setSQL("delete from contentlet_version_info where identifier in (select identifier from contentlet where structure_inode in "
 				+ structsToDelete + ")");
 		dc.loadResult();
+
+		new DotConnect()
+				.setSQL("delete from workflow_comment where workflowtask_id   in " + contentsStructsToDelete)
+				.loadResult();
+
+		new DotConnect()
+				.setSQL("delete from workflow_history where workflowtask_id   in " + contentsStructsToDelete)
+				.loadResult();
+
+		new DotConnect()
+				.setSQL("delete from workflowtask_files where workflowtask_id in " + contentsStructsToDelete)
+				.loadResult();
+
+		dc.setSQL("delete from workflow_task where webasset in " + contentsStructsToDelete);
+		dc.loadResult();
+
 
 		dc.setSQL("delete from contentlet where structure_inode in " + structsToDelete);
 		dc.loadResult();
@@ -222,5 +255,14 @@ public class ContentTypeBaseTest extends IntegrationTestBase {
 		return Collections.unmodifiableList(sortedList);
 	}
 
+	
+	
+
+	
+	
+	
+	
+	
+	
 
 }

@@ -28,7 +28,7 @@ public class Task00003CreateSystemRoles implements StartupTask {
 	private final String insertRole = "insert into cms_role (id, role_name, description, role_key, db_fqn, parent, edit_permissions, " +
 		"edit_users, edit_layouts, locked, system) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	
-	private final String[] rolesWithUsersLocked = { "LDAP User", "CMS Owner", "CMS Anonymous", "LoggedIn Site User" };
+	private final String[] rolesWithUsersLocked = { "LDAP User", "CMS Owner", "CMS Anonymous" };
 
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		

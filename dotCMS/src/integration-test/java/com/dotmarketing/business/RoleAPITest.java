@@ -49,6 +49,31 @@ public class RoleAPITest extends IntegrationTestBase {
         systemUser = APILocator.getUserAPI().getSystemUser();
     }
 
+    @Test
+    public void test_equals_role_on_null__false_expected ()  {
+
+        final Role role = new Role();
+        role.setId("1");
+        assertFalse(role.equals(null));
+    }
+
+    @Test
+    public void test_equals_role_on_noRole__false_expected ()  {
+
+        final Role role = new Role();
+        role.setId("1");
+        assertFalse(role.equals("No Role Object"));
+    }
+
+    @Test
+    public void test_equals_role__true_expected ()  {
+
+        final Role role1 = new Role();
+        final Role role2 = new Role();
+        role1.setId("1");
+        role2.setId("1");
+        assertTrue(role1.equals(role2));
+    }
     /**
      * Testing {@link RoleAPI#loadRolesForUser(String, boolean)}, {@link RoleAPI#loadRolesForUser(String)},
      * {@link RoleAPI#doesUserHaveRole(com.liferay.portal.model.User, Role)} and the cache for Roles in general

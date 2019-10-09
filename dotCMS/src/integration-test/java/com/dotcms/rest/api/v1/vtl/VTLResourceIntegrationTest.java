@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.ConfigTestHelper;
@@ -255,7 +256,7 @@ public class VTLResourceIntegrationTest {
 
         final WebResource webResource = spy(WebResource.class);
         doReturn(requestingUser).when(webResource).getCurrentUser(request, response,
-                WebResource.buildParamsMap(testCase.getPathParameter()), false);
+                WebResource.buildParamsMap(testCase.getPathParameter()), AnonymousAccess.systemSetting());
         return webResource;
     }
 
@@ -282,6 +283,7 @@ public class VTLResourceIntegrationTest {
         getVTLFileAsset.setIndexPolicy(IndexPolicy.FORCE);
         getVTLFileAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
         getVTLFileAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        getVTLFileAsset.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         APILocator.getContentletAPI().publish(getVTLFileAsset, systemUser, false);
 
         //Assign permissions

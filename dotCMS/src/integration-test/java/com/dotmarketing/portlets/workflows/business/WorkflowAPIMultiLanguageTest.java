@@ -221,6 +221,8 @@ public class WorkflowAPIMultiLanguageTest extends BaseWorkflowIntegrationTest {
                 WorkflowAPIMultiLanguageTest.contentletAPI.archive(WorkflowAPIMultiLanguageTest.contentlet, APILocator.systemUser(), false);
                 WorkflowAPIMultiLanguageTest.contentletAPI.delete(WorkflowAPIMultiLanguageTest.contentlet, APILocator.systemUser(), false);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
 
             try {
@@ -229,12 +231,18 @@ public class WorkflowAPIMultiLanguageTest extends BaseWorkflowIntegrationTest {
 
                     WorkflowAPIMultiLanguageTest.cleanScheme(WorkflowAPIMultiLanguageTest.schemeStepActionResult1.getScheme());
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             } finally {
 
-                if (null != WorkflowAPIMultiLanguageTest.type) {
+                try {
+                    if (null != WorkflowAPIMultiLanguageTest.type) {
 
-                    ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-                    contentTypeAPI.delete(WorkflowAPIMultiLanguageTest.type);
+                        ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+                        contentTypeAPI.delete(WorkflowAPIMultiLanguageTest.type);
+                    }
+                }catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }

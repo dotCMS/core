@@ -185,7 +185,7 @@
 	var filterUsersHandler;
 
 	//Event handler then the user types to filter users
-	function filterUsers() {
+	function filterUsers(btn) {
 
 		//Canceling any other delayed request of filtering in case
 		// the user typed more
@@ -195,20 +195,38 @@
 
 		//Executed in a delayed fashion to allow the user type more keystrokes
 		//before loading the server
-		filterUsersHandler = setTimeout('filterUsersDelayed()', 700);
+		filterUsersHandler = setTimeout(filterUsersDelayed(btn), 300);
 	}
 
 	//Executed after the user has typed some characters to filter users
-	function filterUsersDelayed(){
+	function filterUsersDelayed(btn){
 		dojo.byId('loadingUsers').style.display = '';
 		dojo.byId('usersGrid').style.display = 'none';
 		var value = dijit.byId('usersFilter').attr('value');
-		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: value, includeDefault: false }, dojo.hitch(this, getUsersListCallback));
+		var showUsers = "all";
+		var myId = (btn && btn.id) ? btn.id : "all";
+		if(myId === "showFrontEndUsers"){
+		    dijit.byId("showFrontEndUsers").attr('checked',true);
+		    dijit.byId("showAllUsers").attr('checked',false);
+		    dijit.byId("showBackEndUsers").attr('checked',false);
+		    showUsers="frontEnd";
+		}else if(myId === "showBackEndUsers"){
+		      dijit.byId("showBackEndUsers").attr('checked',true);
+	          dijit.byId("showAllUsers").attr('checked',false);
+	          dijit.byId("showFrontEndUsers").attr('checked',false);
+	          showUsers="backEnd";
+		}
+
+		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: value, includeDefault: false, showUsers: showUsers }, dojo.hitch(this, getUsersListCallback));
 	}
 
 	//Event handler for clearing the users filter
 	function clearUserFilter () {
-		dojo.byId('loadingUsers').style.display = '';
+	    dijit.byId("showAllUsers").attr('checked',true);
+        dijit.byId("showBackEndUsers").attr('checked',false);
+        dijit.byId("showFrontEndUsers").attr('checked',false);
+
+	    dojo.byId('loadingUsers').style.display = '';
 		dojo.byId('usersGrid').style.display = 'none';
 		dijit.byId('usersFilter').attr('value', '');
 		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: '', includeDefault: false }, dojo.hitch(this, getUsersListCallback));
@@ -230,16 +248,42 @@
 			return;
 		dojo.byId('userProfileTabs').style.display = 'none';
 		dojo.byId('loadingUserProfile').style.display = '';
+	    dojo.byId('gravatarTextHolder').display='none';
+	    dojo.byId('gravatarImage').display='none';
+	    dojo.byId('gravatarImage').style.backgroundImage ="url('/html/images/shim.gif')";
 		UserAjax.getUserById(userId, editUserCallback);
 	}
 
+	
+	
+	function changeUserAccess(evt){
+	    
+	    if(!currentUser) return;
+
+	    
+	    UserAjax.assignUserAccess({"userid": currentUser.id, "access":evt.id, "granted":evt.checked},assignUserAccessCallback);
+	
+        
+        
+	}
+	
+	
+	function assignUserAccessCallback(data){
+	    
+	    dojo.byId("canLoginToConsole").innerHTML=data.user.hasConsoleAccess
+	   
+	    console.log("data", data)	    
+	
+	
+	}
+	
+	
 	//Gathering the user info from the server and setting up the right hand side
 	//of user info
 	function editUserCallback(user) {
-
 		//Global user variable
 		currentUser = user;
-
+        dijit.byId('userActive').attr("checked", user.active);
 		//SEtting user info form
 		if(!authByEmail) {
 			dijit.byId('userId').attr('value', user.id);
@@ -248,6 +292,28 @@
 			dojo.byId('userIdValue').innerHTML = user.id;
 			dojo.byId('userId').value = user.id;
 		}
+		
+		
+	    var myChar = (user.firstName && user.firstName.length>0) ? user.firstName.substring(0,1).toUpperCase() : "?";
+	    dojo.byId('gravatarTextHolder').style.display='none';
+	    dojo.byId('gravatarImage').style.display='none';
+	    var img = new Image();
+	    img.src = 'https://www.gravatar.com/avatar/" +user.gravitar + "?d=blank';
+	    img.onload = function () {
+	        dojo.byId('gravatarImage').style.backgroundImage ="url('https://www.gravatar.com/avatar/" +user.gravitar + "?d=blank')";
+	        dojo.byId('gravatarText').innerHTML=myChar;
+	        dojo.byId('gravatarImage').style.display='';
+	        dojo.byId('gravatarTextHolder').style.display='';
+	        
+	    }
+
+	    
+
+	    
+
+		
+		dojo.byId('fullUserName').style.display = '';
+		dojo.byId('userAccessBox').style.display = '';
 		dojo.byId('userIdLabel').style.display = '';
 		dojo.byId('userIdValue').style.display = '';
 		dijit.byId('firstName').attr('value', user.firstName);
@@ -272,11 +338,17 @@
 		if(deleteButton != null){
 			deleteButton.parentNode.parentNode.show();
 		}
+
+        dojo.byId("canLoginToConsole").innerHTML=user.hasConsoleAccess
+		
+		
+		
+		
 		
 		initStructures();
 		loadUserRolesTree(currentUser.id);
 		buildRolesTree();
-		dijit.byId('userTabsContainer').selectChild(dijit.byId('userRolesTab'));
+		//dijit.byId('userTabsContainer').selectChild(dijit.byId('userRolesTab'));
 	}
 
 	//Setting up tab actions
@@ -295,6 +367,9 @@
 		}
 	 	switch (currentSelectedTab) {
 			case 'userDetailsTab':
+			    if(userId){
+                    UserAjax.getUserById(userId, editUserCallback);
+                }
 				break;
 			case 'userRolesTab':
 				initStructures();
@@ -305,7 +380,6 @@
 				break;
 			case 'userAdditionalInfoTab':
 				loadUserAdditionalInfo(currentUser);
-				loadUserAddresses(userId);
 				break;
 			case 'marketingInfoTab':
 				loadMarketingInfo(userId);
@@ -325,7 +399,9 @@
 	var newUser = false;
 	function addUser() {
         currentUser = null;
-
+        dojo.byId('userAccessBox').style.display = 'none';
+        dojo.byId('fullUserName').style.display = 'none';
+        
 		//Clearing the form to enter a new user
 		if(!authByEmail) {
 			dojo.byId('userIdLabel').style.display = '';
@@ -348,6 +424,7 @@
 		newUser = true;
 		dojo.byId('userProfileTabs').style.display = '';
 		dojo.byId('loadingUserProfile').style.display = 'none';
+        dojo.byId('gravatarTextHolder').style.display='none';
 		if(dojo.isIE){
 		  //http://jira.dotmarketing.net/browse/DOTCMS-5679
 		  dijit.byId('userTabsContainer').selectChild(dijit.byId('userRolesTab'));
@@ -382,7 +459,7 @@
 
 	//Handler to save the user details
 	function saveUserDetails() {
-
+         
 		//If the form is not valid focus on the first not valid field and
 		//hightlight the other not valid ones
 		if(!dijit.byId('userInfoForm').validate()) {
@@ -545,7 +622,24 @@
 	    if(userRolesSelect && userRolesSelect instanceof dijit.form.MultiSelect) {
 	    	userRolesSelect.destroyRecursive(false);
 	    }
-
+	    dijit.byId("frontEndRoleCheck").attr('checked',false);
+	    dijit.byId("backEndRoleCheck").attr('checked',false);
+	    dijit.byId("adminRoleCheck").attr('checked',false);
+	    for(i=0;i<roles.length;i++){
+	        if("DOTCMS_FRONT_END_USER" == roles[i].roleKey){
+	            dijit.byId("frontEndRoleCheck").attr('checked',true);
+	        }
+            if("DOTCMS_BACK_END_USER" == roles[i].roleKey){
+                dijit.byId("backEndRoleCheck").attr('checked',true);
+            }
+            if("CMS Administrator" == roles[i].roleKey){
+                dijit.byId("adminRoleCheck").attr('checked',true);
+            }
+	        
+	    }
+	    
+	    
+	    
 		dojo.destroy("userRolesSelect");
 	    dojo.create('select',{id:'userRolesSelect'},'userRolesSelectWrapper');
 
@@ -1004,6 +1098,7 @@
 	//Callback from the server after successful save
 	function saveRolesCallback () {
 		showDotCMSSystemMessage(userRolesSaved);
+		editUser(currentUser.id);
 	}
 
 	//Utility functions
@@ -1099,194 +1194,7 @@
 		return branches;
 	}
 
-	//Additional information tab functions
 
-	var addressesData = {
-		identifier: 'addressId',
-		label: 'address',
-		items: [  ]
-	};
-
-	var userAddressesStore = new dojo.data.ItemFileReadStore({data: addressesData});
-
-	var userAddressesGridLayout = [[{
-            field: 'description',
-            name: nameColumn,
-            width: '20%'
-        },{
-            field: 'address',
-            name: addressColumn,
-            width: '70%',
-			get: addressCell,
-			formatter: addressCellFormatter
-        },{
-            field: 'addressId',
-            name: ' ',
-            width: '5%',
-			get: addressActionsCell,
-			formatter: addressActionsCellFormatter
-        }
-	]];
-
-	//Initializing addresses
-
-	function loadUserAddresses(userId) {
-		if(!userId && currentUser!=null) userId = currentUser.id;
-		UserAjax.loadUserAddresses(userId, loadUserAddressesCallback);
-	}
-
-	function loadUserAddressesCallback(addresses){
-		var addressesGrid = dijit.byId('userAddressesGrid');
-		addressesData.items = [];
-		addresses.forEach(function (newAddress) {
-			newAddress.address = newAddress.street1 + "<br/>" + newAddress.street2 + "<br/>" + newAddress.city + ", " +
-				newAddress.state + " " + newAddress.zip + "<br/>" + newAddress.country;
-			addressesData.items.push(newAddress);
-		});
-		if(addressesData.items.length == 0) {
-			var empty = { addressId: '0', description: 'None', address: '', street1: '', street2: '', city: '', state: '', zip: '', country: '', phone: '', fax: '', cell: '' };
-			addressesData.items.push(empty);
-		}
- 		var addressesStore = new dojo.data.ItemFileReadStore({data: addressesData });
-		addressesGrid.setStore(addressesStore);
-		addressesGrid.render();
-	}
-
-	function addressCellFormatter (item) {
-		if(!item || !item.street1)
-			return item;
-		var addressHTML = item.street1;
-		if(item.street2 && item.street2 != '')
-			 addressHTML += ' ' + item.street2;
-		if(item.city && item.city != '')
-			 addressHTML += ', ' + item.city;
-		if(item.state && item.state != '')
-			 addressHTML += ', ' + item.state;
-		if(item.zip && item.zip != '')
-			 addressHTML += ' ' + item.zip;
-		if(item.country && item.country != '')
-			 addressHTML += ' ' + item.country;
-		if(item.phone && item.phone != '')
-			 addressHTML += '<br/><b>' + phone + ':</b> ' + item.phone;
-		if(item.fax && item.fax != '')
-			 addressHTML += '<br/><b>' + fax + ':</b> ' + item.fax;
-		if(item.cell && item.cell != '')
-			 addressHTML += '<br/><b>' + cell + ':</b> ' + item.cell;
-
-		return addressHTML;
-	}
-
-	function addressCell(rowid, item) {
-		if(!item || !item.street1)
-			return item;
-		return item;
-	}
-
-
-	function addressActionsCellFormatter (item) {
-		if(!item || !item.addressId || item.addressId == '0')
-			return '';
-		var addressHTML =
-			'<span class="editIcon" onclick="editAddress(\'' + item.addressId + '\')"></span>\
-			 <span class="deleteIcon" onclick="deleteAddress(\'' + item.addressId + '\')"></span>';
-
-
-		return addressHTML;
-	}
-
-	function addressActionsCell(rowid, item) {
-		if(!item)
-			return item;
-		return item;
-	}
-
-	function addAddress () {
-		dijit.byId('addressForm').reset();
-		dojo.byId('addressId').value = '';
-		dijit.byId('addressDialog').show();
-	}
-
-	function editAddress (addressId) {
-		dijit.byId('addressForm').reset();
-		dojo.byId('addressId').value = addressId;
-
-		var selectedAddress;
-		for (var i = 0; i < addressesData.items.length; i++){
-			if(addressesData.items[i].addressId == addressId) {
-				selectedAddress = addressesData.items[i];
-				break;
-			}
-		};
-
-		dijit.byId('addressDescription').attr('value', selectedAddress.description);
-		dijit.byId('addressStreet1').attr('value', selectedAddress.street1);
-		dijit.byId('addressStreet2').attr('value', selectedAddress.street2);
-		dijit.byId('addressCity').attr('value', selectedAddress.city);
-		dijit.byId('addressState').attr('value', selectedAddress.state);
-		dijit.byId('addressZip').attr('value', selectedAddress.zip);
-		dijit.byId('addressCountry').attr('value', selectedAddress.country);
-		dijit.byId('addressPhone').attr('value', selectedAddress.phone);
-		dijit.byId('addressFax').attr('value', selectedAddress.fax);
-		dijit.byId('addressCell').attr('value', selectedAddress.cell);
-
-		dijit.byId('addressDialog').show();
-	}
-
-	function saveAddress(){
-		if(currentUser == null)
-			return;
-		if(!dijit.byId('addressForm').validate())
-			return;
-		var id = dojo.byId('addressId').value;
-		var desc = dijit.byId('addressDescription').attr('value');
-		var street1 = dijit.byId('addressStreet1').attr('value');
-		var street2 = dijit.byId('addressStreet2').attr('value');
-		var city = dijit.byId('addressCity').attr('value');
-		var state = dijit.byId('addressState').attr('value');
-		var zip = dijit.byId('addressZip').attr('value');
-		var country = dijit.byId('addressCountry').attr('value');
-		var phone = dijit.byId('addressPhone').attr('value');
-		var fax = dijit.byId('addressFax').attr('value');
-		var cell = dijit.byId('addressCell').attr('value');
-
-		dwr.engine.setErrorHandler(errorHandler);
-
-		if(id== '')
-			UserAjax.addNewUserAddress(currentUser.id, desc, street1, street2, city, state, zip, country, phone, fax, cell, saveAddressCallback);
-		else
-			UserAjax.saveUserAddress(currentUser.id, id, desc, street1, street2, city, state, zip, country, phone, fax, cell, saveAddressCallback);
-	}
-
-	function errorHandler(message, exception) {
-		if (message == 'com.liferay.portal.AddressPhoneException')
-			alert(invalidAddresPhoneMsg);
-		else if (message == 'com.liferay.portal.AddressFaxException')
-			alert(invalidAddresFaxMsg);
-		else if (message == 'com.liferay.portal.AddressCellException')
-			alert(invalidAddresCellMsg);
-	}
-
-	function saveAddressCallback (newAddress) {
-		showDotCMSSystemMessage(addressSaved);
-		loadUserAddresses();
-		dijit.byId('addressDialog').hide();
-	}
-
-	function cancelSaveAddress () {
-		dijit.byId('addressDialog').hide();
-	}
-
-	function deleteAddress(addressId){
-		if(confirm(removeAddressConfirmation))
-			UserAjax.deleteAddress(currentUser.id, addressId, deleteAddressCallback);
-
-	}
-
-	function deleteAddressCallback(addressId) {
-		showDotCMSSystemMessage(addressDeleted);
-		loadUserAddresses();
-		dijit.byId('addressDialog').hide();
-	}
 
 	//User additional info
 
@@ -1848,5 +1756,13 @@
 		return roleNode;
 	}
 
-
+	require(["dojo/ready", "dijit/Tooltip"], function(ready, Tooltip){
+	    ready(function(){
+	        new Tooltip({
+	            connectId: ["explainCanLogin"],
+	            label: "<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "user.detail.can.login.note")) %>"
+	        });
+	    });
+	});
+	
 </script>

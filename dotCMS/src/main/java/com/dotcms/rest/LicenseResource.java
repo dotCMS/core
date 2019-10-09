@@ -57,7 +57,16 @@ public class LicenseResource {
     @Path("/all/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAll(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
-        webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
+                .init();
+
         try {
             JSONArray array=new JSONArray();
 
@@ -117,7 +126,16 @@ public class LicenseResource {
     public Response putZipFile(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params,
             @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail,
             @FormDataParam("return") String ret) {
-        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
+                .init();
+
         try {
            
             if(inputFile!=null) {
@@ -144,7 +162,16 @@ public class LicenseResource {
     @DELETE
     @Path("/delete/{params:.*}")
     public Response delete(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
-        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
+                .init();
+
         String id=initData.getParamsMap().get("id");
         try {
             if(UtilMethods.isSet(id)) {
@@ -174,7 +201,16 @@ public class LicenseResource {
     @POST
     @Path("/pick/{params:.*}")
     public Response pickLicense(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
-        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
+                .init();
+
         String serial = initData.getParamsMap().get("serial");
         
         final long currentLevel = LicenseUtil.getLevel();
@@ -216,7 +252,15 @@ public class LicenseResource {
     @POST
     @Path("/free/{params:.*}")
     public Response freeLicense(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
-        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
+                .init();
         
         String localServerId = APILocator.getServerAPI().readServerId();
         String remoteServerId = initData.getParamsMap().get(SERVER_ID);
@@ -309,7 +353,15 @@ public class LicenseResource {
     public Response requestLicense(
     	@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params
     ) {
-        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
+                .init();
 
         Map<String, String> paramsMap = initData.getParamsMap();
 
@@ -372,7 +424,14 @@ public class LicenseResource {
     	@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params,
     	@QueryParam("licenseText") String licenseText
     ) {
-        InitDataObject initData = webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
+                .init();
 
         //Validate the parameters
         StringBuilder responseMessage = new StringBuilder();
@@ -414,11 +473,18 @@ public class LicenseResource {
     @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
     public Response resetLicense(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") String params) {
 
-        webResource.init(params, request, response, true, PortletID.CONFIGURATION.toString());
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
+                .init();
+
         try {
         	freeLicense(request, response, params);
-        	
-        	
+
         	
 	        HttpSession session = request.getSession();
 

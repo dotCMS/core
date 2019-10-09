@@ -1,5 +1,10 @@
 package com.dotmarketing.cms.myaccount.action;
 
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -19,18 +24,13 @@ import java.util.HashMap;
 import java.util.StringTokenizer;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
 
 @Deprecated
 public class AccountActivationAction extends SecureAction {
 
 	@SuppressWarnings("unchecked")
 	public ActionForward unspecified(ActionMapping mapping, ActionForm lf,
-			HttpServletRequest request, HttpServletResponse response)
+									 HttpServletRequest request, HttpServletResponse response)
 	throws Exception {
 		String userId = request.getParameter("userId");
 		if (!UtilMethods.isSet(userId)) {

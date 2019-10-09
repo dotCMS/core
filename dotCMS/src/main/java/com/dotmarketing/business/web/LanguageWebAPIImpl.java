@@ -1,6 +1,8 @@
 package com.dotmarketing.business.web;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -10,6 +12,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
 
@@ -147,7 +150,60 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 
     }
 
+    /**
+     * Return the back end session language
+     * @return
+     */
+    public Language getBackendLanguage() {
+        return this.getBackendLanguage(HttpServletRequestThreadLocal.INSTANCE.getRequest());
+    }
 
+    /**
+     * Return the back end session language
+     * @return
+     */
+    public Language getBackendLanguage(final HttpServletRequest request) {
+        Locale locale = null;
 
+        if(request != null) {
+            locale = this.getGlocalLocale(request);
+
+            if (locale == null) {
+                locale = (Locale) request.getAttribute(Globals.LOCALE_KEY);
+            }
+
+            if (locale == null) {
+                locale = getLocaleFromSession(request);
+            }
+        }
+
+        return getLanguage(locale);
+    }
+
+    private Locale getLocaleFromSession(HttpServletRequest request) {
+        final HttpSession session = request.getSession(false);
+        return session != null ? (Locale) session.getAttribute(Globals.LOCALE_KEY) :  null;
+    }
+
+    private Language getLanguage(final Locale locale) {
+        Language language = null;
+
+        if (locale != null) {
+            language = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(), locale.getCountry());
+        }
+
+        return language != null ? language : APILocator.getLanguageAPI().getDefaultLanguage();
+    }
+
+    private Locale getGlocalLocale(final HttpServletRequest request){
+        final String parameter = request.getParameter(WebKeys.BACKEND_LANGUAGE_PARAMETER_NAME);
+
+        if (parameter != null) {
+            final String[] parameterSplit = parameter.split("-|_");
+            return parameterSplit.length < 2 ? null : new Locale(parameterSplit[0], parameterSplit[1]);
+        } else {
+            return null;
+        }
+    }
 
 }

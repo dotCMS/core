@@ -13,6 +13,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.util.CookieUtil;
+
+import io.vavr.control.Try;
+
 import java.io.IOException;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -36,21 +39,22 @@ public class CookiesFilter implements Filter {
 		}
 	}
 
-	public void doFilter(ServletRequest request, ServletResponse response,
-			FilterChain filterChain) throws IOException, ServletException {
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
 
-		HttpServletRequest req = (HttpServletRequest) request;
-		HttpServletResponse res = new CookieServletResponse(response);
-		CookieUtil.setCookiesSecurityHeaders(req, res);
-		try {
-			filterChain.doFilter(req, res);
-		} catch (Exception nse) {
-			Logger.error(this, "Exception processing Cookies", nse);
-			if (ExceptionUtil.causedBy(nse, com.liferay.portal.NoSuchUserException.class)) {
-				handleNoSuchUserException(req,res);
-			}
-		}
-	}
+    HttpServletRequest req = (HttpServletRequest) request;
+    HttpServletResponse res = new CookieServletResponse(response);
+    CookieUtil.setCookiesSecurityHeaders(req, res);
+    try {
+      filterChain.doFilter(req, res);
+    } catch (final Exception nse) {
+      if (ExceptionUtil.causedBy(nse, com.liferay.portal.NoSuchUserException.class)) {
+        handleNoSuchUserException(req, res);
+      }else {
+        Class clazz = Try.of(() -> (Class) Class.forName(nse.getStackTrace()[0].getClassName())).getOrElse(this.getClass());
+        Logger.error(clazz, nse);
+      }
+    }
+  }
 
 	private void handleNoSuchUserException(final HttpServletRequest request, final HttpServletResponse response) throws ServletException{
 		try {

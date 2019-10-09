@@ -1,6 +1,7 @@
 package com.dotcms.publisher.bundle.business;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -11,19 +12,24 @@ import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.ULID;
 import com.dotmarketing.util.UtilMethods;
 
 public class BundleFactoryImpl extends BundleFactory {
 
+  
+  
+  
 	@Override
 	public void saveBundle(Bundle bundle) throws DotDataException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(INSERT_BUNDLE);
 		if(!InodeUtils.isSet(bundle.getId())) {
-		    bundle.setId(UUID.randomUUID().toString());
+		    bundle.setId(new ULID().nextULID());
 		}
 		dc.addParam(bundle.getId());
-		dc.addParam(UtilMethods.isSet(bundle.getName())?bundle.getName():bundle.getId());
+		dc.addParam(UtilMethods.isSet(bundle.getName()) ? bundle.getName() : "bundle-" + UtilMethods.dateToJDBC(new Date()));
+
 		dc.addParam(bundle.getPublishDate());
 		dc.addParam(bundle.getExpireDate());
 		dc.addParam(bundle.getOwner());

@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import java.util.Date;
@@ -51,6 +52,7 @@ public class WorkflowStepDataGen extends AbstractDataGen<WorkflowStep> {
         return workflowStep;
     }
 
+    @WrapInTransaction
     @Override
     public WorkflowStep persist(final WorkflowStep workflowStep) {
         try {
@@ -71,6 +73,7 @@ public class WorkflowStepDataGen extends AbstractDataGen<WorkflowStep> {
         return persist(next());
     }
 
+    @WrapInTransaction
     public static void remove(final WorkflowStep workflowStep) {
         try {
             APILocator.getWorkflowAPI().deleteStep(workflowStep, APILocator.systemUser());

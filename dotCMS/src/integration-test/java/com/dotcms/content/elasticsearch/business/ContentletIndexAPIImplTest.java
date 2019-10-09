@@ -52,11 +52,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ThreadUtils;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -96,7 +92,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     public static void prepare () throws Exception {
     	//Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        OSGIUtil.getInstance().initializeFramework(Config.CONTEXT);
 
         HostAPI hostAPI = APILocator.getHostAPI();
         LanguageAPI languageAPI = APILocator.getLanguageAPI();
@@ -193,7 +188,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 .stream().filter(Objects::nonNull).collect(Collectors.toList());
 
         assertNotNull(contentlets);
-        assertTrue(contentlets.size() >= 50);
+        assertTrue("The number of contentlet returned is: " + contentlets.size(),contentlets.size() >= 50);
 
         final List<Contentlet>   contentletsDefaultRefresh    = contentlets.subList(0, 15);
         final List<Contentlet>   contentletsImmediateRefresh  = contentlets.subList(15, 30);
@@ -500,8 +495,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             //Validations
             assertTrue( result == null || result.isEmpty() );
         } finally {
-            APILocator.getContentletAPI().archive( testContentlet, user, false );
-            APILocator.getContentletAPI().delete( testContentlet, user, false );
+            try {
+                APILocator.getContentletAPI().destroy(testContentlet, user, false );
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             APILocator.getContentTypeAPI(user).delete(new StructureTransformer(testStructure).from());
         }
     }
@@ -555,8 +553,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             assertTrue(result.isEmpty());
 
         } finally {
-            APILocator.getContentletAPI().archive( testContentlet, user, false );
-            APILocator.getContentletAPI().delete( testContentlet, user, false );
+            try {
+                APILocator.getContentletAPI().destroy(testContentlet, user, false );
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             APILocator.getContentTypeAPI(user).delete(new StructureTransformer(testStructure).from());
         }
     }
@@ -707,8 +708,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         } finally {
             //And finally remove the index
             APILocator.getContentTypeAPI(user).delete(new StructureTransformer(testStructure).from());
-            APILocator.getContentletAPI().archive(testHtmlPage,user,false);
-            APILocator.getContentletAPI().delete(testHtmlPage,user,false);
+            try {
+                APILocator.getContentletAPI().destroy(testContentlet, user, false);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             siteSearchAPI.deleteFromIndex( indexName, docId );
         }
     }
@@ -813,7 +817,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     assertEquals(content.getTitle(), title);
     // publish the content
     content.setIndexPolicy(IndexPolicy.FORCE);
-    
+    content.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
     APILocator.getContentletAPI().publish(content, user, false);
     String liveInode = content.getInode();
     assertTrue(content.isLive());
@@ -1124,9 +1128,10 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         // testing publish
         for (Contentlet content : contents) {
-            content.setIndexPolicy(IndexPolicy.FORCE);
+            content.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            content.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             contentletAPI.publish(content, user, false);
-            assertTrue(content.isLive());
+            assertTrue("the contentlet: " + content.getIdentifier() + " must be published",content.isLive());
             assertTrue(contentletAPI.indexCount(
                     "+live:true +identifier:" + content.getIdentifier() + " +inode:" + content
                             .getInode() + " +languageId:" + content.getLanguageId(), user,

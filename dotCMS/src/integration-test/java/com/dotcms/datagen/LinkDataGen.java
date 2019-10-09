@@ -1,5 +1,8 @@
 package com.dotcms.datagen;
 
+import java.util.Date;
+
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -21,14 +24,15 @@ public class LinkDataGen extends AbstractDataGen<Link> {
     private String protocol = "https://";
     private String url = "www.google.com";
     private String internalLinkIdentifier = StringPool.BLANK;
-    private Folder parent;
-
+    private boolean showOnMenu=false;
+    
     public LinkDataGen() {
-        this.parent = new FolderDataGen().nextPersisted();
+        this.folder = new FolderDataGen().nextPersisted();
     }
 
     public LinkDataGen(Folder parent) {
         this.folder = parent;
+
     }
 
     @SuppressWarnings("unused")
@@ -42,7 +46,13 @@ public class LinkDataGen extends AbstractDataGen<Link> {
         this.friendlyName = friendlyName;
         return this;
     }
-
+    
+    @SuppressWarnings("unused")
+    public LinkDataGen showOnMenu(boolean showOnMenu) {
+        this.showOnMenu = showOnMenu;
+        return this;
+    }
+    
     @SuppressWarnings("unused")
     public LinkDataGen target(String target) {
         this.target = target;
@@ -87,7 +97,7 @@ public class LinkDataGen extends AbstractDataGen<Link> {
 
     @SuppressWarnings("unused")
     public LinkDataGen parent(Folder parent) {
-        this.parent = parent;
+        this.folder = parent;
         return this;
     }
 
@@ -97,7 +107,7 @@ public class LinkDataGen extends AbstractDataGen<Link> {
         Link link = new Link();
         link.setTitle(title);
         link.setFriendlyName(friendlyName);
-        link.setParent(parent.getInode());
+        link.setParent(folder.getInode());
         link.setTarget(target);
         link.setHostId(hostId);
         link.setOwner(owner.getUserId());
@@ -106,14 +116,16 @@ public class LinkDataGen extends AbstractDataGen<Link> {
         link.setInternalLinkIdentifier(internalLinkIdentifier);
         link.setProtocal(protocol);
         link.setUrl(url);
-
+        link.setShowOnMenu(showOnMenu);
+        link.setModDate(new Date());
         return link;
     }
 
+    @WrapInTransaction
     @Override
     public Link persist(final Link link) {
         try {
-            APILocator.getMenuLinkAPI().save(link, parent, user, false);
+            APILocator.getMenuLinkAPI().save(link, folder, user, false);
             return link;
         } catch (Exception e) {
             throw new RuntimeException("Unable to persist link.", e);

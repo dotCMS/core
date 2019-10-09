@@ -1,23 +1,24 @@
 package com.dotcms.util;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Paths;
+
+import javax.servlet.ServletContext;
+
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
 import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
 import com.liferay.portal.util.WebAppPool;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Paths;
-import javax.servlet.ServletContext;
-import org.apache.struts.Globals;
-import org.apache.struts.config.ModuleConfig;
-import org.apache.struts.util.MessageResources;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 /**
  * Sets configuration and environment details used for Integration Tests
@@ -55,6 +56,34 @@ public class ConfigTestHelper extends Config {
                     return path;
                 }
             });
+            Mockito.when(context.getResource(Matchers.anyString())).thenAnswer(new Answer<URL>() {
+            //Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
+                @Override
+                public URL answer(InvocationOnMock invocation) throws Throwable {
+                  final String path = (String) invocation.getArguments()[0];
+                  
+                  URL url = MultiMessageResources.class.getClassLoader().getResource(path);
+                  if(url==null) {
+                    String workingDir=new File(".").getAbsolutePath();
+                    System.out.println("Working Directory = " + workingDir);
+
+                    
+                    String newPath  = workingDir + File.separator + 
+                    "src" + File.separator + 
+                    "main"  + File.separator +
+                    "webapp"  + path;
+                    System.out.println("path      :" + path);
+                    System.out.println("workingDir:" + workingDir);
+                    System.out.println("newPath   :" + newPath);
+                    if(new File(newPath).exists()) {
+                      return new URL("file://" + newPath);
+                    }
+                  }
+                  return url;
+                }
+            });
+            
+           
             Config.CONTEXT = context;
             Config.CONTEXT_PATH = context.getRealPath("/");
 

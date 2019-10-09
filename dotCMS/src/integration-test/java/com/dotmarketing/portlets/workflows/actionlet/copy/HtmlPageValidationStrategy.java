@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.actionlet.copy;
 
+import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.FRIENDLY_NAME_FIELD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
@@ -46,9 +47,9 @@ public class HtmlPageValidationStrategy extends AbstractContentletValidationStra
     };
 
     AssertionStrategy friendlyAssertion = (final Contentlet original, final Contentlet copy) -> {
-        final String originalValue = (String) original.get("friendlyname");
-        final String copyValue = (String) copy.get("friendlyname");
-        assertEquals("friendlyname", originalValue, copyValue);
+        final String originalValue = (String) original.get(FRIENDLY_NAME_FIELD);
+        final String copyValue = (String) copy.get(FRIENDLY_NAME_FIELD);
+        assertEquals(FRIENDLY_NAME_FIELD, originalValue, copyValue);
     };
 
     AssertionStrategy seoKeywordAssertion = (final Contentlet original, final Contentlet copy) -> {

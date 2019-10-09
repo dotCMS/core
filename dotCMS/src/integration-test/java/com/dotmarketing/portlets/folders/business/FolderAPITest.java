@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
@@ -77,10 +78,10 @@ public class FolderAPITest {//24 contentlets
 	private static long langId;
 
 	@BeforeClass
-    public static void prepare () throws Exception {
+	public static void prepare() throws Exception {
 
-        //Setting web app environment
-        IntegrationTestInitService.getInstance().init();
+		//Setting web app environment
+		IntegrationTestInitService.getInstance().init();
 		identifierAPI    = APILocator.getIdentifierAPI();
 		userAPI          = APILocator.getUserAPI();
 		hostAPI          = APILocator.getHostAPI();
@@ -96,18 +97,35 @@ public class FolderAPITest {//24 contentlets
 		templateAPI      = APILocator.getTemplateAPI();
 
 		user   = userAPI.getSystemUser();
-		host   = hostAPI.findDefaultHost(user, false);
+		host = new SiteDataGen().nextPersisted();
 		langId = languageAPI.getDefaultLanguage().getId();
 		fc     = CacheLocator.getFolderCache();
 
 		contentTypeAPI   = APILocator.getContentTypeAPI(user);
 
-    }
+	}
 
 	@Rule
 	public TemporaryFolder testFolder = new TemporaryFolder();
 
+	// pull request #16967
+	@Test
+	public void test_get_by_path_does_not_throw_NPE() throws Exception {
 
+		String testFolder = "/folderMoveSourceTest" + System.currentTimeMillis();
+		//create folders and assets
+		final Folder test = folderAPI
+				.createFolders(testFolder, host, user, false);
+
+		final Folder foundFolder = folderAPI.findFolderByPath(testFolder, host, user, false);
+		Assert.assertEquals(test.getIdentifier(), foundFolder.getIdentifier());
+		Assert.assertEquals(test.getInode(), foundFolder.getInode());
+		Assert.assertEquals(test.getPath(), foundFolder.getPath());
+
+		Assert.assertNull(folderAPI.findFolderByPath(null, host, user, false));
+
+		Assert.assertNull(folderAPI.findFolderByPath(testFolder, (String) null, user, false));
+	}
 
 	@Test
 	public void renameFolder() throws Exception {
@@ -126,10 +144,10 @@ public class FolderAPITest {//24 contentlets
 
 		// make sure the rename is properly propagated on children (that's done in a db trigger)
 
-        final Identifier ident  = identifierAPI.loadFromDb(ftest.getVersionId());
-        final Identifier ident1 = identifierAPI.loadFromDb(ftest1.getVersionId());
-        final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getVersionId());
-        final Identifier ident3 = identifierAPI.loadFromDb(ftest3.getVersionId());
+		final Identifier ident = identifierAPI.loadFromDb(ftest.getVersionId());
+		final Identifier ident1 = identifierAPI.loadFromDb(ftest1.getVersionId());
+		final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getVersionId());
+		final Identifier ident3 = identifierAPI.loadFromDb(ftest3.getVersionId());
 
 		Assert.assertTrue(ident.getAssetName().startsWith("folderTestXX"));
 		Assert.assertEquals(ident.getPath(),ident1.getParentPath());
@@ -153,7 +171,7 @@ public class FolderAPITest {//24 contentlets
 
 		//adding page
 		final String page0Name ="page0";
-        final Template template = new TemplateDataGen().nextPersisted();
+		final Template template = new TemplateDataGen().nextPersisted();
 
 		Contentlet contentAsset1 = new Contentlet();
 		contentAsset1.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
@@ -217,12 +235,9 @@ public class FolderAPITest {//24 contentlets
 		Assert.assertEquals(3, pages.size());
 		Assert.assertTrue(pages.stream().anyMatch(page -> page.getName().equals(page0Name)));
 
-		contentletAPI.archive(contentAsset1,user,false);
-		contentletAPI.archive(contentAsset2,user,false);
-		contentletAPI.archive(contentAsset4,user,false);
-		contentletAPI.delete(contentAsset1,user,false);
-		contentletAPI.delete(contentAsset2,user,false);
-		contentletAPI.delete(contentAsset4,user,false);
+		contentletAPI.destroy(contentAsset1, user, false);
+		contentletAPI.destroy(contentAsset2, user, false);
+		contentletAPI.destroy(contentAsset4, user, false);
 	}
 
 	/**
@@ -232,7 +247,6 @@ public class FolderAPITest {//24 contentlets
 	@Test
 	public void move() throws Exception {
 
-
 		//create folders and assets
 		Folder ftest = folderAPI
 				.createFolders("/folderMoveSourceTest"+System.currentTimeMillis(), host, user, false);
@@ -241,7 +255,7 @@ public class FolderAPITest {//24 contentlets
 
 		//adding page
 		final String page0Str ="page0";
-        Template template = new TemplateDataGen().nextPersisted();
+		Template template = new TemplateDataGen().nextPersisted();
 
 		Contentlet contentAsset1=new Contentlet();
 		contentAsset1.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
@@ -258,7 +272,7 @@ public class FolderAPITest {//24 contentlets
 
 		/*adding menu link*/
 		final String linkStr="link";
-  		final Link link = new Link();
+		final Link link = new Link();
 		link.setTitle(linkStr);
 		link.setFriendlyName(linkStr);
 		link.setParent(ftest1.getInode());
@@ -268,7 +282,7 @@ public class FolderAPITest {//24 contentlets
 		Contentlet pageContentlet = TestDataUtils.getPageContent(true, langId);
 		IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
 
-  		Identifier internalLinkIdentifier = identifierAPI.find(page.getIdentifier());
+		Identifier internalLinkIdentifier = identifierAPI.find(page.getIdentifier());
 		link.setLinkType(Link.LinkType.INTERNAL.toString());
 		link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
 		link.setProtocal("http://");
@@ -302,7 +316,7 @@ public class FolderAPITest {//24 contentlets
 
 		/*Adding menu link*/
 		final String linkStr2="link2";
-  		final Link link2 = new Link();
+		final Link link2 = new Link();
 		link2.setTitle(linkStr2);
 		link2.setFriendlyName(linkStr2);
 		link2.setParent(ftest2.getInode());
@@ -312,7 +326,7 @@ public class FolderAPITest {//24 contentlets
 		pageContentlet = TestDataUtils.getPageContent(true, langId);
 		page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
 
-  		internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
+		internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
 		link2.setLinkType(Link.LinkType.INTERNAL.toString());
 		link2.setInternalLinkIdentifier(internalLinkIdentifier.getId());
 		link2.setProtocal("http://");
@@ -327,8 +341,8 @@ public class FolderAPITest {//24 contentlets
 		versionableAPI.setLive(link2);
 
 		/*Adding file asset to folder */
-        final String fileTitle = "testMove.txt";
-        final File destFile = testFolder.newFile(fileTitle);
+		final String fileTitle = "testMove.txt";
+		final File destFile = testFolder.newFile(fileTitle);
 		FileUtil.write(destFile, "helloworld");
 
 		Contentlet contentAsset3=new Contentlet();
@@ -381,7 +395,6 @@ public class FolderAPITest {//24 contentlets
 		final MultiTree m = new MultiTree(contentAsset4.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
 		APILocator.getMultiTreeAPI().saveMultiTree(m);
 
-
 		final Folder destinationftest = folderAPI
 				.createFolders("/folderMoveDestinationTest"+System.currentTimeMillis(), host, user, false);
 
@@ -424,19 +437,6 @@ public class FolderAPITest {//24 contentlets
 
 		final List<MultiTree> mt= APILocator.getMultiTreeAPI().getMultiTrees(pages.get(0).getIdentifier());
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset2.getIdentifier()) );
-
-		contentletAPI.archive(contentAsset1,user,false);
-		contentletAPI.archive(contentAsset2,user,false);
-		contentletAPI.archive(contentAsset3,user,false);
-		contentletAPI.archive(contentAsset4,user,false);
-		contentletAPI.archive(contentAsset5,user,false);
-		contentletAPI.delete(contentAsset1,user,false);
-		contentletAPI.delete(contentAsset2,user,false);
-		contentletAPI.delete(contentAsset3,user,false);
-		contentletAPI.delete(contentAsset4,user,false);
-		contentletAPI.delete(contentAsset5,user,false);
-
-
 	}
 
 	/**
@@ -455,7 +455,7 @@ public class FolderAPITest {//24 contentlets
 				.createFolders("/folderCopySourceTest"+System.currentTimeMillis(), host, user, false);
 		//adding page
 		final String pageStr ="mypage";
-        Template template = new TemplateDataGen().nextPersisted();
+		Template template = new TemplateDataGen().nextPersisted();
 
 		Contentlet contentAsset1=new Contentlet();
 		contentAsset1.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
@@ -475,7 +475,7 @@ public class FolderAPITest {//24 contentlets
 
 		IHTMLPage page = htmlPageAssetAPI
 				.getPageByPath(ftest.getPath()+pageStr, host, languageAPI
-				.getDefaultLanguage().getId(), false);
+						.getDefaultLanguage().getId(), false);
 		Assert.assertTrue(page != null && page.getTitle().contains(pageStr));
 		page = htmlPageAssetAPI
 				.getPageByPath(ftest.getPath()+pageStr+"_COPY", host, langId, false);
@@ -542,7 +542,7 @@ public class FolderAPITest {//24 contentlets
 
 		/*Adding a link*/
 		final String linkStr="link1";
-  		Link link = new Link();
+		Link link = new Link();
 		link.setTitle(linkStr);
 		link.setFriendlyName(linkStr);
 		link.setParent(ftest1.getInode());
@@ -552,7 +552,7 @@ public class FolderAPITest {//24 contentlets
 		Contentlet pageContentlet = TestDataUtils.getPageContent(true, langId);
 		page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
 
-  		Identifier internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
+		Identifier internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
 		link.setLinkType(Link.LinkType.INTERNAL.toString());
 		link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
 		link.setProtocal("http://");
@@ -598,7 +598,7 @@ public class FolderAPITest {//24 contentlets
 
 		/*Adding page and menu link to folder fcopy3*/
 		String linkStr2="link2";
-  		Link link2 = new Link();
+		Link link2 = new Link();
 		link2.setTitle(linkStr2);
 		link2.setFriendlyName(linkStr2);
 		link2.setParent(ftest3.getInode());
@@ -608,7 +608,7 @@ public class FolderAPITest {//24 contentlets
 		pageContentlet = TestDataUtils.getPageContent(true, langId);
 		page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
 
-  		internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
+		internalLinkIdentifier = identifierAPI.findFromInode(page.getIdentifier());
 		link2.setLinkType(Link.LinkType.INTERNAL.toString());
 		link2.setInternalLinkIdentifier(internalLinkIdentifier.getId());
 		link2.setProtocal("http://");
@@ -705,42 +705,6 @@ public class FolderAPITest {//24 contentlets
 		mt= APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset8.getIdentifier()) );
 
-		for(Contentlet contentlet : folderAPI.getLiveContent(newftest1,user,false)){
-			contentletAPI.archive(contentlet,user,false);
-			contentletAPI.delete(contentlet,user,false);
-		}
-
-		for(Contentlet contentlet : folderAPI.getLiveContent(newftest2,user,false)){
-			contentletAPI.archive(contentlet,user,false);
-			contentletAPI.delete(contentlet,user,false);
-		}
-
-		for(Contentlet contentlet : folderAPI.getLiveContent(newftest3,user,false)){
-			contentletAPI.archive(contentlet,user,false);
-			contentletAPI.delete(contentlet,user,false);
-		}
-
-		contentletAPI.archive(contentAsset1,user,false);
-		contentletAPI.archive(contentAsset2,user,false);
-		contentletAPI.archive(contentAsset3,user,false);
-		contentletAPI.archive(contentAsset4,user,false);
-		contentletAPI.archive(contentAsset5,user,false);
-		contentletAPI.archive(contentAsset6,user,false);
-		contentletAPI.archive(contentAsset7,user,false);
-		contentletAPI.archive(contentAsset8,user,false);
-		contentletAPI.archive(contentAsset1Copy,user,false);
-
-
-		contentletAPI.delete(contentAsset1,user,false);
-		contentletAPI.delete(contentAsset2,user,false);
-		contentletAPI.delete(contentAsset3,user,false);
-		contentletAPI.delete(contentAsset4,user,false);
-		contentletAPI.delete(contentAsset5,user,false);
-		contentletAPI.delete(contentAsset6,user,false);
-		contentletAPI.delete(contentAsset7,user,false);
-		contentletAPI.delete(contentAsset8,user,false);
-		contentletAPI.delete(contentAsset1Copy,user,false);
-
 	}
 
 	/**
@@ -749,7 +713,7 @@ public class FolderAPITest {//24 contentlets
 	 */
 	@Test
 	public void delete() throws Exception {
-		final long langIdES= languageAPI.getLanguage("es", "ES").getId();
+		final long langIdES = TestDataUtils.getSpanishLanguage().getId();
 
 		final String folderPath = "/folderDeleteSourceTest"+System.currentTimeMillis();
 		final Folder ftest = folderAPI.createFolders(folderPath, host, user, false);
@@ -758,7 +722,7 @@ public class FolderAPITest {//24 contentlets
 
 		//adding page
 		String pageStr ="mypage";
-        Template template = new TemplateDataGen().nextPersisted();
+		Template template = new TemplateDataGen().nextPersisted();
 
 		/*create page content multilingual */
 		Contentlet contentAsset1=new Contentlet();
@@ -968,131 +932,102 @@ public class FolderAPITest {//24 contentlets
 
 	@Test
 	public void testGetLinks() throws Exception {
-		Container container     = null;
-		Contentlet contentAsset = null;
-		Folder ftest            = null;
-		Link link               = null;
-		Template template       = null;
 
-		Host host;
-		Identifier internalLinkIdentifier;
-		long id;
 		String containerName, linkStr, page0Str, userId;
-		StringBuffer myURL;
 
-		host    = hostAPI.findDefaultHost(user, false);
-		id      = System.currentTimeMillis();
+		Host host = hostAPI.findDefaultHost(user, false);
+		long id = System.currentTimeMillis();
 		linkStr = "link" + id;
-		userId  = user.getUserId();
+		userId = user.getUserId();
 
-		try {
-			//Create new folder
-			ftest = folderAPI.createFolders("/folderTest" + id, host, user, false);
-			ftest.setOwner(userId);
-			folderAPI.save(ftest, user, false);
+		final ContentType widgetContentType = TestDataUtils.getWidgetLikeContentType();
 
-			/**
-			 * Create new container
-			 */
-			container     = new Container();
-			containerName = "container" + id;
+		//Create new folder
+		Folder ftest = folderAPI.createFolders("/folderTest" + id, host, user, false);
+		ftest.setOwner(userId);
+		folderAPI.save(ftest, user, false);
 
-			container.setFriendlyName(containerName);
-			container.setTitle(containerName);
-			container.setOwner(userId);
-			container.setMaxContentlets(5);
-			container.setPreLoop("preloop code");
-			container.setPostLoop("postloop code");
+		/**
+		 * Create new container
+		 */
+		Container container = new Container();
+		containerName = "container" + id;
 
-			List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
-			ContainerStructure cs = new ContainerStructure();
-			cs.setStructureId(
-					CacheLocator.getContentTypeCache().getStructureByVelocityVarName("SimpleWidget")
-							.getInode());
-			cs.setCode("<div><h3>content $!{title}</h3><p>$!{body}</p></div>");
-			csList.add(cs);
-			container = containerAPI.save(container, csList, host, user, false);
-			PublishFactory.publishAsset(container, user, false, false);
+		container.setFriendlyName(containerName);
+		container.setTitle(containerName);
+		container.setOwner(userId);
+		container.setMaxContentlets(5);
+		container.setPreLoop("preloop code");
+		container.setPostLoop("postloop code");
 
-			/**
-			 * Create new template
-			 */
-			String templateBody  = "<html><body> #parseContainer('" + container.getIdentifier()
-					+ "') </body></html>";
-			String templateTitle = "template" + id;
+		List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+		ContainerStructure cs = new ContainerStructure();
+		cs.setStructureId(widgetContentType.inode());
+		cs.setCode("<div><h3>content $!{title}</h3><p>$!{body}</p></div>");
+		csList.add(cs);
+		container = containerAPI.save(container, csList, host, user, false);
+		PublishFactory.publishAsset(container, user, false, false);
 
-			//Create template
-			template = new Template();
-			template.setTitle(templateTitle);
-			template.setBody(templateBody);
-			template.setOwner(user.getUserId());
-			template.setDrawedBody(templateBody);
-			template = templateAPI.saveTemplate(template, host, user, false);
-			PublishFactory.publishAsset(template, user, false, false);
+		/**
+		 * Create new template
+		 */
+		String templateBody = "<html><body> #parseContainer('" + container.getIdentifier()
+				+ "') </body></html>";
+		String templateTitle = "template" + id;
 
-			//Create new page
-			page0Str     = "page" + id;
-			contentAsset = new Contentlet();
-			contentAsset
-					.setContentTypeId(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-			contentAsset.setHost(host.getIdentifier());
-			contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page0Str);
-			contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page0Str);
-			contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page0Str);
-			contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-			contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
-			contentAsset.setLanguageId(languageAPI.getDefaultLanguage().getId());
-			contentAsset.setFolder(ftest.getInode());
-			contentAsset = contentletAPI.checkin(contentAsset, user, false);
-			contentletAPI.publish(contentAsset, user, false);
+		//Create template
+		Template template = new Template();
+		template.setTitle(templateTitle);
+		template.setBody(templateBody);
+		template.setOwner(user.getUserId());
+		template.setDrawedBody(templateBody);
+		template = templateAPI.saveTemplate(template, host, user, false);
+		PublishFactory.publishAsset(template, user, false, false);
 
-			internalLinkIdentifier = identifierAPI.findFromInode(contentAsset.getIdentifier());
+		//Create new page
+		page0Str = "page" + id;
+		Contentlet contentAsset = new Contentlet();
+		contentAsset
+				.setContentTypeId(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset.setHost(host.getIdentifier());
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page0Str);
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page0Str);
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page0Str);
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset.setLanguageId(languageAPI.getDefaultLanguage().getId());
+		contentAsset.setFolder(ftest.getInode());
+		contentAsset = contentletAPI.checkin(contentAsset, user, false);
+		contentletAPI.publish(contentAsset, user, false);
 
-			myURL = new StringBuffer();
-			if (InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
-				myURL.append(host.getHostname());
-			}
-			myURL.append(internalLinkIdentifier.getURI());
+		Identifier internalLinkIdentifier = identifierAPI
+				.findFromInode(contentAsset.getIdentifier());
 
-			link = new Link();
-			link.setTitle(linkStr);
-			link.setFriendlyName(linkStr);
-			link.setParent(ftest.getInode());
-			link.setTarget("_blank");
-			link.setOwner(userId);
-			link.setModUser(userId);
-			link.setLinkType(Link.LinkType.INTERNAL.toString());
-			link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
-			link.setProtocal("http://");
-			link.setUrl(myURL.toString());
-			WebAssetFactory.createAsset(link, userId, ftest);
-
-			List<Link> links = folderAPI.getLinks(ftest, user, false);
-
-			Assert.assertNotNull(links);
-			Assert.assertFalse(links.isEmpty());
-			Assert.assertEquals(link.getIdentifier(), links.get(0).getIdentifier());
-			Assert.assertEquals(link.getInode(), links.get(0).getInode());
-		} finally {
-
-			if (contentAsset != null && contentAsset.getInode() != null) {
-				contentletAPI.archive(contentAsset, user, false);
-				contentletAPI.delete(contentAsset, user, false);
-			}
-
-			if (ftest != null) {
-				folderAPI.delete(ftest, user, false);
-			}
-
-			if (container != null && container.getInode() != null) {
-				containerAPI.delete(container, user, false);
-			}
-
-			if (template != null && template.getInode() != null) {
-				templateAPI.delete(template, user, false);
-			}
-
+		StringBuffer myURL = new StringBuffer();
+		if (InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
+			myURL.append(host.getHostname());
 		}
+		myURL.append(internalLinkIdentifier.getURI());
 
+		Link link = new Link();
+		link.setTitle(linkStr);
+		link.setFriendlyName(linkStr);
+		link.setParent(ftest.getInode());
+		link.setTarget("_blank");
+		link.setOwner(userId);
+		link.setModUser(userId);
+		link.setLinkType(Link.LinkType.INTERNAL.toString());
+		link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
+		link.setProtocal("http://");
+		link.setUrl(myURL.toString());
+		WebAssetFactory.createAsset(link, userId, ftest);
+
+		List<Link> links = folderAPI.getLinks(ftest, user, false);
+
+		Assert.assertNotNull(links);
+		Assert.assertFalse(links.isEmpty());
+		Assert.assertEquals(link.getIdentifier(), links.get(0).getIdentifier());
+		Assert.assertEquals(link.getInode(), links.get(0).getInode());
 	}
+
 }

@@ -13,6 +13,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
@@ -31,6 +32,7 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -40,7 +42,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang.StringUtils;
-import org.apache.struts.Globals;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -82,7 +83,8 @@ public class SiteResourceTest extends UnitTestBase {
         Config.CONTEXT = context;
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+        when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
+        when(initDataObject.getUser()).thenReturn(user);
         when(paginationUtil.getPage(request, user, "filter",1, count,
                 map("archive", false, "live", false, "system", false))).thenReturn(responseExpected);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
@@ -119,7 +121,8 @@ public class SiteResourceTest extends UnitTestBase {
 
         when(initDataObject.getUser()).thenReturn(user);
         // final InitDataObject initData = this.webResource.init(null, request, response, true, null); // should logged in
-        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+        when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
+
         when(hostAPI.findAll(user, true)).thenReturn(hosts);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
@@ -170,6 +173,7 @@ public class SiteResourceTest extends UnitTestBase {
         final WebResource webResource       = mock(WebResource.class);
         final ServletContext context = mock(ServletContext.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
+        
         final User user = new User();
         final Host host = getSite().get(0);
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
@@ -178,7 +182,7 @@ public class SiteResourceTest extends UnitTestBase {
         Map<String, Object> sessionAttributes = map(WebKeys.CONTENTLET_LAST_SEARCH, "mock mock mock mock");
 
         when(initDataObject.getUser()).thenReturn(user);
-        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+        when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
         when(hostAPI.find("48190c8c-42c4-46af-8d1a-0cd5db894798", user, Boolean.TRUE)).thenReturn(host);
         when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getSession()).thenReturn(session);
@@ -256,7 +260,7 @@ public class SiteResourceTest extends UnitTestBase {
                 .thenReturn( currentSite.getIdentifier() );
 
         final InitDataObject initDataObject = mock(InitDataObject.class);
-        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+        when(webResource.init((WebResource.InitBuilder)anyObject())).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
 
         final SiteResource siteResource =
@@ -273,8 +277,8 @@ public class SiteResourceTest extends UnitTestBase {
      *
      * @return
      */
-    private PaginatedArrayList<Host> getSite() {
-        List<Host> temp = list(new Host(new Contentlet(mapAll(
+    private PaginatedArrayList<Host> getSite() throws DotDataException {
+        Contentlet contentlet = new Contentlet(mapAll(
                 map(
                         "hostName", "system.dotcms.com",
                         "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utru0",
@@ -306,7 +310,11 @@ public class SiteResourceTest extends UnitTestBase {
                         "isSystemHost", true,
                         "sortOrder", 0,
                         "modUser", "dotcms.org.1"
-                )))) {
+                )));
+
+        contentlet = Mockito.spy(contentlet);
+        Mockito.doNothing().when(contentlet).setTags();
+        final List<Host> temp = list(new Host(contentlet) {
                                    @Override
                                    public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
                                        return false;
@@ -324,7 +332,7 @@ public class SiteResourceTest extends UnitTestBase {
      * @return
      */
     private PaginatedArrayList<Host> getSites() {
-        List<Host> temp = list(new Host(new Contentlet(mapAll(
+        final List<Contentlet> contentlets = list(new Contentlet(mapAll(
                 map(
                         "hostName", "demo.dotcms.com",
                         "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utmu0",
@@ -358,12 +366,7 @@ public class SiteResourceTest extends UnitTestBase {
                         "sortOrder", 0,
                         "modUser", "dotcms.org.1"
                 )
-                               ))) {
-                                   @Override
-                                   public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
-                                       return false;
-                                   }
-                               }, new Host(new Contentlet(mapAll(
+        )), new Contentlet(mapAll(
                 map(
                         "hostName", "system.dotcms.com",
                         "googleMap", "AIzaSyDXvD7JA5Q8S5VgfviI8nDinAq9x5Utru0",
@@ -395,13 +398,25 @@ public class SiteResourceTest extends UnitTestBase {
                         "isSystemHost", true,
                         "sortOrder", 0,
                         "modUser", "dotcms.org.1"
-                )))) {
-                                   @Override
-                                   public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
-                                       return false;
-                                   }
-                               }
-        );
+                ))));
+
+        final List<Host> temp = new ArrayList<>();
+        contentlets.forEach(contentlet -> {
+            contentlet = Mockito.spy(contentlet);
+            try {
+                Mockito.doNothing().when(contentlet).setTags();
+            } catch (DotDataException e) {
+                throw new RuntimeException(e);
+            }
+            temp.add(new Host(contentlet) {
+                @Override
+                public boolean isArchived() throws DotStateException, DotDataException, DotSecurityException {
+                    return false;
+                }
+            });
+
+        });
+
         PaginatedArrayList<Host> hosts = new PaginatedArrayList<Host>();
         hosts.addAll(temp);
         hosts.setTotalResults(2);

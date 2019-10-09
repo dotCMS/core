@@ -34,7 +34,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.tools.view.context.ViewContext;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -68,7 +67,7 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
         final User user = new UserDataGen().nextPersisted();
         assertNotNull(user.getUserId());
 
-        return APILocator.getUserAPI().getUsersByNameOrEmailOrUserID(user.getEmailAddress(), 0, 1).get(0);
+        return user;
     }
 
     @Before
@@ -173,21 +172,6 @@ public class ContainerWebAPIIntegrationTest extends IntegrationTestBase {
         assertTrue(baseContentTypes.contains("WIDGET"));
         assertTrue(baseContentTypes.contains("FORM"));
         assertTrue(baseContentTypes.contains("CONTENT"));
-    }
-
-    @After
-    public void cleanUp() throws Exception {
-        HibernateUtil.startTransaction();
-
-        if (user != null) {
-            APILocator.getUserAPI().delete(user, adminUser, false);
-        }
-
-        if (container != null) {
-            APILocator.getContainerAPI().delete(container, adminUser, false);
-        }
-
-        HibernateUtil.commitTransaction();
     }
 
     private void addPermissionToBaseType(BaseContentType baseContentType) throws DotSecurityException, DotDataException {

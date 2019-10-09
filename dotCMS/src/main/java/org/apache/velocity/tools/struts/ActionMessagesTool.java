@@ -16,14 +16,14 @@
 
 package org.apache.velocity.tools.struts;
 
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
+import com.dotcms.repackage.org.apache.struts.util.MessageResources;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.action.ActionMessages;
-import org.apache.struts.util.MessageResources;
 
 /**
  * <p>View tool to work with the Struts action messages.</p>

@@ -75,7 +75,7 @@ public class HostAPIImpl implements HostAPI {
      * @throws DotSecurityException, DotDataException
      */
     @Override
-    @CloseDBIfOpened
+    @WrapInTransaction
     public Host findDefaultHost(User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
         Host host;
@@ -376,6 +376,7 @@ public class HostAPIImpl implements HostAPI {
         APILocator.getContentletAPI().copyProperties(contentletHost, host.getMap());
         contentletHost.setInode("");
         contentletHost.setIndexPolicy(host.getIndexPolicy());
+        contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
         contentletHost = APILocator.getContentletAPI().checkin(contentletHost, user, respectFrontendRoles);
 
         if(host.isWorking() || host.isLive()){
@@ -638,7 +639,7 @@ public class HostAPIImpl implements HostAPI {
 
                 // Remove Templates
                 TemplateAPI templateAPI = APILocator.getTemplateAPI();
-                List<Template> templates = templateAPI.findTemplates(user, true, null, host.getIdentifier(), null, null, null, 0, -1, null);
+                List<Template> templates = templateAPI.findTemplatesAssignedTo(host, true);
                 for (Template template : templates) {
                     dc.setSQL("delete from template_containers where template_id = ?");
                     dc.addParam(template.getIdentifier());
@@ -937,8 +938,10 @@ public class HostAPIImpl implements HostAPI {
         if(host != null){
             hostCache.remove(host);
         }
-        Contentlet c = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
-        APILocator.getContentletAPI().publish(c, user, respectFrontendRoles);
+
+        final Contentlet contentletHost = APILocator.getContentletAPI().find(host.getInode(), user, respectFrontendRoles);
+        contentletHost.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        APILocator.getContentletAPI().publish(contentletHost, user, respectFrontendRoles);
         hostCache.add(host);
         hostCache.clearAliasCache();
 

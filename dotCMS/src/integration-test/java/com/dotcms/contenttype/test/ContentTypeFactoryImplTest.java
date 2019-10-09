@@ -18,6 +18,7 @@ import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.beans.Host;
@@ -29,6 +30,7 @@ import java.io.File;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
 
@@ -71,10 +73,11 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 	public void testFindMethodEquals() throws Exception {
 		List<ContentType> types = contentTypeFactory.findAll();
 		for (ContentType type : types) {
-			ContentType contentType = contentTypeFactory.find(type.id());
+			ContentType contentType1 = contentTypeFactory.find(type.id());
 			ContentType contentType2 = contentTypeFactory.find(type.variable());
 			try {
-				assertThat("ContentType == ContentType2", contentType.equals(contentType2) && contentType.equals(type));
+				assertThat("testing equals:\ncontentType1:" + contentType1 +"\ncontentType2" + contentType2 + "\ntype in list " + type, contentType1.equals(contentType2) && contentType1.equals(type));
+				
 			} catch (Throwable t) {
 
 				throw t;
@@ -167,31 +170,6 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 	}
 
-	/*
-	@Test
-	public void testLegacyTransform() throws Exception {
-
-		Structure st = new Structure();
-		List<ContentType> types = contentTypeFactory.findAll("name");
-		List<ContentType> oldTypes = new StructureTransformer(getCrappyStructures()).asList();
-
-		assertThat("findAll and legacy return same quantity", types.size() == oldTypes.size());
-
-		for (int i = 0; i < types.size(); i++) {
-			try {
-				assertThat("Old and New Contentyypes are the same", types.get(i).equals(oldTypes.get(i)));
-			} catch (Throwable t) {
-				System.out.println("Old and New Contentyypes are NOT the same");
-				System.out.println(types.get(i));
-				System.out.println(oldTypes.get(i));
-				throw t;
-			}
-		}
-
-		assertThat("findAll sort by Name has same size as find all", contentTypeFactory.findAll("name").size() == types.size());
-	}
-	*/
-
 	@Test
 	public void testAddingContentTypes() throws Exception {
 		int count = contentTypeFactory.searchCount(null);
@@ -234,37 +212,57 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 				" And structure.inode='" + newsLikeContentType.id() + "'"};
 
 		int totalCount = contentTypeFactory.searchCount(null);
+		final List<ContentType> typesCreated = new ArrayList<>();
 
-		List<ContentType> types=contentTypeFactory.search(null, BaseContentType.ANY, "name", -1,0);
-		assertThat("we have at least 40 content types", types.size() > 20);
-		types = contentTypeFactory.search(null, BaseContentType.ANY, "name", 5, 0);
-		assertThat("limit works and we have max five content types", types.size() < 6);
-		for (int x = 0; x < totalCount; x = x + 5) {
-			types = contentTypeFactory.search(null, BaseContentType.ANY, "name",  5, x);
-			assertThat("we have max five content types", types.size() < 6);
+		for(int i=0; i<5; i++) {
+			typesCreated.add(new ContentTypeDataGen().nextPersisted());
 		}
 
-		for (int i = 0; i < BaseContentType.values().length; i++) {
-			types = contentTypeFactory.search(null, BaseContentType.getBaseContentType(i), "name", -1, 0);
-			if (!types.isEmpty()) {
-				assertThat("we have content types of " + BaseContentType.getBaseContentType(i), types.size() > 0);
-				int count = contentTypeFactory.searchCount(null, BaseContentType.getBaseContentType(i));
-				assertThat("Count works as well", types.size() == count);
-			} else {
-				System.out.println("No data found for BaseContentType: " + BaseContentType.getBaseContentType(i));
+		try {
+
+			List<ContentType> types = contentTypeFactory
+					.search(null, BaseContentType.ANY, "name", -1, 0);
+			assertThat("we have at least 5 content types", types.size() >= 5);
+			types = contentTypeFactory.search(null, BaseContentType.ANY, "name", 5, 0);
+			assertThat("limit works and we have max five content types", types.size() < 6);
+			for (int x = 0; x < totalCount; x = x + 5) {
+				types = contentTypeFactory.search(null, BaseContentType.ANY, "name", 5, x);
+				assertThat("we have max five content types", types.size() < 6);
 			}
+
+			for (int i = 0; i < BaseContentType.values().length; i++) {
+				types = contentTypeFactory
+						.search(null, BaseContentType.getBaseContentType(i), "name", -1, 0);
+				if (!types.isEmpty()) {
+					assertThat("we have content types of " + BaseContentType.getBaseContentType(i),
+							types.size() > 0);
+					int count = contentTypeFactory
+							.searchCount(null, BaseContentType.getBaseContentType(i));
+					assertThat("Count works as well", types.size() == count);
+				} else {
+					System.out.println("No data found for BaseContentType: " + BaseContentType
+							.getBaseContentType(i));
+				}
+			}
+
+			for (int i = 0; i < searchTerms.length; i++) {
+				types = contentTypeFactory
+						.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", -1, 0);
+				if (!types.isEmpty()) {
+					assertThat("we can search content types:" + searchTerms[i], types.size() > 0);
+					int count = contentTypeFactory.searchCount(searchTerms[i], BaseContentType.ANY);
+					assertThat("Count works as well", types.size() == count);
+				} else {
+					System.out.println("No data found for BaseContentType: " + BaseContentType
+							.getBaseContentType(i));
+				}
+			}
+
+		} finally {
+			typesCreated.forEach(ContentTypeDataGen::remove);
 		}
 
-		for (int i = 0; i < searchTerms.length; i++) {
-			types = contentTypeFactory.search(searchTerms[i], BaseContentType.ANY, "mod_date desc", -1, 0);
-			if (!types.isEmpty()) {
-				assertThat("we can search content types:" + searchTerms[i], types.size() > 0);
-				int count = contentTypeFactory.searchCount(searchTerms[i], BaseContentType.ANY);
-				assertThat("Count works as well", types.size() == count);
-			} else {
-				System.out.println("No data found for BaseContentType: " + BaseContentType.getBaseContentType(i));
-			}
-		}
+
 
 	}
 
@@ -316,20 +314,25 @@ public class ContentTypeFactoryImplTest extends ContentTypeBaseTest {
 
 	}
 
-	@Test
-	public void suggestVelocityVar() throws DotDataException {
-		String tryVar = "Content" + System.currentTimeMillis();
-		String newVar = contentTypeFactory.suggestVelocityVar(tryVar);
+    @Test
+    public void suggestVelocityVar() throws DotDataException {
+        String tryVar = "Content" + System.currentTimeMillis();
+        String newVar = contentTypeFactory.suggestVelocityVar(tryVar);
 
-		assertThat("random velocity var works", newVar!=null);
-		assertThat("random velocity var works : " + newVar + " == " + tryVar, newVar.equals(tryVar));
+        assertThat("random velocity var works", newVar != null);
+        assertThat("random velocity var works : " + newVar + " == " + tryVar,
+                newVar.equals(tryVar));
 
-		//Create a test content type
-		final ContentType newsLikeContentType = TestDataUtils.getNewsLikeContentType();
-		tryVar = newsLikeContentType.variable();
-		newVar = contentTypeFactory.suggestVelocityVar(tryVar);
-		assertThat("existing velocity var will not work", !newVar.equals(tryVar));
-	}
+        //Create a test content type
+        final ContentType newsLikeContentType = TestDataUtils.getNewsLikeContentType();
+        tryVar = newsLikeContentType.variable();
+        newVar = contentTypeFactory.suggestVelocityVar(tryVar);
+        assertThat("existing velocity var will not work", !newVar.equalsIgnoreCase(tryVar));
+
+        //Velocity var should be case insensitive
+        newVar = contentTypeFactory.suggestVelocityVar(tryVar.toUpperCase());
+        assertThat("existing velocity var will not work", !newVar.equalsIgnoreCase(tryVar));
+    }
 
 	private void testDeleting() throws Exception{
 		List<ContentType> types = contentTypeFactory.search("velocity_var_name like 'velocityVarNameTesting%'", BaseContentType.ANY, "mod_date", -1, 0);

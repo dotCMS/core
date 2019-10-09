@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -94,6 +95,7 @@ public class CategoryDataGen extends AbstractDataGen<Category> {
         return persist(next());
     }
 
+    @WrapInTransaction
     @Override
     public Category persist(final Category object) {
         final CategoryAPI categoryAPI = APILocator.getCategoryAPI();

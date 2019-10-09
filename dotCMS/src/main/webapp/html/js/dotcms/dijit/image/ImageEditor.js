@@ -137,7 +137,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         
         this.imageEditor = document.createElement('div');
         this.imageEditor.id = 'dotImageDialog';
-        this.imageEditor.innerHTML="<iframe scrolling='no' src='" + url+ "' id='imageToolIframe' frameborder='0' style='width:100%;height:100%;overflow:hidden;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);'></iframe>";
+        this.imageEditor.innerHTML="<iframe scrolling='yes' src='" + url+ "' id='imageToolIframe' frameborder='0' style='width:100%;height:100%;overflow:hidden;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.3), 0 6px 20px 0 rgba(0, 0, 0, 0.19);'></iframe>";
         this.imageEditor.style="position:absolute;top:10px;bottom:20px;left:20px;right:20px;padding:0;margin:0;border:1px silver solid;background:white;z-index: 99999;";
         document.body.insertBefore(this.imageEditor, document.body.firstChild);
 
@@ -478,149 +478,17 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     },
 
     doDownload: function(){
-        var x =this.cleanUrl(this.currentUrl);
+        var url =this.cleanUrl(this.currentUrl);
+        
         var aj =this.iframe.dojo.byId("actionJackson");
-        var url = (this.ajaxUrl.indexOf("?")>-1) ? this.ajaxUrl + "&"  : this.ajaxUrl + "?";
-        url = url + "r=" +_rand()+ "&action=download&fileUrl=" + x;
+ 
+        url = (x.indexOf("?")>-1) ? x + "&"  : x + "?";
+        url = url + "r=" +_rand()+ "&force_download=true";
         console.log(url);
         aj.src=url;
 
     },
 
-
-
-
-    showSaveAsDialog: function(ext){
-        if(ext.indexOf("jpg") >-1){
-            this._removeFilter("Gif");
-            this._addFilter("Jpeg", "/jpeg_q/" + this.compressionValue);
-            this._redrawImage();
-        }
-        else if(ext.indexOf("gif") >-1){
-            this._removeFilter("Jpeg");
-            this._addFilter("Gif", "/gif/2");
-            this._redrawImage();
-        }
-        else if(ext.indexOf("png") >-1){
-            this.iframe.dijit.byId("jpeg").checked=false;
-            this._removeFilter("Jpeg");
-            this._removeFilter("Gif");
-            if(this.filters.length ==0){
-                this._addFilter("Png", "");
-            }
-            this._redrawImage();
-        }
-        else{
-            alert("invalid extension")
-            return;
-        }
-
-
-        var x = this.cleanUrl(this.currentUrl);
-
-        var url = this.currentUrl + "?_imageToolSaveFile=true&r=" +_rand();
-
-
-        dojo.xhrGet({
-            url:url,
-            preventCache:true,
-            load:function(data){
-
-            }
-        });
-
-
-        saveAsDia = this.iframe.dijit.byId("saveAsDialog");
-
-        if(this.saveAsFileName != "0"){
-            var fakename = this.saveAsFileName;
-
-            // strip extension
-            if(fakename.indexOf(".")>-1){
-                fakename=   fakename.substring(0, fakename.lastIndexOf("."));
-            }
-
-            // increment version
-            var re = new RegExp("_[0-9]+");
-            if(fakename.match(re)){
-                var x = fakename.substring(fakename.lastIndexOf("_")+1, fakename.length);
-                this.saveAsIncrement =  (this.saveAsIncrement > parseInt(x) + 1) ? this.saveAsIncrement :parseInt(x) + 1;
-                fakename = fakename.substring(0,fakename.lastIndexOf("_"));
-
-            }
-
-
-            fakename = fakename + "_" + this.saveAsIncrement ;
-            this.iframe.dojo.attr(this.iframe.dojo.byId("saveAsFileExt"), "innerHTML", "." + ext);
-
-            this.iframe.dojo.attr(this.iframe.dojo.byId("saveAsName"), "value", fakename );
-
-        }
-
-
-        dojo.style(this.iframe.dojo.byId("saveAsButtonCluster"), "display", "block");
-        dojo.style(this.iframe.dojo.byId("saveAsProgress"), "display", "none");
-        dojo.style(this.iframe.dojo.byId("saveAsFailBtn"), "display", "none");
-        dojo.style(this.iframe.dojo.byId("saveAsSuccessBtn"), "display", "none");
-        dojo.style(this.iframe.dojo.byId("saveAsFailMsg"), "display", "none");
-        dojo.style(this.iframe.dojo.byId("saveAsSuccessMsg"), "display", "none");
-        saveAsDia.show();
-    },
-
-
-    doSaveAs: function(){
-
-
-        if(!this.iframe.dijit.byId("saveAsName").isValid()){
-
-            alert("filename invalid:\nA-z, 0-0 & _");
-            this.iframe.dojo.byId("saveAsFinalBtn").disabled = false;
-            return;
-        }
-        var fileName=this.iframe.dojo.byId("saveAsName").value + this.iframe.dojo.byId("saveAsFileExt").innerHTML ;
-        this.iframe.dojo.byId("saveAsFinalBtn").disabled = true;
-
-
-        var x =this.cleanUrl(this.currentUrl);
-        var aj =this.iframe.dojo.byId("actionJackson");
-        var url = (this.ajaxUrl.indexOf("?")>-1) ? this.ajaxUrl + "&"  : this.ajaxUrl + "?";
-        url+=  "&fileName=" + fileName;
-        url+=  "&action=saveAs";
-        url+=  "&fileUrl=" + x;
-        url+=  "&inode=" + this.inode;
-
-
-
-
-        dojo.style(this.iframe.dojo.byId("saveAsButtonCluster"), "display", "none");
-        dojo.style(this.iframe.dojo.byId("saveAsProgress"), "display", "block");
-        dojo.xhrGet({
-            url:url,
-            handleAs: "text",
-            preventCache:true,
-            handle: function(data, ioargs){
-                var ctx = window.top._dotImageEditor ;
-                dojo.style(ctx.iframe.dojo.byId("saveAsProgress"), "display", "none");
-
-                ctx.saveAsIncrement++ ;
-                if(data.toLowerCase().indexOf("failure") > -1){
-                    dojo.style(ctx.iframe.dojo.byId("saveAsFailMsg"), "display", "block");
-                    dojo.style(ctx.iframe.dojo.byId("saveAsFailBtn"), "display", "block");
-                    return;
-                }
-                dojo.style(ctx.iframe.dojo.byId("saveAsSuccessBtn"), "display", "block");
-                dojo.style(ctx.iframe.dojo.byId("saveAsSuccessMsg"), "display", "block");
-                return;
-
-
-            }
-
-
-        });
-
-
-
-    },
 
 
     closeSaveAsDia : function(){
@@ -963,9 +831,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     
     toggleCompression: function(){
         var x = this.iframe.dijit.byId("compression").getValue();
-        
+
         this._removeFilter("Jpeg");
         this._removeFilter("WebP");
+        this._removeFilter("Quality");
         
         this.iframe.dijit.byId("compressionValue").set("value", this.compressionValue, false);
         this.iframe.dojo.byId("compressionValueSpan").innerHTML=this.compressionValue + "%";
@@ -991,6 +860,15 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             this.iframe.dijit.byId("compression").set("value", "webp", false);
             
         }
+        else if(x=="auto"){
+            this.iframe.dojo.query("#controlTable .compressTd").forEach(function(node, index, arr){
+                node.style.display="table-cell";
+            });
+            this._addFilter("Quality", "/quality_q/" + this.compressionValue);
+            this.iframe.dijit.byId("compression").set("value", "auto", false);
+            
+        }
+        
         this._redrawImage();
     },
 

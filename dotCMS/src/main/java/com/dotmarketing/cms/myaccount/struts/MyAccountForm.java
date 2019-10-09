@@ -1,11 +1,11 @@
 package com.dotmarketing.cms.myaccount.struts;
 
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotmarketing.util.UtilMethods;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
 
 @Deprecated
 public class MyAccountForm extends ActionForm
@@ -77,7 +77,7 @@ public class MyAccountForm extends ActionForm
 		
 		if (arg1.getParameter("dispatch").equals("saveUserInfo")) {
 			if (firstName.equals(""))
-				errors.add("firstName", new ActionMessage ("error.form.mandatory", "First Name"));
+				errors.add("firstName", new ActionMessage("error.form.mandatory", "First Name"));
 			if (lastName.equals(""))
 				errors.add("lastName", new ActionMessage ("error.form.mandatory", "Last Name"));
 			if (emailAddress.equals(""))

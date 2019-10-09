@@ -3,6 +3,8 @@ package com.dotmarketing.portlets.htmlpages.action;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -23,8 +25,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portlet.ActionRequestImpl;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
 
 /**
  * <a href="ViewQuestionsAction.java.html"><b><i>View Source</i></b></a>

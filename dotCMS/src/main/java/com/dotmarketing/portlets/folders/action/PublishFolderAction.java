@@ -3,6 +3,9 @@ package com.dotmarketing.portlets.folders.action;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.WindowState;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
@@ -11,13 +14,12 @@ import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
 import java.net.URLDecoder;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
 
 /**
  * @author Maria
@@ -51,7 +53,10 @@ public class PublishFolderAction extends DotPortletAction {
 
 		        String referer = URLDecoder.decode(req.getParameter("referer"),"UTF-8");
 
-		        _sendToReferral(req,res,referer);
+		        //Waits for reindex to load page with latest contentlets status (live/working)
+                ThreadUtils.sleep(1000);
+
+		        _sendToReferral(req,res,referer + "&p_p_state="+ WindowState.MAXIMIZED + "&p_p_id=site-browser&p_p_action=1");
 		        return;
 			}
 			setForward(req,"portlet.ext.folders.publish_folder");

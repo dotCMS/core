@@ -1,24 +1,29 @@
 package com.dotcms.rest.api.v2.user;
 
-import com.dotcms.rest.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.dotcms.UnitTestBase;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.RestUtilTest;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.util.PaginationUtil;
 import com.liferay.portal.model.User;
-import org.junit.Assert;
-import org.junit.Test;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 /**
  * test {@link UserResource}
  */
-public class UserResourceTest {
+public class UserResourceTest extends UnitTestBase {
 
     @Test
     public void testLoginAsData(){
@@ -29,7 +34,7 @@ public class UserResourceTest {
         final User user = new User();
         when(initDataObject.getUser()).thenReturn(user);
         // final InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
-        when(webResource.init(null, request, httpServletResponse, true, null)).thenReturn(initDataObject);
+        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
 
         String filter = "filter";
         int page = 3;

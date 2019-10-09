@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
@@ -110,6 +111,8 @@ public class WorkflowResourceLicenseIntegrationTest {
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
         roleAPI = APILocator.getRoleAPI();
         ContentHelper contentHelper = ContentHelper.getInstance();
+        final SystemActionApiFireCommandFactory systemActionApiFireCommandFactory =
+                SystemActionApiFireCommandFactory.getInstance();
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         WorkflowImportExportUtil workflowImportExportUtil = WorkflowImportExportUtil.getInstance();
 
@@ -122,7 +125,7 @@ public class WorkflowResourceLicenseIntegrationTest {
                 workflowImportExportUtil);
         ResponseUtil responseUtil = ResponseUtil.INSTANCE;
 
-        userAdmin = APILocator.systemUser();
+        userAdmin = TestUserUtils.getAdminUser();
         billIntranet = TestUserUtils.getBillIntranetUser();
         publisher = TestUserUtils.getOrCreatePublisherRole();
 
@@ -144,13 +147,13 @@ public class WorkflowResourceLicenseIntegrationTest {
         licenseWorkflowResource = new WorkflowResource(licensedWorkflowHelper, contentHelper,
                 licensedWorkflowAPI,
                 contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil, new MultiPartUtils(),
-                webResourceThatReturnsAdminUser);
+                webResourceThatReturnsAdminUser, systemActionApiFireCommandFactory);
 
         nonLicenseWorkflowResource = new WorkflowResource(nonLicensedWorkflowHelper, contentHelper,
                 nonLicensedWorkflowAPI,
                 contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil,
                 new MultiPartUtils(),
-                webResourceThatReturnsARandomUser); //Returns Bill
+                webResourceThatReturnsARandomUser, systemActionApiFireCommandFactory); //Returns Bill
     }
 
 
@@ -591,7 +594,8 @@ public class WorkflowResourceLicenseIntegrationTest {
     public void Find_Available_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final ContentType contentType = APILocator.getContentTypeAPI(userAdmin).find("webPageContent");
-        final Contentlet contentlet = new ContentletDataGen(contentType.id()).setProperty("title", "content1").setProperty("body", "content1").nextPersisted();
+        Contentlet contentlet = new ContentletDataGen(contentType.id()).setProperty("title", "content1").setProperty("body", "content1").nextPersisted();
+        contentlet = ContentletDataGen.publish(contentlet);
         Logger.error(this, "Contentlet: " + contentlet);
         final Response response = nonLicenseWorkflowResource.findAvailableActions(request,  new EmptyHttpResponse(), contentlet.getInode(), null);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
@@ -606,8 +610,8 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_Available_Default_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final ContentType webPageContentType = APILocator.getContentTypeAPI(userAdmin).find("webPageContent");
-        final Response response = nonLicenseWorkflowResource.findAvailableDefaultActionsByContentType(request,  new EmptyHttpResponse(), webPageContentType.id());
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();// Uses the System Workflow by default
+        final Response response = nonLicenseWorkflowResource.findAvailableDefaultActionsByContentType(request,  new EmptyHttpResponse(), contentType.id());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
         List<WorkflowDefaultActionView> actions = List.class.cast(ev.getEntity());
@@ -644,8 +648,8 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_Initial_Available_Default_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final ContentType webPageContentType = APILocator.getContentTypeAPI(userAdmin).find("webPageContent");
-        final Response response = nonLicenseWorkflowResource.findInitialAvailableActionsByContentType(request,  new EmptyHttpResponse(), webPageContentType.id());
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();// Uses the System Workflow by default
+        final Response response = nonLicenseWorkflowResource.findInitialAvailableActionsByContentType(request,  new EmptyHttpResponse(), contentType.id());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
         List<WorkflowDefaultActionView> actions = List.class.cast(ev.getEntity());

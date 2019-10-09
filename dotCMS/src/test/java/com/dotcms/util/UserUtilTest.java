@@ -1,14 +1,16 @@
 package com.dotcms.util;
 
-
 import com.liferay.portal.model.User;
-
 import java.util.Date;
 
 public class UserUtilTest {
 
     public static User createUser(){
         User user = new User();
+        return set(user);
+    }
+
+    public static User set(User user) {
         user.setActive( true );
         user.setCompanyId("company");
         user.setBirthday( new Date() );
@@ -30,4 +32,5 @@ public class UserUtilTest {
 
         return user;
     }
+
 }

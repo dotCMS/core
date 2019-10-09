@@ -26,9 +26,11 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -120,6 +122,72 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         Assert.assertEquals(0, inodesSet.size());
     }
 
+    
+    
+    /**
+     * When calling the findContentlets(List<String> inodes), it should return the 
+     * contentlets in the same order as they were asked for, meaning, if the list
+     * of contentlets was sent in ordered by mod_date, then they should come out ordered
+     * by mod_date.  If you order them by random, then you get them out in that same 
+     * random order
+     * @throws Exception
+     */
+    @Test
+    public void findContentletsReturnsInExpectedOrder() throws Exception {
+      String name = "contentType" + System.currentTimeMillis();
+      ContentType type = new ContentTypeDataGen().velocityVarName(name).name(name).nextPersisted();
+      for(int i=0;i<10;i++) {
+        new ContentletDataGen(type.inode()).nextPersisted();
+      }
+        DotConnect dc=new DotConnect();
+        dc.setSQL("select inode from contentlet order by mod_date desc");
+        dc.setMaxRows(10);
+        
+        List<String> inodesToOrderBy=new ArrayList<String>();
+        for(Map<String,Object> r : dc.loadObjectResults()) {
+          inodesToOrderBy.add((String)r.get("inode"));
+        }
+
+        // ten inodes 
+        assertTrue("We've added 10 contentlets", inodesToOrderBy.size()==10);
+        
+        //load the cache with the 9th one and the 7th one
+        instance.find(inodesToOrderBy.get(9));
+        instance.find(inodesToOrderBy.get(7));
+        
+        
+        List<Contentlet> contentlets = instance.findContentlets(inodesToOrderBy);
+        
+        // this list should mirror the db query above
+        Assert.assertEquals("our inodes and contentlet lists match",inodesToOrderBy.size(), contentlets.size());
+        
+        // make sure the contentlets are in the same order
+        for(int i=0;i<inodesToOrderBy.size();i++) {
+          assertEquals(inodesToOrderBy.get(i),contentlets.get(i).getInode());
+        }
+        
+        
+        //randomize the order sent in
+        Collections.shuffle(inodesToOrderBy); 
+        contentlets = instance.findContentlets(inodesToOrderBy);
+        
+        // this list should mirror the shuffle above
+        Assert.assertEquals("our inodes and contentlet lists match",inodesToOrderBy.size(), contentlets.size());
+        
+        // make sure the contentlets are in the same order
+        for(int i=0;i<inodesToOrderBy.size();i++) {
+          assertEquals("content is in the right order",inodesToOrderBy.get(i),contentlets.get(i).getInode());
+        }
+        
+        
+        
+    }
+    
+    
+    
+    
+    
+    
     @Test
     public void saveContentlets() throws Exception {
         try {
@@ -152,9 +220,9 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     @Test
     public void testScore () throws DotDataException, DotSecurityException {
-
+        String blogId="Blog" + System.currentTimeMillis();
         final ContentType blogContentType = TestDataUtils
-                .getBlogLikeContentType("Blog" + System.currentTimeMillis());
+                .getBlogLikeContentType(blogId);
         final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         new ContentletDataGen(blogContentType.id())
                 .languageId(languageId)
@@ -163,10 +231,18 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 .setProperty("urlTitle", "title")
                 .setProperty("body", "During the 1980s and 1990s Southwest Air (LUV) ")
                 .setProperty("sysPublishDate", new Date()).nextPersisted();
+        
+        new ContentletDataGen(blogContentType.id())
+        .languageId(languageId)
+        .host(site)
+        .setProperty("title", "Mulish On America? Get On Board With Southwest Air")
+        .setProperty("urlTitle", "title")
+        .setProperty("body", "During the 1980s and 1990s Southwest Air (LUV) ")
+        .setProperty("sysPublishDate", new Date()).nextPersisted();
 
         //+++++++++++++++++++++++++++
         //Executing a simple query filtering by score
-        SearchHits searchHits = instance.indexSearch("+contenttype:blog", 20, 0, "score");
+        SearchHits searchHits = instance.indexSearch("+contenttype:"+blogId, 20, 0, "score");
 
 
         //Starting some validations
@@ -183,7 +259,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         //+++++++++++++++++++++++++++
         //Executing a simple query filtering by score
-        searchHits = instance.indexSearch("+contenttype:blog blog.title:bullish*", 20, 0, "score");
+        searchHits = instance.indexSearch("+contenttype:"+blogId + " " + blogId + ".title:bullish*", 20, 0, "score");
 
         //Starting some validations
         assertNotNull(searchHits.getTotalHits());

@@ -275,13 +275,13 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
         	archived.value="false"
         	this.saveAddEdit();
     	},
-	
+
     	archiveScheme : function() {
         	var archived = dojo.byId("schemeArchived");
         	archived.value="true"
         	this.saveAddEdit();
     	},
-	
+
 	copyScheme : function(schemeId, name) {
 
 		var optionalName = prompt ("<%=LanguageUtil.get(pageContext, "Workflow-Name")%>", name);
@@ -845,52 +845,84 @@ dojo.declare("dotcms.dijit.workflows.ActionAdmin", null, {
 		}
 		return ;
 	},
+	confirmDeleteAction : function(stepId, actionId, ele) {
 
-	deleteActionForStep : function (ele){
-
-		var stepId = this.findStepId(ele);
-		var actionId = this.findActionId(ele);
-
-
-
-		let matches = document.querySelectorAll('.x' + actionId );
-
+        let matches = document.querySelectorAll('.x' + actionId );
 		// we only confirm if this is the last instance of the action
-
-
 		var deleteUrl = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=deleteActionForStep&actionId=" + actionId + "&stepId=" + stepId ;
-		if(matches.length ==1){
-			if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Action")%>")){
+		if(matches.length == 1) {
+			if(!confirm("<%=LanguageUtil.get(pageContext, "Confirm-Delete-Action")%>")) {
 				return;
-			}
-			else{
+			} else {
 				deleteUrl = "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionAjax?cmd=delete&actionId=" + actionId + "&stepId=" + stepId ;
 			}
 		}
+
 		var xhrArgs = {
-			 url: deleteUrl ,
+			url: deleteUrl ,
 			handle : function(dataOrError, ioArgs) {
 				if (dojo.isString(dataOrError)) {
 
-
 					if (dataOrError.indexOf("FAILURE") == 0) {
 						showDotCMSSystemMessage(dataOrError, true);
-
-
 					} else {
-						var die  =actionAdmin.findActionDiv(ele);
-
+						var die = actionAdmin.findActionDiv(ele);
 						die.parentNode.removeChild(die);
-
 						actionAdmin.deleteSuccess(dataOrError);
 					}
 				} else {
 					this.saveError("<%=LanguageUtil.get(pageContext, "unable-to-save-scheme")%>");
-
 				}
 			}
 		};
+
 		dojo.xhrPut(xhrArgs);
+	},
+
+	deleteActionForStep : function (ele, stepIndex){
+
+		var stepId   = this.findStepId(ele);
+		var actionId = this.findActionId(ele);
+
+		if (0 == stepIndex) { // if trying to remove an action on the first step, check if the method is a default one
+
+			var xhrArgs = {
+
+				url: "/api/v1/workflow/system/actions/" + actionId,
+				handle : function(dataOrError, ioArgs) {
+
+					console.log("dataOrError", dataOrError);
+					if (dojo.isString(dataOrError)) {
+
+						var response = JSON.parse(dataOrError);
+						if (response.errors.length > 0) {
+							showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>", true);
+						} else {
+							if (response.entity.length > 0) {
+
+								var owners = "";
+								for(var i=0; i < response.entity.length; i++) {
+
+									owners += response.entity[i].owner.name + " ";
+								}
+
+								if(!confirm(`<%=LanguageUtil.get(pageContext, "Confirm-Delete-Default-Action", "${owners}")%>`)) {
+									return;
+								}
+							}
+							actionAdmin.confirmDeleteAction(stepId, actionId, ele);
+						}
+					} else {
+						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "unable-to-save-action")%>", true);
+					}
+				}
+			};
+			dojo.xhrGet(xhrArgs);
+
+		} else {
+
+			actionAdmin.confirmDeleteAction(stepId, actionId, ele);
+		}
 
 		return;
 	},

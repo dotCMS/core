@@ -520,21 +520,22 @@
 
 
     <%
+       String maxFileLength="-1";
        String accept="*/*"; 
        List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
        for(FieldVariable fv : acceptTypes){
            if("accept".equalsIgnoreCase(fv.getKey())){
                accept = fv.getValue();
-               break;
+
+           }
+           if("maxFileLength".equalsIgnoreCase(fv.getKey())){
+             maxFileLength=fv.getValue();
+             
            }
        }
     
     %>
     
-    
-
-
-
 
     <%-- File uploader --%>
     <div
@@ -551,6 +552,7 @@
             idShorty="<%=APILocator.getShortyAPI().shortify(contentlet.getIdentifier())%>"
             onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')"
             dojoType="dotcms.dijit.form.FileAjaxUploader" 
+            maxFileLength="<%= maxFileLength%>" 
             licenseLevel="<%=LicenseUtil.getLevel() %>" 
             accept="<%=accept %>" >
     </div>

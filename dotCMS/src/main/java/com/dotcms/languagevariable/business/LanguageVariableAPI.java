@@ -48,6 +48,8 @@ public interface LanguageVariableAPI {
     public String get(final String key, final long languageId, final User user, final boolean respectFrontendRoles);
 
 
+    public String get(final String key, final long languageId, final User user, final boolean live, final boolean respectFrontendRoles);
+
     /**
      * Returns the Language Variable value associated to the specified key and language ID. This
      * method has a series of fallback mechanisms:
@@ -95,7 +97,17 @@ public interface LanguageVariableAPI {
      */
     public default String getLanguageVariable(final String key, final long languageId, final User user) {
 
-        return this.get(key, languageId, user, Boolean.FALSE);
+        return this.getLanguageVariable(key, languageId, user, true, false);
+    }
+
+    default String getLanguageVariable(
+            final String key,
+            final long languageId,
+            final User user,
+            final boolean live,
+            final boolean respectFrontendRoles) {
+
+        return this.get(key, languageId, user, live, respectFrontendRoles);
     }
 
     /**

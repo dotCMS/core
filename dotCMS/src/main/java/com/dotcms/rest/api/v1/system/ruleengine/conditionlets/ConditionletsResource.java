@@ -2,12 +2,6 @@ package com.dotcms.rest.api.v1.system.ruleengine.conditionlets;
 
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -16,13 +10,18 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 @Path("/v1/system/ruleengine")
 public class ConditionletsResource {
@@ -150,6 +149,11 @@ public class ConditionletsResource {
     }
 
     private User getUser(@Context HttpServletRequest request, final @Context HttpServletResponse response) {
-        return webResource.init(request, response, true).getUser();
+         return new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init().getUser();
+
     }
 }

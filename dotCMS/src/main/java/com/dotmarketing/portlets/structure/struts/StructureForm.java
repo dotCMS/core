@@ -1,5 +1,9 @@
 package com.dotmarketing.portlets.structure.struts;
 
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -7,10 +11,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.struts.action.ActionErrors;
-import org.apache.struts.action.ActionMapping;
-import org.apache.struts.action.ActionMessage;
-import org.apache.struts.validator.ValidatorForm;
 
 public class StructureForm extends ValidatorForm {
 	
@@ -87,7 +87,7 @@ public class StructureForm extends ValidatorForm {
         ActionErrors errors =  super.validate(arg0,arg1);
         if (errors == null) errors = new ActionErrors ();
         if (isReviewContent() && ! InodeUtils.isSet(reviewerRole)) {
-            errors.add("reviewerRole", new ActionMessage ("structure.reviewerRole.required"));
+            errors.add("reviewerRole", new ActionMessage("structure.reviewerRole.required"));
         }
         if(!UtilMethods.isSet(host) && (!UtilMethods.isSet(folder) || folder.equals("SYSTEM_FOLDER"))){
        	   errors.add("host", new ActionMessage ("Host-or-folder-is-required"));

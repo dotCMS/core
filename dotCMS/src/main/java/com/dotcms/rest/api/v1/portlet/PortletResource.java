@@ -59,7 +59,14 @@ public class PortletResource implements Serializable {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
   public final Response createContentPortlet(@Context final HttpServletRequest request, final CustomPortletForm formData) {
-    final InitDataObject init = webResource.init(null, true, request, true, "roles");
+
+    final InitDataObject initData = new WebResource.InitBuilder(webResource)
+            .requiredBackendUser(true)
+            .requiredFrontendUser(false)
+            .requestAndResponse(request, null)
+            .rejectWhenNoUser(true)
+            .requiredPortlet("roles")
+            .init();
 
     Response response = null;
 
@@ -74,7 +81,7 @@ public class PortletResource implements Serializable {
       initValues.put("contentTypes", formData.contentTypes);
 
       final Portlet newPortlet = APILocator.getPortletAPI()
-          .savePortlet(new DotPortlet(formData.portletId, contentPortlet.getPortletClass(), initValues), init.getUser());
+          .savePortlet(new DotPortlet(formData.portletId, contentPortlet.getPortletClass(), initValues), initData.getUser());
 
       return Response.ok(new ResponseEntityView(map("portlet", newPortlet.getPortletId()))).build();
 
@@ -92,7 +99,14 @@ public class PortletResource implements Serializable {
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
   public final Response deleteCustomPortlet(@Context final HttpServletRequest request, @PathParam("portletId") final String portletId) {
-    final InitDataObject init = webResource.init(null, true, request, true, "roles");
+
+    final InitDataObject initData = new WebResource.InitBuilder(webResource)
+            .requiredBackendUser(true)
+            .requiredFrontendUser(false)
+            .requestAndResponse(request, null)
+            .rejectWhenNoUser(true)
+            .requiredPortlet("roles")
+            .init();
 
     try {
 

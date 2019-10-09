@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.json.JSONIgnore;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -75,15 +76,19 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         title = href = "";
         order = 0;
 
-        try {
-            sysuser = APILocator.getUserAPI()
-                .getSystemUser();
-        } catch (DotDataException e) {
-            Logger.warn(this, e.getMessage(), e);
-        }
+    
+        sysuser = APILocator.systemUser();
 
     }
 
+    @JSONIgnore
+    public NavResult getUnhydratedNavResult() {
+      return this;
+    }
+    
+    
+    
+    
 
 
     public NavResult(String parent, String host, Long languageId) {
@@ -189,7 +194,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                     ff.setTitle(nn.getTitle());
                     ff.setHref(nn.getHref());
                     ff.setOrder(nn.getOrder());
-                    ff.setType(nn.getType());
+                    ff.setType("folder");
                     ff.setPermissionId(nn.getPermissionId());
                     ff.setShowOnMenu(nn.isShowOnMenu());
                     list.add(ff);

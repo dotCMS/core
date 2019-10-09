@@ -7,6 +7,8 @@ import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
@@ -39,8 +41,6 @@ import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionDialogMessage;
 import com.liferay.util.servlet.SessionMessages;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -81,12 +81,12 @@ public class EditTemplateAction extends DotPortletAction implements
 
 	@WrapInTransaction
 	public void processAction(ActionMapping mapping, ActionForm form,
-			PortletConfig config, ActionRequest req, ActionResponse res)
+							  PortletConfig config, ActionRequest req, ActionResponse res)
 	throws Exception {
 
 		String cmd = req.getParameter(Constants.CMD);
 		String referer = req.getParameter("referer");
-		
+
 
 		//wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
@@ -107,7 +107,7 @@ public class EditTemplateAction extends DotPortletAction implements
 		HibernateUtil.startTransaction();
 
 		User user = _getUser(req);
-		
+
 		// Old template used to compare against edited version
 		Template oldTemplate = new Template();
 		try {

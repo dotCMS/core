@@ -3,12 +3,12 @@ package com.dotmarketing.portlets.workflows.action;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.util.Logger;
 import javax.servlet.jsp.PageContext;
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
 
 /**
  * 
@@ -19,12 +19,12 @@ import org.apache.struts.action.ActionMapping;
 public class ViewWorkflowTasksAction extends DotPortletAction {
 
 	/*
-	 * @see com.liferay.portal.struts.PortletAction#render(org.apache.struts.action.ActionMapping,
-	 *      org.apache.struts.action.ActionForm, com.dotcms.repackage.javax.portlet.PortletConfig,
+	 * @see com.liferay.portal.struts.PortletAction#render(com.dotcms.repackage.org.apache.struts.action.ActionMapping,
+	 *      com.dotcms.repackage.org.apache.struts.action.ActionForm, com.dotcms.repackage.javax.portlet.PortletConfig,
 	 *      com.dotcms.repackage.javax.portlet.RenderRequest, com.dotcms.repackage.javax.portlet.RenderResponse)
 	 */
 	public ActionForward render(ActionMapping mapping, ActionForm form, PortletConfig config, RenderRequest req,
-			RenderResponse res) throws Exception {
+								RenderResponse res) throws Exception {
 
 		Logger.debug(this, "Running ViewWorkflowTasksAction!!!!=" + req.getWindowState());
 

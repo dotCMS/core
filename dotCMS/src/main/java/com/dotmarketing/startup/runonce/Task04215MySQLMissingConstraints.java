@@ -47,8 +47,7 @@ public class Task04215MySQLMissingConstraints extends AbstractJDBCStartupTask {
     public String getMySQLScript() {
         String sql = "";
         final String UPDATE_MISSING_WORKFLOW_ASSIGNMENTS = "UPDATE workflow_task SET assigned_to = "
-                + " (SELECT id FROM cms_role WHERE role_name = '" + Config.getStringProperty("CMS_ADMINISTRATOR_ROLE",
-            Role.DEFAULT_CMS_ADMINISTRATOR_ROLE) + "') "
+                + " (SELECT id FROM cms_role WHERE role_name = '" + Role.CMS_ADMINISTRATOR_ROLE + "') "
                 + " WHERE NOT EXISTS (SELECT 1 FROM cms_role rl WHERE rl.id = assigned_to); ";
 
         final String FKWORKFLOWASSIGN = "ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);";

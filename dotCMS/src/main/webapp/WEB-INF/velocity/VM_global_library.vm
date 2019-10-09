@@ -112,12 +112,13 @@
         #set ($folder = $folderAPI.findCurrentFolder($startFromPath, $host))
         #set ($menuId = $folder.inode)
 
-        <a href="#" onclick="openReorderDialog()" class="btn btn-primary btn-xs normaltip" data-original-title="Reorder Menu">
+        <a href="#" onclick="openReorderDialog(event)" class="btn btn-primary btn-xs normaltip" data-original-title="Reorder Menu">
             <i class="fa fa-arrow-up"></i>
             <i class="fa fa-arrow-down"></i>
         </a>
         <script>
-            function openReorderDialog() {
+            function openReorderDialog(event) {
+                event.preventDefault();
                 var reorderUrl = "${directorURL}&startLevel=1&depth=2&pagePath=${VTLSERVLET_URI}&hostId=${host.identifier}";
                 var customEvent = window.top.document.createEvent("CustomEvent");
                 customEvent.initCustomEvent("ng-event", false, false,  {

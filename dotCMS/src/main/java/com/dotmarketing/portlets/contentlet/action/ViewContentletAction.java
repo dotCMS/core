@@ -1,26 +1,15 @@
 package com.dotmarketing.portlets.contentlet.action;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionForward;
-import org.apache.struts.action.ActionMapping;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionForward;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,13 +23,20 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.RenderRequestImpl;
-
 import io.vavr.control.Try;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.PageContext;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Struts action that retrieves the required information to display the "Content Search" portlet.
@@ -103,7 +99,7 @@ public class ViewContentletAction extends DotPortletAction {
    */
   @Override
   public ActionForward render(final ActionMapping mapping, final ActionForm form, final PortletConfig config, final RenderRequest req,
-      final RenderResponse res) throws Exception {
+                              final RenderResponse res) throws Exception {
 
     Logger.debug(ViewContentletAction.class, "Running ViewContentletsAction!!!!");
 
@@ -140,34 +136,36 @@ public class ViewContentletAction extends DotPortletAction {
 
   List<ContentType> resolveContentTypes(HttpServletRequest request) throws DotDataException, DotSecurityException {
     Map<String, String> initParams = (Map<String, String>) request.getAttribute("initParams");
-
+    String contentTypesRaw = initParams.getOrDefault("contentTypes", request.getParameter("structure_id"));
     ContentTypeAPI contentTypeApi = APILocator.getContentTypeAPI(PortalUtil.getUser(request));
     List<BaseContentType> baseTypes = resolveBaseTypes(request);
-
+   
+    final List<ContentType> contentTypesList = new ArrayList<>();
     if (baseTypes.size() > 0) {
-      final List<ContentType> contentTypesList = new ArrayList<>();
       for (BaseContentType type : baseTypes) {
         contentTypesList.addAll(contentTypeApi.findByType(type));
       }
-      request.setAttribute("contentTypesJs", buildJsArray(contentTypesList));
-      return contentTypesList;
     }
-
-    String contentTypesRaw = initParams.getOrDefault("contentTypes", request.getParameter("structure_id"));
-    if (UtilMethods.isSet(contentTypesRaw)) {
+    else if (UtilMethods.isSet(contentTypesRaw)) {
       String[] contentTypes = contentTypesRaw.trim().split(",");
-      List<ContentType> contentTypeList = new ArrayList<>();
+
       for (String type : contentTypes) {
           ContentType contentType = Try.of(() -> APILocator.getContentTypeAPI(PortalUtil.getUser(request)).find(type.trim())).getOrNull();
           if (contentType != null) {
-            contentTypeList.add(contentType);
+              contentTypesList.add(contentType);
           }
       }
-      request.setAttribute("contentTypesJs", buildJsArray(contentTypeList));
-      return contentTypeList;
-    }
 
-    return contentTypeApi.findAll();
+    }else {
+        contentTypesList.addAll(contentTypeApi.findAll());
+    }
+    
+    contentTypesList.removeIf(t->t.variable().equalsIgnoreCase(Host.HOST_VELOCITY_VAR_NAME));
+    contentTypesList.removeIf(t->t.variable().equalsIgnoreCase("forms"));
+    
+    request.setAttribute("contentTypesJs", buildJsArray(contentTypesList));
+    return contentTypesList;
+
 
   }
 

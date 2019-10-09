@@ -6,6 +6,7 @@ import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
@@ -164,13 +165,17 @@ public class ActionResource {
     }
 
     private User getUser(final HttpServletRequest request, final HttpServletResponse response) {
-        return webResource.init(request, response, true).getUser();
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+                return initData.getUser();
     }
 
     @VisibleForTesting
     private Host getHost(String siteId, User user) {
-
-
     	Host host  = new Host();
     	host.setIdentifier(siteId);
     	return host;

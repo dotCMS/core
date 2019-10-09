@@ -25,7 +25,10 @@ public abstract class FormContentType extends ContentType implements Expireable{
 	public static final String FORM_TITLE_FIELD_VAR = "formTitle";
 	public static final String FORM_EMAIL_FIELD_VAR = "formEmail";
 	public static final String FORM_RETURN_PAGE_FIELD_VAR = "formReturnPage";
+  public static final String FORM_SUCCESS_CALLBACK = "formSuccessCallback";
 
+  
+  
 	@Override
 	public  BaseContentType baseType() {
 		return  BaseContentType.FORM;
@@ -39,44 +42,35 @@ public abstract class FormContentType extends ContentType implements Expireable{
 	
 	public  List<Field> requiredFields(){
 		
-		
-		Field titleField = ImmutableConstantField.builder()
-				.name("Form Title")
-				.variable(FORM_TITLE_FIELD_VAR)
-				.indexed(true)
-				.sortOrder(1)
-				.fixed(true)
-				.searchable(true)
-				.build();
-		
+
 		Field emailField = ImmutableConstantField.builder()
 				.name("Form Email")
 				.variable(FORM_EMAIL_FIELD_VAR)
 				.sortOrder(2)
-				.fixed(true)
-				.readOnly(true)
+				.fixed(false)
+				.readOnly(false)
 				.searchable(true)
 				.build();
-		
-		
+
 		Field returnField = ImmutableConstantField.builder()
-				.name("Form Return Page")
-				.variable(FORM_RETURN_PAGE_FIELD_VAR)
+				.name("Success Callback")
+				.variable(FORM_SUCCESS_CALLBACK)
 				.sortOrder(3)
-				.fixed(true)
-				.readOnly(true)
+				.fixed(false)
+				.readOnly(false)
 				.searchable(true)
+				.values("// contentlet is an object\n// e.g. contentlet.inode, contentlet.firstName\n\nwindow.location='/thank-you?id=' + contentlet.identifier")
 				.build();
 		
 		Field usageField = ImmutableHostFolderField.builder()
 				.name("Form Host")
 				.variable(FORM_HOST_FIELD_VAR)
 				.sortOrder(4)
-				.fixed(true)
+				.fixed(false)
 				.searchable(true)
 				.build();
 		
 
-		return ImmutableList.of(titleField,emailField,returnField,usageField);
+		return ImmutableList.of(emailField,returnField,usageField);
 	}
 }

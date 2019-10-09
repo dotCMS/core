@@ -57,7 +57,15 @@ public class ClusterResource {
     public Response getNodesInfo (@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam ("params") String params )
 			throws DotDataException, JSONException {
 
-        InitDataObject initData = webResource.init( params, request, response, false, PortletID.CONFIGURATION.toString());
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.requestAndResponse(request, response)
+				.params(params)
+				.rejectWhenNoUser(true)
+				.requiredPortlet(PortletID.CONFIGURATION.toString())
+				.init();
+
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         
         ServerAPI serverAPI = APILocator.getServerAPI();

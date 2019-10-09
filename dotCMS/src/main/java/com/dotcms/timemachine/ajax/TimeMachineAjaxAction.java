@@ -1,33 +1,15 @@
 package com.dotcms.timemachine.ajax;
 
 import com.dotcms.business.CloseDBIfOpened;
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.WebResource;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -39,19 +21,36 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class TimeMachineAjaxAction extends IndexAjaxAction {
 
     private final NotificationAPI notificationAPI;
 
     public TimeMachineAjaxAction() {
-        this(APILocator.getNotificationAPI());
+        this(APILocator.getNotificationAPI(), new WebResource());
     }
 
     @VisibleForTesting
-    public TimeMachineAjaxAction(final NotificationAPI notificationAPI) {
+    public TimeMachineAjaxAction(final NotificationAPI notificationAPI,
+            final WebResource webResource) {
+        super(webResource);
         this.notificationAPI = notificationAPI;
     }
 

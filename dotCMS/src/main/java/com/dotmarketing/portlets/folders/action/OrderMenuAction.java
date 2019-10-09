@@ -6,6 +6,8 @@ import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.util.I18NMessage;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
@@ -45,9 +47,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
-
-import org.apache.struts.action.ActionForm;
-import org.apache.struts.action.ActionMapping;
 
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;

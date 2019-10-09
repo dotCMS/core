@@ -4,13 +4,18 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.PageMode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vavr.control.Try;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -271,13 +276,22 @@ public class StructuresWebAPI implements ViewTool {
 	 * @param user
 	 * @return
 	 */
-	public String getLayoutAsJson(final Structure structure, final User user) {
+	public String getLayoutAsJson(final String inodeOrVar) {
 		try {
-			final StructureTransformer transformer = new StructureTransformer(structure);
-			final ContentType contentType = transformer.from();
+		  ContentType contentType = APILocator.getContentTypeAPI(user).find(inodeOrVar);
+			final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+
+
+
+			final boolean live = (PageMode.get(Try.of(() -> HttpServletRequestThreadLocal.INSTANCE.getRequest()).getOrNull())).showLive;
+
+			final ContentTypeInternationalization contentTypeInternationalization = language != null ?
+					new ContentTypeInternationalization(language.getId(), live, user) : null;
 
 			final FieldLayout layout = APILocator.getContentTypeFieldLayoutAPI().getLayout(contentType.id(), user);
-			return MAPPER.writeValueAsString(layout.getRows());
+			layout.setContentTypeInternationalization(contentTypeInternationalization);
+
+			return MAPPER.writeValueAsString(layout);
 		} catch (DotDataException | DotSecurityException | JsonProcessingException e) {
 			throw new DotRuntimeException(e);
 		}

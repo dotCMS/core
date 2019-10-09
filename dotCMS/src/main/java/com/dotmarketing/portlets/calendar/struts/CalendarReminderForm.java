@@ -1,8 +1,9 @@
 package com.dotmarketing.portlets.calendar.struts;
 
-import org.apache.struts.action.ActionForm;
 
-public class CalendarReminderForm extends ActionForm{
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+
+public class CalendarReminderForm extends ActionForm {
 	
 	private String firstName;
 	private String lastName;

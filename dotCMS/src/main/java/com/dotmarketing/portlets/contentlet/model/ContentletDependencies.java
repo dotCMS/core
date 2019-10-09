@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -19,6 +20,7 @@ public class ContentletDependencies {
     private final boolean                 generateSystemEvent;
     private final IndexPolicy             indexPolicy;
     private final IndexPolicy             indexPolicyDependencies;
+    private final List<Permission>        permissions;
 
     private ContentletDependencies(final ContentletDependencies.Builder builder) {
 
@@ -32,6 +34,7 @@ public class ContentletDependencies {
         this.generateSystemEvent         = builder.generateSystemEvent;
         this.indexPolicy                 = builder.indexPolicy;
         this.indexPolicyDependencies     = builder.indexPolicyDependencies;
+        this.permissions                 = builder.permissions;
 
     }
 
@@ -75,6 +78,10 @@ public class ContentletDependencies {
         return indexPolicyDependencies;
     }
 
+    public List<Permission> getPermissions() {
+        return permissions;
+    }
+
     public static final class Builder {
 
         private User modUser;
@@ -87,9 +94,15 @@ public class ContentletDependencies {
         private boolean generateSystemEvent;
         private IndexPolicy  indexPolicy = null;
         private IndexPolicy  indexPolicyDependencies = null;
+        private List<Permission>        permissions  = null;
 
         public ContentletDependencies build() {
             return new ContentletDependencies(this);
+        }
+
+        public ContentletDependencies.Builder permissions(final List<Permission> permissions) {
+            this.permissions = permissions;
+            return this;
         }
 
         public ContentletDependencies.Builder modUser(final User user) {

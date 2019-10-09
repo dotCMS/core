@@ -30,5 +30,14 @@ public class UUIDGenerator implements IdentifierGenerator {
    public static String shorty(){
      return APILocator.getShortyAPI().shortify(UUID.randomUUID().toString());
    }
+   
+   
+   public static String ulid() {
+     return new ULID().nextULID();
+     
+   }
+   
+   
+   
 	 
 }

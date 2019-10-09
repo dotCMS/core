@@ -1,12 +1,13 @@
 package com.dotmarketing.portlets.links.factories;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.factories.PublishFactory;
@@ -62,132 +63,105 @@ public class LinkFactoryTest extends IntegrationTestBase {
     @Test
     public void testGetLinkChildrenByCondition() throws Exception {
 
-        Container container     = null;
-        Contentlet contentAsset = null;
-        Folder ftest            = null;
-        Link link               = null;
-        Template template       = null;
-
-        Host host;
-        Identifier internalLinkIdentifier;
-        long id;
         String containerName, linkStr, page0Str, userId;
-        StringBuffer myURL;
 
-        host = hostAPI.findDefaultHost(systemUser, false);
-        id = System.currentTimeMillis();
+        Host host = hostAPI.findDefaultHost(systemUser, false);
+        long id = System.currentTimeMillis();
         linkStr = "link" + id;
         userId = systemUser.getUserId();
 
-        try {
-            //Create new folder
-            ftest = folderAPI.createFolders("/folderTest" + id, host, systemUser, false);
-            ftest.setOwner(userId);
-            folderAPI.save(ftest, systemUser, false);
+        final ContentType widgetContentType = TestDataUtils.getWidgetLikeContentType();
 
-            /**
-             * Create new container
-             */
-            container = new Container();
-            containerName = "container" + id;
+        //Create new folder
+        Folder ftest = folderAPI.createFolders("/folderTest" + id, host, systemUser, false);
+        ftest.setOwner(userId);
+        folderAPI.save(ftest, systemUser, false);
 
-            container.setFriendlyName(containerName);
-            container.setTitle(containerName);
-            container.setOwner(userId);
-            container.setMaxContentlets(5);
-            container.setPreLoop("preloop code");
-            container.setPostLoop("postloop code");
+        /**
+         * Create new container
+         */
+        Container container = new Container();
+        containerName = "container" + id;
 
-            final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
-            final ContainerStructure cs = new ContainerStructure();
-            cs.setStructureId(
-                    CacheLocator.getContentTypeCache().getStructureByVelocityVarName("SimpleWidget")
-                            .getInode());
-            cs.setCode("<div><h3>content $!{title}</h3><p>$!{body}</p></div>");
-            csList.add(cs);
-            container = containerAPI.save(container, csList, host, systemUser, false);
-            PublishFactory.publishAsset(container, systemUser, false, false);
+        container.setFriendlyName(containerName);
+        container.setTitle(containerName);
+        container.setOwner(userId);
+        container.setMaxContentlets(5);
+        container.setPreLoop("preloop code");
+        container.setPostLoop("postloop code");
 
-            /**
-             * Create new template
-             */
-            final String templateBody = "<html><body> #parseContainer('" + container.getIdentifier()
-                    + "') </body></html>";
-            final String templateTitle = "template" + id;
+        final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        final ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(widgetContentType.inode());
+        cs.setCode("<div><h3>content $!{title}</h3><p>$!{body}</p></div>");
+        csList.add(cs);
+        container = containerAPI.save(container, csList, host, systemUser, false);
+        PublishFactory.publishAsset(container, systemUser, false, false);
 
-            //Create template
-            template = new Template();
-            template.setTitle(templateTitle);
-            template.setBody(templateBody);
-            template.setOwner(systemUser.getUserId());
-            template.setDrawedBody(templateBody);
-            template = templateAPI.saveTemplate(template, host, systemUser, false);
-            PublishFactory.publishAsset(template, systemUser, false, false);
+        /**
+         * Create new template
+         */
+        final String templateBody = "<html><body> #parseContainer('" + container.getIdentifier()
+                + "') </body></html>";
+        final String templateTitle = "template" + id;
 
-            //Create new page
-            page0Str = "page" + id;
-            contentAsset = new Contentlet();
-            contentAsset
-                    .setContentTypeId(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-            contentAsset.setHost(host.getIdentifier());
-            contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page0Str);
-            contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page0Str);
-            contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page0Str);
-            contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-            contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
-            contentAsset.setLanguageId(languageAPI.getDefaultLanguage().getId());
-            contentAsset.setFolder(ftest.getInode());
-            contentAsset = contentletAPI.checkin(contentAsset, systemUser, false);
-            contentletAPI.publish(contentAsset, systemUser, false);
+        //Create template
+        Template template = new Template();
+        template.setTitle(templateTitle);
+        template.setBody(templateBody);
+        template.setOwner(systemUser.getUserId());
+        template.setDrawedBody(templateBody);
+        template = templateAPI.saveTemplate(template, host, systemUser, false);
+        PublishFactory.publishAsset(template, systemUser, false, false);
 
-            internalLinkIdentifier = identifierAPI.findFromInode(contentAsset.getIdentifier());
+        //Create new page
+        page0Str = "page" + id;
+        Contentlet contentAsset = new Contentlet();
+        contentAsset
+                .setContentTypeId(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+        contentAsset.setHost(host.getIdentifier());
+        contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, page0Str);
+        contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, page0Str);
+        contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, page0Str);
+        contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+        contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+        contentAsset.setLanguageId(languageAPI.getDefaultLanguage().getId());
+        contentAsset.setFolder(ftest.getInode());
+        contentAsset = contentletAPI.checkin(contentAsset, systemUser, false);
+        contentletAPI.publish(contentAsset, systemUser, false);
 
-            myURL = new StringBuffer();
-            if (InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
-                myURL.append(host.getHostname());
-            }
-            myURL.append(internalLinkIdentifier.getURI());
+        Identifier internalLinkIdentifier = identifierAPI
+                .findFromInode(contentAsset.getIdentifier());
 
-            link = new Link();
-            link.setTitle(linkStr);
-            link.setFriendlyName(linkStr);
-            link.setParent(ftest.getInode());
-            link.setTarget("_blank");
-            link.setOwner(userId);
-            link.setModUser(userId);
-            link.setLinkType(Link.LinkType.INTERNAL.toString());
-            link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
-            link.setProtocal("http://");
-            link.setUrl(myURL.toString());
-            WebAssetFactory.createAsset(link, userId, ftest);
-
-            final List<Link> links = LinkFactory.getLinkChildrenByCondition(ftest, "");
-
-            Assert.assertNotNull(links);
-            Assert.assertFalse(links.isEmpty());
-
-            Link result = links.get(0);
-            Assert.assertEquals(link.getIdentifier(), result.getIdentifier());
-            Assert.assertEquals(link.getInode(), result.getInode());
-            Assert.assertTrue(link.getOwner() != null && link.getOwner().equals(result.getOwner()));
-        } finally {
-            if (container != null && container.getInode() != null) {
-                containerAPI.delete(container, systemUser, false);
-            }
-
-            if (template != null && template.getInode() != null) {
-                templateAPI.delete(template, systemUser, false);
-            }
-
-            if (contentAsset != null && contentAsset.getInode() != null) {
-                contentletAPI.archive(contentAsset, systemUser, false);
-                contentletAPI.delete(contentAsset, systemUser, false);
-            }
-
-            if (ftest != null) {
-                folderAPI.delete(ftest, systemUser, false);
-            }
+        StringBuffer myURL = new StringBuffer();
+        if (InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
+            myURL.append(host.getHostname());
         }
+        myURL.append(internalLinkIdentifier.getURI());
+
+        Link link = new Link();
+        link.setTitle(linkStr);
+        link.setFriendlyName(linkStr);
+        link.setParent(ftest.getInode());
+        link.setTarget("_blank");
+        link.setOwner(userId);
+        link.setModUser(userId);
+        link.setLinkType(Link.LinkType.INTERNAL.toString());
+        link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
+        link.setProtocal("http://");
+        link.setUrl(myURL.toString());
+        WebAssetFactory.createAsset(link, userId, ftest);
+
+        final List<Link> links = LinkFactory.getLinkChildrenByCondition(ftest, "");
+
+        Assert.assertNotNull(links);
+        Assert.assertFalse(links.isEmpty());
+
+        Link result = links.get(0);
+        Assert.assertEquals(link.getIdentifier(), result.getIdentifier());
+        Assert.assertEquals(link.getInode(), result.getInode());
+        Assert.assertTrue(link.getOwner() != null && link.getOwner().equals(result.getOwner()));
 
     }
+
 }

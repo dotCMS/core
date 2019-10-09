@@ -31,6 +31,8 @@ import com.dotcms.repackage.javax.portlet.PortletException;
 import com.dotcms.repackage.javax.portlet.PortletRequest;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.liferay.portal.struts.PortletRequestProcessor;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
@@ -44,8 +46,6 @@ import java.util.Map;
 import javax.servlet.ServletException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.struts.Globals;
-import org.apache.struts.config.ModuleConfig;
 
 /**
  * <a href="StrutsPortlet.java.html"><b><i>View Source</i></b></a>
@@ -229,7 +229,7 @@ public class StrutsPortlet extends GenericPortlet {
 
 	private static final Log _log = LogFactory.getLog(StrutsPortlet.class);
 
-	private static String _STRUTS_PACKAGE = "org.apache.struts.";
+	private static String _STRUTS_PACKAGE = "com.dotcms.repackage.org.apache.struts.";
 
 	private PortletConfigImpl _portletConfig;
 	private String _editAction;

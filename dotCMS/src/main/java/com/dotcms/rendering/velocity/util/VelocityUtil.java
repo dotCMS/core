@@ -1,8 +1,11 @@
 package com.dotcms.rendering.velocity.util;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-
+import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rendering.velocity.viewtools.content.ContentTool;
@@ -21,10 +24,15 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.*;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.SystemProperties;
+
+import io.vavr.control.Try;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.velocity.Template;
@@ -141,7 +149,7 @@ public class VelocityUtil {
 			variableToReturn = variableToReturn.replaceAll("[^_0-9A-Za-z]", "_");
 		}
 
-		if(variableToReturn.matches(".*[a-zA-Z].*")) {
+		if(variableToReturn.matches("[a-zA-Z].*")) {
 			variableToReturn = (firstLetterUppercase)
 					? StringUtils.camelCaseUpper(variableToReturn)
 					: StringUtils.camelCaseLower(variableToReturn);
@@ -237,6 +245,82 @@ public class VelocityUtil {
 		return getWebContext(getBasicContext(), request, response);
 	}
 	
+  /**
+   * This will return a velocity context for workflow actionlet.
+   * It will mock a Request and Response and then use
+   */
+  public Context getWorkflowContext(final WorkflowProcessor processor) {
+    
+    final Contentlet contentlet = processor.getContentlet();
+    final ContentType contentType = contentlet.getContentType();
+    final Host host =  Try
+        .of(() -> Host.SYSTEM_HOST.equals(contentlet.getHost()) || null == contentlet.getHost() 
+        ? APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false)
+            : APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser(), false))
+        .getOrElse(APILocator.systemHost());
+    
+    final HttpServletRequest requestProxy= (HttpServletRequestThreadLocal.INSTANCE.getRequest() != null) ? HttpServletRequestThreadLocal.INSTANCE.getRequest()
+        : new MockHttpRequest(host.getHostname(), null).request();
+    
+    
+    
+    
+    final HttpServletResponse responseProxy = new BaseResponse().response();
+
+
+    
+    
+    Context context = getWebContext(VelocityUtil.getBasicContext(), requestProxy, responseProxy);
+    context.put("host", host);
+    context.put("contentType", contentType);
+    context.put("host_id", host.getIdentifier());
+    context.put("user", processor.getUser());
+    context.put("company", APILocator.getCompanyAPI().getDefaultCompany());
+    context.put("workflow", processor);
+    context.put("actionName", processor.getAction().getName());
+    context.put("stepName", processor.getStep().getName());
+    context.put("stepId", processor.getStep().getId());
+    context.put("nextAssign", processor.getNextAssign().getName());
+    context.put("workflowMessage", processor.getWorkflowMessage());
+    context.put("nextStepResolved", processor.getNextStep().isResolved());
+    context.put("nextStepId", processor.getNextStep().getId());
+    context.put("nextStepName", processor.getNextStep().getName());
+    context.put("ipAddress", requestProxy.getRemoteAddr());
+    
+    // set the link to the contentlet
+    if(UtilMethods.isSet(contentlet.getInode())) {
+      final Company company = APILocator.getCompanyAPI().getDefaultCompany();
+      if(UtilMethods.isSet(contentlet.getInode())) {
+        context.put("linkToContent", company.getPortalURL() + "/dotAdmin/#/c/content/" + contentlet.getInode());
+      }
+    }
+    
+    
+    
+    
+    if (UtilMethods.isSet(processor.getTask())) {
+      context.put("workflowTask", processor.getTask());
+      context.put("workflowTaskTitle",
+          UtilMethods.isSet(processor.getTask().getTitle()) ? processor.getTask().getTitle() : processor.getContentlet().getTitle());
+      context.put("modDate", processor.getTask().getModDate());
+    } else {
+      context.put("workflowTaskTitle", processor.getContentlet().getTitle());
+      context.put("modDate", processor.getContentlet().getModDate());
+    }
+    context.put("contentTypeName", processor.getContentlet().getContentType().name());
+    context.put("content", contentlet);
+    context.put("contentlet", contentlet);
+    context.put("contentMap", new ContentMap(contentlet, processor.getUser(),PageMode.PREVIEW_MODE,host,context));
+    return context;
+   }
+ 
+
+  public ChainedContext getWorkflowContext(final HttpServletRequest request, final HttpServletResponse response,
+      final WorkflowProcessor processor) {
+
+    return getWebContext(getBasicContext(), request, response);
+  }
+
 	public static ChainedContext getWebContext(Context ctx, HttpServletRequest request, HttpServletResponse response) {
 
         if ( ctx == null ) {

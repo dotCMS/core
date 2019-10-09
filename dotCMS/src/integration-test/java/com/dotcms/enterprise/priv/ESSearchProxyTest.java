@@ -3,6 +3,7 @@ package com.dotcms.enterprise.priv;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -39,8 +40,8 @@ public class ESSearchProxyTest extends IntegrationTestBase {
                         defaultHost, systemUser, false);
 
         for(int i=0; i<=10; i++ ){
-          final Contentlet page = TestDataUtils.getPageContent(true, defLangId, aboutUs);
-          APILocator.getVersionableAPI().setLive(page);
+            final Contentlet page = TestDataUtils.getPageContent(true, defLangId, aboutUs);
+            ContentletDataGen.publish(page);
         }
 
     }

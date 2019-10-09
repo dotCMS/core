@@ -2,8 +2,10 @@ package com.dotmarketing.common.db;
 
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.DbType;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import java.sql.*;
@@ -17,6 +19,7 @@ public class DotDatabaseMetaData {
 
     public static final String ALTER_TABLE = "ALTER TABLE ";
     public static final String DROP_FOREIGN_KEY = " DROP FOREIGN KEY ";
+    public static final String DROP_INDEX = " DROP INDEX ";
 
     /**
      * Find the foreign key on the table, with the primary keys and columns assigned.
@@ -79,7 +82,10 @@ public class DotDatabaseMetaData {
         ForeignKey foundForeignKey = null;
         final List<ForeignKey> foreignKeys = this.getForeignKeys(connection, foreignKeyTableName);
 
-        for (ForeignKey foreignKey : foreignKeys) {
+        Logger.info(this, "**Printing foreign keys");
+
+        for (final ForeignKey foreignKey : foreignKeys) {
+            System.out.println("foreignKey = " + foreignKey);
 
             if (primaryKeyTableName.equalsIgnoreCase(foreignKey.getPrimaryKeyTableName()) &&
                     foreignKeyTableName.equalsIgnoreCase(foreignKey.getForeignKeyTableName()) &&
@@ -315,6 +321,43 @@ public class DotDatabaseMetaData {
         }
     } // executeDropForeignKeyMySql.
 
+    /**
+     * Returns true if the table already exists
+     * @param connection {@link Connection}
+     * @param tableName  {@link String}
+     * @return Boolean true if exists, otherwise false
+     * @throws SQLException
+     */
+    public boolean tableExists(final Connection connection, final String tableName) throws SQLException {
+
+        boolean exists                        = false;
+        DatabaseMetaData databaseMetaData     = null;
+        ResultSet        resultSet            = null;
+        String           schema               = null;
+        String           table                = tableName;
+
+        try {
+
+            databaseMetaData = connection.getMetaData();
+
+            if (DbConnectionFactory.isOracle()) {
+                table = table.toUpperCase();
+                schema = databaseMetaData.getUserName();
+            }
+
+            resultSet = databaseMetaData.getTables
+                    (connection.getCatalog(), schema, table, null);
+
+            // Iterates over the foreign foreignKey columns
+            exists = resultSet.next();
+        } catch (SQLException e) {
+            Logger.error(this,
+                    "An error occurred when getting the the table: " + e.getMessage(), e);
+            throw e;
+        }
+
+        return exists;
+    }
 
     /**
      * Returns the columns list of the table as a list
@@ -418,5 +461,100 @@ public class DotDatabaseMetaData {
 
         return primaryKey;
     }
+
+    /**
+     * Drops the column depending on the db
+     * @param connection {@link Connection}
+     * @param tableName {@link String}
+     * @param columnName {@link String}
+     * @throws SQLException
+     */ 
+    public void dropColumn(final Connection connection, final String tableName, final String columnName) throws SQLException {
+
+        if (DbConnectionFactory.isMySql()) {
+            // Drop column constraints
+            this.dropColumnMySQLDependencies(connection, tableName, columnName);
+        } else if (DbConnectionFactory.isMsSql()) {
+            this.dropColumnMSSQLDependencies(connection, tableName, columnName);
+        }
+
+        // Drop the column:
+        connection.createStatement().executeUpdate("ALTER TABLE " + tableName + " DROP COLUMN " + columnName); // Drop the column
+    }
+
+    private void dropColumnMySQLDependencies(final Connection connection, final String tableName, final String columnName) throws SQLException {
+
+        try (final ResultSet resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+                .executeQuery("select CONSTRAINT_NAME from INFORMATION_SCHEMA.KEY_COLUMN_USAGE where CONSTRAINT_SCHEMA = SCHEMA() and TABLE_NAME = '" +
+                        tableName + "' and COLUMN_NAME = '" + columnName + "'")) {
+
+            while (resultSet.next()) {
+                final String constraintName = resultSet.getString("CONSTRAINT_NAME");
+                this.executeDropConstraint(connection, tableName, constraintName);
+            }
+        }
+
+        // Drop column indexes
+        try (final ResultSet resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+                .executeQuery("SHOW INDEX FROM " + tableName + " where column_name = '" + columnName + "'")) {
+
+            while (resultSet.next()) {
+                final String keyName = resultSet.getString("Key_name");
+                this.dropIndex(tableName, keyName);
+            }
+        }
+    }
+
+    private void dropColumnMSSQLDependencies(final Connection connection, final String tableName, final String columnName) throws SQLException {
+
+        final List<String>  constraints = getColumnConstraintsMSSQL(connection, tableName, columnName);
+        if (UtilMethods.isSet(constraints)) {
+
+            for (final String constraintName : constraints) {
+                this.executeDropConstraint(connection, tableName, constraintName);
+            }
+        }
+    }
+
+    private List<String> getColumnConstraintsMSSQL (final Connection connection, final String tableName, final String columnName) throws SQLException {
+
+        final List<String>  constraints = new ArrayList<>();
+
+        try (final Statement statement = connection.createStatement()) {
+            try (final ResultSet resultSet = statement.executeQuery("SELECT default_constraints.name FROM sys.all_columns INNER JOIN sys.tables\n" +
+                    "        ON all_columns.object_id = tables.object_id\n" +
+                    "        INNER JOIN sys.schemas\n" +
+                    "        ON tables.schema_id = schemas.schema_id\n" +
+                    "        INNER JOIN sys.default_constraints\n" +
+                    "        ON all_columns.default_object_id = default_constraints.object_id\n" +
+                    "WHERE tables.name = '" + tableName + "' AND all_columns.name = '" + columnName + "'")) {
+
+                while (resultSet.next()) {
+
+                    constraints.add(resultSet.getString(1));
+                }
+            }
+        }
+
+        return constraints;
+    }
+
+    public void dropIndex(final String tableName, final String indexName) throws SQLException {
+        final DbType dbType = DbType.getDbType(DbConnectionFactory.getDBType());
+
+        if(dbType == DbType.MYSQL){
+            new DotConnect().executeStatement(String.format("%s %s %s %s",ALTER_TABLE,tableName,DROP_INDEX,indexName));
+            return;
+        }
+
+        if(dbType == DbType.MSSQL){
+            new DotConnect().executeStatement(String.format("%s %s.%s",DROP_INDEX, tableName, indexName));
+            return;
+        }
+
+        new DotConnect().executeStatement(String.format("%s %s",DROP_INDEX, indexName));
+
+    }
+
 } // E:O:F:DotDatabaseMetaData.
 

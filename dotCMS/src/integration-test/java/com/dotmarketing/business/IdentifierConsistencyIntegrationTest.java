@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -299,7 +300,7 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
         Identifier subFolderIdentifier = null;
         try {
             final String prefix = System.currentTimeMillis() + "_";
-            final String parentFolderName = String.format("/%sparentFolder", prefix);
+            final String parentFolderName = String.format("%sparentFolder", prefix);
             parentFolderIdentifier = insertIdentifier(parentFolderName, "/", FOLDER);
             subFolderIdentifier = insertIdentifier("subFolder", parentFolderIdentifier.getPath(), FOLDER);
 
@@ -390,6 +391,7 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
     }
 
 
+    @WrapInTransaction
     private Identifier insertIdentifier(final String assetName, final String parentPath, final String assetType)
             throws DotDataException, DotRuntimeException {
 
@@ -399,39 +401,29 @@ public class IdentifierConsistencyIntegrationTest extends IntegrationTestBase {
         final String uuid = UUIDGenerator.generateUuid();
         final Identifier identifier = new Identifier(uuid);
         try {
+            identifier.setParentPath(parentPath);
+            identifier.setAssetName(assetName);
+            identifier.setHostId(host.getIdentifier());
+            identifier.setAssetType(assetType);
+            identifier.setSysExpireDate(null);
+            identifier.setSysPublishDate(null);
 
-            final Connection conn = DbConnectionFactory.getDataSource().getConnection();
-            conn.setAutoCommit(true);
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL(INSERT_IDENTIFIER_SQL);
+
+            dotConnect.addParam(identifier.getParentPath());
+            dotConnect.addParam(identifier.getAssetName());
+            dotConnect.addParam(identifier.getHostId());
+            dotConnect.addParam(identifier.getAssetType());
+            dotConnect.addParam(identifier.getSysPublishDate());
+            dotConnect.addParam(identifier.getSysExpireDate());
+            dotConnect.addParam(uuid);
+
             try {
-
-                identifier.setParentPath(parentPath);
-                identifier.setAssetName(assetName);
-                identifier.setHostId(host.getIdentifier());
-                identifier.setAssetType(assetType);
-                identifier.setSysExpireDate(null);
-                identifier.setSysPublishDate(null);
-
-                final DotConnect dotConnect = new DotConnect();
-                dotConnect.setSQL(INSERT_IDENTIFIER_SQL);
-
-                dotConnect.addParam(identifier.getParentPath());
-                dotConnect.addParam(identifier.getAssetName());
-                dotConnect.addParam(identifier.getHostId());
-                dotConnect.addParam(identifier.getAssetType());
-                dotConnect.addParam(identifier.getSysPublishDate());
-                dotConnect.addParam(identifier.getSysExpireDate());
-                dotConnect.addParam(uuid);
-
-                try {
-                    dotConnect.loadResult();
-                } catch (DotDataException e) {
-                    Logger.error(getClass(), "insertIdentifier failed:" + e, e);
-                    throw new DotDataException(e);
-                }
-
-            } finally {
-                conn.setAutoCommit(false);
-                conn.close();
+                dotConnect.loadResult();
+            } catch (DotDataException e) {
+                Logger.error(getClass(), "insertIdentifier failed:" + e, e);
+                throw new DotDataException(e);
             }
             return identifier;
         } catch (Exception e) {

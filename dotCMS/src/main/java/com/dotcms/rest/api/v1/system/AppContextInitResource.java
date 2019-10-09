@@ -29,8 +29,9 @@ import com.dotcms.util.CollectionsUtils;
  * <p>
  * The number of configuration properties my vary depending on whether the user
  * is logged in or not before calling this end-point. For example, the list of
- * navigation menu items <b>will be returned as an empty list</b> if the user is
- * not authenticated yet.
+ * navigation menu items <b>will be returned as an empty list</b>
+ *
+ * This is a public endpoint and requires no authentiction.
  * 
  * @author Jose Castro
  * @version 3.7

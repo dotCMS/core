@@ -1,19 +1,23 @@
 package com.dotcms.datagen;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.util.StringPool;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Class used to create {@link Template} objects for test purposes
@@ -24,12 +28,15 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 
     private long currentTime = System.currentTimeMillis();
     private String body;
+    private String drawedBody;
     private String footer;
     private String header;
     private String friendlyName = "testFriendlyName" + currentTime;
     private String image;
     private String title = "testTitle" + currentTime;
     private List<Map<String, String>> containers = new ArrayList<>();
+
+    private String theme;
 
     private static final TemplateAPI templateAPI = APILocator.getTemplateAPI();
     private static final String type = "template";
@@ -46,6 +53,26 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
      */
     public TemplateDataGen body(String body) {
         this.body = body;
+        return this;
+    }
+
+    /**
+     * Sets drawedBody property to the TemplateDataGen instance. This will be used when a new {@link
+     * Template} instance is created.
+     *
+     * @param templateLayout
+     * @return TemplateDataGen with body property set
+     */
+    public TemplateDataGen drawedBody(final TemplateLayout templateLayout) {
+        final ObjectMapper mapper = new ObjectMapper();
+        final String json;
+        try {
+            json = mapper.writeValueAsString(templateLayout);
+            this.drawedBody = json;
+        } catch (JsonProcessingException e) {
+            throw new DotRuntimeException(e);
+        }
+
         return this;
     }
 
@@ -108,7 +135,21 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         this.title = title;
         return this;
     }
-
+    
+    /**
+     * Sets title property to the TemplateDataGen instance. This will be used when a new {@link
+     * Template} instance is created
+     *
+     * @param title the title of this template
+     * @return TemplateDataGen with title property set
+     */
+    public TemplateDataGen host(Host host) {
+        this.host = host;
+        return this;
+    }
+    public TemplateDataGen site(Host site) {
+      return this.host(site);
+    }
     /**
      * Adds a container to the list of containers to be included in the {@link Template} this
      * data-gen will create.
@@ -127,8 +168,15 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     }
 
     public TemplateDataGen withContainer(final String containerId) {
+        final Set<String> containerIds = containers.stream()
+                .map(map -> map.get("containerId"))
+                .collect(Collectors.toSet());
+
         Map<String, String> containerMap = new ImmutableMap.Builder<String, String>()
-                .put("containerId", containerId).put("uuid", UUID.randomUUID().toString()).build();
+                .put("containerId", containerId)
+                .put("uuid", String.valueOf(containerIds.size() + 1))
+                .build();
+
         containers.add(containerMap);
         return this;
     }
@@ -155,6 +203,11 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         return this;
     }
 
+    public TemplateDataGen theme(final String theme) {
+        this.theme = theme;
+        return this;
+    }
+
     /**
      * {@inheritDoc}
      * <p>It will also include a '#parseContainer('containerId')' string to the body of the
@@ -178,9 +231,12 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         template.setTitle(this.title);
         template.setType(type);
         template.setBody(body);
+        template.setDrawedBody(drawedBody);
+        template.setTheme(theme);
         return template;
     }
 
+    @WrapInTransaction
     @Override
     public Template persist(Template template) {
 
@@ -220,6 +276,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         }
     }
 
+    @WrapInTransaction
     public static void remove(Template template) {
         try {
             templateAPI.delete(template, user, false);

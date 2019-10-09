@@ -54,6 +54,11 @@ public class MockHeaderRequest extends HttpServletRequestWrapper implements Mock
     headers.put(name, o);
   }
 
+  public MockHeaderRequest addHeader(final String name, final String o) {
+    headers.put(name, o);
+    return this;
+  }
+
   @Override
   public Enumeration<String> getHeaders(final String name) {
 

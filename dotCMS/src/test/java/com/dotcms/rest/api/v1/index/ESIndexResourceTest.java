@@ -13,6 +13,7 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.LayoutAPI;
@@ -26,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class ESIndexResourceTest extends UnitTestBase {
 
@@ -67,6 +69,7 @@ public class ESIndexResourceTest extends UnitTestBase {
         when(webResource.init(requestParams, request, httpServletResponse, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
+        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
         when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
         when(indexHelper.getIndexNameOrAlias(paramsMap,indexAPI)).thenReturn(liveIndex);
@@ -116,6 +119,7 @@ public class ESIndexResourceTest extends UnitTestBase {
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
+        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
         when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn("live");
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", liveIndex)).thenReturn(tempFile);
@@ -162,6 +166,7 @@ public class ESIndexResourceTest extends UnitTestBase {
         when(webResource.init(requestParams, request, httpServletResponse, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
+        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
         when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
         when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(workingIndex);
@@ -209,6 +214,7 @@ public class ESIndexResourceTest extends UnitTestBase {
         when(webResource.init(requestParams, request, httpServletResponse, true, null)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
+        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
         when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
         when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(workingIndex);
@@ -249,6 +255,7 @@ public class ESIndexResourceTest extends UnitTestBase {
         when(initDataObject.getUser()).thenReturn(user);
         when(user.getLocale()).thenReturn(Locale.getDefault());
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
+        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
         when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(null);
         when(responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, Locale.getDefault(), null, "snapshot.wrong.arguments")).thenReturn(Response.status(Status.BAD_REQUEST).build());
