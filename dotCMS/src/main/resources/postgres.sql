@@ -2165,6 +2165,7 @@ alter table workflowtask_files add constraint FK_workflow_id foreign key (workfl
 
 alter table workflow_comment add constraint workflowtask_id_comment_FK foreign key (workflowtask_id) references workflow_task(id);
 alter table workflow_history add constraint workflowtask_id_history_FK foreign key (workflowtask_id) references workflow_task(id);
+alter table workflow_task add constraint unique_workflow_task unique (webasset,language_id);
 
 alter table contentlet add constraint fk_contentlet_lang foreign key (language_id) references language(id);
 

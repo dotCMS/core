@@ -224,7 +224,8 @@ import org.junit.runners.Suite.SuiteClasses;
         CachedParameterDecoratorTest.class,
         TestConfig.class,
         PublishAuditAPITest.class,
-        BundleFactoryTest.class
+        BundleFactoryTest.class,
+        com.dotmarketing.startup.runonce.Task05200WorkflowTaskUniqueKeyTest.class
 })
 public class MainSuite {
 
