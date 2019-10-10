@@ -8,12 +8,12 @@ public class RuleWatcher extends TestWatcher {
 
     @Override
     protected void starting(Description description) {
-        Logger.info(RuleWatcher.class, ">>>>>>>>>>>>>>>>>>>");
+        Logger.info(RuleWatcher.class, ">>>>>>>>>>>>>>>>>>>>>>>>>>");
         Logger.info(RuleWatcher.class,
-                String.format(">>> Starting: [%s][%s]",
-                        description.getClassName(),
-                        description.getMethodName()));
-        Logger.info(RuleWatcher.class, ">>>>>>>>>>>>>>>>>>>");
+                String.format(">>> %s - %s",
+                        description,
+                        "starting..."));
+        Logger.info(RuleWatcher.class, ">>>>>>>>>>>>>>>>>>>>>>>>>>");
     }
 
 }
