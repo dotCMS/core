@@ -134,18 +134,6 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			} else {
 				return responseResource.response(json.toString());
 			}
-
-		}catch(DotStateException dse) {
-	        if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level){
-	            final String noLicenseMessage = "Unable to execute ES API Requests. Please apply an Enterprise License";
-	            Logger.warn(this.getClass(), noLicenseMessage);
-	            return Response.status(Status.FORBIDDEN)
-	                    .entity(map("message", noLicenseMessage))
-	                    .build();
-	        }
-            Logger.warn(this.getClass(), "Error processing :" + dse.getMessage(), dse);
-            return responseResource.responseError(dse.getMessage());
-	        
 		} catch (Exception e) {
 			Logger.warn(this.getClass(), "Error processing :" + e.getMessage(), e);
 			return responseResource.responseError(e.getMessage());

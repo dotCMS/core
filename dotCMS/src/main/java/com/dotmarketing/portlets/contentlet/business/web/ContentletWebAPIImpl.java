@@ -515,7 +515,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			}
 		} catch(DotContentletValidationException ve) {
 
-			Logger.error(this, ve.getMessage(), ve);
+			Logger.warnAndDebug(this.getClass(), ve.getMessage(), ve);
 			throw ve;
 		}
 
@@ -852,7 +852,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	private void handleException(final Exception ae) {
 		
 		if(!(ae instanceof DotContentletValidationException) && !(ae instanceof DotLanguageException)){
-			Logger.warn(this, ae.toString(), ae);
+			Logger.warnAndDebug(this.getClass(), ae.toString(), ae);
 		} else {
 			Logger.debug(this, ae.toString(), ae);
 		}
