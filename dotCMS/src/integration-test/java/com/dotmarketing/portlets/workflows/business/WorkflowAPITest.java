@@ -69,7 +69,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -85,7 +84,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import javax.swing.text.AbstractDocument.Content;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -669,9 +667,9 @@ public class WorkflowAPITest extends IntegrationTestBase {
             contentlet = contentletDataGen.setProperty("title", "TestContent")
                     .setProperty("body", unicodeText ).languageId(frenchLanguage.getId()).nextPersisted();
             final WorkflowStep workflowStep           = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
-
-            final WorkflowTask workflowTask = workflowAPI.createWorkflowTask
-                    (contentlet, user, workflowStep, "test", "test");
+            //UnassignedWorkflowContentletCheckinListener.assigned is called by default creating a task. So we better reset here before we get an duplicate entry violation.
+            workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
+            final WorkflowTask workflowTask = workflowAPI.createWorkflowTask(contentlet, user, workflowStep, "test", "test");
             workflowAPI.saveWorkflowTask(workflowTask);
 
             Optional<WorkflowStep> currentStepOpt = workflowAPI.findCurrentStep(contentlet);
