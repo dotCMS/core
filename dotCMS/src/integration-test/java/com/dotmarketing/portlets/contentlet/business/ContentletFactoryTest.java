@@ -10,12 +10,12 @@ import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.google.common.collect.ImmutableList;
-import java.lang.reflect.Field;
 import java.util.List;
 import org.junit.Test;
 
@@ -118,11 +118,8 @@ public class ContentletFactoryTest extends ContentletBaseTest {
     @Test
     public void Create_Contentlet_Then_find_Expect_Cache_Hit_Then_Remove_Expect_404()
             throws DotDataException, NoSuchFieldException, IllegalAccessException, DotSecurityException {
-        //Making cache accessible.
-        final ESContentFactoryImpl impl = ESContentFactoryImpl.class.cast(contentletFactory);
-        final Field contentletCacheDeclaredField = impl.getClass().getDeclaredField("contentletCache");
-        contentletCacheDeclaredField.setAccessible(true);
-        final ContentletCache contentletCache = ContentletCache.class.cast(contentletCacheDeclaredField.get(impl));
+        
+        final ContentletCache contentletCache = CacheLocator.getContentletCache();
 
         final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen();
         final ContentType contentType = contentTypeDataGen.name("lol").nextPersisted();
