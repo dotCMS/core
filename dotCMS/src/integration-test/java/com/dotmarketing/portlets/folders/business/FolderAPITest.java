@@ -1056,7 +1056,7 @@ public class FolderAPITest {//24 contentlets
 
 	@Test(expected = DotDataException.class)
 	@UseDataProvider("reservedFolderNames")
-	public void testCopy_BlacklistedName_ShouldFail(final String reservedName)
+	public void testCopyToFolder_BlacklistedName_ShouldFail(final String reservedName)
 			throws DotDataException, DotSecurityException, IOException {
 
 		final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
@@ -1066,6 +1066,20 @@ public class FolderAPITest {//24 contentlets
 		final Folder newFolder = new FolderDataGen().nextPersisted();
 
 		APILocator.getFolderAPI().copy(invalidFolder, newFolder, APILocator.systemUser(), false);
+	}
+
+	@Test(expected = DotDataException.class)
+	@UseDataProvider("reservedFolderNames")
+	public void testCopyToHost_BlacklistedName_ShouldFail(final String reservedName)
+			throws DotDataException, DotSecurityException, IOException {
+
+		final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
+		Identifier newIdentifier = APILocator.getIdentifierAPI().createNew(invalidFolder, host);
+		invalidFolder.setIdentifier(newIdentifier.getId());
+
+		final Host newHost = new SiteDataGen().nextPersisted();
+
+		APILocator.getFolderAPI().copy(invalidFolder, newHost, APILocator.systemUser(), false);
 	}
 
 }

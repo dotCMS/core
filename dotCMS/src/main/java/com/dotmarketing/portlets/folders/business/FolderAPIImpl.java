@@ -341,6 +341,11 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Host " + newParentHost.getHostname());
 		}
 
+		if(folderToCopy!=null && UtilMethods.isSet(folderToCopy.getName())
+				&& reservedFolderNames.contains(folderToCopy.getName().toUpperCase())) {
+			throw new DotDataException("Folder can't be saved. You entered a reserved folder name");
+		}
+
 		folderFactory.copy(folderToCopy, newParentHost);
 
 		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
