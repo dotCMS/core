@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -65,6 +66,7 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -85,14 +87,14 @@ public class FolderAPIImpl implements FolderAPI  {
 	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
 	@VisibleForTesting
-	protected static final List<String> reservedFolderNames = new ArrayList<>();
-
-	static {
-		String[] reservedFolderNamesArray = Config.getStringArrayProperty("RESERVEDFOLDERNAMES");
-		for (String name : reservedFolderNamesArray) {
-			reservedFolderNames.add(name.toUpperCase());
-		}
-	}
+	protected static final Set<String> reservedFolderNames =
+			Collections.unmodifiableSet(
+				CollectionsUtils.set(Config.getStringArrayProperty("RESERVEDFOLDERNAMES",
+					new String[]{"WEB-INF", "META-INF", "assets", "dotcms", "html", "portal",
+							"email_backups",
+							"DOTLESS", "DOTSASS"})
+				).stream().map(String::toUpperCase).collect(Collectors.toSet())
+			);
 
 	/**
 	 * Will get a folder for you on a given path for a particular host
@@ -317,10 +319,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getPath());
 		}
 
-		if(folderToCopy!=null && UtilMethods.isSet(folderToCopy.getName())
-				&& reservedFolderNames.contains(folderToCopy.getName().toUpperCase())) {
-			throw new DotDataException("Folder can't be saved. You entered a reserved folder name");
-		}
+		validateFolderName(folderToCopy);
 
 		folderFactory.copy(folderToCopy, newParentFolder);
 
@@ -341,10 +340,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Host " + newParentHost.getHostname());
 		}
 
-		if(folderToCopy!=null && UtilMethods.isSet(folderToCopy.getName())
-				&& reservedFolderNames.contains(folderToCopy.getName().toUpperCase())) {
-			throw new DotDataException("Folder can't be saved. You entered a reserved folder name");
-		}
+		validateFolderName(folderToCopy);
 
 		folderFactory.copy(folderToCopy, newParentHost);
 
@@ -580,10 +576,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	public void save(final Folder folder, final String existingId,
 					 final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
-		if(folder!=null && UtilMethods.isSet(folder.getName())
-				&& reservedFolderNames.contains(folder.getName().toUpperCase())) {
-			throw new DotDataException("Folder can't be saved. You entered a reserved folder name");
-		}
+		validateFolderName(folder);
 
 		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		if(id ==null || !UtilMethods.isSet(id.getId())){
@@ -615,6 +608,13 @@ public class FolderAPIImpl implements FolderAPI  {
         SystemEventType systemEventType = isNew ? SystemEventType.SAVE_FOLDER : SystemEventType.UPDATE_FOLDER;
 		systemEventsAPI.pushAsync(systemEventType, new Payload(folder, Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+	}
+
+	private void validateFolderName(Folder folder) throws DotDataException {
+		if (folder != null && UtilMethods.isSet(folder.getName())
+				&& reservedFolderNames.contains(folder.getName().toUpperCase())) {
+			throw new DotDataException("Folder can't be saved. You entered a reserved folder name");
+		}
 	}
 
 	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
