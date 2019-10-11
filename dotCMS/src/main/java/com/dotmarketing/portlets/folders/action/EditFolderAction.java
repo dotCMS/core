@@ -388,6 +388,7 @@ public class EditFolderAction extends DotPortletAction {
 			CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(f.getIdentifier());
 			// For messages to be displayed on messages page
 			SessionMessages.add(req, "message", "message.folder.save");
+			HibernateUtil.closeAndCommitTransaction();
 			return true;
 		}catch(AddContentToFolderPermissionException e){
 			HibernateUtil.rollbackTransaction();
