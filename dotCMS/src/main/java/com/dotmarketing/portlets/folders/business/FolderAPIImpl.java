@@ -53,10 +53,12 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -81,6 +83,16 @@ public class FolderAPIImpl implements FolderAPI  {
 	private final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 	private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+	@VisibleForTesting
+	protected static final List<String> reservedFolderNames = new ArrayList<>();
+
+	static {
+		String[] reservedFolderNamesArray = Config.getStringArrayProperty("RESERVEDFOLDERNAMES");
+		for (String name : reservedFolderNamesArray) {
+			reservedFolderNames.add(name.toUpperCase());
+		}
+	}
 
 	/**
 	 * Will get a folder for you on a given path for a particular host
@@ -303,6 +315,11 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		if (!permissionAPI.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getPath());
+		}
+
+		if(folderToCopy!=null && UtilMethods.isSet(folderToCopy.getName())
+				&& reservedFolderNames.contains(folderToCopy.getName().toUpperCase())) {
+			throw new DotDataException("Folder can't be saved. You entered a reserved folder name");
 		}
 
 		folderFactory.copy(folderToCopy, newParentFolder);
@@ -557,6 +574,11 @@ public class FolderAPIImpl implements FolderAPI  {
 	@WrapInTransaction
 	public void save(final Folder folder, final String existingId,
 					 final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
+
+		if(folder!=null && UtilMethods.isSet(folder.getName())
+				&& reservedFolderNames.contains(folder.getName().toUpperCase())) {
+			throw new DotDataException("Folder can't be saved. You entered a reserved folder name");
+		}
 
 		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		if(id ==null || !UtilMethods.isSet(id.getId())){
