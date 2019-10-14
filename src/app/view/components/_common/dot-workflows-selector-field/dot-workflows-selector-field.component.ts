@@ -1,4 +1,3 @@
-import { mergeMap } from 'rxjs/operators';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
 import { Observable } from 'rxjs';
 import { DotCMSWorkflow } from 'dotcms-models';
@@ -20,6 +19,7 @@ import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 })
 export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor, OnInit {
     options$: Observable<DotCMSWorkflow[]>;
+    label$: Observable<string>;
     value: DotCMSWorkflow[] = [];
     disabled = false;
     messagesKey: { [key: string]: string } = {};
@@ -44,12 +44,11 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
     registerOnTouched(): void {}
 
     ngOnInit() {
-        this.options$ = this.dotMessageService
-            .getMessages(['dot.common.select.workflows', 'dot.common.archived'])
-            .pipe(mergeMap((messages: { [key: string]: string }) => {
-                this.messagesKey = messages;
-                return this.dotWorkflowService.get();
-            }));
+        this.options$ = this.dotWorkflowService.get();
+        this.label$ = this.dotMessageService.getMessages([
+            'dot.common.select.workflows',
+            'dot.common.archived'
+        ]);
     }
 
     /**
