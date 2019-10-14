@@ -241,7 +241,7 @@ export class DotFormComponent {
         const maxSize = this.getMaxSize(event);
         const binary: DotBinaryFileComponent = (event.target as unknown) as DotBinaryFileComponent;
 
-        if (file.size <= maxSize) {
+        if (!maxSize || file.size <= maxSize) {
             this.uploadFileInProgress = true;
             binary.errorMessage = '';
             return uploadService
