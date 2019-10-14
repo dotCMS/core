@@ -36,7 +36,8 @@ describe('DotLoginComponent', () => {
         login: 'admin@dotcms.com',
         language: 'en_US',
         password: 'admin',
-        rememberMe: false
+        rememberMe: false,
+        backEndLogin: true
     };
 
     beforeEach(() => {
@@ -86,7 +87,9 @@ describe('DotLoginComponent', () => {
         expect(rememberMe.nativeElement.innerHTML).toEqual('Remember Me');
         expect(submitButton.nativeElement.innerHTML).toContain('Sign In');
         expect(productInformation[0].nativeElement.innerHTML).toEqual('Server: 860173b0');
-        expect(productInformation[1].nativeElement.innerHTML).toEqual('COMMUNITY EDITION: 5.0.0 - March 13, 2019');
+        expect(productInformation[1].nativeElement.innerHTML).toEqual(
+            'COMMUNITY EDITION: 5.0.0 - March 13, 2019'
+        );
         expect(productInformation[2].nativeElement.innerHTML).toEqual(
             ' - <a href="https://dotcms.com/features" target="_blank">upgrade</a>'
         );
@@ -109,8 +112,9 @@ describe('DotLoginComponent', () => {
 
     it('should load initial value of the form', () => {
         expect(component.loginForm.value).toEqual({
-            login: '',
+            backEndLogin: true,
             language: 'en_US',
+            login: '',
             password: '',
             rememberMe: false
         });
@@ -123,18 +127,13 @@ describe('DotLoginComponent', () => {
 
         expect(signInButton.nativeElement.disabled).toBeFalsy();
         signInButton.triggerEventHandler('click', {});
-        expect(loginService.loginUser).toHaveBeenCalledWith(
-            credentials.login,
-            credentials.password,
-            credentials.rememberMe,
-            credentials.language
-        );
+        expect(loginService.loginUser).toHaveBeenCalledWith(credentials);
         expect(dotRouterService.goToMain).toHaveBeenCalledWith('redirect/to');
     });
 
     it('should disable fields while waiting login response', () => {
         component.loginForm.setValue(credentials);
-        spyOn(loginService, 'loginUser');
+        spyOn(loginService, 'loginUser').and.callThrough();
         signInButton.triggerEventHandler('click', {});
 
         const languageDropdown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
