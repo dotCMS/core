@@ -5,6 +5,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
@@ -76,9 +77,12 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			Logger.debug(this,
 					()->"content version already saved for the contentlet: " + contentlet.getIdentifier());
 		} catch (Exception e) {
-
-			Logger.error(this.getClass(),e.getMessage(),e);
-			throw new  WorkflowActionFailureException(e.getMessage(),e);
+            if (e instanceof DotContentletValidationException){
+                Logger.warnAndDebug(this.getClass(),e.getMessage(),e);
+            } else{
+                Logger.error(this.getClass(),e.getMessage(),e);
+            }
+            throw new  WorkflowActionFailureException(e.getMessage(),e);
 		}
 	}
 

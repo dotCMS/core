@@ -3,6 +3,7 @@ package com.dotmarketing.common.db;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.DbType;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -10,6 +11,8 @@ import com.liferay.util.StringPool;
 
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Encapsulates database metada operations operations.
@@ -553,6 +556,121 @@ public class DotDatabaseMetaData {
         }
 
         new DotConnect().executeStatement(String.format("%s %s",DROP_INDEX, indexName));
+
+    }
+
+    public List<String> getConstraints(final String tableName) throws DotDataException {
+        final DotConnect dotConnect = new DotConnect();
+        if (DbConnectionFactory.isPostgres()) {
+            return getConstraintsPostgres(tableName, dotConnect);
+        }
+
+        if (DbConnectionFactory.isOracle()) {
+            return getConstraintsOracleSQL(tableName, dotConnect);
+        }
+
+        if (DbConnectionFactory.isMsSql()) {
+            return getConstraintsMSSQL(tableName, dotConnect);
+        }
+
+        if (DbConnectionFactory.isMySql()) {
+            return getConstraintsMySQL(tableName, dotConnect);
+        }
+
+        throw new DotDataException("Unknown database type.");
+    }
+
+    private static String POSTGRES_CONSTRAINT_SQL =
+            " SELECT con.*\n"
+            + "       FROM pg_catalog.pg_constraint con\n"
+            + "            INNER JOIN pg_catalog.pg_class rel\n"
+            + "                       ON rel.oid = con.conrelid\n"
+            + "            INNER JOIN pg_catalog.pg_namespace nsp\n"
+            + "                       ON nsp.oid = connamespace\n"
+            + "       WHERE  nsp.nspname = 'public' \n"
+            + "             AND rel.relname = '%s' ";
+
+    private List<String> getConstraintsPostgres(final String tableName, final DotConnect dotConnect) throws DotDataException {
+        dotConnect.setSQL(String.format(POSTGRES_CONSTRAINT_SQL, tableName));
+        final List<Map> constraintsMeta = dotConnect.loadResults();
+        return constraintsMeta.stream().map(map -> map.get("conname").toString()).collect(Collectors.toList());
+    }
+
+    private static final String MYSQL_CONSTRAINT_SQL =
+            " SELECT column_name, constraint_name \n"
+            + " FROM information_schema.KEY_COLUMN_USAGE\n"
+            + " WHERE TABLE_NAME = 'workflow_task'";
+
+    private List<String> getConstraintsMySQL(final String tableName, final DotConnect dotConnect) throws DotDataException {
+        dotConnect.setSQL(String.format(MYSQL_CONSTRAINT_SQL, tableName));
+        final List<Map> constraintsMeta = dotConnect.loadResults();
+        return constraintsMeta.stream().map(map -> map.get("constraint_name").toString()).collect(Collectors.toList());
+    }
+
+    private static final String ORACLE_CONSTRAINT_SQL = "SELECT * FROM ALL_CONSTRAINTS WHERE table_name = '%s' ";
+
+    private List<String> getConstraintsOracleSQL(final String tableName, final DotConnect dotConnect) throws DotDataException {
+        dotConnect.setSQL(String.format(ORACLE_CONSTRAINT_SQL, tableName.toUpperCase()));
+        final List<Map> constraintsMeta = dotConnect.loadResults();
+        return constraintsMeta.stream().map(map -> map.get("constraint_name").toString()).collect(Collectors.toList());
+    }
+
+    private static final String MS_SQL_INDEX = "select  t.[name] as table_view, \n"
+            + "    case when t.[type] = 'U' then 'Table'\n"
+            + "        when t.[type] = 'V' then 'View'\n"
+            + "        end as [object_type],\n"
+            + "    i.index_id,\n"
+            + "    case when i.is_primary_key = 1 then 'Primary key'\n"
+            + "        when i.is_unique = 1 then 'Unique'\n"
+            + "        else 'Not unique' end as [type],\n"
+            + "    i.[name] as index_name,\n"
+            + "    substring(column_names, 1, len(column_names)-1) as [columns],\n"
+            + "    case when i.[type] = 1 then 'Clustered index'\n"
+            + "        when i.[type] = 2 then 'Nonclustered unique index'\n"
+            + "        when i.[type] = 3 then 'XML index'\n"
+            + "        when i.[type] = 4 then 'Spatial index'\n"
+            + "        when i.[type] = 5 then 'Clustered columnstore index'\n"
+            + "        when i.[type] = 6 then 'Nonclustered columnstore index'\n"
+            + "        when i.[type] = 7 then 'Nonclustered hash index'\n"
+            + "        end as index_type\n"
+            + "from sys.objects t\n"
+            + "    inner join sys.indexes i\n"
+            + "        on t.object_id = i.object_id\n"
+            + "    cross apply (select col.[name] + ', '\n"
+            + "                    from sys.index_columns ic\n"
+            + "                        inner join sys.columns col\n"
+            + "                            on ic.object_id = col.object_id\n"
+            + "                            and ic.column_id = col.column_id\n"
+            + "                    where ic.object_id = t.object_id\n"
+            + "                        and ic.index_id = i.index_id\n"
+            + "                            order by col.column_id\n"
+            + "                            for xml path ('') ) D (column_names)\n"
+            + "where t.is_ms_shipped <> 1\n"
+            + "and index_id > 0 and  t.[name] = '%s'\n"
+            + "order by schema_name(t.schema_id) + '.' + t.[name], i.index_id";
+
+
+    private static final String MS_SQL_CONSTRAINTS = "\n"
+            + "SELECT default_constraints.name FROM sys.all_columns INNER JOIN sys.tables\n"
+            + "  ON all_columns.object_id = tables.object_id\n"
+            + "  INNER JOIN sys.schemas\n"
+            + "  ON tables.schema_id = schemas.schema_id\n"
+            + "  INNER JOIN sys.default_constraints \n"
+            + "  ON all_columns.default_object_id = default_constraints.object_id \n"
+            + " WHERE tables.name = '%s'";
+
+    private List<String> getConstraintsMSSQL(final String tableName, final DotConnect dotConnect) throws DotDataException {
+        //unique constraints are stored as indices
+        dotConnect.setSQL(String.format(MS_SQL_INDEX, tableName));
+        final List<Map> indexMeta = dotConnect.loadResults();
+
+        dotConnect.setSQL(String.format(MS_SQL_CONSTRAINTS,tableName));
+        final List<Map> constraintsMeta = dotConnect.loadResults();
+
+        return Stream.concat(
+                indexMeta.stream().map(map -> map.get("index_name").toString()),
+                constraintsMeta.stream().map(map -> map.get("name").toString())
+        ).collect(Collectors.toList());
 
     }
 

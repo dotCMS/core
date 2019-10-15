@@ -37,7 +37,7 @@
         var structureInode;
         var currentStructureFields;
         var currentPage = 1;
-        var currentSortBy = "modDate desc";
+        var currentSortBy = "score,modDate desc";
         var setDotFieldTypeStr = "";
         var DOT_FIELD_TYPE = "dotFieldType";
         var cbContentInodeList = new Array();
@@ -1519,6 +1519,7 @@
                 else {
                         sortBy=document.getElementById('currentSortBy').value;
                 }
+               
 
                 var filterSystemHost = false;
                 if (document.getElementById("filterSystemHostCB").checked && document.getElementById("filterSystemHostTable").style.display != "none") {
