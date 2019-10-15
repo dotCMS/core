@@ -1,6 +1,6 @@
 language: bash
 git:
-   clone: false
+  submodules: false
 
 cache:
   directories:

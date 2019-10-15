@@ -612,7 +612,7 @@ public class HibernateUtil {
         public void preFlush(Iterator arg0) throws CallbackException { }
     }
 
-	private static void buildSessionFactory() {
+	private static synchronized void buildSessionFactory() {
 		long start = System.currentTimeMillis();
 		try {
 			// Initialize the Hibernate environment
