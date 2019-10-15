@@ -7,6 +7,7 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
@@ -172,7 +173,7 @@ public class Language implements Serializable {
 
 	@Override
 	public String toString() {
-		if(this.getCountryCode()!=null){
+		if(UtilMethods.isSet(this.getCountryCode())){
 			return (this.getLanguageCode() + "-"+ this.getCountryCode()).toLowerCase();
 		}
 		return this.getLanguageCode().toLowerCase();

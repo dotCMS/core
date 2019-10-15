@@ -7,7 +7,7 @@
 <%@page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%
-java.util.List list = (java.util.List) request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_MANAGER_LIST);
+java.util.List<Language> list = (java.util.List<Language>) request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_MANAGER_LIST);
 java.util.Map params = new java.util.HashMap();
 params.put("struts_action",new String[] {"/ext/languages_manager/view_languages_manager"});
 String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
@@ -34,10 +34,6 @@ var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoin
 var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
 </script>
 
-<liferay:box top="/html/common/box_top.jsp"
-	bottom="/html/common/box_bottom.jsp">
-	<liferay:param name="box_title"
-		value='<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Viewing-Languages"))%>' />
 
 <div class="portlet-main">
 	<!-- START Toolbar -->
@@ -62,29 +58,25 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
 
 
 	<!-- Listing -->
-	<table class="listingTable" id="listingLanguagesTable">
+	<table class="listingTable" style="width:90%;border:1px #eee solid;">
 		<tr>
-			<th colspan="2"><%=LanguageUtil.get(pageContext, "Languages")%></th>
+			<th><%=LanguageUtil.get(pageContext, "ISO")%></th>
+            <th><%=LanguageUtil.get(pageContext, "Id")%></th>
+            <th><%=LanguageUtil.get(pageContext, "Language")%></th>
+            <th><%=LanguageUtil.get(pageContext, "Country")%></th>
+            
 		</tr>
 
-	<%
-	    int l = 0;
-	    for (int k=0; k < (list.size()+1)/2;k++) {
-	%>
-
-		<tr>
-		<%
-		    for (int m=0; m < 2  ;m++) {
-		%>
-			<%
-		    if(l < list.size()) {
-		        final long longLanguageId = ((com.dotmarketing.portlets.languagesmanager.model.Language)list.get(l)).getId();
-			    final String strLanguage = ((com.dotmarketing.portlets.languagesmanager.model.Language)list.get(l)).getLanguage();
-			    final String strLangCode = ((com.dotmarketing.portlets.languagesmanager.model.Language)list.get(l)).getLanguageCode();
-			    final String strCountryCode = ((com.dotmarketing.portlets.languagesmanager.model.Language)list.get(l)).getCountryCode();
-			    final String langIcon = LanguageUtil.getLiteralLocale(strLangCode, strCountryCode);
-			%>
-			<td id="tdLanguage-<%=String.valueOf(longLanguageId)%>" class="tdLanguage" 
+	<%for (final Language lang : list){%>
+            <%
+                final long longLanguageId = lang.getId();
+                final String strLanguage = lang.getLanguage();
+                final String strLangCode = lang.getLanguageCode();
+                final String strCountryCode = lang.getCountryCode();
+                final String langIcon = LanguageUtil.getLiteralLocale(strLangCode, strCountryCode);
+            %>
+		<tr 
+                 id="tdLanguage-<%=String.valueOf(longLanguageId)%>" class="tdLanguage" 
                 data-href-edit-variables="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
                     <portlet:param name="struts_action" value="/ext/languages_manager/edit_language_keys" />
                     <portlet:param name="id" value="<%= String.valueOf(longLanguageId) %>" />
@@ -93,34 +85,32 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
                 data-href-edit-language="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
                     <portlet:param name="struts_action" value="/ext/languages_manager/edit_language" />
                     <portlet:param name="id" value="<%= String.valueOf(longLanguageId) %>" />
-                    <portlet:param name="<%= Constants.CMD %>" value="edit" /></portlet:actionURL>">
-                <a href="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
+                    <portlet:param name="<%= Constants.CMD %>" value="edit" /></portlet:actionURL>"
+
+              >
+            
+			<td onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
                     <portlet:param name="struts_action" value="/ext/languages_manager/edit_language_keys" />
                     <portlet:param name="id" value="<%= String.valueOf(longLanguageId) %>" />
                     <portlet:param name="referer" value="<%= referer %>" />
-                    <portlet:param name="<%= Constants.CMD %>" value="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, \"edit\")) %>" /></portlet:actionURL>">
-					<img
-					src="/html/images/languages/<%= langIcon %>.gif"
-					border="0" />
-					<%= strLanguage %>&nbsp;<%= (UtilMethods.isSet(strCountryCode) ? ("(" + strCountryCode + ")&nbsp;") : StringPool.BLANK) %>
-			    </a>
-			</td>
-		    <% } else { %>
-		        <td></td>
-		    <% } %>
-		<%     l++;
-	        }
-		%>
+                    <portlet:param name="<%= Constants.CMD %>" value="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, \"edit\")) %>" /></portlet:actionURL>';">
+               <img
+                    src="/html/images/languages/<%= langIcon %>.gif"
+                    border="0" /> <%=lang %></td>   
+                   <td> <%=lang.getId() %></td>
+            <td><%=lang.getLanguage() %></td>
+            <td><%=lang.getCountry() %></td>
+                  
+  
+
+
 		</tr>
-	<%
-	    }
-	%>
+        <%  }%>
 	</table>
 	<!-- End Listing -->
 	
 	
     <div id="popups"></div>
-</liferay:box>
 
 <script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>
 <script src="/html/js/scriptaculous/scriptaculous.js" type="text/javascript"></script>

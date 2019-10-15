@@ -73,7 +73,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 		deleteLanguageById(language);
 
-		CacheLocator.getLanguageCache().removeLanguage(language);
+		CacheLocator.getLanguageCache().clearCache();
 	}
 
 
@@ -220,7 +220,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 				lang.setCountryCode(lang.getCountryCode().toUpperCase());
 			}
 			dbUpsert(lang);
-			CacheLocator.getLanguageCache().clearLanguages();
+			CacheLocator.getLanguageCache().clearCache();
 		} catch (DotDataException e) {
 
 			throw new DotRuntimeException("saveLanguage failed to save the language:" + lang, e);
@@ -624,12 +624,11 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 	private void dbUpsert(final Language language) throws DotDataException {
 
-		if (language.getId() == 0) {
-			language.setId(nextId());
-		}
+
+	    language.setId(betterHash(language.toString()));
+
 		Language tester = getLanguage(language.getId());
 		if (tester != null) {
-
 			new DotConnect().setSQL(UPDATE_LANGUAGE_BY_ID)
 					.addParam(language.getLanguageCode().toLowerCase())
 					.addParam(language.getCountryCode())
@@ -650,10 +649,9 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 	}
 
-    private synchronized long nextId(){
-       return System.currentTimeMillis();
+    private long betterHash(final String s) {
+        return s.intern().hashCode();
     }
-
 	private List<Language> fromDbList(final List<Map<String, Object>> resultSet) {
 		return  new ArrayList<>(new LanguageTransformer(resultSet).asList());
 	}
