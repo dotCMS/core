@@ -829,7 +829,7 @@ public class ESIndexAPI {
         final OpenIndexRequest request = new OpenIndexRequest(indexName);
 		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 		Sneaky.sneak(()->RestHighLevelClientProvider.getInstance().getClient()
-				.indices().open(new OpenIndexRequest(indexName)));
+				.indices().open(new OpenIndexRequest(indexName), RequestOptions.DEFAULT));
 
         AdminLogger.log(this.getClass(), "openIndex", "Index: " + indexName + " opened");
     }

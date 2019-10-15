@@ -979,7 +979,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 Logger.error( this.getClass(), e.getMessage(), e );
                 return false;
             }
-            if ( lc.getTotalHits() > 0 ) {
+            if ( lc.getTotalHits().value > 0 ) {
                 found = true;
                 return true;
             }

@@ -85,6 +85,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.search.TotalHits;
+import org.apache.lucene.search.TotalHits.Relation;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.ActionListener;
@@ -1345,7 +1347,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final SearchResponse response = Sneaky.sneak(()->
                 RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
-       return response.getHits().getTotalHits();
+       return response.getHits().getTotalHits().value;
 	}
 
     @Override
@@ -1372,7 +1374,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         final SearchResponse response = Sneaky.sneak(()->
                 RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
-        return response.getHits().getTotalHits();
+        return response.getHits().getTotalHits().value;
     }
 
     @Override
@@ -1408,7 +1410,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             @Override
             public void onResponse(SearchResponse searchResponse) {
 
-                indexCountSuccess.accept(searchResponse.getHits().getTotalHits());
+                indexCountSuccess.accept(searchResponse.getHits().getTotalHits().value);
             }
 
             @Override
@@ -1557,7 +1559,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warnAndDebug(this.getClass(), infe.getMessage(), infe);
             Logger.warn(this.getClass(), "----------------------------------------------");
 
-            return new SearchHits(new SearchHit[] {}, 0, 0);
+            return new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
 
 
         } catch (Exception e) {

@@ -147,7 +147,7 @@ class MonitorHelper {
                         final SearchResponse response = Sneaky.sneak(()->
                                 RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,
                                         RequestOptions.DEFAULT));
-                        return response.getHits().getTotalHits()>0;
+                        return response.getHits().getTotalHits().value>0;
                     }finally{
                         DbConnectionFactory.closeSilently();
                     }

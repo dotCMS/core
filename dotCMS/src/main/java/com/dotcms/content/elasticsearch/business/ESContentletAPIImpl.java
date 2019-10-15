@@ -927,7 +927,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
         PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
-        list.setTotalResults(lc.getTotalHits());
+        list.setTotalResults(lc.getTotalHits().value);
 
         for (SearchHit sh : lc.getHits()) {
             try{

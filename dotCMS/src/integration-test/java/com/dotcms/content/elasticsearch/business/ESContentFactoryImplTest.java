@@ -247,7 +247,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         //Starting some validations
         assertNotNull(searchHits.getTotalHits());
-        assertTrue(searchHits.getTotalHits() > 0);
+        assertTrue(searchHits.getTotalHits().value > 0);
 
         SearchHit[] hits = searchHits.getHits();
         float maxScore = hits[0].getScore();
@@ -263,7 +263,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         //Starting some validations
         assertNotNull(searchHits.getTotalHits());
-        assertTrue(searchHits.getTotalHits() > 0);
+        assertTrue(searchHits.getTotalHits().value > 0);
 
         hits = searchHits.getHits();
         maxScore = getMaxScore(hits);
