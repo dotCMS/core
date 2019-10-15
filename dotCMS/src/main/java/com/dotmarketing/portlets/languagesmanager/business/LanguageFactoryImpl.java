@@ -118,7 +118,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
         }
 
 		// if we have a number
-		if(!languageId.contains("_")){
+		if(!languageId.contains("_") && ! languageId.contains("-")){
 			try {
 				final long parsedLangId = Long.parseLong(languageId);
 				return getLanguage(parsedLangId);

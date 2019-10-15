@@ -102,9 +102,13 @@ dojo.ready(function() {
 			    <dt><%= LanguageUtil.get(pageContext, "Language-Id") %>:</dt>
 			    <dd><%=languageId %> </dd>
 			</dl>
+            <dl> 
+                <dt><%= LanguageUtil.get(pageContext, "Language-ISO") %>:</dt>
+                <dd><%=language %> </dd>
+            </dl>
 			<dl> 
 			    <dt><%= LanguageUtil.get(pageContext, "Use") %>:</dt>
-			    <dd>http://yoursite.com/?language_id=<%=languageId %></dd>
+			    <dd>https://yoursite.com/?language_id=<%=languageId %></dd>
 			</dl>
 	    <%} %>
 	    <dl>

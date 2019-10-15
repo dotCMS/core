@@ -75,7 +75,7 @@ var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
                 final String strCountryCode = lang.getCountryCode();
                 final String langIcon = LanguageUtil.getLiteralLocale(strLangCode, strCountryCode);
             %>
-		<tr 
+		<tr style="cursor: pointer;"
                  id="tdLanguage-<%=String.valueOf(longLanguageId)%>" class="tdLanguage" 
                 data-href-edit-variables="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
                     <portlet:param name="struts_action" value="/ext/languages_manager/edit_language_keys" />
