@@ -94,6 +94,7 @@ import com.liferay.util.servlet.SessionMessages;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -614,6 +615,8 @@ public class ContentletAjax {
 		    luceneQuery.append("-baseType:3 ");
 		}
 
+        final String finalSort = getFinalSort(fields, orderBy, st, structureInodes);
+
 		// Stores (database name,type description) pairs to catch certain field types.
 		List<Field> targetFields = new ArrayList<Field>();
 
@@ -665,7 +668,7 @@ public class ContentletAjax {
                     final List<String> relatedContent = conAPI
                             .getRelatedContent(relatedParent, childRelationship.get(), true,
                                     currentUser, false, RELATIONSHIPS_FILTER_CRITERIA_SIZE,
-                                    offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, orderBy).stream()
+                                    offset / RELATIONSHIPS_FILTER_CRITERIA_SIZE, finalSort).stream()
                             .map(cont -> cont.getIdentifier()).collect(Collectors.toList());
 
                     if (relatedQueryByChild.length() > 0) {
@@ -911,22 +914,6 @@ public class ContentletAjax {
 		    }
 		}
 
-        if (!UtilMethods.isSet(orderBy)){
-            orderBy = "modDate desc";
-        }else if (orderBy.endsWith("__wfstep__")){
-			orderBy = "wfCurrentStepName";
-		}else if (orderBy.endsWith("__wfstep__ desc")){
-			orderBy = "wfCurrentStepName desc";
-		}else{
-            if(orderBy.charAt(0)=='.'){
-				if (structureInodes.length > 1) {
-					orderBy = orderBy.substring(1);
-				} else {
-					orderBy = st.getVelocityVarName() + orderBy;
-				}
-            }
-        }
-
 		lastSearchMap.put("showDeleted", showDeleted);
 		lastSearchMap.put("filterSystemHost", filterSystemHost);
 		lastSearchMap.put("filterLocked", filterLocked);
@@ -971,7 +958,7 @@ public class ContentletAjax {
 		PaginatedArrayList <Contentlet> hits = new PaginatedArrayList <Contentlet>();
 		long totalHits=0;
 		try{
-			hits = (PaginatedArrayList<Contentlet>) conAPI.search(luceneQuery.toString(), perPage + 1, offset, orderBy, currentUser, false);
+			hits = (PaginatedArrayList<Contentlet>) conAPI.search(luceneQuery.toString(), perPage + 1, offset, finalSort, currentUser, false);
 			totalHits = hits.getTotalResults();
 		}catch (Exception pe) {
 			Logger.error(ContentletAjax.class, "Unable to execute Lucene Query", pe);
@@ -1215,7 +1202,7 @@ public class ContentletAjax {
 		counters.put("luceneQueryFrontend", luceneQueryToShow2.replace("\"","\\${esc.quote}"));
         counters.put("relatedQueryByChild",
                 relatedQueryByChild.length() > 0 ? relatedQueryByChild.toString() : null);
-		counters.put("sortByUF", orderBy);
+		counters.put("sortByUF", finalSort);
 		counters.put("expiredInodes", expiredInodes);
 
 		long end = total;
@@ -1243,6 +1230,64 @@ public class ContentletAjax {
 
 		return results;
 	}
+
+    /**
+     *
+     * @param fields
+     * @param orderBy
+     * @param st
+     * @param structureInodes
+     * @return
+     */
+    private String getFinalSort(final List<String> fields, final String orderBy,
+            final Structure st, final String[] structureInodes) {
+
+	    final String finalSort;
+
+        if (!UtilMethods.isSet(orderBy)) {
+            finalSort = "modDate desc";
+        }else if(orderBy.equalsIgnoreCase("score,modDate desc") && !hasCustomFields(fields)){
+            finalSort = "modDate desc";
+        }else if (orderBy.endsWith("__wfstep__")){
+            finalSort = "wfCurrentStepName";
+        }else if (orderBy.endsWith("__wfstep__ desc")){
+            finalSort = "wfCurrentStepName desc";
+        }else{
+            if(orderBy.charAt(0)=='.'){
+                if (structureInodes.length > 1) {
+                    finalSort = orderBy.substring(1);
+                } else {
+                    finalSort = st.getVelocityVarName() + orderBy;
+                }
+            } else{
+                finalSort = orderBy;
+            }
+        }
+
+        return finalSort;
+    }
+
+    /**
+     *
+     * @param fields
+     * @return
+     */
+    private boolean hasCustomFields(final List<String> fields) {
+        //Current default fields: conHost, languageId
+        final String[] defaultFields = {"conHost", "languageId"};
+
+        //Verify all the default fields are contained. Otherwise, included fields are empty
+        for (int i = 0; i < fields.size(); i += 2) {
+            final int currentIndex = i;
+            if (Arrays.stream(defaultFields)
+                    .noneMatch(field -> field.equalsIgnoreCase(fields.get(currentIndex)))
+                    && UtilMethods.isSet(fields.get(i+1))) {
+                //Case when it is not a default field and has a value set (ie. a user searchable field)
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Returns a relationship field from the child side
