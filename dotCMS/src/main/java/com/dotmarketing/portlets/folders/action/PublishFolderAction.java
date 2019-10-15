@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
@@ -51,6 +52,9 @@ public class PublishFolderAction extends DotPortletAction {
 				_publishFolder(req,res,config,form);
 
 		        String referer = URLDecoder.decode(req.getParameter("referer"),"UTF-8");
+
+		        //Waits for reindex to load page with latest contentlets status (live/working)
+                ThreadUtils.sleep(1000);
 
 		        _sendToReferral(req,res,referer + "&p_p_state="+ WindowState.MAXIMIZED + "&p_p_id=site-browser&p_p_action=1");
 		        return;

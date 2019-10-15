@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.*;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -42,12 +43,18 @@ public final class PageRenderTestUtil {
         }
     }
 
-    private static void addContainers(final PageRenderTest templateTest , final int containersNumber) {
+    private static void addContainers(final PageRenderTest templateTest , final int containersNumber)
+            throws DotDataException, DotSecurityException {
+
+        final ContentType webPageContent = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("webPageContent");
+        StructureTransformer structureTransformer = new StructureTransformer(webPageContent);
+        final Structure structure = structureTransformer.asStructure();
 
         for (int i = 0; i < containersNumber; i++) {
-            final Structure structure1 = new StructureDataGen().nextPersisted();
+
             final Container container = new ContainerDataGen()
-                    .withStructure(structure1, "")
+                    .withStructure(structure, "testing")
                     .friendlyName(String.format("container-%d-friendly-name", i))
                     .title(String.format("container-%d-title", i))
                     .nextPersisted();
@@ -123,7 +130,7 @@ public final class PageRenderTestUtil {
             return containers.values().iterator().next();
         }
 
-        public void createContent(final Container container) {
+        public Contentlet createContent(final Container container) {
             try {
                 final Contentlet contentlet = createGenericContent();
                 final List<Contentlet> contents = this.contents.getContents(container.getIdentifier());
@@ -135,6 +142,8 @@ public final class PageRenderTestUtil {
                 multiTreeAPI.saveMultiTree(multiTree);
 
                 this.contents.addContent(container.getIdentifier(), contentlet);
+
+                return contentlet;
             } catch (DotSecurityException | DotDataException e) {
                 throw new DotRuntimeException(e);
             }

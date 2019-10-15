@@ -87,7 +87,7 @@ public class Task05170DefineFrontEndAndBackEndRoles implements StartupTask {
              + "   where not exists (\n"
              + "    select ur2.user_id from users_cms_roles ur2, cms_role r2 where ur2.role_id = r2.id and r2.role_key = 'DOTCMS_BACK_END_USER' and ur2.user_id = ur.user_id  \n"
              + "  ) union  (  \n"
-             + "       select token_userid as user_id from  api_token_issued where not exists (\n"
+             + "       select token_userid as user_id from  api_token_issued, user_ where api_token_issued.token_userid= user_.userid and not exists (\n"
              + "          select ur2.user_id from users_cms_roles ur2, cms_role r2 where ur2.role_id = r2.id and r2.role_key = 'DOTCMS_BACK_END_USER' and ur2.user_id = token_userid \n"
              + "       )\n"
              + "  )";

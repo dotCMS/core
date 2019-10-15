@@ -17,7 +17,6 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,7 +43,6 @@ public class TikaUtils {
 
     private TikaProxyService tikaService;
     private Boolean osgiInitialized;
-    private User systemUser;
 
     public TikaUtils() throws DotDataException {
 
@@ -88,8 +86,6 @@ public class TikaUtils {
                 osgiInitialized = false;
                 return;
             }
-
-            this.systemUser = APILocator.getUserAPI().getSystemUser();
 
             /*
             Creating a new instance of the TikaProxyService in order to use the Tika services exposed in OSGI,
@@ -183,7 +179,7 @@ public class TikaUtils {
 
                 final File binFile = APILocator.getContentletAPI()
                         .getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD,
-                                this.systemUser);
+                                APILocator.getUserAPI().getSystemUser());
                 if (binFile != null) {
 
                     //Parse the metadata from this file

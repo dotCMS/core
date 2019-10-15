@@ -102,6 +102,19 @@ public class URLMapAPIImplTest {
     }
 
     @Test
+    public void shouldNotMatchUrlStaringWithAPI()
+            throws DotDataException, DotSecurityException {
+
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                    "/api/v1/page/render" +
+                        newsPatternPrefix
+                        + "u-s-labor-department-moves-forward-on-retirement-advice-proposal-esp"
+                        + System.currentTimeMillis());
+
+        assertFalse(urlMapAPI.isUrlPattern(context));
+    }
+
+    @Test
     public void shouldReturnNullWhenThePageUriIsNotDetailPage()
             throws DotDataException, DotSecurityException {
 

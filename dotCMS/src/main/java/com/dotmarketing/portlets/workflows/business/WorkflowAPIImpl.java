@@ -434,6 +434,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		Logger.debug(this,
 				() -> "Adding actionlet class: " + workFlowActionletClass);
 
+        //Prevent dupes
+        removeActionlet(workFlowActionletClass);
 		actionletClasses.add(workFlowActionletClass);
 		refreshWorkFlowActionletMap();
 		return workFlowActionletClass.getCanonicalName();
@@ -446,8 +448,36 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				() -> "Removing actionlet: " + workFlowActionletName);
 
 		final WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
-		actionletClasses.remove(actionlet.getClass());
+		removeActionlet(actionlet.getClass());
 		refreshWorkFlowActionletMap();
+
+		try {
+		    final User user = APILocator.systemUser();
+			final List<WorkflowActionClass> actionClasses = findActionClassesByClassName(actionlet.getActionClass());
+            for(final WorkflowActionClass clazz:actionClasses) {
+				deleteActionClass(clazz, user);
+			}
+		} catch (Exception e) {
+		    Logger.error(WorkflowAPIImpl.class,String.format("Error removing Actionlet with className `%s`", workFlowActionletName), e);
+			throw new DotRuntimeException(e);
+		}
+	}
+
+	/**
+	 * This method applies an additional "remove-code" in case the first direct remove attempt reports to have failed.
+	 * The reason is that the same class could have been loaded from different ClassLoaders (When they come from OSGI)
+	 * If removing the class directly from the class instance fails then we look it up by name.
+	 * @param workFlowActionletClass
+	 */
+	private void removeActionlet(final Class<? extends WorkFlowActionlet> workFlowActionletClass) {
+		final boolean found = actionletClasses.remove(workFlowActionletClass);
+		if (!found) {
+			final String canonicalName = workFlowActionletClass.getCanonicalName();
+			final Optional<Class<? extends WorkFlowActionlet>> optionalClass = actionletClasses
+					.stream().filter(s -> s.getCanonicalName().equals(canonicalName))
+					.findFirst();
+			optionalClass.ifPresent(actionletClasses::remove);
+		}
 	}
 
 	@Override
@@ -1998,6 +2028,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return  workFlowFactory.findActionClasses(action);
 	}
 
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowActionClass> findActionClassesByClassName(final String actionClassName) throws DotDataException {
+
+		return  workFlowFactory.findActionClassesByClassName(actionClassName);
+	}
+
 	private void refreshWorkFlowActionletMap() {
 		actionletMap = null;
 		if (actionletMap == null) {
@@ -2035,7 +2072,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					}
 
 					Collections.sort(actionletList, new ActionletComparator());
-					actionletMap = new LinkedHashMap<String, WorkFlowActionlet>();
+					actionletMap = new LinkedHashMap<>();
 					for(WorkFlowActionlet actionlet : actionletList){
 
 						try {

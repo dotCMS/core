@@ -9,12 +9,7 @@ import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -36,9 +31,11 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
@@ -49,12 +46,16 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import com.liferay.util.StringPool;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
+import com.dotcms.visitor.domain.Visitor;
 
 public class HTMLPageAssetRenderedTest {
 
@@ -74,7 +75,8 @@ public class HTMLPageAssetRenderedTest {
 
     private static Language spanishLanguage;
     private static Host site;
-
+    private static Persona persona;
+    private static Visitor visitor;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -85,6 +87,13 @@ public class HTMLPageAssetRenderedTest {
         createTestPage();
 
         IntegrationTestInitService.getInstance().mockStrutsActionModule();
+
+        final Host  host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
+        persona = new PersonaDataGen().keyTag("persona"+System.currentTimeMillis()).hostFolder(host.getIdentifier()).nextPersisted();
+
+        visitor = mock(Visitor.class);
+        Mockito.when(visitor.getPersona()).thenReturn(persona);
     }
 
     private static void createTestPage() throws Exception{
@@ -189,6 +198,21 @@ public class HTMLPageAssetRenderedTest {
         //Assign permissions
         addAnonymousPermissions(contentlet3);
         contentletsIds.add(contentlet3.getIdentifier());
+
+        //Create Contentlet to not default persona
+        final Contentlet contentlet4 = new ContentletDataGen(contentGenericId)
+                .languageId(1)
+                .setProperty("title", "content4")
+                .setProperty("body", "content4")
+                .nextPersisted();
+
+        contentlet4.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet4.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet4.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        contentletAPI.publish(contentlet4, systemUser, false);
+        //Assign permissions
+        addAnonymousPermissions(contentlet4);
+        contentletsIds.add(contentlet4.getIdentifier());
     }
 
 
@@ -201,6 +225,12 @@ public class HTMLPageAssetRenderedTest {
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
         multiTree = new MultiTree(pageId, containerId, contentletsIds.get(2),UUID,0);
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+        final String personaTag  = persona.getKeyTag();
+        final String personalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
+
+        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(3),UUID,0, personalization);
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
     }
 
@@ -879,6 +909,62 @@ public class HTMLPageAssetRenderedTest {
             WebAssetFactory.unArchiveAsset(container);
             WebAssetFactory.publishAsset(container, systemUser);
         }
+    }
+
+    /**
+     * Method to test: {@link com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: Create a page with three contents for default persona, and 1 content to another persona
+     * ExpectedResult: The page should return the content according to the persona set into the request
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldReturnPageHTMLForPersona() throws Exception{
+
+        final String pageName = "test5Page-"+System.currentTimeMillis();
+        final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
+        pageEnglishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        contentletAPI.publish(pageEnglishVersion, systemUser, false);
+        addAnonymousPermissions(pageEnglishVersion);
+
+        createMultiTree(pageEnglishVersion.getIdentifier());
+
+        final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        Mockito.when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        Mockito.when(mockRequest.getRequestURI()).thenReturn(pageEnglishVersion.getURI());
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+
+        final HttpSession session = mock(HttpSession.class);
+        Mockito.when(mockRequest.getSession()).thenReturn(session);
+        Mockito.when(mockRequest.getSession(false)).thenReturn(session);
+        Mockito.when(mockRequest.getSession(true)).thenReturn(session);
+        Mockito.when(session.getAttribute(WebKeys.VISITOR)).thenReturn(visitor);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue(html , html.contains("content4"));
+
+        Mockito.when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue(html , html.contains("content2content1"));
     }
 
     private static void addAnonymousPermissions(final Contentlet contentlet)

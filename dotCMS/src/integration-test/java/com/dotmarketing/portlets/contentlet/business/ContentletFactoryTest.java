@@ -1,13 +1,21 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 import org.junit.Test;
 
@@ -106,4 +114,42 @@ public class ContentletFactoryTest extends ContentletBaseTest {
         assertNotNull( foundContentlet );
         assertEquals( foundContentlet.getInode(), contentlet.getInode() );
     }
+
+    @Test
+    public void Create_Contentlet_Then_find_Expect_Cache_Hit_Then_Remove_Expect_404()
+            throws DotDataException, NoSuchFieldException, IllegalAccessException, DotSecurityException {
+        
+        final ContentletCache contentletCache = CacheLocator.getContentletCache();
+
+        final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen();
+        final ContentType contentType = contentTypeDataGen.name("lol").nextPersisted();
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+        //Create some content
+        final List<Contentlet> persistentContentlets = ImmutableList.of(
+                    contentletDataGen.nextPersisted(),
+                    contentletDataGen.nextPersisted(),
+                    contentletDataGen.nextPersisted()
+        );
+        //Find it and make sure that nothing like a 404 comes back from cache
+        for(final Contentlet contentlet:persistentContentlets){
+             final String inode = contentlet.getInode();
+             assertNotNull(inode);
+             assertNull(contentletCache.get(inode));
+             assertNotNull(contentletFactory.find( inode ));
+             assertNotNull(contentletCache.get(inode));
+             assertNotEquals(ESContentFactoryImpl.CACHE_404_CONTENTLET, contentletCache.get(inode).getInode());
+        }
+        //Remove'em all
+        contentletFactory.delete(persistentContentlets);
+        //Now if we request them again, null must come back from the factory but a 404  must come back from cache
+        for(final Contentlet contentlet:persistentContentlets){
+            final String inode = contentlet.getInode();
+            assertNotNull(inode);
+            assertNull(contentletCache.get(inode));
+            assertNull(contentletFactory.find( inode ));
+            assertEquals(ESContentFactoryImpl.CACHE_404_CONTENTLET, contentletCache.get(inode).getInode());
+        }
+    }
+
+
 }

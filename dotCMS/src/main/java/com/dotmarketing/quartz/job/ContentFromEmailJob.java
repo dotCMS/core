@@ -1,7 +1,6 @@
 package com.dotmarketing.quartz.job;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -37,16 +36,16 @@ import java.util.Map;
 /**
  * This job will queries a POP account for email and creates content.
  * @author BayLogic
- * @since 
+ * @since
  * http://jira.dotmarketing.net/browse/DOTCMS-6298
  */
 public class ContentFromEmailJob implements Job {
 
 	public ContentFromEmailJob() {
-		
+
 	}
 
-	@WrapInTransaction
+	@CloseDBIfOpened
 	public void execute(JobExecutionContext ctx) throws JobExecutionException {
 
 		ContentletAPI conAPI = APILocator.getContentletAPI();

@@ -19,7 +19,7 @@ public class UrlMapContext {
     private final Host host;
     private final User user;
 
-    UrlMapContext(
+    public UrlMapContext(
             final PageMode mode,
             final long languageId,
             final String uri,

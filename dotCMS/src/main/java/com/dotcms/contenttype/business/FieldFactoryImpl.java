@@ -96,10 +96,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
   @Override
   public List<FieldVariable> loadVariables(Field field) throws DotDataException {
-    // System.err.println("loading field:" + field.variable() + ":" +
-    // System.identityHashCode(field));
-    List<FieldVariable> l = selectFieldVarsInDb(field);
-    return l;
+      return selectFieldVarsInDb(field);
   }
 
   @Override

@@ -101,7 +101,7 @@ public class SiteResource implements Serializable {
           final User user = new WebResource.InitBuilder(this.webResource)
               .requestAndResponse(httpServletRequest, httpServletResponse)
               .requiredBackendUser(true)
-              .rejectWhenNoUser(true)
+              .requiredFrontendUser(true)
               .init().getUser();
           
             Host currentSite = siteHelper.getCurrentSite(httpServletRequest, user);

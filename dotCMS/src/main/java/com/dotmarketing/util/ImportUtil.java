@@ -524,12 +524,17 @@ public class ImportUtil {
             }
         }
 
-        if (keyFieldsInodes.length == 0)
+        if (keyFieldsInodes.length == 0) {
+            Logger.debug(ImportUtil.class, ()->"Warning: No-key-fields-were-choosen-it-could-give-to-you-duplicated-content");
             results.get("warnings").add(
-                    LanguageUtil.get(user, "No-key-fields-were-choosen-it-could-give-to-you-duplicated-content"));
+                    LanguageUtil.get(user,
+                            "No-key-fields-were-choosen-it-could-give-to-you-duplicated-content"));
+        }
 
         if(!uniqueFields.isEmpty()){
             for(Field f : uniqueFields){
+
+                Logger.debug(ImportUtil.class, ()->"the-structure-field" + " " + f.getVelocityVarName() +  " " + "is-unique");
                 results.get("warnings").add(LanguageUtil.get(user, "the-structure-field")+ " " + f.getVelocityVarName() +  " " +LanguageUtil.get(user, "is-unique"));
             }
         }
@@ -547,6 +552,8 @@ public class ImportUtil {
                 .add(
                         LanguageUtil.get(user, "No-headers-found-on-the-file-that-match-any-of-the-structure-fields"));
             }
+
+            Logger.debug(ImportUtil.class, ()->"Not-all-the-structure-fields-were-matched-against-the-file-headers-Some-content-fields-could-be-left-empty");
             results
             .get("warnings")
             .add(LanguageUtil.get(user, "Not-all-the-structure-fields-were-matched-against-the-file-headers-Some-content-fields-could-be-left-empty"));
@@ -874,6 +881,8 @@ public class ImportUtil {
                 Logger.debug(ImportUtil.class, e.getMessage(), e);
             }
 
+            Logger.info(ImportUtil.class, "identifierFieldIndex: " + identifierFieldIndex);
+
             String identifier = null;
             if ( -1 < identifierFieldIndex ) {
                 identifier = line[identifierFieldIndex];
@@ -891,14 +900,18 @@ public class ImportUtil {
                 List<ContentletSearch> contentsSearch = conAPI.searchIndex( buffy.toString(), 0, -1, null, user, true );
 
                 if ( (contentsSearch == null) || (contentsSearch.size() == 0) ) {
+
+                    Logger.warn(ImportUtil.class, "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
                     throw new DotRuntimeException( "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n" );
                 } else {
+
                     Contentlet contentlet;
                     for ( ContentletSearch contentSearch : contentsSearch ) {
                         contentlet = conAPI.find( contentSearch.getInode(), user, true );
                         if ( (contentlet != null) && InodeUtils.isSet( contentlet.getInode() ) ) {
                             contentlets.add( contentlet );
                         } else {
+                            Logger.warn(ImportUtil.class, "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n");
                             throw new DotRuntimeException( "Line #" + lineNumber + ": Content not found with identifier " + identifier + "\n" );
                         }
                     }
@@ -1325,6 +1338,9 @@ public class ImportUtil {
                         try {
                             executeWfAction = validateWorkflowAction(user, cont);
                         } catch (Exception e) {
+
+                            Logger.debug(ImportUtil.class, results + ", cont: " + cont + ", user: " +  user + ", lineNumber " +  lineNumber +
+                                    "validateWorkflowAction, message.import.contentlet.invalid.action.selected: " + e.getMessage());
                             setActionWarning(results, cont, user, lineNumber,
                                     "message.import.contentlet.invalid.action.found.in.csv",
                                     e.getMessage());
@@ -1345,6 +1361,9 @@ public class ImportUtil {
                             cont.setActionId(wfActionId);
                             executeWfAction = validateWorkflowAction(user, cont);
                         } catch (Exception e) {
+
+                            Logger.debug(ImportUtil.class, results + ", cont: " + cont + ", user: " +  user + ", lineNumber " +  lineNumber +
+                                    "message.import.contentlet.invalid.action.selected: " + e.getMessage());
                             setActionWarning(results, cont, user, lineNumber,
                                     "message.import.contentlet.invalid.action.selected",
                                     e.getMessage());
@@ -1362,7 +1381,8 @@ public class ImportUtil {
 
                         if (userCanExecuteAction) {
                           cont.setIndexPolicy(IndexPolicy.DEFER);
-                          
+
+                          Logger.info(ImportUtil.class, "fireContentWorkflow: " + executeWfAction.getName() + ", id: " + executeWfAction.getId());
                             cont = workflowAPI.fireContentWorkflow(cont,
                                     new ContentletDependencies.Builder()
                                             .respectAnonymousPermissions(Boolean.FALSE)
@@ -1374,6 +1394,7 @@ public class ImportUtil {
                                             .categories(new ArrayList<>(categories))
                                             .generateSystemEvent(Boolean.FALSE).build());
                         } else {
+                            Logger.info(ImportUtil.class, "runWorkflowIfCould");
                             cont = runWorkflowIfCould(user, contentTypePermissions,
                                     categories, cont, contentletRelationships);
                         }

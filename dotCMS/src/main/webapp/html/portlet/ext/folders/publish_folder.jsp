@@ -20,21 +20,18 @@ function cancel() {
 }
 </script>
 
-<liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
-	<liferay:param name="box_title" value='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-Related-Assets" )) %>'/>
 
-	<table border="0" cellpadding="0" cellspacing="0" width="100%">
-		<tr>
-			<td>
+
 				<form id="fm" method="post">
 				<input type="hidden" name="referer" value="<%=referer%>">
 				<input type="hidden" name="cmd" value="publish">
 				<input type="hidden" name="inode" value="<%= request.getParameter("inode") %>">
-				
-				<table border="0" cellpadding="0" cellspacing="0" width="100%" class="listingTable">
+		<div style="margin:auto;width:90%;padding:20px;">
+                 <table class="listingTable" style="border:1px solid silver;">
 					<tr class="header">
-						<td>&nbsp;<%= LanguageUtil.get(pageContext, "Title") %></td>
-						<td><%= LanguageUtil.get(pageContext, "Description") %></td>
+                        <th></th>
+						<th>&nbsp;<%= LanguageUtil.get(pageContext, "Title") %></th>
+						<th><%= LanguageUtil.get(pageContext, "Description") %></th>
 					</tr>
 					<% 
 						java.util.List relatedAssets = (java.util.List) request.getAttribute(com.dotmarketing.util.WebKeys.FOLDER_RELATED_ASSETS);
@@ -51,21 +48,15 @@ function cancel() {
 								webasset =  (com.dotmarketing.beans.WebAsset) o;	
 							}
 							
-							k++;
-							String str_style = "";
-							if ((k%2)==0) {
-								str_style = "class=\"alternate_2\"";
-							}
-						    else{
-								str_style = "class=\"alternate_1\"";
-							}
+
+	
 						%>
-						<tr <%=str_style%> >
-							<td valign="bottom">
-								<table border="0" cellpadding="0" cellspacing="0" width="100%" >
-								<tr>
+						<tr  >
+
 									<td width="20">
-										<% if(con != null){ %>
+										<% if(con != null && con.getTitleImage().isPresent()){ %>
+                                            <img src="/dA/<%=con.getInode()%>/<%=con.getTitleImage().get().variable()%>/75h/25q" >
+                                        <%}else if(con !=null){ %>
 											<%= com.dotmarketing.util.UtilHTML.getAssetIcon(con) %>&nbsp;
 										<%}else{ %>
 											<%= com.dotmarketing.util.UtilHTML.getAssetIcon(webasset) %>&nbsp;
@@ -75,7 +66,7 @@ function cancel() {
 										<%
 											String title = "";
 											if(con != null){
-												title = "Contentlet Title";
+												title = con.getTitle();
 											}
 											else if (webasset instanceof Link) {
 												title = ((Link)webasset).getProtocal() + ((Link)webasset).getUrl();
@@ -86,12 +77,9 @@ function cancel() {
 										%>
 										<%=title%>
 									</td>
-								</tr>
-								</table>
-							</td>
 							<td>
 								<% if(con != null){ %>
-								<%=con.getTitle()%>
+								<%=con.getContentType().name()%>
 								<% } else { %>
 								<%=webasset.getFriendlyName()%>
 								<% } %>
@@ -105,22 +93,24 @@ function cancel() {
 						</td>
 					</tr>
 					<% } %>
-					
-					<tr><td colspan="3">&nbsp;</td></tr>
-					<tr>
-						<td colspan="3" align="center">
+
+				</table>
+            
+            <div style="margin:auto;width:400px;">
+                                   
                         <button dojoType="dijit.form.Button" onClick="submitfmPublish()">
                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publish-all-related-assets"  )) %>
-                        </button>
+                        </button>&nbsp; &nbsp; &nbsp;
                         <button dojoType="dijit.form.Button" onClick="cancel()" class="dijitButtonFlat">
                            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "cancel" )) %>
                         </button>
-						</td>
-					</tr>
-				</table>
+                 
+            
+            </div>
+            </div>
+            
+            
+            
 				</form>
-			</td>
-		</tr>
-	</table>
-</liferay:box>
+
 

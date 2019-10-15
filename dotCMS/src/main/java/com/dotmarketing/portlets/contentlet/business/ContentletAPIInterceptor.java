@@ -783,7 +783,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException {
+	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletByIdentifierAnyLanguage(identifier);
 			if(!preResult){

@@ -122,7 +122,7 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException;
+	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException;
 
 	/**
 	 * Retrieves a contentlet list from the database based on a identifiers array

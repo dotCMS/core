@@ -16,16 +16,27 @@ public class VisitorSerializer extends JsonSerializer<Visitor> {
 
     if (visitor.getPersona() != null) {
       Persona persona = visitor.getPersona();
-      visitorBuilder.put("persona", ImmutableMap.of(
-          "keyTag", persona.getKeyTag(), 
-          "identifier",persona.getIdentifier(),
-          "tags",persona.getTags(),
-          "title",persona.getTitle()
-          )
-        );
+      ImmutableMap.Builder<String,Object> builder =ImmutableMap.builder();
+      if(persona.getKeyTag() !=null) {
+          builder.put("keyTag", persona.getKeyTag());
+      }
+      if(persona.getIdentifier() !=null) {
+          builder.put("identifier", persona.getIdentifier());
+      }
+      if(persona.getTitle() !=null) {
+          builder.put("title", persona.getTitle());
+      }
+      if(persona.getTitleImage().isPresent()) {
+          builder.put("titleImage", persona.getTitleImage().get());
+      }
+      if(persona.getTags()!=null) {
+          builder.put("tags", persona.getTags());
+      }
+      visitorBuilder.put("persona", builder.build());
     }
-    
-    visitorBuilder.put("tags", visitor.getAccruedTags());
+    if (visitor.getAccruedTags() != null) {
+        visitorBuilder.put("tags", visitor.getAccruedTags());
+    }
     if (visitor.getDevice() != null) {
       visitorBuilder.put("device", visitor.getDevice());
     }

@@ -3,6 +3,7 @@ package com.dotmarketing.factories;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
@@ -23,6 +24,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 
 /**
@@ -1870,6 +1875,7 @@ public class InodeFactory {
 	
 	//http://jira.dotmarketing.net/browse/DOTCMS-3232
     //To Check whether given inode exists in DB or not
+	@CloseDBIfOpened
 	public static boolean isInode(String inode){
 		DotConnect dc = new DotConnect();
 		String InodeQuery = "Select count(*) as count from inode where inode = ?";
@@ -1907,15 +1913,43 @@ public class InodeFactory {
 	 * @throws DotStateException There is a data inconsistency
 	 * @throws DotSecurityException 
 	 */
+	@WrapInTransaction
 	public static void updateUserReferences(String userId, String replacementUserId)throws DotDataException, DotSecurityException{
         DotConnect dc = new DotConnect();
         
+
+        
+        
         try {
+            List<String> contentTypes = dc.setSQL("select inode.inode as strucId from inode, structure where structure.inode=inode.inode and inode.owner=?")
+                            .addParam(userId)
+                            .loadObjectResults()
+                            .stream()
+                            .map(r->String.valueOf(r.get("strucId")))
+                            .collect(Collectors.toList());
+            
+            
+            
+            
            dc.setSQL("update inode set owner = ? where owner = ?");
            dc.addParam(replacementUserId);
            dc.addParam(userId);
            dc.loadResult();
 
+           
+           // invalidate the content type cache
+           for(String id : contentTypes) {
+               try {
+                   ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser()).find(id);
+                   CacheLocator.getContentTypeCache2().remove(type);
+               }
+               catch(Exception e) {
+                   Logger.warnAndDebug(InodeFactory.class, e);
+               }
+           }
+           
+           
+           
         } catch (DotDataException e) {
             Logger.error(InodeFactory.class,e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);

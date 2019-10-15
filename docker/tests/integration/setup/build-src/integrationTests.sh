@@ -10,6 +10,19 @@ then
    exit 1
 fi
 
+TEST_SUITE_COMMAND="-Dtest.single=com.dotcms.MainSuite"
+GRADLE_PARAMS=${TEST_SUITE_COMMAND}
+
+if [ ! -z "${EXTRA_PARAMS}" ]
+then
+  if [[ $EXTRA_PARAMS =~ "--tests" ]] # We don't need the suite
+  then
+    GRADLE_PARAMS=${EXTRA_PARAMS}
+  else
+    GRADLE_PARAMS="${EXTRA_PARAMS} ${TEST_SUITE_COMMAND}"
+  fi
+fi
+
 if [ ! -z "${EXTRA_PARAMS}" ]
 then
     echo "Running integration tests with extra parameters [${EXTRA_PARAMS}]"
@@ -51,8 +64,14 @@ then
     sleep ${WAIT_DB_FOR}
 fi
 
+echo ""
+echo "================================================================================"
+echo "Executing... [./gradlew integrationTest ${GRADLE_PARAMS}]"
+echo "================================================================================"
+echo ""
+
 cd /build/src/core/dotCMS \
-&& ./gradlew integrationTest ${EXTRA_PARAMS}
+&& ./gradlew integrationTest ${GRADLE_PARAMS}
 
 # Required code, without it gradle will exit 1 killing the docker container
 gradlewReturnCode=$?

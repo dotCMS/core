@@ -1404,10 +1404,15 @@ public class WorkflowResource {
                         this.workflowHelper.contentletToMap(
                                 fireCommandOpt.isPresent()?
                                         fireCommandOpt.get().fire(contentlet,
-                                                UtilMethods.isSet(fireActionForm.getContentletFormData()), formBuilder.build()):
+                                                this.needSave(fireActionForm), formBuilder.build()):
                                         this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build()))
                 )
         ).build(); // 200
+    }
+
+    private boolean needSave (final FireActionForm fireActionForm) {
+
+        return null != fireActionForm && UtilMethods.isSet(fireActionForm.getContentletFormData());
     }
 
     /**
@@ -1465,7 +1470,7 @@ public class WorkflowResource {
 
                 final Optional<SystemActionApiFireCommand> fireCommandOpt =
                         this.systemActionApiFireCommandProvider.get(workflowAction,
-                                UtilMethods.isSet(fireActionForm.getContentletFormData()), systemAction);
+                                this.needSave(fireActionForm), systemAction);
 
                 return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
             } else {
@@ -1593,7 +1598,7 @@ public class WorkflowResource {
                 final String actionId = workflowAction.getId();
                 final Optional<SystemActionApiFireCommand> fireCommandOpt =
                         this.systemActionApiFireCommandProvider.get(workflowAction,
-                                UtilMethods.isSet(fireActionForm.getContentletFormData()), systemAction);
+                                this.needSave(fireActionForm), systemAction);
 
                 return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
             } else {

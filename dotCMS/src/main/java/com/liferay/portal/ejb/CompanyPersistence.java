@@ -22,10 +22,9 @@
 
 package com.liferay.portal.ejb;
 
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 import com.liferay.portal.NoSuchCompanyException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.util.HibernateUtil;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -45,7 +44,6 @@ public class CompanyPersistence extends BasePersistence {
 		return new com.liferay.portal.model.Company(companyId);
 	}
 
-	@WrapInTransaction
 	protected com.liferay.portal.model.Company remove(String companyId)
 		throws NoSuchCompanyException, SystemException {
 		Session session = null;
@@ -70,9 +68,11 @@ public class CompanyPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@WrapInTransaction
 	protected com.liferay.portal.model.Company update(
 		com.liferay.portal.model.Company company) throws SystemException {
 		Session session = null;
@@ -148,9 +148,11 @@ public class CompanyPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected com.liferay.portal.model.Company findByPrimaryKey(
 		String companyId) throws NoSuchCompanyException, SystemException {
 		com.liferay.portal.model.Company company = CompanyPool.get(companyId);
@@ -175,9 +177,11 @@ public class CompanyPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected List findAll() throws SystemException {
 		Session session = null;
 
@@ -200,6 +204,9 @@ public class CompanyPersistence extends BasePersistence {
 		}
 		catch (HibernateException he) {
 			throw new SystemException(he);
+		}
+		finally {
+			HibernateUtil.closeSession(session);
 		}
 	}
 }
