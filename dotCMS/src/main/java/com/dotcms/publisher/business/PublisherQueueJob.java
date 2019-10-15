@@ -67,7 +67,7 @@ import org.quartz.StatefulJob;
  * queue, identifies its assets (i.e., pages, contentlets, folders, etc.) and
  * sends them to publishing mechanism.</li>
  * </ol>
- * 
+ *
  * @author Alberto
  * @version N/A
  * @since Oct 5, 2012

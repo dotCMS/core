@@ -10,6 +10,9 @@ import com.dotmarketing.util.Logger;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Unpublish a content if this one has a live version
+ */
 @Actionlet(unpublish = true)
 public class UnpublishContentActionlet extends WorkFlowActionlet {
 
@@ -31,12 +34,17 @@ public class UnpublishContentActionlet extends WorkFlowActionlet {
 		try {
 
 			//Verify if there is something to unpublish
-			boolean hasLiveVersion = APILocator.getVersionableAPI()
+			final boolean hasLiveVersion = APILocator.getVersionableAPI()
 					.hasLiveVersion(processor.getContentlet());
-			if (hasLiveVersion) {
-				APILocator.getContentletAPI().unpublish(processor.getContentlet(), processor.getUser(), false);
-			}
 
+			if (hasLiveVersion) {
+
+				APILocator.getContentletAPI().unpublish(processor.getContentlet(), processor.getUser(), false);
+				Logger.debug(this, ()->"Unpublished: " + processor.getContentlet().getIdentifier());
+			} else {
+
+				Logger.debug(this, ()->"Unpublishing, already unpublish does not need: " + processor.getContentlet().getIdentifier());
+			}
 		} catch (Exception e) {
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new  WorkflowActionFailureException(e.getMessage(),e);

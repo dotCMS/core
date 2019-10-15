@@ -1,16 +1,19 @@
 package com.dotcms.publisher.pusher.wrapper;
 
-import java.util.List;
-import java.util.Map;
-
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import java.util.List;
+import java.util.Map;
 
+/**
+ * Encapsulates the necessary object to represent a workflow to PP
+ */
 public class WorkflowWrapper {
 	private WorkflowScheme scheme;
 	private List<WorkflowStep> steps;
@@ -21,19 +24,36 @@ public class WorkflowWrapper {
 	private List<WorkflowActionClassParameter> actionClassParams;
 	private Operation operation;
 	private List<Map<String, String>>  actionStepsListMap;
+	private List<SystemActionWorkflowActionMapping> systemActionMappings;
 
-	public WorkflowWrapper(WorkflowScheme scheme, List<WorkflowStep> steps, List<WorkflowAction> actions, Map<WorkflowAction,
-			List<Role>> actionRoles, List<WorkflowActionClass> actionClasses, List<WorkflowActionClassParameter> actionClassParams, Map<String, String> actionNextAssignRolekeyMap, List<Map<String, String>> actionStepsListMap) {
+	public WorkflowWrapper(final WorkflowScheme scheme,
+						   final List<WorkflowStep> steps,
+						   final List<WorkflowAction> actions,
+						   final Map<WorkflowAction, List<Role>> actionRoles,
+						   final List<WorkflowActionClass> actionClasses,
+						   final List<WorkflowActionClassParameter> actionClassParams,
+						   final Map<String, String> actionNextAssignRolekeyMap,
+						   final List<Map<String, String>> actionStepsListMap,
+						   final List<SystemActionWorkflowActionMapping> systemActionMappings) {
+
 		this.scheme = scheme;
-		this.steps = steps;
-		this.actions = actions;
+		this.steps  = steps;
+		this.actions     = actions;
 		this.actionRoles = actionRoles;
-		this.actionClasses = actionClasses;
+		this.actionClasses     = actionClasses;
 		this.actionClassParams = actionClassParams;
 		this.actionNextAssignRolekeyMap = actionNextAssignRolekeyMap;
-		this.actionStepsListMap = actionStepsListMap;
+		this.actionStepsListMap         = actionStepsListMap;
+		this.systemActionMappings       = systemActionMappings;
 	}
 
+	public List<SystemActionWorkflowActionMapping> getSystemActionMappings() {
+		return systemActionMappings;
+	}
+
+	public void setSystemActionMappings(final List<SystemActionWorkflowActionMapping> systemActionMappings) {
+		this.systemActionMappings = systemActionMappings;
+	}
 
 	public WorkflowScheme getScheme() {
 		return scheme;

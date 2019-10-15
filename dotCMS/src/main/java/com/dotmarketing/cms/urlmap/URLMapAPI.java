@@ -19,4 +19,6 @@ public interface URLMapAPI {
      */
     Optional<URLMapInfo> processURLMap(final UrlMapContext context)
             throws DotSecurityException, DotDataException;
+
+    public boolean isUrlPattern(final UrlMapContext urlMapContext) throws DotDataException;
 }

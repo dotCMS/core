@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v2.user;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
@@ -22,7 +23,7 @@ import org.mockito.Mockito;
 /**
  * test {@link UserResource}
  */
-public class UserResourceTest {
+public class UserResourceTest extends UnitTestBase {
 
     @Test
     public void testLoginAsData(){

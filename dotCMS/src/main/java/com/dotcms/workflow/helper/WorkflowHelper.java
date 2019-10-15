@@ -1382,7 +1382,7 @@ public class WorkflowHelper {
                         workflowAction, workflowScheme);
             } else if (UtilMethods.isSet(workflowSystemActionForm.getContentTypeVariable())) {
 
-                final ContentType contentType = APILocator.getContentTypeAPI(user).find(workflowSystemActionForm.getContentTypeVariable());
+                final ContentType contentType = this.findContentType(workflowSystemActionForm.getContentTypeVariable(), user);
                 mapping = this.workflowAPI.mapSystemActionToWorkflowActionForContentType(workflowSystemActionForm.getSystemAction(),
                         workflowAction, contentType);
             } else {
@@ -1391,11 +1391,22 @@ public class WorkflowHelper {
             }
         } else {
 
-            throw new DoesNotExistException("The workflow id: " + workflowSystemActionForm.getActionId() + " does not exists");
+            throw new DoesNotExistException("The workflow action with the id: " + workflowSystemActionForm.getActionId() + " does not exists");
         }
 
 
         return mapping;
+    }
+
+    private ContentType findContentType (final String variable, final User user)
+            throws DotDataException, DotSecurityException {
+
+        try {
+            return APILocator.getContentTypeAPI(user)
+                    .find(variable);
+        } catch (NotFoundInDbException e) {
+            throw new BadRequestException("The content type: " + variable + " does not exists");
+        }
     }
 
     /**

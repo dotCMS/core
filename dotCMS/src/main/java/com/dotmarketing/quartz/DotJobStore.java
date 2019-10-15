@@ -3,7 +3,6 @@ package com.dotmarketing.quartz;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.DotJobConnectionWrapper;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -60,10 +59,7 @@ public class DotJobStore extends JobStoreCMT {
 				TX_DATA_SOURCE_PREFIX + getInstanceName(),
 				new ConnectionProvider() {
 					public Connection getConnection() throws SQLException {
-						//return dataSource.getConnection();
-						final boolean isNew = !DbConnectionFactory.connectionExists();
-						return new DotJobConnectionWrapper(isNew,
-								DbConnectionFactory.getConnection());
+						return dataSource.getConnection();
 					}
 					public void shutdown() {
 						// Do nothing - a Spring-managed DataSource has its own lifecycle.
@@ -161,18 +157,8 @@ public class DotJobStore extends JobStoreCMT {
 	}
 
 	protected void closeConnection(Connection con) {
-
-		boolean closeMe = true;
-
-		if (null != con && con instanceof DotJobConnectionWrapper &&
-				!DotJobConnectionWrapper.class.cast(con).isNewConnection()) {
-			closeMe = false;
-		}
-
-		if (closeMe) {
-			DbConnectionFactory.closeSilently();
-			CloseUtils.closeQuietly(con);
-		}
+		DbConnectionFactory.closeSilently();
+		CloseUtils.closeQuietly(con);
 	}
 
 }

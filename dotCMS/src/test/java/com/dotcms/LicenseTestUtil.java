@@ -14,7 +14,7 @@ import com.dotcms.enterprise.LicenseUtil;
  * Util class created to emulate the get license form request
  * should only be used inside the test suite. 
  */
-public class LicenseTestUtil {
+public class LicenseTestUtil extends UnitTestBase {
 	
 	public static void getLicense() throws Exception{
 		

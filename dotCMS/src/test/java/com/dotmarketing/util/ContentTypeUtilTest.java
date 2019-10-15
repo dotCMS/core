@@ -2,16 +2,9 @@ package com.dotmarketing.util;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import java.util.Date;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import org.junit.Test;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
@@ -26,6 +19,11 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.util.Date;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.junit.Test;
 
 /**
  * Ensures the correct behavior of the {@link ContentTypeUtil} class.
@@ -67,8 +65,8 @@ public class ContentTypeUtilTest extends UnitTestBase {
         when(request.getServerName()).thenReturn("localhost");
         when(session.getAttribute(WebKeys.CTX_PATH)).thenReturn("/ctx");
         when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER)).thenReturn(user);
-        when(languageAPI.getLanguage("en", "US")).thenReturn(language);
-        final long languageId = 1l;
+        when(languageAPI.getLanguage(any(), any())).thenReturn(language);
+        final long languageId = 1L;
         when(language.getId()).thenReturn(languageId);
         when(httpServletRequestThreadLocal.getRequest()).thenReturn(request);
         when(loginService.getLoggedInUser(request)).thenReturn(user);

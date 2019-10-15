@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
 import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -131,6 +132,7 @@ public class FieldAPIImpl implements FieldAPI {
 		permissionAPI.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
 
 	    Field oldField = null;
+	    boolean useFriendlyNameOldVarName = false;
 	    if (UtilMethods.isSet(field.id())) {
 	    	try {
 	    		oldField = fieldFactory.byId(field.id());
@@ -140,7 +142,17 @@ public class FieldAPIImpl implements FieldAPI {
 	          return field;
 	        }
                 if(!oldField.variable().equals(field.variable())){
-                    throw new DotDataValidationException("Field variable can not be modified, please use the following: " + oldField.variable());
+
+                    //TODO: Remove this condition for future releases.
+                    // It has been done to keep backward compatibility -> Issue: https://github.com/dotCMS/core/issues/17239
+                    if (oldField.variable().equalsIgnoreCase(field.variable()) && oldField
+                            .variable().equals(PAGE_FRIENDLY_NAME_FIELD_VAR)) {
+                        useFriendlyNameOldVarName = true;
+                    } else {
+                        throw new DotDataValidationException(
+                                "Field variable can not be modified, please use the following: "
+                                        + oldField.variable());
+                    }
                 }
 
                 if(!oldField.contentTypeId().equals(field.contentTypeId()) ){
@@ -182,7 +194,11 @@ public class FieldAPIImpl implements FieldAPI {
 	        validateRelationshipField(field);
         }
 
-        Field result = fieldFactory.save(field);
+      //TODO: Remove this condition for future releases.
+      // It has been done to keep backward compatibility -> Issue: https://github.com/dotCMS/core/issues/17239
+      Field result = fieldFactory
+              .save(useFriendlyNameOldVarName ? FieldBuilder.builder(field).variable(oldField.variable())
+                      .build() : field);
 
         //if RelationshipField, Relationship record must be added/updated
         if (field instanceof RelationshipField) {

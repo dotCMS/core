@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.gson.Gson;
@@ -55,9 +56,14 @@ public class ESIndexResource {
     private final WebResource webResource = new WebResource();
 
     protected InitDataObject auth(String params, HttpServletRequest request, final HttpServletResponse response) throws DotDataException, DotSecurityException {
-        InitDataObject init= webResource.init(params, request, response, true, null);
-        if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", init.getUser()))
-            throw new DotSecurityException("unauthorized");
+
+        final InitDataObject init = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .params(params)
+                .requiredPortlet(PortletID.MAINTENANCE.toString())
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init();
         return init;
     }
 

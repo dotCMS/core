@@ -52,7 +52,6 @@ public class PublishContentActionlet extends WorkFlowActionlet {
             //First verify if we are handling a HTML page
             if (structureType == Structure.STRUCTURE_TYPE_HTMLPAGE) {
 
-                Logger.info(this, "HEY the structure type is a Page");
                 final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 
                 //Get the un-publish content related to this HTMLPage
@@ -63,6 +62,9 @@ public class PublishContentActionlet extends WorkFlowActionlet {
                  */
                 relatedNotPublished = PublishFactory.getUnpublishedRelatedAssetsForPage(htmlPageAsset, relatedNotPublished,
                         true, processor.getUser(), false);
+                relatedNotPublished.stream().filter(asset -> asset instanceof Contentlet).forEach(
+                        asset -> Contentlet.class.cast(asset)
+                                .setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE));
                 //Publish the page and the related content
                 htmlPageAsset.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
                 this.setIndexPolicy(contentlet, htmlPageAsset);

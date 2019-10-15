@@ -303,22 +303,16 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
       List<ContentType> personaTypes= APILocator.getContentTypeAPI(APILocator.systemUser()).findByBaseType(BaseContentType.PERSONA, "mod_date", 100, 0);
       final Iterator<ContentType> personaTypeIterator = personaTypes.iterator();
       if (!personaTypes.isEmpty()) {
-        query.append("+");
+        query.append(StringPool.PLUS + StringPool.OPEN_PARENTHESES);
         while (personaTypeIterator.hasNext()) {
           final ContentType personaType = personaTypeIterator.next();
-          // +(persona.name:keyTag*  persona.keytag:keyTag*)
-          query.append(String.format("(%s.name:%s*  %s.keytag:%s*)",personaType.variable(),filter,personaType.variable(),filter));
+          query.append(String.format("(%s.name:*%s*  %s.keytag:*%s*)",personaType.variable(),filter,personaType.variable(),filter));
           if(personaTypeIterator.hasNext()){
              query.append(" OR ");
           }
         }
+        query.append(StringPool.CLOSE_PARENTHESES);
       }
-      /*
-      for(ContentType personaType : personaTypes) {
-        query.append(" +(" +personaType.variable() + ".name:").append(filter).append("* ");
-        query.append(" " +personaType.variable() + ".keytag:").append(filter).append("*)");
-      }
-       */
     }
 
     if (includeDefaultInList) {

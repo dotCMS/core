@@ -2,13 +2,17 @@ package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 
+import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
 
@@ -56,19 +60,9 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 					processor.getContentlet();
 
 			Logger.debug(this,
-					"Saving the content of the contentlet: " + contentlet.getIdentifier());
+					()->"Saving the content of the contentlet: " + contentlet.getIdentifier());
 
-			final boolean    isNew              = this.isNew (contentlet);
-			final Contentlet checkoutContentlet = isNew? contentlet:
-					this.contentletAPI.checkout(contentlet.getInode(), processor.getUser(), false);
-
-			if (!isNew) {
-
-				final String inode = checkoutContentlet.getInode();
-				this.contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
-				setIndexPolicy(contentlet, checkoutContentlet);
-				checkoutContentlet.setInode(inode);
-			}
+			final Contentlet checkoutContentlet = this.checkout(contentlet, processor.getUser());
 
 			checkoutContentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 
@@ -81,12 +75,33 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			processor.setContentlet(contentletNew);
 
 			Logger.debug(this,
-					"content version already saved for the contentlet: " + contentlet.getIdentifier());
+					()->"content version already saved for the contentlet: " + contentlet.getIdentifier());
 		} catch (Exception e) {
-
-			Logger.error(this.getClass(),e.getMessage(),e);
-			throw new  WorkflowActionFailureException(e.getMessage(),e);
+            if (e instanceof DotContentletValidationException){
+                Logger.warnAndDebug(this.getClass(),e.getMessage(),e);
+            } else{
+                Logger.error(this.getClass(),e.getMessage(),e);
+            }
+            throw new  WorkflowActionFailureException(e.getMessage(),e);
 		}
+	}
+
+	public Contentlet checkout (final Contentlet contentlet, final User user)
+			throws DotSecurityException, DotDataException {
+
+		final boolean    isNew              = this.isNew (contentlet);
+		final Contentlet checkoutContentlet = isNew? contentlet:
+				this.contentletAPI.checkout(contentlet.getInode(), user, false);
+
+		if (!isNew) {
+
+			final String inode = checkoutContentlet.getInode();
+			this.contentletAPI.copyProperties(checkoutContentlet, contentlet.getMap());
+			setIndexPolicy(contentlet, checkoutContentlet);
+			checkoutContentlet.setInode(inode);
+		}
+
+		return checkoutContentlet;
 	}
 
 	private void setIndexPolicy (final Contentlet originContentlet, final Contentlet newContentlet) {

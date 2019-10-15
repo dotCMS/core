@@ -150,26 +150,27 @@ public class TempFileAPI {
    * @return
    * @throws DotSecurityException
    */
-  public DotTempFile createTempFile(final String incomingFileName,final HttpServletRequest request, final InputStream inputStream, final long maxLength)
+  public DotTempFile createTempFile(final String incomingFileName,final HttpServletRequest request, final InputStream inputStream)
       throws DotSecurityException {
     
     final DotTempFile dotTempFile = this.createEmptyTempFile(incomingFileName, request);
     final File tempFile = dotTempFile.file;
-
+    final long maxLength = maxFileSize(request);
         
-    try (final OutputStream out = new BoundedOutputStream(maxFileSize(request),new FileOutputStream(tempFile))) {
+    try (final OutputStream out = new BoundedOutputStream(maxLength,new FileOutputStream(tempFile))) {
 
 
       int read = 0;
-      byte[] bytes = new byte[4096];
+      final byte[] bytes = new byte[4096];
       while ((read = inputStream.read(bytes)) != -1) {
         out.write(bytes, 0, read);
       }
       return dotTempFile;
+    } catch (IOException e) {
+      final String message = APILocator.getLanguageAPI().getStringKey(WebAPILocator.getLanguageWebAPI().getLanguage(request), "temp.file.max.file.size.error").replace("{0}", UtilMethods.prettyByteify(maxLength));
+      throw new DotStateException(message, e);
     } catch (Exception e) {
-      String message = APILocator.getLanguageAPI().getStringKey(WebAPILocator.getLanguageWebAPI().getLanguage(request), "temp.file.max.file.size.error").replace("{0}", UtilMethods.prettyByteify(maxLength));
-      
-      throw new DotRuntimeException(message, e);
+      throw new DotRuntimeException(e.getMessage(), e);
     } finally {
       CloseUtils.closeQuietly(inputStream);
     }

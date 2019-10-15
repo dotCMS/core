@@ -1,13 +1,9 @@
 package com.dotmarketing.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-
+import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -59,6 +55,13 @@ public enum PageMode {
     }
 
 
+    public static PageMode get() {
+        final HttpServletRequest req = Try.of(()->HttpServletRequestThreadLocal.INSTANCE.getRequest()).getOrNull();
+        return get(req);
+
+    }
+    
+
     public static PageMode get(final HttpSession ses) {
 
         PageMode mode = PageMode.isPageModeSet(ses)
@@ -77,27 +80,27 @@ public enum PageMode {
         return mode;
     }
 
-    public static PageMode get(final HttpServletRequest req) {
+    public static PageMode get(final HttpServletRequest request) {
 
-        if (req == null || null!= req.getHeader("X-Requested-With")) {
+        if (request == null || null!= request.getHeader("X-Requested-With")) {
 
             return DEFAULT_PAGE_MODE;
         }
 
         PageMode pageMode = null;
 
-        if (null != req.getParameter(WebKeys.PAGE_MODE_PARAMETER)) {
+        if (null != request.getParameter(WebKeys.PAGE_MODE_PARAMETER)) {
 
-            pageMode = PageMode.get(req.getParameter(WebKeys.PAGE_MODE_PARAMETER));
-            req.setAttribute(WebKeys.PAGE_MODE_PARAMETER, pageMode);
+            pageMode = PageMode.get(request.getParameter(WebKeys.PAGE_MODE_PARAMETER));
+            request.setAttribute(WebKeys.PAGE_MODE_PARAMETER, pageMode);
         }
 
-        if (null == pageMode && null != req.getAttribute(WebKeys.PAGE_MODE_PARAMETER)) {
+        if (null == pageMode && null != request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)) {
 
-            pageMode = (PageMode)req.getAttribute(WebKeys.PAGE_MODE_PARAMETER);
+            pageMode = (PageMode)request.getAttribute(WebKeys.PAGE_MODE_PARAMETER);
         }
 
-        final HttpSession session = req.getSession(false);
+        final HttpSession session = request.getSession(false);
         if (null == pageMode) {
 
             if (session == null) {
@@ -108,26 +111,17 @@ public enum PageMode {
             pageMode = get(session);
         }
 
-        if (PageMode.LIVE != pageMode) {
+        if (DEFAULT_PAGE_MODE != pageMode) {
 
-            final User user = PortalUtil.getUser(req);
-            try {
+            final User user = PortalUtil.getUser(request);
 
-                if (null != user && APILocator.getUserAPI().getAnonymousUser().equals(user)) {
-
-                    final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(req, pageMode);
-                    if (null == host || !APILocator.getPermissionAPI().doesUserHavePermission
-                            (host, PermissionLevel.READ.getType(), user)) {
-
-                        pageMode = DEFAULT_PAGE_MODE;
-                    }
-                }
-            } catch (Exception e) {
-
-                Logger.debug(PageMode.class, e.getMessage(), e);
+            if (user == null || !user.isBackendUser()) {
+                pageMode = DEFAULT_PAGE_MODE;
             }
         }
-
+        if(Logger.isDebugEnabled(PageMode.class)){
+           Logger.debug(PageMode.class,String.format("PageMode for uri `%s` is `%s`", request.getRequestURI(), pageMode));
+        }
         return pageMode;
     }
     

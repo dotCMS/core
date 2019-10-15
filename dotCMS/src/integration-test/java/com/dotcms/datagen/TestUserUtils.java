@@ -175,7 +175,7 @@ public class TestUserUtils {
             return users.get(0);
         }
         return new UserDataGen().firstName(name).lastName(lastName).emailAddress(email)
-                .password(password).roles(role).nextPersisted();
+                .password(password).roles(role, getFrontendRole(), getBackendRole()).nextPersisted();
     }
 
     @WrapInTransaction
@@ -187,7 +187,7 @@ public class TestUserUtils {
             return users.get(0);
         }
         return new UserDataGen().firstName("Chris").lastName("Publisher").emailAddress(email)
-                .password("chris").roles(getOrCreatePublisherRole(host)).nextPersisted();
+                .password("chris").roles(getOrCreatePublisherRole(host), getFrontendRole(), getBackendRole()).nextPersisted();
     }
 
     @WrapInTransaction
@@ -204,7 +204,7 @@ public class TestUserUtils {
             return users.get(0);
         }
         return new UserDataGen().firstName("Joe").lastName("Contributor").emailAddress(email)
-                .password("joe").roles(getOrCreateContributorRole(host)).nextPersisted();
+                .password("joe").roles(getOrCreateContributorRole(host), getFrontendRole(), getBackendRole()).nextPersisted();
     }
 
     @WrapInTransaction
@@ -221,7 +221,7 @@ public class TestUserUtils {
             return users.get(0);
         }
         return new UserDataGen().firstName("Bill").lastName("Intranet").emailAddress(email)
-                .password("bill").roles(getOrCreateIntranetRole(host), getOrCreateContributorRole())
+                .password("bill").roles(getOrCreateIntranetRole(host), getOrCreateContributorRole(),  getFrontendRole(), getBackendRole())
                 .nextPersisted();
     }
 
@@ -239,7 +239,7 @@ public class TestUserUtils {
             return users.get(0);
         }
         return new UserDataGen().firstName("Jane").lastName("Reviewer").emailAddress(email)
-                .password("jane").roles(getOrCreateReviewerRole(host)).nextPersisted();
+                .password("jane").roles(getOrCreateReviewerRole(host),  getFrontendRole(), getBackendRole() ).nextPersisted();
     }
 
     @WrapInTransaction
@@ -248,7 +248,7 @@ public class TestUserUtils {
     }
 
     @WrapInTransaction
-    public static User getAdminUser(){
+    public static User getAdminUser() throws DotDataException{
         User adminUser;
         try {
             adminUser = APILocator.getUserAPI()
@@ -259,7 +259,7 @@ public class TestUserUtils {
 
         if(null == adminUser){
             final Role adminRole = getOrCreateAdminRole();
-            adminUser = new UserDataGen().roles(adminRole).emailAddress(ADMIN_DEFAULT_MAIL).nextPersisted();
+            adminUser = new UserDataGen().roles(adminRole, getFrontendRole(), getBackendRole()).emailAddress(ADMIN_DEFAULT_MAIL).nextPersisted();
         }
         return adminUser;
     }

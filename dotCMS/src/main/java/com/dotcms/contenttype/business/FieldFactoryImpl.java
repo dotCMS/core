@@ -96,10 +96,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
   @Override
   public List<FieldVariable> loadVariables(Field field) throws DotDataException {
-    // System.err.println("loading field:" + field.variable() + ":" +
-    // System.identityHashCode(field));
-    List<FieldVariable> l = selectFieldVarsInDb(field);
-    return l;
+      return selectFieldVarsInDb(field);
   }
 
   @Override
@@ -408,7 +405,6 @@ public class FieldFactoryImpl implements FieldFactory {
   }
 
   private FieldVariable upsertFieldVariable(final FieldVariable throwAway) throws DotDataException {
-    String key = StringUtils.camelCaseLower(throwAway.key());
     String value = throwAway.value().trim();
 
 
@@ -416,7 +412,6 @@ public class FieldFactoryImpl implements FieldFactory {
         ImmutableFieldVariable.builder().from(throwAway).modDate(DateUtils.round(new Date(), Calendar.SECOND));
 
 
-    builder.key(key);
     builder.value(value);
 
 

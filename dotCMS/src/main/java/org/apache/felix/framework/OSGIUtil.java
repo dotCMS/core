@@ -1,6 +1,5 @@
 package org.apache.felix.framework;
 
-import com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.osgi.HostActivator;
@@ -11,6 +10,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ResourceCollectorUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableList;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,8 +50,8 @@ public class OSGIUtil {
     //List of jar prefixes of the jars to be included in the osgi-extra-generated.conf file
     private List<String> dotCMSJarPrefixes = ImmutableList
             .copyOf(CollectionsUtils.list("dotcms", "ee-"));
-    public List<String> portletIDsStopped = new ArrayList<>();
-    public List<String> actionletsStopped = new ArrayList<>();
+    public final List<String> portletIDsStopped = Collections.synchronizedList(new ArrayList<>());
+    public final List<String> actionletsStopped = Collections.synchronizedList(new ArrayList<>());
     public WorkflowAPIOsgiService workflowOsgiService;
     private static final String WEB_INF_FOLDER = "/WEB-INF";
     private static final String FELIX_BASE_DIR = "felix.base.dir";
