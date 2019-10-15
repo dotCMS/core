@@ -284,7 +284,7 @@ public class ContentUtilsTest {
 
             //Define content to be sent as param for the pullRelated method
             Contentlet contentletToPullFrom;
-            if (testCase.pullParents) {
+            if (!testCase.pullParents) {
                 if (testCase.languageType == LANGUAGE_TYPE_FILTER.SPANISH) {
                     contentletToPullFrom = parentInSpanish;
                 } else {
@@ -387,8 +387,8 @@ public class ContentUtilsTest {
             assertTrue(results.stream().allMatch(contentlet -> {
                 try {
                     return testCase.publishType == PUBLISH_TYPE_FILTER.LIVE && contentlet.isLive()
-                            || testCase.publishType == PUBLISH_TYPE_FILTER.WORKING && !contentlet
-                            .isLive();
+                            || testCase.publishType == PUBLISH_TYPE_FILTER.WORKING && contentlet
+                            .isWorking();
                 } catch (DotDataException | DotSecurityException e) {
                     e.printStackTrace();
                 }

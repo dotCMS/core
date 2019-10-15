@@ -3046,22 +3046,53 @@ public class ESContentletAPIImpl implements ContentletAPI {
             CacheLocator.getRelationshipCache().putRelatedContentMap(contentlet.getIdentifier(), relatedIds);
         }
 
-        //Filter by language if set
-        if (language != -1) {
-            relatedList = relatedList.stream()
-                    .filter(currentContent -> currentContent.getLanguageId() == language)
-                    .collect(Collectors.toList());
+        //Filter by live and/or language if set
+        //If live=true, for each content, it needs to return the live version, otherwise,
+        // it would return the working one, which is in the list by default
+        return filterRelatedContentByLiveAndLanguage(relatedList, systemUser, live, language);
+    }
+
+    /**
+     *
+     * @param relatedList
+     * @param user
+     * @return
+     */
+    private List<Contentlet> filterRelatedContentByLiveAndLanguage(
+            final List<Contentlet> relatedList,
+            final User user, final Boolean live, final long language) {
+
+        if (live == null && language == -1) {
+            return relatedList;
         }
 
-        //Filter by live if set
-        if (live != null){
-            relatedList = relatedList.stream()
-                    .filter(currentContent -> Sneaky.sneak(() -> currentContent.isLive())
-                            .equals(live))
-                    .collect(Collectors.toList());
+        final List<Contentlet> liveRelatedList = new ArrayList<>();
+
+        for (final Contentlet contentlet : relatedList) {
+            try {
+                if ((live == null || contentlet.isLive() == live) && (language == -1
+                        || contentlet.getLanguageId() == language)) {
+                    liveRelatedList.add(contentlet);
+                } else {
+                    //Otherwise, we need to search for the live version if exists
+                    final Contentlet liveVersion = findContentletByIdentifier(
+                            contentlet.getIdentifier(), live == null ? false : live,
+                            language != -1 ? language : contentlet.getLanguageId(), user,
+                            false);
+
+                    if (liveVersion != null) {
+                        liveRelatedList.add(liveVersion);
+                    }
+                }
+            } catch (DotDataException | DotSecurityException e) {
+                final String identifier = contentlet != null ? contentlet.getIdentifier() : null;
+                Logger.warnAndDebug(this.getClass(),
+                        "Error trying to get a live version for content with identifier "
+                                + identifier, e);
+            }
         }
 
-        return relatedList;
+        return liveRelatedList;
     }
 
     /**
