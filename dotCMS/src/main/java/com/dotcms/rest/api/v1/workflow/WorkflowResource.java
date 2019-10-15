@@ -1840,9 +1840,10 @@ public class WorkflowResource {
                                      final Supplier<Long> sessionLanguage,
                                      final FireActionForm fireActionForm,
                                      final InitDataObject initDataObject,
-                                     final PageMode mode) throws DotDataException, DotSecurityException {
+                                     final PageMode pageMode) throws DotDataException, DotSecurityException {
 
         Contentlet contentlet = null;
+        PageMode mode = pageMode;
 
         if(UtilMethods.isSet(inode)) {
 
@@ -1859,6 +1860,7 @@ public class WorkflowResource {
             Logger.debug(this, ()-> "Fire Action, looking for content by identifier: " + identifier
                     + " and language id: " + language);
 
+            mode = PageMode.EDIT_MODE; // when asking for identifier it is always edit
             final Optional<Contentlet> currentContentlet =  language <= 0?
                     this.workflowHelper.getContentletByIdentifier(identifier, mode, initDataObject.getUser(), sessionLanguage):
                     this.contentletAPI.findContentletByIdentifierOrFallback
@@ -1866,7 +1868,7 @@ public class WorkflowResource {
 
             DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
 
-            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet.get(),mode);
+            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet.get(), mode);
         } else {
 
             //otherwise the information must be grabbed from the request body.

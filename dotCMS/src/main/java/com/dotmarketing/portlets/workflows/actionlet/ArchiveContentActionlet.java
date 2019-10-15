@@ -26,14 +26,18 @@ public class ArchiveContentActionlet extends WorkFlowActionlet {
 	}
 
 	@Override
-	public void executeAction(WorkflowProcessor processor,Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
+	public void executeAction(final WorkflowProcessor processor,
+			final Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
+
 		try {
 
+			Logger.debug(this, ()-> "The contentlet: " + processor.getContentlet().getIdentifier() +
+								", will be archive");
 			APILocator.getContentletAPI().archive(processor.getContentlet(), processor.getUser(), false);
-
 		} catch (Exception e) {
-			Logger.error(this.getClass(),e.getMessage(),e);
-			throw new  WorkflowActionFailureException(e.getMessage(),e);
+
+			Logger.error(this.getClass(), e.getMessage(), e);
+			throw new  WorkflowActionFailureException(e.getMessage(), e);
 		}
 	}
 

@@ -1,7 +1,15 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.ARCHIVE;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.DELETE;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.DESTROY;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.EDIT;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.NEW;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.PUBLISH;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.UNARCHIVE;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.UNPUBLISH;
+
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -9,7 +17,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
-import com.dotmarketing.portlets.workflows.business.UnassignedWorkflowContentletCheckinListener;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
@@ -18,14 +25,10 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-
-import javax.ws.rs.DELETE;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.*;
 
 /**
  * This Factory provides the {@link SystemActionApiFireCommand} for a {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
@@ -50,7 +53,7 @@ public class SystemActionApiFireCommandFactory {
                     .put(EDIT,      (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasSaveActionlet(params._1))
                     .put(PUBLISH,   this::hasPublishValid)
                     .put(UNPUBLISH, (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasUnpublishActionlet(params._1))
-                    .put(ARCHIVE,   (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasUnpublishActionlet(params._1))
+                    .put(ARCHIVE,   (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasArchiveActionlet(params._1))
                     .put(UNARCHIVE, (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasUnarchiveActionlet(params._1))
                     .put(DELETE,    (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasDeleteActionlet(params._1))
                     .put(DESTROY,   (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasDestroyActionlet(params._1))
@@ -60,13 +63,13 @@ public class SystemActionApiFireCommandFactory {
     {
 
         final SystemActionApiFireCommand saveFireCommand = new SaveSystemActionApiFireCommandImpl();
-        this.commandMap.put(NEW,  saveFireCommand);
-        this.commandMap.put(EDIT, saveFireCommand);
+        this.commandMap.put(NEW,       saveFireCommand);
+        this.commandMap.put(EDIT,      saveFireCommand);
         this.commandMap.put(PUBLISH,   new PublishSystemActionApiFireCommandImpl());
-        /*this.commandMap.put(UNPUBLISH, new UnPublishSystemActionApiFireCommandImpl());
+        this.commandMap.put(UNPUBLISH, new UnpublishSystemActionApiFireCommandImpl());
         this.commandMap.put(ARCHIVE,   new ArchiveSystemActionApiFireCommandImpl());
         this.commandMap.put(UNARCHIVE, new UnArchiveSystemActionApiFireCommandImpl());
-        this.commandMap.put(DELETE,    new DeleteSystemActionApiFireCommandImpl());
+        /*this.commandMap.put(DELETE,    new DeleteSystemActionApiFireCommandImpl());
         this.commandMap.put(DESTROY,   new DestroySystemActionApiFireCommandImpl());*/
     }
 
@@ -128,7 +131,7 @@ public class SystemActionApiFireCommandFactory {
     }
 
     /**
-     * Implements a {@link SystemActionApiFireCommand} that does a checkin to cover the NEW and EDIT system action
+     * Implements a {@link SystemActionApiFireCommand} that does a checkin to cover the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction#NEW} and {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction#EDIT} system action
      */
     private class SaveSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
 
@@ -159,6 +162,11 @@ public class SystemActionApiFireCommandFactory {
         }
     }
 
+    ////////////////////////
+
+    /**
+     * Implements a {@link SystemActionApiFireCommand} that does an publish to cover the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction#PUBLISH} system action
+     */
     private class PublishSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
 
         @WrapInTransaction
@@ -242,6 +250,130 @@ public class SystemActionApiFireCommandFactory {
             }
 
             return checkinContentlet;
+        }
+    }
+
+    //////////////////////////
+    /**
+     * Implements a {@link SystemActionApiFireCommand} that does an unpublish to cover the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction#UNPUBLISH} system action
+     */
+    private class UnpublishSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
+
+        @WrapInTransaction
+        @Override
+        public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
+                throws DotDataException, DotSecurityException {
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", was fired by default action: " + dependencies.getWorkflowActionId() +
+                    ", however this action has not any unpublish content actionlet, so the unpublish api call is being triggered as part of the request");
+
+            final String actionId       = UtilMethods.isSet(dependencies.getWorkflowActionId())?
+                    dependencies.getWorkflowActionId():contentlet.getActionId();
+            final User   user           = dependencies.getModUser();
+
+            if(UtilMethods.isSet(actionId)) {
+                contentlet.setActionId(actionId);
+            }
+
+            if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
+                contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, dependencies.getWorkflowActionComments());
+            }
+
+            if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
+                contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
+            }
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", on the action id: " + actionId +
+                    ", will do an unpublish");
+
+            contentletAPI.unpublish(contentlet, user, dependencies.isRespectAnonymousPermissions());
+
+            return contentlet;
+        }
+    }
+
+    //////////////////////////
+    /**
+     * Implements a {@link SystemActionApiFireCommand} that does an archive to cover the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction#ARCHIVE} system action
+     */
+    private class ArchiveSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
+
+        @WrapInTransaction
+        @Override
+        public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
+                throws DotDataException, DotSecurityException {
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", was fired by default action: " + dependencies.getWorkflowActionId() +
+                    ", however this action has not any archive content actionlet, so the archive api call is being triggered as part of the request");
+
+            final String actionId       = UtilMethods.isSet(dependencies.getWorkflowActionId())?
+                    dependencies.getWorkflowActionId():contentlet.getActionId();
+            final User   user           = dependencies.getModUser();
+
+            if(UtilMethods.isSet(actionId)) {
+                contentlet.setActionId(actionId);
+            }
+
+            if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
+                contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, dependencies.getWorkflowActionComments());
+            }
+
+            if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
+                contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
+            }
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", on the action id: " + actionId +
+                    ", will do an archive");
+
+            contentletAPI.archive(contentlet, user, dependencies.isRespectAnonymousPermissions());
+
+            return contentlet;
+        }
+    }
+
+    /////////////////
+
+    /**
+     * Implements a {@link SystemActionApiFireCommand} that does an unarchive to cover the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction#UNARCHIVE} system action
+     */
+    private class UnArchiveSystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
+
+        @WrapInTransaction
+        @Override
+        public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
+                throws DotDataException, DotSecurityException {
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", was fired by default action: " + dependencies.getWorkflowActionId() +
+                    ", however this action has not any unarchive content actionlet, so the unarchive api call is being triggered as part of the request");
+
+            final String actionId       = UtilMethods.isSet(dependencies.getWorkflowActionId())?
+                    dependencies.getWorkflowActionId():contentlet.getActionId();
+            final User   user           = dependencies.getModUser();
+
+            if(UtilMethods.isSet(actionId)) {
+                contentlet.setActionId(actionId);
+            }
+
+            if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
+                contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, dependencies.getWorkflowActionComments());
+            }
+
+            if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
+                contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
+            }
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", on the action id: " + actionId +
+                    ", will do an unarchive");
+
+            contentletAPI.unarchive(contentlet, user, dependencies.isRespectAnonymousPermissions());
+
+            return contentlet;
         }
     }
 }
