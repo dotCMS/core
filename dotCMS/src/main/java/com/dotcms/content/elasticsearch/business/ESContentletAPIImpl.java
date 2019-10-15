@@ -4334,7 +4334,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(createNewVersion && workingContentlet!= null && UtilMethods.isSet(workingContentlet.getInode())){
                 APILocator.getVersionableAPI().setWorking(workingContentlet);
             }
-            Logger.error(this, e.getMessage(), e);
+
+            if (e instanceof DotContentletValidationException){
+                Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
+            } else{
+                Logger.error(this, e.getMessage(), e);
+            }
 
             bubbleUpException(e);
         }

@@ -2123,6 +2123,8 @@ ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_language FOREIGN KEY (
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);
+ALTER TABLE workflow_task ADD CONSTRAINT unique_workflow_task unique (webasset,language_id);
+
 alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);
 
 alter table contentlet_version_info add constraint FK_con_ver_lockedby foreign key (locked_by) references user_(userid);

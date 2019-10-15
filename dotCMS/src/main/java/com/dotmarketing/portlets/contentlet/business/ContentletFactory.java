@@ -124,6 +124,16 @@ public abstract class ContentletFactory {
 	 * @throws DotSecurityException 
 	 */
 	public abstract Contentlet save(Contentlet contentlet) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Saves a Contentlet
+	 * Takes a second param that states if the contentlet already exists, if set updates a specific version
+	 * @param contentlet
+	 * @param existingInode
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	protected abstract Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotSecurityException;
 	
 	/**
