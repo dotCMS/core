@@ -138,7 +138,7 @@ public class LanguageFactoryIntegrationTest extends IntegrationTestBase {
         languageFactory.saveLanguage(german2);
 
         final Language lang = languageFactory
-                .getLanguage("de", "DE" + currentMillis);
+                .getLanguage("de", "DE" );
         assertTrue(lang.getId() == german1.getId() || lang.getId() == german2.getId());
     }
 
@@ -151,7 +151,7 @@ public class LanguageFactoryIntegrationTest extends IntegrationTestBase {
 
         assertTrue(russian.getId() > 0);
 
-        assertEquals("We expected the new record to have a value of " + newId, newId,
+        assertEquals("We expected the new record to have a value of " + Math.abs(russian.toString().hashCode()), Math.abs(russian.toString().hashCode()),
                 russian.getId());
 
         assertTrue(languageFactory.hasLanguage(russian.getId()));

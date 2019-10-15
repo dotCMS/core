@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.business;
 
+import com.dotcms.repackage.bsh.util.Util;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.CacheLocator;
@@ -218,6 +219,8 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			}
 			if(UtilMethods.isSet(lang.getCountryCode())) {
 				lang.setCountryCode(lang.getCountryCode().toUpperCase());
+		        String cc = lang.getCountryCode().length()>2 ? lang.getCountryCode().substring(0,2) : lang.getCountryCode();
+		        lang.setCountryCode(cc);
 			}
 			dbUpsert(lang);
 			CacheLocator.getLanguageCache().clearCache();
@@ -624,8 +627,8 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 	private void dbUpsert(final Language language) throws DotDataException {
 
-
 	    language.setId(betterHash(language.toString()));
+	    
 
 		Language tester = getLanguage(language.getId());
 		if (tester != null) {
@@ -650,7 +653,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	}
 
     private long betterHash(final String s) {
-        return s.intern().hashCode();
+        return Math.abs(s.intern().hashCode());
     }
 	private List<Language> fromDbList(final List<Map<String, Object>> resultSet) {
 		return  new ArrayList<>(new LanguageTransformer(resultSet).asList());
