@@ -37,13 +37,13 @@ import java.util.stream.Collectors;
  */
 public class HibernateUtil {
 
-    private final static String LISTENER_SUBMITTER = "dotListenerSubmitter";
-    public static final  String NETWORK_CACHE_FLUSH_DELAY = "NETWORK_CACHE_FLUSH_DELAY";
+    private static final String LISTENER_SUBMITTER = "dotListenerSubmitter";
+    private static final String NETWORK_CACHE_FLUSH_DELAY = "NETWORK_CACHE_FLUSH_DELAY";
 
 	private static Dialect dialect;
 	private static SessionFactory sessionFactory;
 
-	private static ThreadLocal sessionHolder = new ThreadLocal();
+	private static ThreadLocal <Session> sessionHolder = new ThreadLocal<>();
 
 	private Class thisClass;
 
@@ -302,7 +302,7 @@ public class HibernateUtil {
 	public static java.util.List find(String x)  throws DotHibernateException{
 		try{
 			Session session = getSession();
-			return (ArrayList) session.find(x);
+			return session.find(x);
 		}catch (Exception e) {
 			throw new DotHibernateException("Error executing a find on Hibernate Session " + e.getMessage(), e);
 		}
@@ -449,7 +449,7 @@ public class HibernateUtil {
 			if (id == 0) {
 				return thisClass.newInstance();
 			}
-				return session.get(thisClass, new Long(id));
+				return session.get(thisClass, id);
 		}catch (Exception e) {
 			throw new DotHibernateException("Unable to get Object with id " + id + " from Hibernate Session ", e);
 		}
@@ -514,7 +514,7 @@ public class HibernateUtil {
 
 	public String getQuery() throws DotHibernateException {
 		try{
-		StringBuffer sb = new StringBuffer(this.query.getQueryString() + "\n");
+		final StringBuilder sb = new StringBuilder(this.query.getQueryString() + "\n");
 			for (int i = 0; i < this.query.getNamedParameters().length; i++) {
 				sb.append("param " + i + " = " + query.getNamedParameters()[i]);
 			}
@@ -589,7 +589,7 @@ public class HibernateUtil {
 
 	// Session management methods
 
-	protected static ThreadLocal forceDirtyObject=new ThreadLocal();
+	private static ThreadLocal <Object>forceDirtyObject = new ThreadLocal<>();
 
 	protected static class NoDirtyFlushInterceptor implements Interceptor {
 
@@ -625,6 +625,7 @@ public class HibernateUtil {
 			*/
 			Configuration cfg = new Configuration().configure();
 			cfg.setProperty("hibernate.cache.provider_class", "com.dotmarketing.db.NoCacheProvider");
+			cfg.setProperty("hibernate.jdbc.use_scrollable_resultset","true");
 			cfg.addResource("META-INF/portal-hbm.xml");
 			final String[] additionalConfigs = Config.getStringArrayProperty("additional.hibernate.configs",new String[] {});
 		    for(String config:additionalConfigs) {
@@ -726,7 +727,7 @@ public class HibernateUtil {
 			if (sessionFactory == null) {
 				buildSessionFactory();
 			}
-			Session session = (Session) sessionHolder.get();
+			Session session = sessionHolder.get();
 
 			if (session == null) {
 					session = sessionFactory.openSession(DbConnectionFactory.getConnection());
@@ -743,25 +744,26 @@ public class HibernateUtil {
 					}
     			} catch (Exception e) {
     	        	try {
-    	        		session.close();
-    				}
-    				catch (Exception ex) {
+    	        	   if(null != session) {
+						  session.close();
+					   }
+    				} catch (Exception ex) {
     					Logger.error(HibernateUtil.class,e.getMessage() );
     		        	Logger.debug(HibernateUtil.class,e.getMessage(),e);
     				}
     				session = null;
     				try{
     					session = sessionFactory.openSession(DbConnectionFactory.getConnection());
-
-    				}
-    				catch (Exception ex) {
+    				} catch (Exception ex) {
     					Logger.error(HibernateUtil.class,ex.getMessage() );
     		        	Logger.debug(HibernateUtil.class,ex.getMessage(),ex);
     				}
             	}
 			}
 			sessionHolder.set(session);
-			session.setFlushMode(FlushMode.NEVER);
+			if(null != session){
+			   session.setFlushMode(FlushMode.NEVER);
+			 }
 			return session;
 		}catch (Exception e) {
 			throw new DotStateException("Unable to get Hibernate Session ", e);
