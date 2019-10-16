@@ -144,8 +144,10 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         'contenttypes.dropzone.action.create.field': 'Create field'
     });
 
+    let dragDropService: TestFieldDragDropService;
+
     beforeEach(async(() => {
-        this.testFieldDragDropService = new TestFieldDragDropService();
+        dragDropService = new TestFieldDragDropService();
 
         DOTTestBed.configureTestingModule({
             declarations: [
@@ -177,7 +179,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             providers: [
                 { provide: Router, useValue: mockRouter },
                 { provide: HotkeysService, useClass: TestHotkeysMock },
-                { provide: FieldDragDropService, useValue: this.testFieldDragDropService },
+                { provide: FieldDragDropService, useValue: dragDropService },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotLoadingIndicatorService, useValue: dotLoadingIndicatorServiceMock },
                 DotEventsSocket,
@@ -356,8 +358,10 @@ describe('Load fields and drag and drop', () => {
         'contenttypes.dropzone.action.create.field': 'Create field'
     });
 
+    let testFieldDragDropService: TestFieldDragDropService;
+
     beforeEach(async(() => {
-        this.testFieldDragDropService = new TestFieldDragDropService();
+        testFieldDragDropService = new TestFieldDragDropService();
 
         DOTTestBed.configureTestingModule({
             declarations: [
@@ -395,7 +399,7 @@ describe('Load fields and drag and drop', () => {
                 LoginService,
                 DotEventsSocket,
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: FieldDragDropService, useValue: this.testFieldDragDropService },
+                { provide: FieldDragDropService, useValue: testFieldDragDropService },
                 { provide: HotkeysService, useClass: TestHotkeysMock },
                 { provide: Router, useValue: mockRouter },
                 { provide: DotLoadingIndicatorService, useValue: dotLoadingIndicatorServiceMock }
@@ -588,7 +592,7 @@ describe('Load fields and drag and drop', () => {
         becomeNewField(dropField);
         fixture.detectChanges();
 
-        this.testFieldDragDropService._fieldDropFromSource.next({
+        testFieldDragDropService._fieldDropFromSource.next({
             item: dropField,
             target: {
                 columnId: '8',
@@ -623,7 +627,7 @@ describe('Load fields and drag and drop', () => {
             done();
         });
 
-        this.testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
+        testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
     });
 
     it('should break columns and emit save', (done) => {
@@ -635,7 +639,7 @@ describe('Load fields and drag and drop', () => {
             done();
         });
 
-        this.testFieldDragDropService._fieldDropFromSource.next({
+        testFieldDragDropService._fieldDropFromSource.next({
             item: {
                 clazz: COLUMN_BREAK_FIELD.clazz
             }
@@ -656,7 +660,7 @@ describe('Load fields and drag and drop', () => {
             done();
         });
 
-        this.testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
+        testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
     });
 
     it('should save all the new fields and at the end DraggedStarted event should be false', (done) => {
@@ -672,14 +676,14 @@ describe('Load fields and drag and drop', () => {
         spyOn(comp.propertiesForm, 'destroy');
 
         // select the fields[8] as the current field
-        this.testFieldDragDropService._fieldDropFromSource.next({
+        testFieldDragDropService._fieldDropFromSource.next({
             item: newlyField
         });
 
         comp.saveFields.subscribe((fields) => {
             expect(fakeFields).toEqual(fields);
             setTimeout(() => {
-                expect(this.testFieldDragDropService.isDraggedEventStarted()).toBe(false);
+                expect(testFieldDragDropService.isDraggedEventStarted()).toBe(false);
             }, 10);
             done();
         });
@@ -731,7 +735,7 @@ describe('Load fields and drag and drop', () => {
             fixture.detectChanges();
 
             const fieldToEdit: DotCMSContentTypeField = fakeFields[2].columns[0].fields[0];
-            this.testFieldDragDropService._fieldDropFromSource.next({
+            testFieldDragDropService._fieldDropFromSource.next({
                 item: fieldToEdit,
                 target: {
                     columnId: '8',
