@@ -1695,17 +1695,87 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    private Optional<Boolean> checkAndRunDeleteAsWorkflow(final Contentlet contentletIn, final User user,
+            final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+
+        // if already on workflow or has an actionid skip this method.
+        if (this.isDisableWorkflow(contentletIn)
+                || this.isWorkflowInProgress(contentletIn)
+                || this.isInvalidContentTypeForWorkflow(contentletIn)
+                || UtilMethods.isSet(contentletIn.getActionId())) {
+
+            return Optional.empty();
+        }
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final Optional<WorkflowAction> workflowActionOpt =
+                workflowAPI.findActionMappedBySystemActionContentlet
+                        (contentletIn, SystemAction.DELETE, user);
+
+        if (workflowActionOpt.isPresent()) {
+
+            final String title    = contentletIn.getTitle();
+            final String actionId = workflowActionOpt.get().getId();
+
+            // if the default action is in the avalable actions for the content.
+            if (!isDefaultActionOnAvailableActions(contentletIn, user, workflowAPI, actionId)) {
+                return Optional.empty();
+            }
+
+            Logger.info(this, () -> "The contentlet: " + contentletIn.getIdentifier() + " hasn't action id set"
+                    + " using the default action: " + actionId);
+
+            // if the action has a save action, we skip the current checkin
+            if (workflowActionOpt.get().hasDeleteActionlet()) {
+
+                Logger.info(this, () -> "The action: " + actionId + " has an delete contentlet actionlet"
+                        + " so firing a workflow and skipping the current delete for the contentlet: " + contentletIn.getIdentifier());
+
+                contentletIn.setActionId(actionId);
+                contentletIn.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+
+                final WorkflowProcessor processor = workflowAPI.fireWorkflowPreCheckin(contentletIn, user);
+                workflowAPI.fireWorkflowPostCheckin(processor);
+                if (processor.getContextMap().containsKey("deleted")) {
+
+                    return Optional.ofNullable((Boolean)processor.getContextMap().get("deleted"));
+                }
+
+                return Optional.ofNullable(false);
+            }
+
+            Logger.info(this, () -> "The action: " + contentletIn.getIdentifier() + " hasn't a delete contentlet actionlet"
+                    + " so including just the action to the contentlet: " + title);
+
+            contentletIn.setActionId(actionId);
+        }
+
+        return Optional.empty();
+    }
+
     @Override
     public boolean delete(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
+
+        final Optional<Boolean> deleteOpt = this.checkAndRunDeleteAsWorkflow(contentlet, user, respectFrontendRoles);
+        if (deleteOpt.isPresent()) {
+
+            Logger.info(this, "A Workflow has been ran instead of delete the contentlet: " +
+                    contentlet.getIdentifier());
+
+            return deleteOpt.get();
+        }
+
         boolean deleted = false;
-        final List<Contentlet> contentlets = new ArrayList<Contentlet>();
+        final List<Contentlet> contentlets = new ArrayList<>();
         contentlets.add(contentlet);
 
         try {
+
             deleted = delete(contentlets, user, respectFrontendRoles);
             HibernateUtil.addCommitListener
                     (()-> this.localSystemEventsAPI.notify(new ContentletDeletedEvent(contentlet, user)));
         } catch(DotDataException | DotSecurityException e) {
+
             logContentletActivity(contentlets, "Error Deleting Content", user);
             throw e;
         }
@@ -1716,11 +1786,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public boolean delete(final Contentlet contentlet, final User user, final boolean respectFrontendRoles, final boolean allVersions) throws DotDataException,DotSecurityException {
 
-        final List<Contentlet> contentlets = new ArrayList<Contentlet>();
+        final List<Contentlet> contentlets = new ArrayList<>();
         contentlets.add(contentlet);
 
         try {
-            delete(contentlets, user, respectFrontendRoles, allVersions);
+
+            this.delete(contentlets, user, respectFrontendRoles, allVersions);
             HibernateUtil.addCommitListener
                     (()-> this.localSystemEventsAPI.notify(new ContentletDeletedEvent(contentlet, user)));
         } catch(DotDataException | DotSecurityException e) {
@@ -1777,8 +1848,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public boolean delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles)
+    public boolean delete(final List<Contentlet> contentlets, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
+
         return deleteContentlets(contentlets, user, respectFrontendRoles, false);
     }
 
@@ -2054,109 +2126,146 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotStateException
      *             One of the specified contentlets is not archived.
      */
-    private boolean deleteContentlets(List<Contentlet> contentlets, User user,
-                                      boolean respectFrontendRoles, boolean isDeletingAHost) throws DotDataException,
+    private boolean deleteContentlets(final List<Contentlet> contentlets, final User user,
+                                      final boolean respectFrontendRoles, final boolean isDeletingAHost) throws DotDataException,
             DotSecurityException {
 
         boolean noErrors = true;
 
-        if(contentlets == null || contentlets.size() == 0){
+        if(contentlets == null || contentlets.size() == 0) {
+
             Logger.info(this, "No contents passed to delete so returning");
             noErrors = false;
             return noErrors;
         }
-        logContentletActivity(contentlets, "Deleting Content", user);
-        for (Contentlet contentlet : contentlets){
-            if(!contentlet.isArchived() && contentlet.validateMe()){
+
+        this.logContentletActivity(contentlets, "Deleting Content", user);
+
+        final List<Contentlet> filteredContentlets = this.validateAndFilterContentletsToDelete(
+                contentlets, user, respectFrontendRoles);
+
+        if(filteredContentlets.size() != contentlets.size()) {
+
+            this.logContentletActivity(contentlets, "Error Deleting Content", user);
+            throw new DotSecurityException("User: "+ (user != null ? user.getUserId() : "Unknown")
+                    +" does not have permission to delete some or all of the contentlets");
+        }
+
+        // Log contentlet identifiers that we are going to delete
+        final HashSet<String> contentletIdentifiers   = new HashSet<>();
+        for (final Contentlet contentlet : contentlets) {
+
+            contentletIdentifiers.add(contentlet.getIdentifier());
+        }
+
+        AdminLogger.log(this.getClass(), "delete", "User trying to delete the following contents: " +
+                contentletIdentifiers.toString(), user);
+
+        final HashSet<String> deletedIdentifiers      = new HashSet();
+        final Iterator<Contentlet> contentletIterator = filteredContentlets.iterator();
+        while (contentletIterator.hasNext()) {
+
+            this.deleteContentlet(contentlets, user, isDeletingAHost,
+                    deletedIdentifiers, contentletIterator.next());
+        }
+
+        return noErrors;
+    }
+
+    private void deleteContentlet(final List<Contentlet> contentlets, final User user, final boolean isDeletingAHost,
+            final HashSet<String> deletedIdentifiers, final Contentlet contentletToDelete)
+            throws DotDataException, DotSecurityException {
+
+        //If we are deleting a Site/Host, we can call directly the destroy method.
+        //No need to validate anything.
+        if (isDeletingAHost) {
+            //We need to make sure that we only destroy a identifier once.
+            //If the contentlet has several languages we could send same identifier several times.
+            if(!deletedIdentifiers.contains(contentletToDelete.getIdentifier())) {
+
+                contentletToDelete.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+                this.destroyContentlets(Lists.newArrayList(contentletToDelete), user, false);
+            }
+        } else {
+
+            if (contentletToDelete.isHTMLPage()) {
+
+                unlinkRelatedContentType(user, contentletToDelete);
+            }
+
+            //If we are not deleting a site, the course of action will depend
+            // on the amount of languages of each contentlet.
+
+            // Find all multi-language working contentlets
+            final List<Contentlet> otherLanguageCons = this.contentFactory.getContentletsByIdentifier(contentletToDelete.getIdentifier());
+            if (otherLanguageCons.size() == 1) {
+
+                this.destroyContentlets(Lists.newArrayList(contentletToDelete), user, false);
+            } else if (otherLanguageCons.size() > 1) {
+
+                if(!contentletToDelete.isArchived() && contentletToDelete.getMap().get(Contentlet.DONT_VALIDATE_ME) == null) {
+
+                    this.logContentletActivity(contentletToDelete, "Error Deleting Content", user);
+                    final String errorMsg = "Contentlet with Inode " + contentletToDelete.getInode()
+                            + " cannot be deleted because it's not archived. Please archive it first before deleting it.";
+                    Logger.error(this, errorMsg);
+                    APILocator
+                            .getNotificationAPI().generateNotification(errorMsg, NotificationLevel.INFO, user.getUserId());
+                    throw new DotStateException(errorMsg);
+                }
+
+                //TODO we still have several things that need cleaning here:
+                //TODO https://github.com/dotCMS/core/issues/9146
+                final Identifier identifier                      = APILocator.getIdentifierAPI().find(contentletToDelete.getIdentifier());
+                final List<Contentlet> allVersionsList           = this.findAllVersions(identifier, user,false);
+                final List <Contentlet> contentletsLanguageList  = allVersionsList.stream().
+                        filter(contentlet -> contentlet.getLanguageId() == contentletToDelete.getLanguageId())
+                        .collect(Collectors.toList());
+                contentletsLanguageList.forEach(contentletLanguage -> contentletLanguage.setIndexPolicy(contentletToDelete.getIndexPolicy()));
+                this.contentFactory.delete(contentletsLanguageList, false);
+
+                for (final Contentlet contentlet : contentlets) {
+
+                    try {
+
+                        PublisherAPI.getInstance().deleteElementFromPublishQueueTable(contentlet.getIdentifier(),
+                                contentlet.getLanguageId());
+                    } catch (DotPublisherException e) {
+
+                        Logger.error(getClass(), "Error deleting Contentlet from Publishing Queue with Identifier: " + contentlet.getIdentifier());
+                        Logger.debug(getClass(), "Error deleting Contentlet from Publishing Queue with Identifier: " + contentlet.getIdentifier(), e);
+                    }
+                }
+            }
+        }
+
+        deletedIdentifiers.add(contentletToDelete.getIdentifier());
+        this.sendDeleteEvent(contentletToDelete);
+    }
+
+    private List<Contentlet> validateAndFilterContentletsToDelete(final List<Contentlet> contentlets,
+            final User user, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        for (final Contentlet contentlet : contentlets) {
+
+            if(!contentlet.isArchived() && contentlet.validateMe()) {
+
                 throw new DotContentletStateException(
                     getLocalizedMessageOrDefault(user, "Failed-to-delete-unarchived-content", FAILED_TO_DELETE_UNARCHIVED_CONTENT, getClass())
                 );
             }
 
             if(contentlet.getInode().equals("")) {
+
                 logContentletActivity(contentlet, "Error Deleting Content", user);
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
             }
-            canLock(contentlet, user);
-        }
-        List<Contentlet> perCons = permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_PUBLISH, respectFrontendRoles, user);
 
-        if(perCons.size() != contentlets.size()){
-            logContentletActivity(contentlets, "Error Deleting Content", user);
-            throw new DotSecurityException("User: "+ (user != null ? user.getUserId() : "Unknown")
-                    +" does not have permission to delete some or all of the contentlets");
+            this.canLock(contentlet, user);
         }
 
-        // Log contentlet identifiers that we are going to delete
-        HashSet<String> l = new HashSet();
-        for (Contentlet contentlet : contentlets) {
-            l.add(contentlet.getIdentifier());
-        }
-        AdminLogger.log(this.getClass(), "delete", "User trying to delete the following contents: " + l.toString(), user);
-
-        HashSet<String> deletedIdentifiers = new HashSet();
-
-        Iterator<Contentlet> itr = perCons.iterator();
-        while( itr.hasNext() ) {
-            final Contentlet con = itr.next();
-
-            //If we are deleting a Site/Host, we can call directly the destroy method.
-            //No need to validate anything.
-            if ( isDeletingAHost ) {
-                //We need to make sure that we only destroy a identifier once.
-                //If the contentlet has several languages we could send same identifier several times.
-                if( !deletedIdentifiers.contains(con.getIdentifier()) ){
-                    con.setProperty(Contentlet.DONT_VALIDATE_ME, true);
-                    destroyContentlets(Lists.newArrayList(con), user, false);
-                }
-            } else {
-
-                if (con.isHTMLPage()){
-                    unlinkRelatedContentType(user, con);
-                }
-
-                //If we are not deleting a site, the course of action will depend
-                // on the amount of languages of each contentlet.
-
-                // Find all multi-language working contentlets
-                List<Contentlet> otherLanguageCons = contentFactory.getContentletsByIdentifier(con.getIdentifier());
-                if (otherLanguageCons.size() == 1) {
-                    destroyContentlets(Lists.newArrayList(con), user, false);
-
-                } else if (otherLanguageCons.size() > 1) {
-                    if(!con.isArchived() && con.getMap().get(Contentlet.DONT_VALIDATE_ME) == null){
-                        logContentletActivity(con, "Error Deleting Content", user);
-                        String errorMsg = "Contentlet with Inode " + con.getInode()
-                                + " cannot be deleted because it's not archived. Please archive it first before deleting it.";
-                        Logger.error(this, errorMsg);
-                        APILocator.getNotificationAPI().generateNotification(errorMsg, NotificationLevel.INFO, user.getUserId());
-                        throw new DotStateException(errorMsg);
-                    }
-                    //TODO we still have several things that need cleaning here:
-                    //TODO https://github.com/dotCMS/core/issues/9146
-                    Identifier identifier = APILocator.getIdentifierAPI().find(con.getIdentifier());
-                    List<Contentlet> allVersionsList = findAllVersions(identifier,user,false);
-                    List <Contentlet> contentletsLanguageList  = allVersionsList.stream().
-                            filter(contentlet -> contentlet.getLanguageId()==con.getLanguageId()).collect(Collectors.toList());
-                    contentletsLanguageList.forEach(contentletLanguage -> contentletLanguage.setIndexPolicy(con.getIndexPolicy()));
-                    contentFactory.delete(contentletsLanguageList, false);
-
-                    for (Contentlet contentlet : contentlets) {
-                        try {
-                            PublisherAPI.getInstance().deleteElementFromPublishQueueTable(contentlet.getIdentifier(), contentlet.getLanguageId());
-                        } catch (DotPublisherException e) {
-                            Logger.error(getClass(), "Error deleting Contentlet from Publishing Queue with Identifier: " + contentlet.getIdentifier());
-                            Logger.debug(getClass(), "Error deleting Contentlet from Publishing Queue with Identifier: " + contentlet.getIdentifier(), e);
-                        }
-                    }
-                }
-            }
-
-            deletedIdentifiers.add(con.getIdentifier());
-            this.sendDeleteEvent(con);
-        }
-
-        return noErrors;
+        return this.permissionAPI.filterCollection(contentlets,
+                PermissionAPI.PERMISSION_PUBLISH, respectFrontendRoles, user);
     }
 
     private void sendDeleteEvent (final Contentlet contentlet) throws DotHibernateException {
