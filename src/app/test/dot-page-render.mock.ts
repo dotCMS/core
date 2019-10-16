@@ -38,7 +38,7 @@ export const mockDotPage: DotPage = {
     type: '',
     uri: '',
     versionType: '',
-    rendered: '<html></html>'
+    rendered: '<html><head></header><body><p>Hello World</p></body></html>'
 };
 
 export const mockDotLayout: DotLayout = {

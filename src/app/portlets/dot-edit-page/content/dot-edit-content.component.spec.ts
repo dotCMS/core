@@ -1,55 +1,49 @@
-import { throwError as observableThrowError, of as observableOf } from 'rxjs';
-import { SiteServiceMock, mockSites } from './../../../test/site-service.mock';
+import { of } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { ComponentFixture, tick, fakeAsync } from '@angular/core/testing';
+import { Component, DebugElement, EventEmitter, Input, Output, ElementRef } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { DialogModule, ButtonModule } from 'primeng/primeng';
 import { LoginService, SiteService } from 'dotcms-js';
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DotContainerContentletService } from './services/dot-container-contentlet.service';
-import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
-import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm/index';
-import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
 import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { DotMenuService } from '@services/dot-menu.service';
 import { DotMessageService } from '@services/dot-messages-service';
 import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
-import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
-import { LoginServiceMock, mockUser } from '../../../test/login-service.mock';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
 import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
-import { DotWorkflowServiceMock } from '../../../test/dot-workflow-service.mock';
-import { mockDotRenderedPage, mockDotPage } from '../../../test/dot-page-render.mock';
-import { mockDotDevices } from '../../../test/dot-device.mock';
-import { mockDotEditPageViewAs } from '../../../test/dot-edit-page-view-as.mock';
-import { mockResponseView } from '../../../test/response-view.mock';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotPageRender } from '@portlets/dot-edit-page/shared/models/dot-rendered-page.model';
-import { DotEditPageToolbarComponent } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.component';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotPageContainer } from '@portlets/dot-edit-page/shared/models/dot-page-container.model';
 import { DotEditContentComponent } from './dot-edit-content.component';
 import { DotCMSContentType } from 'dotcms-models';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
-import { DotEditPageInfoComponent } from '../components/dot-edit-page-info/dot-edit-page-info.component';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import * as _ from 'lodash';
-import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
+import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
+import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
+import { DotContainerContentletService } from './services/dot-container-contentlet.service';
+import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
+import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
+import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
+
+import { SiteServiceMock } from '@tests/site-service.mock';
+import { DOTTestBed } from '@tests/dot-test-bed';
+import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
+import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotWorkflowServiceMock } from '@tests/dot-workflow-service.mock';
+import { mockDotRenderedPage, mockDotLayout } from '@tests/dot-page-render.mock';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
+import { DotPageMode, DotPageContainer, DotPageContent } from '../shared/models';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 @Component({
     selector: 'dot-global-message',
@@ -87,29 +81,27 @@ export class MockDotFormSelectorComponent {
     close = new EventEmitter<any>();
 }
 
-function waitForDetectChanges(fixture) {
-    fixture.detectChanges();
-    tick(1);
-    fixture.detectChanges();
-    tick(10);
-}
+const mockRenderedPageState = new DotPageRenderState(
+    mockUser,
+    new DotPageRender(mockDotRenderedPage)
+);
 
 describe('DotEditContentComponent', () => {
     const siteServiceMock = new SiteServiceMock();
     let component: DotEditContentComponent;
     let de: DebugElement;
-    let dotDialogService: DotAlertConfirmService;
     let dotEditContentHtmlService: DotEditContentHtmlService;
     let dotGlobalMessageService: DotGlobalMessageService;
-    let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotPageStateService: DotPageStateService;
     let dotRouterService: DotRouterService;
     let fixture: ComponentFixture<DotEditContentComponent>;
     let route: ActivatedRoute;
-    let toolbarComponent: DotEditPageToolbarComponent;
-    let toolbarElement: DebugElement;
-    let dotContentletEditorService: DotContentletEditorService;
     let dotUiColorsService: DotUiColorsService;
+    let dotEditPageService: DotEditPageService;
+    let iframeOverlayService: IframeOverlayService;
+    let dotLoadingIndicatorService: DotLoadingIndicatorService;
+    let dotContentletEditorService: DotContentletEditorService;
+    let dotDialogService: DotAlertConfirmService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -124,7 +116,9 @@ describe('DotEditContentComponent', () => {
             'editpage.content.save.changes.confirmation.header': 'Save header',
             'editpage.content.save.changes.confirmation.message': 'Save message',
             'dot.common.content.search': 'Content Search',
-            'an-unexpected-system-error-occurred': 'Error msg'
+            'an-unexpected-system-error-occurred': 'Error msg',
+            'editpage.content.contentlet.remove.confirmation_message.header': 'header',
+            'editpage.content.contentlet.remove.confirmation_message.message': 'message'
         });
 
         DOTTestBed.configureTestingModule({
@@ -153,19 +147,17 @@ describe('DotEditContentComponent', () => {
                 ])
             ],
             providers: [
-                DotContainerContentletService,
                 DotContentletLockerService,
+                DotPageRenderService,
+                DotContainerContentletService,
+                DotDragDropAPIHtmlService,
+                DotEditContentToolbarHtmlService,
                 DotDOMHtmlUtilService,
                 DotAlertConfirmService,
-                DotDragDropAPIHtmlService,
                 DotEditContentHtmlService,
-                DotEditContentToolbarHtmlService,
                 DotEditPageService,
                 DotGlobalMessageService,
-                DotHttpErrorManagerService,
-                DotMenuService,
                 DotPageStateService,
-                DotPageRenderService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -187,16 +179,14 @@ describe('DotEditContentComponent', () => {
                     useValue: {
                         parent: {
                             parent: {
-                                data: observableOf({
-                                    content: {
-                                        ...mockDotRenderedPage,
-                                    }
+                                data: of({
+                                    content: mockRenderedPageState
                                 })
                             }
                         },
                         snapshot: {
                             queryParams: {
-                                url: 'an/url/fake'
+                                url: '/an/url/test'
                             }
                         }
                     }
@@ -209,1050 +199,687 @@ describe('DotEditContentComponent', () => {
         component = fixture.componentInstance;
         de = fixture.debugElement;
 
-        dotContentletEditorService = de.injector.get(DotContentletEditorService);
-        dotDialogService = de.injector.get(DotAlertConfirmService);
         dotEditContentHtmlService = de.injector.get(DotEditContentHtmlService);
         dotGlobalMessageService = de.injector.get(DotGlobalMessageService);
-        dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
         dotUiColorsService = de.injector.get(DotUiColorsService);
         dotPageStateService = de.injector.get(DotPageStateService);
         dotRouterService = de.injector.get(DotRouterService);
-        toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
-        // toolbarComponent = toolbarElement.componentInstance;
         route = de.injector.get(ActivatedRoute);
+        dotEditPageService = de.injector.get(DotEditPageService);
+        iframeOverlayService = de.injector.get(IframeOverlayService);
+        dotLoadingIndicatorService = de.injector.get(DotLoadingIndicatorService);
+        dotContentletEditorService = de.injector.get(DotContentletEditorService);
+        dotDialogService = de.injector.get(DotAlertConfirmService);
+
+        spyOn(dotPageStateService, 'reload');
     });
 
-    it('should have a toolbar', () => {
-        expect(toolbarElement).not.toBeNull();
-    });
+    describe('elements', () => {
+        describe('dot-form-selector', () => {
+            let dotFormSelector: DebugElement;
 
-    it('should pass data to the toolbar', fakeAsync(() => {
-        waitForDetectChanges(fixture);
-        expect(toolbarComponent.pageState.page).toEqual(mockDotPage);
-    }));
+            beforeEach(() => {
+                spyOn(dotEditContentHtmlService, 'renderAddedForm').and.returnValue(
+                    of([{ identifier: '123', uuid: 'uui-1' }])
+                );
 
-    it('should have page information', fakeAsync(() => {
-        waitForDetectChanges(fixture);
-        const pageInfo: DotEditPageInfoComponent = de.query(By.css('dot-edit-page-info'))
-            .componentInstance;
-        expect(pageInfo !== null).toBe(true);
-        expect(pageInfo.pageState.page).toEqual(mockDotPage);
-    }));
+                spyOn(dotEditPageService, 'save').and.returnValue(of({}));
 
-    it('should redirect to site browser onClick cancel button', () => {
-        const cancel: DebugElement = de.query(By.css('.edit-page-toolbar__cancel'));
-        cancel.triggerEventHandler('click', {});
+                spyOn(dotGlobalMessageService, 'success');
 
-        expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
-    });
-
-    it('should have loading indicator', () => {
-        const loadingIndicator: DebugElement = de.query(By.css('dot-loading-indicator'));
-        expect(loadingIndicator).not.toBeNull();
-    });
-
-    it('should have iframe', fakeAsync(() => {
-        waitForDetectChanges(fixture);
-
-        const iframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
-        expect(iframe).not.toBeNull();
-    }));
-
-    xit('should check isModelUpdated', () => {});
-
-    it('should show dotLoadingIndicatorService on init', fakeAsync(() => {
-        const spyLoadingIndicator = spyOn(component.dotLoadingIndicatorService, 'show');
-
-        waitForDetectChanges(fixture);
-
-        expect(spyLoadingIndicator).toHaveBeenCalled();
-    }));
-
-    it('should hide dotLoadingIndicatorService when the component loads', fakeAsync(() => {
-        const spyLoadingIndicator = spyOn(component.dotLoadingIndicatorService, 'hide');
-
-        waitForDetectChanges(fixture);
-
-        const loadingIndicatorElem: DebugElement = de.query(By.css('dot-loading-indicator'));
-
-        const iframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
-        iframe.triggerEventHandler('load', {
-            target: {
-                contentWindow: {
-                    document: {
-                        querySelector: () => {}
-                    }
-                }
-            }
-        });
-
-        expect(loadingIndicatorElem).not.toBeNull();
-        expect(spyLoadingIndicator).toHaveBeenCalled();
-    }));
-
-    it('should reload when editPageActionsComponent emit fired event', () => {
-        const editPageActionsComponent: DebugElement = de.query(
-            By.css('dot-edit-page-workflows-actions')
-        );
-        spyOn(component, 'reload');
-        editPageActionsComponent.triggerEventHandler('fired', '');
-        expect(component.reload).toHaveBeenCalledTimes(1);
-    });
-
-    it('should have cancel button with correct label and workflow actions component', fakeAsync(() => {
-        waitForDetectChanges(fixture);
-        const cancelBtn = fixture.debugElement.query(By.css('.edit-page-toolbar__cancel'));
-        const workFlowActionsComponent = fixture.debugElement.query(
-            By.css('dot-edit-page-workflows-actions')
-        );
-        expect(cancelBtn === null).toBe(false);
-        expect(workFlowActionsComponent === null).toBe(false);
-        expect(cancelBtn.nativeElement.innerText).toBe('CANCEL');
-    }));
-
-    it('should have right inputs in WorkflowActions component', fakeAsync(() => {
-        // component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
-        waitForDetectChanges(fixture);
-        const actions = de.query(By.css('dot-edit-page-workflows-actions'));
-        expect(actions.componentInstance.page.workingInode).toEqual(
-            mockDotRenderedPage.page.workingInode
-        );
-    }));
-
-    describe("what's change", () => {
-        let editPageToolbar: DebugElement;
-
-        beforeEach(() => {
-            editPageToolbar = fixture.debugElement.query(By.css('dot-edit-page-toolbar'));
-            // component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
-        });
-
-        it('should not show by default', fakeAsync(() => {
-            waitForDetectChanges(fixture);
-            expect(de.query(By.css('dot-whats-changed'))).toBe(null);
-            expect(component.showWhatsChanged).toBe(false);
-        }));
-
-        describe('show', () => {
-            beforeEach(fakeAsync(() => {
-                waitForDetectChanges(fixture);
-                editPageToolbar.triggerEventHandler('whatschange', true);
                 fixture.detectChanges();
+                dotFormSelector = de.query(By.css('dot-form-selector'));
+            });
+
+            it('should have', () => {
+                expect(dotFormSelector).not.toBeNull();
+                expect(dotFormSelector.componentInstance.show).toBe(false);
+            });
+
+            describe('events', () => {
+                it('select > should add form', () => {
+                    dotFormSelector.triggerEventHandler('select', {
+                        baseType: 'string',
+                        clazz: 'string'
+                    });
+                    fixture.detectChanges();
+
+                    expect(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith({
+                        baseType: 'string',
+                        clazz: 'string'
+                    });
+
+                    expect(dotEditPageService.save).toHaveBeenCalledWith('123', [
+                        { identifier: '123', uuid: 'uui-1' }
+                    ]);
+
+                    expect(dotGlobalMessageService.success).toHaveBeenCalledTimes(1);
+                    expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
+                    expect(dotFormSelector.componentInstance.show).toBe(false);
+                });
+
+                it('close > should close form', () => {
+                    component.editForm = true;
+                    dotFormSelector.triggerEventHandler('close', {});
+                    expect(component.editForm).toBe(false);
+                });
+            });
+        });
+
+        describe('dot-edit-page-toolbar', () => {
+            let toolbarElement: DebugElement;
+
+            beforeEach(() => {
+                fixture.detectChanges();
+                toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
+            });
+
+            it('should have', () => {
+                expect(toolbarElement).not.toBeNull();
+            });
+
+            it('should pass pageState', () => {
+                expect(toolbarElement.componentInstance.pageState).toEqual(mockRenderedPageState);
+            });
+
+            describe('events', () => {
+                it('cancel > should go to site browser', () => {
+                    toolbarElement.triggerEventHandler('cancel', {});
+                    expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
+                });
+
+                it('actionFired > should reload', () => {
+                    toolbarElement.triggerEventHandler('actionFired', {});
+                    expect(dotPageStateService.reload).toHaveBeenCalledTimes(1);
+                });
+
+                it('whatschange > should show dot-whats-changed', () => {
+                    let whatschange = de.query(By.css('dot-whats-changed'));
+                    expect(whatschange).toBeNull();
+                    toolbarElement.triggerEventHandler('whatschange', true);
+                    fixture.detectChanges();
+                    whatschange = de.query(By.css('dot-whats-changed'));
+                    expect(whatschange).not.toBeNull();
+                });
+            });
+        });
+
+        describe('dot-add-contentlet', () => {
+            let dotAddContentlet;
+
+            beforeEach(() => {
+                fixture.detectChanges();
+                dotAddContentlet = de.query(By.css('dot-add-contentlet'));
+            });
+
+            it('should have', () => {
+                expect(dotAddContentlet).not.toBeNull();
+            });
+        });
+
+        describe('dot-edit-contentlet', () => {
+            let dotEditContentlet;
+
+            beforeEach(() => {
+                fixture.detectChanges();
+                dotEditContentlet = de.query(By.css('dot-edit-contentlet'));
+            });
+
+            it('should have', () => {
+                expect(dotEditContentlet).not.toBeNull();
+            });
+        });
+
+        describe('dot-reorder-menu', () => {
+            let dotReorderMenu;
+
+            beforeEach(() => {
+                fixture.detectChanges();
+                dotReorderMenu = de.query(By.css('dot-reorder-menu'));
+            });
+
+            it('should have', () => {
+                expect(dotReorderMenu).not.toBeNull();
+            });
+
+            xdescribe('events', () => {
+                component.reorderMenuUrl = 'some/test';
+                dotReorderMenu.triggerEventHandler('close', {});
+                expect(component.reorderMenuUrl).toBe('xxx');
+            });
+        });
+
+        describe('dot-loading-indicator', () => {
+            let dotLoadingIndicator;
+
+            beforeEach(() => {
+                fixture.detectChanges();
+                dotLoadingIndicator = de.query(By.css('dot-loading-indicator'));
+            });
+
+            it('should have', () => {
+                expect(dotLoadingIndicator).not.toBeNull();
+                expect(dotLoadingIndicator.attributes.fullscreen).toBe('true');
+            });
+        });
+
+        describe('iframe wrappers', () => {
+            it('should show all elements nested correctly', () => {
+                fixture.detectChanges();
+                const wrapper = de.query(By.css('.dot-edit__page-wrapper'));
+                const deviceWrapper = wrapper.query(By.css('.dot-edit__device-wrapper'));
+                const iframeWrapper = deviceWrapper.query(By.css('.dot-edit__iframe-wrapper'));
+
+                expect(wrapper).not.toBeNull();
+                expect(wrapper.classes['dot-edit__page-wrapper--deviced']).toBe(false);
+
+                expect(deviceWrapper).not.toBeNull();
+                expect(iframeWrapper).not.toBeNull();
+            });
+
+            describe('with device selected', () => {
+                beforeEach(() => {
+                    route.parent.parent.data = of({
+                        content: new DotPageRenderState(
+                            mockUser,
+                            new DotPageRender({
+                                ...mockDotRenderedPage,
+                                viewAs: {
+                                    ...mockDotRenderedPage.viewAs,
+                                    device: {
+                                        cssHeight: '100',
+                                        cssWidth: '100',
+                                        name: 'Watch',
+                                        inode: '1234'
+                                    }
+                                }
+                            })
+                        )
+                    });
+                    fixture.detectChanges();
+                });
+
+                it('should add "deviced" class to main wrapper', () => {
+                    const wrapper = de.query(By.css('.dot-edit__page-wrapper'));
+                    expect(wrapper.classes['dot-edit__page-wrapper--deviced']).toBe(true);
+                });
+
+                it('should add inline styles to iframe', (done) => {
+                    setTimeout(() => {
+                        fixture.detectChanges();
+                        const iframeEl = de.query(By.css('iframe.dot-edit__iframe'));
+                        expect(iframeEl.styles).toEqual({
+                            height: '100px',
+                            position: '',
+                            visibility: '',
+                            width: '100px'
+                        });
+                        done();
+                    }, 0);
+                });
+            });
+        });
+
+        describe('iframe', () => {
+            function detectChangesForIframeRender(fix) {
+                fix.detectChanges();
+                tick(1);
+                fix.detectChanges();
+                tick(10);
+            }
+
+            function getIframe() {
+                return de.query(
+                    By.css(
+                        '.dot-edit__page-wrapper .dot-edit__device-wrapper .dot-edit__iframe-wrapper iframe.dot-edit__iframe'
+                    )
+                );
+            }
+
+            function triggerIframeCustomEvent(detail) {
+                const event = new CustomEvent('ng-event', {
+                    detail
+                });
+                window.document.dispatchEvent(event);
+            }
+
+            it('should show', fakeAsync(() => {
+                detectChangesForIframeRender(fixture);
+                const iframeEl = getIframe();
+                expect(iframeEl).not.toBeNull();
             }));
 
-            it('should show', () => {
-                expect(de.query(By.css('dot-whats-changed'))).toBeTruthy();
-                expect(component.showWhatsChanged).toBe(true);
-            });
+            it('should have attr setted', fakeAsync(() => {
+                detectChangesForIframeRender(fixture);
+                const iframeEl = getIframe();
+                expect(iframeEl.attributes.class).toBe('dot-edit__iframe');
+                expect(iframeEl.attributes.frameborder).toBe('0');
+                expect(iframeEl.attributes.height).toBe('100%');
+                expect(iframeEl.attributes.width).toBe('100%');
+            }));
 
-            it('should hide edit iframe', () => {
-                const editIframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
-                expect(editIframe.styles).toEqual({
-                    width: '',
-                    height: '',
-                    visibility: 'hidden',
-                    position: 'absolute'
-                });
-            });
-        });
-    });
-
-    describe('reload', () => {
-        const mockRenderedPageState = new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage));
-
-        beforeEach(() => {
-            // component.pageState = null;
-        });
-
-        it('should reload', () => {
-            // expect(component.pageState).toBe(null);
-
-            spyOn(dotPageStateService, 'get').and.returnValue(observableOf(mockRenderedPageState));
-
-            component.reload();
-
-            expect(dotPageStateService.get).toHaveBeenCalledWith('an/url/fake');
-            // expect(component.pageState).toBe(mockRenderedPageState);
-        });
-
-        it('should handle error on reload', () => {
-            const fake500Response = mockResponseView(500);
-            spyOn(dotPageStateService, 'get').and.returnValue(
-                observableThrowError(fake500Response)
-            );
-            spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-
-            component.reload();
-
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(fake500Response);
-            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('set new view as configuration', () => {
-        beforeEach(() => {
-            // component.pageState = new DotRenderedPageState(mockUser, mockDotRenderedPage);
-        });
-
-        it('should NOT set configuration skin for the content', fakeAsync(() => {
-            waitForDetectChanges(fixture);
-            const pageWrapper: DebugElement = de.query(By.css('.dot-edit__page-wrapper'));
-            expect(pageWrapper.classes['dot-edit__page-wrapper--deviced']).toBeFalsy();
-        }));
-
-        it('should set configuration skin for the content', fakeAsync(() => {
-            // component.pageState.viewAs.device = mockDotDevices[0];
-            waitForDetectChanges(fixture);
-            const pageWrapper: DebugElement = de.query(By.css('.dot-edit__page-wrapper'));
-
-            expect(pageWrapper.classes['dot-edit__page-wrapper--deviced']).toBeTruthy();
-        }));
-
-        it('should set the page wrapper dimensions based on device', fakeAsync(() => {
-            // component.pageState.viewAs.device = mockDotDevices[0];
-            waitForDetectChanges(fixture);
-
-            const pageWrapper: DebugElement = de.query(By.css('.dot-edit__page-wrapper'));
-            const editIframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
-
-            expect(editIframe.styles).toEqual({
-                width: mockDotDevices[0].cssWidth + 'px',
-                height: mockDotDevices[0].cssHeight + 'px',
-                visibility: '',
-                position: ''
-            });
-            expect(
-                pageWrapper.nativeElement.classList.contains('dot-edit__page-wrapper--deviced')
-            ).toBe(true);
-        }));
-
-        it('should change the Language/Persona of the page when viewAs configuration changes and set the dev', () => {
-            // spyOn(component, 'changeViewAsHandler').and.callThrough();
-            spyOn(dotPageStateService, 'reload');
-
-            const editPageToolbar = fixture.debugElement.query(By.css('dot-edit-page-toolbar'));
-            editPageToolbar.componentInstance.changeViewAs.emit(mockDotEditPageViewAs);
-
-            // expect(component.changeViewAsHandler).toHaveBeenCalledWith(mockDotEditPageViewAs);
-
-            expect(dotPageStateService.reload).toHaveBeenCalledWith({
-                url: 'an/url/fake',
-                mode: 2,
-                viewAs: {
-                    persona_id: '1c56ba62-1f41-4b81-bd62-b6eacff3ad23',
-                    language_id: 1,
-                    device_inode: '1'
-                }
-            });
-        });
-    });
-
-    describe('set default page state', () => {
-        beforeEach(() => {
-            spyOn(dotEditContentHtmlService, 'renderPage');
-            spyOn(dotEditContentHtmlService, 'initEditMode');
-        });
-
-        it('should set page mode in preview', fakeAsync(() => {
-            waitForDetectChanges(fixture);
-
-            expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledTimes(1);
-            expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
-        }));
-
-        it('should set page mode in edit', fakeAsync(() => {
-            route.parent.parent.data = observableOf({
-                content: {
-                    ...mockDotRenderedPage,
-                    page: {
-                        ...mockDotRenderedPage.page,
-                        canLock: true
-                    },
-                    state: {
-                        locked: true,
-                        mode: DotPageMode.EDIT
-                    }
-                }
-            });
-            waitForDetectChanges(fixture);
-
-            expect(dotEditContentHtmlService.renderPage).not.toHaveBeenCalled();
-            expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledTimes(1);
-        }));
-
-        it('should set page mode in preview when the page is locked by another user', fakeAsync(() => {
-            route.parent.parent.data = observableOf({
-                content: {
-                    page: {
-                        ...mockDotRenderedPage,
-                        canLock: true
-                    },
-                    state: {
-                        locked: true,
-                        mode: DotPageMode.PREVIEW
-                    },
-                    viewAs: {}
-                }
-            });
-            waitForDetectChanges(fixture);
-
-            const toolbar: DebugElement = de.query(By.css('.dot-edit__toolbar'));
-            expect(toolbar.componentInstance.mode).toEqual(DotPageMode.PREVIEW);
-            expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledTimes(1);
-            expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
-        }));
-    });
-
-    describe('set page state when toolbar emit new state', () => {
-        // const spyStateSet = (val) => {
-        //     spyOn(dotPageStateService, 'set').and.returnValue(observableOf(val));
-        // };
-
-        beforeEach(() => {
-            // spyOn(component, 'statePageHandler').and.callThrough();
-            spyOn(dotGlobalMessageService, 'display');
-            spyOn(dotEditContentHtmlService, 'renderPage');
-            spyOn(dotEditContentHtmlService, 'initEditMode');
-        });
-
-        it('should set edit mode', fakeAsync(() => {
-            // const customMockDotRenderedPage = {
-            //     ...mockDotRenderedPage,
-            //     page: {
-            //         ...mockDotRenderedPage.page,
-            //         lockedBy: mockUser.userId,
-            //         canLock: true
-            //     },
-            //     viewAs: {
-            //         mode: 'EDIT_MODE'
-            //     }
-            // };
-
-            // spyStateSet(new DotRenderedPageState(mockUser, customMockDotRenderedPage));
-            waitForDetectChanges(fixture);
-
-            // toolbarComponent.changeState.emit({
-            //     locked: true,
-            //     mode: DotPageMode.EDIT
-            // });
-
-            tick(2);
-
-            // expect(component.statePageHandler).toHaveBeenCalledWith({
-            //     locked: true,
-            //     mode: DotPageMode.EDIT
-            // });
-            // expect(component.pageState.state).toEqual({
-            //     mode: DotPageMode.EDIT,
-            //     locked: true,
-            //     lockedByAnotherUser: false
-            // });
-            // expect(component.pageState.page).toEqual(customMockDotRenderedPage.page);
-            expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledWith(
-                // component.pageState,
-                component.iframe
-            );
-        }));
-
-        it('should set preview mode', fakeAsync(() => {
-            // spyStateSet(new DotRenderedPageState(mockUser, mockDotRenderedPage));
-
-            waitForDetectChanges(fixture);
-
-            // toolbarComponent.changeState.emit({
-            //     locked: true,
-            //     mode: DotPageMode.PREVIEW
-            // });
-
-            tick(2);
-
-            // expect(component.statePageHandler).toHaveBeenCalledWith({
-            //     locked: true,
-            //     mode: DotPageMode.PREVIEW
-            // });
-
-            // expect(component.pageState.page).toEqual(mockDotPage);
-            // expect(component.pageState.state).toEqual({
-            //     mode: DotPageMode.PREVIEW,
-            //     locked: true,
-            //     lockedByAnotherUser: true
-            // });
-            // expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
-            // expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(
-            //     component.pageState,
-            //     component.iframe
-            // );
-        }));
-
-        it('should set live mode', fakeAsync(() => {
-            const mockDotRenderedPageCopy: DotPageRender = _.cloneDeep(mockDotRenderedPage);
-            mockDotRenderedPageCopy.viewAs.mode = DotPageMode[DotPageMode.LIVE];
-
-            // spyStateSet(new DotRenderedPageState(mockUser, mockDotRenderedPageCopy));
-            waitForDetectChanges(fixture);
-
-            // toolbarComponent.changeState.emit({
-            //     mode: DotPageMode.LIVE
-            // });
-
-            tick(2);
-
-            // expect(component.statePageHandler).toHaveBeenCalledWith({
-            //     mode: DotPageMode.LIVE
-            // });
-
-            // expect(component.pageState.page).toEqual(mockDotPage);
-            // expect(component.pageState.state).toEqual({
-            //     mode: DotPageMode.LIVE,
-            //     locked: true,
-            //     lockedByAnotherUser: true
-            // });
-            expect(dotGlobalMessageService.display).not.toHaveBeenCalled();
-            expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
-            // expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(
-            //     component.pageState,
-            //     component.iframe
-            // );
-        }));
-    });
-
-    describe('contentlets', () => {
-        it('should display confirmation dialog and remove contentlet when user accepts', fakeAsync(() => {
-            waitForDetectChanges(fixture);
-
-            const mockResEvent = {
-                contentletEvents: {},
-                dataset: {
-                    dotIdentifier: '2sfasfk-sd2d-4dxc-sdfnsdkjnajd0',
-                    dotInode: '26ad1jbj-23xd-4cx3-9cf2-432scc413cc2'
-                },
-                container: {
-                    dotIdentifier: '3',
-                    dotUuid: '4'
-                },
-                name: 'remove'
-            };
-
-            spyOn(dotEditContentHtmlService, 'contentletEvents$').and.returnValue(
-                observableOf(mockResEvent)
-            );
-            spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(() => {});
-
-            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
-                conf.accept();
-            });
-
-            component['removeContentlet'](mockResEvent);
-
-            expect(dotEditContentHtmlService.removeContentlet).toHaveBeenCalledWith(
-                {
-                    identifier: mockResEvent.container.dotIdentifier,
-                    uuid: mockResEvent.container.dotUuid
-                },
-                {
-                    inode: mockResEvent.dataset.dotInode,
-                    identifier: mockResEvent.dataset.dotIdentifier
-                }
-            );
-        }));
-    });
-    describe('handle switch site', () => {
-        beforeEach(fakeAsync(() => {
-            // component.pageState = null;
-            waitForDetectChanges(fixture);
-        }));
-
-        it('should reload page', () => {
-            spyOn(component, 'reload');
-
-            siteServiceMock.setFakeCurrentSite(mockSites[1]);
-            expect(component.reload).toHaveBeenCalledTimes(1);
-        });
-
-        it('should unsubscribe before destroy', () => {
-            spyOn(dotPageStateService, 'get');
-
-            fixture.detectChanges();
-            component.ngOnDestroy();
-
-            siteServiceMock.setFakeCurrentSite(mockSites[1]);
-            expect(dotPageStateService.get).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('actions', () => {
-        beforeEach(fakeAsync(() => {
-            spyOn(dotEditContentHtmlService, 'setContainterToAppendContentlet');
-            waitForDetectChanges(fixture);
-        }));
-
-        describe('add', () => {
-            beforeEach(() => {
-                spyOn(dotContentletEditorService, 'add').and.callThrough();
-
-                dotEditContentHtmlService.iframeActions$.next({
-                    name: 'add',
-                    dataset: {
-                        dotAdd: 'content',
-                        dotIdentifier: '123',
-                        dotUuid: '456'
-                    }
-                });
-
-                fixture.detectChanges();
-            });
-
-            describe('content or widget', () => {
+            describe('render html ', () => {
                 beforeEach(() => {
-                    dotEditContentHtmlService.iframeActions$.next({
-                        name: 'add',
-                        dataset: {
-                            dotAdd: 'content',
-                            dotIdentifier: '123',
-                            dotUuid: '456'
-                        }
-                    });
-
-                    fixture.detectChanges();
+                    spyOn(dotEditContentHtmlService, 'renderPage');
+                    spyOn(dotEditContentHtmlService, 'initEditMode');
                 });
 
-                it('should have dot-add-contentlet', () => {
-                    expect(de.query(By.css('dot-add-contentlet')) !== null).toBe(true);
-                });
+                it('should render in preview mode', fakeAsync(() => {
+                    detectChangesForIframeRender(fixture);
 
-                it('should set container to add', () => {
-                    expect(
-                        dotEditContentHtmlService.setContainterToAppendContentlet
-                    ).toHaveBeenCalledWith({
-                        identifier: '123',
-                        uuid: '456'
-                    });
+                    expect(dotEditContentHtmlService.renderPage).toHaveBeenCalledWith(
+                        mockRenderedPageState,
+                        jasmine.any(ElementRef)
+                    );
+                    expect(dotEditContentHtmlService.initEditMode).not.toHaveBeenCalled();
+                }));
 
-                    expect(dotContentletEditorService.add).toHaveBeenCalledWith({
-                        header: 'Content Search',
-                        data: {
-                            container: '123',
-                            baseTypes: 'content'
-                        },
-                        events: {
-                            load: jasmine.any(Function)
-                        }
-                    });
-                });
-
-                it('should bind contentlet events', () => {
-                    const fakeEvent = {
-                        target: {
-                            contentWindow: {
-                                ngEditContentletEvents: undefined
+                it('should render in edit mode', fakeAsync(() => {
+                    const state = new DotPageRenderState(
+                        mockUser,
+                        new DotPageRender({
+                            ...mockDotRenderedPage,
+                            page: {
+                                ...mockDotRenderedPage.page,
+                                lockedBy: null
+                            },
+                            viewAs: {
+                                mode: DotPageMode.EDIT
                             }
-                        }
-                    };
-                    dotContentletEditorService.load(fakeEvent);
-                    expect(fakeEvent.target.contentWindow.ngEditContentletEvents).toBeDefined();
-                });
-            });
-
-            describe('form', () => {
-                let dotFormSelector;
-
-                beforeEach(() => {
-                    dotEditContentHtmlService.iframeActions$.next({
-                        name: 'add',
-                        dataset: {
-                            dotAdd: 'form',
-                            dotIdentifier: '123',
-                            dotUuid: '456'
-                        }
-                    });
-
-                    fixture.detectChanges();
-
-                    dotFormSelector = de.query(By.css('dot-form-selector'));
-                });
-
-                it('should show form-selector and set container to add', () => {
-                    expect(
-                        dotEditContentHtmlService.setContainterToAppendContentlet
-                    ).toHaveBeenCalledWith({
-                        identifier: '123',
-                        uuid: '456'
-                    });
-
-                    fixture.detectChanges();
-
-                    expect(dotFormSelector.componentInstance.show).toBe(true);
-                });
-
-                it('select a form to add into the page', fakeAsync(() => {
-                    const mockContentType = {};
-
-                    spyOn(dotEditContentHtmlService, 'renderAddedForm').and.callFake(() =>
-                        observableOf(null)
+                        })
                     );
+                    route.parent.parent.data = of({
+                        content: state
+                    });
+                    detectChangesForIframeRender(fixture);
 
-                    dotFormSelector.componentInstance.select.emit(mockContentType);
-
-                    fixture.detectChanges();
-                    tick(2);
-
-                    expect(component.editForm).toBe(false);
-                    expect(dotFormSelector.componentInstance.show).toBe(false);
-                    expect(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith(
-                        mockContentType
+                    expect(dotEditContentHtmlService.initEditMode).toHaveBeenCalledWith(
+                        state,
+                        jasmine.any(ElementRef)
                     );
+                    expect(dotEditContentHtmlService.renderPage).not.toHaveBeenCalled();
                 }));
             });
-        });
 
-        describe('edit', () => {
-            beforeEach(() => {
-                spyOn(dotContentletEditorService, 'edit').and.callThrough();
-
-                dotEditContentHtmlService.iframeActions$.next({
-                    name: 'edit',
-                    container: {
-                        dotIdentifier: '123',
-                        dotUuid: '456'
-                    },
-                    dataset: {
-                        dotInode: '999'
-                    }
+            describe('events', () => {
+                beforeEach(() => {
+                    route.parent.parent.data = of({
+                        content: new DotPageRenderState(
+                            mockUser,
+                            new DotPageRender({
+                                ...mockDotRenderedPage,
+                                viewAs: {
+                                    mode: DotPageMode.EDIT
+                                }
+                            })
+                        )
+                    });
                 });
 
-                fixture.detectChanges();
-            });
+                it('should handle load', fakeAsync(() => {
+                    spyOn(dotLoadingIndicatorService, 'hide');
+                    spyOn(dotUiColorsService, 'setColors');
+                    spyOn(dotEditContentHtmlService, 'setContaintersChangeHeightListener');
+                    detectChangesForIframeRender(fixture);
 
-            it('should have dot-edit-contentlet', () => {
-                expect(de.query(By.css('dot-edit-contentlet')) !== null).toBe(true);
-            });
+                    expect(dotLoadingIndicatorService.hide).toHaveBeenCalled();
+                    expect(dotUiColorsService.setColors).toHaveBeenCalled();
+                    expect(
+                        dotEditContentHtmlService.setContaintersChangeHeightListener
+                    ).toHaveBeenCalledWith(jasmine.objectContaining(mockDotLayout));
+                }));
 
-            it('should call edit service', () => {
-                expect(dotContentletEditorService.edit).toHaveBeenCalledWith({
-                    data: {
-                        inode: '999'
-                    },
-                    events: {
-                        load: jasmine.any(Function)
-                    }
-                });
-            });
+                describe('custom', () => {
+                    it('should handle remote-render-edit', fakeAsync(() => {
+                        detectChangesForIframeRender(fixture);
 
-            it('should bind contentlet events', () => {
-                const fakeEvent = {
-                    target: {
-                        contentWindow: {
-                            ngEditContentletEvents: undefined
-                        }
-                    }
-                };
-                dotContentletEditorService.load(fakeEvent);
-                expect(fakeEvent.target.contentWindow.ngEditContentletEvents).toBeDefined();
-            });
-        });
-
-        describe('select', () => {
-            it('should close dialog on select contentlet', () => {
-                spyOn(dotContentletEditorService, 'clear').and.callThrough();
-
-                dotEditContentHtmlService.iframeActions$.next({
-                    name: 'select'
-                });
-
-                expect(dotContentletEditorService.clear).toHaveBeenCalledTimes(1);
-            });
-        });
-
-        describe('save', () => {
-            it('should reload contentlet when saved', () => {
-                spyOn(component, 'reload').and.callThrough();
-
-                dotEditContentHtmlService.iframeActions$.next({
-                    name: 'save'
-                });
-
-                expect(component.reload).toHaveBeenCalledTimes(1);
-            });
-        });
-    });
-
-    describe('dialog configuration', () => {
-        describe('page iframe', () => {
-            let event;
-
-            beforeEach(() => {
-                event = {
-                    target: {
-                        contentDocument: {
-                            body: {
-                                innerHTML: ''
+                        triggerIframeCustomEvent({
+                            name: 'remote-render-edit',
+                            data: {
+                                pathname: '/url/from/event'
                             }
-                        },
-                        contentWindow: {
-                            focus: jasmine.createSpy('focus'),
-                            addEventListener: (_type, _listener) => {}
-                        }
-                    }
-                };
-                spyOn(event.target.contentWindow, 'addEventListener').and.callThrough();
+                        });
+
+                        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(
+                            'url/from/event'
+                        );
+                    }));
+
+                    it('should handle in-iframe', fakeAsync(() => {
+                        detectChangesForIframeRender(fixture);
+
+                        triggerIframeCustomEvent({
+                            name: 'in-iframe'
+                        });
+
+                        expect(dotPageStateService.reload).toHaveBeenCalled();
+                    }));
+
+                    it('should handle reorder-menu', fakeAsync(() => {
+                        detectChangesForIframeRender(fixture);
+
+                        triggerIframeCustomEvent({
+                            name: 'reorder-menu',
+                            data: 'some/url/to/reorder/menu'
+                        });
+
+                        fixture.detectChanges();
+
+                        const menu = de.query(By.css('dot-reorder-menu'));
+                        expect(menu.componentInstance.url).toBe('some/url/to/reorder/menu');
+                    }));
+
+                    it('should handle load-edit-mode-page to internal navigation', fakeAsync(() => {
+                        spyOn(dotPageStateService, 'setLocalState').and.callFake(() => {});
+                        detectChangesForIframeRender(fixture);
+
+                        triggerIframeCustomEvent({
+                            name: 'load-edit-mode-page',
+                            data: mockDotRenderedPage
+                        });
+
+                        fixture.detectChanges();
+
+                        const dotRenderedPageStateExpected = new DotPageRenderState(
+                            mockUser,
+                            mockDotRenderedPage
+                        );
+
+                        expect(dotPageStateService.setLocalState).toHaveBeenCalledWith(dotRenderedPageStateExpected);
+                    }));
+
+                    it('should handle load-edit-mode-page to internal navigation', fakeAsync(() => {
+                        spyOn(dotPageStateService, 'setInternalNavigationState').and.callFake(() => {});
+
+                        detectChangesForIframeRender(fixture);
+
+                        const mockDotRenderedPageCopy = _.cloneDeep(mockDotRenderedPage);
+                        mockDotRenderedPageCopy.page.pageURI = '/another/url/test';
+
+                        triggerIframeCustomEvent({
+                            name: 'load-edit-mode-page',
+                            data: mockDotRenderedPageCopy
+                        });
+
+                        fixture.detectChanges();
+
+                        const dotRenderedPageStateExpected = new DotPageRenderState(
+                            mockUser,
+                            mockDotRenderedPageCopy
+                        );
+
+                        expect(dotPageStateService.setInternalNavigationState).toHaveBeenCalledWith(dotRenderedPageStateExpected);
+                        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(mockDotRenderedPageCopy.page.pageURI);
+                    }));
+
+                    it('should handle save-menu-order', fakeAsync(() => {
+                        detectChangesForIframeRender(fixture);
+
+                        triggerIframeCustomEvent({
+                            name: 'save-menu-order'
+                        });
+
+                        fixture.detectChanges();
+
+                        expect(dotPageStateService.reload).toHaveBeenCalled();
+
+                        const menu = de.query(By.css('dot-reorder-menu'));
+                        expect(menu.componentInstance.url).toBe('');
+                    }));
+
+                    it('should handle error-saving-menu-order', fakeAsync(() => {
+                        spyOn(dotGlobalMessageService, 'error').and.callFake(() => {});
+
+                        detectChangesForIframeRender(fixture);
+
+                        triggerIframeCustomEvent({
+                            name: 'error-saving-menu-order'
+                        });
+
+                        fixture.detectChanges();
+                        dotGlobalMessageService.error('Error msg');
+
+                        const menu = de.query(By.css('dot-reorder-menu'));
+                        expect(menu.componentInstance.url).toBe('');
+                    }));
+
+                    it('should handle cancel-save-menu-order', fakeAsync(() => {
+                        spyOn(dotGlobalMessageService, 'error').and.callFake(() => {});
+
+                        detectChangesForIframeRender(fixture);
+
+                        triggerIframeCustomEvent({
+                            name: 'cancel-save-menu-order'
+                        });
+
+                        fixture.detectChanges();
+
+                        const menu = de.query(By.css('dot-reorder-menu'));
+                        expect(menu.componentInstance.url).toBe('');
+                    }));
+                });
+
+                describe('iframe events', () => {
+                    it('should handle edit event', (done) => {
+                        spyOn(dotContentletEditorService, 'edit').and.callFake((param) => {
+                            expect(param.data.inode).toBe('test_inode');
+
+                            const event: any = {
+                                target: {
+                                    contentWindow: {}
+                                }
+                            };
+                            param.events.load(event);
+                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(dotEditContentHtmlService.contentletEvents$);
+                            done();
+                        });
+
+                        fixture.detectChanges();
+
+                        dotEditContentHtmlService.iframeActions$.next({
+                            name: 'edit',
+                            dataset: {
+                                dotInode: 'test_inode'
+                            },
+                            target: {
+                                contentWindow: {
+                                    ngEditContentletEvents: null
+                                }
+                            }
+                        });
+                    });
+
+                    it('should handle code event', (done) => {
+                        spyOn(dotContentletEditorService, 'edit').and.callFake((param) => {
+
+                            expect(param.data.inode).toBe('test_inode');
+
+                            const event: any = {
+                                target: {
+                                    contentWindow: {}
+                                }
+                            };
+                            param.events.load(event);
+                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(dotEditContentHtmlService.contentletEvents$);
+                            done();
+                        });
+
+                        fixture.detectChanges();
+
+                        dotEditContentHtmlService.iframeActions$.next({
+                            name: 'code',
+                            dataset: {
+                                dotInode: 'test_inode'
+                            },
+                            target: {
+                                contentWindow: {
+                                    ngEditContentletEvents: null
+                                }
+                            }
+                        });
+                    });
+
+                    it('should handle add form event', () => {
+                        component.editForm = false;
+                        spyOn(dotEditContentHtmlService, 'setContainterToAppendContentlet').and.callFake(() => {});
+
+                        fixture.detectChanges();
+
+                        dotEditContentHtmlService.iframeActions$.next({
+                            name: 'add',
+                            dataset: {
+                                dotAdd: 'form',
+                                dotIdentifier: 'identifier',
+                                dotUuid: 'uuid'
+                            }
+                        });
+
+                        const container: DotPageContainer = {
+                            identifier: 'identifier',
+                            uuid: 'uuid'
+                        };
+
+                        expect(dotEditContentHtmlService.setContainterToAppendContentlet).toHaveBeenCalledWith(container);
+                        expect(component.editForm).toBe(true);
+                    });
+
+                    it('should handle add content event', (done) => {
+                        spyOn(dotEditContentHtmlService, 'setContainterToAppendContentlet').and.callFake(() => {});
+                        spyOn(dotContentletEditorService, 'add').and.callFake((param) => {
+                            expect(param.data).toEqual({
+                                container: 'identifier',
+                                baseTypes:  'content'
+                            });
+
+                            expect(param.header).toEqual('Content Search');
+
+                            const event: any = {
+                                target: {
+                                    contentWindow: {}
+                                }
+                            };
+                            param.events.load(event);
+                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(dotEditContentHtmlService.contentletEvents$);
+                            done();
+                        });
+
+                        fixture.detectChanges();
+
+                        dotEditContentHtmlService.iframeActions$.next({
+                            name: 'add',
+                            dataset: {
+                                dotAdd: 'content',
+                                dotIdentifier: 'identifier',
+                                dotUuid: 'uuid'
+                            },
+                            target: {
+                                contentWindow: {
+                                    ngEditContentletEvents: null
+                                }
+                            }
+                        });
+
+                        const container: DotPageContainer = {
+                            identifier: 'identifier',
+                            uuid: 'uuid'
+                        };
+
+                        expect(dotEditContentHtmlService.setContainterToAppendContentlet).toHaveBeenCalledWith(container);
+                    });
+
+                    it('should handle remove event', (done) => {
+                        spyOn(dotEditContentHtmlService, 'removeContentlet').and.callFake(() => {});
+                        spyOn(dotDialogService, 'confirm').and.callFake((param) => {
+                            expect(param.header).toEqual('header');
+                            expect(param.message).toEqual('message');
+
+                            param.accept();
+
+                            const pageContainer: DotPageContainer = {
+                                identifier: 'container_identifier',
+                                uuid: 'container_uuid'
+                            };
+
+                            const pageContent: DotPageContent = {
+                                inode: 'test_inode',
+                                identifier: 'test_identifier'
+                            };
+                            expect(dotEditContentHtmlService.removeContentlet).toHaveBeenCalledWith(pageContainer, pageContent);
+                            done();
+                        });
+
+                        fixture.detectChanges();
+
+                        dotEditContentHtmlService.iframeActions$.next({
+                            name: 'remove',
+                            dataset: {
+                                dotInode: 'test_inode',
+                                dotIdentifier: 'test_identifier'
+                            },
+                            container: {
+                                dotIdentifier: 'container_identifier',
+                                dotUuid: 'container_uuid'
+                            },
+                        });
+                    });
+
+                    it('should handle select event', () => {
+                        spyOn(dotContentletEditorService, 'clear').and.callFake(() => {});
+
+                        fixture.detectChanges();
+
+                        dotEditContentHtmlService.iframeActions$.next({
+                            name: 'select'
+                        });
+
+                        expect(dotContentletEditorService.clear).toHaveBeenCalled();
+                    });
+
+                    it('should handle save event', () => {
+                        fixture.detectChanges();
+
+                        dotEditContentHtmlService.iframeActions$.next({
+                            name: 'save'
+                        });
+
+                        expect(dotPageStateService.reload).toHaveBeenCalled();
+                    });
+                });
             });
         });
 
-        describe('listen load-edit-mode-page event', () => {
-            beforeEach(() => {
-                route.parent.parent.data = observableOf({
-                    content: new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage))
-                });
-
-                spyOn(dotEditContentHtmlService, 'renderPage');
+        describe('dot-overlay-mask', () => {
+            it('should be hidden', () => {
+                const dotOverlayMask = de.query(By.css('dot-overlay-mask'));
+                expect(dotOverlayMask).toBeNull();
             });
 
-            it('should reload the current page', fakeAsync(() => {
-                waitForDetectChanges(fixture);
-
-                const customEvent = document.createEvent('CustomEvent');
-                customEvent.initCustomEvent('ng-event', false, false, {
-                    name: 'load-edit-mode-page',
-                    data: {
-                        ...mockDotRenderedPage,
-                        page: {
-                            ...mockDotRenderedPage.page,
-                            pageURI: 'an/url/fake'
-                        }
-                    }
-                });
-                document.dispatchEvent(customEvent);
-
-                tick(2);
-
-                expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
-                // expect(component.pageState.page).toEqual({
-                //     ...mockDotRenderedPage.page,
-                //     pageURI: 'an/url/fake'
-                // });
-                expect(dotEditContentHtmlService.renderPage).toHaveBeenCalled();
-            }));
-
-            it('should go to edit-page and set data for the resolver', fakeAsync(() => {
-                const copyMockDotRenderedPage: DotPageRender = _.cloneDeep(mockDotRenderedPage);
-                copyMockDotRenderedPage.page.lockedBy = '123';
-
-                waitForDetectChanges(fixture);
-
-                const customEvent = document.createEvent('CustomEvent');
-                customEvent.initCustomEvent('ng-event', false, false, {
-                    name: 'load-edit-mode-page',
-                    data: copyMockDotRenderedPage
-                });
-                document.dispatchEvent(customEvent);
-
-                expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(
-                    copyMockDotRenderedPage.page.pageURI
+            it('should show', () => {
+                iframeOverlayService.show();
+                fixture.detectChanges();
+                const dotOverlayMask = de.query(
+                    By.css('.dot-edit__iframe-wrapper dot-overlay-mask')
                 );
-            }));
-
-            it('unsubcribe before destroy', () => {
-                fixture.detectChanges();
-                component.ngOnDestroy();
-
-                const customEvent = document.createEvent('CustomEvent');
-                customEvent.initCustomEvent('ng-event', false, false, {
-                    name: 'load-edit-mode-page',
-                    data: mockDotRenderedPage
-                });
-                document.dispatchEvent(customEvent);
-
-                expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
+                expect(dotOverlayMask).not.toBeNull();
             });
         });
 
-        describe('listen reorder-menu event', () => {
-            it('should set the reorder menu url', () => {
-                fixture.detectChanges();
-
-                const customEvent = document.createEvent('CustomEvent');
-                customEvent.initCustomEvent('ng-event', false, false, {
-                    name: 'reorder-menu',
-                    data: 'testUrl'
-                });
-                document.dispatchEvent(customEvent);
-                expect(component.reorderMenuUrl).toEqual('testUrl');
+        describe('dot-whats-changed', () => {
+            it('should be hidden', () => {
+                const dotWhatsChange = de.query(By.css('dot-whats-changed'));
+                expect(dotWhatsChange).toBeNull();
             });
 
-            it('should clean the reorder menu url & reload iframe (Saved Menu)', () => {
-                spyOn(component, 'reload');
+            it('should show', () => {
                 fixture.detectChanges();
-
-                const customEvent = document.createEvent('CustomEvent');
-                customEvent.initCustomEvent('ng-event', false, false, {
-                    name: 'save-menu-order',
-                    data: ''
-                });
-                document.dispatchEvent(customEvent);
-                expect(component.reorderMenuUrl).toEqual('');
-                expect(component.reload).toHaveBeenCalled();
-            });
-
-            it('should clean the reorder menu url & display error msg (Error saving Menu)', () => {
-                spyOn(dotGlobalMessageService, 'display');
+                const toolbarElement = de.query(By.css('dot-edit-page-toolbar'));
+                toolbarElement.triggerEventHandler('whatschange', true);
                 fixture.detectChanges();
-
-                const customEvent = document.createEvent('CustomEvent');
-                customEvent.initCustomEvent('ng-event', false, false, {
-                    name: 'error-saving-menu-order',
-                    data: ''
-                });
-                document.dispatchEvent(customEvent);
-                expect(component.reorderMenuUrl).toEqual('');
-                expect(dotGlobalMessageService.display).toHaveBeenCalledWith('Error msg');
-            });
-
-            it('should clean the reorder menu url (Cancel custom event)', () => {
-                fixture.detectChanges();
-                const customEvent = document.createEvent('CustomEvent');
-                customEvent.initCustomEvent('ng-event', false, false, {
-                    name: 'cancel-save-menu-order',
-                    data: ''
-                });
-                document.dispatchEvent(customEvent);
-                expect(component.reorderMenuUrl).toEqual('');
-            });
-
-            it('should close menu dialog on close()', () => {
-                const reorderMenuElement = de.query(By.css('dot-reorder-menu')).nativeElement;
-                fixture.detectChanges();
-                reorderMenuElement.dispatchEvent(new Event('close'));
-                expect(component.reorderMenuUrl).toEqual('');
+                const dotWhatsChange = de.query(
+                    By.css('.dot-edit__iframe-wrapper dot-whats-changed')
+                );
+                expect(dotWhatsChange).not.toBeNull();
             });
         });
     });
-
-    describe('Auto save', () => {
-        const model: DotPageContainer[] = [
-            {
-                identifier: '1',
-                uuid: '2',
-                contentletsId: ['3', '4']
-            }
-        ];
-
-        it('should call the save endpoint after a model change happens', fakeAsync(() => {
-            route.parent.parent.data = observableOf({
-                content: {
-                    ...mockDotRenderedPage,
-                    page: {
-                        ...mockDotRenderedPage.page,
-                        canLock: true
-                    },
-                    state: {
-                        locked: true,
-                        mode: DotPageMode.EDIT
-                    }
-                }
-            });
-
-            const newModel: DotPageContainer[] = [
-                {
-                    identifier: '2',
-                    uuid: '3',
-                    contentletsId: ['4', '5']
-                }
-            ];
-
-            let dotEditPageService: DotEditPageService;
-            dotEditPageService = de.injector.get(DotEditPageService);
-
-            spyOn(dotEditPageService, 'save').and.returnValue(observableOf(true));
-            spyOn(dotEditContentHtmlService, 'getContentModel').and.returnValue({});
-            spyOn(dotEditContentHtmlService, 'setContaintersSameHeight');
-            spyOn(component, 'reload');
-
-            waitForDetectChanges(fixture);
-            dotEditContentHtmlService.pageModel$.next({
-                model: model,
-                type: PageModelChangeEventType.ADD_CONTENT
-            });
-            dotEditContentHtmlService.pageModel$.next({
-                model: newModel,
-                type: PageModelChangeEventType.ADD_CONTENT
-            });
-            expect(component.reload).not.toHaveBeenCalled();
-            expect(dotEditPageService.save).toHaveBeenCalledTimes(2);
-            expect(dotEditContentHtmlService.setContaintersSameHeight).toHaveBeenCalledTimes(2);
-        }));
-
-        it('should call the updatePageStateHaveContent after a model change happens', fakeAsync(() => {
-            route.parent.parent.data = observableOf({
-                content: {
-                    ...mockDotRenderedPage,
-                    page: {
-                        ...mockDotRenderedPage.page,
-                        canLock: true
-                    },
-                    state: {
-                        locked: true,
-                        mode: DotPageMode.EDIT
-                    }
-                }
-            });
-
-            spyOn(dotPageStateService, 'updatePageStateHaveContent').and.callFake(() => {});
-
-            waitForDetectChanges(fixture);
-
-            dotEditContentHtmlService.pageModel$.next({
-                model: model,
-                type: PageModelChangeEventType.ADD_CONTENT
-            });
-
-            expect(dotPageStateService.updatePageStateHaveContent).toHaveBeenCalled();
-        }));
-
-        it('should call the save endpoint and reload the iframe after a model change happens and page is remote rendered', fakeAsync(() => {
-            route.parent.parent.data = observableOf({
-                content: {
-                    ...mockDotRenderedPage,
-                    page: {
-                        ...mockDotRenderedPage.page,
-                        canLock: true,
-                        remoteRendered: true
-                    },
-                    state: {
-                        locked: true,
-                        mode: DotPageMode.EDIT
-                    }
-                }
-            });
-
-            let dotEditPageService: DotEditPageService;
-            dotEditPageService = de.injector.get(DotEditPageService);
-
-            spyOn(dotEditPageService, 'save').and.returnValue(observableOf(true));
-            spyOn(dotEditContentHtmlService, 'getContentModel').and.returnValue({});
-            spyOn(dotEditContentHtmlService, 'setContaintersSameHeight');
-            spyOn(component, 'reload');
-
-            waitForDetectChanges(fixture);
-            dotEditContentHtmlService.pageModel$.next({
-                model: model,
-                type: PageModelChangeEventType.ADD_CONTENT
-            });
-            expect(dotEditPageService.save).toHaveBeenCalledTimes(1);
-            expect(component.reload).toHaveBeenCalledTimes(1);
-            expect(dotEditContentHtmlService.setContaintersSameHeight).toHaveBeenCalledTimes(1);
-        }));
-
-        it('should not call the save endpoint and reload the iframe after content D&D happen and page is remote rendered', fakeAsync(() => {
-            route.parent.parent.data = observableOf({
-                content: {
-                    ...mockDotRenderedPage,
-                    page: {
-                        ...mockDotRenderedPage.page,
-                        canLock: true,
-                        remoteRendered: true
-                    },
-                    state: {
-                        locked: true,
-                        mode: DotPageMode.EDIT
-                    }
-                }
-            });
-
-            let dotEditPageService: DotEditPageService;
-            dotEditPageService = de.injector.get(DotEditPageService);
-
-            spyOn(dotEditPageService, 'save').and.returnValue(observableOf(true));
-            spyOn(dotEditContentHtmlService, 'getContentModel').and.returnValue({});
-            spyOn(dotEditContentHtmlService, 'setContaintersSameHeight');
-            spyOn(component, 'reload');
-
-            waitForDetectChanges(fixture);
-            dotEditContentHtmlService.pageModel$.next({
-                model: model,
-                type: PageModelChangeEventType.MOVE_CONTENT
-            });
-            expect(dotEditPageService.save).toHaveBeenCalledTimes(1);
-            expect(component.reload).not.toHaveBeenCalledTimes(1);
-            expect(dotEditContentHtmlService.setContaintersSameHeight).toHaveBeenCalledTimes(1);
-        }));
-
-        it('should not execute setContaintersSameHeight() when layout is null', fakeAsync(() => {
-            route.parent.parent.data = observableOf({
-                content: {
-                    ...mockDotRenderedPage,
-                    layout: null,
-                    page: {
-                        ...mockDotRenderedPage.page,
-                        canLock: true
-                    },
-                    state: {
-                        locked: true,
-                        mode: DotPageMode.EDIT
-                    }
-                }
-            });
-
-            spyOn(dotEditContentHtmlService, 'setContaintersSameHeight');
-
-            waitForDetectChanges(fixture);
-            dotEditContentHtmlService.pageModel$.next({
-                model: model,
-                type: PageModelChangeEventType.ADD_CONTENT
-            });
-            expect(dotEditContentHtmlService.setContaintersSameHeight).not.toHaveBeenCalled();
-        }));
-    });
-
-    // TODO: Find The right way to test this by mocking the MutationObserver and spy that it was called with the right args
-    it('should have correct mutation Observer config params', () => {
-        const config = { attributes: false, childList: true, characterData: false };
-        expect(dotEditContentHtmlService.mutationConfig).toEqual(config);
-    });
-
-    it('should set listener to change containers height', fakeAsync(() => {
-        spyOn(dotEditContentHtmlService, 'setContaintersChangeHeightListener');
-        expect(dotEditContentHtmlService.setContaintersChangeHeightListener).not.toHaveBeenCalled();
-
-        waitForDetectChanges(fixture);
-        // component.pageState.state.mode = DotPageMode.EDIT;
-        fixture.detectChanges();
-
-        const iframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
-        iframe.triggerEventHandler('load', {
-            currentTarget: {
-                contentDocument: {
-                    body: {
-                        innerHTML: 'html'
-                    }
-                }
-            }
-        });
-
-        // expect(dotEditContentHtmlService.setContaintersChangeHeightListener).toHaveBeenCalledWith(
-        //     component.pageState.layout
-        // );
-    }));
-
-    xit('should set colors on load', fakeAsync(() => {
-        const fakeHtmlEl = {
-            hello: 'world'
-        };
-
-        spyOn(dotUiColorsService, 'setColors');
-
-        waitForDetectChanges(fixture);
-
-        const iframe: DebugElement = de.query(By.css('.dot-edit__iframe'));
-        iframe.triggerEventHandler('load', {
-            target: {
-                contentWindow: {
-                    document: {
-                        querySelector: () => fakeHtmlEl
-                    }
-                }
-            }
-        });
-
-        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
-    }));
 });
