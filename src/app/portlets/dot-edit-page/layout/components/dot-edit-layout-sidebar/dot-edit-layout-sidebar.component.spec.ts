@@ -119,7 +119,7 @@ describe('DotEditLayoutSidebarComponent', () => {
         };
         spyOn(component, 'updateAndPropagate').and.callThrough();
         spyOn(component, 'propagateChange');
-        containerSelector.triggerEventHandler('change', 'mockDotContainers');
+        containerSelector.triggerEventHandler('change', mockDotContainers);
         component.updateAndPropagate(mockDotContainers);
         expect(component.updateAndPropagate).toHaveBeenCalled();
         expect(component.propagateChange).toHaveBeenCalledWith(transformedValue);

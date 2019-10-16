@@ -35,22 +35,28 @@ describe('DotFormBuilderComponent', () => {
     let fixture: ComponentFixture<DotFormBuilderComponent>;
     let de: DebugElement;
 
-    beforeEach(async(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [DotFormBuilderComponent],
-            imports: [DotContentTypesListingModule, DotUnlicensedPorletModule, RouterTestingModule],
-            providers: [
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: ActivatedRoute,
-                    useClass: ActivatedRouteMock
-                }
-            ]
-        }).compileComponents();
-    }));
+    beforeEach(
+        async(() => {
+            DOTTestBed.configureTestingModule({
+                declarations: [DotFormBuilderComponent],
+                imports: [
+                    DotContentTypesListingModule,
+                    DotUnlicensedPorletModule,
+                    RouterTestingModule
+                ],
+                providers: [
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    },
+                    {
+                        provide: ActivatedRoute,
+                        useClass: ActivatedRouteMock
+                    }
+                ]
+            }).compileComponents();
+        })
+    );
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotFormBuilderComponent);
@@ -75,7 +81,7 @@ describe('DotFormBuilderComponent', () => {
     });
 
     it('should show dot-content-types', () => {
-        routeDatamock = null;
+        routeDatamock = { unlicensed: null };
         fixture.detectChanges();
         const unlicensed = de.query(By.css('dot-unlicensed-porlet'));
         const contentTypes = de.query(By.css('dot-content-types'));
