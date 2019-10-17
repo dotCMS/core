@@ -1,14 +1,16 @@
 package com.dotcms;
 
+import com.dotcms.junit.MainBaseSuite;
+import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
-@RunWith(Suite.class)
+//@RunWith(Suite.class)
+@RunWith(MainBaseSuite.class)
 @SuiteClasses({
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
@@ -213,6 +215,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.startup.runonce.Task05050FileAssetContentTypeReadOnlyFileNameTest.class,
         com.dotmarketing.startup.runonce.Task05190UpdateFormsWidgetCodeFieldTest.class,
         com.dotmarketing.startup.runalways.Task00001LoadSchemaIntegrationTest.class,
+        com.dotmarketing.startup.runonce.Task05200WorkflowTaskUniqueKeyTest.class,
+        Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class,
         CleanUpFieldReferencesJobTest.class,
         ESContentletAPIImplTest.class
 })
