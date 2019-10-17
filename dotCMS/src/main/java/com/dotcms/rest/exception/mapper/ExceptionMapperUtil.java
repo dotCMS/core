@@ -179,7 +179,6 @@ public final class ExceptionMapperUtil {
                     .status(status)
                     .entity(map("message", message,
                             "stacktrace", errors))
-                    .header("error-message", message)
                     .header("error-key", key)
                     .header("access-control", getAccessControlHeader(exception))
                     .build();
@@ -189,7 +188,6 @@ public final class ExceptionMapperUtil {
         return Response
                 .status(status)
                 .entity(map("message", message))
-                .header("error-message", message)
                 .header("error-key", key)
                 .header("access-control", getAccessControlHeader(exception))
                 .build();
