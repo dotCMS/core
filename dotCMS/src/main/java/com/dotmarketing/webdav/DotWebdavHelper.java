@@ -34,6 +34,7 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.apache.oro.text.regex.MalformedPatternException;
 import org.apache.oro.text.regex.Perl5Compiler;
@@ -994,12 +995,7 @@ public class DotWebdavHelper {
 			}
 		} else {
 			if (host != null && InodeUtils.isSet(host.getInode())) {
-				java.util.List<String> reservedFolderNames = new java.util.ArrayList<String>();
-				String[] reservedFolderNamesArray = Config.getStringArrayProperty("RESERVEDFOLDERNAMES");
-				for (String name : reservedFolderNamesArray) {
-					reservedFolderNames.add(name.toUpperCase());
-				}
-				validName = (!(reservedFolderNames.contains(path.substring(1).toUpperCase())));
+				folderAPI.validateFolderName(path.substring(1));
 			}
 			try {
 				hasPermission = perAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user, false);
@@ -1025,11 +1021,11 @@ public class DotWebdavHelper {
 
 	public void move(String fromPath, String toPath, User user,boolean autoPublish)throws IOException, DotDataException {
 	    String resourceFromPath = fromPath;
-		fromPath = stripMapping(fromPath);
+		final String fromPathStripped = stripMapping(fromPath);
 		toPath = stripMapping(toPath);
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 
-		String hostName = getHostname(fromPath);
+		String hostName = getHostname(fromPathStripped);
 		String toParentPath = getFolderName(getPath(toPath));
 
 		Host host;
@@ -1059,7 +1055,7 @@ public class DotWebdavHelper {
 			}
 
 			try{
-				Identifier identifier  = APILocator.getIdentifierAPI().find(host, getPath(fromPath));
+				Identifier identifier  = APILocator.getIdentifierAPI().find(host, getPath(fromPathStripped));
 
 				Identifier identTo  = APILocator.getIdentifierAPI().find(host, getPath(toPath));
 				boolean destinationExists=identTo!=null && InodeUtils.isSet(identTo.getId());
@@ -1067,7 +1063,7 @@ public class DotWebdavHelper {
 				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 					Contentlet fileAssetCont = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 					if(!destinationExists) {
-    					if (getFolderName(fromPath).equals(getFolderName(toPath))) {
+    					if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
     						String fileName = getFileName(toPath);
     						if(fileName.contains(".")){
     							fileName = fileName.substring(0, fileName.lastIndexOf("."));
@@ -1116,8 +1112,8 @@ public class DotWebdavHelper {
 					Logger.error(DotWebdavHelper.class,e1.getMessage(),e1);
 					throw new IOException(e1.getMessage());
 				}
-				if (getFolderName(fromPath).equals(getFolderName(toPath))) {
-					Logger.debug(this, "Calling Folderfactory to rename " + fromPath + " to " + toPath);
+				if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
+					Logger.debug(this, "Calling Folderfactory to rename " + fromPathStripped + " to " + toPath);
 					try{
 					    // Folder must end with "/", otherwise we get the parent folder
                         String folderToPath = getPath(toPath);
@@ -1131,7 +1127,7 @@ public class DotWebdavHelper {
 					}
 					boolean renamed = false;
 					try{
-						Folder folder = folderAPI.findFolderByPath(getPath(fromPath), host,user,false);
+						Folder folder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
 						renamed = folderAPI.renameFolder(folder, getFileName(toPath),user,false);
 						fc.removeFolder(folder,idapi.find(folder));
 						//folderAPI.updateMovedFolderAssets(folder);
@@ -1143,10 +1139,10 @@ public class DotWebdavHelper {
 						throw new IOException("Unable to rename folder");
 					}
 				} else {
-					Logger.debug(this, "Calling folder factory to move from " + fromPath + " to " + toParentPath);
+					Logger.debug(this, "Calling folder factory to move from " + fromPathStripped + " to " + toParentPath);
 					Folder fromFolder;
 					try {
-						fromFolder = folderAPI.findFolderByPath(getPath(fromPath), host,user,false);
+						fromFolder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
 					} catch (Exception e1) {
 						Logger.error(DotWebdavHelper.class, e1.getMessage(), e1);
 						throw new DotRuntimeException(e1.getMessage(), e1);
@@ -1176,21 +1172,27 @@ public class DotWebdavHelper {
 					Logger.error(DotWebdavHelper.class,e.getMessage(),e);
 					throw new IOException(e.getMessage(),e);
 				}
-				if (getFolderName(fromPath).equals(getFolderName(toPath))) {
+				if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
+					final Folder fromfolder = Try.of(()->folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false)).get();
 					try{
-						Folder fromfolder = folderAPI.findFolderByPath(getPath(fromPath), host,user,false);
 						folderAPI.renameFolder(fromfolder, getFileName(toPath),user,false);
 						fc.removeFolder(fromfolder,idapi.find(fromfolder));
 					}catch (Exception e) {
+						if(fromfolder.getName().contains("untitled folder")){
+							try {
+								folderAPI.delete(fromfolder,user,false);
+							} catch (DotSecurityException ex) {
+								throw new DotDataException(ex.getMessage(), ex);
+							}
+						}
 						throw new DotDataException(e.getMessage(), e);
 					}
 				} else {
 					Folder fromFolder;
 					try {
-						fromFolder = folderAPI.findFolderByPath(getPath(fromPath), host,user,false);
+						fromFolder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
 						folderAPI.move(fromFolder, host,user,false);
 						fc.removeFolder(fromFolder,idapi.find(fromFolder));
-						//folderAPI.updateMovedFolderAssets(fromFolder);
 					} catch (Exception e) {
 						Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 						throw new DotDataException(e.getMessage(), e);
