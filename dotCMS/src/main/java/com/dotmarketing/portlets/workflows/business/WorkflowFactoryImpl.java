@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
@@ -117,8 +118,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		row.put("requiresCheckout", row.get("requires_checkout"));
 		row.put("showOn", WorkflowState.toSet(row.get("show_on")));
 		row.put("roleHierarchyForAssign", row.get("use_role_hierarchy_assign"));
-
 		BeanUtils.copyProperties(action, row);
+		action.setPushPublishActionlet(ActionletUtil.hasPushPublishActionlet(action));
 		return action;
 	}
 

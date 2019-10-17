@@ -125,6 +125,28 @@
       ]
     },
     {
+      "id": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
+      "name": "Destroy",
+      "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
+      "condition": "",
+      "nextStep": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
+      "nextAssign": "654b0931-1027-41f7-ad4d-173115ed8ec1",
+      "icon": "workflowIcon",
+      "roleHierarchyForAssign": false,
+      "assignable": false,
+      "commentable": false,
+      "order": 0,
+      "owner": null,
+      "nextStepCurrentStep": false,
+      "showOn": [
+        "UNLOCKED",
+        "ARCHIVED",
+        "LOCKED",
+        "LISTING",
+        "EDITING"
+      ]
+    },
+    {
       "id": "000ec468-0a63-4283-beb7-fcb36c107b2f",
       "name": "Publish",
       "schemeId": "d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
@@ -312,6 +334,11 @@
       "stepId": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
       "actionId": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
       "actionOrder": "1"
+    },
+    {
+      "stepId": "d6b095b6-b65f-4bdb-bbfd-701d663dfee2",
+      "actionId": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
+      "actionOrder": "2"
     }
   ],
   "actionClasses": [
@@ -370,6 +397,20 @@
         "howTo": "This action will delete the content. Warning: this can't be undone!",
         "localizedName": "Delete content",
         "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet.howTo"
+      }
+    },
+    {
+      "id": "74f42846-86b6-4660-bd00-789446fd67c8",
+      "actionId": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
+      "name": "Destroy content",
+      "order": 0,
+      "clazz": "com.dotmarketing.portlets.workflows.actionlet.DestroyContentActionlet",
+      "actionlet": {
+        "name": "Destroy content",
+        "parameters": null,
+        "howTo": "This action will destroy the content. Warning: this can't be undone!",
+        "localizedName": "Destroy content",
+        "localizedHowto": "com.dotmarketing.portlets.workflows.actionlet.DestroyContentActionlet.howTo"
       }
     },
     {
@@ -531,6 +572,15 @@
     {
       "id": 0,
       "inode": "777f1c6b-c877-4a37-ba4b-10627316c2cc",
+      "permission": 1,
+      "type": "individual",
+      "bitPermission": false,
+      "individualPermission": true,
+      "roleId": "c3eb4526-6d96-48d8-9540-e5fa560cfc0f"
+    },
+    {
+      "id": 0,
+      "inode": "1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2",
       "permission": 1,
       "type": "individual",
       "bitPermission": false,
