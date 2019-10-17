@@ -1854,43 +1854,123 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return deleteContentlets(contentlets, user, respectFrontendRoles, false);
     }
 
+    private Optional<Boolean> checkAndRunDestroyAsWorkflow(final Contentlet contentletIn, final User user,
+            final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+
+        // if already on workflow or has an actionid skip this method.
+        if (this.isDisableWorkflow(contentletIn)
+                || this.isWorkflowInProgress(contentletIn)
+                || this.isInvalidContentTypeForWorkflow(contentletIn)
+                || UtilMethods.isSet(contentletIn.getActionId())) {
+
+            return Optional.empty();
+        }
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final Optional<WorkflowAction> workflowActionOpt =
+                workflowAPI.findActionMappedBySystemActionContentlet
+                        (contentletIn, SystemAction.DESTROY, user);
+
+        if (workflowActionOpt.isPresent()) {
+
+            final String title    = contentletIn.getTitle();
+            final String actionId = workflowActionOpt.get().getId();
+
+            // if the default action is in the avalable actions for the content.
+            if (!isDefaultActionOnAvailableActions(contentletIn, user, workflowAPI, actionId)) {
+                return Optional.empty();
+            }
+
+            Logger.info(this, () -> "The contentlet: " + contentletIn.getIdentifier() + " hasn't action id set"
+                    + " using the default action: " + actionId);
+
+            // if the action has a destroy action, we skip the current checkin
+            if (workflowActionOpt.get().hasDestroyActionlet()) {
+
+                Logger.info(this, () -> "The action: " + actionId + " has a destroy contentlet actionlet"
+                        + " so firing a workflow and skipping the current destroy for the contentlet: " + contentletIn.getIdentifier());
+
+                contentletIn.setActionId(actionId);
+                contentletIn.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+
+                final WorkflowProcessor processor = workflowAPI.fireWorkflowPreCheckin(contentletIn, user);
+                workflowAPI.fireWorkflowPostCheckin(processor);
+                if (processor.getContextMap().containsKey("destroy")) {
+
+                    return Optional.ofNullable((Boolean)processor.getContextMap().get("destroy"));
+                }
+
+                return Optional.ofNullable(false);
+            }
+
+            Logger.info(this, () -> "The action: " + contentletIn.getIdentifier() + " hasn't a destroy contentlet actionlet"
+                    + " so including just the action to the contentlet: " + title);
+
+            contentletIn.setActionId(actionId);
+        }
+
+        return Optional.empty();
+    }
+
     @Override
-    public boolean destroy(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
-        List<Contentlet> contentlets = new ArrayList<Contentlet>();
+    public boolean destroy(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
+
+        final Optional<Boolean> deleteOpt = this.checkAndRunDestroyAsWorkflow(contentlet, user, respectFrontendRoles);
+        if (deleteOpt.isPresent()) {
+
+            Logger.info(this, "A Workflow has been ran instead of destroy the contentlet: " +
+                    contentlet.getIdentifier());
+
+            return deleteOpt.get();
+        }
+
+        final List<Contentlet> contentlets = new ArrayList<>();
         contentlets.add(contentlet);
         try {
-            return destroy(contentlets, user, respectFrontendRoles);
+            
+            return this.destroy(contentlets, user, respectFrontendRoles);
         } catch(DotDataException | DotSecurityException e) {
-            logContentletActivity(contentlets, "Error Destroying Content", user);
+            
+            this.logContentletActivity(contentlets, "Error Destroying Content", user);
             throw e;
         }
     }
 
     @WrapInTransaction
     @Override
-    public boolean destroy(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,
+    public boolean destroy(final List<Contentlet> contentlets, final User user, final boolean respectFrontendRoles) throws DotDataException,
             DotSecurityException {
+        
         if (contentlets == null || contentlets.size() == 0) {
+            
             Logger.info(this, "No contents passed to delete so returning");
             return false;
         }
-        logContentletActivity(contentlets, "Destroying Content", user);
-        for (Contentlet contentlet : contentlets) {
+        
+        this.logContentletActivity(contentlets, "Destroying Content", user);
+        
+        for (final Contentlet contentlet : contentlets) {
+            
             if (contentlet.getInode().equals("")) {
-                logContentletActivity(contentlet, "Error Destroying Content", user);
+                
+                this.logContentletActivity(contentlet, "Error Destroying Content", user);
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
             }
-            canLock(contentlet, user);
+            
+            this.canLock(contentlet, user);
         }
-        List<Contentlet> perCons = permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_PUBLISH,
+        
+        final List<Contentlet> filterContentlets = this.permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_PUBLISH,
                 respectFrontendRoles, user);
 
-        if (perCons.size() != contentlets.size()) {
-            logContentletActivity(contentlets, "Error Destroying Content", user);
+        if (filterContentlets.size() != contentlets.size()) {
+
+            this.logContentletActivity(contentlets, "Error Destroying Content", user);
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " does not have permission to destroy some or all of the contentlets");
         }
-        return destroyContentlets(contentlets, user, respectFrontendRoles);
+
+        return this.destroyContentlets(contentlets, user, respectFrontendRoles);
     }
 
     private void forceUnpublishArchive (final Contentlet contentlet, final User user)
@@ -1918,7 +1998,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final List<Relationship> relationships =
                 FactoryLocator.getRelationshipFactory().byContentType(contentlet.getStructure());
         // Remove related contents
-        for (Relationship relationship : relationships) {
+        for (final Relationship relationship : relationships) {
             deleteRelatedContent(contentlet, relationship, user, respectFrontendRoles);
         }
     }
@@ -1974,7 +2054,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws DotDataException, DotSecurityException {
 
         boolean noErrors = true;
-        final List<Contentlet> contentletsVersion = new ArrayList<>();
+        final List<Contentlet> contentletsVersion     = new ArrayList<>();
         // Log contentlet identifiers that we are going to destroy
         AdminLogger.log(this.getClass(), "destroy",
                 "User trying to destroy the following contents: " +
@@ -1984,20 +2064,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final Contentlet contentlet = contentletIterator.next();
             contentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
-
-            this.forceUnpublishArchive(contentlet, user);
+            this.forceUnpublishArchiveOnDestroy(user, contentlet);
             APILocator.getWorkflowAPI().deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
 
             // Remove Rules with this contentlet as Parent.
             try {
+
                 APILocator.getRulesAPI().deleteRulesByParent(contentlet, user, respectFrontendRoles);
             } catch (InvalidLicenseException ilexp) {
+
                 Logger.warn(this, "An enterprise license is required to delete rules under pages.");
             }
-            // Remove category associations
-            categoryAPI.removeChildren(contentlet, APILocator.getUserAPI().getSystemUser(), true);
-            categoryAPI.removeParents(contentlet, APILocator.getUserAPI().getSystemUser(), true);
 
+            // Remove category associations
+            this.categoryAPI.removeChildren(contentlet, APILocator.getUserAPI().getSystemUser(), true);
+            this.categoryAPI.removeParents(contentlet, APILocator.getUserAPI().getSystemUser(), true);
             this.deleteRelationships(contentlet, user, respectFrontendRoles);
 
             contentletsVersion.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentlet.getIdentifier()), user,
@@ -2005,13 +2086,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentletsVersion.forEach(contentletLanguage -> contentletLanguage.setIndexPolicy(contentlet.getIndexPolicy()));
             // Remove page contents (if the content is a Content Page)
             this.deleteMultitrees(contentlet, user);
-            logContentletActivity(contentlet, "Content Destroyed", user);
+            this.logContentletActivity(contentlet, "Content Destroyed", user);
         }
 
         this.backupDestroyedContentlets(contentlets, user);
 
         // Delete all the versions of the contentlets to delete
-        contentFactory.delete(contentletsVersion);
+        this.contentFactory.delete(contentletsVersion);
         // Remove the contentlets from the Elastic index and cache
         for (final Contentlet contentlet : contentletsVersion) {
 
@@ -2022,6 +2103,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
         this.deleteElementFromPublishQueueTable(contentlets);
 
         return noErrors;
+    }
+
+    private void forceUnpublishArchiveOnDestroy(final User user, final Contentlet contentlet)
+            throws DotSecurityException, DotDataException {
+
+        // it could be into a step, so we do not want to move.
+        final Optional<Boolean> disableWorkflowOpt = this.getDisableWorkflow (contentlet);
+        contentlet.getMap().put(Contentlet.DISABLE_WORKFLOW, true);
+        this.forceUnpublishArchive(contentlet, user);
+
+        contentlet.getMap().put(Contentlet.DISABLE_WORKFLOW, disableWorkflowOpt.isPresent()?
+                disableWorkflowOpt.get(): null);
+    }
+
+    private Optional<Boolean> getDisableWorkflow(final Contentlet contentlet) {
+
+        if (!contentlet.getMap().containsKey(Contentlet.DISABLE_WORKFLOW)) {
+
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable((boolean)contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW));
     }
 
     private void deleteElementFromPublishQueueTable(final List<Contentlet> contentlets) {
@@ -3246,7 +3349,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void deleteRelatedContent(Contentlet contentlet, Relationship relationship, User user,
             boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException {
-        deleteRelatedContent(contentlet, relationship, FactoryLocator.getRelationshipFactory()
+
+        this.deleteRelatedContent(contentlet, relationship, FactoryLocator.getRelationshipFactory()
                 .isParent(relationship, contentlet.getStructure()), user, respectFrontendRoles);
     }
 
@@ -3261,11 +3365,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void deleteRelatedContent(final Contentlet contentlet, final Relationship relationship,
             final boolean hasParent, final User user, final boolean respectFrontendRoles, final List<Contentlet> contentletsToBeRelated)
             throws DotDataException, DotSecurityException, DotContentletStateException {
+
         if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user,
                 respectFrontendRoles)) {
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown")
                     + " cannot edit Contentlet with identifier " + contentlet.getIdentifier());
         }
+
         List<Relationship> rels = FactoryLocator.getRelationshipFactory()
                 .byContentType(contentlet.getContentType());
         if (!rels.contains(relationship)) {

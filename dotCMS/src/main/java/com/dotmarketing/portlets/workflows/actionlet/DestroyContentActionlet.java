@@ -39,7 +39,8 @@ public class DestroyContentActionlet extends WorkFlowActionlet {
 
         try {
 
-            APILocator.getContentletAPI().destroy(processor.getContentlet(), processor.getUser(), false);
+            processor.getContextMap().put("destroy",
+                    APILocator.getContentletAPI().destroy(processor.getContentlet(), processor.getUser(), false));
             processor.setTask(null);
             processor.setContentlet(null);
             processor.abortProcessor();
