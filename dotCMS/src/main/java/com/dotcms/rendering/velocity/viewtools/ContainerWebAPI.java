@@ -118,15 +118,17 @@ public class ContainerWebAPI implements ViewTool {
 
         pTag = (!availablePersonalizations.contains(pTag)) ? MultiTree.DOT_PERSONALIZATION_DEFAULT : pTag;
 
+		final String noLegacyUUIDValue = Container.LEGACY_RELATION_TYPE.equals(uuid) ? "1" : uuid;
+
         // if live mode, the content list will not have a colon in the key- as it was a velocity variable
-        List<String> contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag.replace(":", ""));
+        List<String> contentlets = (List<String>) ctx.get("contentletList" + containerId + noLegacyUUIDValue + pTag.replace(":", ""));
         if(contentlets !=null ) {
             return contentlets;
         }
         
         // if edit or preview mode, the content list WILL have a colon in the key, as this is 
         // a map in memory
-        contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag);
+        contentlets = (List<String>) ctx.get("contentletList" + containerId + noLegacyUUIDValue + pTag);
         if(contentlets !=null ) {
             return contentlets;
         }
