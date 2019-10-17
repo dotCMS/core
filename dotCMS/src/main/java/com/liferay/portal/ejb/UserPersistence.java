@@ -27,15 +27,18 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.user.LiferayUserTransformer;
 import com.dotcms.util.user.UserTransformer;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.HibernateUtil;
 import com.liferay.util.dao.hibernate.OrderByComparator;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -64,10 +67,9 @@ public class UserPersistence extends BasePersistence {
 	@WrapInTransaction
 	protected com.liferay.portal.model.User remove(String userId)
 			throws NoSuchUserException, SystemException {
-		Session session = null;
 
 		try {
-			session = openSession();
+
 
 			User systemUser = null;
 			try {
@@ -82,35 +84,30 @@ public class UserPersistence extends BasePersistence {
 
 
 
-			UserHBM userHBM = (UserHBM)session.load(UserHBM.class, userId);
+			UserHBM userHBM = (UserHBM) HibernateUtil.load(UserHBM.class, userId);
 			com.liferay.portal.model.User user = UserHBMUtil.model(userHBM);
-			session.delete(userHBM);
-			session.flush();
+			HibernateUtil.delete(userHBM);
 			UserPool.remove(userId);
 
 			return user;
 		}
-		catch (HibernateException he) {
-			if (he instanceof ObjectNotFoundException) {
-				throw new NoSuchUserException(userId.toString());
-			}
-			else {
-				throw new SystemException(he);
-			}
+		catch (DotHibernateException he) {
+		    throw new SystemException(he);
+			
 		}
 
 	}
 	@WrapInTransaction
 	protected com.liferay.portal.model.User update(
 			com.liferay.portal.model.User user) throws SystemException {
-		Session session = null;
+	
 
-		try {
+
 			if (user.isNew() || user.isModified()) {
-				session = openSession();
-
+	
+				UserHBM userHBM = null;
 				if (user.isNew()) {
-					UserHBM userHBM = new UserHBM(user.getUserId(),
+					userHBM = new UserHBM(user.getUserId(),
 							user.getCompanyId(), user.getPassword(),
 							user.getPasswordEncrypted(),
 							user.getPasswordExpirationDate(),
@@ -135,13 +132,11 @@ public class UserPersistence extends BasePersistence {
 							user.getAgreedToTermsOfUse(), user.getActive(),
 							user.getDeleteInProgress(), user.getDeleteDate());
 
-					userHBM.setModDate(user.getModificationDate());
-					session.save(userHBM);
-					session.flush();
+
 				}
 				else {
 					try {
-						UserHBM userHBM = (UserHBM)session.load(UserHBM.class,
+						userHBM = (UserHBM)HibernateUtil.load(UserHBM.class,
 								user.getPrimaryKey());
 						userHBM.setCompanyId(user.getCompanyId());
 						userHBM.setPassword(user.getPassword());
@@ -185,11 +180,11 @@ public class UserPersistence extends BasePersistence {
 						userHBM.setActive(user.getActive());
 						userHBM.setDeleteInProgress(user.getDeleteInProgress());
 						userHBM.setDeleteDate(user.getDeleteDate());
-						userHBM.setModDate(user.getModificationDate());
-						session.flush();
+
+	
 					}
-					catch (ObjectNotFoundException onfe) {
-						UserHBM userHBM = new UserHBM(user.getUserId(),
+					catch (DotHibernateException onfe) {
+						userHBM = new UserHBM(user.getUserId(),
 								user.getCompanyId(), user.getPassword(),
 								user.getPasswordEncrypted(),
 								user.getPasswordExpirationDate(),
@@ -215,12 +210,17 @@ public class UserPersistence extends BasePersistence {
 								user.getAgreedToTermsOfUse(), user.getActive(),
 								user.getDeleteInProgress(), user.getDeleteDate());
 
-						userHBM.setModDate(user.getModificationDate());
-						session.save(userHBM);
-						session.flush();
-					}
-				}
 
+	
+					} 
+				}
+                userHBM.setModDate(new Date());
+                try {
+                    com.dotmarketing.db.HibernateUtil.save(userHBM);
+                }
+                catch(Exception e) {
+                    throw new DotStateException(e);
+                }
 				user.setNew(false);
 				user.setModified(false);
 				user.protect();
@@ -229,10 +229,8 @@ public class UserPersistence extends BasePersistence {
 			}
 
 			return user;
-		}
-		catch (HibernateException he) {
-			throw new SystemException(he);
-		}
+		
+	
 
 	}
 
@@ -264,10 +262,10 @@ public class UserPersistence extends BasePersistence {
 
 	@CloseDBIfOpened
 	protected List findByCompanyId(String companyId) throws SystemException {
-		Session session = null;
+
 
 		try {
-			session = openSession();
+
 
 			StringBuffer query = new StringBuffer();
 			query.append(
@@ -282,23 +280,18 @@ public class UserPersistence extends BasePersistence {
 			query.append("middleName ASC").append(", ");
 			query.append("lastName ASC");
 
-			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
-			q.setString(queryPos++, companyId);
+			HibernateUtil util = new HibernateUtil();
+			util.setQuery(query.toString());
+			util.setParam(companyId);
+			
+			
 
-			Iterator itr = q.list().iterator();
-			List list = new ArrayList();
 
-			while (itr.hasNext()) {
-				UserHBM userHBM = (UserHBM)itr.next();
-				list.add(UserHBMUtil.model(userHBM));
-			}
-
-			return list;
+			return util.list();
 		}
-		catch (HibernateException he) {
-			throw new SystemException(he);
-		}
+		catch (DotHibernateException e) {
+		    throw new SystemException(e);
+        }
 
 	}
 
