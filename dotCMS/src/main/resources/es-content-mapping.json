@@ -2,7 +2,7 @@
 
     "date_detection": true,
     "dynamic_date_formats": [
-        "yyyy-MM-dd'T'HH:mm:ss||MMM d, yyyy hh:mm:ss aaa||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        "yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
     ],
     "dynamic_templates": [
         {
@@ -15,12 +15,12 @@
             }
         },
         {
-              "textmapping": {
-                  "match": "*_text",
-                  "mapping": {
+            "textmapping": {
+                "match": "*_text",
+                "mapping": {
                     "type": "text"
-                  }
-              }
+                }
+            }
         },
         {
             "strings_as_dates": {
