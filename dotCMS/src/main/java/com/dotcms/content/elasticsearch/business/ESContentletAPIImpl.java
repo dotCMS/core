@@ -1728,7 +1728,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // if the action has a save action, we skip the current checkin
             if (workflowActionOpt.get().hasDeleteActionlet()) {
 
-                Logger.info(this, () -> "The action: " + actionId + " has an delete contentlet actionlet"
+                Logger.info(this, () -> "The action: " + actionId + " has a delete contentlet actionlet"
                         + " so firing a workflow and skipping the current delete for the contentlet: " + contentletIn.getIdentifier());
 
                 contentletIn.setActionId(actionId);
