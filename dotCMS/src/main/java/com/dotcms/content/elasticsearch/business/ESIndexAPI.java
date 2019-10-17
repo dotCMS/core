@@ -51,6 +51,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest.Level;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.repositories.delete.DeleteRepositoryRequest;
 import org.elasticsearch.action.admin.cluster.repositories.get.GetRepositoriesRequest;
@@ -694,6 +695,7 @@ public class ESIndexAPI {
      */
     public Map<String,ClusterIndexHealth> getClusterHealth() {
 		ClusterHealthRequest request = new ClusterHealthRequest();
+		request.level(Level.INDICES);
 		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 		ClusterHealthResponse response = Sneaky.sneak(()->
 				RestHighLevelClientProvider.getInstance().getClient()
