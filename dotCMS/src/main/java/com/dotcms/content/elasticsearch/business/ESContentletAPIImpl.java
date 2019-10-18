@@ -3011,6 +3011,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         com.dotcms.contenttype.model.field.Field field = null;
         List<Contentlet> relatedList;
+        List<String> uniqueIdentifiers;
         Relationship relationship;
 
         try {
@@ -3032,13 +3033,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         relatedList = filterRelatedContent(contentlet, relationship, systemUser, false,
                 pullByParent, limit, offset, sortBy);
 
+        //Get unique identifiers to avoid duplicates (used to save on cache and filter the final list if needed
+        uniqueIdentifiers = relatedList.stream().map(Contentlet::getIdentifier).distinct()
+                .collect(CollectionsUtils.toImmutableList());
+
         //Cache related content only if it is a relationship field
         if (field != null && limit == -1 && offset <= 0 && sortBy == null) {
             if (UtilMethods.isSet(relatedList)) {
-                relatedIds.put(variableName,
-                        relatedList.stream().map(Contentlet::getIdentifier).distinct()
-                                .collect(
-                                        CollectionsUtils.toImmutableList()));
+                relatedIds.put(variableName, uniqueIdentifiers);
             } else {
                 relatedIds.put(variableName, Collections.emptyList());
             }
@@ -3046,53 +3048,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
             CacheLocator.getRelationshipCache().putRelatedContentMap(contentlet.getIdentifier(), relatedIds);
         }
 
-        //Filter by live and/or language if set
-        //If live=true, for each content, it needs to return the live version, otherwise,
-        // it would return the working one, which is in the list by default
-        return filterRelatedContentByLiveAndLanguage(relatedList, systemUser, live, language);
-    }
-
-    /**
-     *
-     * @param relatedList
-     * @param user
-     * @return
-     */
-    private List<Contentlet> filterRelatedContentByLiveAndLanguage(
-            final List<Contentlet> relatedList,
-            final User user, final Boolean live, final long language) {
-
         if (live == null && language == -1) {
             return relatedList;
+        } else{
+            /*Filter by live and/or language if set
+              If live=true, for each content, it needs to return the live version.
+              Otherwise, it would return the working one*/
+            return uniqueIdentifiers.stream()
+                    .flatMap(identifier -> filterRelatedContentByLiveAndLanguage(language, live, identifier))
+                    .collect(Collectors.toList());
         }
-
-        final List<Contentlet> liveRelatedList = new ArrayList<>();
-
-        for (final Contentlet contentlet : relatedList) {
-            try {
-                if ((live == null || contentlet.isLive() == live) && (language == -1
-                        || contentlet.getLanguageId() == language)) {
-                    liveRelatedList.add(contentlet);
-                } else {
-                    //Otherwise, we need to search for the live version if exists
-                    final Contentlet liveVersion = findContentletByIdentifier(
-                            contentlet.getIdentifier(), live == null ? false : live,
-                            language != -1 ? language : contentlet.getLanguageId(), user,
-                            false);
-
-                    if (liveVersion != null) {
-                        liveRelatedList.add(liveVersion);
-                    }
-                }
-            } catch (DotDataException | DotSecurityException e) {
-                final String identifier = contentlet != null ? contentlet.getIdentifier() : null;
-                Logger.warnAndDebug(this.getClass(),
-                        "Error trying to get a live version for content with identifier "
-                                + identifier, e);
-            }
-        }
-
-        return liveRelatedList;
     }
 
     /**
@@ -3104,10 +3069,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @NotNull
     private List<Contentlet> getCachedRelatedContentlets(final Map<String, List<String>> relatedIds,
             final String variableName, final long language, final Boolean live) {
+
         return relatedIds
                 .get(variableName).stream()
-                .flatMap(identifier -> filterRelatedMap(language, live, identifier))
-                .filter(Objects::nonNull).collect(Collectors.toList());
+                .flatMap(identifier -> filterRelatedContentByLiveAndLanguage(language, live, identifier))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -3117,27 +3083,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param identifier
      * @return
      */
-    private Stream<? extends Contentlet> filterRelatedMap(final long language, final Boolean live,
+    private Stream<? extends Contentlet> filterRelatedContentByLiveAndLanguage(final long language, final Boolean live,
             final String identifier) {
-        try {
-            final StringBuilder query = new StringBuilder();
 
-            query.append("+identifier:").append(identifier);
-            if (language != -1) {
-                query.append(" +languageid:").append(language);
-            }
-            if (live != null) {
-                query.append(" +live:").append(live);
-            }
-            List<Contentlet> search = search(query.toString(), -1, -1, null,
-                    APILocator.systemUser(), false);
-            return search.stream();
+        final List<Contentlet> relatedContentList = new ArrayList<>();
+        //If language is set, we must return the content version in that language.
+        //Otherwise, we need to return a version for each language if exists
+        List<Long> languages = language > 0 ? CollectionsUtils.list(language)
+                : languageAPI.getLanguages().stream().map(lang -> lang.getId()).collect(
+                        Collectors.toList());
 
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.warn(this, "No content found with id " + identifier,
-                    e);
-            throw new DotStateException(e);
+        for (Long currentLanguage : languages) {
+            try{
+                Contentlet currentContent = findContentletByIdentifier(
+                        identifier, live == null ? false : live,
+                        currentLanguage, APILocator.getUserAPI().getSystemUser(),
+                        false);
+                if (currentContent != null) {
+                    relatedContentList.add(currentContent);
+                }
+            } catch (DotDataException | DotSecurityException | DotContentletStateException e) {
+                Logger.warnAndDebug(this.getClass(),
+                        "Error trying to get a live version for content with identifier "
+                                + identifier, e);
+            }
         }
+
+        return relatedContentList.stream();
     }
 
     @WrapInTransaction
