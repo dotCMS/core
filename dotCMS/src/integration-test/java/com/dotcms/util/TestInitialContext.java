@@ -51,21 +51,26 @@ public class TestInitialContext extends InitialContext {
         config.setUsername(prop.getProperty(dbType + "db.username"));
         config.setPassword(prop.getProperty(dbType + "db.password"));
 
-        //Lowest acceptable connection timeout is 250 ms. Default: 30000 (30 seconds)
+        // Lowest acceptable connection timeout is 250 ms. Default: 30000 (30 seconds)
         //config.setConnectionTimeout(30000);
 
-        //The minimum allowed value is 10000ms (10 seconds). Default: 600000 (10 minutes)
+        // The minimum allowed value is 10000ms (10 seconds). Default: 600000 (10 minutes)
         //config.setIdleTimeout(600000);
 
-        //We strongly recommend setting this value, and it should be several seconds shorter than any database
+        // We strongly recommend setting this value, and it should be several seconds shorter than any database
         // or infrastructure imposed connection time limit.
         // A value of 0 indicates no maximum lifetime (infinite lifetime), subject of course to the idleTimeout
         // setting. Default: 1800000 (30 minutes)
         //config.setMaxLifetime(1800000);
 
-//        config.addDataSourceProperty("cachePrepStmts", "true");
-//        config.addDataSourceProperty("prepStmtCacheSize", "250");
-//        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+        // This property controls the amount of time that a connection can be out of the pool before a message
+        // is logged indicating a possible connection leak. A value of 0 means leak detection is disabled.
+        // Lowest acceptable value for enabling leak detection is 2000 (2 seconds). Default: 0
+        config.setLeakDetectionThreshold(60000);
+
+        //config.addDataSourceProperty("cachePrepStmts", "true");
+        //config.addDataSourceProperty("prepStmtCacheSize", "250");
+        //config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
         return new HikariDataSource(config);
     }
