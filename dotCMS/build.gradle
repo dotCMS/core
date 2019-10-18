@@ -168,27 +168,6 @@ dependencies {
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-windows', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'embedded-collector', version: '0.13.1'
 
-    //https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html
-    providedCompile (group: 'com.oracle.jdbc', name: 'ojdbc8', version: '19.3') {
-        transitive = false
-    }
-    //https://mvnrepository.com/artifact/org.postgresql/postgresql
-    providedCompile (group: 'org.postgresql', name: 'postgresql', version: '42.2.8') {
-        transitive = false
-    }
-    //https://mvnrepository.com/artifact/mysql/mysql-connector-java
-    providedCompile (group: 'mysql', name: 'mysql-connector-java', version: '8.0.18') {
-        transitive = false
-    }
-    //https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc
-    providedCompile (group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '7.4.1.jre8') {
-        transitive = false
-    }
-
-    providedCompile "javax.servlet:javax.servlet-api:3.1.0"
-    providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
-    providedCompile fileTree("../libs/buildlibs").include('mail.jar')
-
     individualTestCompile sourceSets.test.output
     integrationTestCompile sourceSets.test.output
     functionalTestCompile sourceSets.test.output
