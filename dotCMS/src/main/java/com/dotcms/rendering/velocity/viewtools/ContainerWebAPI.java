@@ -1,10 +1,8 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
@@ -121,15 +119,24 @@ public class ContainerWebAPI implements ViewTool {
 
         pTag = (!availablePersonalizations.contains(pTag)) ? MultiTree.DOT_PERSONALIZATION_DEFAULT : pTag;
 
-		List<String> contentlets = null;
+		List<String> contentlets = new ArrayList<>();
 		if (ContainerUUID.UUID_LEGACY_VALUE.equals(uuid)) {
-			contentlets = getContentsIdByUUID(containerId, pTag, ContainerUUID.UUID_START_VALUE);
-			contentlets.addAll(getContentsIdByUUID(containerId, pTag, ContainerUUID.UUID_LEGACY_VALUE));
+			contentlets.addAll(
+					Optional.ofNullable(
+								getContentsIdByUUID(containerId, pTag, ContainerUUID.UUID_START_VALUE)
+							).orElse(Collections.EMPTY_LIST)
+			);
+
+			contentlets.addAll(
+					Optional.ofNullable(
+							getContentsIdByUUID(containerId, pTag, ContainerUUID.UUID_LEGACY_VALUE)
+					).orElse(Collections.EMPTY_LIST)
+			);
 		} else {
-			contentlets = getContentsIdByUUID(containerId, pTag, uuid);
+			contentlets.addAll(getContentsIdByUUID(containerId, pTag, uuid));
 		}
 
-		if (contentlets != null) return contentlets;
+		if (!contentlets.isEmpty()) return contentlets;
 
 		// if called through the ContainerResource, the content list will appear under the default UUID,
         // as the content is just being rendered in the container and is not associated with any page
