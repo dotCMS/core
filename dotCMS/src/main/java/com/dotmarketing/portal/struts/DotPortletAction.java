@@ -9,6 +9,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -23,6 +24,7 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.PermissionAsset;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -36,14 +38,19 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.WebKeys.Cache;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
@@ -240,6 +247,17 @@ public class DotPortletAction extends PortletAction {
 			if (WebAssetFactory.unPublishAsset(webAsset, userId, parent)) {
 				ActivityLogger.logInfo(this.getClass(), "Unpublish WebAsset action", "User " + user.getPrimaryKey() + " unpublishing" + webAsset.getType()+" named "+webAsset.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 				SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".unpublished");
+				if(webAsset instanceof Template) {
+					APILocator.getHTMLPageAssetAPI()
+							.findPagesByTemplate((Template) webAsset, user, false).stream()
+							.forEach(page -> {
+								final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()
+										.fromContentlet(page);
+								CacheLocator.getVeloctyResourceCache()
+										.remove(new VelocityResourceKey(pageAsset, PageMode.LIVE,
+												pageAsset.getLanguageId()));
+							});
+				}
 			} else {
 				SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".unpublish.notlive_or_locked");
 			}
