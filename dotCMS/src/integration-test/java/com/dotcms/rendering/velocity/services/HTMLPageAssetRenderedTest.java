@@ -36,6 +36,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilde
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
@@ -216,7 +217,7 @@ public class HTMLPageAssetRenderedTest {
     }
 
 
-    private void createMultiTree(final String pageId) throws DotSecurityException, DotDataException {
+    private void    createMultiTree(final String pageId) throws DotSecurityException, DotDataException {
 
         MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0),UUID,0);
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
@@ -961,6 +962,59 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertTrue(html , html.contains("content2content1"));
+    }
+
+    /**
+     * Method to test: {@link com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: Create a page with legacy UUID
+     * ExpectedResult: The page should return the right HTML
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldReturnPageHTMLForLegacyUUID() throws Exception {
+        //Create a Template
+        final Template template = new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
+                .withContainer(containerId, ContainerUUID.UUID_LEGACY_VALUE).nextPersisted();
+        PublishFactory.publishAsset(template, systemUser, false, false);
+
+        final String pageName = "testPage-"+System.currentTimeMillis();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
+        page.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        page.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        page.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        contentletAPI.publish(page, systemUser, false);
+
+        final String pageId = page.getIdentifier();
+        MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0), ContainerUUID.UUID_LEGACY_VALUE,0);
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(1), ContainerUUID.UUID_START_VALUE,0);
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+        final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        Mockito.when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        Mockito.when(mockRequest.getRequestURI()).thenReturn(page.getURI());
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+
+        final HttpSession session = mock(HttpSession.class);
+        Mockito.when(mockRequest.getSession()).thenReturn(session);
+        Mockito.when(mockRequest.getSession(false)).thenReturn(session);
+        Mockito.when(mockRequest.getSession(true)).thenReturn(session);
+        Mockito.when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(page.getURI())
                         .setPageMode(PageMode.PREVIEW_MODE)
                         .build(),
                 mockRequest, mockResponse);

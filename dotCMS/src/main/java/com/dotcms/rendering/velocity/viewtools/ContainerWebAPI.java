@@ -121,14 +121,16 @@ public class ContainerWebAPI implements ViewTool {
 
         pTag = (!availablePersonalizations.contains(pTag)) ? MultiTree.DOT_PERSONALIZATION_DEFAULT : pTag;
 
-        // if live mode, the content list will not have a colon in the key- as it was a velocity variable
-		List<String> contentlets = getContentsIdByUUID(containerId, pTag, uuid);
-		if (contentlets != null) return contentlets;
-
+		List<String> contentlets = null;
 		if (ContainerUUID.UUID_LEGACY_VALUE.equals(uuid)) {
 			contentlets = getContentsIdByUUID(containerId, pTag, ContainerUUID.UUID_START_VALUE);
-			if (contentlets != null) return contentlets;
+			contentlets.addAll(getContentsIdByUUID(containerId, pTag, ContainerUUID.UUID_LEGACY_VALUE));
+		} else {
+			contentlets = getContentsIdByUUID(containerId, pTag, uuid);
 		}
+
+		if (contentlets != null) return contentlets;
+
 		// if called through the ContainerResource, the content list will appear under the default UUID,
         // as the content is just being rendered in the container and is not associated with any page
         contentlets = (List<String>) ctx.get("contentletList" + containerId + ContainerUUID.UUID_LEGACY_VALUE);
@@ -140,15 +142,16 @@ public class ContainerWebAPI implements ViewTool {
     }
 
 	@Nullable
-	private List<String> getContentsIdByUUID(String containerId, String pTag, String noLegacyUUIDValue) {
-		List<String> contentlets = (List<String>) ctx.get("contentletList" + containerId + noLegacyUUIDValue + pTag.replace(":", ""));
+	private List<String> getContentsIdByUUID(String containerId, String pTag, String uuid) {
+		// if live mode, the content list will not have a colon in the key- as it was a velocity variable
+		List<String> contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag.replace(":", ""));
 		if(contentlets !=null ) {
 			return contentlets;
 		}
 
 		// if edit or preview mode, the content list WILL have a colon in the key, as this is
 		// a map in memory
-		contentlets = (List<String>) ctx.get("contentletList" + containerId + noLegacyUUIDValue + pTag);
+		contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag);
 		if(contentlets !=null ) {
 			return contentlets;
 		}
