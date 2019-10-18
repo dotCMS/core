@@ -70,7 +70,7 @@ public class SystemActionApiFireCommandFactory {
         this.commandMap.put(ARCHIVE,   new ArchiveSystemActionApiFireCommandImpl());
         this.commandMap.put(UNARCHIVE, new UnArchiveSystemActionApiFireCommandImpl());
         this.commandMap.put(DELETE,    new DeleteSystemActionApiFireCommandImpl());
-        /*this.commandMap.put(DESTROY,   new DestroySystemActionApiFireCommandImpl());*/
+        this.commandMap.put(DESTROY,   new DestroySystemActionApiFireCommandImpl());
     }
 
     private boolean hasPublishValid (final Tuple2<WorkflowAction, Boolean> params) {
@@ -414,6 +414,48 @@ public class SystemActionApiFireCommandFactory {
                     ", will do an delete");
 
             contentletAPI.delete(contentlet, user, dependencies.isRespectAnonymousPermissions());
+
+            return contentlet;
+        }
+    }
+
+    //////////////////////////////
+
+    /**
+     * Implements a {@link SystemActionApiFireCommand} that does a destroy to cover the {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction#DESTROY} system action
+     */
+    private class DestroySystemActionApiFireCommandImpl implements SystemActionApiFireCommand {
+
+        @WrapInTransaction
+        @Override
+        public Contentlet fire(final Contentlet contentlet, final boolean needSave, final ContentletDependencies dependencies)
+                throws DotDataException, DotSecurityException {
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", was fired by default action: " + dependencies.getWorkflowActionId() +
+                    ", however this action has not any destroy content actionlet, so the delete api call is being triggered as part of the request");
+
+            final String actionId       = UtilMethods.isSet(dependencies.getWorkflowActionId())?
+                    dependencies.getWorkflowActionId():contentlet.getActionId();
+            final User   user           = dependencies.getModUser();
+
+            if(UtilMethods.isSet(actionId)) {
+                contentlet.setActionId(actionId);
+            }
+
+            if(UtilMethods.isSet(dependencies.getWorkflowActionComments())){
+                contentlet.setStringProperty(Contentlet.WORKFLOW_COMMENTS_KEY, dependencies.getWorkflowActionComments());
+            }
+
+            if(UtilMethods.isSet(dependencies.getWorkflowAssignKey())){
+                contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
+            }
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", on the action id: " + actionId +
+                    ", will do an destroy");
+
+            contentletAPI.destroy(contentlet, user, dependencies.isRespectAnonymousPermissions());
 
             return contentlet;
         }
