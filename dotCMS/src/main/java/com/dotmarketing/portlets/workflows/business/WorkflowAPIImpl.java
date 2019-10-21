@@ -79,6 +79,7 @@ import com.dotmarketing.portlets.workflows.actionlet.CheckoutContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CommentOnWorkflowActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.CopyActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.DeleteContentActionlet;
+import com.dotmarketing.portlets.workflows.actionlet.DestroyContentActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.EmailActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionlet;
 import com.dotmarketing.portlets.workflows.actionlet.MultipleApproverActionlet;
@@ -234,6 +235,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				NotifyUsersActionlet.class,
 				ArchiveContentActionlet.class,
 				DeleteContentActionlet.class,
+				DestroyContentActionlet.class,
 				CheckinContentActionlet.class,
 				CheckoutContentActionlet.class,
 				UnpublishContentActionlet.class,
