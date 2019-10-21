@@ -2,14 +2,11 @@ package com.dotmarketing.quartz.job;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -21,27 +18,22 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.DataType;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
+import com.liferay.portal.model.User;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
-
-import com.liferay.portal.model.User;
 
 public class UpdateRatingThread implements StatefulJob {
 
@@ -212,21 +204,10 @@ public class UpdateRatingThread implements StatefulJob {
 
 					User user = APILocator.getUserAPI().getSystemUser();
 					List<Category> cats = catAPI.getParents(c, user, true);
-					Map<Relationship, List<Contentlet>> contentRelationships = new HashMap<Relationship, List<Contentlet>>();
+					ContentletRelationships contentRelationships = conAPI.getAllRelationships(c);
 
-					List<Relationship> rels = FactoryLocator.getRelationshipFactory().byContentType(c.getStructure());
-					for (Relationship r : rels) {
-						if(!contentRelationships.containsKey(r)){
-							contentRelationships.put(r, new ArrayList<Contentlet>());
-						}
-						List<Contentlet> cons = conAPI.getRelatedContent(c, r, user, true);
-						for (Contentlet co : cons) {
-							List<Contentlet> l2 = contentRelationships.get(r);
-							l2.add(co);
-						}
-					}
-
-					conAPI.checkinWithoutVersioning(c, contentRelationships, cats, APILocator.getPermissionAPI().getPermissions(c), user, true);
+                    conAPI.checkinWithoutVersioning(c, contentRelationships, cats,
+                            APILocator.getPermissionAPI().getPermissions(c), user, true);
 					HibernateUtil.closeAndCommitTransaction();
 				}
 

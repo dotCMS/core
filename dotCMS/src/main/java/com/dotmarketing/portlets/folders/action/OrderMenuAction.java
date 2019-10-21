@@ -33,6 +33,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -305,7 +306,8 @@ public class OrderMenuAction extends DotPortletAction {
                             contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
                             contentlet.setSortOrder(i);
                             contentlet.setModDate(new Date());
-                            final Contentlet in = APILocator.getContentletAPI().checkinWithoutVersioning(contentlet, null, null, null,
+                            final Contentlet in = APILocator.getContentletAPI().checkinWithoutVersioning(contentlet,
+                                    (ContentletRelationships) null, null, null,
                                     APILocator.systemUser(), false);
 
                             ret.add(in);

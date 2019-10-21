@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotmarketing.beans.Host;
@@ -1071,8 +1072,14 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException if contentlet is not already persisted
 	 */
 	public Contentlet checkout(String contentletInode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
-	
-	/**
+
+    @CloseDBIfOpened
+    Contentlet checkinWithoutVersioning(Contentlet contentlet,
+            ContentletRelationships contentRelationships, List<Category> cats,
+            List<Permission> permissions, User user,
+            boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
+
+    /**
 	 * Allows you to checkout contents so it can be altered and checked in.
 	 * Note that this method is only intended for use with Checkin methods.
 	 * Methods like publish, archive, unpublish,.. will fail when passing
@@ -1404,7 +1411,7 @@ public interface ContentletAPI {
 	
 	/**
 	 * @deprecated This method should not be used because it does not consider self related content.
-     * Use {@link ContentletAPI#checkin(Contentlet, ContentletRelationships, List, List, User, boolean, boolean)} instead
+     * Use {@link ContentletAPI#checkinWithoutVersioning(Contentlet, ContentletRelationships, List, List, User, boolean)} instead
      * Will check in a update of your contentlet without generating a new version. The inode of your contentlet must be different from null/empty.
 	 * Note this method will also attempt to publish the contentlet and related assets (when checking in) without altering the mod date or mod user.
 	 * Note that the contentlet argument must be obtained using checkout methods.

@@ -5279,7 +5279,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 false);
 
             Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(newsContent,
-                null, new ArrayList<>(), null, user, false);
+                    (ContentletRelationships) null, new ArrayList<>(), null, user, false);
 
             List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
                 false);
@@ -5544,7 +5544,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         blogContent.setIndexPolicy(IndexPolicy.FORCE);
         blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
         Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
-                null, null, null, user, false);
+                (ContentletRelationships) null, null, null, user, false);
 
         Relationship relationship = relationships.getRelationshipsRecords().get(0)
                 .getRelationship();
