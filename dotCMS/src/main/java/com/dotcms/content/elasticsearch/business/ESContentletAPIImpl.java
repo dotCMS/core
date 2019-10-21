@@ -3445,8 +3445,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentletOut.getHost());
 
             // Creates the Local System event
-            if (null != autoAssign) {
-
+            if ( null != autoAssign ) {
                 contentletOut.setBoolProperty(Contentlet.AUTO_ASSIGN_WORKFLOW, autoAssign);
             }
 
@@ -4425,10 +4424,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    private void createLocalCheckinEvent(Contentlet contentlet, User user, boolean createNewVersion) throws DotHibernateException {
+    private void createLocalCheckinEvent(final Contentlet contentlet, final User user, final boolean createNewVersion) throws DotHibernateException {
 
-        HibernateUtil.addCommitListener
-                (()-> this.localSystemEventsAPI.notify(new ContentletCheckinEvent(contentlet, createNewVersion, user)));
+        HibernateUtil.addCommitListener(
+              ()-> this.localSystemEventsAPI.notify(new ContentletCheckinEvent<>(contentlet, createNewVersion, user))
+        );
     }
 
     private void updateTemplateInAllLanguageVersions(final Contentlet contentlet, final User user)
@@ -6315,7 +6315,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     @WrapInTransaction
     @Override
-    public Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+    public Contentlet copyContentlet(final Contentlet contentletToCopy, final Host host, final Folder folder, final User user, final String copySuffix, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
         Contentlet resultContentlet = new Contentlet();
         String newIdentifier = StringPool.BLANK;
         ArrayList<Contentlet> versionsToCopy = new ArrayList<>();
@@ -6482,15 +6482,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentletsToCopyRules.put(contentlet.getIdentifier(), contentletMap);
             }
 
-            if(isContentletLive)
+            if(isContentletLive){
                 APILocator.getVersionableAPI().setLive(newContentlet);
+            }
 
-            if(isContentletWorking)
+            if(isContentletWorking) {
                 versionsToMarkWorking.add(newContentlet);
+            }
 
-
-            if(contentlet.getInode().equals(contentletToCopy.getInode()))
+            if(contentlet.getInode().equals(contentletToCopy.getInode())){
                 resultContentlet = newContentlet;
+            }
         }
 
         for (Map<String, Contentlet> stringContentletMap : contentletsToCopyRules.values()) {
@@ -6522,34 +6524,40 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         // copy the workflow state
-        WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(contentletToCopy);
-        if(task!=null) {
-            WorkflowTask newTask=new WorkflowTask();
+        final WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(contentletToCopy);
+        if(null != task) {
+            //This is not very common bu the `resultContentlet` might come with an existing task
+            final WorkflowTask conflictingTask = APILocator.getWorkflowAPI().findTaskByContentlet(resultContentlet);
+            if( null != conflictingTask ){
+                APILocator.getWorkflowAPI().deleteWorkflowTask(conflictingTask, APILocator.getUserAPI().getSystemUser());
+            }
+
+            final WorkflowTask newTask = new WorkflowTask();
             BeanUtils.copyProperties(task, newTask);
             newTask.setId(null);
             newTask.setWebasset(resultContentlet.getIdentifier());
             newTask.setLanguageId(resultContentlet.getLanguageId());
-
             APILocator.getWorkflowAPI().saveWorkflowTask(newTask);
 
-            for(WorkflowComment comment : APILocator.getWorkflowAPI().findWorkFlowComments(task)) {
-                WorkflowComment newComment=new WorkflowComment();
+            for (final WorkflowComment comment : APILocator.getWorkflowAPI().findWorkFlowComments(task)) {
+                final WorkflowComment newComment = new WorkflowComment();
                 BeanUtils.copyProperties(comment, newComment);
                 newComment.setId(null);
                 newComment.setWorkflowtaskId(newTask.getId());
                 APILocator.getWorkflowAPI().saveComment(newComment);
             }
 
-            for(WorkflowHistory history : APILocator.getWorkflowAPI().findWorkflowHistory(task)) {
-                WorkflowHistory newHistory=new WorkflowHistory();
+            for (final WorkflowHistory history : APILocator.getWorkflowAPI().findWorkflowHistory(task)) {
+                final WorkflowHistory newHistory = new WorkflowHistory();
                 BeanUtils.copyProperties(history, newHistory);
                 newHistory.setId(null);
                 newHistory.setWorkflowtaskId(newTask.getId());
                 APILocator.getWorkflowAPI().saveWorkflowHistory(newHistory);
             }
 
-            List<IFileAsset> files = APILocator.getWorkflowAPI().findWorkflowTaskFilesAsContent(task, APILocator.getUserAPI().getSystemUser());
-            for(IFileAsset f : files) {
+            final List<IFileAsset> files = APILocator.getWorkflowAPI()
+                    .findWorkflowTaskFilesAsContent(task, APILocator.getUserAPI().getSystemUser());
+            for (final IFileAsset f : files) {
                 APILocator.getWorkflowAPI().attachFileToTask(newTask, f.getInode());
             }
         }
