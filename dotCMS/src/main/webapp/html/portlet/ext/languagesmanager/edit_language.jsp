@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@ page import="java.io.FileNotFoundException" %>
 	<%@ include file="/html/portlet/ext/languagesmanager/init.jsp" %>
 
@@ -6,8 +7,8 @@
 <%
 
 com.dotmarketing.portlets.languagesmanager.model.Language language = request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_MANAGER_LANGUAGE) != null ?  (com.dotmarketing.portlets.languagesmanager.model.Language)request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_MANAGER_LANGUAGE) : new com.dotmarketing.portlets.languagesmanager.model.Language(); 
-
 long languageId = language.getId();
+boolean languageIsNew=(languageId==0);
 String strlanguage = language.getLanguage();
 if(languageId == 0 ){
 
@@ -56,19 +57,12 @@ function cancelEdit(form) {
 
 dojo.ready(function() {
 	var fieldWidth = "300px";
-	new dijit.form.ValidationTextBox({
-		name: "languageCode",
-		value: "<%=language.getLanguageCode()%>",
-        maxLength: 2,
-		style: "width: " + fieldWidth,
-		promptMessage: "<%= LanguageUtil.get(pageContext, "LanguageCode-Required") %>"
-	}, "languageCode");
 
 	new dijit.form.TextBox({
 		name: "countryCode",
 		value: "<%=language.getCountryCode()%>",
         maxLength: 2,
-		style: "width: " + fieldWidth
+        style: "width: 100px" ,
 	}, "countryCode");
 
 	new dijit.form.ValidationTextBox({
@@ -96,39 +90,71 @@ dojo.ready(function() {
 	    <input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="">
 	    <input name="<portlet:namespace />redirect" type="hidden" value="">
 	    <html:hidden  property="id" value="<%=String.valueOf(languageId)%>" />
-	    
+	    <dl>
+            <dt class="required2"><%= LanguageUtil.get(pageContext, "Language-Name") %>:</dt>
+            <dd>
+                <html:text size="30" property="language" styleId="language" />
+                <div class="hint-text"><%= LanguageUtil.get(pageContext, "descriptive") %></div>
+            </dd>
+        </dl>
 	    <%if(languageId > 0){ %>
 		    <dl> 
 			    <dt><%= LanguageUtil.get(pageContext, "Language-Id") %>:</dt>
-			    <dd><%=languageId %> </dd>
+			    <dd style="margin-bottom:8px;"><%=languageId %> </dd>
 			</dl>
             <dl> 
                 <dt><%= LanguageUtil.get(pageContext, "Language-ISO") %>:</dt>
-                <dd><%=language %> </dd>
+                <dd style="margin-bottom:8px;"><b><%=language %></b></dd>
             </dl>
 			<dl> 
 			    <dt><%= LanguageUtil.get(pageContext, "Use") %>:</dt>
-			    <dd>https://yoursite.com/?language_id=<%=languageId %></dd>
+			    <dd style="margin-bottom:8px;">https://yoursite.com/?language_id=<%=languageId %></dd>
 			</dl>
-	    <%} %>
-	    <dl>
-		    <dt class="required2"><%= LanguageUtil.get(pageContext, "Language-Code") %>:</dt>
-		    <dd><html:text size="30" property="languageCode" maxlength="2" styleId="languageCode" /></dd>
-	    </dl>
-		<dl>
-		    <dt class="required2"><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
-		    <dd>
-				<html:text size="30" property="language" styleId="language" />
-				<div class="hint-text"><%= LanguageUtil.get(pageContext, "descriptive") %></div>
-			</dd>
-	    </dl>
-		<dl>
-		    <dt><%= LanguageUtil.get(pageContext, "Country-Code") %>:</dt>
-		    <dd><html:text size="30" property="countryCode" maxlength="2" styleId="countryCode" /></dd>
+	    <%}else{%>
 
-	    </dl>
+   	    <dl>
+   		    <dt class="required2"><%= LanguageUtil.get(pageContext, "Language-Code") %>:</dt>
+             
+             <%Locale myLocale =   WebAPILocator.getLanguageWebAPI().getBackendLanguage().asLocale();%>
+             
+   		    <dd>
+             <select name="languageCode" dojoType="dijit.form.FilteringSelect">
+             <option value=""></option>
+             <%for(String lang : Locale.getISOLanguages()) {%>
+                 <option value="<%=lang%>"><%=lang%></option>
+             <%} %>
+                
+             
+             </select>
+
+                <div class="hint-text"><%= LanguageUtil.get(pageContext, "ISO Language Code") %></div>
+             
+             
+             </dd>
+             
+   	    </dl>
+           <dl>
+               <dt><%= LanguageUtil.get(pageContext, "Country-Code") %>:</dt>
+               <dd>
+               <select name="countryCode" dojoType="dijit.form.FilteringSelect">
+               <option value=""></option>
+                <%for(String lang : Locale.getISOCountries()) {%>
+                    <option value="<%=lang%>"><%=lang%></option>
+                <%} %>
+
+             </select>
+
+               <div class="hint-text"><%= LanguageUtil.get(pageContext, "ISO Country Code") %></div>
+               
+               </dd>
+   
+           </dl>
+       <%} %>
+
+
+
 		<dl>
-		    <dt><%= LanguageUtil.get(pageContext, "Country") %>:</dt>
+		    <dt><%= LanguageUtil.get(pageContext, "Country-Name") %>:</dt>
 		    <dd>
 				<html:text size="30" property="country" styleId="country" />
 				<div class="hint-text"><%= LanguageUtil.get(pageContext, "descriptive") %></div>
