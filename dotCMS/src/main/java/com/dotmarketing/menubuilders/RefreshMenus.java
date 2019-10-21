@@ -7,9 +7,7 @@ package com.dotmarketing.menubuilders;
 
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -18,19 +16,21 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 public class RefreshMenus {
 
 
-	public static boolean shouldRefreshMenus(Inode newFile) throws DotDataException{
-		
-		return false;
-	}
-
 
 
 	public static boolean shouldRefreshMenus(IFileAsset oldFile, IFileAsset newFile, boolean isNew){
-      return false;
+	    if(isNew || oldFile==null || newFile==null) {
+	        return true;
+	    }
+	    return (isNew || oldFile.isShowOnMenu() != newFile.isShowOnMenu());
+    
 	}
 
 	public static boolean shouldRefreshMenus(IHTMLPage oldFile, IHTMLPage newFile, boolean isNew){
-      return false;
+       if(isNew || oldFile==null || newFile==null) {
+            return true;
+        }
+        return (oldFile.isShowOnMenu() != newFile.isShowOnMenu());
     }
 
 

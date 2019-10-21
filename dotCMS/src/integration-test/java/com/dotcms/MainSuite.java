@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.junit.MainBaseSuite;
+import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -212,7 +213,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.startup.runonce.Task05050FileAssetContentTypeReadOnlyFileNameTest.class,
         com.dotmarketing.startup.runonce.Task05190UpdateFormsWidgetCodeFieldTest.class,
         com.dotmarketing.startup.runalways.Task00001LoadSchemaIntegrationTest.class,
-        com.dotmarketing.startup.runonce.Task05200WorkflowTaskUniqueKeyTest.class
+        com.dotmarketing.startup.runonce.Task05200WorkflowTaskUniqueKeyTest.class,
+        Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class
 })
 public class MainSuite {
 
