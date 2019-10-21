@@ -1571,7 +1571,7 @@ public class ContentResource {
                     (contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
             // running a workflow action?
             final ContentWorkflowResult contentWorkflowResult = processWorkflowAction(contentlet, init, live);
-            final Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
+            final ContentletRelationships relationships = (ContentletRelationships) contentlet
                     .get(RELATIONSHIP_KEY);
             live = contentWorkflowResult.publish;
 
@@ -1582,7 +1582,7 @@ public class ContentResource {
 
                 contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
                 contentlet = APILocator.getContentletAPI()
-                        .checkin(contentlet, relationships, categories, init.getUser(), ALLOW_FRONT_END_SAVING);
+                        .checkin(contentlet, relationships, categories, null, init.getUser(), ALLOW_FRONT_END_SAVING);
                 if (live) {
                     APILocator.getContentletAPI()
                             .publish(contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
@@ -1593,7 +1593,7 @@ public class ContentResource {
                         new ContentletDependencies.Builder()
                         .respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
                         .modUser(init.getUser()).categories(categories)
-                        .relationships(MapToContentletPopulator.INSTANCE.getContentletRelationshipsFromMap(contentlet, relationships))
+                        .relationships(relationships)
                         .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
                         .build());
             }

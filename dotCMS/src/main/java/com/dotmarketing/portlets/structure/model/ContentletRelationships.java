@@ -162,6 +162,8 @@ public class ContentletRelationships
 
 		private Relationship relationship;
 		private List<Contentlet> records;
+
+		//When hasParent=true, the current side of the relationship will be the parent and the returned records will be its children
 		private boolean hasParent;
 
 		/**

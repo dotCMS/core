@@ -3371,6 +3371,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return checkin(contentlet, relationshipsData, cats , user, respectFrontendRoles, false, false);
     }
 
+    @CloseDBIfOpened
+    @Override
+    public Contentlet checkinWithoutVersioning(final Contentlet contentlet,
+            final ContentletRelationships contentRelationships, final List<Category> cats,
+            final List<Permission> permissions, final User user, final boolean respectFrontendRoles)
+            throws DotContentletStateException, DotSecurityException, DotDataException {
+        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false,
+                false);
+    }
+
     /**
      *
      * @param contentletIn
