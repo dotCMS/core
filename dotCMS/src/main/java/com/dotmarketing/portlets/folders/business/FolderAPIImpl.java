@@ -144,6 +144,8 @@ public class FolderAPIImpl implements FolderAPI  {
 								final User user, final boolean respectFrontEndPermissions) throws DotDataException,
 			DotSecurityException {
 
+    	validateFolderName(newName);
+
 		boolean renamed = false;
 
 		if (!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
@@ -319,7 +321,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getPath());
 		}
 
-		validateFolderName(folderToCopy);
+		validateFolderName(folderToCopy.getName());
 
 		folderFactory.copy(folderToCopy, newParentFolder);
 
@@ -340,7 +342,7 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Host " + newParentHost.getHostname());
 		}
 
-		validateFolderName(folderToCopy);
+		validateFolderName(folderToCopy.getName());
 
 		folderFactory.copy(folderToCopy, newParentHost);
 
@@ -576,7 +578,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	public void save(final Folder folder, final String existingId,
 					 final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
-		validateFolderName(folder);
+		validateFolderName(folder.getName());
 
 		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		if(id ==null || !UtilMethods.isSet(id.getId())){
@@ -610,9 +612,9 @@ public class FolderAPIImpl implements FolderAPI  {
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
-	private void validateFolderName(Folder folder) throws DotDataException {
-		if (folder != null && UtilMethods.isSet(folder.getName())
-				&& reservedFolderNames.contains(folder.getName().toUpperCase())) {
+	public void validateFolderName(final String folderName) throws DotDataException {
+		if (UtilMethods.isSet(folderName)
+				&& reservedFolderNames.contains(folderName.toUpperCase())) {
 			throw new DotDataException("Folder can't be saved. You entered a reserved folder name");
 		}
 	}
@@ -639,7 +641,8 @@ public class FolderAPIImpl implements FolderAPI  {
 		Folder parent = null;
 
 		while (st.hasMoreTokens()) {
-			String name = st.nextToken();
+			final String name = st.nextToken();
+			validateFolderName(name);
 			sb.append(name + "/");
 			Folder f = findFolderByPath(sb.toString(), host, user, respectFrontEndPermissions);
 			if (f == null || !InodeUtils.isSet(f.getInode())) {
