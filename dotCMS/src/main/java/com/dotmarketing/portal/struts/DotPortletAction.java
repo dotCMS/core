@@ -247,17 +247,6 @@ public class DotPortletAction extends PortletAction {
 			if (WebAssetFactory.unPublishAsset(webAsset, userId, parent)) {
 				ActivityLogger.logInfo(this.getClass(), "Unpublish WebAsset action", "User " + user.getPrimaryKey() + " unpublishing" + webAsset.getType()+" named "+webAsset.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 				SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".unpublished");
-				if(webAsset instanceof Template) {
-					APILocator.getHTMLPageAssetAPI()
-							.findPagesByTemplate((Template) webAsset, user, false).stream()
-							.forEach(page -> {
-								final HTMLPageAsset pageAsset = APILocator.getHTMLPageAssetAPI()
-										.fromContentlet(page);
-								CacheLocator.getVeloctyResourceCache()
-										.remove(new VelocityResourceKey(pageAsset, PageMode.LIVE,
-												pageAsset.getLanguageId()));
-							});
-				}
 			} else {
 				SessionMessages.add(httpReq, "message", "message." + webAsset.getType() + ".unpublish.notlive_or_locked");
 			}
