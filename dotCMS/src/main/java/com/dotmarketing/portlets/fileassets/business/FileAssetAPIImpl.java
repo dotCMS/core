@@ -32,6 +32,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 import java.io.*;
@@ -559,7 +560,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	 */
 	public String getRelativeAssetsRootPath() {
         String path = "";
-        path = Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH);
+        path = Try.of(()->Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH)).getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
         return path;
     }
 
@@ -569,7 +570,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
      * @return the root folder of where assets are stored
      */
     public String getRealAssetsRootPath() {
-        String realPath = Config.getStringProperty("ASSET_REAL_PATH");
+        String realPath = Try.of(()->Config.getStringProperty("ASSET_REAL_PATH")).getOrNull();
         if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator))
             realPath = realPath + java.io.File.separator;
         if (!UtilMethods.isSet(realPath))
