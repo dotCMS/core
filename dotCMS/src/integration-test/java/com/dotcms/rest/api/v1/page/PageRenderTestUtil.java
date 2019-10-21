@@ -24,8 +24,11 @@ public final class PageRenderTestUtil {
 
     private PageRenderTestUtil(){}
 
-
     public static PageRenderTest createPage(final int containersNumber, final Host host) {
+        return createPage(containersNumber, host, true);
+    }
+
+    public static PageRenderTest createPage(final int containersNumber, final Host host, final boolean publish) {
         try {
             final PageRenderTest pageRenderTest = new PageRenderTest(host);
 
@@ -34,7 +37,7 @@ public final class PageRenderTestUtil {
 
             final Template template = pageRenderTest.getTemplate();
 
-            final HTMLPageAsset page = PageRenderTestUtil.createHTMLPageAsset(template, host);
+            final HTMLPageAsset page = PageRenderTestUtil.createHTMLPageAsset(template, host, publish);
             pageRenderTest.setPage(page);
 
             return pageRenderTest;
@@ -63,7 +66,11 @@ public final class PageRenderTestUtil {
         }
     }
 
-    private static HTMLPageAsset createHTMLPageAsset(final Template template, final Host host)
+    private static HTMLPageAsset createHTMLPageAsset(final Template template, final Host host) throws DotSecurityException, DotDataException {
+        return createHTMLPageAsset(template, host, true);
+    }
+
+    private static HTMLPageAsset createHTMLPageAsset(final Template template, final Host host, final boolean publish)
             throws DotDataException, DotSecurityException {
 
         final Folder folder = new FolderDataGen()
@@ -76,7 +83,10 @@ public final class PageRenderTestUtil {
                 .nextPersisted();
 
         APILocator.getVersionableAPI().setWorking(pageAsset);
-        APILocator.getVersionableAPI().setLive(pageAsset);
+
+        if (publish) {
+            APILocator.getVersionableAPI().setLive(pageAsset);
+        }
 
         return pageAsset;
     }

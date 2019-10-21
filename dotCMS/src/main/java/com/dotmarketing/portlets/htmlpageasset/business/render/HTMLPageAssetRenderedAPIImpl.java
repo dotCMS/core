@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
@@ -273,7 +274,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             htmlPageUrl = new HTMLPageUrl(htmlPageAsset);
         }
 
-        htmlPageUrl.setHTMLPage(htmlPageAsset);
+        htmlPageUrl.setHTMLPage((HTMLPageAsset) htmlPageAsset);
 
         final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(
                 htmlPageAsset,
@@ -386,7 +387,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     public class HTMLPageUrl {
         private String pageUrl;
         private String pageUrlMapper;
-        private IHTMLPage htmlPage;
+        private HTMLPageAsset htmlPage;
         private Boolean hasLive = null;
 
         public HTMLPageUrl(final String pageUrl, final String pageUrlMapper, final Boolean hasLive) {
@@ -397,13 +398,13 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         public HTMLPageUrl(final IHTMLPage htmlPage) {
             this(htmlPage.getPageUrl(), null, null);
-            this.setHTMLPage(htmlPage);
+            this.setHTMLPage((HTMLPageAsset) htmlPage);
         }
 
         public boolean hasLive() {
             try {
-                return hasLive == null ? this.htmlPage.isLive() : this.hasLive;
-            } catch(DotDataException | DotSecurityException e) {
+                return hasLive == null ? this.htmlPage.hasLiveVersion() : this.hasLive;
+            } catch(DotDataException e) {
                 throw new DotRuntimeException(e);
             }
         }
@@ -420,8 +421,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             return htmlPage;
         }
 
-        public void setHTMLPage(final IHTMLPage ihtmlPage) {
-            this.htmlPage = ihtmlPage;
+        public void setHTMLPage(final HTMLPageAsset htmlPage) {
+            this.htmlPage = htmlPage;
         }
     }
     
