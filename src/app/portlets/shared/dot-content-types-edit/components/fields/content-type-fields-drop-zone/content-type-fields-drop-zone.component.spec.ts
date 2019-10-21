@@ -94,17 +94,12 @@ class TestFieldDragDropService {
     _fieldDropFromSource: Subject<any> = new Subject();
     _fieldDropFromTarget: Subject<any> = new Subject();
     _fieldRowDropFromTarget: Subject<any> = new Subject();
-    draggedEvent = false;
 
     get fieldDropFromSource$(): Observable<any> {
         return this._fieldDropFromSource.asObservable();
     }
 
     get fieldDropFromTarget$(): Observable<any> {
-        this.draggedEvent = true;
-        setTimeout(() => {
-            this.draggedEvent = false;
-        }, 100);
         return this._fieldDropFromTarget.asObservable();
     }
 
@@ -113,7 +108,7 @@ class TestFieldDragDropService {
     }
 
     isDraggedEventStarted(): boolean {
-        return this.draggedEvent;
+        return false;
     }
 }
 
@@ -528,6 +523,8 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should save all updated fields', fakeAsync(() => {
+        spyOn(testFieldDragDropService, 'isDraggedEventStarted').and.returnValue(false);
+
         const updatedField = fakeFields[2].columns[0].fields[0];
 
         fixture.detectChanges();
@@ -544,12 +541,30 @@ describe('Load fields and drag and drop', () => {
             indexed: true
         };
 
+        expect(comp.currentField).toEqual(updatedField);
+
         comp.displayDialog = false;
         comp.saveFieldsHandler(fieldUpdated);
 
         expect(comp.editField.emit).toHaveBeenCalledWith(
             Object.assign({}, updatedField, fieldUpdated)
         );
+    }));
+
+    it('should not save any fields', fakeAsync(() => {
+        comp.currentField = null;
+        spyOn(testFieldDragDropService, 'isDraggedEventStarted').and.returnValue(true);
+
+        const updatedField = fakeFields[2].columns[0].fields[0];
+
+        fixture.detectChanges();
+
+        tick(100);
+        comp.editFieldHandler(updatedField);
+
+        spyOn(comp.editField, 'emit');
+
+        expect(comp.currentField).toBeNull();
     }));
 
     it('should emit and create 2 columns', () => {
@@ -682,9 +697,6 @@ describe('Load fields and drag and drop', () => {
 
         comp.saveFields.subscribe((fields) => {
             expect(fakeFields).toEqual(fields);
-            setTimeout(() => {
-                expect(testFieldDragDropService.isDraggedEventStarted()).toBe(false);
-            }, 10);
             done();
         });
         comp.saveFieldsHandler(newlyField);
