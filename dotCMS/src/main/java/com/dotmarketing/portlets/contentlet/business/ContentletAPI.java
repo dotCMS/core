@@ -1119,8 +1119,10 @@ public interface ContentletAPI {
 	 */
 	public List<Contentlet> checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit) throws DotDataException, DotSecurityException, DotContentletStateException;
 	
-	/** 
-	 * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
+	/**
+     * @deprecated This method should not be used because it does not consider self related content.
+     * Use {@link ContentletAPI#checkin(Contentlet, ContentletRelationships, List, List, User, boolean)} instead
+     * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
 	 * Note that the contentlet argument must be obtained using checkout methods.
      *
      * Important note to be considered: Related content can also be set using any of these methods:
@@ -1311,7 +1313,9 @@ public interface ContentletAPI {
 	public Contentlet checkin(Contentlet contentlet, User user, boolean respectFrontendRoles, List<Category> cats) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
 	
 	/**
-	 * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
+	 * @deprecated This method should not be used because it does not consider self related content.
+     * Use {@link ContentletAPI#checkin(Contentlet, ContentletRelationships, List, List, User, boolean)} instead
+     * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
 	 * Note that the contentlet argument must be obtained using checkout methods.
      *
      * Important note to be considered: Related content can also be set using any of these methods:
@@ -1362,7 +1366,9 @@ public interface ContentletAPI {
 	public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
 
 	/**
-	 * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
+	 * @deprecated This method should not be used because it does not consider self related content.
+     * Use {@link ContentletAPI#checkin(Contentlet, ContentletRelationships, List, List, User, boolean)} instead
+     * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
 	 * Note that the contentlet argument must be obtained using checkout methods.
      *
      * Important note to be considered: Related content can also be set using any of these methods:
@@ -1397,7 +1403,9 @@ public interface ContentletAPI {
 	public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
 	
 	/**
-	 * Will check in a update of your contentlet without generating a new version. The inode of your contentlet must be different from null/empty.
+	 * @deprecated This method should not be used because it does not consider self related content.
+     * Use {@link ContentletAPI#checkin(Contentlet, ContentletRelationships, List, List, User, boolean, boolean)} instead
+     * Will check in a update of your contentlet without generating a new version. The inode of your contentlet must be different from null/empty.
 	 * Note this method will also attempt to publish the contentlet and related assets (when checking in) without altering the mod date or mod user.
 	 * Note that the contentlet argument must be obtained using checkout methods.
      *
