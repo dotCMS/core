@@ -78,6 +78,10 @@ public class PageView implements Serializable {
         this.live = live;
     }
 
+    public boolean isLive() {
+        return live;
+    }
+
     private int getContentsNumber() {
         final Optional<Integer> contentsNumber = this.getContainersMap().values()
                 .stream()
