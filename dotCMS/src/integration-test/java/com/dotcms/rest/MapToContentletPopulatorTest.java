@@ -235,6 +235,67 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
     }
 
     @Test
+    public void testPopulateSelfJoinedRelationshipWithLuceneQuery() throws DotDataException, DotSecurityException {
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+
+        ContentType parentContentType = null;
+
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType");
+
+            Contentlet parentContentlet = createContentlet(parentContentType);
+            Contentlet childContentlet = createContentlet(parentContentType);
+            Contentlet contentletToPopulate = createContentlet(parentContentType);
+
+            //Adding a RelationshipField to the parent
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
+                    parentContentType.id(), parentContentType.variable());
+
+            final String fullFieldVar =
+                    parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
+
+            //Adding a RelationshipField to the child
+            final Field childTypeRelationshipField = createAndSaveRelationshipField("otherSideRel",
+                    parentContentType.id(), fullFieldVar);
+
+
+            final Map<String, Object> properties = new HashMap<>();
+            properties.put(Contentlet.STRUCTURE_INODE_KEY, parentContentType.id());
+            properties.put(parentTypeRelationshipField.variable(), childContentlet.getIdentifier());
+            properties.put(childTypeRelationshipField.variable(), parentContentlet.getIdentifier());
+
+            contentletToPopulate = populator.populate(contentletToPopulate, properties);
+
+            assertNotNull(contentletToPopulate.get(Contentlet.RELATIONSHIP_KEY));
+
+            ContentletRelationships  resultMap = (ContentletRelationships) contentletToPopulate
+                    .get(Contentlet.RELATIONSHIP_KEY);
+
+            assertEquals(2, resultMap.getRelationshipsRecords().size());
+
+            for(ContentletRelationships.ContentletRelationshipRecords result:resultMap.getRelationshipsRecords()){
+
+                //validates the relationship
+                assertEquals(parentContentType.id(), result.getRelationship().getParentStructureInode());
+                assertEquals(parentContentType.id(), result.getRelationship().getChildStructureInode());
+
+                //validates the contentlet
+                assertEquals(1, result.getRecords().size());
+
+                if (result.isHasParent()){
+                    assertEquals(childContentlet.getInode(), result.getRecords().get(0).getInode());
+                } else{
+                    assertEquals(parentContentlet.getInode(), result.getRecords().get(0).getInode());
+                }
+            }
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+        }
+    }
+
+    @Test
     public void testPopulateContentletWithTwoSidedRelationshipAndParentRelationNameEqualsToAnotherFieldVarInChild()
             throws DotDataException, DotSecurityException {
         final MapToContentletPopulator populator = new MapToContentletPopulator();
