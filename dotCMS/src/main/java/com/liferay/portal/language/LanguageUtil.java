@@ -94,12 +94,6 @@ public class LanguageUtil {
 
 							language = languageAPI.getFallbackLanguage(languageCountryCode._1);
 						}
-
-						if (null == language || language.getId() <= 0) { // fallback by any lang code match
-
-							language = languageAPI
-									.getFindFirstLanguageByCode(languageCountryCode._1).orElse(null);
-						}
 					}
 
 					if (null != language && language.getId() > 0) {
