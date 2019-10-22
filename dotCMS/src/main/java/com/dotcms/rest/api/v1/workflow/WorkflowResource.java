@@ -1246,7 +1246,7 @@ public class WorkflowResource {
      * @param request    {@link HttpServletRequest}
      * @param inode      {@link String} (Optional) to fire an action over the existing inode.
      * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
-     * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param language   {@link String}   (Optional) to fire an action over the existing language (in combination of identifier).
      * @param multipart {@link FormDataMultiPart} Multipart form (if an inode is set, this param is not ignored).
      *
      * @return Response
@@ -1261,7 +1261,7 @@ public class WorkflowResource {
                                               @Context final HttpServletResponse response,
                                               @QueryParam("inode")            final String inode,
                                               @QueryParam("identifier")       final String identifier,
-                                              @DefaultValue("-1") @QueryParam("language")         final long   language,
+                                              @DefaultValue("-1") @QueryParam("language")         final String   language,
                                               final FormDataMultiPart multipart) {
 
       final InitDataObject initDataObject = new WebResource.InitBuilder()
@@ -1275,11 +1275,12 @@ public class WorkflowResource {
             Logger.debug(this, ()-> "On Fire Action: inode = " + inode +
                     ", identifier = " + identifier + ", language = " + language);
 
+            final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
             final FireActionByNameForm fireActionForm = this.processForm (multipart);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
-                    (inode, identifier, language,
+                    (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
@@ -1302,7 +1303,7 @@ public class WorkflowResource {
      * @param request    {@link HttpServletRequest}
      * @param inode      {@link String} (Optional) to fire an action over the existing inode.
      * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
-     * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param language   {@link String} (Optional) to fire an action over the existing language (in combination of identifier).
      * @param fireActionForm {@link FireActionByNameForm} Fire Action by Name Form (if an inode is set, this param is not ignored).
      * @return Response
      */
@@ -1314,7 +1315,7 @@ public class WorkflowResource {
     public final Response fireActionByName(@Context final HttpServletRequest request,
                                      @QueryParam("inode")                        final String inode,
                                      @QueryParam("identifier")                   final String identifier,
-                                     @DefaultValue("-1") @QueryParam("language") final long   language,
+                                     @DefaultValue("-1") @QueryParam("language") final String   language,
                                      final FireActionByNameForm fireActionForm) {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
@@ -1328,11 +1329,11 @@ public class WorkflowResource {
             Logger.debug(this, ()-> "On Fire Action: action name = '" + (null != fireActionForm? fireActionForm.getActionName(): StringPool.BLANK)
                     + "', inode = " + inode +
                     ", identifier = " + identifier + ", language = " + language);
-
+            final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
-                    (inode, identifier, language,
+                    (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
@@ -1420,7 +1421,7 @@ public class WorkflowResource {
      * @param request    {@link HttpServletRequest}
      * @param inode      {@link String} (Optional) to fire an action over the existing inode.
      * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
-     * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param language   {@link String} (Optional) to fire an action over the existing language (in combination of identifier).
      * @param fireActionForm {@link FireActionForm} Fire Action Form
      * (if an inode is set, this param is not ignored).
      * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction} system action to determine the default action
@@ -1435,7 +1436,7 @@ public class WorkflowResource {
                                      @Context final HttpServletResponse response,
                                      @QueryParam("inode")            final String inode,
                                      @QueryParam("identifier")       final String identifier,
-                                     @DefaultValue("-1") @QueryParam("language") final long   language,
+                                     @DefaultValue("-1") @QueryParam("language") final String language,
                                      @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
                                      final FireActionForm fireActionForm) {
 
@@ -1449,10 +1450,11 @@ public class WorkflowResource {
             Logger.debug(this, ()-> "On Fire Action: systemAction = " + systemAction + ", inode = " + inode +
                     ", identifier = " + identifier + ", language = " + language);
 
-            final PageMode mode = PageMode.get(request);
+            final PageMode mode   = PageMode.get(request);
+            final long languageId = LanguageUtil.getLanguageId(language);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
-                    (inode, identifier, language,
+                    (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
@@ -1502,7 +1504,7 @@ public class WorkflowResource {
      * @param request    {@link HttpServletRequest}
      * @param inode      {@link String} (Optional) to fire an action over the existing inode.
      * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
-     * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param language   {@link String}   (Optional) to fire an action over the existing language (in combination of identifier).
      * @param actionId   {@link String} (Required) action id to fire
      * @param fireActionForm {@link FireActionForm} Fire Action Form
      * (if an inode is set, this param is not ignored).
@@ -1518,7 +1520,7 @@ public class WorkflowResource {
                                      @PathParam ("actionId")         final String actionId,
                                      @QueryParam("inode")            final String inode,
                                      @QueryParam("identifier")       final String identifier,
-                                     @DefaultValue("-1") @QueryParam("language") final long   language,
+                                     @DefaultValue("-1") @QueryParam("language") final String   language,
                                      final FireActionForm fireActionForm) {
 
         final InitDataObject initDataObject = this.webResource.init
@@ -1529,10 +1531,11 @@ public class WorkflowResource {
             Logger.debug(this, ()-> "On Fire Action: action Id " + actionId + ", inode = " + inode +
                     ", identifier = " + identifier + ", language = " + language);
 
+            final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
-                    (inode, identifier, language,
+                    (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
@@ -1552,7 +1555,7 @@ public class WorkflowResource {
      * @param request    {@link HttpServletRequest}
      * @param inode      {@link String} (Optional) to fire an action over the existing inode.
      * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
-     * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param language   {@link String}   (Optional) to fire an action over the existing language (in combination of identifier).
      * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction} system action to determine the default action
      * (if an inode is set, this param is not ignored).
      * @return Response
@@ -1568,7 +1571,7 @@ public class WorkflowResource {
                                               @Context final HttpServletResponse response,
                                               @QueryParam("inode")       final String inode,
                                               @QueryParam("identifier")  final String identifier,
-                                              @DefaultValue("-1") @QueryParam("language") final long   language,
+                                              @DefaultValue("-1") @QueryParam("language") final String   language,
                                               @PathParam("systemAction") final WorkflowAPI.SystemAction systemAction,
                                               final FormDataMultiPart multipart) {
 
@@ -1580,11 +1583,12 @@ public class WorkflowResource {
             Logger.debug(this, ()-> "On Fire Action Multipart: systemAction = " + systemAction + ", inode = " + inode +
                     ", identifier = " + identifier + ", language = " + language);
 
+            final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
             final FireActionForm fireActionForm = this.processForm (multipart);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
-                    (inode, identifier, language,
+                    (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
@@ -1630,7 +1634,7 @@ public class WorkflowResource {
      * @param request    {@link HttpServletRequest}
      * @param inode      {@link String} (Optional) to fire an action over the existing inode.
      * @param identifier {@link String} (Optional) to fire an action over the existing identifier (in combination of language).
-     * @param language   {@link Long}   (Optional) to fire an action over the existing language (in combination of identifier).
+     * @param language   {@link String}   (Optional) to fire an action over the existing language (in combination of identifier).
      * @param actionId   {@link String} (Required) action id to fire
      * (if an inode is set, this param is not ignored).
      * @return Response
@@ -1646,7 +1650,7 @@ public class WorkflowResource {
                                               @PathParam ("actionId")         final String actionId,
                                               @QueryParam("inode")            final String inode,
                                               @QueryParam("identifier")       final String identifier,
-                                              @DefaultValue("-1") @QueryParam("language") final long   language,
+                                              @DefaultValue("-1") @QueryParam("language") final String   language,
                                               final FormDataMultiPart multipart) {
 
         final InitDataObject initDataObject = this.webResource.init
@@ -1657,11 +1661,12 @@ public class WorkflowResource {
             Logger.debug(this, ()-> "On Fire Action Multipart: action Id " + actionId + ", inode = " + inode +
                     ", identifier = " + identifier + ", language = " + language);
 
+            final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
             final FireActionForm fireActionForm = this.processForm (multipart);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
-                    (inode, identifier, language,
+                    (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 

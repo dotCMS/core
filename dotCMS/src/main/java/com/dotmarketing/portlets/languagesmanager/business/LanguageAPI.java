@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import com.dotmarketing.exception.DotDataException;
@@ -42,9 +43,9 @@ public interface LanguageAPI {
 
 	/**
 	 * Deletes a fallback Language, that you obtain with {@link #getFallbackLanguage(String)}
-	 * @param fallbackPortugueseLanguage Language
+	 * @param fallbackLanguage Language
 	 */
-	void deleteFallbackLanguage(Language fallbackPortugueseLanguage);
+	void deleteFallbackLanguage(Language fallbackLanguage);
 
 	/**
 	 * 
@@ -126,7 +127,6 @@ public interface LanguageAPI {
 	/**
 	 * Retrieves the keys for the given language and specific for the given country
 	 * @param langCode
-	 * @param countryCode
 	 * @return
 	 */
 	public List<LanguageKey> getLanguageKeys(String langCode);
@@ -240,6 +240,13 @@ public interface LanguageAPI {
      * @return The fallback {@link Language} object.
      */
     public Language getFallbackLanguage(final String languageCode);
+
+	/**
+	 * Finds the first language with the language code
+	 * @param languageCode String
+	 * @return Optional language
+	 */
+	public Optional<Language> getFindFirstLanguageByCode(final String languageCode);
 
 	/**
 	 * Return all the languages for a specific contentletInode
