@@ -3,8 +3,11 @@ package com.dotcms.visitor.domain;
 import java.io.Serializable;
 import java.io.StringWriter;
 import javax.annotation.Nonnull;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.vavr.control.Try;
 
 
 @JsonDeserialize(builder = Geolocation.Builder.class)
@@ -194,7 +197,11 @@ public class Geolocation implements Serializable {
         return sw.toString();
     }
     
-    
+    @Override
+    public String toString() {
+        return Try.of(()->DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(this)).getOrElse(super.toString());
+        
+    }
     /**
      * Creates a builder to build {@link Geolocation} and initialize it with the given object.
      * 
