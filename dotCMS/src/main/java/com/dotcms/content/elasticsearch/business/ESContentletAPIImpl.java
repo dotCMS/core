@@ -42,6 +42,7 @@ import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.services.VanityUrlServices;
@@ -3617,10 +3618,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private Contentlet internalCheckin(Contentlet contentlet,
             ContentletRelationships contentRelationships, List<Category> cats,
-            final User user,
+            final User incomingUser,
             final boolean respectFrontendRoles,
             boolean createNewVersion
     ) throws DotDataException, DotSecurityException {
+        
+        final User user = (incomingUser!=null) ? incomingUser : APILocator.getUserAPI().getAnonymousUser();
+        
+        if(user.isAnonymousUser() && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
+            throw new DotSecurityException("CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
+        }
         
         final boolean validateEmptyFile =
                 contentlet.getMap().get("_validateEmptyFile_") == null;

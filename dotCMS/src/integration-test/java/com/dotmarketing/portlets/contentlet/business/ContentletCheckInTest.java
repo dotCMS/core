@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-
+import static org.junit.Assert.assertTrue;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -11,9 +11,12 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
@@ -23,6 +26,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
@@ -39,6 +43,39 @@ import org.junit.Test;
  */
 public class ContentletCheckInTest extends ContentletBaseTest{
 
+    
+    
+    
+    
+    
+  @Test
+  public void checkin_content_anonymously () throws Exception {
+      Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
+      ContentType contentType = createContentType("testingType");
+      final String textFieldString = "title";
+      createTextField(textFieldString,contentType.id());
+      Permission permissionRead = new Permission( contentType.getPermissionId(), APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_READ );
+      Permission permissionWrite = new Permission( contentType.getPermissionId(),  APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_EDIT );
+      Permission permissionPublish = new Permission( contentType.getPermissionId(),  APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_PUBLISH );
+    
+      // give write permissions
+      APILocator.getPermissionAPI().save( permissionRead, contentType, APILocator.systemUser(), false );
+      APILocator.getPermissionAPI().save( permissionWrite, contentType, APILocator.systemUser(), false );
+    
+      Contentlet con = new ContentletDataGen(contentType.id()).nextWithSampleTextValues();
+      Contentlet newCon = contentletAPI.checkin(con, null, true);
+      assertTrue("we saved a contentlet anonymously", newCon.getIdentifier()!=null);
+      assertTrue("the contentlet title was saved", newCon.getTitle().equals(con.getTitle()));
+  }
+    
+    
+    
+    
+    
+    
+    
+    
+    
   @Test
   public void checkinInvalidFileContent () throws Exception {
 
