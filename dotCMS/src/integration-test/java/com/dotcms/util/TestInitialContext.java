@@ -3,11 +3,13 @@ package com.dotcms.util;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import java.io.InputStream;
 import java.util.Properties;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import org.apache.tomcat.jdbc.pool.DataSource;
+import javax.sql.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 
 /**
@@ -34,6 +36,47 @@ public class TestInitialContext extends InitialContext {
 
         System.out.println("dbType = " + dbType);
 
+        //dataSource = tomcatDataSource(dbType);
+        dataSource = hikariDataSource(dbType);
+    }
+
+    private DataSource hikariDataSource(final String dbType) {
+
+        // https://github.com/brettwooldridge/HikariCP#configuration-knobs-baby
+        HikariConfig config = new HikariConfig();
+
+        config.setPoolName("jdbc/dotCMSPool");
+        config.setDriverClassName(prop.getProperty(dbType + "db.driver"));
+        config.setJdbcUrl(prop.getProperty(dbType + "db.base.url"));
+        config.setUsername(prop.getProperty(dbType + "db.username"));
+        config.setPassword(prop.getProperty(dbType + "db.password"));
+
+        // Lowest acceptable connection timeout is 250 ms. Default: 30000 (30 seconds)
+        //config.setConnectionTimeout(30000);
+
+        // The minimum allowed value is 10000ms (10 seconds). Default: 600000 (10 minutes)
+        //config.setIdleTimeout(600000);
+
+        // We strongly recommend setting this value, and it should be several seconds shorter than any database
+        // or infrastructure imposed connection time limit.
+        // A value of 0 indicates no maximum lifetime (infinite lifetime), subject of course to the idleTimeout
+        // setting. Default: 1800000 (30 minutes)
+        //config.setMaxLifetime(1800000);
+
+        // This property controls the amount of time that a connection can be out of the pool before a message
+        // is logged indicating a possible connection leak. A value of 0 means leak detection is disabled.
+        // Lowest acceptable value for enabling leak detection is 2000 (2 seconds). Default: 0
+        config.setLeakDetectionThreshold(60000);
+
+        //config.addDataSourceProperty("cachePrepStmts", "true");
+        //config.addDataSourceProperty("prepStmtCacheSize", "250");
+        //config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+
+        return new HikariDataSource(config);
+    }
+
+    private DataSource tomcatDataSource(final String dbType) {
+
         PoolProperties properties = new PoolProperties();
         properties.setName("jdbc/dotCMSPool");
         properties.setDriverClassName(prop.getProperty(dbType + "db.driver"));
@@ -56,14 +99,16 @@ public class TestInitialContext extends InitialContext {
         properties.setDefaultTransactionIsolation(
                 Integer.parseInt(prop.getProperty(dbType + "db.default.transaction.isolation")));
 
+        org.apache.tomcat.jdbc.pool.DataSource ds;
         try {
-            dataSource = new DataSource(properties);
-            //initialise the pool itself
-            dataSource.createPool();
+            ds = new org.apache.tomcat.jdbc.pool.DataSource(properties);
+            //initialize the pool itself
+            ds.createPool();
         } catch (Exception e) {
             throw new DotRuntimeException("Error creating tests data source", e);
         }
 
+        return ds;
     }
 
     public static TestInitialContext getInstance() throws NamingException {
