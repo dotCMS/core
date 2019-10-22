@@ -65,6 +65,7 @@ public class GeoIp2CityDbUtil {
 
     /**
      * Singleton holder based on the initialization-on-demand approach.
+     * The use of the Try on the Config gives us the ability to Unit test this.
      */
     private enum SingletonHolder {
 
@@ -123,7 +124,7 @@ public class GeoIp2CityDbUtil {
 	 *             If the connection to the GeoIP2 database file cannot be
 	 *             established.
 	 */
-	private GeoIp2CityDbUtil(String databasePath) {
+	private GeoIp2CityDbUtil(final String databasePath) {
 		dbPath = databasePath;
 		File database = new File(databasePath);
 		if(!database.exists()) throw new DotRuntimeException("cannot find GeoDatabase, looking for:" + database.getAbsolutePath());
@@ -142,11 +143,15 @@ public class GeoIp2CityDbUtil {
 	 *             If the connection to the GeoIP2 database file cannot be
 	 *             established.
 	 */
-	private static void connectToDatabase(File database) {
+	private static void connectToDatabase(final File database) {
 		try {
 			if (databaseReader != null) {
 				databaseReader.close();
 			}
+	         Logger.info(GeoIp2CityDbUtil.class,
+	                         "Connecting to GeoIP2 database:" + database);
+			
+			
 			databaseReader = new DatabaseReader.Builder(database).build();
 			lastModified = database.lastModified();
 		} catch (IOException e) {
