@@ -627,11 +627,6 @@ public class ESIndexAPI {
         map.put("index.mapping.nested_fields.limit",
                 Config.getIntProperty("ES_INDEX_MAPPING_NESTED_FIELDS_LIMITS", 5000));
 
-        //TODO: Uncomment when ES version used is at least 7.0
-        /*map.put("index.mapping.nested_objects.limit",
-                Config.getIntProperty("ES_INDEX_MAPPING_NESTED_OBJECTS_LIMITS", 25000));*/
-
-
 		final CreateIndexRequest request = new CreateIndexRequest(indexName);
 		request.settings(map);
 		request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
