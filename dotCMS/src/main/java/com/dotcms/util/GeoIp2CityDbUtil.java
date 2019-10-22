@@ -23,6 +23,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.rules.conditionlet.Location;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
 
 /**
@@ -99,6 +100,18 @@ public class GeoIp2CityDbUtil {
 		return SingletonHolder.GEODB.getGeoDb();
 	}
 
+	@VisibleForTesting
+	public static long getLastModified() {
+	    GeoIp2CityDbUtil.getInstance();
+	    GeoIp2CityDbUtil.getDatabaseReader();
+	    return new Long(lastModified);
+	}
+	
+    @VisibleForTesting
+    public static String getDbPath() {
+        return new String(dbPath);
+    }
+	
 	/**
 	 * Private constructor that will initialize the connection to the local
 	 * GeoIP2 database. If the database file is updated, it will have to be

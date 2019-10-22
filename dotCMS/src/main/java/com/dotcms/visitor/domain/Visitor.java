@@ -104,13 +104,15 @@ public class Visitor implements Serializable {
     
     public Geolocation getGeo() {
         if(this.geolocation==null) {
-            this.geolocation =  GeoIp2CityDbUtil.getInstance().getGeolocation(ipAddress);
+            this.geolocation =  this.getGeo(ipAddress.getHostAddress());
         }
         return this.geolocation;
         
     }
     
-    
+    public Geolocation getGeo(String ipAddress) {
+        return GeoIp2CityDbUtil.getInstance().getGeolocation(ipAddress);
+    }
     /**
      * Adds a persona to the visitors "possible personas"
      * without setting the visitor persona

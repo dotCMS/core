@@ -3,6 +3,7 @@ package com.dotcms.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import java.io.File;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotcms.visitor.domain.Geolocation;
@@ -66,6 +67,21 @@ public class GeoIp2CityDbUtilTest {
         assertEquals(orig, fromJson);
 
     }
-
+    
+    @Test
+    public void test_Geolocation_can_reload() throws Exception{
+        GeoIp2CityDbUtil geoUtil = GeoIp2CityDbUtil.getInstance();
+        
+        String dbPath = geoUtil.getDbPath();
+        long lastModified = geoUtil.getLastModified();
+        assert(lastModified>0);
+        File geoDB = new File(dbPath);
+        assert(geoDB.exists());
+        geoDB.setLastModified(System.currentTimeMillis());
+        
+        assert(lastModified<geoUtil.getLastModified());
+    }
+    
+    
 
 }
