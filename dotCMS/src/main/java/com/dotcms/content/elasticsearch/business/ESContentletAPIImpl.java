@@ -4754,20 +4754,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(categories == null){
             categories = new ArrayList<>();
         }
-        //Find categories which the user can't use.  A user cannot remove a category they cannot use
-        final List<Category> cats = categoryAPI.getParents(fromContentlet, APILocator.getUserAPI().getSystemUser(), true);
-        for (final Category category : cats) {
-            if(!categoryAPI.canUseCategory(category, user, false)){
-                if(!categories.contains(category)){
-                    categoriesUserCannotRemove.add(category);
+        
+        if(!fromContentlet.equals(toContentlet)) {
+            //Find categories which the user can't use.  A user cannot remove a category they cannot use
+            final List<Category> cats = categoryAPI.getParents(fromContentlet, APILocator.getUserAPI().getSystemUser(), true);
+            for (final Category category : cats) {
+                if(!categoryAPI.canUseCategory(category, user, false)){
+                    if(!categories.contains(category)){
+                        categoriesUserCannotRemove.add(category);
+                    }
                 }
             }
         }
-
         categories = permissionAPI.filterCollection(categories, PermissionAPI.PERMISSION_USE, respect, user);
         categories.addAll(categoriesUserCannotRemove);
 
-        categoryAPI.setParents(toContentlet, categories, user, respect);
+        // we have already validated permissions on the content object, no need to do it again
+        categoryAPI.setParents(toContentlet, categories, APILocator.systemUser(), respect);
     }
 
     @CloseDBIfOpened

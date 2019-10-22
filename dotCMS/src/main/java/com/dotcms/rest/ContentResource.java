@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -1559,8 +1560,7 @@ public class ContentResource {
             throws URISyntaxException {
         boolean live = init.getParamsMap().containsKey("publish");
         boolean clean = false;
-        final boolean ALLOW_FRONT_END_SAVING = Config
-            .getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
+        PageMode mode = PageMode.get();
 
         try {
 
@@ -1568,7 +1568,7 @@ public class ContentResource {
 
             // preparing categories
             List<Category> categories = MapToContentletPopulator.INSTANCE.getCategories
-                    (contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
+                    (contentlet, init.getUser(), mode.respectAnonPerms);
             // running a workflow action?
             final ContentWorkflowResult contentWorkflowResult = processWorkflowAction(contentlet, init, live);
             final ContentletRelationships relationships = (ContentletRelationships) contentlet
@@ -1582,16 +1582,16 @@ public class ContentResource {
 
                 contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
                 contentlet = APILocator.getContentletAPI()
-                        .checkin(contentlet, relationships, categories, null, init.getUser(), ALLOW_FRONT_END_SAVING);
+                        .checkin(contentlet, relationships, categories, null, init.getUser(), mode.respectAnonPerms);
                 if (live) {
                     APILocator.getContentletAPI()
-                            .publish(contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
+                            .publish(contentlet, init.getUser(), mode.respectAnonPerms);
                 }
             } else {
 
                 contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                         new ContentletDependencies.Builder()
-                        .respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
+                        .respectAnonymousPermissions(mode.respectAnonPerms)
                         .modUser(init.getUser()).categories(categories)
                         .relationships(relationships)
                         .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
