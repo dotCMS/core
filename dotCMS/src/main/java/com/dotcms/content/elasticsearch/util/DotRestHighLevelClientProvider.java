@@ -48,6 +48,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
+import org.elasticsearch.client.Node;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -117,6 +118,11 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     httpClientBuilder
                             .setDefaultCredentialsProvider(credentialsProvider);
                     return httpClientBuilder;
+                })
+                .setFailureListener(new RestClient.FailureListener() {
+                    public void onFailure(Node node) {
+                        Logger.error(this, node.toString());
+                    }
                 });
 
         //Loading token if JWT authentication is set
