@@ -22,6 +22,7 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.net.sf.hibernate.Session;
@@ -74,6 +75,7 @@ public class CompanyPersistence extends BasePersistence {
 		}
 	}
 
+	@WrapInTransaction
 	protected com.liferay.portal.model.Company update(
 		com.liferay.portal.model.Company company) throws SystemException {
 		Session session = null;
