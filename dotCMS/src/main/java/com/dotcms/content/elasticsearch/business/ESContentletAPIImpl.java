@@ -534,8 +534,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     // note: is not annotated with WrapInTransaction b/c it handles his own transaction locally in the method
     @WrapInTransaction
     @Override
-    public void publish(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
-
+    public void publish(final Contentlet contentlet, final User userIn, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
+        final User user = (userIn!=null) ? userIn : APILocator.getUserAPI().getAnonymousUser();
         String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
         String contentPushExpireDate  = contentlet.getStringProperty("wfExpireDate");
 
@@ -551,7 +551,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final Optional<Contentlet> contentletOpt = this.checkAndRunPublishAsWorkflow(contentlet, user, respectFrontendRoles);
             if (contentletOpt.isPresent()) {
 
-                Logger.info(this, "A Workflow has been ran instead of publish the contentlet: " +
+                Logger.info(this, "A Workflow has been run instead of a simple publish: " +
                         contentlet.getIdentifier());
                 if (!contentlet.getInode().equals(contentletOpt.get().getInode())) {
                    this.copyProperties(contentlet, contentletOpt.get().getMap());
@@ -3308,6 +3308,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles)
             throws IllegalArgumentException,DotDataException, DotSecurityException {
+        
+        user = (user==null) ? APILocator.getUserAPI().getAnonymousUser() : user;
+        
         return checkin(contentlet, (ContentletRelationships) null, null, null, user,
             respectFrontendRoles, false);
     }
@@ -3546,10 +3549,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private Optional<Contentlet> validateWorkflowStateOrRunAsWorkflow(final Contentlet contentletIn, final ContentletRelationships contentRelationships,
-                                                                      final List<Category> categories, final User user,
+                                                                      final List<Category> categories, final User userIn,
                                                                       final boolean respectFrontendRoles, final boolean createNewVersion,
                                                                       boolean generateSystemEvent) throws DotSecurityException, DotDataException {
 
+        final User user = (userIn==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
+        
+        
         // if already on workflow or has an actionid skip this method.
         if (this.isDisableWorkflow(contentletIn)
                 || this.isWorkflowInProgress(contentletIn)
