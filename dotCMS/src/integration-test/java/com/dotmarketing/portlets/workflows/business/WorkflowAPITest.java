@@ -3730,7 +3730,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
         final WorkflowStep emptyWorkflowStep = new WorkflowStep(); // This empty object will generate a null step id which is precisely the scenario we want to replicate.
         final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
         final WorkflowTask task = workflowAPI
-                .createWorkflowTask(contentlet, user, emptyWorkflowStep, "test Task with null status",
+                .createWorkflowTask(contentlet, user, emptyWorkflowStep,
+                        "test Task with null status",
                         "test");
         assertNull(task.getStatus());
         final Contentlet out = contentletAPI.checkout(contentlet.getInode(), user, false);
@@ -3741,20 +3742,24 @@ public class WorkflowAPITest extends IntegrationTestBase {
         //The Workflow task should be assigned by UnassignedWorkflowContentletCheckinListener
         APILocator.getLocalSystemEventsAPI().subscribe(ContentletCheckinEvent.class,
                 (EventSubscriber<ContentletCheckinEvent>) event -> {
-                    assertNotNull("ok we're getting a null contentlet.", event.getContentlet());
-                    assertEquals("ok we're not getting the same contenlet.", out.getIdentifier(),
-                            event.getContentlet().getIdentifier()); // Ensure this is the same contentlet we sent.
-                    try {
-                        final WorkflowTask workflowTask = APILocator.getWorkflowAPI()
-                                .findTaskByContentlet(contentlet);
-                        assertNotNull(workflowTask);
-                        assertNotNull(workflowTask.getStatus()); // null Status should have been taken care by now.
-                    } catch (DotDataException e) {
-                        Logger.error(WorkflowAPITest.class, e);
-                        fail(String
-                                .format("Something happened getting the workflow task for contentlet [%s] ",
-                                        contentlet)
-                        );
+                    final Contentlet expectedContentlet = event.getContentlet();
+                    if (null != expectedContentlet) {
+                        // Ensure this is the same contentlet we sent.
+                        if (out.getIdentifier().equals(expectedContentlet.getIdentifier())) {
+                            try {
+                                final WorkflowTask workflowTask = APILocator.getWorkflowAPI()
+                                        .findTaskByContentlet(contentlet);
+                                assertNotNull(workflowTask);
+                                assertNotNull(workflowTask
+                                        .getStatus()); // null Status should have been taken care by now.
+                            } catch (DotDataException e) {
+                                Logger.error(WorkflowAPITest.class, e);
+                                fail(String
+                                        .format("Something happened getting the workflow task for contentlet [%s] ",
+                                                contentlet)
+                                );
+                            }
+                        }
                     }
                 }
         );
