@@ -3397,7 +3397,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             String wfPublishDate = contentletIn.getStringProperty("wfPublishDate");
             String wfExpireDate  = contentletIn.getStringProperty("wfExpireDate");
-
+            final boolean isWorkflowInProgress = contentletIn.isWorkflowInProgress();
             final String contentPushPublishDateBefore = UtilMethods.isSet(wfPublishDate) ? wfPublishDate : "N/D";
             final String contentPushExpireDateBefore  = UtilMethods.isSet(wfExpireDate) ? wfExpireDate : "N/D";
 
@@ -3446,6 +3446,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             .getUserId() : "Unknown")
                             + "; ContentIdentifier: " + contentletOut.getIdentifier(),
                     contentletOut.getHost());
+
+            if(isWorkflowInProgress){
+                autoAssign = false;
+            }
 
             // Creates the Local System event
             if ( null != autoAssign ) {
@@ -6293,7 +6297,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * source contentlet points to image A and resulting new contentlet will
      * point to same image A as well, also copies source permissions.
      *
-     * @param contentletToCopy
+     * @param sourceContentlet
      *            - The contentlet that will be copied to the new destination.
      * @param host
      *            - The destination host.
@@ -6318,13 +6322,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     @WrapInTransaction
     @Override
-    public Contentlet copyContentlet(final Contentlet contentletToCopy, final Host host, final Folder folder, final User user, final String copySuffix, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-        Contentlet resultContentlet = new Contentlet();
+    public Contentlet copyContentlet(final Contentlet sourceContentlet, final Host host, final Folder folder, final User user, final String copySuffix, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+        Contentlet copyContentlet = new Contentlet();
         String newIdentifier = StringPool.BLANK;
         ArrayList<Contentlet> versionsToCopy = new ArrayList<>();
         List<Contentlet> versionsToMarkWorking = new ArrayList<>();
         Map<String, Map<String, Contentlet>> contentletsToCopyRules = Maps.newHashMap();
-        final Identifier sourceContentletIdentifier = APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier());
+        final Identifier sourceContentletIdentifier = APILocator.getIdentifierAPI().find(sourceContentlet.getIdentifier());
         versionsToCopy.addAll(findAllVersions(sourceContentletIdentifier, false, user, respectFrontendRoles));
 
         // we need to save the versions from older-to-newer to make sure the last save
@@ -6359,7 +6363,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             newContentlet.setHost(host != null?host.getIdentifier(): (folder!=null? folder.getHostId() : contentlet.getHost()));
             newContentlet.setFolder(folder != null?folder.getInode(): null);
             newContentlet.setLowIndexPriority(contentlet.isLowIndexPriority());
-            final boolean copyingSite = (!newContentlet.getHost().equals(contentletToCopy.getHost()));
+            final boolean copyingSite = (!newContentlet.getHost().equals(sourceContentlet.getHost()));
             if(contentlet.isFileAsset()){
                 final String newName = generateCopyName(newContentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD), copySuffix);
                 newContentlet.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newName);
@@ -6433,15 +6437,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             } else{
                 destinationHostId = contentlet.getHost();
             }
-            if(contentletToCopy.getHost().equals(destinationHostId)){
+            if(sourceContentlet.getHost().equals(destinationHostId)){
                 ContentletRelationships cr = getAllRelationships(contentlet);
                 List<ContentletRelationshipRecords> rr = cr.getRelationshipsRecords();
                 for (ContentletRelationshipRecords crr : rr) {
                     rels.put(crr.getRelationship(), crr.getRecords());
                 }
             }
-
-
 
             //Set URL in the new contentlet because is needed to create Identifier in EscontentletAPI.
             if(contentlet.isHTMLPage()){
@@ -6462,7 +6464,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             newContentlet.getMap().put(Contentlet.DISABLE_WORKFLOW, true);
             newContentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
             newContentlet.getMap().put(Contentlet.IS_COPY_CONTENTLET, true);
-            newContentlet.setIndexPolicy(contentletToCopy.getIndexPolicy());
+            newContentlet.setIndexPolicy(sourceContentlet.getIndexPolicy());
 
             // Use the generated identifier if one version of this contentlet
             // has already been checked in
@@ -6493,8 +6495,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 versionsToMarkWorking.add(newContentlet);
             }
 
-            if(contentlet.getInode().equals(contentletToCopy.getInode())){
-                resultContentlet = newContentlet;
+            if(contentlet.getInode().equals(sourceContentlet.getInode())){
+                copyContentlet = newContentlet;
             }
         }
 
@@ -6512,12 +6514,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getVersionableAPI().setWorking(con);
         }
 
-        if (contentletToCopy.isHTMLPage()) {
+        if (sourceContentlet.isHTMLPage()) {
             // If the content is an HTML Page then copy page associated contentlets
-            final List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(contentletToCopy.getIdentifier());
+            final List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(sourceContentlet.getIdentifier());
             for (final MultiTree multitree : pageContents) {
 
-                APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(resultContentlet.getIdentifier(),
+                APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(copyContentlet.getIdentifier(),
                         multitree.getContainer(),
                         multitree.getContentlet(),
                         multitree.getRelationType(),
@@ -6527,19 +6529,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         // copy the workflow state
-        final WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(contentletToCopy);
+        final WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(sourceContentlet);
         if(null != task) {
-            //This is not very common bu the `resultContentlet` might come with an existing task
-            final WorkflowTask conflictingTask = APILocator.getWorkflowAPI().findTaskByContentlet(resultContentlet);
-            if( null != conflictingTask ){
-                APILocator.getWorkflowAPI().deleteWorkflowTask(conflictingTask, APILocator.getUserAPI().getSystemUser());
-            }
+
+            preventTaskConflictIfAny(copyContentlet);
 
             final WorkflowTask newTask = new WorkflowTask();
             BeanUtils.copyProperties(task, newTask);
             newTask.setId(null);
-            newTask.setWebasset(resultContentlet.getIdentifier());
-            newTask.setLanguageId(resultContentlet.getLanguageId());
+            newTask.setWebasset(copyContentlet.getIdentifier());
+            newTask.setLanguageId(copyContentlet.getLanguageId());
             APILocator.getWorkflowAPI().saveWorkflowTask(newTask);
 
             for (final WorkflowComment comment : APILocator.getWorkflowAPI().findWorkFlowComments(task)) {
@@ -6565,9 +6564,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        this.sendCopyEvent(resultContentlet);
+        this.sendCopyEvent(copyContentlet);
 
-        return resultContentlet;
+        return copyContentlet;
+    }
+
+    /**
+     * On rare cases the copyContentlet can have an existing task already assigned
+     * In such cases we need to reset the contentlet before adding a new one.
+     * @param copyContentlet
+     * @throws DotDataException
+     */
+    private void preventTaskConflictIfAny(final Contentlet copyContentlet) throws DotDataException {
+        final WorkflowTask conflictingTask = APILocator.getWorkflowAPI().findTaskByContentlet(copyContentlet);
+        if( null != conflictingTask ){
+            APILocator.getWorkflowAPI().deleteWorkflowTask(conflictingTask, APILocator.getUserAPI().getSystemUser());
+        }
     }
 
     private String generateCopyName(final String originalName, final String copySuffix) {

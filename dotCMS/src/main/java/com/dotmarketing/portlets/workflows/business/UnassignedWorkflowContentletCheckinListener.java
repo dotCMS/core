@@ -86,16 +86,16 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
     private boolean validContentType(final Contentlet contentlet) {
         // is valid if not host and
         // no auto assign attribute and if exists no in true
-
         boolean autoAssign = true;
 
         if (null != contentlet.get(AUTO_ASSIGN_WORKFLOW)) {
-
-            autoAssign = contentlet.getBoolProperty(AUTO_ASSIGN_WORKFLOW); // if AUTO_ASSIGN_WORKFLOW is set and FALSE, won't auto assign
+            autoAssign = contentlet.getBoolProperty(
+                    AUTO_ASSIGN_WORKFLOW); // if AUTO_ASSIGN_WORKFLOW is set and FALSE, won't auto assign
         }
 
         final ContentType contentType = contentlet.getContentType();
-        return null != contentType && !Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable()) && autoAssign;
+        return null != contentType && !Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable())
+                && autoAssign;
     }
 
     private static void assign (final Contentlet contentlet, final User user) {
