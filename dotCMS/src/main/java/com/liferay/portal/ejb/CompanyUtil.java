@@ -43,7 +43,7 @@ public class CompanyUtil {
 	public static String LISTENER = GetterUtil.getString(PropsUtil.get(
 				"value.object.listener.com.liferay.portal.model.Company"));
 
-	protected static com.liferay.portal.model.Company create(
+	public static com.liferay.portal.model.Company create(
 		java.lang.String companyId) {
 		CompanyPersistence persistence = (CompanyPersistence)InstancePool.get(PERSISTENCE);
 
@@ -79,7 +79,7 @@ public class CompanyUtil {
 		return company;
 	}
 
-	protected static com.liferay.portal.model.Company update(
+	public static com.liferay.portal.model.Company update(
 		com.liferay.portal.model.Company company)
 		throws com.liferay.portal.SystemException {
 		CompanyPersistence persistence = (CompanyPersistence)InstancePool.get(PERSISTENCE);
