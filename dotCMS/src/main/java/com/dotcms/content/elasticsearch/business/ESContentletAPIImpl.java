@@ -1016,52 +1016,53 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public void cleanField(Structure structure, Field oldField, User user, boolean respectFrontendRoles)
-                    throws DotSecurityException, DotDataException {
-
+    public void cleanField(final Structure structure, final Date deletionDate, final Field oldField, final User user,
+            final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
         if (!permissionAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)) {
             throw new DotSecurityException("Must be able to publish structure to clean all the fields with user: "
-                            + (user != null ? user.getUserId() : "Unknown"));
+                    + (user != null ? user.getUserId() : "Unknown"));
         }
 
         com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
 
-
-
-        
         // Binary fields have nothing to do with database.
         if (field instanceof BinaryField) {
             int batchSize=500;
             int offset=0;
             final List<Contentlet> contentlets = new ArrayList<>();
-            contentlets.addAll(contentFactory.findByStructure(structure.getInode(), batchSize, offset));
+            contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
             while(!contentlets.isEmpty()) {
                 HibernateUtil.addCommitListener(() -> moveBinaryFilesToTrash(contentlets, oldField));
                 offset+=batchSize;
                 contentlets.clear();
-                contentlets.addAll(contentFactory.findByStructure(structure.getInode(), batchSize, offset));
+                contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
             }
         } else if (field instanceof TagField) {
             int batchSize=500;
             int offset=0;
             final List<Contentlet> contentlets = new ArrayList<>();
-            contentlets.addAll(contentFactory.findByStructure(structure.getInode(), batchSize, offset));
+            contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
             while(!contentlets.isEmpty()) {
                 for(Contentlet contentlet : contentlets) {
                     tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.variable());
                 }
                 offset+=batchSize;
                 contentlets.clear();
-                contentlets.addAll(contentFactory.findByStructure(structure.getInode(), batchSize, offset));
+                contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
             }
         }else if(field.dataType() == DataTypes.SYSTEM || field.dataType()== DataTypes.NONE) {
             return;
         } else {
 
-            contentFactory.clearField(structure.getInode(), oldField);
+            contentFactory.clearField(structure.getInode(), deletionDate, oldField);
         }
+    }
 
-
+    @Override
+    public void cleanField(Structure structure, Field oldField, User user, boolean respectFrontendRoles)
+                    throws DotSecurityException, DotDataException {
+        cleanField(structure, null, oldField, user, respectFrontendRoles);
     }
 
     @Override
