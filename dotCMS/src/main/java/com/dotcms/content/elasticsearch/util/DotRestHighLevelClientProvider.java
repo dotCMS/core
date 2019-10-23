@@ -141,8 +141,8 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
     }
 
     private void loadTLSCertificates() throws IOException, GeneralSecurityException {
-        String clientCertPath = getCertPath("ES_AUTH_TLS_CLIENT_CERT", "esnode.pem");
-        String clientKeyPath = getCertPath("ES_AUTH_TLS_CLIENT_KEY", "esnode-key.pem");
+        String clientCertPath = getCertPath("ES_AUTH_TLS_CLIENT_CERT", "elasticsearch.pem");
+        String clientKeyPath = getCertPath("ES_AUTH_TLS_CLIENT_KEY", "elasticsearch.key");
         String serverCertPath = getCertPath("ES_AUTH_TLS_CA_CERT", "root-ca.pem");
 
         sslContextFromPem = SSLContexts
