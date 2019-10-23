@@ -46,6 +46,7 @@ import com.google.common.collect.Sets;
 import com.liferay.portal.NoSuchRoleException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 /**
  * PermissionAPI is an API intended to be a helper class for class to get Permissions.  Classes within the dotCMS
@@ -382,19 +383,15 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			}
 		}
 
-		// at this point, there is no anon, logged in site user and the owner do not have permissions 
-		// If we don't have a user, return false
-		if(anonUser.getUserId().equals(user.getUserId())){
-			return false;
-		} 
 
-		List<Role> roles;
-		try {
-			roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
-		} catch (DotDataException e1) {
-			Logger.error(this, e1.getMessage(), e1);
-			throw new DotRuntimeException(e1.getMessage(), e1);
-		}
+
+		List<Role> roles = Sneaky.sneak(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()));
+        // remove front end user access for anon user (e.g, /intranet)
+		if(user.isAnonymousUser()) {
+            roles.removeIf(r->r.equals(frontEndUserRole));
+        }
+		
+		
 		List<String> userRoleIds= new ArrayList<String>();
 		for (Role role : roles) {
 			try{

@@ -17,6 +17,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
@@ -56,20 +57,54 @@ public class ContentletCheckInTest extends ContentletBaseTest{
       createTextField(textFieldString,contentType.id());
       Permission permissionRead = new Permission( contentType.getPermissionId(), APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_READ );
       Permission permissionWrite = new Permission( contentType.getPermissionId(),  APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_EDIT );
-      Permission permissionPublish = new Permission( contentType.getPermissionId(),  APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_PUBLISH );
-    
+
       // give write permissions
       APILocator.getPermissionAPI().save( permissionRead, contentType, APILocator.systemUser(), false );
       APILocator.getPermissionAPI().save( permissionWrite, contentType, APILocator.systemUser(), false );
+
     
       Contentlet con = new ContentletDataGen(contentType.id()).nextWithSampleTextValues();
       Contentlet newCon = contentletAPI.checkin(con, null, true);
       assertTrue("we saved a contentlet anonymously", newCon.getIdentifier()!=null);
       assertTrue("the contentlet title was saved", newCon.getTitle().equals(con.getTitle()));
+     
+      
+      
   }
     
     
+  @Test
+  public void publish_content_anonymously () throws Exception {
+      Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
+      final ContentType contentType = createContentType("testingType");
+      final String textFieldString = "title";
+      final Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
+      createTextField(textFieldString,contentType.id());
+      Permission permissionRead = new Permission( contentType.getPermissionId(), cmsAnon.getId(), PermissionAPI.PERMISSION_READ );
+      Permission permissionWrite = new Permission( contentType.getPermissionId(),  cmsAnon.getId(), PermissionAPI.PERMISSION_EDIT );
+
+      // give write permissions to content Type
+      APILocator.getPermissionAPI().save( permissionRead, contentType, APILocator.systemUser(), false );
+      APILocator.getPermissionAPI().save( permissionWrite, contentType, APILocator.systemUser(), false );
+
     
+      Contentlet con = new ContentletDataGen(contentType.id()).nextWithSampleTextValues();
+      Contentlet newCon = contentletAPI.checkin(con, null, true);
+      
+      // give publish permissions on the content itself
+      APILocator.getPermissionAPI().save( new Permission(newCon.getPermissionId(),cmsAnon.getId(),PermissionAPI.PERMISSION_READ),newCon, APILocator.systemUser(), false );
+      APILocator.getPermissionAPI().save( new Permission(newCon.getPermissionId(),cmsAnon.getId(),PermissionAPI.PERMISSION_EDIT),newCon, APILocator.systemUser(), false );
+      APILocator.getPermissionAPI().save( new Permission(newCon.getPermissionId(),cmsAnon.getId(),PermissionAPI.PERMISSION_PUBLISH),newCon, APILocator.systemUser(), false );
+      
+
+      contentletAPI.publish(newCon, null, true);
+      
+      
+      
+      assertTrue("we published a contentlet anonymously", newCon.isLive());
+
+
+  }
     
     
     
