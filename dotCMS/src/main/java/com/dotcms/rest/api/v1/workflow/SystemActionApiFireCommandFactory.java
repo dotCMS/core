@@ -83,6 +83,16 @@ public class SystemActionApiFireCommandFactory {
                 this.workflowAPI.hasPublishActionlet(action);
     }
 
+    private boolean hasUnpublishValid (final Tuple2<WorkflowAction, Boolean> params) {
+
+        final WorkflowAction action   = params._1;
+        final boolean        needSave = params._2;
+
+        return needSave? // if needs Save has to have save and unpublish actionlet
+                this.workflowAPI.hasSaveActionlet(action) && this.workflowAPI.hasUnpublishActionlet(action):
+                this.workflowAPI.hasUnpublishActionlet(action);
+    }
+
     /**
      * Adds a new command
      * @param systemAction {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}

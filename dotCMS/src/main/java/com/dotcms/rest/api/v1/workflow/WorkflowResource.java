@@ -69,6 +69,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
@@ -1458,6 +1459,8 @@ public class WorkflowResource {
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
+            this.checkContentletState (contentlet, systemAction);
+
             final Optional<WorkflowAction> workflowActionOpt = // ask to see if there is any default action by content type or scheme
                     this.workflowAPI.findActionMappedBySystemActionContentlet
                             (contentlet, systemAction, initDataObject.getUser());
@@ -1498,6 +1501,26 @@ public class WorkflowResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     } // fireAction.
+
+    private void checkContentletState(final Contentlet contentlet, final SystemAction systemAction)
+            throws NotFoundInDbException {
+
+        if (null == contentlet) {
+
+            throw new NotFoundInDbException("Not Contentlet Found");
+        }
+
+        if (contentlet.isNew()) {
+
+            if (    systemAction == SystemAction.UNPUBLISH ||
+                    systemAction == SystemAction.UNARCHIVE ||
+                    systemAction == SystemAction.DELETE    ||
+                    systemAction == SystemAction.DESTROY) {
+
+                throw new IllegalArgumentException("A new Contentlet can not fire any of these actions: [EDIT, UNPUBLISH, UNARCHIVE, DELETE, DESTROY]");
+            }
+        }
+    }
 
     /**
      * Fires a workflow action by action id, if the contentlet exists could use inode or identifier and optional language.
@@ -1591,6 +1614,8 @@ public class WorkflowResource {
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
+
+            this.checkContentletState (contentlet, systemAction);
 
             final Optional<WorkflowAction> workflowActionOpt =
                     this.workflowAPI.findActionMappedBySystemActionContentlet
