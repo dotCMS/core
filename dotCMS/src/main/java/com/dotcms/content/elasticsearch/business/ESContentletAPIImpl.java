@@ -3632,7 +3632,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final User user = (incomingUser!=null) ? incomingUser : APILocator.getUserAPI().getAnonymousUser();
         
         if(user.isAnonymousUser() && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
-            throw new DotSecurityException("CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
+            throw new DotSecurityException("CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content EDITS");
         }
         
         final boolean validateEmptyFile =

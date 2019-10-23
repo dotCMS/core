@@ -2065,9 +2065,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
   }
 
-  private String resolvePermissionType(final Permissionable permissionable) {
+  private String resolvePermissionType(final Permissionable permissionable) throws DotDataException {
     // Need to determine who this asset should inherit from
     String type = permissionable.getPermissionType();
+    Permissionable parentPermissionable = permissionable.getParentPermissionable();
+    if(parentPermissionable instanceof ContentType && Contentlet.class.getCanonicalName().equals(type)){
+        type= Structure.class.getCanonicalName();
+    }
+    
     if (permissionable instanceof Host || (permissionable instanceof Contentlet && ((Contentlet) permissionable).getStructure() != null
         && ((Contentlet) permissionable).getStructure().getVelocityVarName() != null
         && ((Contentlet) permissionable).getStructure().getVelocityVarName().equals("Host"))) {

@@ -9,6 +9,8 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -1250,7 +1252,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
     public Boolean isHTMLPage() {
-        return getStructure().getStructureType() == BaseContentType.HTMLPAGE.getType();
+        return Try.of(()->getContentType() instanceof PageContentType).getOrElse(Boolean.FALSE);
     }
 
     /**
@@ -1258,7 +1260,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @return
      */
 	public boolean isFileAsset() {
-		return getStructure().getStructureType() == BaseContentType.FILEASSET.getType();
+	    return Try.of(()->getContentType() instanceof FileAssetContentType).getOrElse(Boolean.FALSE);
 	}
 
 	/**

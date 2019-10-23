@@ -181,7 +181,9 @@ public class ContentletCacheImpl extends ContentletCache {
 		if(host != null){
 			CacheLocator.getHostCache().remove(host);
 		}
-		CacheLocator.getHTMLPageCache().remove(key);
+		if(content!=null && content.isHTMLPage()) {
+		    CacheLocator.getHTMLPageCache().remove(key);
+		}
 		new ShortyIdCache().remove(key);
 	}
 
