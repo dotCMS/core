@@ -1,13 +1,12 @@
 package com.dotmarketing.quartz.job;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.CheckboxField;
-import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -19,6 +18,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -27,12 +27,11 @@ import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.util.Calendar;
 import java.util.Date;
-import org.apache.commons.lang.StringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.quartz.JobExecutionException;
 
 /**
  * @author nollymar
@@ -51,29 +50,26 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
     public static class TestCase {
 
         String name;
-        Object fieldValue;
+        String fieldValue;
         String values;
-        Object expectedValue;
+        String expectedValue;
         Class fieldType;
 
-        public TestCase(final String name, final Object fieldValue, final String values,
-                final Object expectedValue, final Class fieldType) {
+        public TestCase(final String name, final String fieldValue, final String values,
+                final String expectedValue, final Class fieldType) {
             this.name = name;
             this.fieldValue = fieldValue;
             this.values = values;
-            this.expectedValue = expectedValue;
             this.fieldType = fieldType;
+            this.expectedValue = expectedValue;
         }
     }
 
     @DataProvider
     public static Object[] testCases() {
         return new TestCase[]{
-                new TestCase("dateTimeFieldVarName", new Date(System.currentTimeMillis()-24*60*60*1000),
-                        null, new Date(), DateTimeField.class),
                 new TestCase("checkboxFieldVarName", "CA",
-                        "Canada|CA\r\nMexico|MX\r\nUSA|US", StringUtils.EMPTY, CheckboxField.class),
-
+                        "Canada|CA\r\nMexico|MX\r\nUSA|US","", CheckboxField.class)
 
         };
     }
@@ -89,16 +85,17 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
         final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
 
-
         final String currentTime = String.valueOf(new Date().getTime());
+        ContentType contentType = null;
 
-        // Create content type
-        ContentType contentType = contentTypeAPI.save(
-                ContentTypeBuilder.builder(SimpleContentType.class).folder(
-                        FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
-                        .name("testContentType" + currentTime)
-                        .owner(systemUser.getUserId()).build());
         try {
+
+            // Create content type
+            contentType = contentTypeAPI.save(
+                    ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                            FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                            .name("testContentType" + currentTime)
+                            .owner(systemUser.getUserId()).build());
 
 
             // Adding the test fields
@@ -116,34 +113,17 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
             Contentlet contentlet = contentletDataGen.languageId(langId)
                     .setProperty(field.variable(), testCase.fieldValue).nextPersisted();
 
-
-
+            HibernateUtil.startTransaction();
             // Execute jobs to delete fields
             TestJobExecutor.execute(instance,
                     CollectionsUtils
                             .map("deletionDate", new Date(), "field", field, "user", systemUser));
 
-
-
+            HibernateUtil.closeAndCommitTransaction();
             // Make sure the field value is cleaned up
-            CacheLocator.getContentletCache().remove(contentlet);
+            CacheLocator.getContentletCache().get(contentlet.getInode());
             contentlet = APILocator.getContentletAPI().find(contentlet.getInode(), systemUser, false);
-
-            Object fieldValue = contentlet.get(field.variable());
-
-            if (fieldValue instanceof Date){
-
-                Calendar cal1 = Calendar.getInstance();
-                Calendar cal2 = Calendar.getInstance();
-                cal1.setTime((Date) fieldValue);
-                cal2.setTime((Date) testCase.expectedValue);
-
-                assertTrue(cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-                        cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR));
-            } else{
-                assertEquals(testCase.expectedValue, fieldValue);
-            }
-
+            assertEquals(testCase.expectedValue, contentlet.get(field.variable()));
         } finally {
             if (contentType != null) {
                 contentTypeAPI.delete(contentType);
