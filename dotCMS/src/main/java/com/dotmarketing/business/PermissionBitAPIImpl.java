@@ -330,13 +330,11 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		Role anonRole;
 		Role frontEndUserRole;
 		Role cmsOwnerRole;
-		User anonUser;
 		try {
 			adminRole = APILocator.getRoleAPI().loadCMSAdminRole();
 			anonRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
 			frontEndUserRole = APILocator.getRoleAPI().loadLoggedinSiteRole();
 			cmsOwnerRole = APILocator.getRoleAPI().loadCMSOwnerRole();
-			anonUser=APILocator.getUserAPI().getAnonymousUser();
 		} catch (DotDataException e1) {
 			Logger.error(this, e1.getMessage(), e1);
 			throw new DotRuntimeException(e1.getMessage(), e1);
@@ -346,11 +344,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			return true;
 		}
 
-		List<RelatedPermissionableGroup> permissionDependencies = permissionable.permissionDependencies(permissionType);
 
 
-		List<Permission> perms =  getPermissions(permissionable, true);
-		boolean isContentlet = permissionable instanceof Contentlet;
+		final List<Permission> perms =  getPermissions(permissionable, true);
+		final boolean isContentlet = permissionable instanceof Contentlet;
 		for(Permission p : perms){
 			if(p.matchesPermission(permissionType)){
 				if(respectFrontendRoles){
@@ -369,7 +366,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 				// if owner and owner has required permission return true
 				try {
 					if(p.getRoleId().equals(cmsOwnerRole.getId()) && permissionable.getOwner() != null && permissionable.getOwner().equals(user.getUserId()) &&
-							checkRelatedPermissions(permissionDependencies, user)){
+							checkRelatedPermissions(permissionable.permissionDependencies(permissionType), user)){
 						return true;
 					}
 				} catch (DotDataException e1) {
@@ -381,15 +378,16 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 
 
-		List<Role> roles = Sneaky.sneak(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()));
+		final List<Role> roles = Sneaky.sneak(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()));
         
 		// remove front end user access for anon user (e.g, /intranet)
-		if(user.isAnonymousUser()) {
+		
 		    
-		    if(isContentlet && !isLiveContentlet(permissionable) && permissionType == PERMISSION_READ) {
-		        return false;
-		    }
-
+		if(user.isFrontendUser() && isContentlet && !isLiveContentlet(permissionable) && permissionType == PERMISSION_READ) {
+		    return false;
+		}
+		
+		if(user.isAnonymousUser()) {
             roles.remove(frontEndUserRole);
         }
 		
