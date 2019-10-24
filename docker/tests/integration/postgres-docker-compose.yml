@@ -7,7 +7,7 @@ services:
 
   # https://hub.docker.com/_/postgres
   database:
-    image: "postgres:9-alpine"
+    image: "postgres:10-alpine"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
