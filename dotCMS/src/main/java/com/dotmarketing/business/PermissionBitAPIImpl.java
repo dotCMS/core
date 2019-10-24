@@ -354,8 +354,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		for(Permission p : perms){
 			if(p.matchesPermission(permissionType)){
 				if(respectFrontendRoles){
-					// if we are anonymous
-                    try {
+
                         //anonymous role should not be able to access non-live contentlet
                         boolean isContentlet = permissionable instanceof Contentlet;
                         if (p.getRoleId().equals(anonRole.getId()) && (!isContentlet
@@ -365,10 +364,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
                         }else if(!anonUser.getUserId().equals(user.getUserId()) && p.getRoleId().equals(frontEndUserRole.getId())){
                             return true;
                         }
-                    } catch (DotSecurityException e) {
-                        Logger.error(this,"Error getting permissions for user " + user.getUserId(), e);
-                        throw new DotRuntimeException(e.getMessage(), e);
-                    }
+                   
                 }
 				// if owner and owner has required permission return true
 				try {
@@ -388,6 +384,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		List<Role> roles = Sneaky.sneak(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()));
         // remove front end user access for anon user (e.g, /intranet)
 		if(user.isAnonymousUser()) {
+		    
+		    if(!isLiveContentlet(permissionable)) {
+		        return false;
+		    }
+		    
+		    
             roles.removeIf(r->r.equals(frontEndUserRole));
         }
 		
@@ -433,10 +435,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    private boolean isLiveContentlet(Permissionable permissionable)
-            throws DotDataException, DotSecurityException {
-        return permissionable instanceof Contentlet
-                && ((Contentlet) permissionable).isLive();
+    private boolean isLiveContentlet(Permissionable permissionable) {
+        return permissionable!=null && permissionable instanceof Contentlet
+                && Sneaky.sneak(()->((Contentlet) permissionable).isLive());
     }
 
     @WrapInTransaction
