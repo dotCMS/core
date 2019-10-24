@@ -382,15 +382,15 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 
 		List<Role> roles = Sneaky.sneak(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()));
-        // remove front end user access for anon user (e.g, /intranet)
+        
+		// remove front end user access for anon user (e.g, /intranet)
 		if(user.isAnonymousUser()) {
 		    
-		    if(!isLiveContentlet(permissionable)) {
+		    if(!isLiveContentlet(permissionable) && permissionType == PERMISSION_READ) {
 		        return false;
 		    }
-		    
-		    
-            roles.removeIf(r->r.equals(frontEndUserRole));
+
+            roles.remove(frontEndUserRole);
         }
 		
 		

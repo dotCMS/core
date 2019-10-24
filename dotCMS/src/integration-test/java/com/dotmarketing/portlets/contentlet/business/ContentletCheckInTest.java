@@ -45,20 +45,22 @@ import org.junit.Test;
 public class ContentletCheckInTest extends ContentletBaseTest{
 
     
-    
-    
-    
-    
+   /**
+    * This tests to insure that an anonymous user with write permissions can check in content 
+    * @throws Exception
+    */
   @Test
   public void checkin_content_anonymously () throws Exception {
       Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
       ContentType contentType = createContentType("testingType");
       final String textFieldString = "title";
       createTextField(textFieldString,contentType.id());
+      
+      // give write permissions on the content type
       Permission permissionRead = new Permission( contentType.getPermissionId(), APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_READ );
       Permission permissionWrite = new Permission( contentType.getPermissionId(),  APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_EDIT );
 
-      // give write permissions
+      
       APILocator.getPermissionAPI().save( permissionRead, contentType, APILocator.systemUser(), false );
       APILocator.getPermissionAPI().save( permissionWrite, contentType, APILocator.systemUser(), false );
 
@@ -68,22 +70,25 @@ public class ContentletCheckInTest extends ContentletBaseTest{
       assertTrue("we saved a contentlet anonymously", newCon.getIdentifier()!=null);
       assertTrue("the contentlet title was saved", newCon.getTitle().equals(con.getTitle()));
      
-      
+      assertTrue("contentlet is not live", newCon.isWorking() && !newCon.hasLiveVersion());
       
   }
     
-    
+  /**
+   * This tests to insure that an anonymous user with publish permissions can check in content 
+   * @throws Exception
+   */
   @Test
   public void publish_content_anonymously () throws Exception {
       Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
       final ContentType contentType = createContentType("testingType");
-      final String textFieldString = "title";
+
       final Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
-      createTextField(textFieldString,contentType.id());
+
+      
+      // give write permissions to content Type
       Permission permissionRead = new Permission( contentType.getPermissionId(), cmsAnon.getId(), PermissionAPI.PERMISSION_READ );
       Permission permissionWrite = new Permission( contentType.getPermissionId(),  cmsAnon.getId(), PermissionAPI.PERMISSION_EDIT );
-
-      // give write permissions to content Type
       APILocator.getPermissionAPI().save( permissionRead, contentType, APILocator.systemUser(), false );
       APILocator.getPermissionAPI().save( permissionWrite, contentType, APILocator.systemUser(), false );
 
@@ -91,7 +96,7 @@ public class ContentletCheckInTest extends ContentletBaseTest{
       Contentlet con = new ContentletDataGen(contentType.id()).nextWithSampleTextValues();
       Contentlet newCon = contentletAPI.checkin(con, null, true);
       
-      // give publish permissions on the content itself
+      // now give publish permissions on the content itself
       APILocator.getPermissionAPI().save( new Permission(newCon.getPermissionId(),cmsAnon.getId(),PermissionAPI.PERMISSION_READ),newCon, APILocator.systemUser(), false );
       APILocator.getPermissionAPI().save( new Permission(newCon.getPermissionId(),cmsAnon.getId(),PermissionAPI.PERMISSION_EDIT),newCon, APILocator.systemUser(), false );
       APILocator.getPermissionAPI().save( new Permission(newCon.getPermissionId(),cmsAnon.getId(),PermissionAPI.PERMISSION_PUBLISH),newCon, APILocator.systemUser(), false );
