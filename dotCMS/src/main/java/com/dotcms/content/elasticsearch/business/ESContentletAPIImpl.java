@@ -1,6 +1,10 @@
 package com.dotcms.content.elasticsearch.business;
 
 
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -15,7 +19,13 @@ import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
@@ -31,7 +41,6 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
-import com.dotcms.repackage.net.sf.hibernate.Hibernate;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
@@ -40,8 +49,21 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ThreadContextUtil;
-import com.dotmarketing.beans.*;
-import com.dotmarketing.business.*;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -53,7 +75,11 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.LocalTransaction;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
@@ -61,7 +87,14 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.*;
+import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.DotLockException;
+import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -87,10 +120,28 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.RegEX;
+import com.dotmarketing.util.RegExMatch;
+import com.dotmarketing.util.TrashUtils;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -103,6 +154,37 @@ import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -111,24 +193,6 @@ import org.elasticsearch.search.SearchHits;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeanUtils;
-
-import javax.servlet.http.HttpServletRequest;
-import java.io.*;
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -301,7 +365,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try {
             ContentletVersionInfo clvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
             if(clvi ==null){
-                throw new DotContentletStateException("No contenlet found for given identifier");
+                throw new DotContentletStateException("No contentlet found for given identifier");
             }
             if(live){
                 return find(clvi.getLiveInode(), user, respectFrontendRoles);
@@ -371,11 +435,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     
     @CloseDBIfOpened
     @Override
-    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException {
         try {
             return contentFactory.findContentletByIdentifierAnyLanguage(identifier);
-        } catch (DotSecurityException se) {
-            throw se;
+
         } catch (Exception e) {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
         }
@@ -1396,15 +1459,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 offset, sortBy),
                                 getRelatedParents(contentlet, rel, user, respectFrontendRoles,
                                         limit, offset, sortBy)).stream()
+                        .filter(Objects::nonNull)
                         .collect(CollectionsUtils.toImmutableList());
             }
             if (pullByParent) {
                 return getRelatedChildren(contentlet, rel, user, respectFrontendRoles, limit,
                         offset, sortBy).stream()
+                                .filter(Objects::nonNull)
                         .collect(CollectionsUtils.toImmutableList());
             } else {
                 return getRelatedParents(contentlet, rel, user, respectFrontendRoles, limit, offset,
                         sortBy).stream()
+                                .filter(Objects::nonNull)
                         .collect(CollectionsUtils.toImmutableList());
             }
         } else {
@@ -1418,7 +1484,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    @CloseDBIfOpened
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel, User user,
             boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -1535,11 +1600,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @Override
+    public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
+            Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
+            String sortBy) throws DotDataException {
+        return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, limit, offset, sortBy, -1, null);
+    }
+
     @CloseDBIfOpened
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
             Boolean pullByParent, User user, boolean respectFrontendRoles, int limit, int offset,
-            String sortBy)
+            String sortBy, final long language, final Boolean live)
             throws DotDataException {
         try {
             String fieldVariable = rel.getRelationTypeValue();
@@ -1556,12 +1628,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             return getRelatedContent(contentlet, fieldVariable, user, respectFrontendRoles, pullByParent, limit,
-                            offset, sortBy);
+                            offset, sortBy, language, live);
         } catch (Exception e) {
+            final String id = contentlet!=null ? contentlet.getIdentifier() : "null";
+            final String relName = rel!=null ? rel.getRelationTypeValue() : "null";
+            
             final String errorMessage =
                     "Unable to look up related content for contentlet with identifier "
-                            + contentlet.getIdentifier() + ". Relationship name: " + rel
-                            .getRelationTypeValue();
+                            + id + ". Relationship name: " + relName;
+            
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class,
@@ -1572,7 +1647,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    @CloseDBIfOpened
+
+    @Override
+    public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
+            Boolean pullByParent, User user, boolean respectFrontendRoles, final long language, final Boolean live)
+            throws DotDataException, DotSecurityException {
+        return getRelatedContent(contentlet, rel, pullByParent, user, respectFrontendRoles, -1, -1,
+                null, language, live);
+    }
+
     @Override
     public List<Contentlet> getRelatedContent(Contentlet contentlet, Relationship rel,
             Boolean pullByParent, User user, boolean respectFrontendRoles)
@@ -2601,6 +2684,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             new ContentletLoader().invalidate(contentlet, PageMode.LIVE);
+            CacheLocator.getContentletCache().remove(contentlet.getInode());
             publishRelatedHtmlPages(contentlet);
 
             HibernateUtil.addCommitListener(() -> this.contentletSystemEventUtil.pushUnpublishEvent(contentlet), 1000);
@@ -2804,59 +2888,51 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
             boolean hasParent) {
 
-        String fieldVariable = null;
-        try {
-            //If relationship field, related content cache must be invalidated
-            if (relationship.isRelationshipField()) {
+        //If relationship field, related content cache must be invalidated
+        if (relationship.isRelationshipField()) {
 
-                if (relationshipAPI.sameParentAndChild(relationship)) {
-                    if (relationship.getParentRelationName() != null) {
-                        fieldVariable = relationship.getParentRelationName();
-                        contentlet.setRelated(relationship.getParentRelationName(), null);
-                        CacheLocator.getRelationshipCache()
-                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
-                                        relationship.getParentRelationName());
-                    }
+            if (relationshipAPI.sameParentAndChild(relationship)) {
+                if (relationship.getParentRelationName() != null) {
+                    contentlet.setRelated(relationship.getParentRelationName(), null);
+                    CacheLocator.getRelationshipCache()
+                            .removeRelatedContentMap(contentlet.getIdentifier());
+                }
 
-                    if (relationship.getChildRelationName() != null) {
-                        fieldVariable = relationship.getChildRelationName();
-                        contentlet.setRelated(relationship.getChildRelationName(), null);
-                        CacheLocator.getRelationshipCache()
-                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
-                                        relationship.getChildRelationName());
-                    }
-                } else {
-                    if (!hasParent && relationship.getParentRelationName() != null) {
-                        fieldVariable = relationship.getParentRelationName();
-                        contentlet.setRelated(relationship.getParentRelationName(), null);
-                        CacheLocator.getRelationshipCache()
-                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
-                                        relationship.getParentRelationName());
-                    } else if (hasParent && relationship.getChildRelationName() != null) {
-                        fieldVariable = relationship.getChildRelationName();
-                        contentlet.setRelated(relationship.getChildRelationName(), null);
-                        CacheLocator.getRelationshipCache()
-                                .removeRelatedContentFromMap(contentlet.getIdentifier(),
-                                        relationship.getChildRelationName());
-                    }
+                if (relationship.getChildRelationName() != null) {
+                    contentlet.setRelated(relationship.getChildRelationName(), null);
+                    CacheLocator.getRelationshipCache()
+                            .removeRelatedContentMap(contentlet.getIdentifier());
+                }
+            } else {
+                if (!hasParent && relationship.getParentRelationName() != null) {
+                    contentlet.setRelated(relationship.getParentRelationName(), null);
+                    CacheLocator.getRelationshipCache()
+                            .removeRelatedContentMap(contentlet.getIdentifier());
+                } else if (hasParent && relationship.getChildRelationName() != null) {
+                    contentlet.setRelated(relationship.getChildRelationName(), null);
+                    CacheLocator.getRelationshipCache()
+                            .removeRelatedContentMap(contentlet.getIdentifier());
                 }
             }
-
-        } catch (DotCacheException e) {
-            Logger.debug(this, String.format(
-                    "Cache entry with key %s was not found for contentlet with identifier %s.",
-                    fieldVariable, contentlet.getIdentifier()),
-                    e);
         }
     }
 
-    @CloseDBIfOpened
     @Override
     public List<Contentlet> getRelatedContent(final Contentlet contentlet, final String variableName,
             final User user,
             final boolean respectFrontendRoles, Boolean pullByParents, final int limit,
-            final int offset,
-            final String sortBy) {
+            final int offset, final String sortBy){
+        return getRelatedContent(contentlet, variableName, user, respectFrontendRoles,
+                pullByParents, limit, offset, sortBy, -1, null);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Contentlet> getRelatedContent(final Contentlet contentlet,
+            final String variableName,
+            final User user,
+            final boolean respectFrontendRoles, Boolean pullByParents, final int limit,
+            final int offset, final String sortBy, final long language, final Boolean live) {
 
         if (variableName == null){
             return Collections.EMPTY_LIST;
@@ -2891,14 +2967,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 currentUser = APILocator.getUserAPI().getAnonymousUser();
             }
 
-            final List<Contentlet> relatedContentlet;
+            List<Contentlet> relatedContentlet;
 
             if (relatedIds.containsKey(variableName)) {
-                relatedContentlet = getCachedRelatedContentlets(relatedIds, variableName);
+                relatedContentlet = getCachedRelatedContentlets(relatedIds, variableName, language, live);
             } else {
                 relatedContentlet = getNonCachedRelatedContentlets(contentlet, relatedIds,
                         variableName, pullByParents,
-                        limit, offset, sortBy);
+                        limit, offset, sortBy, language, live);
             }
 
             //Restricts contentlet according to user permissions
@@ -2929,12 +3005,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private List<Contentlet> getNonCachedRelatedContentlets(final Contentlet contentlet,
             final Map<String, List<String>> relatedIds, final String variableName,
             final Boolean pullByParent, final int limit, final int offset,
-            final String sortBy)
+            final String sortBy, final long language, final Boolean live)
             throws DotDataException, DotSecurityException {
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         com.dotcms.contenttype.model.field.Field field = null;
-        final List<Contentlet> relatedList;
+        List<Contentlet> relatedList;
+        List<String> uniqueIdentifiers;
         Relationship relationship;
 
         try {
@@ -2956,14 +3033,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         relatedList = filterRelatedContent(contentlet, relationship, systemUser, false,
                 pullByParent, limit, offset, sortBy);
 
+        //Get unique identifiers to avoid duplicates (used to save on cache and filter the final list if needed
+        uniqueIdentifiers = relatedList.stream().map(Contentlet::getIdentifier).distinct()
+                .collect(CollectionsUtils.toImmutableList());
 
         //Cache related content only if it is a relationship field
-        if (field != null && limit == -1 && offset == 0 && sortBy == null) {
+        if (field != null && limit == -1 && offset <= 0 && sortBy == null) {
             if (UtilMethods.isSet(relatedList)) {
-                relatedIds.put(variableName,
-                        relatedList.stream().map(cont -> cont.getIdentifier())
-                                .collect(
-                                        CollectionsUtils.toImmutableList()));
+                relatedIds.put(variableName, uniqueIdentifiers);
             } else {
                 relatedIds.put(variableName, Collections.emptyList());
             }
@@ -2971,7 +3048,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
             CacheLocator.getRelationshipCache().putRelatedContentMap(contentlet.getIdentifier(), relatedIds);
         }
 
-        return relatedList;
+        if (live == null && language == -1) {
+            return relatedList;
+        } else{
+            /*Filter by live and/or language if set
+              If live=true, for each content, it needs to return the live version.
+              Otherwise, it would return the working one*/
+            return uniqueIdentifiers.stream()
+                    .flatMap(identifier -> filterRelatedContentByLiveAndLanguage(language, live, identifier))
+                    .collect(Collectors.toList());
+        }
     }
 
     /**
@@ -2982,21 +3068,48 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     @NotNull
     private List<Contentlet> getCachedRelatedContentlets(final Map<String, List<String>> relatedIds,
-            final String variableName) {
-        final List<Contentlet> relatedList = relatedIds
-                .get(variableName).stream()
-                .map(identifier -> {
-                    try {
-                        return APILocator.getContentletAPI()
-                                .findContentletByIdentifierAnyLanguage(identifier);
-                    } catch (DotDataException | DotSecurityException e) {
-                        Logger.warn(this, "No content found with id " + identifier,
-                                e);
-                        throw new DotStateException(e);
-                    }
-                }).collect(Collectors.toList());
+            final String variableName, final long language, final Boolean live) {
 
-        return relatedList;
+        return relatedIds
+                .get(variableName).stream()
+                .flatMap(identifier -> filterRelatedContentByLiveAndLanguage(language, live, identifier))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     *
+     * @param language
+     * @param live
+     * @param identifier
+     * @return
+     */
+    private Stream<? extends Contentlet> filterRelatedContentByLiveAndLanguage(final long language, final Boolean live,
+            final String identifier) {
+
+        final List<Contentlet> relatedContentList = new ArrayList<>();
+        //If language is set, we must return the content version in that language.
+        //Otherwise, we need to return a version for each language if exists
+        List<Long> languages = language > 0 ? CollectionsUtils.list(language)
+                : languageAPI.getLanguages().stream().map(lang -> lang.getId()).collect(
+                        Collectors.toList());
+
+        for (Long currentLanguage : languages) {
+            try{
+                Contentlet currentContent = findContentletByIdentifier(
+                        identifier, live == null ? false : live,
+                        currentLanguage, APILocator.getUserAPI().getSystemUser(),
+                        false);
+                if (currentContent != null) {
+                    relatedContentList.add(currentContent);
+                }
+            } catch (DotDataException | DotSecurityException | DotContentletStateException e) {
+                Logger.warnAndDebug(this.getClass(),
+                        "Error trying to get a live version for content with identifier "
+                                + identifier, e);
+            }
+        }
+
+        return relatedContentList.stream();
     }
 
     @WrapInTransaction
@@ -3258,6 +3371,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return checkin(contentlet, relationshipsData, cats , user, respectFrontendRoles, false, false);
     }
 
+    @CloseDBIfOpened
+    @Override
+    public Contentlet checkinWithoutVersioning(final Contentlet contentlet,
+            final ContentletRelationships contentRelationships, final List<Category> cats,
+            final List<Permission> permissions, final User user, final boolean respectFrontendRoles)
+            throws DotContentletStateException, DotSecurityException, DotDataException {
+        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false,
+                false);
+    }
+
     /**
      *
      * @param contentletIn
@@ -3440,7 +3563,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // in the future if the contentlet exist, EDIT should be catch
         final Optional<WorkflowAction> workflowActionOpt =
                 workflowAPI.findActionMappedBySystemActionContentlet
-                        (contentletIn, UtilMethods.isSet(contentletIn.getIdentifier())?WorkflowAPI.SystemAction.NEW:WorkflowAPI.SystemAction.EDIT, user);
+                        (contentletIn, contentletIn.isNew()?WorkflowAPI.SystemAction.NEW:WorkflowAPI.SystemAction.EDIT, user);
 
         if (workflowActionOpt.isPresent()) {
 
@@ -3835,7 +3958,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 workingContentlet = contentlet;
             }
 
-            if (createNewVersion || (!createNewVersion && (contentRelationships != null || cats != null))) {
+            final boolean movedContentDependencies = (createNewVersion || contentRelationships != null
+                    || cats != null);
+
+            if (movedContentDependencies) {
                 contentlet.setBoolProperty(CHECKIN_IN_PROGRESS, Boolean.TRUE);
                 moveContentDependencies(workingContentlet, contentlet, contentRelationships, cats, user, respectFrontendRoles);
             }
@@ -4156,7 +4282,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 }
 
-                if (ThreadContextUtil.isReindex()) {
+                if (movedContentDependencies) {
+                    final Contentlet newContentlet = contentlet;
+                    ThreadContextUtil.ifReindex(
+                            () -> indexAPI.addContentToIndex(newContentlet, INCLUDE_DEPENDENCIES),
+                            INCLUDE_DEPENDENCIES);
+                } else if (ThreadContextUtil.isReindex()) {
                     indexAPI.addContentToIndex(contentlet, false);
                 }
             }
@@ -4216,7 +4347,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(createNewVersion && workingContentlet!= null && UtilMethods.isSet(workingContentlet.getInode())){
                 APILocator.getVersionableAPI().setWorking(workingContentlet);
             }
-            Logger.error(this, e.getMessage(), e);
+
+            if (e instanceof DotContentletValidationException){
+                Logger.warnAndDebug(this.getClass(), e.getMessage(), e);
+            } else{
+                Logger.error(this, e.getMessage(), e);
+            }
 
             bubbleUpException(e);
         }
@@ -5037,11 +5173,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 else if(value instanceof String && tempApi.isTempResource((String) value)) {
                   final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
                   // we use the session to verify access to the temp resource
-                  final DotTempFile tempFile = tempApi.getTempFile(request, (String) value).get();
-                  contentlet.setBinary(field.getVelocityVarName(), tempFile.file);
+                  final Optional<DotTempFile> tempFileOptional =  tempApi
+                          .getTempFile(request, (String) value);
+
+                  if(tempFileOptional.isPresent()) {
+                        contentlet.setBinary(field.getVelocityVarName(), tempFileOptional.get().file);
+                  } else {
+                      throw new DotStateException("Invalid Temp File provided");
+                  }
 
                 }
-            }catch (Exception e) {
+            }catch (IOException e) {
                 throw new DotContentletStateException("Unable to set binary file Object",e);
             }
         }else if(field.getFieldContentlet().startsWith("system_field")){
@@ -6060,9 +6202,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         Contentlet con = contentFactory.find(contentletInode);
 
-        if(!permissionAPI.doesUserHavePermission(con,PermissionAPI.PERMISSION_READ,user))
-            throw new DotSecurityException("Unauthorized Access");
-
+        if (!permissionAPI.doesUserHavePermission(con, PermissionAPI.PERMISSION_READ, user)) {
+            if (null != user) {
+                throw new DotSecurityException(String.format(
+                        "Unauthorized Access user [%s , %s] trying to access contentlet identified by `%s`.",
+                        user.getUserId(), user.getEmailAddress(), con.getIdentifier()));
+            } else {
+                throw new DotSecurityException(
+                        "Unauthorized Access null user trying to access contentlet. ");
+            }
+        }
 
         File binaryFile = null;
         String binaryFilePath = null;
@@ -6237,9 +6386,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 newContentlet.setStringProperty(Contentlet.CONTENTLET_ASSET_NAME_COPY, newIdentifierName);
             }
 
+            final String temporalFolder =
+                    APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator
+                            + UUIDGenerator.generateUuid();
+
             List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
             File srcFile;
-            File destFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + user.getUserId());
+            File destFile = new File(temporalFolder);
             if (!destFile.exists())
                 destFile.mkdirs();
 
@@ -6255,7 +6408,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }else{
                                 fieldValue=srcFile.getName();
                             }
-                            destFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + user.getUserId() + File.separator + fieldValue);
+                            destFile = new File(temporalFolder + File.separator + fieldValue);
                             if (!destFile.exists())
                                 destFile.createNewFile();
 
@@ -6375,8 +6528,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(resultContentlet.getIdentifier(),
                         multitree.getContainer(),
                         multitree.getContentlet(),
-                        MultiTree.LEGACY_RELATION_TYPE,
-                        multitree.getTreeOrder()));
+                        multitree.getRelationType(),
+                        multitree.getTreeOrder(), 
+                        multitree.getPersonalization()));
             }
         }
 

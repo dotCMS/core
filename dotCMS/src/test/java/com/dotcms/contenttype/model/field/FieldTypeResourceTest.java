@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.model.field;
 
 
+import com.dotcms.UnitTestBase;
 import javax.ws.rs.core.Response;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -26,7 +27,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 /**
  * {@link FieldTypeResource} test
  */
-public class FieldTypeResourceTest {
+public class FieldTypeResourceTest extends UnitTestBase {
 
     @Test
     public void testGetFieldTypes() throws JSONException, DotSecurityException, DotDataException {

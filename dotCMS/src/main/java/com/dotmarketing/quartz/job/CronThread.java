@@ -17,7 +17,7 @@ public class CronThread implements Runnable {
 
     public void run() {
 	    Logger.info(this, "Starting annoying CronThread running every minute");
-        
+
         GregorianCalendar greg = null;
 
 
@@ -50,8 +50,8 @@ public class CronThread implements Runnable {
             }
         }
     }
-    
-  
+
+
     /* (non-Javadoc)
      * @see java.lang.Thread#destroy()
      */

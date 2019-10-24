@@ -18,9 +18,21 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.workflows.model.*;
-import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
+import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
+import com.dotmarketing.portlets.workflows.model.WorkflowState;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -28,13 +40,22 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
-import org.apache.commons.beanutils.BeanUtils;
-
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import org.apache.commons.beanutils.BeanUtils;
 
 
 /**
@@ -97,8 +118,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		row.put("requiresCheckout", row.get("requires_checkout"));
 		row.put("showOn", WorkflowState.toSet(row.get("show_on")));
 		row.put("roleHierarchyForAssign", row.get("use_role_hierarchy_assign"));
-
 		BeanUtils.copyProperties(action, row);
+		action.setPushPublishActionlet(ActionletUtil.hasPushPublishActionlet(action));
 		return action;
 	}
 
@@ -655,6 +676,16 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		return classes;
 	}
+
+	@Override
+	public List<WorkflowActionClass> findActionClassesByClassName(final String actionClassName) throws DotDataException {
+
+		final List<WorkflowActionClass> classes = this.convertListToObjects(new DotConnect().setSQL(sql.SELECT_ACTION_CLASSES_BY_CLASS)
+				.addParam(actionClassName).loadObjectResults(), WorkflowActionClass.class);
+
+		return classes;
+	}
+
 
 	public WorkflowActionClassParameter findActionClassParameter(String id) throws DotDataException {
 		final DotConnect db = new DotConnect();
@@ -1437,11 +1468,26 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public void deleteSystemActionsByWorkflowAction(final WorkflowAction action) throws DotDataException {
 
 		Logger.debug(this, ()->"Removing system action mappings associated to the action: " + action.getId());
+
+		final List<Map<String, Object>> mappingsToClean = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION).
+				addParam(action.getId())
+				.loadObjectResults();
+
 		new DotConnect().setSQL(sql.DELETE_SYSTEM_ACTION_BY_WORKFLOW_ACTION_ID)
 				.addParam(action.getId())
 				.loadResult();
 
 		this.cache.removeSystemActionsByWorkflowAction(action.getId());
+
+		if (UtilMethods.isSet(mappingsToClean)) {
+
+			for (final Map<String, Object> mappingRow : mappingsToClean) {
+
+				final String owner = (String)mappingRow.get("scheme_or_content_type");
+				this.cache.removeSystemActionsByContentType(owner);
+				this.cache.removeSystemActionsByScheme(owner);
+			}
+		}
 	}
 
 	private String createQueryIn (final Collection list) {

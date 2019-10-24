@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public interface VisitorAPI {
 
-    void setLanguageWebAPI(LanguageWebAPI languageWebAPI);
+
 
     Optional<Visitor> getVisitor(HttpServletRequest request);
 

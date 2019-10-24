@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +18,7 @@ import com.dotcms.util.UserUtilTest;
 import com.dotmarketing.business.LoginAsAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.logConsole.model.LogMapper;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.NoSuchUserException;
@@ -50,6 +52,11 @@ public class AuthenticationResourceTest extends UnitTestBase {
     public void testEmptyParameter() throws JSONException{
 
         try {
+
+            LogMapper mockLogMapper = mock(LogMapper.class);
+            when(mockLogMapper.isLogEnabled(any())).thenReturn(false);
+            LogMapper.setLogMapper(mockLogMapper);
+
             final AuthenticationForm authenticationForm =
                     new AuthenticationForm.Builder().build();
 

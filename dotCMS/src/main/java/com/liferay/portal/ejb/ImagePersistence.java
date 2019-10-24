@@ -22,10 +22,9 @@
 
 package com.liferay.portal.ejb;
 
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 import com.liferay.portal.NoSuchImageException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.util.HibernateUtil;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -45,7 +44,6 @@ public class ImagePersistence extends BasePersistence {
 		return new com.liferay.portal.model.Image(imageId);
 	}
 
-	@WrapInTransaction
 	protected com.liferay.portal.model.Image remove(String imageId)
 		throws NoSuchImageException, SystemException {
 		Session session = null;
@@ -69,9 +67,11 @@ public class ImagePersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@WrapInTransaction
 	protected com.liferay.portal.model.Image update(
 		com.liferay.portal.model.Image image) throws SystemException {
 		Session session = null;
@@ -113,9 +113,11 @@ public class ImagePersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected com.liferay.portal.model.Image findByPrimaryKey(String imageId)
 		throws NoSuchImageException, SystemException {
 		com.liferay.portal.model.Image image = ImagePool.get(imageId);
@@ -140,9 +142,11 @@ public class ImagePersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected List findAll() throws SystemException {
 		Session session = null;
 
@@ -166,6 +170,9 @@ public class ImagePersistence extends BasePersistence {
 		}
 		catch (HibernateException he) {
 			throw new SystemException(he);
+		}
+		finally {
+			HibernateUtil.closeSession(session);
 		}
 	}
 }

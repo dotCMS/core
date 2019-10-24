@@ -461,7 +461,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         } else if (!DbConnectionFactory.inTransaction()) {
             addContentToIndex(contentToIndex);
         } else {
-            HibernateUtil.addCommitListener(() -> addContentToIndex(contentToIndex));
+            HibernateUtil.addSyncCommitListener(() -> addContentToIndex(contentToIndex));
         }
     }
 

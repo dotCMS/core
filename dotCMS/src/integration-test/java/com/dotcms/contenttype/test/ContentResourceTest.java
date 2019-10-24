@@ -8,7 +8,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -60,6 +59,7 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.Tuple2;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -158,13 +158,16 @@ public class ContentResourceTest extends IntegrationTestBase {
         String depth;
         String responseType;
         boolean limitedUser;
+        boolean testSelfRelated;
         int statusCode;
 
-        public TestCase(final String depth, final String responseType, final int statusCode, final boolean limitedUser) {
-            this.depth        = depth;
+        public TestCase(final String depth, final String responseType, final int statusCode,
+                final boolean limitedUser, final boolean testSelfRelated) {
+            this.depth = depth;
             this.responseType = responseType;
-            this.statusCode   = statusCode;
-            this.limitedUser  = limitedUser;
+            this.statusCode = statusCode;
+            this.limitedUser = limitedUser;
+            this.testSelfRelated = testSelfRelated;
         }
     }
 
@@ -184,25 +187,45 @@ public class ContentResourceTest extends IntegrationTestBase {
     @DataProvider
     public static Object[] testCases(){
         return new TestCase[]{
-                new TestCase(null, JSON_RESPONSE, Status.OK.getStatusCode(), false),
-                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode(), false),
-                new TestCase("1", JSON_RESPONSE, Status.OK.getStatusCode(), false),
-                new TestCase("2", JSON_RESPONSE, Status.OK.getStatusCode(), false),
-                new TestCase("3", JSON_RESPONSE, Status.OK.getStatusCode(), false),
-                new TestCase(null, XML_RESPONSE, Status.OK.getStatusCode(), false),
-                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode(), false),
-                new TestCase("1", XML_RESPONSE, Status.OK.getStatusCode(), false),
-                new TestCase("2", XML_RESPONSE, Status.OK.getStatusCode(), false),
-                new TestCase("3", XML_RESPONSE, Status.OK.getStatusCode(), false),
-                new TestCase(null, null, Status.OK.getStatusCode(), false),
+                new TestCase(null, JSON_RESPONSE, Status.OK.getStatusCode(), false, false),
+                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode(), false, false),
+                new TestCase("1", JSON_RESPONSE, Status.OK.getStatusCode(), false, false),
+                new TestCase("2", JSON_RESPONSE, Status.OK.getStatusCode(), false, false),
+                new TestCase("3", JSON_RESPONSE, Status.OK.getStatusCode(), false, false),
+                new TestCase(null, XML_RESPONSE, Status.OK.getStatusCode(), false, false),
+                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode(), false, false),
+                new TestCase("1", XML_RESPONSE, Status.OK.getStatusCode(), false, false),
+                new TestCase("2", XML_RESPONSE, Status.OK.getStatusCode(), false, false),
+                new TestCase("3", XML_RESPONSE, Status.OK.getStatusCode(), false, false),
+                new TestCase(null, null, Status.OK.getStatusCode(), false, false),
                 //Bad depth cases
-                new TestCase("5", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false),
-                new TestCase("5", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false),
-                new TestCase("no_depth", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false),
-                new TestCase("no_depth", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false),
+                new TestCase("5", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false, false),
+                new TestCase("5", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false, false),
+                new TestCase("no_depth", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false, false),
+                new TestCase("no_depth", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false, false),
 
-                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode(), true),
-                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode(), true)
+                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode(), true, false),
+                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode(), true, false),
+
+                new TestCase(null, JSON_RESPONSE, Status.OK.getStatusCode(), false, true),
+                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode(), false, true),
+                new TestCase("1", JSON_RESPONSE, Status.OK.getStatusCode(), false, true),
+                new TestCase("2", JSON_RESPONSE, Status.OK.getStatusCode(), false, true),
+                new TestCase("3", JSON_RESPONSE, Status.OK.getStatusCode(), false, true),
+                new TestCase(null, XML_RESPONSE, Status.OK.getStatusCode(), false, true),
+                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode(), false, true),
+                new TestCase("1", XML_RESPONSE, Status.OK.getStatusCode(), false, true),
+                new TestCase("2", XML_RESPONSE, Status.OK.getStatusCode(), false, true),
+                new TestCase("3", XML_RESPONSE, Status.OK.getStatusCode(), false, true),
+                new TestCase(null, null, Status.OK.getStatusCode(), false, true),
+                //Bad depth cases
+                new TestCase("5", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false, true),
+                new TestCase("5", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false, true),
+                new TestCase("no_depth", JSON_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false, true),
+                new TestCase("no_depth", XML_RESPONSE, Status.BAD_REQUEST.getStatusCode(), false, true),
+
+                new TestCase("0", JSON_RESPONSE, Status.OK.getStatusCode(), true, true),
+                new TestCase("0", XML_RESPONSE, Status.OK.getStatusCode(), true, true)
         };
     }
 
@@ -293,6 +316,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             throws Exception {
 
         final long language = languageAPI.getDefaultLanguage().getId();
+        final Map<String, Contentlet> contentlets = new HashMap();
 
         ContentType parentContentType = null;
         ContentType childContentType  = null;
@@ -306,7 +330,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             //creates content types
             parentContentType = createSampleContentType(false);
             childContentType = createSampleContentType(false);
-            grandChildContentType = createSampleContentType(false);
+            grandChildContentType = testCase.testSelfRelated? childContentType: createSampleContentType(false);
 
             //creates relationship fields
             final Field parentField = createRelationshipField("children", parentContentType,
@@ -323,7 +347,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                     RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal());
 
             //creates the other side of the child relationship
-            createRelationshipField("parents",
+            final Field otherSideChildField = createRelationshipField(testCase.testSelfRelated? "siblings": "parents",
                     grandChildContentType,
                     childContentType.variable() + StringPool.PERIOD + childField.variable(),
                     RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
@@ -343,9 +367,16 @@ public class ContentResourceTest extends IntegrationTestBase {
             final ContentletDataGen childDataGen = new ContentletDataGen(childContentType.id());
             Contentlet child = childDataGen.languageId(language).next();
 
-            child = contentletAPI.checkin(child, CollectionsUtils
-                            .map(childRelationship, CollectionsUtils.list(grandChild1, grandChild2)), user,
-                    false);
+            child.setRelated(childField.variable(), CollectionsUtils.list(grandChild1, grandChild2));
+
+            if (testCase.testSelfRelated){
+                final Contentlet sibling = childDataGen.languageId(language).nextPersisted();
+                child.setRelated(otherSideChildField, CollectionsUtils.list(sibling));
+                contentlets.put("sibling", sibling);
+            }
+
+            child = contentletAPI.checkin(child, user, false);
+
             if (testCase.limitedUser){
                 newRole = createRole();
 
@@ -375,7 +406,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                         true), parent, user, false);
             }
 
-            final Map<String, Contentlet> contentlets = new HashMap();
+
             contentlets.put("parent", parent);
             contentlets.put("child", child);
             contentlets.put("grandChild1", grandChild1);
@@ -405,8 +436,14 @@ public class ContentResourceTest extends IntegrationTestBase {
             }
 
         }finally{
-            deleteContentTypes(CollectionsUtils
-                    .list(parentContentType, childContentType, grandChildContentType));
+
+            if (testCase.testSelfRelated){
+                deleteContentTypes(CollectionsUtils
+                        .list(parentContentType, childContentType));
+            } else{
+                deleteContentTypes(CollectionsUtils
+                        .list(parentContentType, childContentType, grandChildContentType));
+            }
 
             if (newRole != null){
                 roleAPI.delete(newRole);
@@ -618,7 +655,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         if (depth > 1) {
             //validates grandchildren
-            final JSONArray jsonArray = (JSONArray) ((JSONObject) contentlet
+            JSONArray jsonArray = (JSONArray) ((JSONObject) contentlet
                     .get(parent.getContentType().fields().get(0).variable()))
                     .get(child.getContentType().fields().get(0).variable());
 
@@ -637,6 +674,18 @@ public class ContentResourceTest extends IntegrationTestBase {
                             .equals(contentletMap.get("grandChild1").getIdentifier())
                             || grandChild
                             .equals(contentletMap.get("grandChild2").getIdentifier())));
+
+            //Validate self-related if needed
+            if (contentletMap.containsKey("sibling")){
+                jsonArray = (JSONArray) ((JSONObject) contentlet
+                        .get(parent.getContentType().fields().get(0).variable()))
+                        .get(child.getContentType().fields().get(2).variable());
+                assertEquals(1, jsonArray.length());
+
+                assertEquals(contentletMap.get("sibling").getIdentifier(), depth == 2 ? jsonArray.get(0)
+                        : JSONObject.class.cast(jsonArray.get(0)).get(IDENTIFIER));
+
+            }
 
             //parent relationship was not added back again
             assertFalse(((JSONObject) contentlet
@@ -699,12 +748,29 @@ public class ContentResourceTest extends IntegrationTestBase {
             final DeferredElementImpl contentlet, final Contentlet parent,
             final Contentlet child, final int depth) {
 
-        assertEquals(child.getIdentifier(),
-                ((DeferredElementImpl) contentlet
-                        .getElementsByTagName(
-                                parent.getContentType().fields().get(0).variable())
-                        .item(0)).getElementsByTagName(IDENTIFIER).item(0)
-                        .getTextContent());
+        //Verifies self related case
+        if (depth == 3 && contentletMap.containsKey("sibling")){
+            assertEquals(contentletMap.get("sibling").getIdentifier(),
+                    ((DeferredElementImpl) contentlet
+                            .getElementsByTagName(
+                                    parent.getContentType().fields().get(0).variable())
+                            .item(0)).getElementsByTagName(IDENTIFIER).item(0)
+                            .getTextContent());
+
+            assertEquals(child.getIdentifier(),
+                    ((DeferredElementImpl) contentlet
+                            .getElementsByTagName(
+                                    parent.getContentType().fields().get(0).variable())
+                            .item(0)).getElementsByTagName(IDENTIFIER).item(1)
+                            .getTextContent());
+        } else{
+            assertEquals(child.getIdentifier(),
+                    ((DeferredElementImpl) contentlet
+                            .getElementsByTagName(
+                                    parent.getContentType().fields().get(0).variable())
+                            .item(0)).getElementsByTagName(IDENTIFIER).item(0)
+                            .getTextContent());
+        }
 
         if (depth > 1) {
             //validates grandchildren
@@ -842,7 +908,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletRequest request2 = createHttpRequest(jsonPayload2);
             final HttpServletResponse response2 = mock(HttpServletResponse.class);
             final Response endpointResponse2 = contentResource.singlePOST(request2, response2, "/save/1");
-            assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), endpointResponse2.getStatus());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse2.getStatus());
 
             //The Endpoint can only handle the entire set of fields.. You can not use this endpoint to only update 1 field.
 
@@ -873,8 +939,9 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletRequest request1 = createHttpRequest(jsonPayload1);
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
             final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
-            assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), endpointResponse1.getStatus());
-            assertEquals("Unable to set string value as a Long", endpointResponse1.getEntity());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
+            assertEquals(CollectionsUtils.map("message", "Unable to set string value as a Long"),
+                    endpointResponse1.getEntity());
 
         }finally {
             if(null != contentType){
@@ -902,8 +969,57 @@ public class ContentResourceTest extends IntegrationTestBase {
             final HttpServletRequest request1 = createHttpRequest(jsonPayload1);
             final HttpServletResponse response1 = mock(HttpServletResponse.class);
             final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
-            assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), endpointResponse1.getStatus());
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
             /// No Detailed Message is shown here. Explaining that the field is required
+        }finally {
+            if(null != contentType){
+                contentTypeAPI.delete(contentType);
+            }
+        }
+
+    }
+
+    @DataProvider
+    public static Object[] contentResourceInvalidParamsDP(){
+
+        // case 1 bad stInode value
+        final String case1Payload = "{\n"
+                + "    \"stInode\" : \"InvalidValue\",\n"
+                + "    \"numeric\" : \"0\",\n"
+                + "    \"image\" : \"whatever\"\n"
+                + "}";
+
+        // tuple: payload, expected response
+        final Tuple2 case1 = new Tuple2<>(case1Payload, Status.BAD_REQUEST);
+
+        // case 2 missing stInode param
+        final String case2Payload = "{\n"
+                + "    \"numeric\" : \"0\",\n"
+                + "    \"image\" : \"whatever\"\n"
+                + "}";
+
+        // tuple: payload, expected response
+        final Tuple2 case2 = new Tuple2<>(case2Payload, Status.BAD_REQUEST);
+
+        return new Tuple2[]{
+                case1,
+                case2
+        };
+    }
+
+    @Test
+    @UseDataProvider("contentResourceInvalidParamsDP")
+    public void testSinglePOST_InvalidParamsShouldReturn400(final Tuple2<String, Response.Status> testCase) throws Exception {
+        final ContentResource contentResource = new ContentResource();
+        ContentType contentType = null;
+        try {
+            contentType = createSampleContentType(true);
+
+            //Create an instance of the CT
+            final HttpServletRequest request1 = createHttpRequest(testCase._1);
+            final HttpServletResponse response1 = mock(HttpServletResponse.class);
+            final Response endpointResponse1 = contentResource.singlePOST(request1, response1, "/save/1");
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), endpointResponse1.getStatus());
         }finally {
             if(null != contentType){
                 contentTypeAPI.delete(contentType);

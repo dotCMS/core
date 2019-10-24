@@ -1,16 +1,14 @@
 package com.dotmarketing.servlets;
 
+import java.util.TimeZone;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.repackage.net.sf.hibernate.dialect.Dialect;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
-
-import java.util.TimeZone;
 
 public class StartupLogger {
 
@@ -26,19 +24,15 @@ public class StartupLogger {
         Logger.info(this, "InitServlet: Setting Default Timezone: " + companyTimeZone.getDisplayName());
 
         String dbType = DbConnectionFactory.getDBType();
-        String dailect = "";
-        try {
-            dailect = HibernateUtil.getDialect();
-        } catch (DotHibernateException e3) {
-            Logger.error(InitServlet.class, e3.getMessage(), e3);
-        }
+        Dialect dailect = HibernateUtil.getDialect();
+
         String expires = (license.isPerpetual()) ?  "never" : UtilMethods.dateToLongPrettyHTMLDate(license.getValidUntil());
         
         String companyId = PublicCompanyFactory.getDefaultCompanyId();
         Logger.info(this, "");
         Logger.info(this, "   Initializing dotCMS");
         Logger.info(this, "   Using database: " + dbType);
-        Logger.info(this, "   Using dialect : " + dailect);
+        Logger.info(this, "   Using dialect : " + dailect.getClass().getCanonicalName());
         Logger.info(this, "   Company Name  : " + companyId);
         Logger.info(this, "");
         Logger.info(this, "   License       : " + license.getLevelName(license.getLevel()));

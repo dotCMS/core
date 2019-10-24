@@ -1338,6 +1338,8 @@ insert into workflow_action_mappings(id, action, workflow_action, scheme_or_cont
 values ('99019118-df2c-4297-a5aa-2fe3fe0f52ce','UNARCHIVE','c92f9aa1-9503-4567-ac30-d3242b54d02d','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
 insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
 values ('d073436e-3c10-4e4c-8c97-225e9cddf320','DELETE'   ,'777f1c6b-c877-4a37-ba4b-10627316c2cc','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
+insert into workflow_action_mappings(id, action, workflow_action, scheme_or_content_type)
+values ('3d73437e-3f1c-8e5c-ac97-a25e9cddf320','DESTROY'  ,'1e0f1c6b-b67f-4c99-983d-db2b4bfa88b2','d61a59e1-a49c-46f2-a929-db2b4bfa88b2');
 
 create table tag_inode (
    tag_id NVARCHAR(100) not null,
@@ -2458,6 +2460,7 @@ ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_language FOREIGN KEY (
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);
+ALTER TABLE workflow_task ADD CONSTRAINT unique_workflow_task unique (webasset,language_id);
 
 CREATE index idx_workflow_step_escalation_action on workflow_step(escalation_action);
 alter table workflow_step add constraint fk_escalation_action foreign key (escalation_action) references workflow_action(id);

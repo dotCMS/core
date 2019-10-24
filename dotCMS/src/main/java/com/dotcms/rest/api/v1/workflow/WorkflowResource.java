@@ -66,6 +66,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -1384,11 +1385,7 @@ public class WorkflowResource {
         }
 
         if (contentlet.getMap().containsKey(Contentlet.RELATIONSHIP_KEY)) {
-
-            final  Map<Relationship, List<Contentlet>> relationshipListMap =
-                    (Map<Relationship, List<Contentlet>>) contentlet.getMap().get(Contentlet.RELATIONSHIP_KEY);
-            formBuilder.relationships(MapToContentletPopulator.
-                    INSTANCE.getContentletRelationshipsFromMap(contentlet, relationshipListMap));
+            formBuilder.relationships((ContentletRelationships) contentlet.getMap().get(Contentlet.RELATIONSHIP_KEY));
         }
 
         final List<Category> categories = MapToContentletPopulator.
@@ -1404,10 +1401,15 @@ public class WorkflowResource {
                         this.workflowHelper.contentletToMap(
                                 fireCommandOpt.isPresent()?
                                         fireCommandOpt.get().fire(contentlet,
-                                                UtilMethods.isSet(fireActionForm.getContentletFormData()), formBuilder.build()):
+                                                this.needSave(fireActionForm), formBuilder.build()):
                                         this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build()))
                 )
         ).build(); // 200
+    }
+
+    private boolean needSave (final FireActionForm fireActionForm) {
+
+        return null != fireActionForm && UtilMethods.isSet(fireActionForm.getContentletFormData());
     }
 
     /**
@@ -1465,7 +1467,7 @@ public class WorkflowResource {
 
                 final Optional<SystemActionApiFireCommand> fireCommandOpt =
                         this.systemActionApiFireCommandProvider.get(workflowAction,
-                                UtilMethods.isSet(fireActionForm.getContentletFormData()), systemAction);
+                                this.needSave(fireActionForm), systemAction);
 
                 return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
             } else {
@@ -1593,7 +1595,7 @@ public class WorkflowResource {
                 final String actionId = workflowAction.getId();
                 final Optional<SystemActionApiFireCommand> fireCommandOpt =
                         this.systemActionApiFireCommandProvider.get(workflowAction,
-                                UtilMethods.isSet(fireActionForm.getContentletFormData()), systemAction);
+                                this.needSave(fireActionForm), systemAction);
 
                 return this.fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, fireCommandOpt);
             } else {
@@ -2030,6 +2032,7 @@ public class WorkflowResource {
             exportObject.setActionSteps(workflowSchemeImportForm.getWorkflowImportObject().getActionSteps());
             exportObject.setActionClasses(workflowSchemeImportForm.getWorkflowImportObject().getActionClasses());
             exportObject.setActionClassParams(workflowSchemeImportForm.getWorkflowImportObject().getActionClassParams());
+            exportObject.setSchemeSystemActionWorkflowActionMappings(workflowSchemeImportForm.getWorkflowImportObject().getSchemeSystemActionWorkflowActionMappings());
 
             this.workflowHelper.importScheme (
                     exportObject,

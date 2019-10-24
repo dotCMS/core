@@ -1,10 +1,13 @@
 package com.dotmarketing.portlets.folders.business;
 
+import static com.dotmarketing.portlets.folders.business.FolderAPIImpl.reservedFolderNames;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -46,7 +49,11 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Assert;
@@ -54,7 +61,9 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class FolderAPITest {//24 contentlets
 
 	private final static String LOGO_GIF_1 = "logo.gif";
@@ -1028,6 +1037,69 @@ public class FolderAPITest {//24 contentlets
 		Assert.assertFalse(links.isEmpty());
 		Assert.assertEquals(link.getIdentifier(), links.get(0).getIdentifier());
 		Assert.assertEquals(link.getInode(), links.get(0).getInode());
+	}
+
+	@DataProvider
+	public static Object[] reservedFolderNames() {
+		return reservedFolderNames.toArray();
+	}
+
+	@Test(expected = DotDataException.class)
+	@UseDataProvider("reservedFolderNames")
+	public void testSave_BlacklistedName_ShouldFail(final String reservedName)
+			throws DotDataException, DotSecurityException {
+		final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
+		final Identifier newIdentifier = identifierAPI.createNew(invalidFolder, host);
+		invalidFolder.setIdentifier(newIdentifier.getId());
+		folderAPI.save(invalidFolder, APILocator.systemUser(), false);
+	}
+
+	@Test(expected = DotDataException.class)
+	@UseDataProvider("reservedFolderNames")
+	public void testCopyToFolder_BlacklistedName_ShouldFail(final String reservedName)
+			throws DotDataException, DotSecurityException, IOException {
+
+		final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
+		final Identifier newIdentifier = identifierAPI.createNew(invalidFolder, host);
+		invalidFolder.setIdentifier(newIdentifier.getId());
+
+		final Folder newFolder = new FolderDataGen().nextPersisted();
+
+		folderAPI.copy(invalidFolder, newFolder, APILocator.systemUser(), false);
+	}
+
+	@Test(expected = DotDataException.class)
+	@UseDataProvider("reservedFolderNames")
+	public void testCopyToHost_BlacklistedName_ShouldFail(final String reservedName)
+			throws DotDataException, DotSecurityException, IOException {
+
+		final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
+		final Identifier newIdentifier = identifierAPI.createNew(invalidFolder, host);
+		invalidFolder.setIdentifier(newIdentifier.getId());
+
+		final Host newHost = new SiteDataGen().nextPersisted();
+
+		folderAPI.copy(invalidFolder, newHost, APILocator.systemUser(), false);
+	}
+
+	@Test(expected = DotDataException.class)
+	@UseDataProvider("reservedFolderNames")
+	public void testRename_BlacklistedName_ShouldFail(final String reservedName)
+			throws DotDataException, DotSecurityException {
+		final Folder folder = new FolderDataGen().name("testFolderRename" + System.currentTimeMillis()).next();
+		final Identifier newIdentifier = identifierAPI.createNew(folder, host);
+		folder.setIdentifier(newIdentifier.getId());
+		folderAPI.save(folder, APILocator.systemUser(), false);
+
+		folderAPI.renameFolder(folder,reservedName,user,false);
+	}
+
+	@Test(expected = DotDataException.class)
+	@UseDataProvider("reservedFolderNames")
+	public void testCreateFolders_BlacklistedName_ShouldFail(final String reservedName)
+			throws DotDataException, DotSecurityException {
+		final String foldersString = "/testFolders/" + reservedName;
+		folderAPI.createFolders(foldersString,host,user,false);
 	}
 
 }

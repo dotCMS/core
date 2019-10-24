@@ -67,8 +67,19 @@ public class LazyUserAPIWrapper implements UserAPI {
     }
 
     @Override
+    public List<User> getUsersByName(String filter, List<Role> roles, int start, int limit)
+            throws DotDataException {
+        return getUserAPI().getUsersByName(filter, roles, start, limit);
+    }
+
+    @Override
     public long getCountUsersByName(String filter) throws DotDataException {
         return this.getUserAPI().getCountUsersByName(filter);
+    }
+
+    @Override
+    public long getCountUsersByName(String filter, List<Role> roles) throws DotDataException {
+        return getUserAPI().getCountUsersByName(filter, roles);
     }
 
     @Override

@@ -1,6 +1,8 @@
 package com.dotcms.rest.exception.mapper;
 
 import javax.ws.rs.core.Response;
+
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 
 /**
@@ -12,7 +14,8 @@ public abstract class DotForbiddenExceptionMapper<T extends Throwable> extends D
 
     @Override
     public Response toResponse(final T exception) {
-        SecurityLogger.logInfo(DotSecurityExceptionMapper.class, exception.getMessage());
+        SecurityLogger.logInfo(this.getClass(), exception.getMessage());
+        Logger.error(this.getClass(), exception);
 
         return ExceptionMapperUtil.createResponse(exception, this.getErrorKey(), this.getErrorStatus());
     }

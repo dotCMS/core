@@ -22,10 +22,9 @@
 
 package com.liferay.portal.ejb;
 
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 import com.liferay.portal.NoSuchUserTrackerPathException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.util.HibernateUtil;
 import com.liferay.util.dao.hibernate.OrderByComparator;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -49,7 +48,6 @@ public class UserTrackerPathPersistence extends BasePersistence {
 		return new com.liferay.portal.model.UserTrackerPath(userTrackerPathId);
 	}
 
-	@WrapInTransaction
 	protected com.liferay.portal.model.UserTrackerPath remove(
 		String userTrackerPathId)
 		throws NoSuchUserTrackerPathException, SystemException {
@@ -75,9 +73,11 @@ public class UserTrackerPathPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@WrapInTransaction
 	protected com.liferay.portal.model.UserTrackerPath update(
 		com.liferay.portal.model.UserTrackerPath userTrackerPath)
 		throws SystemException {
@@ -127,9 +127,11 @@ public class UserTrackerPathPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected com.liferay.portal.model.UserTrackerPath findByPrimaryKey(
 		String userTrackerPathId)
 		throws NoSuchUserTrackerPathException, SystemException {
@@ -155,9 +157,11 @@ public class UserTrackerPathPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected List findByUserTrackerId(String userTrackerId)
 		throws SystemException {
 		Session session = null;
@@ -188,6 +192,9 @@ public class UserTrackerPathPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
 	protected List findByUserTrackerId(String userTrackerId, int begin, int end)
@@ -195,7 +202,6 @@ public class UserTrackerPathPersistence extends BasePersistence {
 		return findByUserTrackerId(userTrackerId, begin, end, null);
 	}
 
-	@CloseDBIfOpened
 	protected List findByUserTrackerId(String userTrackerId, int begin,
 		int end, OrderByComparator obc) throws SystemException {
 		Session session = null;
@@ -251,6 +257,9 @@ public class UserTrackerPathPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
 	protected com.liferay.portal.model.UserTrackerPath findByUserTrackerId_First(
@@ -280,7 +289,6 @@ public class UserTrackerPathPersistence extends BasePersistence {
 		}
 	}
 
-	@CloseDBIfOpened
 	protected com.liferay.portal.model.UserTrackerPath[] findByUserTrackerId_PrevAndNext(
 		String userTrackerPathId, String userTrackerId, OrderByComparator obc)
 		throws NoSuchUserTrackerPathException, SystemException {
@@ -365,9 +373,11 @@ public class UserTrackerPathPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected List findAll() throws SystemException {
 		Session session = null;
 
@@ -391,9 +401,11 @@ public class UserTrackerPathPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@WrapInTransaction
 	protected void removeByUserTrackerId(String userTrackerId)
 		throws SystemException {
 		Session session = null;
@@ -424,9 +436,11 @@ public class UserTrackerPathPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected int countByUserTrackerId(String userTrackerId)
 		throws SystemException {
 		Session session = null;
@@ -459,6 +473,9 @@ public class UserTrackerPathPersistence extends BasePersistence {
 		}
 		catch (HibernateException he) {
 			throw new SystemException(he);
+		}
+		finally {
+			HibernateUtil.closeSession(session);
 		}
 	}
 }

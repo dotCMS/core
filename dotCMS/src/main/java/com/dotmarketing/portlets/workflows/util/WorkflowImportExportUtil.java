@@ -2,7 +2,9 @@ package com.dotmarketing.portlets.workflows.util;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
@@ -10,18 +12,18 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
-
 import io.vavr.Tuple2;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -35,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 
 public class WorkflowImportExportUtil {
 	public static final String ACTION_ID = "actionId";
@@ -130,19 +131,24 @@ public class WorkflowImportExportUtil {
 
 			for (final WorkflowScheme scheme : importer.getSchemes()) {
 
+				Logger.info(this,"Importing scheme: " + scheme);
 				workflowAPI.saveScheme(scheme, user);
 			}
 
 			List<Tuple2<String, String>> stepsWithActions = new ArrayList<>();
 			for (final WorkflowStep step : importer.getSteps()) {
-			  if(step.getEscalationAction()!=null) {
-			    stepsWithActions.add(new Tuple2<String, String>(step.getId(), step.getEscalationAction()));
-			    step.setEscalationAction(null);
-			  }
+
+				Logger.info(this, "Importing step: " + step);
+			    if(step.getEscalationAction()!=null) {
+			        stepsWithActions.add(new Tuple2<String, String>(step.getId(), step.getEscalationAction()));
+			        step.setEscalationAction(null);
+			    }
 				workflowAPI.saveStep(step, user);
 			}
 
 			for (final WorkflowAction action : importer.getActions()) {
+
+				Logger.info(this, "Importing action: " + action);
 				workflowAPI.saveAction(action, null, user);
 			}
 			
@@ -156,36 +162,72 @@ public class WorkflowImportExportUtil {
 			
 			for(final Map<String, String> actionStepMap : importer.getActionSteps()){
 
+				Logger.info(this, "Importing actionStepMap: " + actionStepMap);
 				workflowAPI.saveAction(actionStepMap.get(ACTION_ID),
 						actionStepMap.get(STEP_ID),
 						user,
 						ConversionUtils.toInt(actionStepMap.get(ACTION_ORDER), 0));
 			}
 
-			for (final WorkflowActionClass actionClass : importer.getActionClasses()) {
+ 			for (final WorkflowActionClass actionClass : importer.getActionClasses()) {
+
+				Logger.info(this, "Importing actionClass: " + actionClass);
 				workflowAPI.saveActionClass(actionClass, user);
 			}
 
-			for(final Map<String, String> map : importer.getWorkflowStructures()) {
+			if (UtilMethods.isSet(importer.getWorkflowStructures())) {
+				for (final Map<String, String> map : importer.getWorkflowStructures()) {
 
-				DotConnect dc = new DotConnect();
-				dc.setSQL("delete from workflow_scheme_x_structure where id=?");
-				dc.addParam(map.get("id"));
-				dc.loadResult();
-				dc.setSQL("insert into workflow_scheme_x_structure (id, scheme_id, structure_id) values (?, ?, ?)");
-				dc.addParam(map.get("id"));
-				dc.addParam(map.get("scheme_id"));
-				dc.addParam(map.get("structure_id"));
-				dc.loadResult();
+					Logger.info(this, "Importing WorkflowStructures: " + map);
+					DotConnect dc = new DotConnect();
+					dc.setSQL("delete from workflow_scheme_x_structure where id=?");
+					dc.addParam(map.get("id"));
+					dc.loadResult();
+					dc.setSQL(
+							"insert into workflow_scheme_x_structure (id, scheme_id, structure_id) values (?, ?, ?)");
+					dc.addParam(map.get("id"));
+					dc.addParam(map.get("scheme_id"));
+					dc.addParam(map.get("structure_id"));
+					dc.loadResult();
+				}
 			}
 
+			Logger.info(this, "Importing ActionClassParams: " + importer.getActionClassParams());
 			workflowAPI.saveWorkflowActionClassParameters(importer.getActionClassParams(), user);
 
+			this.saveSchemeSystemActionMappings      (workflowAPI, importer.getSchemeSystemActionWorkflowActionMappings());
+			this.saveContentTypeSystemActionMappings (workflowAPI, importer.getContentTpeSystemActionWorkflowActionMappings());
 		} catch (Exception e) {// Catch exception if any
 			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);
 			throw new DotDataException(e);
 		}
 	}
+
+	private void saveSchemeSystemActionMappings(
+			final WorkflowAPI workflowAPI,
+			final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings) throws DotDataException {
+
+		if (UtilMethods.isSet(systemActionWorkflowActionMappings)) {
+
+		    for (final SystemActionWorkflowActionMapping mapping : systemActionWorkflowActionMappings) {
+                workflowAPI.mapSystemActionToWorkflowActionForWorkflowScheme(mapping.getSystemAction(),
+                        mapping.getWorkflowAction(), (WorkflowScheme) mapping.getOwner());
+            }
+		}
+	}
+
+    private void saveContentTypeSystemActionMappings(
+            final WorkflowAPI workflowAPI,
+            final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings) throws DotDataException {
+
+        if (UtilMethods.isSet(systemActionWorkflowActionMappings)) {
+
+            for (final SystemActionWorkflowActionMapping mapping : systemActionWorkflowActionMappings) {
+                workflowAPI.mapSystemActionToWorkflowActionForContentType(mapping.getSystemAction(),
+                        mapping.getWorkflowAction(), (ContentType) mapping.getOwner());
+            }
+        }
+    }
 
 	public WorkflowSchemeImportExportObject buildExportObject() throws DotDataException, DotSecurityException {
 
@@ -195,25 +237,30 @@ public class WorkflowImportExportUtil {
 		return buildExportObject(schemes);
 	}
 
+	@CloseDBIfOpened
 	public WorkflowSchemeImportExportObject buildExportObject(final List<WorkflowScheme> schemes)
 			throws DotDataException, DotSecurityException {
 
 		final WorkflowAPI workflowAPI  = APILocator.getWorkflowAPI();
 		final List<WorkflowStep> steps = new ArrayList<WorkflowStep>();
 		final Set<String> workflowIds  = schemes.stream().map(scheme -> scheme.getId()).collect(Collectors.toSet());
+		final List<SystemActionWorkflowActionMapping> schemeSystemActionWorkflowActionMappings = new ArrayList<>();
+		final List<SystemActionWorkflowActionMapping> contentTypeSystemActionWorkflowActionMappings = new ArrayList<>();
 		final List<WorkflowAction> actions 			  = new ArrayList<WorkflowAction>();
 		final List<WorkflowActionClass> actionClasses = new ArrayList<WorkflowActionClass>();
 		final List<WorkflowActionClassParameter> actionClassParams = new ArrayList<WorkflowActionClassParameter>();
 		final List<Map<String, String>> actionStepsListMap 		   = new ArrayList<>();
 
 
-		for (WorkflowScheme scheme : schemes) {
+		for (final WorkflowScheme scheme : schemes) {
 
 			// scheme actions
 			this.exportSchemeActions(workflowAPI, actions, actionClasses, actionClassParams, scheme);
 
 			// steps actions
 			this.exportStepActions(workflowAPI, actionStepsListMap, steps, scheme);
+			this.exportSchemeSystemWorkflowActionMappings(workflowAPI, schemeSystemActionWorkflowActionMappings, scheme);
+			this.exportSchemeContentTypeSystemWorkflowActionMappings(workflowAPI, contentTypeSystemActionWorkflowActionMappings, scheme);
 		}
 
 		DotConnect dc = new DotConnect();
@@ -231,7 +278,48 @@ public class WorkflowImportExportUtil {
 				.filter(workflowStructure -> workflowIds.contains(workflowStructure.get("scheme_id").toString()))
 				.collect(Collectors.toList()));
 		export.setActionSteps(actionStepsListMap);
+		export.setSchemeSystemActionWorkflowActionMappings(schemeSystemActionWorkflowActionMappings);
+		export.setContentTpeSystemActionWorkflowActionMappings(contentTypeSystemActionWorkflowActionMappings);
 		return export;
+	}
+
+	private void exportSchemeContentTypeSystemWorkflowActionMappings(final WorkflowAPI workflowAPI,
+			final List<SystemActionWorkflowActionMapping> contentTypeSystemActionWorkflowActionMappings,
+			final WorkflowScheme scheme) throws DotDataException, DotSecurityException {
+
+		final List<ContentType> contentTypes = workflowAPI.findContentTypesForScheme(scheme);
+		if (UtilMethods.isSet(contentTypes)) {
+
+			for (final ContentType contentType : contentTypes) {
+
+				final List<SystemActionWorkflowActionMapping> mappings =
+						workflowAPI.findSystemActionsByContentType(contentType, APILocator.systemUser());
+				if (UtilMethods.isSet(mappings)) {
+
+					for (final SystemActionWorkflowActionMapping mapping : mappings) {
+
+						if (UtilMethods.isSet(mapping) &&
+								UtilMethods.isSet(mapping.getWorkflowAction()) &&
+								scheme.getId().equals(mapping.getWorkflowAction().getSchemeId())) { // if the action associated to the content type as default action belongs to the scheme, add it
+
+							contentTypeSystemActionWorkflowActionMappings.add(mapping);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private void exportSchemeSystemWorkflowActionMappings(final WorkflowAPI workflowAPI,
+			final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappings,
+			final WorkflowScheme scheme) throws DotDataException, DotSecurityException {
+
+		final List<SystemActionWorkflowActionMapping> systemActionWorkflowActionMappingsForScheme =
+					workflowAPI.findSystemActionsByScheme(scheme, APILocator.systemUser());
+
+		if (UtilMethods.isSet(systemActionWorkflowActionMappingsForScheme)) {
+			systemActionWorkflowActionMappings.addAll(systemActionWorkflowActionMappingsForScheme);
+		}
 	}
 
 	private void exportStepActions(final WorkflowAPI wapi,
@@ -261,7 +349,6 @@ public class WorkflowImportExportUtil {
 		steps.addAll(mySteps);
 	}
 
-	@NotNull
 	private void exportSchemeActions(final WorkflowAPI wapi,
 													 final List<WorkflowAction> actions,
 													 final List<WorkflowActionClass> actionClasses,

@@ -20,16 +20,16 @@ import com.dotmarketing.util.Logger;
 
 public class CalendarReminderThread implements Job {
 	public CalendarReminderThread() {
-		
+
 	}
-	
+
 	/**
 	  * Thread main method to start the calendar reminder process
 	  */
 	@SuppressWarnings("unchecked")
 	public void run() {
 		Logger.debug(this, "Running Calendar Reminder Job");
-		
+
 		try {
 		    HibernateUtil.startTransaction();
 			CalendarReminderAPI CRAI = APILocator.getCalendarReminderAPI();
@@ -50,12 +50,12 @@ public class CalendarReminderThread implements Job {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Thread#destroy()
 	 */
 	public void destroy() {
 	}
-	
+
 	/**
 	  * Job main method to start Calendar Reminder process, this method call run()
 	  * @param		context JobExecutionContext.

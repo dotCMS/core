@@ -3,6 +3,11 @@ package com.dotcms.rest.api.v1.user;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessage;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -29,11 +34,15 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.liferay.portal.model.UserModel;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
 import java.io.Serializable;
@@ -41,6 +50,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.apache.commons.lang.StringUtils;
@@ -208,6 +219,7 @@ public class UserResourceHelper implements Serializable {
 		checkLoginAsRole(currentUser);
 		final User systemUser = this.userAPI.getSystemUser();
 		final User loginAsUser = this.userAPI.loadUserById(loginAsUserId, systemUser, false);
+		checkHasConsole(currentUser, loginAsUser);
 		final List<Layout> layouts = this.layoutAPI.loadLayoutsForUser(loginAsUser);
 		if ((layouts == null) || (layouts.size() == 0) || !UtilMethods.isSet(layouts.get(0).getId())) {
 			throw new DotDataException("User [" + loginAsUser.getUserId() + "] does not have any layouts.",
@@ -254,6 +266,33 @@ public class UserResourceHelper implements Serializable {
 			throw new DotDataException(
 					"Current user [" + user.getUserId() + "] does not have the proper 'Login As' role.",
 					"loginas.error.missingloginasrole");
+		}
+	}
+
+	/**
+	 * Notifies of an invalid access to the back-end.
+	 */
+	private void checkHasConsole(final User currentUser, final User loginAsUser) throws DotDataException{
+		if (!loginAsUser.hasConsoleAccess()) {
+			final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
+			String message;
+			try {
+				message = LanguageUtil.format(APILocator.systemUser().getLocale(),
+						"loginas.error.invalidloginasHasConsole", loginAsUser.getEmailAddress());
+			} catch (LanguageException e) {
+				Logger.error(UserResourceHelper.class, e);
+				message = String.format("User %s does not have console access the dotCMS backend.",
+						loginAsUser.getEmailAddress());
+			}
+			final SystemMessage systemMessage =
+					systemMessageBuilder.setMessage(message)
+							.setLife(DateUtil.FIVE_SECOND_MILLIS)
+							.setType(MessageType.SIMPLE_MESSAGE)
+							.setSeverity(MessageSeverity.WARNING).create();
+
+			SystemMessageEventUtil.getInstance().pushMessage(systemMessage, Stream.of(currentUser).map(
+					UserModel::getUserId).collect(Collectors.toList()));
+			throw new DotDataException(message);
 		}
 	}
 

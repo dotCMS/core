@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
@@ -30,7 +31,7 @@ import static org.mockito.Mockito.when;
 /**
  * Test of {@link ContainerWebAPI}
  */
-public class ContainerWebAPITest {
+public class ContainerWebAPITest extends UnitTestBase {
 
     private PermissionAPI permissionAPI;
     private ContainerAPI containerAPI;

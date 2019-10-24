@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,9 +41,9 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
      * @return
      *
      */
-    private long getTotalRecords(final String nameFilter) {
+    private long getTotalRecords(final String nameFilter, final List<Role> roles) {
         try {
-            return userAPI.getCountUsersByName(nameFilter);
+            return userAPI.getCountUsersByName(nameFilter, roles);
         } catch (DotDataException e) {
             throw new DotRuntimeException(e);
         }
@@ -66,17 +67,18 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
      */
     @Override
     public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, final int limit, final int offset) {
-
         try {
+            final List<Role> roles =
+            Collections.singletonList(roleAPI.loadBackEndUserRole());
             final List<String> rolesId = collectAdminRolesIfAny();
-            final List<User> users = userAPI.getUsersByName(filter, offset, limit, user, false);
+            final List<User> users = userAPI.getUsersByName(filter, roles ,offset, limit);
             final List<Map<String, Object>> usersMap = users.stream()
                     .map(userItem -> getUserObjectMap(rolesId, userItem))
                     .collect(Collectors.toList());
 
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
             result.addAll(usersMap);
-            result.setTotalResults(this.getTotalRecords(filter));
+            result.setTotalResults(this.getTotalRecords(filter, roles));
             return result;
         } catch (DotDataException e) {
             throw new DotRuntimeException(e);

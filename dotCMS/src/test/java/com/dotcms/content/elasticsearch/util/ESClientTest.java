@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.util;
 
+import com.dotcms.UnitTestBase;
 import com.dotcms.cluster.bean.Server;
 import com.liferay.util.StringPool;
 
@@ -7,7 +8,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class ESClientTest {
+public class ESClientTest extends UnitTestBase {
 
     @Test
     public void testgetServerAddress_ValidIpAndValidPort_ShouldGetAddressSemiColonPort() {

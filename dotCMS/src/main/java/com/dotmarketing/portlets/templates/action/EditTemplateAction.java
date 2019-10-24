@@ -86,7 +86,7 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		String cmd = req.getParameter(Constants.CMD);
 		String referer = req.getParameter("referer");
-		
+
 
 		//wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
@@ -107,7 +107,7 @@ public class EditTemplateAction extends DotPortletAction implements
 		HibernateUtil.startTransaction();
 
 		User user = _getUser(req);
-		
+
 		// Old template used to compare against edited version
 		Template oldTemplate = new Template();
 		try {

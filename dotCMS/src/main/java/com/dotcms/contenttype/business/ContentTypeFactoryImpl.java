@@ -239,16 +239,17 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   public String suggestVelocityVar(final String tryVar) throws DotDataException {
 
     DotConnect dc = new DotConnect();
-    String var = VelocityUtil.convertToVelocityVariable(tryVar, true);
+    final String suggestedVarName = VelocityUtil.convertToVelocityVariable(tryVar, true);
+    String varName = suggestedVarName;
     for (int i = 1; i < 100000; i++) {
       dc.setSQL(this.contentTypeSql.SELECT_COUNT_VAR);
-      dc.addParam(var);
+      dc.addParam(varName.toLowerCase());
       if (dc.getInt("test") == 0) {
-        return var;
+        return varName;
       }
-      var = var + i;
+      varName = suggestedVarName + i;
     }
-    throw new DotDataException("Unable to suggest a variable name.  Got to:" + var);
+    throw new DotDataException("Unable to suggest a variable name.  Got to:" + varName);
 
   }
 

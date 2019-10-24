@@ -63,7 +63,7 @@ public abstract class ContentTypeSql {
         + " %s" //if we have a condition
         + " and structuretype>=? and structuretype<= ? ";
 
-	public static String SELECT_COUNT_VAR="select count(*) as test from structure where velocity_var_name like ?";
+	public static String SELECT_COUNT_VAR="select count(*) as test from structure where lower(velocity_var_name) like ?";
 
 	public static String UPDATE_ALL_DEFAULT = "update structure set default_structure=?";
 

@@ -51,7 +51,7 @@ public class FreeServerFromClusterJob implements StatefulJob {
 
     /**
      * Removes the specified license serial number from a specific server.
-     * @throws Exception 
+     * @throws Exception
      *
      */
     private boolean freeLicense(final String inactiveServerID)

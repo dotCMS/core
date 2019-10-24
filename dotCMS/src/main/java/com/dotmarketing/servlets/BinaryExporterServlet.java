@@ -69,6 +69,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 
 import eu.bitwalker.useragentutils.Browser;
+import eu.bitwalker.useragentutils.OperatingSystem;
 import eu.bitwalker.useragentutils.UserAgent;
 
 /**
@@ -376,9 +377,11 @@ public class BinaryExporterServlet extends HttpServlet {
       
       final String[] val = params.get("filter");
       if(val!=null && val[0].contains("Quality")) {
-        if(Browser.SAFARI == new UserAgent(req.getHeader("user-agent")).getBrowser()){
+      	final UserAgent userAgent = new UserAgent(req.getHeader("user-agent"));
+        if(userAgent.getBrowser() == Browser.SAFARI || userAgent.getOperatingSystem().getGroup() == OperatingSystem.IOS){
           params.put("filter", new String[] {val[0].replace("Quality","Jpeg")});
           params.put("jpeg_q", params.get("quality_q"));
+          params.put("jpeg_p",  new String[] {"1"});
         }else {
           params.put("filter", new String[] {val[0].replace("Quality","WebP")});
           params.put("webp_q", params.get("quality_q"));

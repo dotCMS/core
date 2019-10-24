@@ -14,10 +14,12 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.workflow.form.FireActionForm;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.RelationshipAPI;
@@ -26,7 +28,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
@@ -37,6 +38,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
@@ -491,15 +493,21 @@ public class ContentResource {
         try {
 
             if (idPassed = UtilMethods.isSet(id)) {
-                Optional.ofNullable(
-                        this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
-                                .findContentletByIdentifier(id, live, language, user, respectFrontendRoles)))
-                        .ifPresent(contentlets::add);
+
+                final Contentlet contentlet = APILocator.getContentletAPI()
+                        .findContentletByIdentifier(id, live, language, user, respectFrontendRoles);
+
+                if (contentlet != null){
+                    contentlets.add(this.contentHelper.hydrateContentlet(contentlet));
+                }
+
             } else if (inodePassed = UtilMethods.isSet(inode)) {
-                Optional.ofNullable(
-                        this.contentHelper.hydrateContentlet(APILocator.getContentletAPI()
-                                .find(inode, user, respectFrontendRoles)))
-                        .ifPresent(contentlets::add);
+
+                final Contentlet contentlet = APILocator.getContentletAPI()
+                        .find(inode, user, respectFrontendRoles);
+                if (contentlet != null){
+                    contentlets.add(this.contentHelper.hydrateContentlet(contentlet));
+                }
             } else if (UtilMethods.isSet(related)){
                 //Related identifier are expected this way: "ContentTypeVarName.FieldVarName:contentletIdentifier"
                 //In case of multiple relationships, they must be sent as a comma separated list
@@ -507,13 +515,13 @@ public class ContentResource {
                 int i = 0;
                 for(String relationshipValue: related.split(",")){
                     if (i == 0) {
-                        contentlets.addAll(getPullRelated(user, limit, contentlets, orderBy, tmDate,
-                                processQuery(query), relationshipValue));
+                        contentlets.addAll(getPullRelated(user, limit, orderBy, tmDate,
+                                processQuery(query), relationshipValue, language, live));
                     } else {
                         //filter the intersection in case multiple relationship
                         contentlets = contentlets.stream()
-                                .filter(getPullRelated(user, limit, contentlets, orderBy, tmDate,
-                                        processQuery(query), relationshipValue)::contains).collect(
+                                .filter(getPullRelated(user, limit, orderBy, tmDate,
+                                        processQuery(query), relationshipValue, language, live)::contains).collect(
                                         Collectors.toList());
                     }
 
@@ -530,11 +538,11 @@ public class ContentResource {
             return ExceptionMapperUtil.createResponse(new DotStateException("No Permissions"), Response.Status.FORBIDDEN);
         } catch (Exception e) {
             if (idPassed) {
-                Logger.warn(this, "Can't find Content with Identifier: " + id);
+                Logger.warnAndDebug(this.getClass(), "Can't find Content with Identifier: " + id, e);
             } else if (queryPassed || UtilMethods.isSet(related)) {
                 Logger.warn(this, "Error searching Content : " + e.getMessage());
             } else if (inodePassed) {
-                Logger.warn(this, "Can't find Content with Inode: " + inode);
+                Logger.warnAndDebug(this.getClass(), "Can't find Content with Inode: " + inode, e);
             }
             status = Optional.of(Status.INTERNAL_SERVER_ERROR);
         }
@@ -542,9 +550,11 @@ public class ContentResource {
         /* Converting the Contentlet list to XML or JSON */
         try {
             if ("xml".equals(type)) {
-                result = getXML(contentlets, request, response, render, user, depth, respectFrontendRoles);
+                result = getXML(contentlets, request, response, render, user, depth,
+                        respectFrontendRoles, language, live);
             } else {
-                result = getJSON(contentlets, request, response, render, user, depth, respectFrontendRoles);
+                result = getJSON(contentlets, request, response, render, user, depth,
+                        respectFrontendRoles, language, live);
             }
         } catch (Exception e) {
             Logger.warn(this, "Error converting result to XML/JSON");
@@ -554,21 +564,22 @@ public class ContentResource {
     }
 
     /**
-     *
+     * Method used to obtain related content that matches a given criteria (lucene query and additional params)
      * @param user
      * @param limit
-     * @param contentlets
      * @param orderBy
      * @param tmDate
      * @param luceneQuery
      * @param relationshipValue
+     * @param language
+     * @param live
      * @return
      * @throws DotSecurityException
      * @throws DotDataException
      */
     @NotNull
-    private List<Contentlet> getPullRelated(User user, int limit, List<Contentlet> contentlets,
-            String orderBy, String tmDate, String luceneQuery, String relationshipValue)
+    private List<Contentlet> getPullRelated(User user, int limit,
+            String orderBy, String tmDate, String luceneQuery, String relationshipValue, long language, boolean live)
             throws DotSecurityException, DotDataException {
         final String contentTypeVar = relationshipValue.split(":")[0].split("\\.")[0];
         final String fieldVar = relationshipValue.split(":")[0].split("\\.")[1];
@@ -583,7 +594,7 @@ public class ContentResource {
         List<Contentlet> pullRelated = ContentUtils
                 .pullRelated(relationship.getRelationTypeValue(), relatedIdentifier,
                         luceneQuery, relationship.hasParents(), limit, orderBy, user,
-                        tmDate);
+                        tmDate, language, live);
 
         return pullRelated;
     }
@@ -636,6 +647,8 @@ public class ContentResource {
      * @param user
      * @param depth
      * @param respectFrontendRoles
+     * @param language
+     * @param live
      * @return
      * @throws DotDataException
      * @throws IOException
@@ -643,7 +656,7 @@ public class ContentResource {
      */
     private String getXML(final List<Contentlet> cons, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user,
-            final int depth, final boolean respectFrontendRoles){
+            final int depth, final boolean respectFrontendRoles, long language, boolean live){
 
         final StringBuilder sb = new StringBuilder();
         final XStream xstream = new XStream(new DomDriver());
@@ -658,7 +671,7 @@ public class ContentResource {
                 if (depth != -1){
                     sb.append(xstream.toXML(
                             addRelationshipsToXML(request, response, render, user, depth, respectFrontendRoles, contentlet,
-                                    getContentXML(contentlet, request, response, render, user), null)));
+                                    getContentXML(contentlet, request, response, render, user), null, language, live)));
                 } else{
                     sb.append(xstream.toXML(
                                     getContentXML(contentlet, request, response, render, user)));
@@ -672,7 +685,18 @@ public class ContentResource {
         return sb.toString();
     }
 
-
+    /**
+     *
+     * @param contentlet
+     * @param request
+     * @param response
+     * @param render
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
     private Map<String, Object> getContentXML(final Contentlet contentlet, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user)
             throws DotDataException, IOException, DotSecurityException {
@@ -711,6 +735,8 @@ public class ContentResource {
      * @param contentlet
      * @param objectMap
      * @param addedRelationships
+     * @param language
+     * @param live
      * @return
      * @throws DotDataException
      * @throws JSONException
@@ -719,18 +745,19 @@ public class ContentResource {
      */
     private Map<String, Object> addRelationshipsToXML(final HttpServletRequest request,
             final HttpServletResponse response,
-            final String render, final User user, final int depth, final boolean respectFrontendRoles,
-            final Contentlet contentlet, final Map<String, Object> objectMap, Set<Relationship> addedRelationships)
+            final String render, final User user, final int depth,
+            final boolean respectFrontendRoles,
+            final Contentlet contentlet, final Map<String, Object> objectMap,
+            Set<Relationship> addedRelationships, long language, boolean live)
             throws DotDataException, IOException, DotSecurityException {
 
         Relationship relationship;
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
         //filter relationships fields
-        final List<com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType()
-                .fields()
+        final Map<String, com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType().fields()
                 .stream().filter(field -> field instanceof RelationshipField).collect(
-                        Collectors.toList());
+                        Collectors.toMap(field -> field.variable(), field -> field));
 
         final ContentletRelationships contentletRelationships = new ContentletRelationships(
                 contentlet);
@@ -739,7 +766,7 @@ public class ContentResource {
             addedRelationships = new HashSet<>();
         }
 
-        for (com.dotcms.contenttype.model.field.Field field : fields) {
+        for (com.dotcms.contenttype.model.field.Field field : fields.values()) {
 
             try{
                 relationship = relationshipAPI.getRelationshipFromField(field, user);
@@ -748,52 +775,117 @@ public class ContentResource {
                 continue;
             }
 
-            final List records = new ArrayList();
-
             if (addedRelationships.contains(relationship)) {
                 continue;
             }
             addedRelationships.add(relationship);
-            final ContentletRelationships.ContentletRelationshipRecords relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
-                    relationship,
-                    relationshipAPI.isParent(relationship, contentlet.getContentType()));
 
-            for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles)) {
-                switch (depth) {
-                    //returns a list of identifiers
-                    case 0:
-                        records.add(relatedContent.getIdentifier());
-                        break;
+            final boolean isParent =
+                    relationshipAPI.sameParentAndChild(relationship) ? field.variable()
+                            .equalsIgnoreCase(relationship.getChildRelationName())
+                            : relationshipAPI.isParent(relationship, contentlet.getContentType());
 
-                    //returns a list of related content objects
-                    case 1:
-                        records.add(
-                                getContentXML(relatedContent, request, response, render, user));
-                        break;
+            ContentletRelationships.ContentletRelationshipRecords relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
+                    relationship, isParent);
 
-                    //returns a list of related content identifiers for each of the related content
-                    case 2:
-                        records.add(addRelationshipsToXML(request, response, render, user, 0,
-                                respectFrontendRoles, relatedContent,
-                                getContentXML(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
-                        break;
-
-                    //returns a list of hydrated related content for each of the related content
-                    case 3:
-                        records.add(addRelationshipsToXML(request, response, render, user, 1,
-                                respectFrontendRoles, relatedContent,
-                                getContentXML(relatedContent, request, response, render, user),
-                                new HashSet<>(addedRelationships)));
-                        break;
-                }
-            }
+            List records = addRelatedContentToXMLMap(request, response, render, user, depth, respectFrontendRoles,
+                    contentlet,
+                    addedRelationships, language, live, field, isParent);
 
             objectMap.put(field.variable(),
                     relationshipRecords.doesAllowOnlyOne() && records.size() > 0 ? records.get(0)
                             : records);
+
+            //For self-related fields, the other side of the relationship should be added if the other-side field exists
+            if (relationshipAPI.sameParentAndChild(relationship)){
+                com.dotcms.contenttype.model.field.Field otherSideField = null;
+                if (relationshipAPI.isParent(relationship, contentlet.getContentType())){
+                    if (fields.containsKey(relationship.getChildRelationName())){
+                        otherSideField = fields.get(relationship.getChildRelationName());
+                    }
+                } else{
+                    if (fields.containsKey(relationship.getParentRelationName())){
+                        otherSideField = fields.get(relationship.getParentRelationName());
+                    }
+                }
+
+                if (otherSideField != null){
+
+                    relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
+                            relationship, !isParent);
+
+                    records = addRelatedContentToXMLMap(request, response, render, user, depth, respectFrontendRoles,
+                            contentlet,
+                            addedRelationships, language, live, otherSideField, !isParent);
+
+                    objectMap.put(otherSideField.variable(),
+                            relationshipRecords.doesAllowOnlyOne() && records.size() > 0 ? records.get(0)
+                                    : records);
+                }
+            }
         }
         return objectMap;
+    }
+
+    /**
+     *
+     * @param request
+     * @param response
+     * @param render
+     * @param user
+     * @param depth
+     * @param respectFrontendRoles
+     * @param contentlet
+     * @param addedRelationships
+     * @param language
+     * @param live
+     * @param field
+     * @param isParent
+     * @throws DotDataException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
+    private List addRelatedContentToXMLMap(final HttpServletRequest request, final HttpServletResponse response,
+            final String render, final User user, final int depth, final boolean respectFrontendRoles,
+            final Contentlet contentlet, final Set<Relationship> addedRelationships, final long language,
+            final boolean live, final com.dotcms.contenttype.model.field.Field field,
+            final boolean isParent)
+            throws DotDataException, IOException, DotSecurityException {
+
+        final List records = new ArrayList();
+
+        for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles, isParent, language, live)) {
+            switch (depth) {
+                //returns a list of identifiers
+                case 0:
+                    records.add(relatedContent.getIdentifier());
+                    break;
+
+                //returns a list of related content objects
+                case 1:
+                    records.add(
+                            getContentXML(relatedContent, request, response, render, user));
+                    break;
+
+                //returns a list of related content identifiers for each of the related content
+                case 2:
+                    records.add(addRelationshipsToXML(request, response, render, user, 0,
+                            respectFrontendRoles, relatedContent,
+                            getContentXML(relatedContent, request, response, render, user),
+                            new HashSet<>(addedRelationships), language, live));
+                    break;
+
+                //returns a list of hydrated related content for each of the related content
+                case 3:
+                    records.add(addRelationshipsToXML(request, response, render, user, 1,
+                            respectFrontendRoles, relatedContent,
+                            getContentXML(relatedContent, request, response, render, user),
+                            new HashSet<>(addedRelationships), language, live));
+                    break;
+            }
+        }
+
+        return records;
     }
 
 
@@ -812,7 +904,12 @@ public class ContentResource {
         return sb.toString();
     }
 
-    private String getJSONContentIds(Contentlet con){
+    /**
+     *
+     * @param con
+     * @return
+     */
+    private String getJSONContentIds(final Contentlet con){
         JSONObject json = new JSONObject();
         try {
             json.put("inode", con.getInode());
@@ -833,13 +930,15 @@ public class ContentResource {
      * @param user
      * @param depth
      * @param respectFrontendRoles
+     * @param language
+     * @param live
      * @return
      * @throws IOException
      * @throws DotDataException
      */
     private String getJSON(final List<Contentlet> cons, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user,
-            final int depth, boolean respectFrontendRoles){
+            final int depth, final boolean respectFrontendRoles, final long language, final boolean live){
         final JSONObject json = new JSONObject();
         final JSONArray jsonCons = new JSONArray();
 
@@ -851,7 +950,7 @@ public class ContentResource {
                 //we need to add relationships fields
                 if (depth != -1){
                     addRelationshipsToJSON(request, response, render, user, depth,
-                            respectFrontendRoles, c, jo, null);
+                            respectFrontendRoles, c, jo, null, language, live);
                 }
             } catch (Exception e) {
                 Logger.warn(this.getClass(), "unable to get JSON contentlet " + c.getIdentifier());
@@ -879,6 +978,8 @@ public class ContentResource {
      * @param contentlet
      * @param jsonObject
      * @param addedRelationships
+     * @param language
+     * @param live
      * @return
      * @throws DotDataException
      * @throws JSONException
@@ -887,9 +988,11 @@ public class ContentResource {
      */
     public static JSONObject addRelationshipsToJSON(final HttpServletRequest request,
             final HttpServletResponse response,
-            final String render, final User user, final int depth, final boolean respectFrontendRoles,
+            final String render, final User user, final int depth,
+            final boolean respectFrontendRoles,
             final Contentlet contentlet,
-            final JSONObject jsonObject, Set<Relationship> addedRelationships)
+            final JSONObject jsonObject, Set<Relationship> addedRelationships, final long language,
+            final boolean live)
             throws DotDataException, JSONException, IOException, DotSecurityException {
 
         Relationship relationship;
@@ -897,17 +1000,15 @@ public class ContentResource {
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
 
         //filter relationships fields
-        final List<com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType().fields()
+        final Map<String, com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType().fields()
                 .stream().filter(field -> field instanceof RelationshipField).collect(
-                        Collectors.toList());
-
-        final ContentletRelationships contentletRelationships = new ContentletRelationships(contentlet);
+                        Collectors.toMap(field -> field.variable(), field -> field));
 
         if (addedRelationships == null){
             addedRelationships = new HashSet<>();
         }
 
-        for (com.dotcms.contenttype.model.field.Field field:fields) {
+        for (com.dotcms.contenttype.model.field.Field field:fields.values()) {
 
             try {
                 relationship = relationshipAPI.getRelationshipFromField(field, user);
@@ -921,52 +1022,120 @@ public class ContentResource {
             }
             addedRelationships.add(relationship);
 
-            final ContentletRelationships.ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
-                    relationship,
-                    relationshipAPI.isParent(relationship, contentlet.getContentType()));
+            final boolean isParent =
+                    relationshipAPI.sameParentAndChild(relationship) ? field.variable()
+                            .equalsIgnoreCase(relationship.getChildRelationName())
+                            : relationshipAPI.isParent(relationship, contentlet.getContentType());
 
-            final JSONArray jsonArray = new JSONArray();
+            final ContentletRelationships contentletRelationships = new ContentletRelationships(
+                    contentlet);
+            ContentletRelationships.ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+                    relationship, isParent);
 
-            for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles)) {
-                switch (depth) {
-                    //returns a list of identifiers
-                    case 0:
-                        jsonArray.put(relatedContent.getIdentifier());
-                        break;
-
-                    //returns a list of related content objects
-                    case 1:
-                        jsonArray
-                                .put(contentletToJSON(relatedContent, request, response, render,
-                                        user));
-                        break;
-
-                    //returns a list of related content identifiers for each of the related content
-                    case 2:
-                        jsonArray.put(addRelationshipsToJSON(request, response, render, user, 0,
-                                respectFrontendRoles, relatedContent,
-                                contentletToJSON(relatedContent, request, response, render,
-                                        user),
-                                new HashSet<>(addedRelationships)));
-                        break;
-
-                    //returns a list of hydrated related content for each of the related content
-                    case 3:
-                        jsonArray.put(addRelationshipsToJSON(request, response, render, user, 1,
-                                respectFrontendRoles, relatedContent,
-                                contentletToJSON(relatedContent, request, response, render,
-                                        user),
-                                new HashSet<>(addedRelationships)));
-                        break;
-                }
-
-            }
+            JSONArray jsonArray = addRelatedContentToJsonArray(request, response, render, user, depth,
+                    respectFrontendRoles,
+                    contentlet, addedRelationships, language, live, field, isParent);
 
             jsonObject.put(field.variable(), getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
+
+            //For self-related fields, the other side of the relationship should be added if the other-side field exists
+            if (relationshipAPI.sameParentAndChild(relationship)){
+                com.dotcms.contenttype.model.field.Field otherSideField = null;
+                if (relationshipAPI.isParent(relationship, contentlet.getContentType())){
+                    if (fields.containsKey(relationship.getChildRelationName())){
+                        otherSideField = fields.get(relationship.getChildRelationName());
+                    }
+                } else{
+                    if (fields.containsKey(relationship.getParentRelationName())){
+                        otherSideField = fields.get(relationship.getParentRelationName());
+                    }
+                }
+
+                if (otherSideField != null){
+
+                    records = contentletRelationships.new ContentletRelationshipRecords(
+                            relationship, !isParent);
+                    jsonArray = addRelatedContentToJsonArray(request, response, render, user, depth,
+                            respectFrontendRoles,
+                            contentlet, addedRelationships, language, live, otherSideField, !isParent);
+
+                    jsonObject.put(otherSideField.variable(),
+                            getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
+                }
+            }
 
         }
 
         return jsonObject;
+    }
+
+    /**
+     *
+     * @param request
+     * @param response
+     * @param render
+     * @param user
+     * @param depth
+     * @param respectFrontendRoles
+     * @param contentlet
+     * @param addedRelationships
+     * @param language
+     * @param live
+     * @param field
+     * @param isParent
+     * @return
+     * @throws JSONException
+     * @throws IOException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private static JSONArray addRelatedContentToJsonArray(HttpServletRequest request,
+            HttpServletResponse response, String render, User user, int depth,
+            boolean respectFrontendRoles, Contentlet contentlet,
+            Set<Relationship> addedRelationships, long language, boolean live,
+            com.dotcms.contenttype.model.field.Field field, final boolean isParent)
+            throws JSONException, IOException, DotDataException, DotSecurityException {
+
+
+        final JSONArray jsonArray = new JSONArray();
+
+        for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles, isParent, language, live)) {
+            switch (depth) {
+                //returns a list of identifiers
+                case 0:
+                    jsonArray.put(relatedContent.getIdentifier());
+                    break;
+
+                //returns a list of related content objects
+                case 1:
+                    jsonArray
+                            .put(contentletToJSON(relatedContent, request, response, render,
+                                    user));
+                    break;
+
+                //returns a list of related content identifiers for each of the related content
+                case 2:
+                    jsonArray.put(addRelationshipsToJSON(request, response, render, user, 0,
+                            respectFrontendRoles, relatedContent,
+                            contentletToJSON(relatedContent, request, response, render,
+                                    user),
+                            new HashSet<>(addedRelationships), language, live));
+                    break;
+
+                //returns a list of hydrated related content for each of the related content
+                case 3:
+                    jsonArray.put(addRelationshipsToJSON(request, response, render, user, 1,
+                            respectFrontendRoles, relatedContent,
+                            contentletToJSON(relatedContent, request, response, render,
+                                    user),
+                            new HashSet<>(addedRelationships), language, live));
+                    break;
+            }
+
+        }
+
+        return jsonArray;
+
     }
 
     /**
@@ -1099,9 +1268,22 @@ public class ContentResource {
 
     }
 
+    /**
+     * This method has been deprecated in favor of the {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefaultMultipart(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FormDataMultiPart)}
+     * @param request
+     * @param response
+     * @param multipart
+     * @param params
+     * @deprecated 
+     * @see com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefaultMultipart(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FormDataMultiPart)
+     * @return
+     * @throws URISyntaxException
+     * @throws DotDataException
+     */
+    @Deprecated
     @PUT
     @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript", MediaType.TEXT_PLAIN})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response multipartPUT(@Context HttpServletRequest request,
             @Context HttpServletResponse response,
@@ -1110,6 +1292,19 @@ public class ContentResource {
         return multipartPUTandPOST(request, response, multipart, params, "PUT");
     }
 
+    /**
+     * This method has been deprecated in favor of the {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefaultMultipart(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FormDataMultiPart)}
+     * @param request
+     * @param response
+     * @param multipart
+     * @param params
+     * @deprecated
+     * @see com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefaultMultipart(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FormDataMultiPart)
+     * @return
+     * @throws URISyntaxException
+     * @throws DotDataException
+     */
+    @Deprecated
     @POST
     @Path("/{params:.*}")
     @Produces(MediaType.TEXT_PLAIN)
@@ -1272,20 +1467,43 @@ public class ContentResource {
         }
     }
 
+    /**
+     * This method has been deprecated in favor of {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
+     * @param request
+     * @param response
+     * @param params
+     * @deprecated
+     * @see  {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
+     * @return
+     * @throws URISyntaxException
+     */
     @PUT
     @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
             MediaType.APPLICATION_XML})
+    @Deprecated
     public Response singlePUT(@Context HttpServletRequest request,
             @Context HttpServletResponse response, @PathParam("params") String params)
             throws URISyntaxException {
         return singlePUTandPOST(request, response, params, "PUT");
     }
 
+    /**
+     * This method has been deprecated in favor of {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
+     * @param request
+     * @param response
+     * @param params
+     * @deprecated
+     * @see  {@link com.dotcms.rest.api.v1.workflow.WorkflowResource#fireActionDefault(HttpServletRequest, HttpServletResponse, String, String, long, SystemAction, FireActionForm)}
+     *
+     * @return
+     * @throws URISyntaxException
+     */
+    @Deprecated
     @POST
     @Path("/{params:.*}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
             MediaType.APPLICATION_XML})
     public Response singlePOST(@Context HttpServletRequest request,
@@ -1330,13 +1548,8 @@ public class ContentResource {
             responseBuilder.entity(e.getMessage());
             return responseBuilder.build();
         } catch (Exception e) {
-
             Logger.error(this.getClass(), "Error processing Stream", e);
-
-            Response.ResponseBuilder responseBuilder = Response
-                    .status(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
+            return ResponseUtil.mapExceptionResponse(e);
         }
 
         return saveContent(contentlet, init);
@@ -1351,16 +1564,16 @@ public class ContentResource {
 
         try {
 
+            HibernateUtil.startTransaction();
+
             // preparing categories
             List<Category> categories = MapToContentletPopulator.INSTANCE.getCategories
                     (contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
             // running a workflow action?
             final ContentWorkflowResult contentWorkflowResult = processWorkflowAction(contentlet, init, live);
-            final Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>) contentlet
+            final ContentletRelationships relationships = (ContentletRelationships) contentlet
                     .get(RELATIONSHIP_KEY);
             live = contentWorkflowResult.publish;
-
-            HibernateUtil.startTransaction();
 
             categories = UtilMethods.isSet(categories)?categories:null;
 
@@ -1369,7 +1582,7 @@ public class ContentResource {
 
                 contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
                 contentlet = APILocator.getContentletAPI()
-                        .checkin(contentlet, relationships, categories, init.getUser(), ALLOW_FRONT_END_SAVING);
+                        .checkin(contentlet, relationships, categories, null, init.getUser(), ALLOW_FRONT_END_SAVING);
                 if (live) {
                     APILocator.getContentletAPI()
                             .publish(contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
@@ -1380,34 +1593,15 @@ public class ContentResource {
                         new ContentletDependencies.Builder()
                         .respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
                         .modUser(init.getUser()).categories(categories)
-                        .relationships(MapToContentletPopulator.INSTANCE.getContentletRelationshipsFromMap(contentlet, relationships))
+                        .relationships(relationships)
                         .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
                         .build());
             }
 
             HibernateUtil.closeAndCommitTransaction();
             clean = true;
-        } catch (DotContentletStateException e) {
-
-            Logger.error(this.getClass(), "Error saving Contentlet" + e);
-
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_CONFLICT);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
-        } catch (IllegalArgumentException e) {
-
-            Logger.error(this.getClass(), "Error saving Contentlet" + e);
-
-            Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_CONFLICT);
-            responseBuilder.entity(e.getMessage());
-            return responseBuilder.build();
-        } catch (DotSecurityException e) {
-
-            Logger.error(this.getClass(), "Error saving Contentlet" + e);
-            throw new ForbiddenException(e);
         } catch (Exception e) {
-            Logger.warn(this, e.getMessage(), e);
-            return Response.serverError().build();
+            return ResponseUtil.mapExceptionResponse(e);
         } finally {
             try {
                 if (!clean) {

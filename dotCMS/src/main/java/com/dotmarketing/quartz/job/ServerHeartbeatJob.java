@@ -25,24 +25,24 @@ import org.quartz.JobExecutionException;
 public class ServerHeartbeatJob implements Job {
 
 
-	
-	
-	
+
+
+
 
 	public void execute(JobExecutionContext ctx) throws JobExecutionException {
 
 		try{
 
 			LicenseManager.getInstance().takeLicenseFromRepoIfNeeded();
-			
-			
-			
+
+
+
 
 			LicenseUtil.updateLicenseHeartbeat();
 
 			ClusterFactory.rewireClusterIfNeeded();
 			ClusterServerActionThread.createThread();
-			
+
 
 		} catch (Exception e) {
 
