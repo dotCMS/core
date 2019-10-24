@@ -4761,17 +4761,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             categories = new ArrayList<>();
         }
         
-        if(!fromContentlet.equals(toContentlet)) {
-            //Find categories which the user can't use.  A user cannot remove a category they cannot use
-            final List<Category> cats = categoryAPI.getParents(fromContentlet, APILocator.getUserAPI().getSystemUser(), true);
-            for (final Category category : cats) {
-                if(!categoryAPI.canUseCategory(category, user, false)){
-                    if(!categories.contains(category)){
-                        categoriesUserCannotRemove.add(category);
-                    }
+
+        //Find categories which the user can't use.  A user cannot remove a category they cannot use
+        final List<Category> cats = categoryAPI.getParents(fromContentlet, APILocator.getUserAPI().getSystemUser(), true);
+        for (final Category category : cats) {
+            if(!categoryAPI.canUseCategory(category, user, false)){
+                if(!categories.contains(category)){
+                    categoriesUserCannotRemove.add(category);
                 }
             }
         }
+        
         categories = permissionAPI.filterCollection(categories, PermissionAPI.PERMISSION_USE, respect, user);
         categories.addAll(categoriesUserCannotRemove);
 
