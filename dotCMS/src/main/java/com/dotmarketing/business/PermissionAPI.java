@@ -734,8 +734,10 @@ public interface PermissionAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-
-	boolean doesUserHaveInheriablePermissions(Permissionable parent, String type, int requiredPermissions, User user) throws DotDataException;
+	@Deprecated
+	default boolean doesUserHaveInheriablePermissions(Permissionable parent, String type, int requiredPermissions, User user) throws DotDataException{
+	    return false;
+	}
 
 
 	/**
