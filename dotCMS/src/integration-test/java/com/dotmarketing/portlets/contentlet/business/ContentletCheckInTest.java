@@ -17,6 +17,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
@@ -44,32 +45,71 @@ import org.junit.Test;
 public class ContentletCheckInTest extends ContentletBaseTest{
 
     
-    
-    
-    
-    
+   /**
+    * This tests to insure that an anonymous user with write permissions can check in content 
+    * @throws Exception
+    */
   @Test
   public void checkin_content_anonymously () throws Exception {
       Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
       ContentType contentType = createContentType("testingType");
       final String textFieldString = "title";
       createTextField(textFieldString,contentType.id());
+      
+      // give write permissions on the content type
       Permission permissionRead = new Permission( contentType.getPermissionId(), APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_READ );
       Permission permissionWrite = new Permission( contentType.getPermissionId(),  APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_EDIT );
-      Permission permissionPublish = new Permission( contentType.getPermissionId(),  APILocator.getRoleAPI().loadCMSAnonymousRole().getId(), PermissionAPI.PERMISSION_PUBLISH );
-    
-      // give write permissions
+
+      
       APILocator.getPermissionAPI().save( permissionRead, contentType, APILocator.systemUser(), false );
       APILocator.getPermissionAPI().save( permissionWrite, contentType, APILocator.systemUser(), false );
+
     
       Contentlet con = new ContentletDataGen(contentType.id()).nextWithSampleTextValues();
       Contentlet newCon = contentletAPI.checkin(con, null, true);
       assertTrue("we saved a contentlet anonymously", newCon.getIdentifier()!=null);
       assertTrue("the contentlet title was saved", newCon.getTitle().equals(con.getTitle()));
+     
+      assertTrue("contentlet is not live", newCon.isWorking() && !newCon.hasLiveVersion());
+      
   }
     
+  /**
+   * This tests to insure that an anonymous user with publish permissions can check in content 
+   * @throws Exception
+   */
+  @Test
+  public void publish_content_anonymously () throws Exception {
+      Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "WRITE");
+      final ContentType contentType = createContentType("testingType");
+
+      final Role cmsAnon = APILocator.getRoleAPI().loadCMSAnonymousRole();
+
+      
+      // give write permissions to content Type
+      Permission permissionRead = new Permission( contentType.getPermissionId(), cmsAnon.getId(), PermissionAPI.PERMISSION_READ );
+      Permission permissionWrite = new Permission( contentType.getPermissionId(),  cmsAnon.getId(), PermissionAPI.PERMISSION_EDIT );
+      APILocator.getPermissionAPI().save( permissionRead, contentType, APILocator.systemUser(), false );
+      APILocator.getPermissionAPI().save( permissionWrite, contentType, APILocator.systemUser(), false );
+
     
-    
+      Contentlet con = new ContentletDataGen(contentType.id()).nextWithSampleTextValues();
+      Contentlet newCon = contentletAPI.checkin(con, null, true);
+      
+      // now give publish permissions on the content itself
+      APILocator.getPermissionAPI().save( new Permission(newCon.getPermissionId(),cmsAnon.getId(),PermissionAPI.PERMISSION_READ),newCon, APILocator.systemUser(), false );
+      APILocator.getPermissionAPI().save( new Permission(newCon.getPermissionId(),cmsAnon.getId(),PermissionAPI.PERMISSION_EDIT),newCon, APILocator.systemUser(), false );
+      APILocator.getPermissionAPI().save( new Permission(newCon.getPermissionId(),cmsAnon.getId(),PermissionAPI.PERMISSION_PUBLISH),newCon, APILocator.systemUser(), false );
+      
+
+      contentletAPI.publish(newCon, null, true);
+      
+      
+      
+      assertTrue("we published a contentlet anonymously", newCon.isLive());
+
+
+  }
     
     
     

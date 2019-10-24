@@ -336,10 +336,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	@CloseDBIfOpened
 	@Override
-	public boolean doesUserHavePermission(final Permissionable permissionable, int permissionTypeIn, final User userIn, final boolean acceptAnonymousView) throws DotDataException {
+	public boolean doesUserHavePermission(final Permissionable permissionable, final int permissionType, final User userIn, final boolean acceptAnonymousView) throws DotDataException {
 	    
         if (permissionable == null) {
-            throw new NullPointerException("Permissionable object is null");
+            throw new DotRuntimeException("Permissionable object is null");
         }
         
         // if we have a bad permissionable
@@ -356,13 +356,13 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         }
 
         // Folders do not have PUBLISH, use EDIT instead
-        final int permissionType = (PermissionableType.FOLDERS.getCanonicalName().equals(permissionable.getPermissionType())
-                    && permissionTypeIn == PERMISSION_PUBLISH) 
-                        ? permissionTypeIn = PERMISSION_EDIT 
-                        : permissionTypeIn;
+        if(PermissionableType.FOLDERS.getCanonicalName().equals(permissionable.getPermissionType())
+                    && permissionType == PERMISSION_PUBLISH) {
+            return doesUserHavePermission(permissionable,PERMISSION_EDIT,user,acceptAnonymousView);
+        }
 
 
-        final List<Role> userRoles = Sneaky.sneak(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()));
+        final List<Role> userRoles = Try.of(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId())).getOrElse(new ArrayList<>());
 
         // if CMS Admin TRUE!
         if(userRoles.contains(adminRole())) {
@@ -376,7 +376,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         }
         
         if(user.isAnonymousUser()) {
-            if(permissionable instanceof Contentlet && permissionType != PERMISSION_READ && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
+            if(permissionType != PERMISSION_READ && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
                 Logger.warn(this.getClass(),"CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
                 return false;
             }
@@ -397,9 +397,8 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         
         
         // special cases, ANON working content viewing and CMS Owners
-        if(!returnVal && user.isFrontendUser() && permissionable instanceof Contentlet && isWorkingContent(permissionable)) {
+        if(user.isFrontendUser() && permissionable instanceof Contentlet && isWorkingContent(permissionable)) {
             return false;
-       
         }
         
         
