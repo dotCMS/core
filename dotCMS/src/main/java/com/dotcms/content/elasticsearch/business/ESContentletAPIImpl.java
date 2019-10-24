@@ -2970,11 +2970,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Contentlet> relatedContentlet;
 
             if (relatedIds.containsKey(variableName)) {
-                relatedContentlet = getCachedRelatedContentlets(relatedIds, variableName, language, live);
+                relatedContentlet = getCachedRelatedContentlets(relatedIds, variableName, language,
+                        currentUser.equals(APILocator.getUserAPI().getAnonymousUser()) ? Boolean.TRUE
+                                : live);
             } else {
                 relatedContentlet = getNonCachedRelatedContentlets(contentlet, relatedIds,
                         variableName, pullByParents,
-                        limit, offset, sortBy, language, live);
+                        limit, offset, sortBy, language,
+                        currentUser.equals(APILocator.getUserAPI().getAnonymousUser()) ? Boolean.TRUE
+                                : live);
             }
 
             //Restricts contentlet according to user permissions
