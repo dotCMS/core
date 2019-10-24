@@ -661,6 +661,7 @@ public class DotWebdavHelper {
 		String folderName = getFolderName(path);
 		String fileName = getFileName(path);
 		fileName = deleteSpecialCharacter(fileName);
+        final boolean disableWorkflow = Config.getBooleanProperty("dotcms.webdav.disableworkflow", false);
 
 		Host host;
 		try {
@@ -742,22 +743,46 @@ public class DotWebdavHelper {
 				fileAsset.setHost(host.getIdentifier());
 				fileAsset.setLanguageId(defaultLang);
 				if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
-					fileAsset.getMap().put("_validateEmptyFile_", false);
+					fileAsset.getMap().put(Contentlet.VALIDATE_EMPTY_FILE, false);
 				}
+
+                if (disableWorkflow) {
+                    fileAsset.setBoolProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
+                }
 				fileAsset=conAPI.checkin(fileAsset, user, false);
+
+				if(!HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
+					fileAsset.getMap().put(Contentlet.VALIDATE_EMPTY_FILE, false);
+				}
 
 				//Validate if the user have the right permission before
 				if(isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user) ){
+                    if (disableWorkflow) {
+                        fileAsset.setBoolProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
+                    }
 					conAPI.archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+                    if (disableWorkflow) {
+                        fileAsset.setBoolProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
+                    }
 					conAPI.delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 					throw new DotSecurityException("User does not have permission to publish contentlets");
-		        }else if(!isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_EDIT, user)){
+		        }else if(!isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_EDIT, user)) {
+                    if (disableWorkflow) {
+                        fileAsset.setBoolProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
+                    }
 		        	conAPI.archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+                    if (disableWorkflow) {
+                        fileAsset.setBoolProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
+                    }
 					conAPI.delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
 					throw new DotSecurityException("User does not have permission to edit contentlets");
 		        }
 				if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user)) {
-				    conAPI.publish(fileAsset, user, false);
+                    if (disableWorkflow) {
+                        fileAsset.setBoolProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
+                    }
+				    conAPI.publish(fileAsset, user,
+                            false);
 
 				    Date currentDate = new Date();
 				    fileResourceCache.add(resourceUri + "|" + user.getUserId(), currentDate.getTime());
