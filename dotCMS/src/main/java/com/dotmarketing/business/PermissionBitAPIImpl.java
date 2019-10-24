@@ -350,18 +350,18 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 
 		List<Permission> perms =  getPermissions(permissionable, true);
-
+		boolean isContentlet = permissionable instanceof Contentlet;
 		for(Permission p : perms){
 			if(p.matchesPermission(permissionType)){
 				if(respectFrontendRoles){
 
                         //anonymous role should not be able to access non-live contentlet
-                        boolean isContentlet = permissionable instanceof Contentlet;
+                       
                         if (p.getRoleId().equals(anonRole.getId()) && (!isContentlet
                                 || isLiveContentlet(permissionable))) {
                             return true;
                             //if logged in site user has permission
-                        }else if(!anonUser.getUserId().equals(user.getUserId()) && p.getRoleId().equals(frontEndUserRole.getId())){
+                        }else if(!user.isAnonymousUser() && p.getRoleId().equals(frontEndUserRole.getId())){
                             return true;
                         }
                    
@@ -386,7 +386,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		// remove front end user access for anon user (e.g, /intranet)
 		if(user.isAnonymousUser()) {
 		    
-		    if(!isLiveContentlet(permissionable) && permissionType == PERMISSION_READ) {
+		    if(isContentlet && !isLiveContentlet(permissionable) && permissionType == PERMISSION_READ) {
 		        return false;
 		    }
 
