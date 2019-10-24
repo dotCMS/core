@@ -4761,7 +4761,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             categories = new ArrayList<>();
         }
         
-
         //Find categories which the user can't use.  A user cannot remove a category they cannot use
         final List<Category> cats = categoryAPI.getParents(fromContentlet, APILocator.getUserAPI().getSystemUser(), true);
         for (final Category category : cats) {
