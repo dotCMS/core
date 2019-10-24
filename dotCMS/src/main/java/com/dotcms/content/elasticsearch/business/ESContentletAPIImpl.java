@@ -2971,13 +2971,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             if (relatedIds.containsKey(variableName)) {
                 relatedContentlet = getCachedRelatedContentlets(relatedIds, variableName, language,
-                        currentUser.equals(APILocator.getUserAPI().getAnonymousUser()) ? Boolean.valueOf(true)
+                        currentUser.equals(APILocator.getUserAPI().getAnonymousUser()) ? Boolean.TRUE
                                 : live);
             } else {
                 relatedContentlet = getNonCachedRelatedContentlets(contentlet, relatedIds,
                         variableName, pullByParents,
                         limit, offset, sortBy, language,
-                        currentUser.equals(APILocator.getUserAPI().getAnonymousUser()) ? Boolean.valueOf(true)
+                        currentUser.equals(APILocator.getUserAPI().getAnonymousUser()) ? Boolean.TRUE
                                 : live);
             }
 
