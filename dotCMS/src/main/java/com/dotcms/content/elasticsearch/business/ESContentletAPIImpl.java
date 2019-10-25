@@ -1614,7 +1614,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             String sortBy, final long language, final Boolean live)
             throws DotDataException {
         try {
-            String fieldVariable = null;
+            String fieldVariable = rel.getRelationTypeValue();
 
             if (rel.isRelationshipField()) {
                 if ((relationshipAPI.sameParentAndChild(rel) && pullByParent != null
@@ -1627,8 +1627,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 } else if (rel.getParentRelationName() != null) {
                     fieldVariable = rel.getParentRelationName();
                 }
-            }else{
-                fieldVariable = rel.getRelationTypeValue();
             }
 
             return getRelatedContent(contentlet, fieldVariable, user, respectFrontendRoles, pullByParent, limit,
