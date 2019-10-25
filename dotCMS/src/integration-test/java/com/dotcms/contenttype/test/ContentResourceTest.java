@@ -357,9 +357,6 @@ public class ContentResourceTest extends IntegrationTestBase {
                 CollectionsUtils.map(relationship1, CollectionsUtils.list(child1), relationship2,
                         CollectionsUtils.list(child2, child3)), user, false);
 
-        //calls endpoint
-        Thread.sleep(10000);
-
         final ContentResource contentResource = new ContentResource();
         final HttpServletRequest request = createHttpRequest(null, null);
         final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -542,8 +539,6 @@ public class ContentResourceTest extends IntegrationTestBase {
             contentlets.put("grandChild2", grandChild2);
 
             //calls endpoint
-            Thread.sleep(10000);
-
             final ContentResource contentResource = new ContentResource();
             final HttpServletRequest request = createHttpRequest(null,
                     testCase.limitedUser ? createdLimitedUser : null);
