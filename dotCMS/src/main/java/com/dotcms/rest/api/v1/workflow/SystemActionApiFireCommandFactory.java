@@ -220,7 +220,7 @@ public class SystemActionApiFireCommandFactory {
             Logger.info(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
             final Contentlet checkoutContentlet = new SaveContentActionlet()
                     .checkout(contentlet, dependencies.getModUser());
-            final Contentlet checkinContentlet = contentletAPI.checkin(checkoutContentlet, dependencies);
+            final Contentlet checkinContentlet = contentletAPI.checkin(checkoutContentlet, dependencies); 
 
             if (!hasPublishActionlet) {
 
