@@ -10,24 +10,25 @@ import java.io.File;
 
 public class FileAssetDataGen extends ContentletDataGen {
 
-    public FileAssetDataGen(Host host, File file) throws DotSecurityException, DotDataException {
+    public FileAssetDataGen(final Host host, final File file) throws DotSecurityException, DotDataException {
         this(file);
         this.host = host;
     }
 
-    public FileAssetDataGen(Folder folder, File file)
+    public FileAssetDataGen(final Folder folder, final File file)
             throws DotSecurityException, DotDataException {
         this(file);
         this.folder = folder;
     }
 
-    private FileAssetDataGen(File file) throws DotDataException, DotSecurityException {
+    private FileAssetDataGen(final File file) throws DotDataException, DotSecurityException {
 
         super(APILocator.getContentTypeAPI(APILocator.systemUser())
                 .find("FileAsset").id());
         this.user = APILocator.systemUser();
-        setProperty(FileAssetAPI.TITLE_FIELD, file.getName());
-        setProperty(FileAssetAPI.FILE_NAME_FIELD, file.getName());
+        final String fileName = file.getName();
+        setProperty(FileAssetAPI.TITLE_FIELD, fileName);
+        setProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
         setProperty(FileAssetAPI.BINARY_FIELD, file);
     }
 

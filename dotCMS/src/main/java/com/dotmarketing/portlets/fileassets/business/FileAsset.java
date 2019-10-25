@@ -26,7 +26,9 @@ import java.util.Map;
 
 public class FileAsset extends Contentlet implements IFileAsset {
 
-	String metaData;
+	private String metaData;
+
+    private File file;
 
 	public static final String UNKNOWN_MIME_TYPE = "unknown";
 
@@ -85,17 +87,20 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	}
 
-	private long fileSizeInteral = 0;
-	public long getFileSize() {
+	private long fileSizeInternal = 0;
 
-		if(this.fileSizeInteral==0 && getFileAsset()!=null) {
-		  this.fileSizeInteral = getFileAsset().length();
+	public long getFileSize() {
+		if(this.fileSizeInternal == 0) {
+			final File fileAsset = getFileAsset();
+			if(null != fileAsset){
+			   this.fileSizeInternal = fileAsset.length();
+			}
 		}
-		return this.fileSizeInteral > 0 ? this.fileSizeInteral : 0;
-		
+		return this.fileSizeInternal > 0 ? this.fileSizeInternal : 0;
 	}
 
 	private Dimension fileDimension = new Dimension();
+
 	public int getHeight() {
         try {
             if (fileDimension.height == 0) {
@@ -126,10 +131,14 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	 * This access the physical file on disk
 	 * @param name
 	 */
-	public void setUnderlyingFileName(String name) {
-	    
-	    File ff=getFileAsset();
-	    ff.renameTo(new File(ff.getParent(),name));
+	public void setUnderlyingFileName(final String name) {
+
+	    final File fileAsset = getFileAsset();
+	    //For the sake of performance we do not rename a file to be the same as it was.
+	    //This gets expensive when copyProperties are used on this bean.
+		if(!fileAsset.getName().equals(name)){
+	       fileAsset.renameTo(new File(fileAsset.getParent(),name));
+	    }
 	    this.underlyingFileName = null;
 	}
 
@@ -140,15 +149,14 @@ public class FileAsset extends Contentlet implements IFileAsset {
    */
   private String underlyingFileName = null;
 
-  public String getUnderlyingFileName() {
-
-    if (underlyingFileName != null) {
-      return underlyingFileName;
-    }
-
-    this.underlyingFileName = getFileAsset() != null ? getFileAsset().getName() : null;
-    return this.underlyingFileName;
-  }
+	public String getUnderlyingFileName() {
+		if (underlyingFileName != null) {
+			return underlyingFileName;
+		}
+		final File fileAsset = getFileAsset();
+		this.underlyingFileName = fileAsset != null ? fileAsset.getName() : null;
+		return this.underlyingFileName;
+	}
 
 	/***
 	 * This access the logical file name stored on the table Identifier
@@ -185,11 +193,14 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	}
 
 	public File getFileAsset() {
-		try {
-			return getBinary(FileAssetAPI.BINARY_FIELD);
-		} catch (IOException e) {
-			throw new DotStateException("Unable to find the fileAsset for :" + this.getInode());
+		if (null == file) {
+			try {
+				file = getBinary(FileAssetAPI.BINARY_FIELD);
+			} catch (IOException e) {
+				throw new DotStateException("Unable to find the fileAsset for :" + this.getInode());
+			}
 		}
+		return file;
 	}
 
 	public boolean isDeleted() throws DotStateException, DotDataException, DotSecurityException {
@@ -271,8 +282,8 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	 }
 
 
-	 
-	 
+
+
 	 public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String,Object> map = super.getMap();
 		boolean live =  false;
