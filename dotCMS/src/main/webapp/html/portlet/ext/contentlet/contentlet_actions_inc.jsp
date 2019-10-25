@@ -1,3 +1,5 @@
+<%@page import="java.util.ArrayList"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
@@ -22,7 +24,7 @@ WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentle
 List<WorkflowStep> wfSteps = null;
 WorkflowStep wfStep = null;
 WorkflowScheme scheme = null;
-List<WorkflowAction> wfActions = null;
+List<WorkflowAction> wfActions = new ArrayList<>();
 List<WorkflowAction> wfActionsAll = null;
 try{
 	wfSteps = APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
@@ -79,18 +81,18 @@ function editPage(url, language_id) {
 
 
 <%if(schemesAvailable.size()>1){%>
-<div style="margin-bottom:10px;">
-	<select id="select-workflow-scheme-dropdown" dojoType="dijit.form.FilteringSelect" onchange="setMyWorkflowScheme()" style="width:100%">
-
-	   <option value=""><%=LanguageUtil.get(pageContext, "dot.common.select.workflow")%></option>
-		<%for(String key :schemesAvailable.keySet()) {%>
-
-		  <option value="<%=key%>"><%=schemesAvailable.get(key) %></option>
-
-		<%} %>
-	</select>
-</div>
-<%} %>
+   <div style="margin-bottom:10px;">
+   	<select id="select-workflow-scheme-dropdown" dojoType="dijit.form.FilteringSelect" onchange="setMyWorkflowScheme()" style="width:100%">
+   
+   	   <option value=""><%=LanguageUtil.get(pageContext, "dot.common.select.workflow")%></option>
+   		<%for(String key :schemesAvailable.keySet()) {%>
+   
+   		  <option value="<%=key%>"><%=schemesAvailable.get(key) %></option>
+   
+   		<%} %>
+   	</select>
+   </div>
+<%}%>
 
 <%--check permissions to display the save and publish button or not--%>
 <%boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user);%>
@@ -107,7 +109,7 @@ function editPage(url, language_id) {
 
 
 
-
+<%if(!wfActionsAll.isEmpty()){%>
 <div class="content-edit-actions">
 
 		<%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
@@ -191,21 +193,23 @@ function editPage(url, language_id) {
 	<%}  %>
 
 </div>
-
+<%} %>
 
 <div class="content-edit-workflow">
-	<% if ((!isHost) && (null != wfSteps && wfSteps.size() ==1)){
-        WorkflowStep step = wfSteps.get(0);
-    %>
+	<% if (!isHost) { %>
     <h3><%= LanguageUtil.get(pageContext, "Workflow") %></h3>
     <table>
+     <tr>
+            <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Content-Type") %>:</th>
+            <td><%=contentlet!=null && contentlet.getContentType()!=null ? contentlet.getContentType().name() : LanguageUtil.get(pageContext, "not-available") %></td>
+        </tr>
         <tr>
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Workflow") %>:</th>
-            <td><%=APILocator.getWorkflowAPI().findScheme(step.getSchemeId()).getName() %></td>
+            <td><%=(scheme==null) ? LanguageUtil.get(pageContext, "not-available") : scheme.getName() %></td>
         </tr>
         <tr>
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Step") %>:</th>
-            <td><%=step.getName() %></td>
+            <td><%=(wfStep==null) ? LanguageUtil.get(pageContext, "New") : wfStep.getName() %></td>
         </tr>
         <tr>
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Assignee") %>:</th>
@@ -224,3 +228,9 @@ function editPage(url, language_id) {
     </table>
     <% } %>
 </div>
+
+
+<%if(wfActionsAll.isEmpty() && contentlet!=null && contentlet.getContentType()!=null){ %>
+    <div style="padding:5px;"><%=LanguageUtil.get(pageContext, "dot.common.message.no.workflow.schemes") %></div>
+<%} %>
+
