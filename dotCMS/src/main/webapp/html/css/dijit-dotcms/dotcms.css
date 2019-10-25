@@ -10751,7 +10751,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .content-edit__main {
-  margin: 16px 220px 0 0;
+  margin: 16px 300px 0 0;
   position: relative;
   width: auto;
   z-index: 1;
@@ -10774,7 +10774,7 @@ a.category_higlighted, a.tag_higlighted {
   position: fixed;
   right: 0;
   top: 0;
-  width: 220px;
+  width: 300px;
 }
 
 .content-edit-actions,
