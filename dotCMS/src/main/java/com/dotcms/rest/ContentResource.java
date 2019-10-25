@@ -799,16 +799,18 @@ public class ContentResource {
             //For self-related fields, the other side of the relationship should be added if the other-side field exists
             if (relationshipAPI.sameParentAndChild(relationship)){
                 com.dotcms.contenttype.model.field.Field otherSideField = null;
-                if (relationshipAPI.isParent(relationship, contentlet.getContentType())){
-                    if (fields.containsKey(relationship.getChildRelationName())){
-                        otherSideField = fields.get(relationship.getChildRelationName());
-                    }
-                } else{
-                    if (fields.containsKey(relationship.getParentRelationName())){
-                        otherSideField = fields.get(relationship.getParentRelationName());
+                if (relationship.getParentRelationName() != null
+                        && relationship.getChildRelationName() != null) {
+                    if (relationshipAPI.isParent(relationship, contentlet.getContentType())) {
+                        if (fields.containsKey(relationship.getChildRelationName())) {
+                            otherSideField = fields.get(relationship.getChildRelationName());
+                        }
+                    } else {
+                        if (fields.containsKey(relationship.getParentRelationName())) {
+                            otherSideField = fields.get(relationship.getParentRelationName());
+                        }
                     }
                 }
-
                 if (otherSideField != null){
 
                     relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
@@ -1041,13 +1043,17 @@ public class ContentResource {
             //For self-related fields, the other side of the relationship should be added if the other-side field exists
             if (relationshipAPI.sameParentAndChild(relationship)){
                 com.dotcms.contenttype.model.field.Field otherSideField = null;
-                if (relationshipAPI.isParent(relationship, contentlet.getContentType())){
-                    if (fields.containsKey(relationship.getChildRelationName())){
-                        otherSideField = fields.get(relationship.getChildRelationName());
-                    }
-                } else{
-                    if (fields.containsKey(relationship.getParentRelationName())){
-                        otherSideField = fields.get(relationship.getParentRelationName());
+
+                if (relationship.getParentRelationName() != null
+                        && relationship.getChildRelationName() != null) {
+                    if (relationshipAPI.isParent(relationship, contentlet.getContentType())) {
+                        if (fields.containsKey(relationship.getChildRelationName())) {
+                            otherSideField = fields.get(relationship.getChildRelationName());
+                        }
+                    } else {
+                        if (fields.containsKey(relationship.getParentRelationName())) {
+                            otherSideField = fields.get(relationship.getParentRelationName());
+                        }
                     }
                 }
 

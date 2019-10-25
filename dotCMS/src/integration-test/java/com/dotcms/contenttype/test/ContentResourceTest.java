@@ -171,6 +171,14 @@ public class ContentResourceTest extends IntegrationTestBase {
         }
     }
 
+    public static class PullSelfRelatedTestCase {
+        String responseType;
+
+        public PullSelfRelatedTestCase(final String responseType) {
+            this.responseType = responseType;
+        }
+    }
+
     public static class PullRelatedTestCase {
         boolean pullFromParent;
         boolean multipleMatch;
@@ -237,6 +245,14 @@ public class ContentResourceTest extends IntegrationTestBase {
                 new PullRelatedTestCase(true, false, true),
                 new PullRelatedTestCase(true, false, false),
                 new PullRelatedTestCase(true, true, true)
+        };
+    }
+
+    @DataProvider
+    public static Object[] selfRelatedTestCases(){
+        return new PullSelfRelatedTestCase[]{
+                new PullSelfRelatedTestCase(JSON_RESPONSE),
+                new PullSelfRelatedTestCase(XML_RESPONSE)
         };
     }
 
@@ -308,6 +324,116 @@ public class ContentResourceTest extends IntegrationTestBase {
                 .relationType(childContentTypeVar).build();
 
         return fieldAPI.save(newField, user);
+    }
+
+    @Test
+    @UseDataProvider("selfRelatedTestCases")
+    public void test_getContentWithMultipleSelfRelated_shouldReturnRelationships(final PullSelfRelatedTestCase testCase)
+            throws Exception {
+
+        final long language = languageAPI.getDefaultLanguage().getId();
+        final ContentType contentType = createSampleContentType(false);
+
+        //creates relationship fields
+        final Field field1 = createRelationshipField("relationship1", contentType,
+                contentType.variable(), RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal());
+
+        final Relationship relationship1 = relationshipAPI.getRelationshipFromField(field1, user);
+
+        final Field field2 = createRelationshipField("relationship2", contentType,
+                contentType.variable(), RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal());
+
+        final Relationship relationship2 = relationshipAPI.getRelationshipFromField(field2, user);
+
+
+        //creates contentlets
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentType.id());
+        final Contentlet child1 = contentletDataGen.languageId(language).nextPersisted();
+        final Contentlet child2 = contentletDataGen.languageId(language).nextPersisted();
+        final Contentlet child3 = contentletDataGen.languageId(language).nextPersisted();
+
+        Contentlet parent = contentletDataGen.languageId(language).next();
+        parent = contentletAPI.checkin(parent,
+                CollectionsUtils.map(relationship1, CollectionsUtils.list(child1), relationship2,
+                        CollectionsUtils.list(child2, child3)), user, false);
+
+        final ContentResource contentResource = new ContentResource();
+        final HttpServletRequest request = createHttpRequest(null, null);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final Response endpointResponse = contentResource.getContent(request, response,
+                "/id/" + parent.getIdentifier() + "/live/false/type/" + testCase.responseType
+                        + "/depth/0");
+
+        assertEquals(200, endpointResponse.getStatus());
+
+        //validates results
+        if (testCase.responseType.equals(JSON_RESPONSE)) {
+            final JSONObject json = new JSONObject(endpointResponse.getEntity().toString());
+            final JSONArray contentlets = json.getJSONArray("contentlets");
+            final JSONObject contentlet = (JSONObject) contentlets.get(0);
+
+            //Validate parent identifier
+            assertEquals(parent.getIdentifier(), contentlet.get(IDENTIFIER));
+
+            //Validate child of the first relationship
+            JSONArray jsonArray = (JSONArray) contentlet.get(field1.variable());
+            assertEquals(1, jsonArray.length());
+            assertEquals(child1.getIdentifier(), jsonArray.get(0));
+
+            //Validate children of the second relationship
+            jsonArray = (JSONArray) contentlet.get(field2.variable());
+            assertEquals(2, jsonArray.length());
+            assertEquals(child2.getIdentifier(), jsonArray.get(0));
+            assertEquals(child3.getIdentifier(), jsonArray.get(1));
+
+        }else{
+
+            final DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            final DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+
+            final InputSource inputSource = new InputSource();
+            inputSource.setCharacterStream(
+                    new StringReader(endpointResponse.getEntity().toString().replaceAll("\\n", "")));
+            final Document doc = dBuilder.parse(inputSource);
+            doc.getDocumentElement().normalize();
+
+            final DeferredElementImpl contentlet = (DeferredElementImpl) doc.getFirstChild().getFirstChild();
+
+            //Validate parent identifier
+            assertEquals(parent.getInode(), contentlet.getElementsByTagName("inode").item(0).getTextContent());
+
+            //Validate child of the first relationship
+            NodeList items = ((DeferredElementImpl) (contentlet).getElementsByTagName(field1.variable()).item(0));
+
+            int j= 0;
+            for (int i=0;i<items.getLength();i++){
+                String textContent = items.item(i).getTextContent();
+                if (textContent !=null && !textContent.trim().isEmpty()) {
+                    assertEquals(child1.getIdentifier(), textContent);
+                    j++;
+                }
+            }
+
+            assertEquals(1, j);
+
+            //Validate children of the second relationship
+            items = ((DeferredElementImpl) (contentlet).getElementsByTagName(field2.variable()).item(0));
+
+            j= 0;
+            for (int i=0;i<items.getLength();i++){
+                String textContent = items.item(i).getTextContent();
+                if (textContent !=null && !textContent.trim().isEmpty()) {
+                    if (j == 0) {
+                        assertEquals(child2.getIdentifier(), textContent);
+                    } else{
+                        assertEquals(child3.getIdentifier(), textContent);
+                    }
+                    j++;
+                }
+            }
+
+            assertEquals(2, j);
+        }
     }
 
     @Test
@@ -413,8 +539,6 @@ public class ContentResourceTest extends IntegrationTestBase {
             contentlets.put("grandChild2", grandChild2);
 
             //calls endpoint
-            Thread.sleep(10000);
-
             final ContentResource contentResource = new ContentResource();
             final HttpServletRequest request = createHttpRequest(null,
                     testCase.limitedUser ? createdLimitedUser : null);
