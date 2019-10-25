@@ -1614,17 +1614,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
             String sortBy, final long language, final Boolean live)
             throws DotDataException {
         try {
-            String fieldVariable = rel.getRelationTypeValue();
+            String fieldVariable = null;
 
-            if(rel.isRelationshipField()){
-                if ((relationshipAPI.sameParentAndChild(rel) && pullByParent!= null && pullByParent) || (relationshipAPI
-                        .isParent(rel, contentlet.getContentType()) && !relationshipAPI.sameParentAndChild(rel))) {
-                    if(rel.getChildRelationName()!= null) {
+            if (rel.isRelationshipField()) {
+                if ((relationshipAPI.sameParentAndChild(rel) && pullByParent != null
+                        && pullByParent) || (relationshipAPI
+                        .isParent(rel, contentlet.getContentType()) && !relationshipAPI
+                        .sameParentAndChild(rel))) {
+                    if (rel.getChildRelationName() != null) {
                         fieldVariable = rel.getChildRelationName();
                     }
-                } else if(rel.getParentRelationName() != null){
+                } else if (rel.getParentRelationName() != null) {
                     fieldVariable = rel.getParentRelationName();
                 }
+            }else{
+                fieldVariable = rel.getRelationTypeValue();
             }
 
             return getRelatedContent(contentlet, fieldVariable, user, respectFrontendRoles, pullByParent, limit,
@@ -1632,11 +1636,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } catch (Exception e) {
             final String id = contentlet!=null ? contentlet.getIdentifier() : "null";
             final String relName = rel!=null ? rel.getRelationTypeValue() : "null";
-            
+
             final String errorMessage =
                     "Unable to look up related content for contentlet with identifier "
                             + id + ". Relationship name: " + relName;
-            
+
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class,
@@ -1736,7 +1740,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public boolean deleteByHost(final Host host, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
-        
+
         final DotConnect db = new DotConnect();
 
         List<String> deleteMe = db.setSQL("select working_inode  from identifier, contentlet_version_info where identifier.id = contentlet_version_info.identifier and host_inode=? and asset_type='contentlet'")
@@ -1752,11 +1756,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             LocalTransaction.wrapNoException(() ->{
 
                 try {
-                    
+
                     List<Contentlet> cons = findContentlets(ids);
-                    
+
                     destroy(cons, user, respectFrontendRoles);
-                    
+
                 } catch (DotSecurityException e1) {
                     throw new DotStateException(e1);
                 }
@@ -2885,7 +2889,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    private void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
+    @Override
+    public void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
             boolean hasParent) {
 
         //If relationship field, related content cache must be invalidated
@@ -3041,8 +3046,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         uniqueIdentifiers = relatedList.stream().map(Contentlet::getIdentifier).distinct()
                 .collect(CollectionsUtils.toImmutableList());
 
-        //Cache related content only if it is a relationship field
-        if (field != null && limit == -1 && offset <= 0 && sortBy == null) {
+        //Cache related content only if it is a relationship field and there is no filter
+        //In case of self-relationships, we shouldn't cache any value for a particular field when pullByParent==null
+        //because in this case all parents and children are returned
+        if (field != null && limit == -1 && offset <= 0 && sortBy == null &&
+                !(relationshipAPI.sameParentAndChild(relationship) && pullByParent == null)) {
             if (UtilMethods.isSet(relatedList)) {
                 relatedIds.put(variableName, uniqueIdentifiers);
             } else {

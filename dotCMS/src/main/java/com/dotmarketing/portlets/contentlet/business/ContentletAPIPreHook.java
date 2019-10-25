@@ -718,7 +718,7 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public default boolean getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles){
+	public default boolean getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles){
       return true;
     }
 
@@ -742,7 +742,7 @@ public interface ContentletAPIPreHook {
      * @param sortBy
      * @return
      */
-    default boolean getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent,
+    default boolean getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent,
             User user, boolean respectFrontendRoles, int limit, int offset,
             String sortBy){
         return true;
@@ -1875,6 +1875,10 @@ public interface ContentletAPIPreHook {
     }
 
     default boolean getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles, long language, Boolean live){
+        return true;
+    }
+
+    default boolean invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship, boolean hasParent){
         return true;
     }
 }
