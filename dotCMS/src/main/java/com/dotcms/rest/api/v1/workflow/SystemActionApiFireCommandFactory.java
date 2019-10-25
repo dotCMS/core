@@ -1,7 +1,15 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.ARCHIVE;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.DELETE;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.DESTROY;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.EDIT;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.NEW;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.PUBLISH;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.UNARCHIVE;
+import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.UNPUBLISH;
+
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -9,7 +17,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentActionlet;
-import com.dotmarketing.portlets.workflows.business.UnassignedWorkflowContentletCheckinListener;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
@@ -18,14 +25,10 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-
-import javax.ws.rs.DELETE;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-
-import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction.*;
 
 /**
  * This Factory provides the {@link SystemActionApiFireCommand} for a {@link com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction}
@@ -220,8 +223,7 @@ public class SystemActionApiFireCommandFactory {
             Logger.info(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
             final Contentlet checkoutContentlet = new SaveContentActionlet()
                     .checkout(contentlet, dependencies.getModUser());
-            final Contentlet checkinContentlet = contentletAPI.checkin(checkoutContentlet,
-                    user, dependencies.isRespectAnonymousPermissions());
+            final Contentlet checkinContentlet = contentletAPI.checkin(checkoutContentlet, dependencies);
 
             if (!hasPublishActionlet) {
 
