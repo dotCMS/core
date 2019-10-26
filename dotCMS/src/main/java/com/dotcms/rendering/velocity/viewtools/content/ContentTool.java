@@ -384,7 +384,8 @@ public class ContentTool implements ViewTool {
                     .pullRelated(relationshipName, contentletIdentifier,
                             condition == null ? condition : addDefaultsToQuery(condition),
                             pullParents,
-                            limit, sort, user, tmDate, language.getId(), true);
+                            limit, sort, user, tmDate, language.getId(),
+                            EDIT_OR_PREVIEW_MODE ? null : true);
 
             for (Contentlet cc : cons) {
                 ret.add(new ContentMap(cc, user, EDIT_OR_PREVIEW_MODE, currentHost, context));
@@ -400,52 +401,62 @@ public class ContentTool implements ViewTool {
         }
     }
 
-	/**
-	 * Returns a list of related content given a RelationshipField and additional filtering criteria
-	 * @param contentletIdentifier - Identifier of the contentlet
-	 * @param fieldVariable - Full field variable (including the content type variable, ie.: news.youtubes where 'news' is the content type variable and 'youtubes' is the field variable)
-	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
-	 * @param limit - 0 is the dotCMS max limit which is 10000. Be careful when searching for unlimited amount as all content will load into memory
-	 * @param offset - Starting position of the resulting list. -1 is the default value and the first results of the pagination are returned
-	 * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple values "sort1 acs, sort2 desc". Can be Null
-	 * @return Returns empty List if no results are found
-	 */
-	public List<ContentMap> pullRelatedField(String contentletIdentifier, String fieldVariable,
-			String condition, int limit, int offset, String sort) {
-		try {
-			PaginatedArrayList<ContentMap> ret = new PaginatedArrayList();
+    /**
+     * Returns a list of related content given a RelationshipField and additional filtering
+     * criteria
+     *
+     * @param contentletIdentifier - Identifier of the contentlet
+     * @param fieldVariable - Full field variable (including the content type variable, ie.:
+     * news.youtubes where 'news' is the content type variable and 'youtubes' is the field
+     * variable)
+     * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be
+     * Null
+     * @param limit - 0 is the dotCMS max limit which is 10000. Be careful when searching for
+     * unlimited amount as all content will load into memory
+     * @param offset - Starting position of the resulting list. -1 is the default value and the
+     * first results of the pagination are returned
+     * @param sort - Velocity variable name to sort by.  This is a string and can contain multiple
+     * values "sort1 acs, sort2 desc". Can be Null
+     * @return Returns empty List if no results are found
+     */
+    public List<ContentMap> pullRelatedField(String contentletIdentifier, String fieldVariable,
+            String condition, int limit, int offset, String sort) {
+        try {
+            PaginatedArrayList<ContentMap> ret = new PaginatedArrayList();
 
-			if (!fieldVariable.contains(StringPool.PERIOD)) {
-				final String message = "Invalid field variable " + fieldVariable;
-				if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-					Logger.error(this, message);
-				}
-				throw new RuntimeException(new DotDataValidationException(message));
-			}
+            if (!fieldVariable.contains(StringPool.PERIOD)) {
+                final String message = "Invalid field variable " + fieldVariable;
+                if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                    Logger.error(this, message);
+                }
+                throw new RuntimeException(new DotDataValidationException(message));
+            }
 
-			final ContentType contentType = APILocator.getContentTypeAPI(user)
-					.find(fieldVariable.split("\\" + StringPool.PERIOD)[0]);
-			final Field field = APILocator.getContentTypeFieldAPI()
-					.byContentTypeAndVar(contentType, fieldVariable.split("\\" + StringPool.PERIOD)[1]);
-			final Relationship relationship = APILocator.getRelationshipAPI()
-					.getRelationshipFromField(field, user);
-			List<Contentlet> cons = ContentUtils
-					.pullRelatedField(relationship, contentletIdentifier,
-							addDefaultsToQuery(condition), limit, offset, sort, user, tmDate);
+            final ContentType contentType = APILocator.getContentTypeAPI(user)
+                    .find(fieldVariable.split("\\" + StringPool.PERIOD)[0]);
+            final Field field = APILocator.getContentTypeFieldAPI()
+                    .byContentTypeAndVar(contentType,
+                            fieldVariable.split("\\" + StringPool.PERIOD)[1]);
+            final Relationship relationship = APILocator.getRelationshipAPI()
+                    .getRelationshipFromField(field, user);
+            List<Contentlet> cons = ContentUtils
+                    .pullRelatedField(relationship, contentletIdentifier,
+                            addDefaultsToQuery(condition), limit, offset, sort, user, tmDate,
+                            language.getId(), EDIT_OR_PREVIEW_MODE ? null : true);
 
-			for (Contentlet cc : cons) {
-				ret.add(new ContentMap(cc, user, EDIT_OR_PREVIEW_MODE, currentHost, context));
-			}
-			return ret;
-		} catch (Throwable ex) {
-			if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
-				Logger.error(this,
-						"error in ContentTool.pullRelated. URL: " + req.getRequestURL().toString(),
-						ex);
-			}
-			throw new RuntimeException(ex);
-		}
-	}
+            for (Contentlet cc : cons) {
+                ret.add(new ContentMap(cc, user, EDIT_OR_PREVIEW_MODE, currentHost, context));
+            }
+            return ret;
+        } catch (Throwable ex) {
+            if (Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this,
+                        "error in ContentTool.pullRelated. URL: " + req.getRequestURL().toString(),
+                        ex);
+            }
+            throw new RuntimeException(ex);
+        }
+    }
 
 	/**
 	 * Returns a list of related content given a RelationshipField and additional filtering criteria
