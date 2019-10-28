@@ -170,7 +170,8 @@ public class ContentletCheckInTest extends ContentletBaseTest{
      * @throws DotDataException
      */
   @Test(expected = DotContentletValidationException.class)
-  public void test_checkinContentlet_RelationshipOneToOneCardinality_throwsDotContentletValidationException() throws DotSecurityException, DotDataException{
+  public void test_checkinContentlet_relationshipOneToOneCardinality_fails_whenRelatingMoreThanOneContentlet()
+          throws DotSecurityException, DotDataException {
       ContentType parentContentType = null;
       ContentType childContentType = null;
       try{
@@ -210,6 +211,124 @@ public class ContentletCheckInTest extends ContentletBaseTest{
           }
       }
   }
+
+    /**
+     * This test is meant to test Relationship Cardinality One to One
+     *
+     * It creates 2 content types and create a one to one relationship between them, then create 2
+     * contentlets and relates to each other. When a third content tries to relate to the parent,
+     * it should fail
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotContentletValidationException.class)
+    public void test_checkinContentlet_relationshipOneToOneCardinality_fails_whenRelatedParentBelongsToAnotherRelationship()
+            throws DotSecurityException, DotDataException {
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try {
+            //Create content types
+            parentContentType = createContentType("parentContentType");
+            childContentType = createContentType("childContentType");
+
+            //Create Text and Relationship Fields
+            final String textFieldString = "title";
+            final String relationshipFieldString = "relationship";
+            createTextField(textFieldString, parentContentType.id());
+            createRelationshipField(relationshipFieldString, parentContentType.id(),
+                    childContentType.variable(), String.valueOf(
+                            WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()));
+            createTextField(textFieldString, childContentType.id());
+
+            //Create Contentlets
+            Contentlet contentletParent = new ContentletDataGen(parentContentType.id())
+                    .setProperty(textFieldString, "parent Contentlet").next();
+            final Contentlet contentletChild = new ContentletDataGen(childContentType.id())
+                    .setProperty(textFieldString, "child Contentlet").nextPersisted();
+            final Contentlet contentletChild2 = new ContentletDataGen(childContentType.id())
+                    .setProperty(textFieldString, "child Contentlet 2").next();
+
+            //Find Relationship
+            final Relationship relationship = relationshipAPI.byParent(parentContentType).get(0);
+
+            //Checkin of the parent to validate Relationships
+            contentletParent = contentletAPI.checkin(contentletParent,
+                    CollectionsUtils.map(relationship, CollectionsUtils.list(contentletChild)),
+                    user, false);
+
+            //This checkin should fail because of cardinality violation
+            contentletAPI.checkin(contentletChild2,
+                    CollectionsUtils.map(relationship, CollectionsUtils.list(contentletParent)),
+                    user, false);
+
+        } finally {
+            if (parentContentType != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (childContentType != null) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    /**
+     * This test is meant to test Relationship Cardinality One to One
+     *
+     * It creates 2 content types and create a one to one relationship between them, then create 2
+     * contentlets and relates to each other. When a third content tries to relate to the child, it
+     * should fail
+     */
+    @Test(expected = DotContentletValidationException.class)
+    public void test_checkinContentlet_relationshipOneToOneCardinality_fails_whenRelatedChildBelongsToAnotherRelationship()
+            throws DotSecurityException, DotDataException {
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try {
+            //Create content types
+            parentContentType = createContentType("parentContentType");
+            childContentType = createContentType("childContentType");
+
+            //Create Text and Relationship Fields
+            final String textFieldString = "title";
+            final String relationshipFieldString = "relationship";
+            createTextField(textFieldString, parentContentType.id());
+            createRelationshipField(relationshipFieldString, parentContentType.id(),
+                    childContentType.variable(), String.valueOf(
+                            WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()));
+            createTextField(textFieldString, childContentType.id());
+
+            //Create Contentlets
+            Contentlet contentletParent = new ContentletDataGen(parentContentType.id())
+                    .setProperty(textFieldString, "parent Contentlet").next();
+            Contentlet contentletParent2 = new ContentletDataGen(parentContentType.id())
+                    .setProperty(textFieldString, "parent Contentlet 2").next();
+
+            final Contentlet contentletChild = new ContentletDataGen(childContentType.id())
+                    .setProperty(textFieldString, "child Contentlet").nextPersisted();
+
+            //Find Relationship
+            final Relationship relationship = relationshipAPI.byParent(parentContentType).get(0);
+
+            //Relate parent to child
+            contentletAPI.checkin(contentletParent,
+                    CollectionsUtils.map(relationship, CollectionsUtils.list(contentletChild)),
+                    user, false);
+
+            //This checkin should fail because of cardinality violation
+            contentletAPI.checkin(contentletParent2,
+                    CollectionsUtils.map(relationship, CollectionsUtils.list(contentletChild)),
+                    user, false);
+
+        } finally {
+            if (parentContentType != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (childContentType != null) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
 
     /**
      * This test is meant to test Relationship Cardinality One to Many
