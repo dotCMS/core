@@ -23,6 +23,7 @@ import com.dotmarketing.fixtask.tasks.FixTask00080DeleteOrphanedContentTypeField
 import com.dotmarketing.fixtask.tasks.FixTask00085FixEmptyParentPathOnIdentifier;
 import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPath;
 import com.dotmarketing.fixtask.tasks.FixTask00095DeleteOrphanRelationships;
+import com.dotmarketing.fixtask.tasks.FixTask00100DeleteUnlinkedContentletAssets;
 import com.dotmarketing.startup.runalways.Task00001LoadSchema;
 import com.dotmarketing.startup.runalways.Task00002LoadClusterLicenses;
 import com.dotmarketing.startup.runalways.Task00003CreateSystemRoles;
@@ -73,7 +74,8 @@ public class TaskLocatorUtil {
 			FixTask00080DeleteOrphanedContentTypeFields.class,
 			FixTask00085FixEmptyParentPathOnIdentifier.class,
 			FixTask00090RecreateMissingFoldersInParentPath.class,
-			FixTask00095DeleteOrphanRelationships.class
+			FixTask00095DeleteOrphanRelationships.class,
+			FixTask00100DeleteUnlinkedContentletAssets.class
 	);
 
 	/**
