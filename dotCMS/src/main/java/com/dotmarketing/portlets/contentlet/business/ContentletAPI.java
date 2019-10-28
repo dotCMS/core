@@ -747,6 +747,15 @@ public interface ContentletAPI {
             throws DotDataException, DotSecurityException, DotContentletStateException;
 
     /**
+     *
+     * @param contentlet
+     * @param relationship
+     * @param hasParent
+     */
+    void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
+            boolean hasParent);
+
+    /**
      * Returns a list of all contentlets related to this instance given a RelationshipField variable
      * using pagination
      * @param variableName

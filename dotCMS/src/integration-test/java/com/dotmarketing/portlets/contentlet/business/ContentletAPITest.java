@@ -6802,4 +6802,54 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         }
     }
+
+    @Test
+    public void testGetRelatedForSelfJoinsDoesNotCacheWhenPullByParentIsNull()
+            throws DotDataException, DotSecurityException, DotCacheException {
+        ContentType parentContentType = null;
+        try {
+            final long time = System.currentTimeMillis();
+            parentContentType = createContentType("parentContentType" + time,
+                    BaseContentType.CONTENT);
+
+            //One side of the relationship is set parentContentType --> parentContentType (self-related as parent)
+            com.dotcms.contenttype.model.field.Field parentField = createRelationshipField("child",
+                    parentContentType.id(), parentContentType.variable());
+
+            //Setting the other side of the relationship parentContentType --> parentContentType (self-related as child)
+            com.dotcms.contenttype.model.field.Field childField = createRelationshipField("parent",
+                    parentContentType.id(),
+                    parentContentType.variable() + StringPool.PERIOD + parentField.variable());
+
+            final Relationship relationship = relationshipAPI
+                    .getRelationshipFromField(childField, user);
+
+            final ContentletDataGen dataGen = new ContentletDataGen(parentContentType.id());
+            Contentlet parentContent = dataGen.languageId(languageAPI.getDefaultLanguage().getId())
+                    .nextPersisted();
+
+            Contentlet childContent = dataGen.languageId(languageAPI.getDefaultLanguage().getId())
+                    .next();
+            childContent.setRelated(childField.variable(), CollectionsUtils.list(parentContent));
+
+            childContent = contentletAPI.checkin(childContent, user, false);
+
+            //Flush cache
+            CacheLocator.getRelationshipCache().removeRelationshipsByType(parentContentType);
+
+            contentletAPI.getRelatedContent(parentContent, relationship, null, user, false);
+            contentletAPI.getRelatedContent(childContent, relationship, null, user, false);
+
+            assertFalse(UtilMethods.isSet(CacheLocator.getRelationshipCache()
+                    .getRelatedContentMap(parentContent.getIdentifier())));
+
+            assertFalse(UtilMethods.isSet(CacheLocator.getRelationshipCache()
+                    .getRelatedContentMap(childContent.getIdentifier())));
+
+        } finally {
+            if (parentContentType != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+        }
+    }
 }
