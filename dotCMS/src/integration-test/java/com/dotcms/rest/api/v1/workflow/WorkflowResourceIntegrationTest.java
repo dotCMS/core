@@ -7,6 +7,10 @@ import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.rest.*;
 import com.dotcms.rest.api.MultiPartUtils;
@@ -23,6 +27,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -30,6 +35,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
@@ -39,11 +45,14 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.RandomStringUtils;
+import org.glassfish.jersey.internal.util.Base64;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
@@ -1505,6 +1514,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             "   }\n" +
             "}";
 
+    private static final String RELATIONSHIP_FIELD_NAME = "relationshipField";
+
     @Test
     public void test_Fire_Save_Content_Type_Binary_File() throws Exception {
 
@@ -1940,6 +1951,99 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         }
     }
 
+    @Test
+    public void testFireActionDefault_ContentWithRelationships_Success() throws Exception {
+        ContentType childContentType = null;
+        ContentType parentContentType = null;
+        try{
+            //Create childContentType
+            childContentType = createSampleContentType();
+
+            //Create parentContentType and add relationship field to childContentType
+            parentContentType = createRelationshipFieldContentType(childContentType.variable());
+
+            //Create child Content
+            final FireActionForm.Builder builder1 = new FireActionForm.Builder();
+            final Map <String,Object>contentletFormData = new HashMap<>();
+            contentletFormData.put("stInode", childContentType.inode());
+            contentletFormData.put(REQUIRED_TEXT_FIELD_NAME, REQUIRED_TEXT_FIELD_VALUE);
+            builder1.contentlet(contentletFormData);
+            final FireActionForm fireActionForm1 = new FireActionForm(builder1);
+            final HttpServletRequest request1 = getHttpRequest();
+            final Response response1 = workflowResource
+                    .fireActionDefault(request1, new EmptyHttpResponse(), null, null,
+                            languageAPI.getDefaultLanguage().getId(), SystemAction.PUBLISH,  fireActionForm1);
+            final int statusCode1 = response1.getStatus();
+            assertEquals(Status.OK.getStatusCode(), statusCode1);
+            final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                    .cast(response1.getEntity());
+            final Contentlet childContentlet = new Contentlet (Map.class.cast(fireEntityView1.getEntity()));
+            assertNotNull(childContentlet);
+            assertEquals(REQUIRED_TEXT_FIELD_VALUE, childContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
+
+            //Create parent Content
+            final FireActionForm.Builder builder2 = new FireActionForm.Builder();
+            final Map <String,Object>contentletFormData2 = new HashMap<>();
+            contentletFormData2.put("stInode", parentContentType.inode());
+            contentletFormData2.put(REQUIRED_TEXT_FIELD_NAME, REQUIRED_TEXT_FIELD_VALUE);
+            contentletFormData2.put(RELATIONSHIP_FIELD_NAME,childContentlet.getIdentifier());
+            builder2.contentlet(contentletFormData2);
+            final FireActionForm fireActionForm2 = new FireActionForm(builder2);
+            final HttpServletRequest request2 = getHttpRequest();
+            final Response response2 = workflowResource
+                    .fireActionDefault(request2, new EmptyHttpResponse(), null, null,
+                            languageAPI.getDefaultLanguage().getId(), SystemAction.PUBLISH,  fireActionForm2);
+            final int statusCode2 = response2.getStatus();
+            assertEquals(Status.OK.getStatusCode(), statusCode2);
+            final ResponseEntityView fireEntityView2 = ResponseEntityView.class
+                    .cast(response2.getEntity());
+            final Contentlet parentContentlet = new Contentlet (Map.class.cast(fireEntityView2.getEntity()));
+            assertNotNull(parentContentlet);
+            assertEquals(REQUIRED_TEXT_FIELD_VALUE, parentContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
+
+        }finally {
+            if (null != childContentType) {
+                contentTypeAPI.delete(childContentType);
+            }
+            if (null != parentContentType) {
+                contentTypeAPI.delete(parentContentType);
+            }
+        }
+    }
+
+    private ContentType createRelationshipFieldContentType(final String childContentTypeVariable) throws Exception{
+        ContentType contentType;
+        final String ctPrefix = "TestContentType";
+        final String newContentTypeName = ctPrefix + System.currentTimeMillis();
+
+        // Create ContentType
+        contentType = createContentTypeAndAssignPermissions(newContentTypeName,
+                BaseContentType.CONTENT, PermissionAPI.PERMISSION_READ, adminRole.getId());
+        final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+        final WorkflowScheme documentWorkflow = workflowAPI.findSchemeByName(DM_WORKFLOW);
+
+        // Add fields to the contentType
+        final Field textField =
+                FieldBuilder.builder(TextField.class).name(REQUIRED_TEXT_FIELD_NAME).variable(REQUIRED_TEXT_FIELD_NAME)
+                        .required(true)
+                        .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build();
+
+        final Field relationshipField =
+                FieldBuilder.builder(RelationshipField.class).name(RELATIONSHIP_FIELD_NAME).contentTypeId(contentType.id())
+                        .values(String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal())).relationType(childContentTypeVariable).build();
+        contentType = contentTypeAPI.save(contentType, Arrays.asList(textField, relationshipField));
+
+        // Assign contentType to Workflows
+        workflowAPI.saveSchemeIdsForContentType(contentType,
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
+        );
+
+        return contentType;
+    }
+
     private ContentType createNumericRequiredAndNonRequiredFieldsContentType() throws Exception{
         ContentType contentType;
         final String ctPrefix = "NumericRequiredAndNonRequiredFieldsContentType";
@@ -2073,5 +2177,17 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         return null;
 
+    }
+
+    private static HttpServletRequest getHttpRequest() {
+        MockHeaderRequest request = new MockHeaderRequest(
+                (
+                        new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                ).request()
+        );
+
+        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+
+        return request;
     }
 }
