@@ -22,6 +22,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
 
 public class DotCMSInitDb {
 
@@ -114,7 +116,8 @@ public class DotCMSInitDb {
 		
 		ImportExportUtil ieu = new ImportExportUtil();
 		if(ieu.validateZipFile(starterZip)){
-			ieu.doImport(pw);
+		    Try.run((()->ieu.doImport(pw))).onFailure(e-> new DotRuntimeException(e));
+
 		}
 	}
 }

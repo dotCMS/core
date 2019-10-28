@@ -49,7 +49,6 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
-import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
@@ -70,10 +69,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -82,7 +79,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.search.TotalHits;
@@ -117,14 +113,19 @@ import org.springframework.util.NumberUtils;
  *
  */
 public class ESContentFactoryImpl extends ContentletFactory {
-
     private static final String[] ES_FIELDS = {"inode", "identifier"};
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
 	private final IndiciesAPI indiciesAPI;
 
-	private static final Contentlet cache404Content= new Contentlet();
-	public static final String CACHE_404_CONTENTLET="CACHE_404_CONTENTLET";
+    @VisibleForTesting
+    public static final String CACHE_404_CONTENTLET = "CACHE_404_CONTENTLET";
+
+    private static final Contentlet cache404Content = new Contentlet() {
+        public String getInode() {
+            return CACHE_404_CONTENTLET;
+        }
+    };
 
 	@VisibleForTesting
 	public static final String LUCENE_RESERVED_KEYWORDS_REGEX = "OR|AND|NOT|TO";
@@ -137,7 +138,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         this.contentletCache = CacheLocator.getContentletCache();
         this.languageAPI     =  APILocator.getLanguageAPI();
         this.indiciesAPI     = APILocator.getIndiciesAPI();
-        this.cache404Content.setInode(CACHE_404_CONTENTLET);
 	}
 
 	@Override
@@ -788,7 +788,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	
 	
     @Override
-    protected Contentlet find(String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+    protected Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
         Contentlet con = contentletCache.get(inode);
         if (con != null && InodeUtils.isSet(con.getInode())) {
             if (CACHE_404_CONTENTLET.equals(con.getInode())) {
@@ -796,12 +796,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
             return con;
         }
-        Optional<Contentlet> dbContentlet = this.findInDb(inode);
+        final Optional<Contentlet> dbContentlet = this.findInDb(inode);
         if (dbContentlet.isPresent()) {
             con = dbContentlet.get();
             contentletCache.add(con.getInode(), con);
             return con;
         } else {
+            contentletCache.add(inode, cache404Content);
             return null;
         }
 

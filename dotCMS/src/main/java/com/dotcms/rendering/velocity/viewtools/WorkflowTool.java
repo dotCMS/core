@@ -5,6 +5,7 @@ import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import com.dotcms.rest.MapToContentletPopulator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import java.util.List;
 import java.util.Map;
 
@@ -202,14 +203,14 @@ public class WorkflowTool implements ViewTool {
 
 			final List<Category> categories = categoryAPI.getCategoriesFromContent(contentlet, user, allowFrontEndSaving);
 
-			final Map<Relationship, List<Contentlet>> relationships = (Map<Relationship, List<Contentlet>>)
+			final ContentletRelationships relationships = (ContentletRelationships)
 					contentlet.get(RELATIONSHIP_KEY);
 
 			final ContentletDependencies contentletDependencies = new ContentletDependencies.Builder()
 					.workflowActionId(wfActionId)
 					.respectAnonymousPermissions(allowFrontEndSaving)
 					.modUser(user).categories(categories)
-					.relationships(relationshipAPI.getContentletRelationshipsFromMap(contentlet, relationships))
+					.relationships((relationships))
 					.indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
 					.build();
 

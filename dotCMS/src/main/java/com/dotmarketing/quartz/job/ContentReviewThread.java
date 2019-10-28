@@ -1,17 +1,6 @@
 package com.dotmarketing.quartz.job;
 
 import com.dotcms.business.CloseDBIfOpened;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -28,7 +17,7 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
@@ -40,6 +29,14 @@ import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 public class ContentReviewThread implements Runnable, Job {
 
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
@@ -127,13 +124,13 @@ public class ContentReviewThread implements Runnable, Job {
 
                 	// updating content NextReview date, in order not to over load the Task if CONTENT_REVIEW_THREAD interval is less than content reviewInterval
                 	cont.setNextReview(conAPI.getNextReview(cont, systemUser, false));
-                	Map<Relationship, List<Contentlet>> contentRelationships = conAPI.findContentRelationships(cont, systemUser);
+                	ContentletRelationships contentRelationships = conAPI.getAllRelationships(cont);
                 	List<Category> cats = catAPI.getParents(cont, systemUser, false);
                 	List<Permission> permissions = permAPI.getPermissions(cont);
                 	conAPI.checkinWithoutVersioning(cont, contentRelationships, cats, permissions, systemUser, false);
 
                 } catch (Exception e) {
-                    Logger.error(this, "Error ocurred trying to create the review task for contenlet: "
+                    Logger.error(this, "Error occurred trying to create the review task for contentlet: "
                             + cont.getInode(), e);
                 }
             }

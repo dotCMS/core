@@ -168,10 +168,6 @@ dependencies {
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-windows', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'embedded-collector', version: '0.13.1'
 
-    providedCompile "javax.servlet:javax.servlet-api:3.1.0"
-    providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
-    providedCompile fileTree("../libs/buildlibs").include('mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'mssql-jdbc*.jar')
-
     individualTestCompile sourceSets.test.output
     integrationTestCompile sourceSets.test.output
     functionalTestCompile sourceSets.test.output
@@ -977,14 +973,20 @@ class DeployWarTomcatTask extends DefaultTask{
 
     // Copying libs/buildlibs under tomcat8/lib.
     def copyBuildLibs(buildLibLocation) {
+
+        project.copy {
+            from project.configurations.providedCompile
+            into buildLibLocation + '/lib'
+            include '**/ojdbc*.jar'
+            include '**/postgresql*.jar'
+            include '**/mysql-connector-java*.jar'
+            include '**/mssql-jdbc*.jar'
+        }
+
         project.copy{
             from '../libs/buildlibs'
             into buildLibLocation + '/lib'
             include 'mail.jar'
-            include 'mssql-jdbc-6.2.2.jre8.jar'
-            include 'mysql-connector-java-5.1.37-bin.jar'
-            include 'postgresql-42.2.2.jar'
-            include 'ojdbc5.jar'
         }
 
     }

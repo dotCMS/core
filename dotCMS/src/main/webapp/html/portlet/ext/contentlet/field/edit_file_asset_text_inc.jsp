@@ -98,7 +98,7 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 
 <div id="fileTextEditorDiv">
-    <div style="height:600px;width:900px;border:1px solid silver" 
+    <div style="height:600px;max-width:900px;border:1px solid silver" 
         id="<%=field.getVelocityVarName()%>_ACE"><%=contents %></div>
         <div class="editor-options">
 			<div class="checkbox">

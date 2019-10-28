@@ -777,4 +777,55 @@ public class PageResourceTest {
         }
         assertNull(pageView.getViewAs().getPersona());
     }
+
+
+    /**
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}
+     * Given Scenario: Create a page with not LIVE version, then publish the page, and then update the page to crate a
+     * new working version
+     * ExpectedResult: Should return a LIVE attribute to true just in after the page is publish
+     */
+
+    @Test()
+    public void shouldReturnLIVE() throws DotDataException, DotSecurityException {
+        when(request.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.PREVIEW_MODE.toString());
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(2, host, false);
+        HTMLPageAsset page = pageRenderTest.getPage();
+
+        when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
+
+        Response response = pageResource
+                .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
+                        String.valueOf(languageId), null);
+
+        PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertFalse(pageView.isLive());
+
+
+        //Publish the page
+        APILocator.getContentletAPI().publish(page, user, false);
+
+        response = pageResource
+                .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
+                        String.valueOf(languageId), null);
+
+        pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertTrue(pageView.isLive());
+
+        //Create a new working version
+        final Contentlet checkout = APILocator.getContentletAPI().checkout(page.getInode(), user, false);
+        APILocator.getContentletAPI().checkin(checkout, user, false);
+
+        response = pageResource
+                .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
+                        String.valueOf(languageId), null);
+
+        pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertTrue(pageView.isLive());
+    }
 }

@@ -12,9 +12,9 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -36,9 +37,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
@@ -125,7 +127,7 @@ public class MapToContentletPopulator  {
                 }
 
                 // look for relationships
-                contentlet.setProperty(RELATIONSHIP_KEY, this.getRelationshipListMap(map, contentlet));
+                contentlet.setProperty(RELATIONSHIP_KEY, this.getContentletRelationships(map, contentlet));
 
                 // fill fields
                 this.fillFields(contentlet, map, type, fieldMap);
@@ -349,66 +351,92 @@ public class MapToContentletPopulator  {
         return categories;
     }
 
+    /**
+     * @deprecated This method should not be used because it does not consider self related content.
+     * We suggest to manually create ContentletRelationships
+     * @param contentlet
+     * @param contentRelationships
+     * @return
+     */
     public ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
                                                                       final Map<Relationship, List<Contentlet>> contentRelationships) {
 
         return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
     }
 
-    private Map<Relationship, List<Contentlet>> getRelationshipListMap(final Map<String, Object> map,
+    private ContentletRelationships getContentletRelationships(final Map<String, Object> map,
                                                                        final Contentlet contentlet) throws DotDataException {
 
-        Map<Relationship, List<Contentlet>> relationships = null;
-
+        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
         final ContentType contentType = contentlet.getContentType();
+        ContentletRelationships contentletRelationships = null;
 
-        for (final Relationship relationship : APILocator.getRelationshipAPI().byContentType(contentType)) {
+        for (final Relationship relationship : relationshipAPI.byContentType(contentType)) {
 
             //searches for legacy relationships(those with legacy relation type value) and field
             //relationships (those with period. For example: News.comments)
-            final Optional<String> queryOptional = getRelationshipQuery(contentType, map, relationship);
-            String query = null;
+            final Map<String, String> queryMap = getRelationshipQuery(contentType, map, relationship);
 
-            if (queryOptional.isPresent()){
-                query = queryOptional.get();
-            }
+            for (Entry<String, String> queryEntry: queryMap.entrySet()){
+                String query = queryEntry.getValue();
 
-            if (UtilMethods.isSet(query)) {
+                if (UtilMethods.isSet(query)) {
 
-                try {
+                    try {
 
-                    final List<Contentlet> contentlets = RelationshipUtil
-                            .filterContentlet(contentlet.getLanguageId(), query,
-                                    APILocator.getUserAPI().getSystemUser(), false);
+                        final List<Contentlet> contentlets = RelationshipUtil
+                                .filterContentlet(contentlet.getLanguageId(), query,
+                                        APILocator.getUserAPI().getSystemUser(), false);
 
-                    if (contentlets.size() > 0) {
+                        if (contentlets.size() > 0) {
 
-                        if(relationships==null) {
+                            if (contentletRelationships == null){
+                                contentletRelationships = new ContentletRelationships(contentlet);
+                            }
 
-                            relationships = new HashMap<>();
+                            addContentletRelationships(contentlet,
+                                    relationshipAPI, contentletRelationships,
+                                    relationship, queryEntry, contentlets);
                         }
 
-                        relationships.put(relationship, contentlets);
+                        Logger.info(this, "got " + contentlets.size() + " related contents");
+                    } catch (Exception e) {
+
+                        Logger.warn(this, e.getMessage(), e);
+                    }
+                } else if (query != null && query.trim().equals("")){
+
+                    if (contentletRelationships == null){
+                        contentletRelationships = new ContentletRelationships(contentlet);
                     }
 
-                    Logger.info(this, "got " + contentlets.size() + " related contents");
-                } catch (Exception e) {
-
-                    Logger.warn(this, e.getMessage(), e);
+                    //wipe out relationship
+                    addContentletRelationships(contentlet,
+                            relationshipAPI, contentletRelationships,
+                            relationship, queryEntry, new ArrayList<>());
                 }
-            } else if (query != null && query.trim().equals("")){
-
-                //wipe out relationship
-                if(relationships==null) {
-
-                    relationships = new HashMap<>();
-                }
-                relationships.put(relationship, new ArrayList<>());
             }
         }
 
-        return relationships;
-    } // getRelationshipListMap.
+        return contentletRelationships;
+    } // getContentletRelationships.
+
+    @NotNull
+    private void addContentletRelationships(Contentlet contentlet, RelationshipAPI relationshipAPI,
+            ContentletRelationships contentletRelationships, Relationship relationship,
+            Entry<String, String> queryEntry, List<Contentlet> contentlets) {
+
+        final boolean isParent =
+                relationshipAPI.sameParentAndChild(relationship) ? queryEntry.getKey()
+                        .equalsIgnoreCase(relationship.getChildRelationName())
+                        : relationshipAPI.isParent(relationship, contentlet.getContentType());
+
+        final ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+                relationship, isParent);
+        records.setRecords(contentlets);
+        contentletRelationships.getRelationshipsRecords().add(records);
+
+    }
 
     /**
      * Gets the query to be used for filtering related contentlet. It supports legacy and field relationships
@@ -417,31 +445,36 @@ public class MapToContentletPopulator  {
      * @param relationship
      * @return
      */
-    private Optional<String> getRelationshipQuery(final ContentType contentType,
+    private Map<String, String> getRelationshipQuery(final ContentType contentType,
             final Map<String, Object> fieldsMap, final Relationship relationship) {
         final String relationTypeValue = relationship.getRelationTypeValue();
+
+        final Map<String, String> queryMap = new HashMap<>();
 
         //Important: On this method fieldsMap.contains is not valid
         if (!relationship.isRelationshipField() && fieldsMap.get(relationTypeValue) != null) {
             //returns a legacy relationship
-            return Optional.of((String)fieldsMap.get(relationTypeValue));
-        } else {
+            queryMap.put(relationTypeValue, (String) fieldsMap.get(relationTypeValue));
+        } else if (relationship.isRelationshipField()) {
             //returns a field relationship if exists
             final Set<String> relationshipFields = contentType.fields().stream()
                     .filter(field -> field instanceof RelationshipField)
                     .map(field -> field.variable()).collect(
                             Collectors.toSet());
-            if (relationTypeValue.contains(StringPool.PERIOD) && fieldsMap
-                    .get(relationship.getChildRelationName()) != null && relationshipFields
+            if (fieldsMap.get(relationship.getChildRelationName()) != null && relationshipFields
                     .contains(relationship.getChildRelationName())) {
-                return Optional.of((String)fieldsMap.get(relationship.getChildRelationName()));
-            } else if (fieldsMap.get(relationship.getParentRelationName()) != null && relationshipFields
+                queryMap.put(relationship.getChildRelationName(),
+                        (String) fieldsMap.get(relationship.getChildRelationName()));
+            }
+
+            if (fieldsMap.get(relationship.getParentRelationName()) != null && relationshipFields
                     .contains(relationship.getParentRelationName())) {
-                return Optional.of((String)fieldsMap.get(relationship.getParentRelationName()));
+                queryMap.put(relationship.getParentRelationName(),
+                        (String) fieldsMap.get(relationship.getParentRelationName()));
             }
         }
 
-        return Optional.empty();
+        return queryMap;
     }
 
     private void processIdentifier(final Contentlet contentlet,

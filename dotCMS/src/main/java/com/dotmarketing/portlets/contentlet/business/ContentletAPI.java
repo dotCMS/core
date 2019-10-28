@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotmarketing.beans.Host;
@@ -746,6 +747,15 @@ public interface ContentletAPI {
             throws DotDataException, DotSecurityException, DotContentletStateException;
 
     /**
+     *
+     * @param contentlet
+     * @param relationship
+     * @param hasParent
+     */
+    void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
+            boolean hasParent);
+
+    /**
      * Returns a list of all contentlets related to this instance given a RelationshipField variable
      * using pagination
      * @param variableName
@@ -1071,8 +1081,14 @@ public interface ContentletAPI {
 	 * @throws DotContentletStateException if contentlet is not already persisted
 	 */
 	public Contentlet checkout(String contentletInode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException;
-	
-	/**
+
+    @CloseDBIfOpened
+    Contentlet checkinWithoutVersioning(Contentlet contentlet,
+            ContentletRelationships contentRelationships, List<Category> cats,
+            List<Permission> permissions, User user,
+            boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
+
+    /**
 	 * Allows you to checkout contents so it can be altered and checked in.
 	 * Note that this method is only intended for use with Checkin methods.
 	 * Methods like publish, archive, unpublish,.. will fail when passing
@@ -1119,8 +1135,10 @@ public interface ContentletAPI {
 	 */
 	public List<Contentlet> checkout(String luceneQuery, User user, boolean respectFrontendRoles, int offset, int limit) throws DotDataException, DotSecurityException, DotContentletStateException;
 	
-	/** 
-	 * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
+	/**
+     * @deprecated This method should not be used because it does not consider self related content.
+     * Use {@link ContentletAPI#checkin(Contentlet, ContentletRelationships, List, List, User, boolean)} instead
+     * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
 	 * Note that the contentlet argument must be obtained using checkout methods.
      *
      * Important note to be considered: Related content can also be set using any of these methods:
@@ -1311,7 +1329,9 @@ public interface ContentletAPI {
 	public Contentlet checkin(Contentlet contentlet, User user, boolean respectFrontendRoles, List<Category> cats) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
 	
 	/**
-	 * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
+	 * @deprecated This method should not be used because it does not consider self related content.
+     * Use {@link ContentletAPI#checkin(Contentlet, ContentletRelationships, List, List, User, boolean)} instead
+     * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
 	 * Note that the contentlet argument must be obtained using checkout methods.
      *
      * Important note to be considered: Related content can also be set using any of these methods:
@@ -1362,7 +1382,9 @@ public interface ContentletAPI {
 	public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
 
 	/**
-	 * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
+	 * @deprecated This method should not be used because it does not consider self related content.
+     * Use {@link ContentletAPI#checkin(Contentlet, ContentletRelationships, List, List, User, boolean)} instead
+     * Will check in a new version of you contentlet. The inode of your contentlet must be null or empty.
 	 * Note that the contentlet argument must be obtained using checkout methods.
      *
      * Important note to be considered: Related content can also be set using any of these methods:
@@ -1397,7 +1419,9 @@ public interface ContentletAPI {
 	public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException;
 	
 	/**
-	 * Will check in a update of your contentlet without generating a new version. The inode of your contentlet must be different from null/empty.
+	 * @deprecated This method should not be used because it does not consider self related content.
+     * Use {@link ContentletAPI#checkinWithoutVersioning(Contentlet, ContentletRelationships, List, List, User, boolean)} instead
+     * Will check in a update of your contentlet without generating a new version. The inode of your contentlet must be different from null/empty.
 	 * Note this method will also attempt to publish the contentlet and related assets (when checking in) without altering the mod date or mod user.
 	 * Note that the contentlet argument must be obtained using checkout methods.
      *

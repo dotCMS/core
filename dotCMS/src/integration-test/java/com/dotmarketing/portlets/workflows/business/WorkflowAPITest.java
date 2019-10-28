@@ -10,6 +10,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -25,6 +26,7 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
+import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -69,7 +71,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -85,7 +86,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import javax.swing.text.AbstractDocument.Content;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -669,9 +669,9 @@ public class WorkflowAPITest extends IntegrationTestBase {
             contentlet = contentletDataGen.setProperty("title", "TestContent")
                     .setProperty("body", unicodeText ).languageId(frenchLanguage.getId()).nextPersisted();
             final WorkflowStep workflowStep           = workflowAPI.findStep(SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
-
-            final WorkflowTask workflowTask = workflowAPI.createWorkflowTask
-                    (contentlet, user, workflowStep, "test", "test");
+            //UnassignedWorkflowContentletCheckinListener.assigned is called by default creating a task. So we better reset here before we get an duplicate entry violation.
+            workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
+            final WorkflowTask workflowTask = workflowAPI.createWorkflowTask(contentlet, user, workflowStep, "test", "test");
             workflowAPI.saveWorkflowTask(workflowTask);
 
             Optional<WorkflowStep> currentStepOpt = workflowAPI.findCurrentStep(contentlet);
@@ -3719,5 +3719,52 @@ public class WorkflowAPITest extends IntegrationTestBase {
         }
 
     }
+
+    @Test
+    public void Create_Contentlet_Assign_Task_With_Null_Status_Then_Checkin_Then_Verify_Auto_Assign_is_Called_And_New_Task_Is_Set_Contentlet()
+            throws DotDataException, DotSecurityException {
+
+        final WorkflowScheme scheme = TestWorkflowUtils.getSystemWorkflow();
+        final ContentType contentType = new ContentTypeDataGen().workflowId(scheme.getId())
+                .name("myLameContentType").nextPersisted();
+        final WorkflowStep emptyWorkflowStep = new WorkflowStep(); // This empty object will generate a null step id which is precisely the scenario we want to replicate.
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+        final WorkflowTask task = workflowAPI
+                .createWorkflowTask(contentlet, user, emptyWorkflowStep,
+                        "test Task with null status",
+                        "test");
+        assertNull(task.getStatus());
+        final Contentlet out = contentletAPI.checkout(contentlet.getInode(), user, false);
+        // Set up some flags to make sure the `ContentletCheckinEvent` is issued.
+        out.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        out.setBoolProperty(Contentlet.WORKFLOW_IN_PROGRESS, false);
+        out.setBoolProperty(Contentlet.AUTO_ASSIGN_WORKFLOW, true);
+        //The Workflow task should be assigned by UnassignedWorkflowContentletCheckinListener
+        APILocator.getLocalSystemEventsAPI().subscribe(ContentletCheckinEvent.class,
+                (EventSubscriber<ContentletCheckinEvent>) event -> {
+                    final Contentlet expectedContentlet = event.getContentlet();
+                    if (null != expectedContentlet) {
+                        // Ensure this is the same contentlet we sent.
+                        if (out.getIdentifier().equals(expectedContentlet.getIdentifier())) {
+                            try {
+                                final WorkflowTask workflowTask = APILocator.getWorkflowAPI()
+                                        .findTaskByContentlet(contentlet);
+                                assertNotNull(workflowTask);
+                                assertNotNull(workflowTask
+                                        .getStatus()); // null Status should have been taken care by now.
+                            } catch (DotDataException e) {
+                                Logger.error(WorkflowAPITest.class, e);
+                                fail(String
+                                        .format("Something happened getting the workflow task for contentlet [%s] ",
+                                                contentlet)
+                                );
+                            }
+                        }
+                    }
+                }
+        );
+        contentletAPI.checkin(out, user, false);
+    }
+
 
 }

@@ -1,5 +1,14 @@
 <Context path="${catalina.home}/webapps/ROOT" docBase="${catalina.home}/webapps/ROOT" reloadable="false" crossContext="true">
 <Resources allowLinking="true" />
+
+    <!-- http://tomcat.apache.org/tomcat-8.0-doc/config/jar-scanner.html -->
+    <!-- http://tomcat.apache.org/tomcat-8.0-doc/config/jar-scan-filter.html -->
+    <JarScanner>
+        <JarScanFilter
+            pluggabilitySkip="${tomcat.util.scan.StandardJarScanFilter.jarsToSkip},ojdbc*.jar"
+            tldSkip="${tomcat.util.scan.StandardJarScanFilter.jarsToSkip},ojdbc*.jar"/>
+    </JarScanner>
+
     <!--
     The class loader behaviour changed on recent tomcat versions, with the new default behaviour
      we are unable to set a -javaagent and with that we won't be able to use instrumentation, setting the
