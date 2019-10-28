@@ -5778,12 +5778,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
-                        .ordinal() && contentsInRelationship.size() > 1){
-                    Logger.error(this, "Error in Contentlet [" + contentletId + "]: Relationship [" + relationship
-                            .getRelationTypeValue() + "] has been defined as One to One");
-                    cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
-                    hasError = true;
-                    continue;
+                        .ordinal() && contentsInRelationship.size() > 0){
+                    hasError = !isValidOneToOneRelationship(contentlet, cve, relationship, contentsInRelationship);
+
+                    if (hasError)
+                        continue;
                 }
                 //There is a case when the Relationship is between same structures
                 //We need to validate that case
@@ -5830,14 +5829,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 Logger.error(this, error.toString());
                                 hasError = true;
                                 cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
-                            } else if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
-                                    .ordinal() && relatedContents.size() > 0 && !relatedContents.get(0).getIdentifier()
-                                    .equals(contentlet.getIdentifier())){
-                                Logger.error(this, "Error in related Contentlet [" + relatedContents.get(0).getIdentifier
-                                        () + "]: Relationship [" + relationship.getRelationTypeValue() + "] has been defined " +
-                                        "as One to One");
-                                cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
-                                hasError = true;
                             }
 
                             if (!contentInRelationship.getContentTypeId().equalsIgnoreCase(relationship.getChildStructureInode())) {
@@ -5901,6 +5892,55 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (hasError){
             throw cve;
         }
+    }
+
+    /**
+     *
+     * @param contentlet
+     * @param cve
+     * @param relationship
+     * @param contentsInRelationship
+     * @return
+     */
+    private boolean isValidOneToOneRelationship(final Contentlet contentlet,
+            final DotContentletValidationException cve, final Relationship relationship,
+            final List<Contentlet> contentsInRelationship) {
+
+        //Trying to relate more than one piece of content
+        if (contentsInRelationship.size() > 1) {
+            Logger.error(this,
+                    "Error in Contentlet [" + contentlet.getIdentifier() + "]: Relationship ["
+                            + relationship
+                            .getRelationTypeValue()
+                            + "] has been defined as One to One");
+            cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
+            return false;
+        }
+
+        //Trying to relate a piece of content that already exists to another relationship
+        try {
+            List<Contentlet> relatedContents = getRelatedContent(
+                    contentsInRelationship.get(0), relationship, null,
+                    APILocator.getUserAPI()
+                            .getSystemUser(), true);
+            if (relatedContents.size() > 0 && !relatedContents.get(0).getIdentifier()
+                    .equals(contentlet.getIdentifier())) {
+                Logger.error(this,
+                        "Error in related Contentlet [" + relatedContents.get(0)
+                                .getIdentifier
+                                        () + "]: Relationship [" + relationship
+                                .getRelationTypeValue() + "] has been defined " +
+                                "as One to One");
+                cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
+                return false;
+            }
+        } catch (final DotSecurityException | DotDataException e) {
+            Logger.error(this, "An error occurred when retrieving information from related Contentlet" +
+                    " [" + contentsInRelationship.get(0).getIdentifier() + "]", e);
+            cve.addInvalidContentRelationship(relationship, contentsInRelationship);
+            return false;
+        }
+        return true;
     }
 
     @Override
