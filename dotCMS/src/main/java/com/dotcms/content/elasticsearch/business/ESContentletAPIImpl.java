@@ -3018,6 +3018,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         com.dotcms.contenttype.model.field.Field field = null;
         List<Contentlet> relatedList;
+        List<String> uniqueIdentifiers;
         Relationship relationship;
 
         try {
@@ -3039,6 +3040,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         relatedList = filterRelatedContent(contentlet, relationship, systemUser, false,
                 pullByParent, limit, offset, sortBy);
 
+        //Get unique identifiers to avoid duplicates (used to save on cache and filter the final list if needed
+        uniqueIdentifiers = relatedList.stream().map(Contentlet::getIdentifier).distinct()
+                .collect(CollectionsUtils.toImmutableList());
+
 
         //Cache related content only if it is a relationship field and there is no filter
         //In case of self-relationships, we shouldn't cache any value for a particular field when pullByParent==null
@@ -3046,10 +3051,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (field != null && limit == -1 && offset <= 0 && sortBy == null &&
                 !(relationshipAPI.sameParentAndChild(relationship) && pullByParent == null)) {
             if (UtilMethods.isSet(relatedList)) {
-                relatedIds.put(variableName,
-                        relatedList.stream().map(Contentlet::getIdentifier).distinct()
-                                .collect(
-                                        CollectionsUtils.toImmutableList()));
+                relatedIds.put(variableName, uniqueIdentifiers);
             } else {
                 relatedIds.put(variableName, Collections.emptyList());
             }
@@ -3057,22 +3059,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
             CacheLocator.getRelationshipCache().putRelatedContentMap(contentlet.getIdentifier(), relatedIds);
         }
 
-        //Filter by language if set
-        if (language != -1) {
-            relatedList = relatedList.stream()
-                    .filter(currentContent -> currentContent.getLanguageId() == language)
+        if (live == null && language == -1) {
+            return relatedList;
+        } else{
+            /*Filter by live and/or language if set
+              If live=true, for each content, it needs to return the live version.
+              Otherwise, it would return the working one*/
+            return uniqueIdentifiers.stream()
+                    .flatMap(identifier -> filterRelatedContentByLiveAndLanguage(language, live, identifier))
                     .collect(Collectors.toList());
         }
-
-        //Filter by live if set
-        if (live != null){
-            relatedList = relatedList.stream()
-                    .filter(currentContent -> Sneaky.sneak(() -> currentContent.isLive())
-                            .equals(live))
-                    .collect(Collectors.toList());
-        }
-
-        return relatedList;
     }
 
     /**
@@ -3086,8 +3082,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final String variableName, final long language, final Boolean live) {
         return relatedIds
                 .get(variableName).stream()
-                .flatMap(identifier -> filterRelatedMap(language, live, identifier))
-                .filter(Objects::nonNull).collect(Collectors.toList());
+                .flatMap(identifier -> filterRelatedContentByLiveAndLanguage(language, live, identifier))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -3097,27 +3093,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param identifier
      * @return
      */
-    private Stream<? extends Contentlet> filterRelatedMap(final long language, final Boolean live,
+    private Stream<? extends Contentlet> filterRelatedContentByLiveAndLanguage(final long language, final Boolean live,
             final String identifier) {
-        try {
-            final StringBuilder query = new StringBuilder();
+        final List<Contentlet> relatedContentList = new ArrayList<>();
+        //If language is set, we must return the content version in that language.
+        //Otherwise, we need to return a version for each language if exists
+        List<Long> languages = language > 0 ? CollectionsUtils.list(language)
+                : languageAPI.getLanguages().stream().map(lang -> lang.getId()).collect(
+                        Collectors.toList());
 
-            query.append("+identifier:").append(identifier);
-            if (language != -1) {
-                query.append(" +languageid:").append(language);
+        for (Long currentLanguage : languages) {
+            try{
+                Contentlet currentContent = findContentletByIdentifier(
+                        identifier, live == null ? false : live,
+                        currentLanguage, APILocator.getUserAPI().getSystemUser(),
+                        false);
+                if (currentContent != null) {
+                    relatedContentList.add(currentContent);
+                }
+            } catch (DotDataException | DotSecurityException | DotContentletStateException e) {
+                Logger.warnAndDebug(this.getClass(),
+                        "Error trying to get a live version for content with identifier "
+                                + identifier, e);
             }
-            if (live != null) {
-                query.append(" +live:").append(live);
-            }
-            List<Contentlet> search = search(query.toString(), -1, -1, null,
-                    APILocator.systemUser(), false);
-            return search.stream();
-
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.warn(this, "No content found with id " + identifier,
-                    e);
-            throw new DotStateException(e);
         }
+
+        return relatedContentList.stream();
     }
 
     @WrapInTransaction
