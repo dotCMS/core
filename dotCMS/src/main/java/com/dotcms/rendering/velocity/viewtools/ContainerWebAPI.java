@@ -28,6 +28,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -162,7 +163,7 @@ public class ContainerWebAPI implements ViewTool {
 		if(contentlets !=null ) {
 			return contentlets;
 		}
-		return null;
+		return ImmutableList.of();
 	}
 
 	/**
