@@ -645,7 +645,7 @@ public interface ContentletAPIPostHook {
      * @param user
      * @param respectFrontendRoles
      * @param returnValue - value returned by primary API Method */
-    public default void getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
+    public default void getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
 
     /**
      * Gets all related content from the same structure (where the parent and child structures are the same type)
@@ -668,7 +668,7 @@ public interface ContentletAPIPostHook {
      * @param offset
      * @param sortBy
      */
-    default void getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles, List<Contentlet> returnValue, int limit, int offset,
+    default void getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles, List<Contentlet> returnValue, int limit, int offset,
             String sortBy){}
 
 
@@ -1606,6 +1606,10 @@ public interface ContentletAPIPostHook {
     }
 
     default void getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles, long language, Boolean live){
+
+    }
+
+    default void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship, boolean hasParent){
 
     }
 }
