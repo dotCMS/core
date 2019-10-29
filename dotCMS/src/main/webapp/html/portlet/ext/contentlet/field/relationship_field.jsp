@@ -77,19 +77,18 @@
 	Structure targetStructure = null;
 	String relationType= relationship.getRelationTypeValue();
 	String relationName = "";
+	String isParent="";
 
-	String relationTypeValue = relationship.getRelationTypeValue();
-	String relationJsName = "rel_" + UtilMethods.javaScriptifyVariable(relationTypeValue) + "_" + (records.isHasParent()?"P":"C");
+	String relationJsName = "rel_" + UtilMethods.javaScriptifyVariable(relationType) + "_" + (records.isHasParent()?"P":"C");
 
 	if (records.isHasParent()) {
 		targetStructure = relationship.getChildStructure();
 		relationName = relationship.getChildRelationName();
-
-	
+        isParent="yes";
 	} else {
 		targetStructure = relationship.getParentStructure();
 		relationName = relationship.getParentRelationName();
-
+        isParent="no";
 	}
 	
 %>
@@ -407,6 +406,7 @@
 			href += "&selectedStructure=" + structureInode ;
 			href += "&lang=" + '<%= langAPI.getDefaultLanguage().getId() %>';
 			href += "&relwith=" +'<%=contentletInode%>';
+			href += "&relisparent=" + '<%= isParent %>';
 			href += "&reltype=" + '<%= relationType.toString() %>';
 			href += "&relname=" + '<%= relationJsName %>';
 			href += "&relname_inodes=" + '<%= relationship.getInode()%>';
