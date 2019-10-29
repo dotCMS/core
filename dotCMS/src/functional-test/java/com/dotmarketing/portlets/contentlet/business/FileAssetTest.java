@@ -1,5 +1,8 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.datagen.FolderDataGen;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 
@@ -127,5 +130,26 @@ public class FileAssetTest {
   	  	 
   	  	fileAssetDataGen.remove(fileInEnglish);
 	}
-	
+
+	@Test
+	public void Generate_FileAsset_Copy_Verify_Copy_Verify_Cache() throws Exception {
+		final int english = 1;
+		java.io.File file = java.io.File.createTempFile("texto", ".txt");
+		FileUtil.write(file, "helloworld");
+		final Folder folder = new FolderDataGen().name("lol").nextPersisted();
+		final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(folder,file);
+		final Contentlet contentlet = fileAssetDataGen.languageId(english).folder(folder).nextPersisted();
+		final FileAsset originalFileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+
+        final FileAsset dest = new FileAsset();
+		FileAsset.eagerlyInitializedCopy(dest,originalFileAsset);
+		Assert.assertNotNull(CacheLocator.getContentletCache().get(dest.getInode()));
+		Assert.assertEquals(originalFileAsset.getFileName(),dest.getFileName());
+		Assert.assertEquals(originalFileAsset.getUnderlyingFileName(),dest.getUnderlyingFileName());
+		Assert.assertEquals(originalFileAsset.getIdentifier(),dest.getIdentifier());
+		Assert.assertEquals(originalFileAsset.getInode(),dest.getInode());
+		Assert.assertEquals(originalFileAsset.getFileSize(),dest.getFileSize());
+		Assert.assertEquals(originalFileAsset.getLanguageId(),dest.getLanguageId());
+		Assert.assertEquals(originalFileAsset.getHeight(),dest.getHeight());
+	}
 }
