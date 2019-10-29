@@ -16,9 +16,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang.RandomStringUtils;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class FileAssetAPITest extends IntegrationTestBase {
@@ -220,38 +218,6 @@ public class FileAssetAPITest extends IntegrationTestBase {
       assertTrue("Content should not be a file asset", (asset4 instanceof FileAsset));
       assertTrue("FileAssets should be the same Object", asset3 == asset4);
       
-    }
-
-    @Ignore
-    @Test
-    public void Test_File_Content_Checkin_Metadata_Updates()throws Exception {
-
-        final Folder parentFolder = new FolderDataGen().nextPersisted();
-        // Lets make up some fictional data.
-
-        final java.io.File file = java.io.File.createTempFile("blah", ".txt");
-        FileUtil.write(file, RandomStringUtils.randomAlphanumeric(5));
-
-        final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
-        final Contentlet con = fileAssetDataGen.nextPersisted();
-        final String fileName = con.getMap().get("fileName").toString();
-        System.out.println(fileName);
-        final Contentlet out = APILocator.getContentletAPI().checkout(con.getInode(), APILocator.systemUser(),false );
-
-        final java.io.File newFile = java.io.File.createTempFile("blah", ".txt");
-        FileUtil.write(newFile, RandomStringUtils.randomAlphanumeric(10));
-
-        FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(out);
-        fileAsset.setUnderlyingFileName("lol");
-
-        final String newFileName = newFile.getName();
-        fileAsset.setProperty(FileAssetAPI.TITLE_FIELD, newFileName);
-        fileAsset.setProperty(FileAssetAPI.FILE_NAME_FIELD, newFileName);
-        fileAsset.setProperty(FileAssetAPI.BINARY_FIELD, newFile);
-
-        final Contentlet checkedIn = APILocator.getContentletAPI().checkin(fileAsset, APILocator.systemUser(), false);
-        System.out.println(checkedIn);
-
     }
 
 }
