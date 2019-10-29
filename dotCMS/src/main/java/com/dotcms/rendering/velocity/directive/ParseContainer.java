@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.directive;
 
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
@@ -24,7 +25,19 @@ public class ParseContainer extends DotDirective {
 	public  static final String DEFAULT_UUID_VALUE = MultiTree.LEGACY_RELATION_TYPE;
 	private static final long serialVersionUID     = 1L;
 
-	@Override
+	public static String getDotParserContainerUUID(final String uniqueId) {
+		final String parserContainerUUID;
+
+		if (uniqueId == null) {
+			parserContainerUUID = ContainerUUID.UUID_START_VALUE;
+		} else {
+			parserContainerUUID = ContainerUUID.UUID_LEGACY_VALUE.equals(uniqueId) ? ContainerUUID.UUID_START_VALUE : uniqueId;
+		}
+
+		return PARSE_CONTAINER_UUID_PREFIX + parserContainerUUID;
+	}
+
+    @Override
 	public final String getName() {
 		return "parseContainer";
 	}
@@ -52,9 +65,8 @@ public class ParseContainer extends DotDirective {
 	private String[] getDotParserContainerArguments(final String[] arguments) {
 		final String[] parserContainersArgument = Arrays.copyOf(arguments, 2);
 
-		if (arguments.length < 3 || !Boolean.valueOf(arguments[2])) {
-			parserContainersArgument[1] = PARSE_CONTAINER_UUID_PREFIX + (arguments.length > 1
-					? arguments[1] : MultiTree.LEGACY_RELATION_TYPE);
+		if ((arguments.length < 3) || (!isParserContainerUUID(arguments[2]) && !Boolean.valueOf(arguments[2]))) {
+			parserContainersArgument[1] = getDotParserContainerUUID(arguments.length > 1 ? arguments[1] : null);
 		}
 
 		return parserContainersArgument;
