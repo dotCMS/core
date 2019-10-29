@@ -28,6 +28,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -1515,6 +1516,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             "}";
 
     private static final String RELATIONSHIP_FIELD_NAME = "relationshipField";
+    private static final String CATEGORY_FIELD_NAME = "categoryField";
 
     @Test
     public void test_Fire_Save_Content_Type_Binary_File() throws Exception {
@@ -2000,6 +2002,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final Contentlet parentContentlet = new Contentlet (Map.class.cast(fireEntityView2.getEntity()));
             assertNotNull(parentContentlet);
             assertEquals(REQUIRED_TEXT_FIELD_VALUE, parentContentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
+            assertEquals(1,contentletAPI.getAllRelationships(parentContentlet).getRelationshipsRecords().size());
+            assertEquals(childContentlet.getIdentifier(),contentletAPI.getAllRelationships(parentContentlet).getRelationshipsRecords().get(0).getRecords().get(0).getIdentifier());
 
         }finally {
             if (null != childContentType) {
@@ -2032,6 +2036,82 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 FieldBuilder.builder(RelationshipField.class).name(RELATIONSHIP_FIELD_NAME).contentTypeId(contentType.id())
                         .values(String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal())).relationType(childContentTypeVariable).build();
         contentType = contentTypeAPI.save(contentType, Arrays.asList(textField, relationshipField));
+
+        // Assign contentType to Workflows
+        workflowAPI.saveSchemeIdsForContentType(contentType,
+                Stream.of(
+                        systemWorkflow.getId(),
+                        documentWorkflow.getId()
+                ).collect(Collectors.toSet())
+        );
+
+        return contentType;
+    }
+
+    @Test
+    public void testFireActionDefault_ContentWithCategories_Success() throws Exception {
+        ContentType categoryContentType = null;
+        try{
+            //Create Categories
+            final CategoryDataGen rootCategoryDataGen = new CategoryDataGen().setCategoryName("Bikes-"+System.currentTimeMillis()).setKey("Bikes").setKeywords("Bikes").setCategoryVelocityVarName("bikes");
+            final Category child1 = new CategoryDataGen().setCategoryName("RoadBike-"+System.currentTimeMillis()).setKey("RoadBike").setKeywords("RoadBike").setCategoryVelocityVarName("roadBike").next();
+
+            final Category root = rootCategoryDataGen.children(child1).nextPersisted();
+
+            //Create contentType
+            categoryContentType = createCategoryFieldContentType(root.getInode());
+
+            //Create Content
+            final FireActionForm.Builder builder1 = new FireActionForm.Builder();
+            final Map <String,Object>contentletFormData = new HashMap<>();
+            contentletFormData.put("stInode", categoryContentType.inode());
+            contentletFormData.put(REQUIRED_TEXT_FIELD_NAME, REQUIRED_TEXT_FIELD_VALUE);
+            contentletFormData.put(CATEGORY_FIELD_NAME,child1.getInode());
+            builder1.contentlet(contentletFormData);
+            final FireActionForm fireActionForm1 = new FireActionForm(builder1);
+            final HttpServletRequest request1 = getHttpRequest();
+            final Response response1 = workflowResource
+                    .fireActionDefault(request1, new EmptyHttpResponse(), null, null,
+                            languageAPI.getDefaultLanguage().getId(), SystemAction.PUBLISH,  fireActionForm1);
+            final int statusCode1 = response1.getStatus();
+            assertEquals(Status.OK.getStatusCode(), statusCode1);
+            final ResponseEntityView fireEntityView1 = ResponseEntityView.class
+                    .cast(response1.getEntity());
+            final Contentlet contentlet = new Contentlet (Map.class.cast(fireEntityView1.getEntity()));
+            assertNotNull(contentlet);
+            assertEquals(REQUIRED_TEXT_FIELD_VALUE, contentlet.getMap().get(REQUIRED_TEXT_FIELD_NAME));
+            assertNotNull(APILocator.getCategoryAPI().getParents(contentlet, adminUser, true));
+            assertEquals(child1.getInode(),APILocator.getCategoryAPI().getParents(contentlet, adminUser, true).get(0).getInode());
+
+
+        }finally {
+            if (null != categoryContentType) {
+                contentTypeAPI.delete(categoryContentType);
+            }
+        }
+    }
+
+    private ContentType createCategoryFieldContentType(final String parentCategoryInode) throws Exception{
+        ContentType contentType;
+        final String ctPrefix = "TestContentType";
+        final String newContentTypeName = ctPrefix + System.currentTimeMillis();
+
+        // Create ContentType
+        contentType = createContentTypeAndAssignPermissions(newContentTypeName,
+                BaseContentType.CONTENT, PermissionAPI.PERMISSION_READ, adminRole.getId());
+        final WorkflowScheme systemWorkflow = workflowAPI.findSystemWorkflowScheme();
+        final WorkflowScheme documentWorkflow = workflowAPI.findSchemeByName(DM_WORKFLOW);
+
+        // Add fields to the contentType
+        final Field textField =
+                FieldBuilder.builder(TextField.class).name(REQUIRED_TEXT_FIELD_NAME).variable(REQUIRED_TEXT_FIELD_NAME)
+                        .required(true)
+                        .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build();
+
+        final Field categoryField =
+                FieldBuilder.builder(CategoryField.class).name(CATEGORY_FIELD_NAME).contentTypeId(contentType.id()).indexed(true).required(true)
+                        .values(parentCategoryInode).build();
+        contentType = contentTypeAPI.save(contentType, Arrays.asList(textField, categoryField));
 
         // Assign contentType to Workflows
         workflowAPI.saveSchemeIdsForContentType(contentType,
