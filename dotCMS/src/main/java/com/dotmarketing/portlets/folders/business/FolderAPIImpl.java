@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.EventSubscriber;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -53,16 +54,19 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -81,6 +85,16 @@ public class FolderAPIImpl implements FolderAPI  {
 	private final SystemEventsAPI systemEventsAPI = APILocator.getSystemEventsAPI();
 	private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+	@VisibleForTesting
+	protected static final Set<String> reservedFolderNames =
+			Collections.unmodifiableSet(
+				CollectionsUtils.set(Config.getStringArrayProperty("RESERVEDFOLDERNAMES",
+					new String[]{"WEB-INF", "META-INF", "assets", "dotcms", "html", "portal",
+							"email_backups",
+							"DOTLESS", "DOTSASS"})
+				).stream().map(String::toUpperCase).collect(Collectors.toSet())
+			);
 
 	/**
 	 * Will get a folder for you on a given path for a particular host
@@ -129,6 +143,8 @@ public class FolderAPIImpl implements FolderAPI  {
 	public boolean renameFolder(final Folder folder, final String newName,
 								final User user, final boolean respectFrontEndPermissions) throws DotDataException,
 			DotSecurityException {
+
+    	validateFolderName(newName);
 
 		boolean renamed = false;
 
@@ -305,6 +321,8 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getPath());
 		}
 
+		validateFolderName(folderToCopy.getName());
+
 		folderFactory.copy(folderToCopy, newParentFolder);
 
 		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
@@ -323,6 +341,8 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!permissionAPI.doesUserHavePermission(newParentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Host " + newParentHost.getHostname());
 		}
+
+		validateFolderName(folderToCopy.getName());
 
 		folderFactory.copy(folderToCopy, newParentHost);
 
@@ -558,6 +578,8 @@ public class FolderAPIImpl implements FolderAPI  {
 	public void save(final Folder folder, final String existingId,
 					 final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
+		validateFolderName(folder.getName());
+
 		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		if(id ==null || !UtilMethods.isSet(id.getId())){
 			throw new DotStateException("Folder must already have an identifier before saving");
@@ -590,6 +612,13 @@ public class FolderAPIImpl implements FolderAPI  {
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
+	public void validateFolderName(final String folderName) throws DotDataException {
+		if (UtilMethods.isSet(folderName)
+				&& reservedFolderNames.contains(folderName.toUpperCase())) {
+			throw new DotDataException("Folder can't be saved. You entered a reserved folder name");
+		}
+	}
+
 	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
 		save( folder, null,  user,  respectFrontEndPermissions);
@@ -612,7 +641,8 @@ public class FolderAPIImpl implements FolderAPI  {
 		Folder parent = null;
 
 		while (st.hasMoreTokens()) {
-			String name = st.nextToken();
+			final String name = st.nextToken();
+			validateFolderName(name);
 			sb.append(name + "/");
 			Folder f = findFolderByPath(sb.toString(), host, user, respectFrontEndPermissions);
 			if (f == null || !InodeUtils.isSet(f.getInode())) {

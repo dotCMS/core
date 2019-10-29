@@ -515,7 +515,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			}
 		} catch(DotContentletValidationException ve) {
 
-			Logger.error(this, ve.getMessage(), ve);
+			Logger.warnAndDebug(this.getClass(), ve.getMessage(), ve);
 			throw ve;
 		}
 
@@ -852,7 +852,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	private void handleException(final Exception ae) {
 		
 		if(!(ae instanceof DotContentletValidationException) && !(ae instanceof DotLanguageException)){
-			Logger.warn(this, ae.toString(), ae);
+			Logger.warnAndDebug(this.getClass(), ae.toString(), ae);
 		} else {
 			Logger.debug(this, ae.toString(), ae);
 		}
@@ -1042,6 +1042,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			if (key.startsWith("rel_") && key.endsWith("_inodes")) {
 				//When you click the option Relate New Content, it adds the relwith key with the id of the contentlet that you edited at first.
 				final boolean isRelatingNewContent =  contentletFormData.containsKey("relwith");
+                final String relationHasParent =
+                        contentletFormData.get("relisparent") != null ? (String) contentletFormData
+                                .get("relisparent") : "";
 				//This boolean determines if the contentletFormData is a parent or a child
 				//This is the proper behaviour of the boolean:
 				//if you are relating a new child should be false, because the contentletFormData is a child
@@ -1066,7 +1069,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 						relationship, isContentletAParent);
 				final ArrayList<Contentlet> cons = new ArrayList<>();
 				for (String inode : inodes) {
-					if(relationship.getInode().equalsIgnoreCase(inode)){
+					if(relationship.getInode().equalsIgnoreCase(inode) ||
+                            (FactoryLocator.getRelationshipFactory().sameParentAndChild(records.getRelationship()) &&
+                                    ((!records.isHasParent() && relationHasParent.equals("no")) ||
+                                            (records.isHasParent() && relationHasParent.equals("yes"))))){
 						continue;
 					}
 					try{

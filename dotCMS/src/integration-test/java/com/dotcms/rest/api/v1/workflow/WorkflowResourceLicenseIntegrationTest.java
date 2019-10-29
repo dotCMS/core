@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
@@ -609,8 +610,8 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_Available_Default_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final ContentType webPageContentType = APILocator.getContentTypeAPI(userAdmin).find("webPageContent");
-        final Response response = nonLicenseWorkflowResource.findAvailableDefaultActionsByContentType(request,  new EmptyHttpResponse(), webPageContentType.id());
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();// Uses the System Workflow by default
+        final Response response = nonLicenseWorkflowResource.findAvailableDefaultActionsByContentType(request,  new EmptyHttpResponse(), contentType.id());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
         List<WorkflowDefaultActionView> actions = List.class.cast(ev.getEntity());
@@ -647,8 +648,8 @@ public class WorkflowResourceLicenseIntegrationTest {
     @Test
     public void Find_Initial_Available_Default_Actions_Invalid_License() throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final ContentType webPageContentType = APILocator.getContentTypeAPI(userAdmin).find("webPageContent");
-        final Response response = nonLicenseWorkflowResource.findInitialAvailableActionsByContentType(request,  new EmptyHttpResponse(), webPageContentType.id());
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();// Uses the System Workflow by default
+        final Response response = nonLicenseWorkflowResource.findInitialAvailableActionsByContentType(request,  new EmptyHttpResponse(), contentType.id());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         ResponseEntityView ev = ResponseEntityView.class.cast(response.getEntity());
         List<WorkflowDefaultActionView> actions = List.class.cast(ev.getEntity());

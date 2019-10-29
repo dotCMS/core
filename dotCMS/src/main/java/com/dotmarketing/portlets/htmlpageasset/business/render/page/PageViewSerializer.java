@@ -60,6 +60,12 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
             pageMap.put("pageURI", pageUrlMapper);
         }
 
+        pageMap.put("live", pageView.live);
+
+        if (!pageView.live) {
+            pageMap.remove("liveInode");
+        }
+
         return pageMap;
     }
 

@@ -36,6 +36,8 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     private Date iDateField = new Date();
     private String detailPage;
     private String urlMapPattern;
+    private String publishDateFieldVarName;
+    private String expireDateFieldVarName;
     private boolean systemField = Boolean.FALSE;
     private String velocityVarName = "testVarname" + currentTime;
     private List<Field> fields = new ArrayList<>();
@@ -93,6 +95,16 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
     @SuppressWarnings("unused")
     public ContentTypeDataGen velocityVarName(final String velocityVarName) {
         this.velocityVarName = velocityVarName;
+        return this;
+    }
+
+    public ContentTypeDataGen publishDateFieldVarName(final String publishDateFieldVarName) {
+        this.publishDateFieldVarName = publishDateFieldVarName;
+        return this;
+    }
+
+    public ContentTypeDataGen expireDateFieldVarName(final String expireDateFieldVarName) {
+        this.expireDateFieldVarName = expireDateFieldVarName;
         return this;
     }
 
@@ -156,6 +168,8 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
                 .owner(owner.getUserId())
                 .detailPage(detailPage)
                 .urlMapPattern(urlMapPattern)
+                .publishDateVar(publishDateFieldVarName)
+                .expireDateVar(expireDateFieldVarName)
                 .system(systemField)
                 .variable(velocityVarName)
                 .folder(folder.getInode())

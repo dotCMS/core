@@ -628,7 +628,7 @@ public interface ContentletAPIPostHook {
      * @param user
      * @param respectFrontendRoles
      * @param returnValue - value returned by primary API Method */
-    public default void getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
+    public default void getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
 
     /**
      * Gets all related content from the same structure (where the parent and child structures are the same type)
@@ -651,7 +651,7 @@ public interface ContentletAPIPostHook {
      * @param offset
      * @param sortBy
      */
-    default void getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles, List<Contentlet> returnValue, int limit, int offset,
+    default void getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles, List<Contentlet> returnValue, int limit, int offset,
             String sortBy){}
 
 
@@ -841,7 +841,8 @@ public interface ContentletAPIPostHook {
 	public default void checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, User user,boolean respectFrontendRoles,Contentlet returnValue){}
 	
 	/**
-	 * Will check in a update of your contentlet without generate a new version. The inode of your contentlet must be different from 0.  
+	 * @deprecated {@link ContentletAPIPostHook#checkinWithoutVersioning(Contentlet, ContentletRelationships, List, List, User, boolean, Contentlet)} instead
+     * Will check in a update of your contentlet without generate a new version. The inode of your contentlet must be different from 0.
 	 * @param contentlet - The inode of your contentlet must be different from 0.
 	 * @param contentRelationships - Used to set relationships to updated contentlet version 
 	 * @param user
@@ -849,8 +850,23 @@ public interface ContentletAPIPostHook {
 	 * @param returnValue - value returned by primary API Method 
 	 */
 	public default void checkinWithoutVersioning(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles,Contentlet returnValue){}
-	
-	/**
+
+    /**
+     * Will check in a update of your contentlet without generate a new version. The inode of your
+     * contentlet must be different from 0.
+     *
+     * @param contentlet - The inode of your contentlet must be different from 0.
+     * @param contentRelationships - Used to set relationships to updated contentlet version
+     * @param returnValue - value returned by primary API Method
+     */
+    default void checkinWithoutVersioning(Contentlet contentlet,
+            ContentletRelationships contentRelationships, List<Category> cats,
+            List<Permission> permissions, User user, boolean respectFrontendRoles,
+            Contentlet returnValue) {
+    }
+
+
+    /**
 	 * Will make the passed in contentlet the working copy. 
 	 * @param contentlet
 	 * @param user
@@ -1573,6 +1589,10 @@ public interface ContentletAPIPostHook {
     }
 
     default void getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles, long language, Boolean live){
+
+    }
+
+    default void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship, boolean hasParent){
 
     }
 }

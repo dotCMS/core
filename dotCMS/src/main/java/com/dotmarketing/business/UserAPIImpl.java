@@ -159,6 +159,7 @@ public class UserAPIImpl implements UserAPI {
         return userFactory.getUsersByName(filter, roles ,start, limit);
     }
 
+    @WrapInTransaction
     @Override
     public User createUser(String userId, String email) throws DotDataException, DuplicateUserException {
         return userFactory.createUser(userId, email);

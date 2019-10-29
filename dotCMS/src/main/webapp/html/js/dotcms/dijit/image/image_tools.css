@@ -41,9 +41,13 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 		bottom:0px;
 }
 
+.imageToolContainer{
+	display: flex;
+	padding-top: 60px;
+}
 
 .imageToolButtonBar {
-    position: absolute;
+    position: fixed;
     top:0px;
     left:0px;
     right:0px;
@@ -60,27 +64,17 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 
 
 #imageViewPort{
-    overflow: auto;
-    margin: 0px;
-    padding: 0px;
-    position: absolute;
-    right:320px;
-    top:60px;
-    bottom:0px;
-    left:0px;
-    border:0px solid blue;
-    background:#f3f3f3;
+	overflow: auto;
+	margin: 0px;
+	padding: 0px;
+	border:0px;
+	background:#f3f3f3;
 }
-
 
 #toolBar{
 	background:#fff;
-	position:absolute;
-	right:0px;
-	top:62px;
-	bottom:0px;
-	width:300px;
-	margin:0px;
+	margin-left: auto;
+	min-width:300px;
 	padding:20px 10px;
 	border-left:1px solid silver;
 }

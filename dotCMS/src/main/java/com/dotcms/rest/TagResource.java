@@ -7,6 +7,7 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.tag.business.TagAPI;
@@ -57,13 +58,11 @@ public class TagResource {
       .requiredAnonAccess(AnonymousAccess.READ)
       .requestAndResponse(request, response)
       .init();
-      
-   
 
         final User user = initDataObject.getUser();
 
         List<Tag> tags = UtilMethods.isSet(tagName)
-                ? searchTagsInternal(tagName, siteId, user)
+                ? searchTagsInternal(tagName, this.getSiteId(siteId, request), user)
                 : getTagsInternal();
 
         final Map<String, RestTag> hash = Maps.newHashMapWithExpectedSize(tags.size());
@@ -72,6 +71,19 @@ public class TagResource {
             hash.put(tag.getTagName(), transform.appToRest(tag));
         }
         return hash;
+    }
+
+    private String getSiteId (final String siteId, final HttpServletRequest request) {
+
+        if (!UtilMethods.isSet(siteId)) {
+            final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            if (null != currentHost) {
+
+                return currentHost.getIdentifier();
+            }
+        }
+
+        return siteId;
     }
 
     private List<Tag> searchTagsInternal(final String tagName, final String siteOrFolderId,

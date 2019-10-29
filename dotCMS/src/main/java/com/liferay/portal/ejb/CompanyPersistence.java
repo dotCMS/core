@@ -22,16 +22,17 @@
 
 package com.liferay.portal.ejb;
 
-import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.liferay.portal.NoSuchCompanyException;
-import com.liferay.portal.SystemException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.net.sf.hibernate.Session;
+import com.dotmarketing.business.DotStateException;
+import com.liferay.portal.NoSuchCompanyException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.util.HibernateUtil;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * <a href="CompanyPersistence.java.html"><b><i>View Source</i></b></a>
@@ -45,7 +46,6 @@ public class CompanyPersistence extends BasePersistence {
 		return new com.liferay.portal.model.Company(companyId);
 	}
 
-	@WrapInTransaction
 	protected com.liferay.portal.model.Company remove(String companyId)
 		throws NoSuchCompanyException, SystemException {
 		Session session = null;
@@ -70,6 +70,9 @@ public class CompanyPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
 	@WrapInTransaction
@@ -82,7 +85,7 @@ public class CompanyPersistence extends BasePersistence {
 				session = openSession();
 
 				if (company.isNew()) {
-					CompanyHBM companyHBM = new CompanyHBM(company.getCompanyId(),
+					final CompanyHBM companyHBM = new CompanyHBM(company.getCompanyId(),
 							company.getKey(), company.getPortalURL(),
 							company.getHomeURL(), company.getMx(),
 							company.getName(), company.getShortName(),
@@ -92,13 +95,16 @@ public class CompanyPersistence extends BasePersistence {
 							company.getPhone(), company.getFax(),
 							company.getEmailAddress(), company.getAuthType(),
 							company.getAutoLogin(), company.getStrangers());
-					session.save(companyHBM);
-					session.flush();
+					try {
+						com.dotmarketing.db.HibernateUtil.save(companyHBM);
+					}
+					catch(Exception e) {
+						throw new DotStateException(e);
+					}
 				}
 				else {
 					try {
-						CompanyHBM companyHBM = (CompanyHBM)session.load(CompanyHBM.class,
-								company.getPrimaryKey());
+						final CompanyHBM companyHBM = (CompanyHBM)session.load(CompanyHBM.class, company.getPrimaryKey());
 						companyHBM.setKey(company.getKey());
 						companyHBM.setPortalURL(company.getPortalURL());
 						companyHBM.setHomeURL(company.getHomeURL());
@@ -117,7 +123,12 @@ public class CompanyPersistence extends BasePersistence {
 						companyHBM.setAuthType(company.getAuthType());
 						companyHBM.setAutoLogin(company.getAutoLogin());
 						companyHBM.setStrangers(company.getStrangers());
-						session.flush();
+						try {
+							com.dotmarketing.db.HibernateUtil.save(companyHBM);
+						}
+						catch(Exception e) {
+							throw new DotStateException(e);
+						}
 					}
 					catch (ObjectNotFoundException onfe) {
 						CompanyHBM companyHBM = new CompanyHBM(company.getCompanyId(),
@@ -131,8 +142,12 @@ public class CompanyPersistence extends BasePersistence {
 								company.getEmailAddress(),
 								company.getAuthType(), company.getAutoLogin(),
 								company.getStrangers());
-						session.save(companyHBM);
-						session.flush();
+						try {
+							com.dotmarketing.db.HibernateUtil.save(companyHBM);
+						}
+						catch(Exception e) {
+							throw new DotStateException(e);
+						}
 					}
 				}
 
@@ -148,9 +163,11 @@ public class CompanyPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected com.liferay.portal.model.Company findByPrimaryKey(
 		String companyId) throws NoSuchCompanyException, SystemException {
 		com.liferay.portal.model.Company company = CompanyPool.get(companyId);
@@ -175,9 +192,11 @@ public class CompanyPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected List findAll() throws SystemException {
 		Session session = null;
 
@@ -200,6 +219,9 @@ public class CompanyPersistence extends BasePersistence {
 		}
 		catch (HibernateException he) {
 			throw new SystemException(he);
+		}
+		finally {
+			HibernateUtil.closeSession(session);
 		}
 	}
 }

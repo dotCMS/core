@@ -62,6 +62,7 @@ public class HTMLPageAssetRenderedBuilder {
     private final VersionableAPI versionableAPI;
     private final MultiTreeAPI   multiTreeAPI;
     private String pageUrlMapper;
+    private boolean live;
 
     public HTMLPageAssetRenderedBuilder() {
 
@@ -71,6 +72,11 @@ public class HTMLPageAssetRenderedBuilder {
         this.layoutAPI      = APILocator.getLayoutAPI();
         this.versionableAPI = APILocator.getVersionableAPI();
         this.multiTreeAPI   = APILocator.getMultiTreeAPI();
+    }
+
+    public HTMLPageAssetRenderedBuilder setLive(final boolean live) {
+        this.live = live;
+        return this;
     }
 
     public HTMLPageAssetRenderedBuilder setHtmlPageAsset(final IHTMLPage htmlPageAsset) {
@@ -109,7 +115,7 @@ public class HTMLPageAssetRenderedBuilder {
                 getContentletVersionInfo(htmlPageAsset.getIdentifier(), htmlPageAsset.getLanguageId());
 
         final HTMLPageAssetInfo htmlPageAssetInfo = getHTMLPageAssetInfo(info);
-        final Set<String> pagePersonalizationSet  = this.multiTreeAPI.getPersonalizationsForPage(htmlPageAsset.getIdentifier());
+        final Set<String> pagePersonalizationSet  = this.multiTreeAPI.getPersonalizationsForPage(htmlPageAsset);
         final Template template = getTemplate(mode);
         if(!UtilMethods.isSet(template) && mode.equals(PageMode.ADMIN_MODE)){
             throw new DotStateException(
@@ -135,7 +141,7 @@ public class HTMLPageAssetRenderedBuilder {
         if (!rendered) {
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
             return new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates,
-                    canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper);
+                    canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live);
         } else {
             final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
@@ -143,7 +149,7 @@ public class HTMLPageAssetRenderedBuilder {
                     pageRenderUtil.getContainersRaw(), velocityContext, mode).build();
             final String pageHTML = this.getPageHTML();
             return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
-                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper
+                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live
             );
         }
     }
@@ -234,7 +240,7 @@ public class HTMLPageAssetRenderedBuilder {
 
     
     private Visitor getVisitor() {
-      final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request);
+      final Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, false);
       return visitor.isPresent() ? visitor.get() : null;
     }
     

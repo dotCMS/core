@@ -87,6 +87,8 @@
 
 <script>
 
+	dojo.require("dotcms.dojo.push.PushHandler");
+	require(["dojo/dom-attr"]);
 
     var actionData = {
         identifier: 'id',
@@ -97,8 +99,8 @@
             ,{ id:'<%=action.getId()%>',
                 name:'<%=action.getName()%>',
                 assignable:'<%=action.isAssignable()%>',
-                commentable:'<%=action.isCommentable() ||  UtilMethods.isSet(action.getCondition())%>'
-
+                commentable:'<%=action.isCommentable() ||  UtilMethods.isSet(action.getCondition())%>',
+				pushPublish:'<%=action.hasPushPublishActionlet()%>'
             }
 
             <%}%>
@@ -107,8 +109,6 @@
 
 
     var actionStore = new dojo.data.ItemFileReadStore({data:actionData});
-
-
 
 </script>
 
@@ -187,7 +187,7 @@
 		<tr class="alternate_1">
 			<td>
 
-				<input <%if(!singleStep){ %>disabled="true"<%} %> type="checkbox" dojoType="dijit.form.CheckBox" id="<%=task.getWebasset() %>" class="taskCheckBox" value="<%=task.getId() %>"  />
+				<input <%if(!singleStep){ %>disabled="true"<%} %> type="checkbox" dojoType="dijit.form.CheckBox" id="<%=task.getWebasset() %>" class="taskCheckBox" value="<%=task.getId() %>"  data-action-inode="<%=contentlet.getInode()%>" />
 
 
 			</td>

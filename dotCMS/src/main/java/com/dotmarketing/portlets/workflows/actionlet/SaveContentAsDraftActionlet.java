@@ -58,9 +58,8 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 	public void executeAction(final WorkflowProcessor processor,
 							  final Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
-		Map<Relationship, List<Contentlet>> relationshipListHashMap = new HashMap<Relationship, List<Contentlet>>();
-		ContentletRelationships contentletRelationships          = null;
-		Contentlet contentletNew 								 = null;
+		ContentletRelationships contentletRelationships = null;
+
 		try {
 
 			final Contentlet contentlet             = processor.getContentlet();
@@ -74,8 +73,6 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 					"Saving the content as draft of the contentlet: " + contentlet.getIdentifier());
 
 			contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
-
-			this.buildRelationships(processor.getUser(), relationshipListHashMap, contentlet);
 
 			if (null != processor.getContentletDependencies()) {
 
@@ -96,11 +93,14 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 				}
 			}
 
-			contentletNew = (null != contentletRelationships)?
-					this.contentletAPI.saveDraft(
-							contentlet, contentletRelationships, categories, permissions, user, true):
-					this.contentletAPI.saveDraft(
-						contentlet, relationshipListHashMap, categories, permissions, user, true);
+			//Keeps existing relationships
+			if (contentletRelationships == null){
+                contentletRelationships = contentletAPI.getAllRelationships(contentlet);
+            }
+
+			final Contentlet contentletNew = this.contentletAPI.saveDraft(
+							contentlet, contentletRelationships, categories, permissions, user, true);
+
 
 			processor.setContentlet(contentletNew);
 			Logger.debug(this,
@@ -110,30 +110,6 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new  WorkflowActionFailureException(e.getMessage(),e);
 		}
-	}
-
-	private void buildRelationships(final User user,
-									final Map<Relationship, List<Contentlet>> contentRelationships,
-									final Contentlet contentlet) throws DotDataException, DotSecurityException {
-
-		final List<Relationship> relationships =  this.relationshipAPI.
-				byContentType(contentlet.getContentType());
-
-		for (final Relationship relationship : relationships) {
-
-            if (!contentRelationships.containsKey(relationship)) {
-
-                contentRelationships
-                        .put(relationship, new ArrayList<Contentlet>());
-            }
-
-            final List<Contentlet> relatedContents = this.contentletAPI.getRelatedContent(
-                    contentlet, relationship, user, true);
-
-            for (final Contentlet relatedContent : relatedContents) {
-                contentRelationships.get(relationship).add(relatedContent);
-            }
-        }
 	}
 
 	public WorkflowStep getNextStep() {

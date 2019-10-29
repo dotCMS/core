@@ -76,6 +76,7 @@ public class VelocityServlet extends HttpServlet {
                 if(!response.isCommitted()) {
                     response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
                 }
+                Logger.warnAndDebug(this.getClass(), e.getMessage(),e);
             }
         }
     }

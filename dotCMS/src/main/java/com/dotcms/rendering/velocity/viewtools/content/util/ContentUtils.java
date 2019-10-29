@@ -533,20 +533,20 @@ public class ContentUtils {
             final Contentlet contentlet = conAPI
                 .findContentletByIdentifierAnyLanguage(contentletIdentifier);
 
-            final StringBuilder pullQuery = new StringBuilder();
-
-            if (language != -1){
-                pullQuery.append(" ").append(" +languageId:").append(language);
-            }
-            if (!user.isBackendUser() || live ==null){
-                pullQuery.append(" ").append(" +live:true ");
-            } else {
-                pullQuery.append(" ").append(" +live:").append(live);
-            }
-
             if (UtilMethods.isSet(condition)){
- 
-                pullQuery.append(" AND ").append(condition);
+
+                final StringBuilder pullQuery = new StringBuilder();
+
+                if (language != -1){
+                    pullQuery.append(" ").append("+languageId:").append(language).append(" ");
+                }
+                if (!user.isBackendUser()){
+                    pullQuery.append("+live:true ");
+                } else if (live !=null){
+                    pullQuery.append("+live:").append(live).append(" ");
+                }
+
+                pullQuery.append(condition);
 
                 if ((selfRelated && !pullParents) || (!selfRelated && relationship
                         .getParentStructureInode().equals(contentlet.getContentTypeId()))) {
@@ -616,6 +616,28 @@ public class ContentUtils {
 		return getPullResults(relationship, contentletIdentifier, condition, limit, offset, sort,
 				user, tmDate, false, -1, null);
 	}
+
+    /**
+     * Returns a list of related content given a Relationship and additional filtering criteria
+     * @param relationship
+     * @param contentletIdentifier
+     * @param condition
+     * @param limit
+     * @param offset
+     * @param sort
+     * @param user
+     * @param tmDate
+     * @param language
+     * @param live
+     * @return
+     */
+    public static List<Contentlet> pullRelatedField(final Relationship relationship,
+            final String contentletIdentifier, final String condition, final int limit,
+            final int offset, final String sort, final User user, final String tmDate,
+            final long language, final Boolean live) {
+        return getPullResults(relationship, contentletIdentifier, condition, limit, offset, sort,
+                user, tmDate, false, language, live);
+    }
 
     /**
      *

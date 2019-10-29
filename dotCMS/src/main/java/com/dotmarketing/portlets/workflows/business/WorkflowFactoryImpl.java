@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.util.ActionletUtil;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkFlowTaskFiles;
@@ -117,8 +118,8 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		row.put("requiresCheckout", row.get("requires_checkout"));
 		row.put("showOn", WorkflowState.toSet(row.get("show_on")));
 		row.put("roleHierarchyForAssign", row.get("use_role_hierarchy_assign"));
-
 		BeanUtils.copyProperties(action, row);
+		action.setPushPublishActionlet(ActionletUtil.hasPushPublishActionlet(action));
 		return action;
 	}
 
@@ -1467,11 +1468,26 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public void deleteSystemActionsByWorkflowAction(final WorkflowAction action) throws DotDataException {
 
 		Logger.debug(this, ()->"Removing system action mappings associated to the action: " + action.getId());
+
+		final List<Map<String, Object>> mappingsToClean = new DotConnect().setSQL(sql.SELECT_SYSTEM_ACTION_BY_WORKFLOW_ACTION).
+				addParam(action.getId())
+				.loadObjectResults();
+
 		new DotConnect().setSQL(sql.DELETE_SYSTEM_ACTION_BY_WORKFLOW_ACTION_ID)
 				.addParam(action.getId())
 				.loadResult();
 
 		this.cache.removeSystemActionsByWorkflowAction(action.getId());
+
+		if (UtilMethods.isSet(mappingsToClean)) {
+
+			for (final Map<String, Object> mappingRow : mappingsToClean) {
+
+				final String owner = (String)mappingRow.get("scheme_or_content_type");
+				this.cache.removeSystemActionsByContentType(owner);
+				this.cache.removeSystemActionsByScheme(owner);
+			}
+		}
 	}
 
 	private String createQueryIn (final Collection list) {

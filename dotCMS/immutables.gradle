@@ -46,10 +46,6 @@ repositories {
 
 dependencies {
 
-    providedCompile "javax.servlet:javax.servlet-api:3.1.0"
-    providedCompile fileTree("../libs/buildlibs").include('**/*.jar')
-    providedCompile fileTree("../libs/buildlibs").include('mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'mssql-jdbc*.jar')
-
     if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev')) {
         configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
     }

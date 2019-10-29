@@ -22,6 +22,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -58,6 +59,8 @@ public class ContentUtilsTest {
     private static FieldAPI fieldAPI;
     private static RelationshipAPI relationshipAPI;
 
+    private static Language defaultLanguage;
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment.
@@ -70,6 +73,8 @@ public class ContentUtilsTest {
         contentTypeAPI = APILocator.getContentTypeAPI(user, false);
         fieldAPI = APILocator.getContentTypeFieldAPI();
         relationshipAPI = APILocator.getRelationshipAPI();
+
+        defaultLanguage = languageAPI.getDefaultLanguage();
     }
 
     public static class TestCase {
@@ -100,16 +105,16 @@ public class ContentUtilsTest {
     public static Object[] testCases() {
         return new TestCase[]{
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 2, false),
-                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 2, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, false, false, 2, false),
-                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 2, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, true, false, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, true, true, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, false, false, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, false, true, 1, false),
-                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, true, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, true, false, 2, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, true, true, 1, false),
-                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, false, false, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, false, false, 2, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, false, true, 1, false),
 
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 1, false),
@@ -120,15 +125,15 @@ public class ContentUtilsTest {
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, true, true, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, false, false, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, false, true, 1, false),
-                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, true, false, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, true, false, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, true, true, 0, false),
-                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, false, false, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, false, false, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, false, true, 0, false),
 
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 1, false),
-                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, false, false, 1, false),
-                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, true, false, 0, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, true, true, 0, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, false, false, 0, false),
@@ -146,9 +151,9 @@ public class ContentUtilsTest {
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, true, true, 0, true),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, false, false, 2, true),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, false, true, 0, true),
-                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, true, false, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, true, false, 2, true),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, true, true, 0, true),
-                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, false, false, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, false, false, 2, true),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.WORKING, false, true, 0, true),
 
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 1, true),
@@ -159,9 +164,9 @@ public class ContentUtilsTest {
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, true, true, 0, true),
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, false, false, 1, true),
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.LIVE, false, true, 0, true),
-                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, true, false, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, true, false, 1, true),
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, true, true, 0, true),
-                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, false, false, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, false, false, 1, true),
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, false, true, 0, true),
 
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 1, true),
@@ -172,10 +177,27 @@ public class ContentUtilsTest {
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, true, true, 0, true),
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, false, false, 1, true),
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, false, true, 0, true),
-                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, true, false, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, true, false, 1, true),
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, true, true, 0, true),
-                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, false, false, 0, true),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, false, false, 1, true),
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.WORKING, false, true, 0, true)
+        };
+    }
+
+    public static class LegacyTestCase {
+
+        boolean selfRelated;
+
+        public LegacyTestCase(final boolean selfRelated) {
+            this.selfRelated = selfRelated;
+        }
+    }
+
+    @DataProvider
+    public static Object[] legacyTestCases() {
+        return new LegacyTestCase[]{
+                new LegacyTestCase(true),
+                new LegacyTestCase(false)
         };
     }
 
@@ -185,7 +207,7 @@ public class ContentUtilsTest {
         final long time = System.currentTimeMillis();
         ContentType parentContentType = null;
         ContentType childContentType = null;
-        final Language defaultLanguage = languageAPI.getDefaultLanguage();
+
         final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
         try {
 
@@ -262,7 +284,7 @@ public class ContentUtilsTest {
 
             //Define content to be sent as param for the pullRelated method
             Contentlet contentletToPullFrom;
-            if (testCase.pullParents) {
+            if (!testCase.pullParents) {
                 if (testCase.languageType == LANGUAGE_TYPE_FILTER.SPANISH) {
                     contentletToPullFrom = parentInSpanish;
                 } else {
@@ -350,8 +372,8 @@ public class ContentUtilsTest {
      * @param spanishLanguage
      * @param results
      */
-    private void validateResults(TestCase testCase, Language defaultLanguage,
-            Language spanishLanguage, List<Contentlet> results) {
+    private void validateResults(final TestCase testCase, final Language defaultLanguage,
+            final Language spanishLanguage, final List<Contentlet> results) {
         assertNotNull(results);
         assertEquals(testCase.resultsSize, results.size());
 
@@ -365,14 +387,256 @@ public class ContentUtilsTest {
             assertTrue(results.stream().allMatch(contentlet -> {
                 try {
                     return testCase.publishType == PUBLISH_TYPE_FILTER.LIVE && contentlet.isLive()
-                            || testCase.publishType == PUBLISH_TYPE_FILTER.WORKING && !contentlet
-                            .isLive();
+                            || testCase.publishType == PUBLISH_TYPE_FILTER.WORKING && contentlet
+                            .isWorking();
                 } catch (DotDataException | DotSecurityException e) {
                     e.printStackTrace();
                 }
                 return false;
             }));
         }
+    }
+
+    @UseDataProvider("legacyTestCases")
+    @Test
+    public void testPullRelatedForLegacyRelationship(final LegacyTestCase testCase)
+            throws DotSecurityException, DotDataException {
+        final long time = System.currentTimeMillis();
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try {
+            //Create content types
+            parentContentType = contentTypeAPI
+                    .save(ContentTypeBuilder.builder(SimpleContentType.class)
+                            .folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                            .name("parentContentType" + time)
+                            .owner(user.getUserId()).build());
+
+            if (!testCase.selfRelated){
+                childContentType = contentTypeAPI
+                        .save(ContentTypeBuilder.builder(SimpleContentType.class)
+                                .folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                                .name("childContentType" + time)
+                                .owner(user.getUserId()).build());
+            }
+
+            final Relationship relationship = createLegacyRelationship(parentContentType.id(),
+                    testCase.selfRelated ? parentContentType.id() : childContentType.id(),
+                    RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+
+            //Save children content
+            final Contentlet firstChild = new ContentletDataGen(
+                    testCase.selfRelated ? parentContentType.id() : childContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            ContentletDataGen.publish(firstChild);
+
+            final Contentlet secondChild = new ContentletDataGen(
+                    testCase.selfRelated ? parentContentType.id() : childContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            ContentletDataGen.publish(secondChild);
+
+            //Save parent content and relate children
+            Contentlet parent = new ContentletDataGen(parentContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setPolicy(IndexPolicy.FORCE).next();
+
+            parent = contentletAPI.checkin(parent,
+                    map(relationship, list(firstChild, secondChild)),
+                    null, user, false);
+
+            ContentletDataGen.publish(parent);
+
+            //Pulling children
+            List<Contentlet> results = ContentUtils
+                    .pullRelated(relationship.getRelationTypeValue(),
+                            parent.getIdentifier(), false, -1, user, null);
+
+            assertEquals(2, results.size());
+            assertEquals(firstChild.getInode(), results.get(0).getInode());
+            assertEquals(secondChild.getInode(), results.get(1).getInode());
+
+            //Pulling parent
+            results = ContentUtils
+                    .pullRelated(relationship.getRelationTypeValue(),
+                            firstChild.getIdentifier(),
+                            true, -1, user, null);
+
+            assertEquals(1, results.size());
+            assertEquals(parent.getInode(), results.get(0).getInode());
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+
+    }
+
+    private Relationship createLegacyRelationship(String parentStructureInode,
+            String childStructureInode, int cardinality) throws DotDataException {
+
+        final long time = System.currentTimeMillis();
+        final Relationship relationship = new Relationship();
+        //Set Parent Info
+        relationship.setParentStructureInode( parentStructureInode );
+        relationship.setParentRelationName( "parent" );
+        //Set Child Info
+        relationship.setChildStructureInode( childStructureInode );
+        relationship.setChildRelationName( "child" );
+        //Set general info
+        relationship.setRelationTypeValue( "parent-child" + time);
+        relationship.setCardinality(cardinality);
+
+        //Save it
+        FactoryLocator.getRelationshipFactory().save( relationship );
+
+        return relationship;
+    }
+
+    @Test
+    public void testPullLiveRelatedWhenLatestVersionIsWorking()
+            throws DotDataException, DotSecurityException {
+        final long time = System.currentTimeMillis();
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+
+        try {
+
+            final String childInode;
+            final String parentInode;
+
+            //Create parent and child content types
+            parentContentType = contentTypeAPI
+                    .save(ContentTypeBuilder.builder(SimpleContentType.class)
+                            .folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                            .name("parentContentType" + time)
+                            .owner(user.getUserId()).build());
+            childContentType = contentTypeAPI
+                    .save(ContentTypeBuilder.builder(SimpleContentType.class)
+                            .folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
+                            .name("childContentType" + time)
+                            .owner(user.getUserId()).build());
+
+            //Adding a RelationshipField to the parent
+            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("myChild",
+                    parentContentType.id(), childContentType.variable(), RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
+
+            final String fullFieldVar = parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
+
+            final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
+
+            //Save and publish child content
+            Contentlet childContent = new ContentletDataGen(childContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setPolicy(IndexPolicy.FORCE).nextPersisted();
+
+            childContent = ContentletDataGen.publish(childContent);
+
+            //Keep parent inode of the live version to validate results
+            childInode = childContent.getInode();
+
+            //Create child working version
+            childContent = contentletAPI
+                    .checkout(childContent.getInode(), user, false);
+
+            childContent.setInode("");
+            childContent.setLanguageId(defaultLanguage.getId());
+            childContent.setIndexPolicy(IndexPolicy.FORCE);
+
+            childContent = contentletAPI.checkin(childContent, user, false);
+
+            //Save and publish parent content
+            Contentlet parentContent = new ContentletDataGen(parentContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setPolicy(IndexPolicy.FORCE).next();
+
+            parentContent = contentletAPI.checkin(parentContent,
+                    map(relationship, list(childContent)),
+                    null, user, false);
+
+            parentContent = ContentletDataGen.publish(parentContent);
+
+            //Keep parent inode of the live version to validate results
+            parentInode = parentContent.getInode();
+
+            //Create parent working version
+            parentContent = contentletAPI
+                    .checkout(parentContent.getInode(), user, false);
+
+            parentContent.setInode("");
+            parentContent.setLanguageId(defaultLanguage.getId());
+            parentContent.setIndexPolicy(IndexPolicy.FORCE);
+
+            parentContent = contentletAPI.checkin(parentContent, user, false);
+
+            validateCacheResults(childInode, fullFieldVar, childContent, parentContent, false,
+                    false);
+            validateCacheResults(childInode, fullFieldVar, childContent, parentContent, false,
+                    true);
+
+            validateCacheResults(parentInode, fullFieldVar, parentContent, childContent, true,
+                    false);
+            validateCacheResults(parentInode, fullFieldVar, parentContent, childContent, true,
+                    true);
+
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    /**
+     *
+     * @param childInode
+     * @param fullFieldVar
+     * @param childContent
+     * @param parentContent
+     * @param pullParents
+     * @param isAnonymous
+     * @throws DotDataException
+     */
+    private void validateCacheResults(final String childInode, final String fullFieldVar,
+            final Contentlet childContent, final Contentlet parentContent,
+            final boolean pullParents, final boolean isAnonymous) throws DotDataException {
+        //Clean up cache
+        CacheLocator.getContentletCache().remove(childContent);
+        CacheLocator.getContentletCache().remove(parentContent);
+
+        //Validate non-cached results (from parent)
+        validateLiveResults(childInode, fullFieldVar, parentContent, pullParents, isAnonymous);
+
+        //Validate cached results (from parent)
+        validateLiveResults(childInode, fullFieldVar, parentContent, pullParents, isAnonymous);
+    }
+
+    /**
+     *
+     * @param expectedInode
+     * @param relationshipName
+     * @param contentlet
+     */
+    private void validateLiveResults(final String expectedInode, final String relationshipName,
+            final Contentlet contentlet, final boolean pullParents, final boolean isAnonymous)
+            throws DotDataException {
+        List<Contentlet> results = ContentUtils
+                .pullRelated(relationshipName, contentlet.getIdentifier(), null, pullParents, -1,
+                        null,
+                        isAnonymous ? APILocator.getUserAPI().getAnonymousUser() : user, null, -1,
+                        isAnonymous ? null : true);
+        assertEquals(1, results.size());
+        assertEquals(expectedInode, results.get(0).getInode());
     }
 
 }

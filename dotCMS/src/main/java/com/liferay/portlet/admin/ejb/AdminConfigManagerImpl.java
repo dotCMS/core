@@ -397,8 +397,7 @@ public class AdminConfigManagerImpl
 	private EmailConfig _getUserConfigRegistrationEmail() {
 		String registrationEmailSubject = "[$COMPANY_NAME$] Portal Account";
 
-		String registrationEmailBody = ContentUtil.get(
-			"messages/en_US/user_config_registration_email_body.tmpl");
+		String registrationEmailBody = "does not exist";
 
 		EmailConfig registrationEmail = new EmailConfig(
 			registrationEmailSubject, registrationEmailBody);

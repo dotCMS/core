@@ -58,7 +58,7 @@ public class LocalTransaction {
             final Connection conn = DbConnectionFactory.getConnection();
             result= delegate.execute();
             if (isLocalTransaction) {
-               handleTransactionInterruption(conn, threadStack);
+               handleTransactionInteruption(conn, threadStack);
                HibernateUtil.commitTransaction();
 
             }
@@ -112,7 +112,7 @@ public class LocalTransaction {
             final Connection conn = DbConnectionFactory.getConnection();
             result= delegate.execute();
             if (isLocalTransaction) {
-              handleTransactionInterruption(conn,threadStack);
+              handleTransactionInteruption(conn,threadStack);
               DbConnectionFactory.commit();
             }
         } catch (Throwable e) {
@@ -158,7 +158,7 @@ public class LocalTransaction {
             delegate.execute();
 
             if (isLocalTransaction) {
-              handleTransactionInterruption(conn,threadStack);
+              handleTransactionInteruption(conn,threadStack);
               DbConnectionFactory.commit();
             }
         } catch (Exception e) {
@@ -195,7 +195,7 @@ public class LocalTransaction {
     } // handleException.
 
 
-    private static void handleTransactionInterruption(final Connection conn, final StackTraceElement[] threadStack) throws DotDataException {
+    private static void handleTransactionInteruption(final Connection conn, final StackTraceElement[] threadStack) throws DotDataException {
       if (DbConnectionFactory.getConnection() != conn) {
         final String action = Config.getStringProperty("LOCAL_TRANSACTION_INTERUPTED_ACTION", TransactionErrorEnum.LOG.name());
         if (TransactionErrorEnum.LOG.name().equalsIgnoreCase(action)) {

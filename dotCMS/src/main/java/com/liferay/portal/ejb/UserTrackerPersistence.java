@@ -22,10 +22,9 @@
 
 package com.liferay.portal.ejb;
 
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.business.WrapInTransaction;
 import com.liferay.portal.NoSuchUserTrackerException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.util.HibernateUtil;
 import com.liferay.util.dao.hibernate.OrderByComparator;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -48,7 +47,6 @@ public class UserTrackerPersistence extends BasePersistence {
 		return new com.liferay.portal.model.UserTracker(userTrackerId);
 	}
 
-	@WrapInTransaction
 	protected com.liferay.portal.model.UserTracker remove(String userTrackerId)
 		throws NoSuchUserTrackerException, SystemException {
 		Session session = null;
@@ -73,9 +71,11 @@ public class UserTrackerPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@WrapInTransaction
 	protected com.liferay.portal.model.UserTracker update(
 		com.liferay.portal.model.UserTracker userTracker)
 		throws SystemException {
@@ -133,9 +133,11 @@ public class UserTrackerPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected com.liferay.portal.model.UserTracker findByPrimaryKey(
 		String userTrackerId)
 		throws NoSuchUserTrackerException, SystemException {
@@ -161,9 +163,11 @@ public class UserTrackerPersistence extends BasePersistence {
 				throw new SystemException(he);
 			}
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected List findByCompanyId(String companyId) throws SystemException {
 		Session session = null;
 
@@ -193,6 +197,9 @@ public class UserTrackerPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
 	protected List findByCompanyId(String companyId, int begin, int end)
@@ -200,7 +207,6 @@ public class UserTrackerPersistence extends BasePersistence {
 		return findByCompanyId(companyId, begin, end, null);
 	}
 
-	@CloseDBIfOpened
 	protected List findByCompanyId(String companyId, int begin, int end,
 		OrderByComparator obc) throws SystemException {
 		Session session = null;
@@ -255,6 +261,9 @@ public class UserTrackerPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
 	protected com.liferay.portal.model.UserTracker findByCompanyId_First(
@@ -284,7 +293,6 @@ public class UserTrackerPersistence extends BasePersistence {
 		}
 	}
 
-	@CloseDBIfOpened
 	protected com.liferay.portal.model.UserTracker[] findByCompanyId_PrevAndNext(
 		String userTrackerId, String companyId, OrderByComparator obc)
 		throws NoSuchUserTrackerException, SystemException {
@@ -369,9 +377,11 @@ public class UserTrackerPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected List findByUserId(String userId) throws SystemException {
 		Session session = null;
 
@@ -401,6 +411,9 @@ public class UserTrackerPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
 	protected List findByUserId(String userId, int begin, int end)
@@ -408,7 +421,6 @@ public class UserTrackerPersistence extends BasePersistence {
 		return findByUserId(userId, begin, end, null);
 	}
 
-	@CloseDBIfOpened
 	protected List findByUserId(String userId, int begin, int end,
 		OrderByComparator obc) throws SystemException {
 		Session session = null;
@@ -463,6 +475,9 @@ public class UserTrackerPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
 	protected com.liferay.portal.model.UserTracker findByUserId_First(
@@ -492,7 +507,6 @@ public class UserTrackerPersistence extends BasePersistence {
 		}
 	}
 
-	@CloseDBIfOpened
 	protected com.liferay.portal.model.UserTracker[] findByUserId_PrevAndNext(
 		String userTrackerId, String userId, OrderByComparator obc)
 		throws NoSuchUserTrackerException, SystemException {
@@ -577,9 +591,11 @@ public class UserTrackerPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected List findAll() throws SystemException {
 		Session session = null;
 
@@ -603,9 +619,11 @@ public class UserTrackerPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@WrapInTransaction
 	protected void removeByCompanyId(String companyId)
 		throws SystemException {
 		Session session = null;
@@ -636,9 +654,11 @@ public class UserTrackerPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@WrapInTransaction
 	protected void removeByUserId(String userId) throws SystemException {
 		Session session = null;
 
@@ -668,9 +688,11 @@ public class UserTrackerPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected int countByCompanyId(String companyId) throws SystemException {
 		Session session = null;
 
@@ -703,9 +725,11 @@ public class UserTrackerPersistence extends BasePersistence {
 		catch (HibernateException he) {
 			throw new SystemException(he);
 		}
+		finally {
+			HibernateUtil.closeSession(session);
+		}
 	}
 
-	@CloseDBIfOpened
 	protected int countByUserId(String userId) throws SystemException {
 		Session session = null;
 
@@ -737,6 +761,9 @@ public class UserTrackerPersistence extends BasePersistence {
 		}
 		catch (HibernateException he) {
 			throw new SystemException(he);
+		}
+		finally {
+			HibernateUtil.closeSession(session);
 		}
 	}
 }

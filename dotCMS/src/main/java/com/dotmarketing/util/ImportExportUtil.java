@@ -423,8 +423,6 @@ public class ImportExportUtil {
             Logger.error(this, "Unable to load role : " + e.getMessage(), e);
         }
         try{
-            //Required to avoid transaction broken exception. Issue https://github.com/dotCMS/core/issues/16997
-            HibernateUtil.closeSession();
             doXMLFileImport(userXML, out);
         } catch (Exception e) {
             Logger.error(this, "Unable to load " + userXML.getName() + " : " + e.getMessage(), e);
@@ -742,9 +740,6 @@ public class ImportExportUtil {
         // workflow schemas need to come before permissions
         if(workflowSchemaFile != null){
         	try{
-
-        	    //Required to avoid transaction broken exception. Issue https://github.com/dotCMS/core/issues/16997
-                HibernateUtil.closeSession();
         		WorkflowImportExportUtil.getInstance().importWorkflowExport(workflowSchemaFile);
 
         	}catch(Exception e){
@@ -967,13 +962,8 @@ public class ImportExportUtil {
         try {
             /* get a list of all our tables */
             final ArrayList<String> _tablesToDelete = new ArrayList<String>();
-            Map map =null;
-
-            try {
-                map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
-            } catch (DotHibernateException e) {
-                Logger.error(this,e.getMessage(),e);
-            }
+            Map map = HibernateUtil.getSession().getSessionFactory().getAllClassMetadata();
+   
 
             Iterator it = map.entrySet().iterator();
             while (it.hasNext()) {
@@ -1302,7 +1292,7 @@ public class ImportExportUtil {
                     }
                     try {
                         c.setModified(true);
-                        APILocator.getCompanyAPI().updateCompany(c);
+                        CompanyManagerUtil.updateCompany(c);
                     } catch (SystemException e) {
                         throw new DotDataException("Unable to load company",e);
                     }
