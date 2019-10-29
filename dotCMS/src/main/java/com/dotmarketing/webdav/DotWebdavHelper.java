@@ -852,7 +852,22 @@ public class DotWebdavHelper {
 			final boolean disableWorkflow, Contentlet fileAsset)
 			throws DotDataException, DotSecurityException {
 
-		if (isAutoPub && this.hasPermissionPublish(fileAsset, user)) {
+    	if (!isAutoPub) { // if it is just save
+
+			final Optional<WorkflowAction> saveActionOpt = fileAsset.isNew()?
+					APILocator.getWorkflowAPI().findActionMappedBySystemActionContentlet(fileAsset, SystemAction.NEW, user):
+					APILocator.getWorkflowAPI().findActionMappedBySystemActionContentlet(fileAsset, SystemAction.EDIT, user);
+			if (saveActionOpt.isPresent() && saveActionOpt.get().hasSaveActionlet()) {
+
+				fileAsset = APILocator.getWorkflowAPI().fireContentWorkflow(fileAsset,
+						new ContentletDependencies.Builder()
+								.workflowActionId(saveActionOpt.get().getId())
+								.modUser(user).build());
+
+				fileResourceCache.add(resourceUri + "|" + user.getUserId(), new Date().getTime());
+				return fileAsset;
+			}
+		} else if (isAutoPub && this.hasPermissionPublish(fileAsset, user)) {
 
 			final Optional<WorkflowAction> publishActionOpt = APILocator.getWorkflowAPI().
 					findActionMappedBySystemActionContentlet(fileAsset, SystemAction.PUBLISH, user);
@@ -888,8 +903,7 @@ public class DotWebdavHelper {
 		if (isAutoPub && perAPI
 				.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user)) {
 
-			conAPI.publish(fileAsset, user,
-					false);
+			conAPI.publish(fileAsset, user,false);
 
 			fileResourceCache.add(resourceUri + "|" + user.getUserId(), new Date().getTime());
 		}
