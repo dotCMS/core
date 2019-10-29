@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.fileassets.business;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
@@ -23,6 +24,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.Map;
+import org.apache.commons.beanutils.BeanUtils;
 
 public class FileAsset extends Contentlet implements IFileAsset {
 
@@ -91,41 +93,40 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	public long getFileSize() {
 		if(this.fileSizeInternal == 0) {
-			final File fileAsset = getFileAsset();
-			if(null != fileAsset){
-			   this.fileSizeInternal = fileAsset.length();
-			}
+		   this.fileSizeInternal = computeFileSize(getFileAsset());
 		}
 		return this.fileSizeInternal > 0 ? this.fileSizeInternal : 0;
 	}
 
-	private Dimension fileDimension = new Dimension();
+    private long computeFileSize(final File fileAsset){
+	   return (fileSizeInternal = fileAsset == null ? 0 : fileAsset.length());
+    }
+
+	private Dimension fileDimension = null;
 
 	public int getHeight() {
-        try {
-            if (fileDimension.height == 0) {
-                // File dimension is not loaded and we need to load it
-                fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
-            }
-        } catch (Exception e) {
-            Logger.debug(this, "Error getting height for file asset, id: " + getIdentifier(), e);
-        }
+		if (null == fileDimension) {
+			fileDimension = computeFileDimension(getFileAsset());
+		}
+		return  fileDimension == null ? 0 : fileDimension.height;
+	}
 
-        return fileDimension.height;
-    }
+	public int getWidth() {
+		if (null == fileDimension) {
+			fileDimension = computeFileDimension(getFileAsset());
+		}
+		return fileDimension == null ? 0 : fileDimension.width;
+	}
 
-    public int getWidth() {
-        try {
-            if (fileDimension.width == 0) {
-                // File dimension is not loaded and we need to load it
-                fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
-            }
-        } catch (Exception e) {
-            Logger.debug(this, "Error getting width for file asset, id: " + getIdentifier(), e);
-        }
-
-        return fileDimension.width;
-    }
+	private Dimension computeFileDimension(final File file) {
+		try {
+			return (fileDimension = ImageUtil.getInstance().getDimension(file));
+		} catch (Exception e) {
+			Logger.debug(this,
+					"Error computing dimensions for file asset with id: " + getIdentifier(), e);
+		}
+		return null;
+	}
 
 	/**
 	 * This access the physical file on disk
@@ -147,16 +148,24 @@ public class FileAsset extends Contentlet implements IFileAsset {
    * 
    * @return
    */
-  private String underlyingFileName = null;
+  private  String underlyingFileName = null;
 
-	public String getUnderlyingFileName() {
-		if (underlyingFileName != null) {
-			return underlyingFileName;
-		}
-		final File fileAsset = getFileAsset();
-		this.underlyingFileName = fileAsset != null ? fileAsset.getName() : null;
-		return this.underlyingFileName;
-	}
+  public String getUnderlyingFileName() {
+	 if (underlyingFileName != null) {
+		return underlyingFileName;
+	 }
+	 this.underlyingFileName = computeUnderlyingFileName(getFileAsset());
+	 return this.underlyingFileName;
+  }
+
+	/**
+	 *
+	 * @param fileAsset
+	 * @return
+	 */
+  private String computeUnderlyingFileName(final File fileAsset){
+	  return (this.underlyingFileName = fileAsset != null ? fileAsset.getName() : null);
+  }
 
 	/***
 	 * This access the logical file name stored on the table Identifier
@@ -192,7 +201,21 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return new BufferedInputStream(Files.newInputStream(getFileAsset().toPath()));
 	}
 
+    @Override
+	public void setBinary(final String velocityVarName, final File newFile)throws IOException{
+		file = null;
+		super.setBinary(velocityVarName, newFile);
+	}
+
+	@Override
+	public void setBinary(final com.dotcms.contenttype.model.field.Field field, final File newFile)throws IOException{
+		file = null;
+		super.setBinary(field, newFile);
+	}
+
 	public File getFileAsset() {
+		// calling getBinary can be relatively expensive since it constantly verifies the existence of the file on disk.
+		// Therefore we'll keep a file reference at hand.
 		if (null == file) {
 			try {
 				file = getBinary(FileAssetAPI.BINARY_FIELD);
@@ -281,9 +304,6 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	 }
 
-
-
-
 	 public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String,Object> map = super.getMap();
 		boolean live =  false;
@@ -340,4 +360,27 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	public String toString() {
 		return this.getFileName();
 	}
+
+	/**
+	 * This copy-method is meant to take advantage of the eager fetch methods
+	 * tries to minimize the manipulation of the inner java.io.File object to avoid unnecessary interaction with the file-system
+	 * Also tries initialize everything at once and keep it all on the inner-property value holders.
+	 *
+	 * @param dest
+	 * @param origin
+	 * @return
+	 * @throws Exception
+	 */
+	public static FileAsset eagerlyInitializedCopy( final FileAsset dest, final FileAsset origin) throws Exception{
+		BeanUtils.copyProperties(dest, origin);
+		dest.setHost(origin.getHost());
+		final File file = origin.getFileAsset();
+		dest.setBinary(FileAssetAPI.BINARY_FIELD, file);
+		dest.fileDimension = origin.fileDimension == null ? origin.computeFileDimension(file) : origin.fileDimension;
+		dest.underlyingFileName = origin.underlyingFileName == null ? origin.computeUnderlyingFileName(file) : origin.underlyingFileName;
+		dest.fileSizeInternal = origin.fileSizeInternal == 0 ? origin.computeFileSize(file) : origin.fileSizeInternal;
+		CacheLocator.getContentletCache().add(origin);
+	    return dest;
+	}
+
 }

@@ -220,11 +220,6 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			return (FileAsset) con;
 		}
 
-		final Contentlet cachedContentlet = CacheLocator.getContentletCache().get(con.getInode());
-		if (cachedContentlet instanceof FileAsset) {
-			return (FileAsset) cachedContentlet;
-		}
-		
 		final FileAsset fileAsset = new FileAsset();
 		fileAsset.setContentTypeId(con.getContentTypeId());
 		try {
@@ -248,7 +243,6 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				}
 			}
 		}
-		CacheLocator.getContentletCache().add(fileAsset);
 		return fileAsset;
 	}
 

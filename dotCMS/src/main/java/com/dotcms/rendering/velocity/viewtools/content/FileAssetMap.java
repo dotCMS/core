@@ -4,12 +4,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class FileAssetMap extends FileAsset {
-
     private static final long serialVersionUID = -3798679965316360641L;
 
     private static final String URL_MASK = "/dA/%s/%s";
@@ -29,18 +26,11 @@ public class FileAssetMap extends FileAsset {
      * @return FileAssetMap new instance
      * @throws Exception
      */
-    public static FileAssetMap of(Contentlet c) throws Exception {
-        final FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(c);
-        final FileAssetMap fam = new FileAssetMap();
-        fam.setHost(fa.getHost());
-        fam.setBinary(FileAssetAPI.BINARY_FIELD, fa.getFileAsset());
-        BeanUtils.copyProperties(fam, fa);
-
-        return fam;
+    public static FileAssetMap of(final Contentlet c) throws Exception {
+        final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(c);
+        final FileAssetMap fileAssetMap = new FileAssetMap();
+        return (FileAssetMap)FileAsset.eagerlyInitializedCopy(fileAssetMap, fileAsset);
     }
-    
-    
-    
     
     public String getShortyUrl() {
 
