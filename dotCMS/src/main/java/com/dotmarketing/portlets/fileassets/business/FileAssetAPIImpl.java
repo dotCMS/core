@@ -243,6 +243,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				}
 			}
 		}
+		CacheLocator.getContentletCache().add(fileAsset);
 		return fileAsset;
 	}
 
