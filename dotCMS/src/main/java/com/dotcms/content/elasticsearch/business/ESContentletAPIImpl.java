@@ -1033,7 +1033,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final List<Contentlet> contentlets = new ArrayList<>();
             contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
             while(!contentlets.isEmpty()) {
-                HibernateUtil.addCommitListener(() -> moveBinaryFilesToTrash(contentlets, oldField));
+                final List<Contentlet> finalList = new ArrayList<>();
+                finalList.addAll(contentlets);
+                HibernateUtil.addCommitListener(() -> moveBinaryFilesToTrash(finalList, oldField));
                 offset+=batchSize;
                 contentlets.clear();
                 contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
@@ -1060,6 +1062,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
+    @WrapInTransaction
     public void cleanField(Structure structure, Field oldField, User user, boolean respectFrontendRoles)
                     throws DotSecurityException, DotDataException {
         cleanField(structure, null, oldField, user, respectFrontendRoles);

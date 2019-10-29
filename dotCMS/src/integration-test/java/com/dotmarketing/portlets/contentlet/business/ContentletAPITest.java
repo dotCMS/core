@@ -1816,14 +1816,8 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Cleaning the binary field
         contentletAPI.cleanField(structure, foundBinaryField, user, false);
-        //Validations
-        HibernateUtil.addCommitListener(() -> {
-            try{
-                assertFalse(((java.io.File) value).exists());
-            } catch (Exception e) {
-                fail(e.getMessage());
-            }
-        });
+
+        assertFalse(((java.io.File) value).exists());
     }
 
     /**
