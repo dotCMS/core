@@ -44,6 +44,7 @@ import { IframeOverlayService } from '@components/_common/iframe/service/iframe-
 import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { DotPageMode, DotPageContainer, DotPageContent } from '../shared/models';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
 
 @Component({
     selector: 'dot-global-message',
@@ -212,6 +213,11 @@ describe('DotEditContentComponent', () => {
         dotDialogService = de.injector.get(DotAlertConfirmService);
 
         spyOn(dotPageStateService, 'reload');
+
+        spyOn(dotEditContentHtmlService, 'renderAddedForm').and.returnValue(
+            of([{ identifier: '123', uuid: 'uui-1' }])
+        );
+        spyOn(dotEditPageService, 'save').and.returnValue(of({}));
     });
 
     describe('elements', () => {
@@ -219,12 +225,6 @@ describe('DotEditContentComponent', () => {
             let dotFormSelector: DebugElement;
 
             beforeEach(() => {
-                spyOn(dotEditContentHtmlService, 'renderAddedForm').and.returnValue(
-                    of([{ identifier: '123', uuid: 'uui-1' }])
-                );
-
-                spyOn(dotEditPageService, 'save').and.returnValue(of({}));
-
                 spyOn(dotGlobalMessageService, 'success');
 
                 fixture.detectChanges();
@@ -585,11 +585,15 @@ describe('DotEditContentComponent', () => {
                             mockDotRenderedPage
                         );
 
-                        expect(dotPageStateService.setLocalState).toHaveBeenCalledWith(dotRenderedPageStateExpected);
+                        expect(dotPageStateService.setLocalState).toHaveBeenCalledWith(
+                            dotRenderedPageStateExpected
+                        );
                     }));
 
                     it('should handle load-edit-mode-page to internal navigation', fakeAsync(() => {
-                        spyOn(dotPageStateService, 'setInternalNavigationState').and.callFake(() => {});
+                        spyOn(dotPageStateService, 'setInternalNavigationState').and.callFake(
+                            () => {}
+                        );
 
                         detectChangesForIframeRender(fixture);
 
@@ -608,8 +612,12 @@ describe('DotEditContentComponent', () => {
                             mockDotRenderedPageCopy
                         );
 
-                        expect(dotPageStateService.setInternalNavigationState).toHaveBeenCalledWith(dotRenderedPageStateExpected);
-                        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(mockDotRenderedPageCopy.page.pageURI);
+                        expect(dotPageStateService.setInternalNavigationState).toHaveBeenCalledWith(
+                            dotRenderedPageStateExpected
+                        );
+                        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(
+                            mockDotRenderedPageCopy.page.pageURI
+                        );
                     }));
 
                     it('should handle save-menu-order', fakeAsync(() => {
@@ -670,7 +678,9 @@ describe('DotEditContentComponent', () => {
                                 }
                             };
                             param.events.load(event);
-                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(dotEditContentHtmlService.contentletEvents$);
+                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(
+                                dotEditContentHtmlService.contentletEvents$
+                            );
                             done();
                         });
 
@@ -691,7 +701,6 @@ describe('DotEditContentComponent', () => {
 
                     it('should handle code event', (done) => {
                         spyOn(dotContentletEditorService, 'edit').and.callFake((param) => {
-
                             expect(param.data.inode).toBe('test_inode');
 
                             const event: any = {
@@ -700,7 +709,9 @@ describe('DotEditContentComponent', () => {
                                 }
                             };
                             param.events.load(event);
-                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(dotEditContentHtmlService.contentletEvents$);
+                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(
+                                dotEditContentHtmlService.contentletEvents$
+                            );
                             done();
                         });
 
@@ -721,7 +732,10 @@ describe('DotEditContentComponent', () => {
 
                     it('should handle add form event', () => {
                         component.editForm = false;
-                        spyOn(dotEditContentHtmlService, 'setContainterToAppendContentlet').and.callFake(() => {});
+                        spyOn(
+                            dotEditContentHtmlService,
+                            'setContainterToAppendContentlet'
+                        ).and.callFake(() => {});
 
                         fixture.detectChanges();
 
@@ -739,16 +753,21 @@ describe('DotEditContentComponent', () => {
                             uuid: 'uuid'
                         };
 
-                        expect(dotEditContentHtmlService.setContainterToAppendContentlet).toHaveBeenCalledWith(container);
+                        expect(
+                            dotEditContentHtmlService.setContainterToAppendContentlet
+                        ).toHaveBeenCalledWith(container);
                         expect(component.editForm).toBe(true);
                     });
 
                     it('should handle add content event', (done) => {
-                        spyOn(dotEditContentHtmlService, 'setContainterToAppendContentlet').and.callFake(() => {});
+                        spyOn(
+                            dotEditContentHtmlService,
+                            'setContainterToAppendContentlet'
+                        ).and.callFake(() => {});
                         spyOn(dotContentletEditorService, 'add').and.callFake((param) => {
                             expect(param.data).toEqual({
                                 container: 'identifier',
-                                baseTypes:  'content'
+                                baseTypes: 'content'
                             });
 
                             expect(param.header).toEqual('Content Search');
@@ -759,7 +778,9 @@ describe('DotEditContentComponent', () => {
                                 }
                             };
                             param.events.load(event);
-                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(dotEditContentHtmlService.contentletEvents$);
+                            expect(event.target.contentWindow.ngEditContentletEvents).toBe(
+                                dotEditContentHtmlService.contentletEvents$
+                            );
                             done();
                         });
 
@@ -784,7 +805,9 @@ describe('DotEditContentComponent', () => {
                             uuid: 'uuid'
                         };
 
-                        expect(dotEditContentHtmlService.setContainterToAppendContentlet).toHaveBeenCalledWith(container);
+                        expect(
+                            dotEditContentHtmlService.setContainterToAppendContentlet
+                        ).toHaveBeenCalledWith(container);
                     });
 
                     it('should handle remove event', (done) => {
@@ -804,7 +827,10 @@ describe('DotEditContentComponent', () => {
                                 inode: 'test_inode',
                                 identifier: 'test_identifier'
                             };
-                            expect(dotEditContentHtmlService.removeContentlet).toHaveBeenCalledWith(pageContainer, pageContent);
+                            expect(dotEditContentHtmlService.removeContentlet).toHaveBeenCalledWith(
+                                pageContainer,
+                                pageContent
+                            );
                             done();
                         });
 
@@ -819,7 +845,7 @@ describe('DotEditContentComponent', () => {
                             container: {
                                 dotIdentifier: 'container_identifier',
                                 dotUuid: 'container_uuid'
-                            },
+                            }
                         });
                     });
 
@@ -879,6 +905,49 @@ describe('DotEditContentComponent', () => {
                     By.css('.dot-edit__iframe-wrapper dot-whats-changed')
                 );
                 expect(dotWhatsChange).not.toBeNull();
+            });
+        });
+
+        describe('personalized', () => {
+            let dotFormSelector: DebugElement;
+
+            beforeEach(() => {
+                route.parent.parent.data = of({
+                    content: new DotPageRenderState(
+                        mockUser,
+                        new DotPageRender({
+                            ...mockDotRenderedPage,
+                            viewAs: {
+                                ...mockDotRenderedPage.viewAs,
+                                persona: {
+                                    ...dotcmsContentletMock,
+                                    name: 'Super Persona',
+                                    keyTag: 'SuperPersona',
+                                    personalized: true
+                                }
+                            }
+                        })
+                    )
+                });
+                fixture.detectChanges();
+                dotFormSelector = de.query(By.css('dot-form-selector'));
+            });
+
+            it('should save form', () => {
+                dotFormSelector.triggerEventHandler('select', {
+                    baseType: 'string',
+                    clazz: 'string'
+                });
+                fixture.detectChanges();
+
+                expect(dotEditContentHtmlService.renderAddedForm).toHaveBeenCalledWith({
+                    baseType: 'string',
+                    clazz: 'string'
+                });
+
+                expect(dotEditPageService.save).toHaveBeenCalledWith('123', [
+                    { identifier: '123', uuid: 'uui-1', personaTag: 'SuperPersona' }
+                ]);
             });
         });
     });
