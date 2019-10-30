@@ -60,8 +60,8 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
             this.name = name;
             this.fieldValue = fieldValue;
             this.values = values;
-            this.fieldType = fieldType;
             this.expectedValue = expectedValue;
+            this.fieldType = fieldType;
         }
     }
 
@@ -123,7 +123,6 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
                                     "field", field, "user", systemUser));
 
             // Make sure the field value is cleaned up
-            CacheLocator.getContentletCache().remove(contentlet);
             contentlet = APILocator.getContentletAPI().find(contentlet.getInode(), systemUser, false);
 
             Object fieldValue = contentlet.get(field.variable());
