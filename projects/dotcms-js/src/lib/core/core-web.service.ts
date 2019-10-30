@@ -88,7 +88,7 @@ export class CoreWebService {
                             } else {
                                 throw new CwError(
                                     SERVER_RESPONSE_ERROR,
-                                    response.headers.get('error-message'),
+                                    response.json().message,
                                     request,
                                     response,
                                     source
