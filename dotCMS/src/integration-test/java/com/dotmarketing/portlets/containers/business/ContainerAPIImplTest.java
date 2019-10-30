@@ -19,6 +19,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -41,6 +42,7 @@ import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Optional;
 import org.apache.felix.framework.OSGIUtil;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -205,6 +207,25 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                 // quiet
             }
         }
+    }
+
+    @Test
+    public void test_getContainerByFolder_cache() throws DotDataException, DotSecurityException {
+
+        final User      user       = APILocator.systemUser();
+        final Host      host       = APILocator.getHostAPI().findDefaultHost(user, false);
+        final Folder    folder     = APILocator.getFolderAPI().findFolderByPath
+                (Constants.CONTAINER_FOLDER_PATH + "/large-column", host, user, false);
+        final Container container1 = APILocator.getContainerAPI().getContainerByFolder(folder, host, user, false);
+        final Container container2 = APILocator.getContainerAPI().getContainerByFolder(folder, host, user, false);
+
+        Assert.assertTrue(container1 == container2);
+
+        CacheLocator.getContainerCache().remove(container1);
+
+        final Container container3 = APILocator.getContainerAPI().getContainerByFolder(folder, host, user, false);
+
+        Assert.assertTrue(container3 != container2);
     }
 
     @Test

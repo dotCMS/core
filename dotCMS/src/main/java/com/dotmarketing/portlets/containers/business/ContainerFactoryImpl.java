@@ -201,24 +201,31 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
         final Identifier identifier = getContainerAsset(host, folder);
         if(identifier==null) {
+
             throw new NotFoundInDbException("no container found under: " + folder.getPath() );
         }
-        ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
-        String inode = showLive && UtilMethods.isSet(cvi.getLiveInode()) ? cvi.getLiveInode() : cvi.getWorkingInode();
-        
-        Container container =containerCache.get(inode);
+
+        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().
+				getContentletVersionInfo(identifier.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        final String inode = showLive && UtilMethods.isSet(contentletVersionInfo.getLiveInode()) ?
+				contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
+        Container container = containerCache.get(inode);
 
         if(container==null) {
+
             synchronized (identifier) {
+
                 if(container==null) {
-                    container = FileAssetContainerUtil.getInstance().fromAssets (host, folder, this.findContainerAssets(folder, user, showLive), showLive, includeHostOnPath);
-                    if(container!=null && container.getInode()!=null) {
+
+                    container = FileAssetContainerUtil.getInstance().fromAssets (host, folder,
+							this.findContainerAssets(folder, user, showLive), showLive, includeHostOnPath);
+                    if(container != null && container.getInode() != null) {
                         containerCache.add(container);
                     }
                 }
             }
-
         }
+
         return container;
     }
     /*

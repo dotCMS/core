@@ -61,7 +61,7 @@ public class DotResourceCache implements ResourceCache, Cachable {
         return rw;
 
     }
-    public void putMacro404(String name) {
+    public void putMacro404(final String name) {
         cache.put(MACRO_PREFIX +name, MACRO404, macroCacheGroup);
         
         
