@@ -19,7 +19,7 @@ public class RecurrenceUtil {
 	 * @return
 	 */
 	public static String getBaseEventIdentifier(String recurrentIdentifier){
-		if(recurrentIdentifier.contains(RECURRENCE_PREFIX)){
+		if(recurrentIdentifier!=null && recurrentIdentifier.contains(RECURRENCE_PREFIX)){
 			return recurrentIdentifier.substring(0, recurrentIdentifier.indexOf(RECURRENCE_PREFIX));
 		}
 		return recurrentIdentifier;
@@ -43,6 +43,9 @@ public class RecurrenceUtil {
 	 */
 	public static String[] getRecurrenceDates(String recurrentEventIdentifier){
 		String[] recDates = null;
+		if(recurrentEventIdentifier==null) {
+		    return null;
+		}
 		if(recurrentEventIdentifier.contains(RECURRENCE_PREFIX) && 
 				recurrentEventIdentifier.contains(RECURRENCE_SEPARATOR)){
 				String idAux = "";

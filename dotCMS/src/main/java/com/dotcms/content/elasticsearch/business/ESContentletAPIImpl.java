@@ -3113,9 +3113,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     relatedContentList.add(currentContent);
                 }
             } catch (DotDataException | DotSecurityException | DotContentletStateException e) {
-                Logger.warnAndDebug(this.getClass(),
-                        "Error trying to get a live version for content with identifier "
-                                + identifier, e);
+                Logger.warnEveryAndDebug(this.getClass(),
+                        "No live version for contentlet identifier "
+                                + identifier, e, 5000);
             }
         }
 
