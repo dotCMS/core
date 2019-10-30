@@ -62,16 +62,20 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
     public void notify(final ContentletCheckinEvent event) {
 
         try {
-
+            final Contentlet contentlet = event.getContentlet();
             if (Config.getBooleanProperty(AUTO_ASSIGN_WORKFLOW, true) &&
-                    this.validContentType(event.getContentlet()) &&
-                    !APILocator.getWorkflowAPI().findCurrentStep(event.getContentlet()).isPresent()) {
+                    this.validContentType(contentlet) &&
+                    !APILocator.getWorkflowAPI().findCurrentStep(contentlet).isPresent()) {
 
-                final AutoAssignWorkflowDelegate delegate = null != this.customAutoAssignWorkflowDelegate?
-                        this.customAutoAssignWorkflowDelegate: this.autoAssignWorkflowDelegate;
-                Logger.debug(this, "Using the auto assign workflow with the delegate: " + delegate.getName());
+                final AutoAssignWorkflowDelegate delegate =
+                        null != this.customAutoAssignWorkflowDelegate ?
+                                this.customAutoAssignWorkflowDelegate
+                                : this.autoAssignWorkflowDelegate;
+                Logger.debug(this, String.format(
+                        "Using the auto assign workflow with the delegate: %s  and content with title %s ",
+                        delegate.getName(), contentlet.getTitle()));
 
-                delegate.assign(event.getContentlet(), event.getUser());
+                delegate.assign(contentlet, event.getUser());
             }
         } catch (DotDataException e) {
 
@@ -80,19 +84,18 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
     } // notify.
 
     private boolean validContentType(final Contentlet contentlet) {
-
         // is valid if not host and
         // no auto assign attribute and if exists no in true
-
         boolean autoAssign = true;
 
         if (null != contentlet.get(AUTO_ASSIGN_WORKFLOW)) {
-
-            autoAssign = contentlet.getBoolProperty(AUTO_ASSIGN_WORKFLOW); // if AUTO_ASSIGN_WORKFLOW is set and FALSE, won't auto assign
+            autoAssign = contentlet.getBoolProperty(
+                    AUTO_ASSIGN_WORKFLOW); // if AUTO_ASSIGN_WORKFLOW is set and FALSE, won't auto assign
         }
 
         final ContentType contentType = contentlet.getContentType();
-        return null != contentType && !Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable()) && autoAssign;
+        return null != contentType && !Host.HOST_VELOCITY_VAR_NAME.equals(contentType.variable())
+                && autoAssign;
     }
 
     private static void assign (final Contentlet contentlet, final User user) {
@@ -111,11 +114,17 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
                             .findAvailableDefaultActionsByContentType(contentlet.getContentType(), user);
 
                     if (UtilMethods.isSet(workflowActions)) {
-
-                        APILocator.getWorkflowAPI().saveWorkflowTask(
-                                createWorkflowTask(contentlet, user, workflowActions));
+                         final WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet);
+                        // ESContentletAPIImpl.copyContentlet can assign a copy-task but the contentlet will still lack of a step.
+                        // Meaning we could find our selves attempting to add a task into a contentlet that already has one so we better verify there'isnt one already in place.
+                        if (null == task) {
+                            APILocator.getWorkflowAPI().saveWorkflowTask(createWorkflowTask(contentlet, user, workflowActions));
+                        } else {
+                           if(!UtilMethods.isSet(task.getStatus())){
+                               setToFirstWorkflowStep(contentlet, user, task);
+                           }
+                        }
                     } else {
-
                         setToFirstWorkflowStep(contentlet, user);
                     }
                 }
@@ -155,15 +164,26 @@ public class UnassignedWorkflowContentletCheckinListener implements EventSubscri
     }
 
     private static void setToFirstWorkflowStep(final Contentlet contentlet, final User user) throws DotDataException {
+        setToFirstWorkflowStep(contentlet,user, null);
+    }
+
+    private static void setToFirstWorkflowStep(final Contentlet contentlet, final User user, final WorkflowTask task) throws DotDataException {
 
         final List<WorkflowScheme> schemes = APILocator.getWorkflowAPI().
                 findSchemesForContentType(contentlet.getContentType());
 
         if (UtilMethods.isSet(schemes)) {
             final WorkflowScheme workflowScheme = schemes.get(0);
-            final WorkflowStep workflowStep = APILocator.getWorkflowAPI()
-                    .findFirstStep(workflowScheme.getId()).get();
-            APILocator.getWorkflowAPI().saveWorkflowTask(createWorkflowTask(contentlet, user, workflowStep));
+            final WorkflowStep workflowStep = APILocator.getWorkflowAPI().findFirstStep(workflowScheme.getId()).get();
+            final WorkflowTask workflowTask;
+            if(task == null){
+                workflowTask = createWorkflowTask(contentlet, user, workflowStep);
+              } else {
+                workflowTask = task;
+                workflowTask.setStatus(workflowStep.getId());
+              }
+            APILocator.getWorkflowAPI().saveWorkflowTask(workflowTask);
         }
     }
+
 } // E:O:F:UnassignedWorkflowContentletCheckinListener.

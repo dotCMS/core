@@ -105,9 +105,9 @@ public class ContentUtilsTest {
     public static Object[] testCases() {
         return new TestCase[]{
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 2, false),
-                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 2, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, false, false, 2, false),
-                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 1, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 2, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, true, false, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, true, true, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.DEFAULT, PUBLISH_TYPE_FILTER.LIVE, false, false, 1, false),
@@ -131,9 +131,9 @@ public class ContentUtilsTest {
                 new TestCase(LANGUAGE_TYPE_FILTER.ENGLISH, PUBLISH_TYPE_FILTER.WORKING, false, true, 0, false),
 
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, true, false, 1, false),
-                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, true, true, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, false, false, 1, false),
-                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 0, false),
+                new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.DEFAULT, false, true, 1, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, true, false, 0, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, true, true, 0, false),
                 new TestCase(LANGUAGE_TYPE_FILTER.SPANISH, PUBLISH_TYPE_FILTER.LIVE, false, false, 0, false),
@@ -576,25 +576,15 @@ public class ContentUtilsTest {
 
             parentContent = contentletAPI.checkin(parentContent, user, false);
 
-            //Clean up cache
-            CacheLocator.getContentletCache().remove(childContent);
-            CacheLocator.getContentletCache().remove(parentContent);
+            validateCacheResults(childInode, fullFieldVar, childContent, parentContent, false,
+                    false);
+            validateCacheResults(childInode, fullFieldVar, childContent, parentContent, false,
+                    true);
 
-            //Validate non-cached results (from parent)
-            validateLiveResults(childInode, fullFieldVar, parentContent, false);
-
-            //Validate cached results (from parent)
-            validateLiveResults(childInode, fullFieldVar, parentContent, false);
-
-            //Clean up cache to validate results from the other side of the relationship
-            CacheLocator.getContentletCache().remove(childContent);
-            CacheLocator.getContentletCache().remove(parentContent);
-
-            //Validate non-cached results (from child)
-            validateLiveResults(parentInode, fullFieldVar, childContent, true);
-
-            //Validate cached results (from child)
-            validateLiveResults(parentInode, fullFieldVar, childContent, true);
+            validateCacheResults(parentInode, fullFieldVar, parentContent, childContent, true,
+                    false);
+            validateCacheResults(parentInode, fullFieldVar, parentContent, childContent, true,
+                    true);
 
         } finally {
             if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
@@ -609,15 +599,42 @@ public class ContentUtilsTest {
 
     /**
      *
+     * @param childInode
+     * @param fullFieldVar
+     * @param childContent
+     * @param parentContent
+     * @param pullParents
+     * @param isAnonymous
+     * @throws DotDataException
+     */
+    private void validateCacheResults(final String childInode, final String fullFieldVar,
+            final Contentlet childContent, final Contentlet parentContent,
+            final boolean pullParents, final boolean isAnonymous) throws DotDataException {
+        //Clean up cache
+        CacheLocator.getContentletCache().remove(childContent);
+        CacheLocator.getContentletCache().remove(parentContent);
+
+        //Validate non-cached results (from parent)
+        validateLiveResults(childInode, fullFieldVar, parentContent, pullParents, isAnonymous);
+
+        //Validate cached results (from parent)
+        validateLiveResults(childInode, fullFieldVar, parentContent, pullParents, isAnonymous);
+    }
+
+    /**
+     *
      * @param expectedInode
      * @param relationshipName
      * @param contentlet
      */
     private void validateLiveResults(final String expectedInode, final String relationshipName,
-            final Contentlet contentlet, final boolean pullParents) {
+            final Contentlet contentlet, final boolean pullParents, final boolean isAnonymous)
+            throws DotDataException {
         List<Contentlet> results = ContentUtils
-                .pullRelated(relationshipName, contentlet.getIdentifier(), null, pullParents, -1, null,
-                        user, null, -1, true);
+                .pullRelated(relationshipName, contentlet.getIdentifier(), null, pullParents, -1,
+                        null,
+                        isAnonymous ? APILocator.getUserAPI().getAnonymousUser() : user, null, -1,
+                        isAnonymous ? null : true);
         assertEquals(1, results.size());
         assertEquals(expectedInode, results.get(0).getInode());
     }

@@ -642,6 +642,23 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     }
 
     @Override
+    public void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
+            boolean hasParent) {
+        for (ContentletAPIPreHook pre : preHooks) {
+            boolean preResult = pre.invalidateRelatedContentCache(contentlet, relationship, hasParent);
+            if (!preResult) {
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException(
+                        "The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        conAPI.invalidateRelatedContentCache(contentlet, relationship, hasParent);
+        for (ContentletAPIPostHook post : postHooks) {
+            post.invalidateRelatedContentCache(contentlet, relationship, hasParent);
+        }
+    }
+
+    @Override
 	public Contentlet find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.find(inode, user, respectFrontendRoles);
