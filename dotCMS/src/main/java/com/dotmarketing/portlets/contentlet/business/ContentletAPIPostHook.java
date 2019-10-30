@@ -249,8 +249,8 @@ public interface ContentletAPIPostHook {
 	
 	/**
 	 * Will get all the contentlets for a structure and set the default values for a field on the contentlet.  
-	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all COntentlets will be cleaned make 
-	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
+	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all Contentlets will be cleaned make
+	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all the contentlets it will clean
 	 * as many as it can and throw the DotSecurityException  
 	 * @param structure
 	 * @param field
@@ -259,7 +259,24 @@ public interface ContentletAPIPostHook {
 	 */
 	public default void cleanField(Structure structure, Field field, User user, boolean respectFrontendRoles){}
 
-	/**
+    /**
+     * Will get all the contentlets for a structure (whose modDate is lower than or equals to the deletion date)
+     * and set the default values for a field on the contentlet.
+     * Will check Write/Edit permissions on the Contentlet. So to guarantee all Contentlets will be cleaned make
+     * sure to pass in an Admin User.  If a user doesn't have permissions to clean all the contentlets it will clean
+     * as many as it can and throw the DotSecurityException
+     * @param structure
+     * @param deletionDate
+     * @param field
+     * @param user
+     * @param respectFrontendRoles
+     */
+    default void cleanField(final Structure structure, final Date deletionDate, final Field field,
+            final User user, final boolean respectFrontendRoles) {
+    }
+
+
+    /**
 	 * Will get all the contentlets for a structure and set the default values for a host field.  
 	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all Contentlets will be cleaned make 
 	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 

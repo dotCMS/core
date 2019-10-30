@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -210,7 +211,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.startup.runonce.Task05030UpdateSystemContentTypesHostTest.class,
         com.dotmarketing.startup.runonce.Task05050FileAssetContentTypeReadOnlyFileNameTest.class,
         com.dotmarketing.startup.runonce.Task05190UpdateFormsWidgetCodeFieldTest.class,
-        com.dotmarketing.startup.runalways.Task00001LoadSchemaIntegrationTest.class
+        com.dotmarketing.startup.runalways.Task00001LoadSchemaIntegrationTest.class,
+        CleanUpFieldReferencesJobTest.class
 })
 public class MainSuite {
 
