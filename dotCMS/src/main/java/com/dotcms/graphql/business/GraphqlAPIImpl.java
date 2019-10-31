@@ -160,11 +160,13 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
         // add CONTENT interface fields
         builder.fields(InterfaceType.CONTENTLET.getType().getFieldDefinitions());
-
+        
+        /*
         if(InterfaceType.getInterfaceForBaseType(contentType.baseType())!=null) {
             builder.withInterface(InterfaceType.getInterfaceForBaseType(contentType.baseType()));
         }
-
+        */
+        
         final List<Field> fields = contentType.fields();
 
         fields.forEach((field)->{
