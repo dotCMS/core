@@ -1779,7 +1779,7 @@
                                             	if(languages[n][2]){
                                             		displayLang += "_" + languages[n][2];
                                             	}
-	                                            locale = "<img style='margin-top: 3px;' src='/html/images/languages/" + languages[n][5] + ".gif' width='16px' height='11px' />&nbsp;(" + displayLang + ")";
+	                                            locale = "<img src='/html/images/languages/" + languages[n][5] + ".gif' style=' margin-top: 5px; display: inline-block; margin-right: 5px; width: 16px; height: 11px;' />(" + displayLang + ")";
 	                                            break;
                                         	}
                                         }
