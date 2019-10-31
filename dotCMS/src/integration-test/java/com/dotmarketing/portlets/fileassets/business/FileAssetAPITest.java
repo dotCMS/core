@@ -17,7 +17,6 @@ import com.liferay.util.FileUtil;
 import java.util.List;
 import java.util.Optional;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class FileAssetAPITest extends IntegrationTestBase {
@@ -179,7 +178,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
    * 
    * @throws Exception
    */
-    @Ignore
+    
     @Test
     public void Test_That_File_Asset_Gets_Stored_in_Cache_and_is_Not_Rebuilt_Everytime()
         throws Exception {
