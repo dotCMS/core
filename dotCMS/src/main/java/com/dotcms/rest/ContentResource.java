@@ -781,10 +781,7 @@ public class ContentResource {
             }
             addedRelationships.add(relationship);
 
-            final boolean isParent =
-                    relationshipAPI.sameParentAndChild(relationship) ? field.variable()
-                            .equalsIgnoreCase(relationship.getChildRelationName())
-                            : relationshipAPI.isParent(relationship, contentlet.getContentType());
+            final boolean isParent = relationshipAPI.isParent(relationship, field);
 
             ContentletRelationships.ContentletRelationshipRecords relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
                     relationship, isParent);
@@ -802,13 +799,13 @@ public class ContentResource {
                 com.dotcms.contenttype.model.field.Field otherSideField = null;
                 if (relationship.getParentRelationName() != null
                         && relationship.getChildRelationName() != null) {
-                    if (relationshipAPI.isParent(relationship, contentlet.getContentType())) {
-                        if (fields.containsKey(relationship.getChildRelationName())) {
-                            otherSideField = fields.get(relationship.getChildRelationName());
-                        }
-                    } else {
+                    if (isParent) {
                         if (fields.containsKey(relationship.getParentRelationName())) {
                             otherSideField = fields.get(relationship.getParentRelationName());
+                        }
+                    } else {
+                        if (fields.containsKey(relationship.getChildRelationName())) {
+                            otherSideField = fields.get(relationship.getChildRelationName());
                         }
                     }
                 }
@@ -1025,10 +1022,7 @@ public class ContentResource {
             }
             addedRelationships.add(relationship);
 
-            final boolean isParent =
-                    relationshipAPI.sameParentAndChild(relationship) ? field.variable()
-                            .equalsIgnoreCase(relationship.getChildRelationName())
-                            : relationshipAPI.isParent(relationship, contentlet.getContentType());
+            final boolean isParent = relationshipAPI.isParent(relationship, field);
 
             final ContentletRelationships contentletRelationships = new ContentletRelationships(
                     contentlet);
@@ -1047,13 +1041,13 @@ public class ContentResource {
 
                 if (relationship.getParentRelationName() != null
                         && relationship.getChildRelationName() != null) {
-                    if (relationshipAPI.isParent(relationship, contentlet.getContentType())) {
-                        if (fields.containsKey(relationship.getChildRelationName())) {
-                            otherSideField = fields.get(relationship.getChildRelationName());
-                        }
-                    } else {
+                    if (isParent) {
                         if (fields.containsKey(relationship.getParentRelationName())) {
                             otherSideField = fields.get(relationship.getParentRelationName());
+                        }
+                    } else {
+                        if (fields.containsKey(relationship.getChildRelationName())) {
+                            otherSideField = fields.get(relationship.getChildRelationName());
                         }
                     }
                 }

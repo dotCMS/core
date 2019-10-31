@@ -2,6 +2,7 @@ package com.dotcms.contenttype.business;
 
 import com.dotcms.contenttype.business.sql.RelationshipSQL;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.relationship.DbRelationshipTransformer;
@@ -12,6 +13,7 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -384,6 +386,21 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     }
 
     @Override
+    public  boolean isParent(final Relationship relationship, final Field field) {
+        try {
+            return sameParentAndChild(relationship) ? field.variable()
+                    .equalsIgnoreCase(relationship.getChildRelationName())
+                    : isParent(relationship,
+                            FactoryLocator.getContentTypeFactory().find(field.contentTypeId()));
+        } catch (DotDataException e) {
+            Logger.warnAndDebug(this.getClass(),
+                    "Error searching content type with id " + field.contentTypeId(), e);
+        }
+
+        return false;
+    }
+
+    @Override
     public  boolean isParent(final Relationship relationship, final ContentTypeIf contentTypeIf) {
         return relationship.getParentStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
                 !(sameParentAndChildRelationName(relationship) && relationship
@@ -396,6 +413,21 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
                 !(sameParentAndChildRelationName(relationship) && relationship
                         .getChildStructureInode()
                         .equalsIgnoreCase(relationship.getParentStructureInode()));
+    }
+
+    @Override
+    public boolean isChild(final Relationship relationship, final Field field) {
+        try {
+            return sameParentAndChild(relationship) ? field.variable()
+                    .equalsIgnoreCase(relationship.getParentRelationName())
+                    : isParent(relationship,
+                            FactoryLocator.getContentTypeFactory().find(field.contentTypeId()));
+        } catch (DotDataException e) {
+            Logger.warnAndDebug(this.getClass(),
+                    "Error searching content type with id " + field.contentTypeId(), e);
+        }
+
+        return false;
     }
 
     private boolean sameParentAndChildRelationName(final Relationship relationship){

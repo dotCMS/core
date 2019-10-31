@@ -48,18 +48,16 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
                 throw new DotRuntimeException(e);
             }
 
+            final boolean isParent =  APILocator.getRelationshipAPI().isParent(relationship, field);
             final ContentletRelationships contentletRelationships = new ContentletRelationships(null);
             final ContentletRelationships.ContentletRelationshipRecords
                 records = contentletRelationships.new ContentletRelationshipRecords(
-                relationship,
-                APILocator.getRelationshipAPI().isParent(relationship, contentlet.getContentType()));
+                relationship,isParent);
 
             Object objectToReturn = records.doesAllowOnlyOne() ? null : Collections.emptyList();
 
-            if (UtilMethods.isSet(contentlet.getRelated(fieldVar, user))) {
-
-                final List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user);
-
+            List<Contentlet> relatedContent = contentlet.getRelated(fieldVar, user, true, isParent);
+            if (UtilMethods.isSet(relatedContent)) {
                 objectToReturn = records.doesAllowOnlyOne()
                     ? new ContentletToMapTransformer(relatedContent).hydrate().get(0)
                     : new ContentletToMapTransformer(relatedContent).hydrate();

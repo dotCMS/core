@@ -1206,10 +1206,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         contentlet);
                 final Relationship relationship = relationshipAPI
                         .getRelationshipFromField(theField, currentUser);
+                final boolean isParent =
+                        relationshipAPI.isParent(relationship, theField);
                 final ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
-                        relationship,
-                        relationshipAPI.isParent(relationship, contentlet.getContentType()));
-                records.setRecords(contentlet.getRelated(theField.variable(), user));
+                        relationship, isParent);
+                records.setRecords(contentlet.getRelated(theField.variable(), user, respectFrontEndRoles, isParent));
                 contentletRelationships.setRelationshipsRecords(CollectionsUtils.list(records));
                 return contentletRelationships;
             } else {
@@ -4404,14 +4405,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (contentlet.getMap().containsKey(field.variable())) {
                     final Relationship relationship = relationshipAPI
                             .getRelationshipFromField(field, user);
-                    final boolean hasParent;
-                    if (relationshipAPI.sameParentAndChild(relationship)) {
-                        hasParent = relationship.getParentRelationName() == null || !relationship
-                                .getParentRelationName().equals(field.variable());
-                    } else {
-                        hasParent = relationshipAPI
-                                .isParent(relationship, contentlet.getContentType());
-                    }
+                    final boolean hasParent = relationshipAPI.isParent(relationship, field);
 
                     if (contentRelationships == null){
                         contentRelationships = new ContentletRelationships(contentlet);

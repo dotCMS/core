@@ -91,9 +91,13 @@ public interface RelationshipAPI {
 
   boolean isChild(Relationship rel, ContentTypeIf st);
 
+  boolean isChild(Relationship rel, com.dotcms.contenttype.model.field.Field field);
+
   int maxSortOrder(String parentInode, String relationType);
 
   boolean isParent(Relationship rel, ContentTypeIf st);
+
+  boolean isParent(Relationship rel, com.dotcms.contenttype.model.field.Field field);
 
   void delete(Relationship relationship) throws DotDataException;
 

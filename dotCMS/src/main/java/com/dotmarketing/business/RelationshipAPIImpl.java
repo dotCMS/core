@@ -144,8 +144,18 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     }
 
     @Override
+    public boolean isParent(Relationship rel, com.dotcms.contenttype.model.field.Field field) {
+        return this.relationshipFactory.isParent(rel, field);
+    }
+
+    @Override
     public boolean isChild(Relationship rel, ContentTypeIf st) {
         return this.relationshipFactory.isChild(rel, st);
+    }
+
+    @Override
+    public boolean isChild(Relationship rel, com.dotcms.contenttype.model.field.Field field) {
+        return this.relationshipFactory.isChild(rel, field);
     }
 
     @Override

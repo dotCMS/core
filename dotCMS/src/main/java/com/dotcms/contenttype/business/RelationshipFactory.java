@@ -1,4 +1,5 @@
 package com.dotcms.contenttype.business;
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotmarketing.beans.Tree;
@@ -55,9 +56,13 @@ public interface RelationshipFactory {
 
     List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet, final boolean hasParent) throws  DotDataException;
 
+    boolean isParent(Relationship relationship, Field field);
+
     boolean isParent(final Relationship relationship, final ContentTypeIf contentTypeIf);
 
     boolean isChild(final Relationship relationship, final ContentTypeIf contentTypeIf);
+
+    boolean isChild(Relationship relationship, Field field);
 
     boolean sameParentAndChild(final Relationship rel);
 
