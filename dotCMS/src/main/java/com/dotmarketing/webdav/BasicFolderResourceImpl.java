@@ -76,11 +76,10 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
                 return fileResource;
             } catch (Exception e) {
 
-            	Logger.error(this, "An error occurred while creating new file: " +
+            	Logger.warn(this, "An error occurred while creating new file: " +
                         (newName != null ? newName : "Unknown")
                 		+ " in this path: " + (this.path != null ? this.path : "Unknown") + " "
                 		+ e.getMessage(), e);
-
             	throw new DotRuntimeException(e.getMessage(), e);
             }
         } else {
