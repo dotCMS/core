@@ -99,7 +99,8 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
             return tempFileResource;
         } catch (Exception e){
 
-            Logger.error(this, "Error creating temp file", e);
+            Logger.debug(this, "Error creating temp file", e);
+            Logger.warn(this, "Error creating temp file", e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
     }
