@@ -58,12 +58,9 @@ public class FixTasksExecutor  implements StatefulJob {
 				return o1.getName().compareTo(o2.getName());
 			}
 		};
-		try {
+
 			runOnce = TaskLocatorUtil.getFixTaskClasses();
 
-		} catch (Exception e) {
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
 		Collections.sort(runOnce, comparator);
 
 		//PreparedStatement update = null;

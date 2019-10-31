@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.FixTask;
 import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -32,8 +33,9 @@ public class FixTask00100DeleteUnlinkedContentletAssets implements FixTask {
     final String rootPath;
     final Pattern assetMatchPattern;
     final FileFilter inodeFolderFilter;
-
-    public FixTask00100DeleteUnlinkedContentletAssets(final String rootPath) {
+    
+    @VisibleForTesting
+    FixTask00100DeleteUnlinkedContentletAssets(final String rootPath) {
         this.rootPath = rootPath;
         this.assetMatchPattern = Pattern.compile(ASSET_UUID_REGEX);
         this.inodeFolderFilter = new FileFilter() {
@@ -68,11 +70,12 @@ public class FixTask00100DeleteUnlinkedContentletAssets implements FixTask {
      * @return
      * @throws DotDataException
      */
-    private final List<String> filterForDeadInodes(final List<String> testTheseInode) throws DotDataException {
+    @VisibleForTesting
+    final List<String> filterForDeadInodes(final List<String> testTheseInode) throws DotDataException {
 
-        final String sql = "select inode.inode as test from inode, contentlet, identifier "
-                        + "where identifier.id = contentlet.identifier and inode.inode = contentlet.inode and "
-                        + "inode.type='contentlet' and inode.inode in ('" + String.join("','", testTheseInode) + "')";
+        final String sql = "select contentlet.inode as test from contentlet, identifier "
+                        + "where identifier.id = contentlet.identifier and contentlet.inode in ('"
+                        + String.join("','", testTheseInode) + "')";
 
         final List<String> existingInodes = new DotConnect().setSQL(sql).loadObjectResults().stream()
                         .map(r -> String.valueOf(r.get("test"))).collect(Collectors.toList());
@@ -86,7 +89,7 @@ public class FixTask00100DeleteUnlinkedContentletAssets implements FixTask {
     }
 
 
-    public Tuple2<Integer,List<String>> run() throws JobExecutionException {
+    public Tuple2<Integer, List<String>> run() throws JobExecutionException {
 
         final File assetFolder = new File(this.rootPath);
 
@@ -130,7 +133,8 @@ public class FixTask00100DeleteUnlinkedContentletAssets implements FixTask {
      * 
      * @param deadOnes
      */
-    private void deleteDeadInodeFolders(List<String> deadOnes) {
+    @VisibleForTesting
+    void deleteDeadInodeFolders(List<String> deadOnes) {
         for (String id : deadOnes) {
             File deleteMe = new File(APILocator.getFileAssetAPI().getRealAssetPath(id)).getParentFile();
             Logger.info(this.getClass(), "  - deleting unlinked contentlet " + deleteMe);

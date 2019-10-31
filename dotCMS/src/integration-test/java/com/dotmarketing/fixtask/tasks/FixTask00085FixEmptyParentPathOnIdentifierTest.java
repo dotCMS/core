@@ -1,4 +1,4 @@
-package com.dotmarketing.fixTasks;
+package com.dotmarketing.fixtask.tasks;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
