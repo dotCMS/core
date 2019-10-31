@@ -18,11 +18,12 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotmarketing.beans.*;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.PermissionableProxy;
+import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -157,7 +158,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	 * @param requiredPermissionType
 	 * @return If the user has the required permission for the collection of permissions passed in
 	 */
-	private boolean doRolesHavePermission(List<String> userRoleIDs, List<Permission> permissions, int requiredPermissionType){
+	private boolean doRolesHavePermission(Collection<String> userRoleIDs, List<Permission> permissions, int requiredPermissionType){
 		
 		for (Permission permission : permissions) {
 			if(permission.matchesPermission(requiredPermissionType)
@@ -342,7 +343,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         }
 
 
-		final List<Role> roles = Try.of(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId())).getOrElse(new ArrayList<>());
+		final Set<Role> roles = new HashSet<>(Try.of(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId())).getOrElse(new ArrayList<>()));
         
 
 		
@@ -357,7 +358,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		    roles.remove(APILocator.getRoleAPI().loadRoleByKey("anonymous"));
 		}
 		
-		List<String> userRoleIds= roles.stream().map(r->r.getId()).collect(Collectors.toList());
+		Set<String> userRoleIds= roles.stream().map(r->r.getId()).collect(Collectors.toSet());
         
         
 		return doRolesHavePermission(userRoleIds,getPermissions(permissionable, true),permissionType);
