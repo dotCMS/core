@@ -178,7 +178,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
    * 
    * @throws Exception
    */
-    
+
     @Test
     public void Test_That_File_Asset_Gets_Stored_in_Cache_and_is_Not_Rebuilt_Everytime()
         throws Exception {
