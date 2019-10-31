@@ -15,6 +15,7 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateHtml
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,6 +46,8 @@ public class TemplateLayout implements Serializable {
 
     private Body body;
     private Sidebar sidebar;
+
+
 
     public String getPageWidth () {
         return pageWidth;
@@ -179,5 +182,24 @@ public class TemplateLayout implements Serializable {
         }
     }
 
+    public boolean existsContainer(final String identifier, final String uuid){
+        return this.getContainers().stream()
+                .anyMatch(containerUUID ->
+                        containerUUID.getIdentifier().equals(identifier) && isTheSameUUID(containerUUID.getUUID(), uuid)
+                );
+    }
+
+    private boolean isTheSameUUID(final String uuid1, final String uuid2) {
+        return ContainerUUID.UUID_LEGACY_VALUE.equals(uuid1) || ContainerUUID.UUID_START_VALUE.equals(uuid1)
+            ? ContainerUUID.UUID_LEGACY_VALUE.equals(uuid2) || ContainerUUID.UUID_START_VALUE.equals(uuid2)
+            : uuid1.equals(uuid1);
+    }
+
+    private Collection<ContainerUUID> getContainers() {
+        return body.getRows().stream()
+                .flatMap(row -> row.getColumns().stream())
+                .flatMap(column -> column.getContainers().stream())
+                .collect(Collectors.toSet());
+    }
 
 }

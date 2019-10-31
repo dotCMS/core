@@ -891,18 +891,29 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return findContentlets(inodes);
 	}
 
-	@Override
-	protected List<Contentlet> findByStructure(String structureInode, int limit, int offset) throws DotDataException, DotStateException, DotSecurityException {
-	    HibernateUtil hu = new HibernateUtil();
-        hu.setQuery("select inode from inode in class " + com.dotmarketing.portlets.contentlet.business.Contentlet.class.getName() +
-                ", contentletvi in class "+ContentletVersionInfo.class.getName()+
+    @Override
+    protected List<Contentlet> findByStructure(String structureInode, int limit, int offset)
+            throws DotDataException, DotStateException, DotSecurityException {
+        return findByStructure(structureInode, null, limit, offset);
+    }
+
+    @Override
+    protected List<Contentlet> findByStructure(String structureInode, Date maxDate, int limit,
+            int offset) throws DotDataException, DotStateException, DotSecurityException {
+        HibernateUtil hu = new HibernateUtil();
+        hu.setQuery("select inode from inode in class "
+                + com.dotmarketing.portlets.contentlet.business.Contentlet.class.getName() +
+                ", contentletvi in class " + ContentletVersionInfo.class.getName() +
                 " where type = 'contentlet' and structure_inode = '" + structureInode + "' " +
+                (maxDate!= null?" and mod_date <= '" + maxDate + "' ":"") +
                 " and contentletvi.identifier=inode.identifier and contentletvi.workingInode=inode.inode ");
-        if(offset > 0)
+        if (offset > 0) {
             hu.setFirstResult(offset);
-        if(limit > 0)
+        }
+        if (limit > 0) {
             hu.setMaxResults(limit);
-        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
+        }
+        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties = hu.list();
         List<Contentlet> result = new ArrayList<Contentlet>();
         for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
             Contentlet content = convertFatContentletToContentlet(fatty);
@@ -910,7 +921,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             result.add(convertFatContentletToContentlet(fatty));
         }
         return result;
-	}
+    }
 
 	@Override
 	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
@@ -2337,15 +2348,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 *            - The Inode of the Content Type whose field will be deleted.
 	 * @param field
 	 *            - The {@link Field} that will be removed.
+     * @param maxDate
+     *            - Date used to filter contents whose mod_date is less than or equals to
 	 * @throws DotDataException
 	 *             An error occurred when updating the contents.
 	 */
-    protected void clearField(String structureInode, Field field) throws DotDataException {
+    protected void clearField(String structureInode, Date maxDate, Field field) throws DotDataException {
         // we are not a db field;
         if(field.getFieldContentlet() == null  || ! (field.getFieldContentlet().matches("^.*\\d+$"))){
           return;
         }
-        Queries queries = getQueries(field);
+        Queries queries = getQueries(field, maxDate);
         List<String> inodesToFlush = new ArrayList<>();
 
         Connection conn = DbConnectionFactory.getConnection();
@@ -2382,12 +2395,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
+    protected void clearField(String structureInode, Field field) throws DotDataException {
+        clearField(structureInode, null, field);
+    }
+
+    /**
+     * @deprecated Use {@link ESContentFactoryImpl#getQueries(Field, Date)} instead
+     * @param field
+     * @return
+     */
+    @Deprecated
+    public Queries getQueries(Field field) {
+        return getQueries(field, null);
+    }
     /**
      *
      * @param field
      * @return
      */
-    public Queries getQueries(Field field) {
+    public Queries getQueries(final Field field, final Date maxDate) {
 
         StringBuilder select = new StringBuilder("SELECT inode FROM contentlet ");
         StringBuilder update = new StringBuilder("UPDATE contentlet SET ");
@@ -2460,6 +2486,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         select.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");
+
+        if (maxDate != null){
+            select.append(" AND mod_date <= '").append(maxDate).append("'");
+        }
+
         update.append(" WHERE inode = ?");
 
         return new Queries().setSelect(select.toString()).setUpdate(update.toString());

@@ -34,6 +34,10 @@
 	modDateFormat.setTimeZone(timeZone);
 
 	Contentlet contentlet = (Contentlet) request.getAttribute("contentlet");
+
+    String contentTitle = (contentlet !=null && contentlet.getTitle() !=null) ? contentlet.getTitle() : LanguageUtil.get(pageContext, "modes.New-Content");
+    contentTitle = UtilMethods.truncatify(contentTitle, 150);
+
 	String contentletInode = String.valueOf(contentlet.getInode());
 	Map con = contentlet.getMap();
 
@@ -149,7 +153,7 @@
 			<div id="<%= relationJsName %>relateMenu"></div>
 		</div>
 	</div>
-	
+
 		<table border="0" class="listingTable"  style="margin-bottom:30px;">
 				<thead>
 					<tr class="beta">
@@ -224,12 +228,12 @@
 				   	if(parent && FactoryLocator.getRelationshipFactory().sameParentAndChild(rel)){
 			        	//continue;
 			        }
-				   	
-				   	
-				   	
-				   	
+
+
+
+
 					/**********   GIT 1057     *******/
-					
+
 					ContentletAPI contentletAPI = APILocator.getContentletAPI();
 					Contentlet languageContentlet = null;
 				    %>
@@ -263,7 +267,7 @@
 							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['deleted'] = 'true';
 							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['locked'] = 'false';
 							cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling['siblingInode'] = '<%=cont.getInode()%>';
-							
+
 						    <%
 					    }else{
 					    	%>
@@ -282,10 +286,10 @@
 					    %>
 					    	cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings[cont<%=UtilMethods.javaScriptifyVariable(cont.getInode())%>Siblings.length] = cont<%=UtilMethods.javaScriptifyVariable(cont.getInode()+lang.getId())%>Sibling;
 					    <%
-					    
+
 					}
-					
-				/**********   GIT 1057     *******/							 				   	
+
+				/**********   GIT 1057     *******/
 
 					String languageCode;
 					String languageName;
@@ -356,46 +360,46 @@
 					var lang = '';
 					var result = '';
 					var anchorValue = "";
-		
+
 					if (o != null) {
 						result = result + "<table width=\"100%\" class=\"relationLanguageFlag\"><tbody><tr>"
-						
+
 						for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
-																								
+
 							result = result + '<td  class=\"relationLanguageFlag\">';
 							langImg = o['siblings'][sibIndex]['langCode'];
 							langName = o['siblings'][sibIndex]['langName'];
-							
+
 							if(o['siblings'][sibIndex]['live'] == 'true'){
-																								
+
 								anchorValue = "";
 								if (o != null){
 									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
 					 			}
-								
+
 								result = result +'&nbsp;&nbsp;' + anchorValue + '<img style="vertical-align: middle; border: solid 2px #33FF33; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
-								
+
 							}else if(o['siblings'][sibIndex]['deleted'] == 'true'){
-								
+
 								anchorValue = "";
 								if (o != null){
 									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
 					 			}
 
 								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #66664D; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '_gray.gif" alt="'+langName+'">' + '</a>';
-								
-								
+
+
 							}else{
-								
+
 								anchorValue = "";
 								if (o != null){
 									anchorValue = "<a href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['siblings'][sibIndex]['inode'] + "', '"+ o['siblings'][sibIndex]['siblingInode'] +"', '"+ o['siblings'][sibIndex]['langId'] +"');\"" + ">" ;
 					 			}
-								
+
 								result = result + '&nbsp;&nbsp;'  + anchorValue + '<img style="vertical-align: middle; border: solid 2px #FFCC11; padding:2px; border-radius:5px;" src="/html/images/languages/' + langImg + '.gif" alt="'+langName+'">' + '</a>';
-								
+
 							}
-							
+
 							result = result + "</td>";
 							if((sibIndex+1)%6 == 0){
 								result = result + "</tr><tr>";
@@ -519,7 +523,7 @@
 				function <%= relationJsName %>_addRelationshipCallback(selectedData){
 					var data = new Array();
 					var dataToRelate = new Array();
-					
+
 					// Eliminating existing relations
 					for (var indexJ = 0; indexJ < selectedData.length; indexJ++) {
 						var relationExists = false;
@@ -532,7 +536,7 @@
 							dataToRelate[dataToRelate.length] = selectedData[indexJ];
 						}
 					}
-					
+
 					// Eliminating mulitple contentlets for same identifier
 					for (var indexK = 0; indexK < dataToRelate.length; indexK++) {
 						var doesIdentifierExists = false;
@@ -542,9 +546,9 @@
 						}
 						if(!doesIdentifierExists)
 							data[data.length] = dataToRelate[indexK];
-					}				
-					
-					
+					}
+
+
 					if( data == null || (data != null && data.length == 0) ) {
 					  return;
 					}
@@ -635,13 +639,17 @@
 				//Add new content
 			    function <%= relationJsName %>_addContentlet(structureInode) {
 
+                    var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
+	    	        var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+	    	        localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
+
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					referer += 		"<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-					referer += 		"<portlet:param name='cmd' value='edit' />";					
+					referer += 		"<portlet:param name='cmd' value='edit' />";
 					referer += "</portlet:actionURL>";
 					referer += "&inode="+'<%=contentletInode%>';
 					referer += "&lang=" + '<%= contentlet.getLanguageId() %>';
-					referer += "&relend=true";					
+					referer += "&relend=true";
 					<%if( request.getAttribute("isRelationsihpAField") != null && !(Boolean)request.getAttribute("isRelationsihpAField")){ //DOTCMS-6893 %>
 						referer += "&is_rel_tab=true";
 					<%}%>
@@ -650,10 +658,10 @@
 
 					var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
-					href += "<portlet:param name='cmd' value='new' />";					
+					href += "<portlet:param name='cmd' value='new' />";
 					href += "</portlet:actionURL>";
 
-					//href += "&_content_selectedStructure=" + structureInode ; 
+					//href += "&_content_selectedStructure=" + structureInode ;
 					href += "&inode" + "";
 					href += "&selectedStructure=" + structureInode ;
 					href += "&lang=" + '<%= languageId %>';
@@ -682,7 +690,7 @@
 				dojo.require("dojo.dnd.Source");
 
 				var <%= relationJsName %>RelatedCons;
-				
+
 				<jsp:include page="/html/portlet/ext/contentlet/field/tiny_mce_config.jsp"/>
 
 				function <%= relationJsName %>buildListing(nodeId,data){
@@ -753,7 +761,7 @@
 					<%
 					if(langs.size() > 1) {
 					%>	// displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
-						var langTD = document.createElement("td");					
+						var langTD = document.createElement("td");
 						langTD.innerHTML = <%= relationJsName %>_lang(item);
 						tr.appendChild(langTD);
 					<%
@@ -794,6 +802,10 @@
 
 					if (!confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.lose.unsaved.changes")) %>'))
 						return;
+
+                    var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
+                    var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+                    localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
 					referer += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";

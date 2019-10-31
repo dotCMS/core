@@ -20,7 +20,7 @@ import static com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil
  */
 public class ContainerHolder implements Serializable{
 
-    private static final String PARSE_CONTAINER_STATEMENT =  "#parseContainer('%s', '%s')";
+    private static final String PARSE_CONTAINER_STATEMENT =  "#parseContainer('%s', '%s', true)";
     private boolean preview;
     private final List<ContainerUUID> containers;
 

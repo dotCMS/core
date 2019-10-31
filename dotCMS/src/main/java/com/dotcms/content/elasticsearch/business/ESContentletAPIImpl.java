@@ -1014,65 +1014,58 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @WrapInTransaction
     @Override
-    public void cleanField(Structure structure, Field field, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
-
-        if(!permissionAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
+    public void cleanField(final Structure structure, final Date deletionDate, final Field oldField, final User user,
+            final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        if (!permissionAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)) {
             throw new DotSecurityException("Must be able to publish structure to clean all the fields with user: "
                     + (user != null ? user.getUserId() : "Unknown"));
         }
 
-        String type = field.getFieldType();
-        if(Field.FieldType.LINE_DIVIDER.toString().equals(type) ||
-                Field.FieldType.TAB_DIVIDER.toString().equals(type) ||
-                Field.FieldType.RELATIONSHIPS_TAB.toString().equals(type) ||
-                Field.FieldType.RELATIONSHIP.toString().equals(type) ||
-                Field.FieldType.CATEGORIES_TAB.toString().equals(type) ||
-                Field.FieldType.PERMISSIONS_TAB.toString().equals(type))
-        {
-            throw new DotDataException("Unable to clean a " + type + " system field");
-        }
+        com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
 
-        boolean localTransaction = false;
-        boolean isNewConnection  = false;
-
-        try {
-
-            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-            isNewConnection  = !DbConnectionFactory.connectionExists();
-
-            if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
-                List<Contentlet> contentlets = contentFactory.findByStructure(structure.getInode(),0,0);
-
-                HibernateUtil.addCommitListener(() -> moveBinaryFilesToTrash(contentlets,field));
-
-                // Binary fields have nothing to do with database.
-            } else if(Field.FieldType.TAG.toString().equals(field.getFieldType())){
-                List<Contentlet> contentlets = contentFactory.findByStructure(structure.getInode(),0,0);
-
+        // Binary fields have nothing to do with database.
+        if (field instanceof BinaryField) {
+            int batchSize=500;
+            int offset=0;
+            final List<Contentlet> contentlets = new ArrayList<>();
+            contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
+            while(!contentlets.isEmpty()) {
+                final List<Contentlet> finalList = new ArrayList<>();
+                finalList.addAll(contentlets);
+                HibernateUtil.addCommitListener(() -> moveBinaryFilesToTrash(finalList, oldField));
+                offset+=batchSize;
+                contentlets.clear();
+                contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
+            }
+        } else if (field instanceof TagField) {
+            int batchSize=500;
+            int offset=0;
+            final List<Contentlet> contentlets = new ArrayList<>();
+            contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
+            while(!contentlets.isEmpty()) {
                 for(Contentlet contentlet : contentlets) {
-                    tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.getVelocityVarName());
+                    tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.variable());
                 }
-
-            } else {
-
-                contentFactory.clearField(structure.getInode(), field);
+                offset+=batchSize;
+                contentlets.clear();
+                contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
             }
+        }else if(field.dataType() == DataTypes.SYSTEM || field.dataType()== DataTypes.NONE) {
+            return;
+        } else {
 
-            if(localTransaction){
-                HibernateUtil.commitTransaction();
-            }
-        } catch (Exception e) {
-            if(localTransaction){
-                HibernateUtil.rollbackTransaction();
-            }
-            throw e;
-        } finally {
-
-            if(localTransaction && isNewConnection){
-                HibernateUtil.closeSessionSilently();
-            }
+            contentFactory.clearField(structure.getInode(), deletionDate, oldField);
         }
+    }
+
+    @Override
+    @WrapInTransaction
+    public void cleanField(Structure structure, Field oldField, User user, boolean respectFrontendRoles)
+                    throws DotSecurityException, DotDataException {
+        cleanField(structure, null, oldField, user, respectFrontendRoles);
     }
 
     @Override
@@ -1616,13 +1609,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try {
             String fieldVariable = rel.getRelationTypeValue();
 
-            if(rel.isRelationshipField()){
-                if ((relationshipAPI.sameParentAndChild(rel) && pullByParent!= null && pullByParent) || (relationshipAPI
-                        .isParent(rel, contentlet.getContentType()) && !relationshipAPI.sameParentAndChild(rel))) {
-                    if(rel.getChildRelationName()!= null) {
+            if (rel.isRelationshipField()) {
+                if ((relationshipAPI.sameParentAndChild(rel) && pullByParent != null
+                        && pullByParent) || (relationshipAPI
+                        .isParent(rel, contentlet.getContentType()) && !relationshipAPI
+                        .sameParentAndChild(rel))) {
+                    if (rel.getChildRelationName() != null) {
                         fieldVariable = rel.getChildRelationName();
                     }
-                } else if(rel.getParentRelationName() != null){
+                } else if (rel.getParentRelationName() != null) {
                     fieldVariable = rel.getParentRelationName();
                 }
             }
@@ -1632,11 +1627,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } catch (Exception e) {
             final String id = contentlet!=null ? contentlet.getIdentifier() : "null";
             final String relName = rel!=null ? rel.getRelationTypeValue() : "null";
-            
+
             final String errorMessage =
                     "Unable to look up related content for contentlet with identifier "
                             + id + ". Relationship name: " + relName;
-            
+
             if (e instanceof SearchPhaseExecutionException || e
                     .getCause() instanceof SearchPhaseExecutionException) {
                 Logger.warnAndDebug(ESContentletAPIImpl.class,
@@ -1736,7 +1731,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public boolean deleteByHost(final Host host, final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
 
-        
+
         final DotConnect db = new DotConnect();
 
         List<String> deleteMe = db.setSQL("select working_inode  from identifier, contentlet_version_info where identifier.id = contentlet_version_info.identifier and host_inode=? and asset_type='contentlet'")
@@ -1752,11 +1747,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             LocalTransaction.wrapNoException(() ->{
 
                 try {
-                    
+
                     List<Contentlet> cons = findContentlets(ids);
-                    
+
                     destroy(cons, user, respectFrontendRoles);
-                    
+
                 } catch (DotSecurityException e1) {
                     throw new DotStateException(e1);
                 }
@@ -2885,7 +2880,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    private void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
+    @Override
+    public void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
             boolean hasParent) {
 
         //If relationship field, related content cache must be invalidated
@@ -3041,8 +3037,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         uniqueIdentifiers = relatedList.stream().map(Contentlet::getIdentifier).distinct()
                 .collect(CollectionsUtils.toImmutableList());
 
-        //Cache related content only if it is a relationship field
-        if (field != null && limit == -1 && offset <= 0 && sortBy == null) {
+        //Cache related content only if it is a relationship field and there is no filter
+        //In case of self-relationships, we shouldn't cache any value for a particular field when pullByParent==null
+        //because in this case all parents and children are returned
+        if (field != null && limit == -1 && offset <= 0 && sortBy == null &&
+                !(relationshipAPI.sameParentAndChild(relationship) && pullByParent == null)) {
             if (UtilMethods.isSet(relatedList)) {
                 relatedIds.put(variableName, uniqueIdentifiers);
             } else {
@@ -5774,12 +5773,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
-                        .ordinal() && contentsInRelationship.size() > 1){
-                    Logger.error(this, "Error in Contentlet [" + contentletId + "]: Relationship [" + relationship
-                            .getRelationTypeValue() + "] has been defined as One to One");
-                    cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
-                    hasError = true;
-                    continue;
+                        .ordinal() && contentsInRelationship.size() > 0){
+                    hasError = !isValidOneToOneRelationship(contentlet, cve, relationship, contentsInRelationship);
+
+                    if (hasError)
+                        continue;
                 }
                 //There is a case when the Relationship is between same structures
                 //We need to validate that case
@@ -5826,14 +5824,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 Logger.error(this, error.toString());
                                 hasError = true;
                                 cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
-                            } else if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
-                                    .ordinal() && relatedContents.size() > 0 && !relatedContents.get(0).getIdentifier()
-                                    .equals(contentlet.getIdentifier())){
-                                Logger.error(this, "Error in related Contentlet [" + relatedContents.get(0).getIdentifier
-                                        () + "]: Relationship [" + relationship.getRelationTypeValue() + "] has been defined " +
-                                        "as One to One");
-                                cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
-                                hasError = true;
                             }
 
                             if (!contentInRelationship.getContentTypeId().equalsIgnoreCase(relationship.getChildStructureInode())) {
@@ -5897,6 +5887,55 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (hasError){
             throw cve;
         }
+    }
+
+    /**
+     *
+     * @param contentlet
+     * @param cve
+     * @param relationship
+     * @param contentsInRelationship
+     * @return
+     */
+    private boolean isValidOneToOneRelationship(final Contentlet contentlet,
+            final DotContentletValidationException cve, final Relationship relationship,
+            final List<Contentlet> contentsInRelationship) {
+
+        //Trying to relate more than one piece of content
+        if (contentsInRelationship.size() > 1) {
+            Logger.error(this,
+                    "Error in Contentlet [" + contentlet.getIdentifier() + "]: Relationship ["
+                            + relationship
+                            .getRelationTypeValue()
+                            + "] has been defined as One to One");
+            cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
+            return false;
+        }
+
+        //Trying to relate a piece of content that already exists to another relationship
+        try {
+            List<Contentlet> relatedContents = getRelatedContent(
+                    contentsInRelationship.get(0), relationship, null,
+                    APILocator.getUserAPI()
+                            .getSystemUser(), true);
+            if (relatedContents.size() > 0 && !relatedContents.get(0).getIdentifier()
+                    .equals(contentlet.getIdentifier())) {
+                Logger.error(this,
+                        "Error in related Contentlet [" + relatedContents.get(0)
+                                .getIdentifier
+                                        () + "]: Relationship [" + relationship
+                                .getRelationTypeValue() + "] has been defined " +
+                                "as One to One");
+                cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
+                return false;
+            }
+        } catch (final DotSecurityException | DotDataException e) {
+            Logger.error(this, "An error occurred when retrieving information from related Contentlet" +
+                    " [" + contentsInRelationship.get(0).getIdentifier() + "]", e);
+            cve.addInvalidContentRelationship(relationship, contentsInRelationship);
+            return false;
+        }
+        return true;
     }
 
     @Override

@@ -249,8 +249,8 @@ public interface ContentletAPIPostHook {
 	
 	/**
 	 * Will get all the contentlets for a structure and set the default values for a field on the contentlet.  
-	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all COntentlets will be cleaned make 
-	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
+	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all Contentlets will be cleaned make
+	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all the contentlets it will clean
 	 * as many as it can and throw the DotSecurityException  
 	 * @param structure
 	 * @param field
@@ -259,7 +259,24 @@ public interface ContentletAPIPostHook {
 	 */
 	public default void cleanField(Structure structure, Field field, User user, boolean respectFrontendRoles){}
 
-	/**
+    /**
+     * Will get all the contentlets for a structure (whose modDate is lower than or equals to the deletion date)
+     * and set the default values for a field on the contentlet.
+     * Will check Write/Edit permissions on the Contentlet. So to guarantee all Contentlets will be cleaned make
+     * sure to pass in an Admin User.  If a user doesn't have permissions to clean all the contentlets it will clean
+     * as many as it can and throw the DotSecurityException
+     * @param structure
+     * @param deletionDate
+     * @param field
+     * @param user
+     * @param respectFrontendRoles
+     */
+    default void cleanField(final Structure structure, final Date deletionDate, final Field field,
+            final User user, final boolean respectFrontendRoles) {
+    }
+
+
+    /**
 	 * Will get all the contentlets for a structure and set the default values for a host field.  
 	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all Contentlets will be cleaned make 
 	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
@@ -628,7 +645,7 @@ public interface ContentletAPIPostHook {
      * @param user
      * @param respectFrontendRoles
      * @param returnValue - value returned by primary API Method */
-    public default void getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
+    public default void getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles,List<Contentlet> returnValue){}
 
     /**
      * Gets all related content from the same structure (where the parent and child structures are the same type)
@@ -651,7 +668,7 @@ public interface ContentletAPIPostHook {
      * @param offset
      * @param sortBy
      */
-    default void getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles, List<Contentlet> returnValue, int limit, int offset,
+    default void getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles, List<Contentlet> returnValue, int limit, int offset,
             String sortBy){}
 
 
@@ -1589,6 +1606,10 @@ public interface ContentletAPIPostHook {
     }
 
     default void getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles, long language, Boolean live){
+
+    }
+
+    default void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship, boolean hasParent){
 
     }
 }
