@@ -1,8 +1,8 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.util.Loadable;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
@@ -24,9 +24,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.Map;
-import org.apache.commons.beanutils.BeanUtils;
 
-public class FileAsset extends Contentlet implements IFileAsset {
+public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 
 	private String metaData;
 
@@ -37,6 +36,20 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	public FileAsset() {
 		super();
 
+	}
+
+	/**
+	 * Use to build a fileAsset and take the state of another fileAsset
+	 * @param contentlet
+	 * @throws Exception
+	 */
+	protected FileAsset(final FileAsset contentlet) throws Exception {
+		super(contentlet);
+		final File file = contentlet.getFileAsset();
+		setBinary(FileAssetAPI.BINARY_FIELD, file);
+		this.fileDimension = contentlet.fileDimension;
+		this.underlyingFileName = contentlet.underlyingFileName;
+		this.fileSizeInternal = contentlet.fileSizeInternal;
 	}
 
 	public String getMetaData(){
@@ -361,26 +374,27 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return this.getFileName();
 	}
 
-	/**
-	 * This copy-method is meant to take advantage of the eager fetch methods
-	 * tries to minimize the manipulation of the inner java.io.File object to avoid unnecessary interaction with the file-system
-	 * Also tries initialize everything at once and keep it all on the inner-property value holders.
-	 *
-	 * @param dest
-	 * @param origin
-	 * @return
-	 * @throws Exception
-	 */
-	public static FileAsset eagerlyInitializedCopy( final FileAsset dest, final FileAsset origin) throws Exception{
-		BeanUtils.copyProperties(dest, origin);
-		dest.setHost(origin.getHost());
-		final File file = origin.getFileAsset();
-		dest.setBinary(FileAssetAPI.BINARY_FIELD, file);
-		dest.fileDimension = origin.fileDimension == null ? origin.computeFileDimension(file) : origin.fileDimension;
-		dest.underlyingFileName = origin.underlyingFileName == null ? origin.computeUnderlyingFileName(file) : origin.underlyingFileName;
-		dest.fileSizeInternal = origin.fileSizeInternal == 0 ? origin.computeFileSize(file) : origin.fileSizeInternal;
-		CacheLocator.getContentletCache().add(origin);
-	    return dest;
+	@Override
+	public boolean isLoaded() {
+		return null != fileDimension && null != underlyingFileName && fileSizeInternal > 0;
+	}
+
+	@Override
+	public void load() {
+		if (!isLoaded()) {
+			final File file = getFileAsset();
+			if (null != file) {
+				if (null == fileDimension) {
+					computeFileDimension(file);
+				}
+				if (null == underlyingFileName) {
+					computeUnderlyingFileName(file);
+				}
+				if (0 == fileSizeInternal) {
+					computeFileSize(file);
+				}
+			}
+		}
 	}
 
 }

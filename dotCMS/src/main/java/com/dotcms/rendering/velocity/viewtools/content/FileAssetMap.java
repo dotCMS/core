@@ -11,6 +11,21 @@ public class FileAssetMap extends FileAsset {
 
     private static final String URL_MASK = "/dA/%s/%s";
 
+    /**
+     * Default constructor
+     */
+    public FileAssetMap() {
+    }
+
+    /**
+     * copy constructor
+     * @param contentlet
+     * @throws Exception
+     */
+    public FileAssetMap(final FileAsset contentlet) throws Exception {
+        super(contentlet);
+    }
+
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this);
@@ -22,16 +37,15 @@ public class FileAssetMap extends FileAsset {
 
     /**
      * Create a new instance of FileAssetMap using a contentlet
-     * @param c
+     * @param contentlet
      * @return FileAssetMap new instance
      * @throws Exception
      */
-    public static FileAssetMap of(final Contentlet c) throws Exception {
-        final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(c);
-        final FileAssetMap fileAssetMap = new FileAssetMap();
-        return (FileAssetMap)FileAsset.eagerlyInitializedCopy(fileAssetMap, fileAsset);
+    public static FileAssetMap of(final Contentlet contentlet) throws Exception {
+        final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+        return APILocator.getFileAssetAPI().fromFileAsset(fileAsset);
     }
-    
+
     public String getShortyUrl() {
 
         if (getFileAsset() != null) {

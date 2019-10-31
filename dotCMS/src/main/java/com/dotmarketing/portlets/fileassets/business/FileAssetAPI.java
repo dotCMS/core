@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -66,6 +67,14 @@ public interface FileAssetAPI {
 	 * @throws DotStateException
 	 */
 	List<IFileAsset> fromContentletsI(List<Contentlet> cons) throws DotStateException;
+
+	/**
+	 *
+	 * @param fileAsset
+	 * @return
+	 * @throws DotStateException
+	 */
+	FileAssetMap fromFileAsset(final FileAsset fileAsset) throws DotStateException;
 
 	/**
 	 *
