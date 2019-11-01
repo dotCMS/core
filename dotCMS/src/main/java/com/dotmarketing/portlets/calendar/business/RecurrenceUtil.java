@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.calendar.business;
 
+import com.dotmarketing.util.StringUtils;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -44,7 +46,7 @@ public class RecurrenceUtil {
 	public static String[] getRecurrenceDates(String recurrentEventIdentifier){
 		String[] recDates = null;
 		if(recurrentEventIdentifier==null) {
-		    return null;
+		    return new String[]{};
 		}
 		if(recurrentEventIdentifier.contains(RECURRENCE_PREFIX) && 
 				recurrentEventIdentifier.contains(RECURRENCE_SEPARATOR)){
