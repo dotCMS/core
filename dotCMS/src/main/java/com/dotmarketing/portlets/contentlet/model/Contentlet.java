@@ -26,7 +26,6 @@ import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -47,9 +46,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-
 import io.vavr.control.Try;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -116,6 +113,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
   public static final String DONT_VALIDATE_ME = "_dont_validate_me";
   public static final String DISABLE_WORKFLOW = "__disable_workflow__";
+  public static final String VALIDATE_EMPTY_FILE = "_validateEmptyFile_";
 
   // means the contentlet is being used on unit test mode.
   // this is only for unit test. do not use on production.

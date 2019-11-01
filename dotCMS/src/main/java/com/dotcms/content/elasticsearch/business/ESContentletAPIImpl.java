@@ -447,15 +447,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Contentlet> findContentletsByIdentifiers(String[] identifiers, boolean live, long languageId, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
-        List<Contentlet> l = new ArrayList<Contentlet>();
+    public List<Contentlet> findContentletsByIdentifiers(final String[] identifiers, final boolean live, final long languageId, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+        final List<Contentlet> contentlets = new ArrayList<>();
 
-        for(String identifier : identifiers){
-            Contentlet con = findContentletByIdentifier(identifier.trim(), live, languageId, user, respectFrontendRoles);
-            l.add(con);
+        for(final String identifier : identifiers) {
+
+            final Contentlet contentlet = findContentletByIdentifier(identifier.trim(), live, languageId, user, respectFrontendRoles);
+            contentlets.add(contentlet);
         }
         
-        return l;
+        return contentlets;
     }
 
     @CloseDBIfOpened
@@ -3643,7 +3645,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         
         final boolean validateEmptyFile =
-                contentlet.getMap().get("_validateEmptyFile_") == null;
+                contentlet.getMap().containsKey(Contentlet.VALIDATE_EMPTY_FILE)?
+                        contentlet.getBoolProperty(Contentlet.VALIDATE_EMPTY_FILE):true;
 
         if(contentRelationships == null) {
 
@@ -4100,9 +4103,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                             // We want to copy (not move) cause the same file could be in
                             // another field and we don't want to delete it in the first time.
-                            final boolean content_version_hard_link = Config
+                            final boolean contentVersionHardLink = Config
                                     .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                            FileUtil.copyFile(incomingFile, newFile, content_version_hard_link, validateEmptyFile);
+                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
 
 
                             // delete old content metadata if exists
@@ -4112,7 +4115,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                         } else if (oldFile.exists()) {
                             // otherwise, we copy the files as hardlinks
-                            FileUtil.copyFile(oldFile, newFile);
+                            final boolean contentVersionHardLink = Config
+                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
+                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink, validateEmptyFile);
 
                             // try to get the content metadata from the old version
                             if (metadata != null) {

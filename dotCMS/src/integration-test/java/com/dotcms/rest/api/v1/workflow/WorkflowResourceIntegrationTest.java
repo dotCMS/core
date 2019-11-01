@@ -983,6 +983,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 ).collect(Collectors.toSet())
         );
 
+        Logger.info(this, "findSchemesForContentType: " + workflowAPI.findSchemesForContentType(contentType));
+
         return contentType;
     }
 
@@ -1057,12 +1059,14 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             // We create a contentType that is associated with the two workflows that come out of the box.
             final ContentType contentType = createSampleContentType();
             //Then we create an instance
-            final Contentlet contentlet = createSampleContent(contentType);
+            final Contentlet contentlet   = createSampleContent(contentType);
             final String inode = contentlet.getInode();
 
             try {
 
                 workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, APILocator.systemUser());
+                contentlet.setIndexPolicy(IndexPolicy.FORCE);
+                APILocator.getContentletIndexAPI().addContentToIndex(contentlet);
 
                 //  Now Test BulkActions
                 final BulkActionForm form1 = new BulkActionForm(
@@ -1079,6 +1083,8 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                         .cast(beforeFireEntityView.getEntity());
                 assertNotNull(bulkActionView);
                 final List<BulkWorkflowSchemeView> schemes1 = bulkActionView.getSchemes();
+
+                Logger.info(this, "schemes1: " + schemes1.toString());
 
                 final Optional<BulkWorkflowSchemeView> documentManagementOptional1 = schemes1
                         .stream()
