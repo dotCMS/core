@@ -10,15 +10,18 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -30,17 +33,28 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.liferay.portal.model.User;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.apache.felix.framework.OSGIUtil;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -205,6 +219,59 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
                 // quiet
             }
         }
+    }
+
+    /**
+     * Creates a temporal file using a given content
+     *
+     * @param content
+     * @return
+     * @throws IOException
+     */
+    private File createTempFile (final String content ) throws IOException {
+
+        final File tempTestFile = File.createTempFile( "tempfile_" + String.valueOf( new Date().getTime() ), ".vtl" );
+        FileUtils.writeStringToFile( tempTestFile, content );
+        return tempTestFile;
+    }
+
+    private void createTestFileContainer(final String containerPath, final Host host, final String containerContent)
+            throws DotDataException, DotSecurityException, IOException {
+
+        final User   user            = APILocator.systemUser();
+        final Folder containerFolder = APILocator.getFolderAPI().createFolders(containerPath, host, user, false);
+        final File   contentFile     = this.createTempFile(containerContent);
+        new FileAssetDataGen(containerFolder, contentFile)
+                .setProperty(FileAssetAPI.TITLE_FIELD, "container.vtl")
+                .setProperty(FileAssetAPI.FILE_NAME_FIELD, "container.vtl")
+                .nextPersisted();
+
+    }
+
+    @Test
+    public void test_getContainerByFolder_cache() throws DotDataException, DotSecurityException, IOException {
+
+        final String containerPath = Constants.CONTAINER_FOLDER_PATH + "/test-container" + System.currentTimeMillis();
+        this.createTestFileContainer(containerPath, APILocator.getHostAPI()
+                .findDefaultHost(APILocator.systemUser(), false),
+                "$dotJSON.put(\"title\", \"Test Container\""+ System.currentTimeMillis() +")\n"
+                        + "$dotJSON.put(\"description\", \"Test container\")\n"
+                        + "$dotJSON.put(\"max_contentlets\", 25)\n");
+
+        final User      user       = APILocator.systemUser();
+        final Host      host       = APILocator.getHostAPI().findDefaultHost(user, false);
+        final Folder    folder     = APILocator.getFolderAPI().findFolderByPath
+                (containerPath, host, user, false);
+        final Container container1 = APILocator.getContainerAPI().getContainerByFolder(folder, host, user, false);
+        final Container container2 = APILocator.getContainerAPI().getContainerByFolder(folder, host, user, false);
+
+        Assert.assertTrue(container1 == container2);
+
+        CacheLocator.getContainerCache().remove(container1);
+
+        final Container container3 = APILocator.getContainerAPI().getContainerByFolder(folder, host, user, false);
+
+        Assert.assertTrue(container3 != container2);
     }
 
     @Test

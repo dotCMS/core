@@ -37,7 +37,7 @@ public class DotResourceCache implements ResourceCache, Cachable {
     private String[] groupNames = {primaryGroup, macroCacheGroup};
     private static final String MACRO_PREFIX = "MACRO_PREFIX";
     private final Set<String> ignoreGlobalVM;
-
+    public final static String[] MACRO404 = new String[] {"MACRO404"};
 
 
     public DotResourceCache() {
@@ -57,11 +57,15 @@ public class DotResourceCache implements ResourceCache, Cachable {
 
 
         String[] rw = (String[]) cache.getNoThrow(MACRO_PREFIX + name, macroCacheGroup);
-
+        
         return rw;
 
     }
-
+    public void putMacro404(final String name) {
+        cache.put(MACRO_PREFIX +name, MACRO404, macroCacheGroup);
+        
+        
+    }
     public void putMacro(String name, String content) {
         if (name == null || content == null) {
             Logger.warn(this.getClass(), "Cannot add a null macro to cache:" + name + " / " + content);
