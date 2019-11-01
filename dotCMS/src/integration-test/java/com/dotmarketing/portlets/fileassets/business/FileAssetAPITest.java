@@ -27,58 +27,6 @@ public class FileAssetAPITest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
     }
 
-    @Test
-    public void Test_Modify_Underlying_File_Name_Then_Recover_File_Then_Expect_Match()
-            throws Exception {
-
-        final User user = APILocator.systemUser();
-        final Folder parentFolder = new FolderDataGen().nextPersisted();
-
-        // Lets make up some fictional data.
-
-        final java.io.File file = java.io.File.createTempFile("blah", ".txt");
-        FileUtil.write(file, "helloworld");
-
-        // file paths must be the same at this point.
-
-        final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
-        final Contentlet fileAssetContentlet = fileAssetDataGen.nextPersisted();
-        final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
-        final java.io.File savedFile = (java.io.File) fileAssetContentlet.get("fileAsset");
-        final String realPath = fileAssetAPI
-                .getRealAssetPath(fileAssetContentlet.getInode(), savedFile.getName());
-
-        assertEquals("file paths must match ", realPath, savedFile.getCanonicalPath());
-
-        final FileAsset fileAsset = fileAssetAPI.fromContentlet(fileAssetContentlet);
-
-        assertEquals("file names must match", fileAsset.getUnderlyingFileName(),
-                fileAsset.getName());
-
-        //Now rename the physical file name
-
-        final String newExpectedUnderlyingFileName = "newExpectedUnderlyingFileName";
-        fileAsset.setUnderlyingFileName(newExpectedUnderlyingFileName);
-
-        CacheLocator.getContentletCache().remove(fileAsset);
-
-        final List<FileAsset> files = fileAssetAPI
-                .findFileAssetsByFolder(parentFolder, user, false);
-        final Optional<FileAsset> optional = files.stream()
-                .filter(f -> f.getInode().equals(fileAsset.getInode())).findAny();
-        assertTrue("file asset is missing ", optional.isPresent());
-
-        final FileAsset recoveredFileAsset = optional.get();
-
-        final String recoveredUnderlyingFileName = recoveredFileAsset.getUnderlyingFileName();
-        assertEquals("file names must match", newExpectedUnderlyingFileName,
-                recoveredUnderlyingFileName);
-
-        assertNotEquals(recoveredFileAsset.getFileName(),
-                recoveredFileAsset.getUnderlyingFileName());
-
-    }
-
 
     @Test
     public void Test_Modify_Identifier_File_Name_Then_Recover_File_Then_Expect_Mismatch()

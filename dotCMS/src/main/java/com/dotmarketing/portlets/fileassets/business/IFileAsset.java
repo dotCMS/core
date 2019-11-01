@@ -68,8 +68,6 @@ public interface IFileAsset extends Permissionable {
 
 	public long getFileSize();
 
-	public void setUnderlyingFileName(String name);
-
 	public String getUnderlyingFileName();
 
 	public String getFileName();

@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.fileassets.business;
 import com.dotcms.util.Loadable;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
@@ -139,21 +140,6 @@ public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 					"Error computing dimensions for file asset with id: " + getIdentifier(), e);
 		}
 		return null;
-	}
-
-	/**
-	 * This access the physical file on disk
-	 * @param name
-	 */
-	public void setUnderlyingFileName(final String name) {
-
-	    final File fileAsset = getFileAsset();
-	    //For the sake of performance we do not rename a file to be the same as it was.
-	    //This gets expensive when copyProperties are used on this bean.
-		if(!fileAsset.getName().equals(name)){
-	       fileAsset.renameTo(new File(fileAsset.getParent(),name));
-	    }
-	    this.underlyingFileName = null;
 	}
 
   /**

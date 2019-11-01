@@ -276,7 +276,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	@CloseDBIfOpened
 	public FileAssetMap fromFileAsset(final FileAsset fileAsset) throws DotStateException {
 		if (!fileAsset.isLoaded()) {
-		    //
+		    //Force to pre-load
 			fileAsset.load();
 		}
 		try {
