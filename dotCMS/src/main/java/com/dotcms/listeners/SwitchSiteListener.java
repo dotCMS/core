@@ -24,55 +24,69 @@ import java.util.Objects;
  * Trigger a {@link SystemEventType#SWITCH_SITE} when the current site is set in the {@link HttpSession}
  */
 public class SwitchSiteListener implements HttpSessionAttributeListener {
+    
+    private final String CMS_SELECTED_HOST_ID_PREVIOUS="CMS_SELECTED_HOST_ID_PREVIOUS";
+    
+    
+    
+    
     @Override
     public void attributeAdded(final HttpSessionBindingEvent httpSessionBindingEvent) {
         if (WebKeys.CMS_SELECTED_HOST_ID.equals(httpSessionBindingEvent.getName())) {
-            final String currentValue = (String) httpSessionBindingEvent.getValue();
-            this.triggerSwitchSiteEventIfNecessary(currentValue, null, httpSessionBindingEvent.getSession());
+            final String value = (String) httpSessionBindingEvent.getValue();
+            Logger.debug(this.getClass(),"selected site Added:" + value);
+            this.triggerSwitchSiteEventIfNecessary(value,  httpSessionBindingEvent.getSession());
         }
     }
 
     @Override
     public void attributeRemoved(final HttpSessionBindingEvent httpSessionBindingEvent) {
-
+        if (WebKeys.CMS_SELECTED_HOST_ID.equals(httpSessionBindingEvent.getName())) {
+            final String value = (String) httpSessionBindingEvent.getValue();
+            Logger.debug(this.getClass(),"selected site removed:" +  value);
+        }
     }
 
     @Override
     public void attributeReplaced(final HttpSessionBindingEvent httpSessionBindingEvent) {
         if (WebKeys.CMS_SELECTED_HOST_ID.equals(httpSessionBindingEvent.getName())) {
-            final String currentValue = (String) httpSessionBindingEvent.getSession().getAttribute(WebKeys.CMS_SELECTED_HOST_ID);
-            final String oldValue = (String) httpSessionBindingEvent.getValue();
-            this.triggerSwitchSiteEventIfNecessary(currentValue, oldValue, httpSessionBindingEvent.getSession());
+            final String value = (String) httpSessionBindingEvent.getValue();
+            Logger.debug(this.getClass(),"selected site replace -> " + value);
+            this.triggerSwitchSiteEventIfNecessary(value,  httpSessionBindingEvent.getSession());
         }
     }
 
     private void triggerSwitchSiteEventIfNecessary(
-            final String currentHostNewValue,
-            final String currentHostOldValue,
+            final String newHosId,
             final HttpSession session) {
+        if(session==null) return;
+        synchronized (session) {
+            String oldHostId = (String) session.getAttribute(CMS_SELECTED_HOST_ID_PREVIOUS);
 
-        if (!Objects.equals(currentHostNewValue, currentHostOldValue)) {
-            try {
-                final User loggedInUser = APILocator.getLoginServiceAPI().getLoggedInUser();
-
-                if (loggedInUser != null && loggedInUser.hasConsoleAccess()) {
-                    final Host host = APILocator.getHostAPI().find(currentHostNewValue, loggedInUser, false);
-
-                    APILocator.getSystemEventsAPI().push(SystemEventType.SWITCH_SITE,
-                            new Payload(
-                                    host,
-                                    Visibility.USER_SESSION,
-                                    new UserSessionBean(
-                                            loggedInUser.getUserId(),
-                                            session.getId()
-                                    )
-                            )
-                    );
+            if (!Objects.equals(newHosId, oldHostId)) {
+                try {
+                    final User loggedInUser = APILocator.getLoginServiceAPI().getLoggedInUser();
+    
+                    if (loggedInUser != null && loggedInUser.hasConsoleAccess()) {
+                        final Host host = APILocator.getHostAPI().find(newHosId, loggedInUser, false);
+    
+                        APILocator.getSystemEventsAPI().push(SystemEventType.SWITCH_SITE,
+                                new Payload(
+                                        host,
+                                        Visibility.USER_SESSION,
+                                        new UserSessionBean(
+                                                loggedInUser.getUserId(),
+                                                session.getId()
+                                        )
+                                )
+                        );
+                    }
+                } catch (DotSecurityException | DotDataException e) {
+                    Logger.warn(this, e.getMessage(), e);
+                    throw new DotRuntimeException(e);
                 }
-            } catch (DotSecurityException | DotDataException e) {
-                Logger.error(this, e.getMessage(), e);
-                throw new DotRuntimeException(e);
             }
+            session.setAttribute(CMS_SELECTED_HOST_ID_PREVIOUS, newHosId);
         }
 
     }
