@@ -10,6 +10,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Validator;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -43,13 +45,16 @@ public class WorkflowActionletUtil {
      *
      * @return The list of {@link User} objects based on the specified IDs.
      */
-    public static Set<User> getUsersFromIds(final String ids, final String delimiter) {
+    public static Tuple2<Set<User>, Set<Role>> getUsersFromIds(final String ids, final String delimiter) {
+
         final Set<User> userSet = new HashSet<>();
+        final Set<Role> roleSet = new HashSet<>();
         final StringTokenizer tokenizer = new StringTokenizer(ids, delimiter);
         while (tokenizer.hasMoreTokens()) {
-            boolean idNotFound = Boolean.FALSE;
+
+            boolean idNotFound  = Boolean.FALSE;
             Exception exception = null;
-            final String token = tokenizer.nextToken().trim();
+            final String token  = tokenizer.nextToken().trim();
             if (Validator.isEmailAddress(token)) {
                 try {
                     final User user = APILocator.getUserAPI()
@@ -62,6 +67,7 @@ public class WorkflowActionletUtil {
                     exception = e;
                 }
             } else {
+
                 try {
                     final User user = APILocator.getUserAPI()
                             .loadUserById(token, APILocator.getUserAPI().getSystemUser(), false);
@@ -72,11 +78,13 @@ public class WorkflowActionletUtil {
                     idNotFound = Boolean.TRUE;
                     exception = e;
                 }
+
                 try {
                     final Role role = APILocator.getRoleAPI().loadRoleByKey(token);
                     final List<User> approvingUsersInRole = APILocator.getRoleAPI()
                             .findUsersForRole(role);
                     userSet.addAll(approvingUsersInRole);
+                    roleSet.add(role);
                     idNotFound = Boolean.FALSE;
                 } catch (DotSecurityException e) {
                     Logger.warn(WorkflowActionletUtil.class,
@@ -88,14 +96,17 @@ public class WorkflowActionletUtil {
                     exception = e;
                 }
             }
+
             if (idNotFound) {
                 Logger.warn(WorkflowActionletUtil.class,
                         "The following email/userID/role key could not be found: " + token,
                         exception);
             }
         }
-        return userSet;
+
+        return Tuple.of(userSet, roleSet);
     }
+
 
     /**
      * Returns the value of the specified actionlet parameter. If the value is {@code null}, the
