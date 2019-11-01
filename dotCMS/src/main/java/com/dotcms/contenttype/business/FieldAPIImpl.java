@@ -9,7 +9,6 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -43,10 +42,10 @@ import com.dotcms.contenttype.model.field.event.FieldDeletedEvent;
 import com.dotcms.contenttype.model.field.event.FieldSavedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
@@ -500,24 +499,10 @@ public class FieldAPIImpl implements FieldAPI {
       }
 
       final Structure structure = new StructureTransformer(type).asStructure();
-      com.dotmarketing.portlets.structure.model.Field legacyField = new LegacyFieldTransformer(field).asOldField();
-
-
-      if (!(field instanceof CategoryField) &&
-          !(field instanceof ConstantField) &&
-          !(field instanceof HiddenField) &&
-          !(field instanceof LineDividerField) &&
-          !(field instanceof TabDividerField) &&
-          !(field instanceof RelationshipsTabField) &&
-          !(field instanceof RelationshipField) &&
-          !(field instanceof PermissionTabField) &&
-          !(field instanceof HostFolderField) &&
-          structure != null
-      ) {
-          this.contentletAPI.cleanField(structure, legacyField, this.userAPI.getSystemUser(), false);
-      }
 
       fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder());
+
+      CleanUpFieldReferencesJob.triggerCleanUpJob(field, user);
       fieldFactory.delete(field);
 
       ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action",
@@ -529,16 +514,6 @@ public class FieldAPIImpl implements FieldAPI {
 
       CacheLocator.getContentTypeCache().remove(structure);
 
-
-      //Refreshing permissions
-      if (field instanceof HostFolderField) {
-          try {
-              this.contentletAPI.cleanHostField(structure, this.userAPI.getSystemUser(), false);
-          } catch(DotMappingException e) {}
-
-          this.permissionAPI.resetChildrenPermissionReferences(structure);
-      }
-
       //if RelationshipField, Relationship record must be updated/deleted
       if (field instanceof RelationshipField) {
           removeRelationshipLink(field, type, contentTypeAPI);
@@ -548,14 +523,11 @@ public class FieldAPIImpl implements FieldAPI {
       if(field.indexed()){
           contentletAPI.reindex(structure);
       }
-      // remove the file from the cache
-      new ContentletLoader().invalidate(structure);
 
       HibernateUtil.addCommitListener(()-> {
           localSystemEventsAPI.notify(new FieldDeletedEvent(field.variable()));
       });
   }
-
 
     /**
      * Remove one-sided relationship when the field is deleted

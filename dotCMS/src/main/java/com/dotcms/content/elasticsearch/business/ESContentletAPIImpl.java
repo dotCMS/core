@@ -42,6 +42,7 @@ import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.services.VanityUrlServices;
@@ -533,8 +534,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     // note: is not annotated with WrapInTransaction b/c it handles his own transaction locally in the method
     @WrapInTransaction
     @Override
-    public void publish(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
-
+    public void publish(final Contentlet contentlet, final User userIn, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
+        final User user = (userIn!=null) ? userIn : APILocator.getUserAPI().getAnonymousUser();
         String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
         String contentPushExpireDate  = contentlet.getStringProperty("wfExpireDate");
 
@@ -550,7 +551,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final Optional<Contentlet> contentletOpt = this.checkAndRunPublishAsWorkflow(contentlet, user, respectFrontendRoles);
             if (contentletOpt.isPresent()) {
 
-                Logger.info(this, "A Workflow has been ran instead of publish the contentlet: " +
+                Logger.info(this, "A Workflow has been run instead of a simple publish: " +
                         contentlet.getIdentifier());
                 if (!contentlet.getInode().equals(contentletOpt.get().getInode())) {
                    this.copyProperties(contentlet, contentletOpt.get().getMap());
@@ -1014,65 +1015,58 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @WrapInTransaction
     @Override
-    public void cleanField(Structure structure, Field field, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
-
-        if(!permissionAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
+    public void cleanField(final Structure structure, final Date deletionDate, final Field oldField, final User user,
+            final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        if (!permissionAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)) {
             throw new DotSecurityException("Must be able to publish structure to clean all the fields with user: "
                     + (user != null ? user.getUserId() : "Unknown"));
         }
 
-        String type = field.getFieldType();
-        if(Field.FieldType.LINE_DIVIDER.toString().equals(type) ||
-                Field.FieldType.TAB_DIVIDER.toString().equals(type) ||
-                Field.FieldType.RELATIONSHIPS_TAB.toString().equals(type) ||
-                Field.FieldType.RELATIONSHIP.toString().equals(type) ||
-                Field.FieldType.CATEGORIES_TAB.toString().equals(type) ||
-                Field.FieldType.PERMISSIONS_TAB.toString().equals(type))
-        {
-            throw new DotDataException("Unable to clean a " + type + " system field");
-        }
+        com.dotcms.contenttype.model.field.Field field = new LegacyFieldTransformer(oldField).from();
 
-        boolean localTransaction = false;
-        boolean isNewConnection  = false;
-
-        try {
-
-            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
-            isNewConnection  = !DbConnectionFactory.connectionExists();
-
-            if(Field.FieldType.BINARY.toString().equals(field.getFieldType())){
-                List<Contentlet> contentlets = contentFactory.findByStructure(structure.getInode(),0,0);
-
-                HibernateUtil.addCommitListener(() -> moveBinaryFilesToTrash(contentlets,field));
-
-                // Binary fields have nothing to do with database.
-            } else if(Field.FieldType.TAG.toString().equals(field.getFieldType())){
-                List<Contentlet> contentlets = contentFactory.findByStructure(structure.getInode(),0,0);
-
+        // Binary fields have nothing to do with database.
+        if (field instanceof BinaryField) {
+            int batchSize=500;
+            int offset=0;
+            final List<Contentlet> contentlets = new ArrayList<>();
+            contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
+            while(!contentlets.isEmpty()) {
+                final List<Contentlet> finalList = new ArrayList<>();
+                finalList.addAll(contentlets);
+                HibernateUtil.addCommitListener(() -> moveBinaryFilesToTrash(finalList, oldField));
+                offset+=batchSize;
+                contentlets.clear();
+                contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
+            }
+        } else if (field instanceof TagField) {
+            int batchSize=500;
+            int offset=0;
+            final List<Contentlet> contentlets = new ArrayList<>();
+            contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
+            while(!contentlets.isEmpty()) {
                 for(Contentlet contentlet : contentlets) {
-                    tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.getVelocityVarName());
+                    tagAPI.deleteTagInodesByInodeAndFieldVarName(contentlet.getInode(), field.variable());
                 }
-
-            } else {
-
-                contentFactory.clearField(structure.getInode(), field);
+                offset+=batchSize;
+                contentlets.clear();
+                contentlets.addAll(contentFactory.findByStructure(structure.getInode(), deletionDate, batchSize, offset));
             }
+        }else if(field.dataType() == DataTypes.SYSTEM || field.dataType()== DataTypes.NONE) {
+            return;
+        } else {
 
-            if(localTransaction){
-                HibernateUtil.commitTransaction();
-            }
-        } catch (Exception e) {
-            if(localTransaction){
-                HibernateUtil.rollbackTransaction();
-            }
-            throw e;
-        } finally {
-
-            if(localTransaction && isNewConnection){
-                HibernateUtil.closeSessionSilently();
-            }
+            contentFactory.clearField(structure.getInode(), deletionDate, oldField);
         }
+    }
+
+    @Override
+    @WrapInTransaction
+    public void cleanField(Structure structure, Field oldField, User user, boolean respectFrontendRoles)
+                    throws DotSecurityException, DotDataException {
+        cleanField(structure, null, oldField, user, respectFrontendRoles);
     }
 
     @Override
@@ -3317,6 +3311,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public Contentlet checkin(Contentlet contentlet, User user,boolean respectFrontendRoles)
             throws IllegalArgumentException,DotDataException, DotSecurityException {
+        
+        user = (user==null) ? APILocator.getUserAPI().getAnonymousUser() : user;
+        
         return checkin(contentlet, (ContentletRelationships) null, null, null, user,
             respectFrontendRoles, false);
     }
@@ -3558,10 +3555,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private Optional<Contentlet> validateWorkflowStateOrRunAsWorkflow(final Contentlet contentletIn, final ContentletRelationships contentRelationships,
-                                                                      final List<Category> categories, final User user,
+                                                                      final List<Category> categories, final User userIn,
                                                                       final boolean respectFrontendRoles, final boolean createNewVersion,
                                                                       boolean generateSystemEvent) throws DotSecurityException, DotDataException {
 
+        final User user = (userIn==null) ? APILocator.getUserAPI().getAnonymousUser() : userIn;
+        
+        
         // if already on workflow or has an actionid skip this method.
         if (this.isDisableWorkflow(contentletIn)
                 || this.isWorkflowInProgress(contentletIn)
@@ -3630,10 +3630,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private Contentlet internalCheckin(Contentlet contentlet,
             ContentletRelationships contentRelationships, List<Category> cats,
-            final User user,
+            final User incomingUser,
             final boolean respectFrontendRoles,
             boolean createNewVersion
     ) throws DotDataException, DotSecurityException {
+        
+        final User user = (incomingUser!=null) ? incomingUser : APILocator.getUserAPI().getAnonymousUser();
+        
+        if(user.isAnonymousUser() && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
+            throw new DotSecurityException("CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
+        }
         
         final boolean validateEmptyFile =
                 contentlet.getMap().get("_validateEmptyFile_") == null;
@@ -4766,6 +4772,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(categories == null){
             categories = new ArrayList<>();
         }
+        
         //Find categories which the user can't use.  A user cannot remove a category they cannot use
         final List<Category> cats = categoryAPI.getParents(fromContentlet, APILocator.getUserAPI().getSystemUser(), true);
         for (final Category category : cats) {
@@ -4775,11 +4782,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
         }
-
+        
         categories = permissionAPI.filterCollection(categories, PermissionAPI.PERMISSION_USE, respect, user);
         categories.addAll(categoriesUserCannotRemove);
 
-        categoryAPI.setParents(toContentlet, categories, user, respect);
+        // we have already validated permissions on the content object, no need to do it again
+        categoryAPI.setParents(toContentlet, categories, APILocator.systemUser(), respect);
     }
 
     @CloseDBIfOpened

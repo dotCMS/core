@@ -63,14 +63,14 @@ public abstract class ContentletFactory {
 	/**
 	 * Returns a live Contentlet Object for a given language
 	 * @param languageId
-	 * @param inode
+	 * @param contentletId
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException 
 	 */
 	protected abstract Contentlet findContentletForLanguage(long languageId, Identifier contentletId) throws DotDataException, DotSecurityException;
-	
-	/**
+
+    /**
 	 * Retrieves a contentlet from the database based on its identifier
 	 * @param identifier 
 	 * @param live Retrieves the live version if false retrieves the working version
@@ -108,17 +108,31 @@ public abstract class ContentletFactory {
 	protected abstract List<Contentlet> findContentlets(List<String> inodes) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Returns all Contentlets for a specific structure
+	 * Returns all Contentlets for a specific structure using pagination
 	 * @param structureInode
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
 	protected abstract List<Contentlet> findByStructure(String structureInode, int limit, int offset) throws DotDataException, DotSecurityException;
+
+    /**
+     * Returns all Contentlets for a specific structure (whose modDate is less than or equals to maxDate) using pagination
+     * @param structureInode
+     * @param maxDate
+     * @param limit
+     * @param offset
+     * @return
+     * @throws DotDataException
+     * @throws DotStateException
+     * @throws DotSecurityException
+     */
+    protected abstract List<Contentlet> findByStructure(String structureInode, Date maxDate,
+            int limit, int offset) throws DotDataException, DotStateException, DotSecurityException;
 	
 	/**
 	 * Saves a Contentlet
-	 * @param x
+	 * @param contentlet
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException 

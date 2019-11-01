@@ -162,14 +162,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         assertTrue(throwException);
         
         throwException = false;
-        try{
-        	permissionAPI.doesUserHaveInheriablePermissions(null, "HTMLPAGES", PermissionAPI.PERMISSION_READ, user);
-        }catch(NullPointerException e){
-        	throwException=true;
-        }
-        assertTrue(throwException);
-        
-        throwException = false;
+
         try{
         	permissionAPI.doesUserHavePermission(null, PermissionAPI.PERMISSION_READ, user, false);
         }catch(NullPointerException e){

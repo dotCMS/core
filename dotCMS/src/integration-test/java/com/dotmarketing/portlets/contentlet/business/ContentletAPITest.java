@@ -1817,7 +1817,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Cleaning the binary field
         contentletAPI.cleanField(structure, foundBinaryField, user, false);
 
-        //Validations
         assertFalse(((java.io.File) value).exists());
     }
 
