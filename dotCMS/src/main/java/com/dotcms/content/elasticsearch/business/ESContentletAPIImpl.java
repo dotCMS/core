@@ -1206,11 +1206,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         contentlet);
                 final Relationship relationship = relationshipAPI
                         .getRelationshipFromField(theField, currentUser);
-                final boolean isParent =
-                        relationshipAPI.isParent(relationship, theField);
+                final boolean isChildField =
+                        relationshipAPI.isChildField(relationship, theField);
                 final ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
-                        relationship, isParent);
-                records.setRecords(contentlet.getRelated(theField.variable(), user, respectFrontEndRoles, isParent));
+                        relationship, isChildField);
+                records.setRecords(contentlet.getRelated(theField.variable(), user, respectFrontEndRoles, isChildField));
                 contentletRelationships.setRelationshipsRecords(CollectionsUtils.list(records));
                 return contentletRelationships;
             } else {
@@ -4405,7 +4405,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (contentlet.getMap().containsKey(field.variable())) {
                     final Relationship relationship = relationshipAPI
                             .getRelationshipFromField(field, user);
-                    final boolean hasParent = relationshipAPI.isParent(relationship, field);
+                    final boolean hasParent = relationshipAPI.isChildField(relationship, field);
 
                     if (contentRelationships == null){
                         contentRelationships = new ContentletRelationships(contentlet);

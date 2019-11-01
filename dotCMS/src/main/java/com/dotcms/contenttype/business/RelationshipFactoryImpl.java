@@ -385,8 +385,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         return matches;
     }
 
-    @Override
-    public  boolean isParent(final Relationship relationship, final Field field) {
+    public  boolean isChildField(final Relationship relationship, final Field field) {
         try {
             return sameParentAndChild(relationship) ? field.variable()
                     .equalsIgnoreCase(relationship.getChildRelationName())
@@ -400,6 +399,13 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         return false;
     }
 
+    /**
+     * @deprecated For relationship fields use {@link RelationshipFactory#isChildField(Relationship, Field)} instead
+     * @param relationship
+     * @param contentTypeIf
+     * @return
+     */
+    @Deprecated
     @Override
     public  boolean isParent(final Relationship relationship, final ContentTypeIf contentTypeIf) {
         return relationship.getParentStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
@@ -407,6 +413,14 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
                         .getChildStructureInode()
                         .equalsIgnoreCase(relationship.getParentStructureInode()));
     }
+
+    /**
+     * @deprecated For relationship fields use {@link RelationshipFactory#isParentField(Relationship, Field)} instead
+     * @param relationship
+     * @param contentTypeIf
+     * @return
+     */
+    @Deprecated
     @Override
     public  boolean isChild(final Relationship relationship, final ContentTypeIf contentTypeIf) {
         return relationship.getChildStructureInode().equalsIgnoreCase(contentTypeIf.id()) &&
@@ -416,8 +430,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     }
 
     @Override
-    public boolean isChild(final Relationship relationship, final Field field) {
-	    return !isParent(relationship, field);
+    public boolean isParentField(final Relationship relationship, final Field field) {
+	    return !isChildField(relationship, field);
     }
 
     private boolean sameParentAndChildRelationName(final Relationship relationship){

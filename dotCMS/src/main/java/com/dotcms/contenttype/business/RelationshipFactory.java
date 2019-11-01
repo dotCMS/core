@@ -56,13 +56,27 @@ public interface RelationshipFactory {
 
     List<Tree> relatedContentTrees(final Relationship relationship, final Contentlet contentlet, final boolean hasParent) throws  DotDataException;
 
-    boolean isParent(Relationship relationship, Field field);
+    boolean isChildField(Relationship relationship, Field field);
 
+    /**
+     * @deprecated For relationship fields use {@link RelationshipFactory#isChildField(Relationship, Field)} instead
+     * @param relationship
+     * @param contentTypeIf
+     * @return
+     */
+    @Deprecated
     boolean isParent(final Relationship relationship, final ContentTypeIf contentTypeIf);
 
+    /**
+     * @deprecated For relationship fields use {@link RelationshipFactory#isParentField(Relationship, Field)} instead
+     * @param relationship
+     * @param contentTypeIf
+     * @return
+     */
+    @Deprecated
     boolean isChild(final Relationship relationship, final ContentTypeIf contentTypeIf);
 
-    boolean isChild(Relationship relationship, Field field);
+    boolean isParentField(Relationship relationship, Field field);
 
     boolean sameParentAndChild(final Relationship rel);
 

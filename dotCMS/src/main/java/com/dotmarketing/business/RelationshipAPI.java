@@ -89,15 +89,29 @@ public interface RelationshipAPI {
 
   boolean sameParentAndChild(Relationship rel);
 
+    /**
+     * @deprecated For relationship fields use {@link RelationshipAPI#isParentField(Relationship, com.dotcms.contenttype.model.field.Field)} instead
+     * @param rel
+     * @param st
+     * @return
+     */
+    @Deprecated
   boolean isChild(Relationship rel, ContentTypeIf st);
 
-  boolean isChild(Relationship rel, com.dotcms.contenttype.model.field.Field field);
+  boolean isParentField(Relationship rel, com.dotcms.contenttype.model.field.Field field);
 
   int maxSortOrder(String parentInode, String relationType);
 
+    /**
+     * @deprecated For relationship fields use {@link RelationshipAPI#isChildField(Relationship, com.dotcms.contenttype.model.field.Field)} instead
+     * @param rel
+     * @param st
+     * @return
+     */
+    @Deprecated
   boolean isParent(Relationship rel, ContentTypeIf st);
 
-  boolean isParent(Relationship rel, com.dotcms.contenttype.model.field.Field field);
+  boolean isChildField(Relationship rel, com.dotcms.contenttype.model.field.Field field);
 
   void delete(Relationship relationship) throws DotDataException;
 

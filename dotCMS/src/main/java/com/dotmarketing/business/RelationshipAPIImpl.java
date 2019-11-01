@@ -138,24 +138,38 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         return this.relationshipFactory.relatedContentTrees(relationship, contentlet, hasParent);
     }
 
+    /**
+     * @deprecated For relationship fields use {@link RelationshipAPI#isChildField(Relationship, com.dotcms.contenttype.model.field.Field)} instead
+     * @param rel
+     * @param st
+     * @return
+     */
+    @Deprecated
     @Override
     public boolean isParent(Relationship rel, ContentTypeIf st) {
         return this.relationshipFactory.isParent(rel, st);
     }
 
     @Override
-    public boolean isParent(Relationship rel, com.dotcms.contenttype.model.field.Field field) {
-        return this.relationshipFactory.isParent(rel, field);
+    public boolean isChildField(Relationship rel, com.dotcms.contenttype.model.field.Field field) {
+        return this.relationshipFactory.isChildField(rel, field);
     }
 
+    /**
+     * @deprecated For relationship fields use {@link RelationshipAPI#isParentField(Relationship, com.dotcms.contenttype.model.field.Field)} instead
+     * @param rel
+     * @param st
+     * @return
+     */
+    @Deprecated
     @Override
     public boolean isChild(Relationship rel, ContentTypeIf st) {
         return this.relationshipFactory.isChild(rel, st);
     }
 
     @Override
-    public boolean isChild(Relationship rel, com.dotcms.contenttype.model.field.Field field) {
-        return this.relationshipFactory.isChild(rel, field);
+    public boolean isParentField(Relationship rel, com.dotcms.contenttype.model.field.Field field) {
+        return this.relationshipFactory.isParentField(rel, field);
     }
 
     @Override
