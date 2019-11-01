@@ -417,17 +417,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     @Override
     public boolean isChild(final Relationship relationship, final Field field) {
-        try {
-            return sameParentAndChild(relationship) ? field.variable()
-                    .equalsIgnoreCase(relationship.getParentRelationName())
-                    : isParent(relationship,
-                            FactoryLocator.getContentTypeFactory().find(field.contentTypeId()));
-        } catch (DotDataException e) {
-            Logger.warnAndDebug(this.getClass(),
-                    "Error searching content type with id " + field.contentTypeId(), e);
-        }
-
-        return false;
+	    return !isParent(relationship, field);
     }
 
     private boolean sameParentAndChildRelationName(final Relationship relationship){
