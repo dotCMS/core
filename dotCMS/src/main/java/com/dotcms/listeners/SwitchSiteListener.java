@@ -61,7 +61,7 @@ public class SwitchSiteListener implements HttpSessionAttributeListener {
             final HttpSession session) {
         if(session==null) return;
         synchronized (session) {
-            String oldHostId = (String) session.getAttribute(CMS_SELECTED_HOST_ID_PREVIOUS);
+            final String oldHostId = (String) session.getAttribute(CMS_SELECTED_HOST_ID_PREVIOUS);
 
             if (!Objects.equals(newHosId, oldHostId)) {
                 try {
