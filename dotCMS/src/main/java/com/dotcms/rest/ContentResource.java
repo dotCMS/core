@@ -40,7 +40,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -781,17 +780,14 @@ public class ContentResource {
             }
             addedRelationships.add(relationship);
 
-            final boolean isParent =
-                    relationshipAPI.sameParentAndChild(relationship) ? field.variable()
-                            .equalsIgnoreCase(relationship.getChildRelationName())
-                            : relationshipAPI.isParent(relationship, contentlet.getContentType());
+            final boolean isChildField = relationshipAPI.isChildField(relationship, field);
 
             ContentletRelationships.ContentletRelationshipRecords relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
-                    relationship, isParent);
+                    relationship, isChildField);
 
             List records = addRelatedContentToXMLMap(request, response, render, user, depth, respectFrontendRoles,
                     contentlet,
-                    addedRelationships, language, live, field, isParent);
+                    addedRelationships, language, live, field, isChildField);
 
             objectMap.put(field.variable(),
                     relationshipRecords.doesAllowOnlyOne() && records.size() > 0 ? records.get(0)
@@ -802,24 +798,24 @@ public class ContentResource {
                 com.dotcms.contenttype.model.field.Field otherSideField = null;
                 if (relationship.getParentRelationName() != null
                         && relationship.getChildRelationName() != null) {
-                    if (relationshipAPI.isParent(relationship, contentlet.getContentType())) {
-                        if (fields.containsKey(relationship.getChildRelationName())) {
-                            otherSideField = fields.get(relationship.getChildRelationName());
-                        }
-                    } else {
+                    if (isChildField) {
                         if (fields.containsKey(relationship.getParentRelationName())) {
                             otherSideField = fields.get(relationship.getParentRelationName());
+                        }
+                    } else {
+                        if (fields.containsKey(relationship.getChildRelationName())) {
+                            otherSideField = fields.get(relationship.getChildRelationName());
                         }
                     }
                 }
                 if (otherSideField != null){
 
                     relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
-                            relationship, !isParent);
+                            relationship, !isChildField);
 
                     records = addRelatedContentToXMLMap(request, response, render, user, depth, respectFrontendRoles,
                             contentlet,
-                            addedRelationships, language, live, otherSideField, !isParent);
+                            addedRelationships, language, live, otherSideField, !isChildField);
 
                     objectMap.put(otherSideField.variable(),
                             relationshipRecords.doesAllowOnlyOne() && records.size() > 0 ? records.get(0)
@@ -1025,19 +1021,16 @@ public class ContentResource {
             }
             addedRelationships.add(relationship);
 
-            final boolean isParent =
-                    relationshipAPI.sameParentAndChild(relationship) ? field.variable()
-                            .equalsIgnoreCase(relationship.getChildRelationName())
-                            : relationshipAPI.isParent(relationship, contentlet.getContentType());
+            final boolean isChildField = relationshipAPI.isChildField(relationship, field);
 
             final ContentletRelationships contentletRelationships = new ContentletRelationships(
                     contentlet);
             ContentletRelationships.ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
-                    relationship, isParent);
+                    relationship, isChildField);
 
             JSONArray jsonArray = addRelatedContentToJsonArray(request, response, render, user, depth,
                     respectFrontendRoles,
-                    contentlet, addedRelationships, language, live, field, isParent);
+                    contentlet, addedRelationships, language, live, field, isChildField);
 
             jsonObject.put(field.variable(), getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
 
@@ -1047,13 +1040,13 @@ public class ContentResource {
 
                 if (relationship.getParentRelationName() != null
                         && relationship.getChildRelationName() != null) {
-                    if (relationshipAPI.isParent(relationship, contentlet.getContentType())) {
-                        if (fields.containsKey(relationship.getChildRelationName())) {
-                            otherSideField = fields.get(relationship.getChildRelationName());
-                        }
-                    } else {
+                    if (isChildField) {
                         if (fields.containsKey(relationship.getParentRelationName())) {
                             otherSideField = fields.get(relationship.getParentRelationName());
+                        }
+                    } else {
+                        if (fields.containsKey(relationship.getChildRelationName())) {
+                            otherSideField = fields.get(relationship.getChildRelationName());
                         }
                     }
                 }
@@ -1061,10 +1054,10 @@ public class ContentResource {
                 if (otherSideField != null){
 
                     records = contentletRelationships.new ContentletRelationshipRecords(
-                            relationship, !isParent);
+                            relationship, !isChildField);
                     jsonArray = addRelatedContentToJsonArray(request, response, render, user, depth,
                             respectFrontendRoles,
-                            contentlet, addedRelationships, language, live, otherSideField, !isParent);
+                            contentlet, addedRelationships, language, live, otherSideField, !isChildField);
 
                     jsonObject.put(otherSideField.variable(),
                             getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
