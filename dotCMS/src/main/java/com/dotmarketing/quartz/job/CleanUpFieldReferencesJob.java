@@ -32,6 +32,7 @@ import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
@@ -105,41 +106,33 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
     
     
     public static void triggerCleanUpJob(final Field field, final User user) {
-        try {
-            HibernateUtil.addCommitListener(() -> {
 
+        final JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put("field", field);
+        jobDataMap.put("deletionDate", Calendar.getInstance().getTime());
+        jobDataMap.put("user", user);
 
-                final JobDataMap jobDataMap = new JobDataMap();
-                jobDataMap.put("field", field);
-                jobDataMap.put("deletionDate", Calendar.getInstance().getTime());
-                jobDataMap.put("user", user);
+        final String randomID = UUID.randomUUID().toString();
 
-                String randomID = UUID.randomUUID().toString();
+        final JobDetail jd = new JobDetail("CleanUpFieldReferencesJob-" + randomID, "clean_up_field_reference_jobs",
+                        CleanUpFieldReferencesJob.class);
+        jd.setJobDataMap(jobDataMap);
+        jd.setDurability(false);
+        jd.setVolatility(false);
+        jd.setRequestsRecovery(true);
 
-                JobDetail jd = new JobDetail("CleanUpFieldReferencesJob-" + randomID, "clean_up_field_reference_jobs",
-                                CleanUpFieldReferencesJob.class);
-                jd.setJobDataMap(jobDataMap);
-                jd.setDurability(false);
-                jd.setVolatility(false);
-                jd.setRequestsRecovery(true);
+        long startTime = System.currentTimeMillis();
+        final SimpleTrigger trigger = new SimpleTrigger("deleteFieldStatefulTrigger-" + randomID,
+                        "clean_up_field_reference_job_triggers", new Date(startTime));
 
-                long startTime = System.currentTimeMillis();
-                SimpleTrigger trigger = new SimpleTrigger("deleteFieldStatefulTrigger-" + randomID,
-                                "clean_up_field_reference_job_triggers", new Date(startTime));
-
-                try {
-                    Scheduler sched = QuartzUtils.getSequentialScheduler();
-                    sched.scheduleJob(jd, trigger);
-                } catch (Exception e) {
-                    Logger.error(CleanUpFieldReferencesJob.class, "Error scheduling CleanUpFieldReferencesJob", e);
-                    throw new DotRuntimeException("Error scheduling CleanUpFieldReferencesJob", e);
-                }
-
+        HibernateUtil.addCommitListenerNoThrow(() -> {
+            Sneaky.sneaked(() -> {
+                Scheduler sched = QuartzUtils.getSequentialScheduler();
+                sched.scheduleJob(jd, trigger);
             });
-        } catch (DotHibernateException e) {
-            Logger.error(CleanUpFieldReferencesJob.class, "Error scheduling CleanUpFieldReferencesJob", e);
-            throw new DotRuntimeException("Error scheduling CleanUpFieldReferencesJob", e);
-        }
+        });
+
+
     }
     
 
