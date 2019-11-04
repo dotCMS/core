@@ -220,7 +220,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final ContentletRelationships.ContentletRelationshipRecords
             records = contentletRelationships.new ContentletRelationshipRecords(
             relationship,
-            APILocator.getRelationshipAPI().isParent(relationship, contentType));
+            APILocator.getRelationshipAPI().isChildField(relationship, field));
 
         GraphQLOutputType outputType = typesMap.get(relatedContentType.variable()) != null
             ? typesMap.get(relatedContentType.variable())

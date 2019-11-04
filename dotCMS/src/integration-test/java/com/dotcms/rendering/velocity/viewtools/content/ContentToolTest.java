@@ -86,12 +86,14 @@ public class ContentToolTest extends IntegrationTestBase {
         int cardinality;
         Class parentExpectedType;
         Class childExpectedType;
+        boolean selfRelated;
 
         public TestCase(final int cardinality, final Class parentExpectedType,
-                final Class childExpectedType) {
+                final Class childExpectedType, final boolean selfRelated) {
             this.cardinality = cardinality;
             this.parentExpectedType = parentExpectedType;
             this.childExpectedType = childExpectedType;
+            this.selfRelated = selfRelated;
         }
     }
 
@@ -99,11 +101,17 @@ public class ContentToolTest extends IntegrationTestBase {
     public static Object[] testCases(){
         return new TestCase[]{
                 new TestCase(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal(), List.class,
-                        List.class),
+                        List.class, false),
                 new TestCase(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal(), ContentMap.class,
-                        List.class),
+                        List.class, false),
                 new TestCase(RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal(), ContentMap.class,
-                        ContentMap.class)
+                        ContentMap.class, false),
+                new TestCase(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal(), List.class,
+                        List.class, true),
+                new TestCase(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal(), ContentMap.class,
+                        List.class, true),
+                new TestCase(RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal(), ContentMap.class,
+                        ContentMap.class, true)
         };
     }
 
@@ -305,7 +313,7 @@ public class ContentToolTest extends IntegrationTestBase {
         ContentType parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
 
         //creates child content type
-        ContentType childContentType = createAndSaveSimpleContentType("childContentType" + time);
+        ContentType childContentType = testCase.selfRelated? parentContentType: createAndSaveSimpleContentType("childContentType" + time);
 
         Field parentField = createField(childContentType.variable(), parentContentType.id(),
                 childContentType.variable(), String.valueOf(testCase.cardinality));
