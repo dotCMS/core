@@ -51,7 +51,7 @@ public class Task05200WorkflowTaskUniqueKey implements StartupTask {
             .setSQL("select id from workflow_task where webasset=? and language_id=? order by mod_date desc")
             .addParam(webAsset)
             .addParam(lang)
-            .setStartRow(1)
+            .setStartRow(1) //magic happens here
             .loadObjectResults()
             .stream()
             .map(r->(String)r.get("id")).collect(Collectors.toList());
