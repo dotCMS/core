@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.field.PermissionTabField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RelationshipsTabField;
 import com.dotcms.contenttype.model.field.TabDividerField;
+import com.dotcms.contenttype.model.field.event.FieldDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -20,7 +21,9 @@ import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -99,34 +102,45 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
         }
     }
 
-    public static void triggerCleanUpJob(Field field, User user) {
-        final JobDataMap jobDataMap = new JobDataMap();
-        jobDataMap.put("field", field);
-        jobDataMap.put("deletionDate", Calendar.getInstance().getTime());
-        jobDataMap.put("user", user);
-
-        String randomID = UUID.randomUUID().toString();
-
-        JobDetail jd = new JobDetail("CleanUpFieldReferencesJob-" + randomID,
-                "clean_up_field_reference_jobs", CleanUpFieldReferencesJob.class);
-        jd.setJobDataMap(jobDataMap);
-        jd.setDurability(false);
-        jd.setVolatility(false);
-        jd.setRequestsRecovery(true);
-
-        long startTime = System.currentTimeMillis();
-        SimpleTrigger trigger = new SimpleTrigger("deleteFieldStatefulTrigger-" + randomID,
-                "clean_up_field_reference_job_triggers",
-                new Date(startTime));
-
+    
+    
+    public static void triggerCleanUpJob(final Field field, final User user) {
         try {
-            Scheduler sched = QuartzUtils.getSequentialScheduler();
-            sched.scheduleJob(jd, trigger);
-        } catch (SchedulerException e) {
-            Logger.error(CleanUpFieldReferencesJob.class,
-                    "Error scheduling CleanUpFieldReferencesJob", e);
+            HibernateUtil.addCommitListener(() -> {
+
+
+                final JobDataMap jobDataMap = new JobDataMap();
+                jobDataMap.put("field", field);
+                jobDataMap.put("deletionDate", Calendar.getInstance().getTime());
+                jobDataMap.put("user", user);
+
+                String randomID = UUID.randomUUID().toString();
+
+                JobDetail jd = new JobDetail("CleanUpFieldReferencesJob-" + randomID, "clean_up_field_reference_jobs",
+                                CleanUpFieldReferencesJob.class);
+                jd.setJobDataMap(jobDataMap);
+                jd.setDurability(false);
+                jd.setVolatility(false);
+                jd.setRequestsRecovery(true);
+
+                long startTime = System.currentTimeMillis();
+                SimpleTrigger trigger = new SimpleTrigger("deleteFieldStatefulTrigger-" + randomID,
+                                "clean_up_field_reference_job_triggers", new Date(startTime));
+
+                try {
+                    Scheduler sched = QuartzUtils.getSequentialScheduler();
+                    sched.scheduleJob(jd, trigger);
+                } catch (Exception e) {
+                    Logger.error(CleanUpFieldReferencesJob.class, "Error scheduling CleanUpFieldReferencesJob", e);
+                    throw new DotRuntimeException("Error scheduling CleanUpFieldReferencesJob", e);
+                }
+
+            });
+        } catch (DotHibernateException e) {
+            Logger.error(CleanUpFieldReferencesJob.class, "Error scheduling CleanUpFieldReferencesJob", e);
             throw new DotRuntimeException("Error scheduling CleanUpFieldReferencesJob", e);
         }
     }
+    
 
 }
