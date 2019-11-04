@@ -149,7 +149,6 @@ public class ContentletCheckInTest extends ContentletBaseTest{
           asset.setLanguageId(lang.getId());
           asset.setBinary("fileAsset", file);
           asset.setTitle(file.getName());
-          asset.setUnderlyingFileName(file.getName());
           asset.setContentTypeId(fileTypeId);
           asset.setHost(host.getIdentifier());
           asset.setFolder(folder1.getIdentifier());

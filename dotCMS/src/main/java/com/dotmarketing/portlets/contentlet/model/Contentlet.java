@@ -1067,8 +1067,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             if ( map.get( INODE_KEY ) != null && InodeUtils.isSet( (String) map.get( INODE_KEY ) ) ) {
                 String inode = (String) map.get(INODE_KEY);
 	        	try{
-
-	        		java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
+	        		java.io.File binaryFileFolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
 	                    + java.io.File.separator
 	                    + inode.charAt(0)
 	                    + java.io.File.separator
@@ -1077,12 +1076,14 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	                    + inode
 	                    + java.io.File.separator
 	                    + velocityVarName);
-	                    if(binaryFilefolder.exists()){
-	                    	java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
-		                    if(files.length > 0){
+	                    if(binaryFileFolder.exists()){
+	                    	java.io.File[] files = binaryFileFolder.listFiles(new BinaryFileFilter());
+		                    if(null != files && files.length > 0){
 		                    	f = files[0];
 		                    	map.put(velocityVarName, f);
 		                    }
+		                } else {
+		                     Logger.warn(Contentlet.class,String.format("Failed to retrieve binary file. Folder `%s` does NOT exist.",binaryFileFolder.getPath()));
 		                }
 	            }catch(Exception e){
 	                Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+inode+"  velocityVaribleName : "+velocityVarName );
@@ -1248,7 +1249,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
     public Boolean isHTMLPage() {
-        return getStructure().getStructureType() == BaseContentType.HTMLPAGE.getType();
+      return getContentType().baseType() == BaseContentType.HTMLPAGE;
     }
 
     /**
@@ -1256,7 +1257,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @return
      */
 	public boolean isFileAsset() {
-		return getStructure().getStructureType() == BaseContentType.FILEASSET.getType();
+		return getContentType().baseType() == BaseContentType.FILEASSET;
 	}
 
 	/**
@@ -1264,10 +1265,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
     public boolean isHost() {
-        Structure hostStructure =
-                CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+      
 
-        return getStructure().getInode().equals(hostStructure.getInode());
+        return getContentType().variable().equals(Host.HOST_VELOCITY_VAR_NAME);
     }
 
 	/**

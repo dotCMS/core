@@ -7,11 +7,16 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -32,14 +37,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 /**
  * This class is a bridge impl that will support the older
@@ -207,41 +215,44 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 
 	@CloseDBIfOpened
-	public FileAsset fromContentlet(Contentlet con) throws DotStateException {
-		if (con == null) {
-			throw new DotStateException("Contentlet : is null");
+	public FileAsset fromContentlet(final Contentlet con) throws DotStateException {
+		if (con == null || con.getInode() == null) {
+			throw new DotStateException("Contentlet is null");
 		}
-		if (con.getStructure().getStructureType() != Structure.STRUCTURE_TYPE_FILEASSET) {
+
+		if (!con.isFileAsset()) {
 			throw new DotStateException("Contentlet : " + con.getInode() + " is not a FileAsset");
 		}
 
-		FileAsset fa = new FileAsset();
-		fa.setStructureInode(con.getStructureInode());
-		try {
-			contAPI.copyProperties((Contentlet) fa, con.getMap());
-		} catch (Exception e) {
-			throw new DotStateException("File Copy Failed :" + e.getMessage(), e);
+		if(con instanceof FileAsset) {
+			return (FileAsset) con;
 		}
-		fa.setHost(con.getHost());
+
+		final FileAsset fileAsset = new FileAsset();
+		fileAsset.setContentTypeId(con.getContentTypeId());
+		try {
+			contAPI.copyProperties(fileAsset, con.getMap());
+		} catch (Exception e) {
+			throw new DotStateException("Content -> FileAsset Copy Failed :" + e.getMessage(), e);
+		}
+		fileAsset.setHost(con.getHost());
 		if(UtilMethods.isSet(con.getFolder())){
 			try{
-				Identifier ident = APILocator.getIdentifierAPI().find(con);
-				User systemUser = APILocator.getUserAPI().getSystemUser();
-				Host host = APILocator.getHostAPI().find(con.getHost(), systemUser , false);
-				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, systemUser, false);
-				fa.setFolder(folder.getInode());
+				final Identifier ident = APILocator.getIdentifierAPI().find(con);
+				final Host host = APILocator.getHostAPI().find(con.getHost(), APILocator.systemUser() , false);
+				final Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, APILocator.systemUser(), false);
+				fileAsset.setFolder(folder.getInode());
 			}catch(Exception e){
 				try{
-					User systemUser = APILocator.getUserAPI().getSystemUser();
-					Host host = APILocator.getHostAPI().find(con.getHost(), systemUser , false);
-					Folder folder = APILocator.getFolderAPI().find(con.getFolder(), systemUser, false);
-					fa.setFolder(folder.getInode());
+					final Folder folder = APILocator.getFolderAPI().find(con.getFolder(), APILocator.systemUser(), false);
+					fileAsset.setFolder(folder.getInode());
 				}catch(Exception e1){
 					Logger.warn(this, "Unable to convert contentlet to file asset " + con, e1);
 				}
 			}
 		}
-		return fa;
+		CacheLocator.getContentletCache().add(fileAsset);
+		return fileAsset;
 	}
 
 	public List<FileAsset> fromContentlets(final List<Contentlet> contentlets) {
@@ -260,6 +271,22 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		}
 		return fileAssets;
 
+	}
+
+	@CloseDBIfOpened
+	public FileAssetMap fromFileAsset(final FileAsset fileAsset) throws DotStateException {
+		if (!fileAsset.isLoaded()) {
+		    //Force to pre-load
+			fileAsset.load();
+		}
+		try {
+			final FileAssetMap fileAssetMap = new FileAssetMap(fileAsset);
+			CacheLocator.getContentletCache().add(fileAsset);
+			// We cache the original contentlet that was forced to pre-load its values. That's the state we want to maintain.
+			return fileAssetMap;
+		} catch (Exception e) {
+			throw new DotStateException(e);
+		}
 	}
 
 	public boolean isFileAsset(Contentlet con)  {
@@ -511,6 +538,16 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		return assets;
 	}
 
+  @Override
+  @CloseDBIfOpened
+  public FileAsset find(final String inode, final User user, final boolean respectFrontendRoles)
+      throws DotDataException, DotSecurityException {
+
+    return fromContentlet(contAPI.find(inode, user, respectFrontendRoles));
+
+  }
+	
+	
 	public String getRealAssetPath(String inode, String fileName, String ext) {
         String _inode = inode;
         String path = "";
