@@ -5,7 +5,11 @@
  */
 package com.dotmarketing.util;
 
+import com.dotcms.business.expiring.ExpiringMap;
+import com.dotcms.business.expiring.ExpiringMapBuilder;
 import com.dotmarketing.loggers.Log4jUtil;
+import com.google.common.base.Objects;
+import com.google.common.hash.HashCode;
 import java.io.File;
 import java.util.WeakHashMap;
 import java.util.function.Supplier;
@@ -151,6 +155,43 @@ public class Logger{
     	    ex.printStackTrace();
     	}
     }
+    /**
+     * a map with a 5 minute max lifespan
+     */
+    static ExpiringMap<Long, Long> logMap = new ExpiringMapBuilder().ttl(600*1000).size(2000).build();
+
+	/**
+	 * this method will print the message at WARN level every millis set
+	 * and print the message plus whole stack trace if at DEGUG level
+	 * @param cl
+	 * @param message
+	 * @param ex
+	 * @param warnEveryMillis
+	 */
+	public static void warnEveryAndDebug(final Class cl, final String message, final Throwable ex, final int warnEveryMillis) {
+        if(ex==null) {
+			return;
+		}
+        final org.apache.logging.log4j.Logger logger = loadLogger(cl);    
+        final StackTraceElement ste = ex.getStackTrace()[0];
+
+        final Long hash=new Long(Objects.hashCode(ste,message.substring(0, Math.min(message.length(), 10)),cl));
+        final Long expireWhen = logMap.get(hash);
+        
+        if(expireWhen == null || expireWhen < System.currentTimeMillis()) {
+            logMap.put(hash, System.currentTimeMillis() + warnEveryMillis );
+            logger.warn(message + " (every "+warnEveryMillis + " millis)");
+            
+        }
+        logger.debug(message, ex);
+    }
+    
+    public static void warnEveryAndDebug(final Class cl, final Throwable ex, final int ttlMillis) {
+        warnEveryAndDebug(cl,ex.getMessage(), ex, ttlMillis );
+    }
+    
+    
+    
     /**
      * this method will print the message if at the WARN level
      * and print the message + whole stack trace if at the DEGUG LEVEL
