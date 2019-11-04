@@ -100,7 +100,7 @@ public abstract class Field implements FieldIf, Serializable {
   }
 
     @Value.Default
-    public boolean deferRelationshipCreation() {
+    public boolean skipRelationshipCreation() {
         return false;
     }
 
