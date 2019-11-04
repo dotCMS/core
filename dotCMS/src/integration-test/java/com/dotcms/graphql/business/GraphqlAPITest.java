@@ -62,7 +62,6 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
-import io.vavr.control.Try;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -89,6 +88,8 @@ public class GraphqlAPITest {
     public static Object[] typeTestCases() {
 
         return new TypeTestCase[]{
+
+                // TODO commented cases pending for researching. Do not remove them
 
                 // CREATE TYPE CASES
                 new TypeTestCase.Builder()
