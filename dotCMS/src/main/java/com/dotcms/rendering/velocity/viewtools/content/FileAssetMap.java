@@ -4,12 +4,27 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class FileAssetMap extends FileAsset {
     private static final long serialVersionUID = -3798679965316360641L;
+
+    private static final String URL_MASK = "/dA/%s/%s";
+
+    /**
+     * Default constructor
+     */
+    public FileAssetMap() {
+    }
+
+    /**
+     * copy constructor
+     * @param contentlet
+     * @throws Exception
+     */
+    public FileAssetMap(final FileAsset contentlet) throws Exception {
+        super(contentlet);
+    }
 
     @Override
     public String toString() {
@@ -22,32 +37,20 @@ public class FileAssetMap extends FileAsset {
 
     /**
      * Create a new instance of FileAssetMap using a contentlet
-     * @param c
+     * @param contentlet
      * @return FileAssetMap new instance
      * @throws Exception
      */
-    public static FileAssetMap of(Contentlet c) throws Exception {
-        FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(c);
-
-        FileAssetMap fam = new FileAssetMap();
-        fam.setHost(fa.getHost());
-        fam.setBinary(FileAssetAPI.BINARY_FIELD, fa.getFileAsset());
-        BeanUtils.copyProperties(fam, fa);
-
-        return fam;
+    public static FileAssetMap of(final Contentlet contentlet) throws Exception {
+        final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+        return APILocator.getFileAssetAPI().fromFileAsset(fileAsset);
     }
-    
-    
-    
-    
+
     public String getShortyUrl() {
 
-        if (getFileAsset() != null
-            && getFileAsset().exists()
-            && getFileAsset().getName() != null) {
-
+        if (getFileAsset() != null) {
             String shorty = APILocator.getShortyAPI().shortify(getIdentifier());
-            return "/dA/"+shorty+"/" + getFileAsset().getName();
+            return String.format(URL_MASK, shorty, getFileAsset().getName());
         } else {
             return null;
         }
@@ -60,12 +63,9 @@ public class FileAssetMap extends FileAsset {
     
     public String getShortyUrlInode() {
 
-        if (getFileAsset() != null
-            && getFileAsset().exists()
-            && getFileAsset().getName() != null) {
-
+        if (getFileAsset() != null) {
             String shorty = APILocator.getShortyAPI().shortify(getInode());
-            return "/dA/"+shorty+"/" + getFileAsset().getName();
+            return String.format(URL_MASK, shorty, getFileAsset().getName());
         } else {
             return null;
         }
