@@ -109,6 +109,18 @@ public class BrowserAjax {
 		BrowserAjax.permissionAPI = permissionAPI;
 	}
 
+	private String getCurrentHost() {
+	    final WebContext ctx = WebContextFactory.get();
+	    final String selectedHost = (String) ctx.getHttpServletRequest().getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+	    if(selectedHost==null) {
+	        // this will fire a host switch host if needed
+	        ctx.getHttpServletRequest().getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(ctx.getHttpServletRequest()).getIdentifier());
+	    }
+	    return selectedHost;
+	    
+	}
+
+	
     /**
      * This methods is used to load the entire tree by first time.
      * @return The whole folders tree structure.
@@ -116,7 +128,7 @@ public class BrowserAjax {
      * @throws DotSecurityException
      */
     public List<Map> getTree(String hostId) throws DotDataException, DotSecurityException {
-
+        hostId = UtilMethods.isSet(hostId) ? hostId : getCurrentHost();
         WebContext ctx = WebContextFactory.get();
         User usr = getUser(ctx.getHttpServletRequest());
         User systemUser = userAPI.getSystemUser();

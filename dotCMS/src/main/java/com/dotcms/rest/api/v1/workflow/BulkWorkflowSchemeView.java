@@ -21,4 +21,12 @@ public class BulkWorkflowSchemeView {
     public List<BulkWorkflowStepView> getSteps() {
         return steps;
     }
+
+    @Override
+    public String toString() {
+        return "BulkWorkflowSchemeView{" +
+                "scheme=" + scheme +
+                ", steps=" + steps +
+                '}';
+    }
 }

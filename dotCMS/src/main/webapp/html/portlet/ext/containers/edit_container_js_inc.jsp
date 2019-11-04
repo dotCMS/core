@@ -277,7 +277,7 @@
 			if(isNaN(parseInt(val)) || parseInt(val)==0){
 
 				if(preLoopEditorCreated){
-					preLoopEditor=aceRemover(preLoopEditor,"preLoopMask");
+					preLoopEditor=aceHide(preLoopEditor,"preLoopMask");
 					preLoopEditorCreated=false;
 				}
 
@@ -287,7 +287,7 @@
                 }
 
 				if(postLoopEditorCreated){
-			   		postLoopEditor=aceRemover(postLoopEditor,"postLoopMask");
+			   		postLoopEditor=aceHide(postLoopEditor,"postLoopMask");
 					postLoopEditorCreated=false;
 				}
 
@@ -526,12 +526,18 @@
 		return editor;
 	}
 
+    function aceHide(removeEditor, textarea){
 
+		var editorText=removeEditor.getValue();
+		dojo.query('#'+textarea).style({display:'none'});
+		dojo.query('#'+textarea)[0].value=editorText;
+		return null;
+	}
 
 	function aceRemover(removeEditor, textarea){
 
 		var editorText=removeEditor.getValue();
-		dojo.query('#'+textarea).style({display:'none'});
+		dojo.query('#'+textarea).style({display:''});
 		dojo.query('#'+textarea)[0].value=editorText;
 		return null;
 	}

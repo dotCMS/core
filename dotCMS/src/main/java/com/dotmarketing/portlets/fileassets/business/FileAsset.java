@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.util.Loadable;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
@@ -24,15 +26,31 @@ import java.nio.file.Files;
 import java.util.Date;
 import java.util.Map;
 
-public class FileAsset extends Contentlet implements IFileAsset {
+public class FileAsset extends Contentlet implements IFileAsset, Loadable {
 
-	String metaData;
+	private String metaData;
+
+    private File file;
 
 	public static final String UNKNOWN_MIME_TYPE = "unknown";
 
 	public FileAsset() {
 		super();
 
+	}
+
+	/**
+	 * Use to build a fileAsset and take the state of another fileAsset
+	 * @param contentlet
+	 * @throws Exception
+	 */
+	protected FileAsset(final FileAsset contentlet) throws Exception {
+		super(contentlet);
+		final File file = contentlet.getFileAsset();
+		setBinary(FileAssetAPI.BINARY_FIELD, file);
+		this.fileDimension = contentlet.fileDimension;
+		this.underlyingFileName = contentlet.underlyingFileName;
+		this.fileSizeInternal = contentlet.fileSizeInternal;
 	}
 
 	public String getMetaData(){
@@ -64,7 +82,6 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	private static final long serialVersionUID = 1L;
 
-	private String path;
 
 	public String getPath() {
 		Identifier id = null;
@@ -86,57 +103,68 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	}
 
+	private long fileSizeInternal = 0;
+
 	public long getFileSize() {
-		if(getFileAsset()!=null)
-			return getFileAsset().length();
-		else
-			return 0;
+		if(this.fileSizeInternal == 0) {
+		   this.fileSizeInternal = computeFileSize(getFileAsset());
+		}
+		return this.fileSizeInternal > 0 ? this.fileSizeInternal : 0;
 	}
 
-	private Dimension fileDimension = new Dimension();
+    private long computeFileSize(final File fileAsset){
+	   return (fileSizeInternal = fileAsset == null ? 0 : fileAsset.length());
+    }
+
+	private Dimension fileDimension = null;
+
 	public int getHeight() {
-        try {
-            if (fileDimension.height == 0) {
-                // File dimension is not loaded and we need to load it
-                fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
-            }
-        } catch (Exception e) {
-            Logger.debug(this, "Error getting height for file asset, id: " + getIdentifier(), e);
-        }
-
-        return fileDimension.height;
-    }
-
-    public int getWidth() {
-        try {
-            if (fileDimension.width == 0) {
-                // File dimension is not loaded and we need to load it
-                fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
-            }
-        } catch (Exception e) {
-            Logger.debug(this, "Error getting width for file asset, id: " + getIdentifier(), e);
-        }
-
-        return fileDimension.width;
-    }
-
-	/**
-	 * This access the physical file on disk
-	 * @param name
-	 */
-	public void setUnderlyingFileName(String name) {
-	    File ff=getFileAsset();
-	    ff.renameTo(new File(ff.getParent(),name));
+		if (null == fileDimension) {
+			fileDimension = computeFileDimension(getFileAsset());
+		}
+		return  fileDimension == null ? 0 : fileDimension.height;
 	}
 
+	public int getWidth() {
+		if (null == fileDimension) {
+			fileDimension = computeFileDimension(getFileAsset());
+		}
+		return fileDimension == null ? 0 : fileDimension.width;
+	}
+
+	private Dimension computeFileDimension(final File file) {
+		try {
+			return (fileDimension = ImageUtil.getInstance().getDimension(file));
+		} catch (Exception e) {
+			Logger.debug(this,
+					"Error computing dimensions for file asset with id: " + getIdentifier(), e);
+		}
+		return null;
+	}
+
+  /**
+   * This access the physical file on disk
+   * 
+   * @return
+   */
+  private  String underlyingFileName = null;
+
+  public String getUnderlyingFileName() {
+	 if (underlyingFileName != null) {
+		return underlyingFileName;
+	 }
+	 this.underlyingFileName = computeUnderlyingFileName(getFileAsset());
+	 return this.underlyingFileName;
+  }
+
 	/**
-	 * This access the physical file on disk
+	 *
+	 * @param fileAsset
 	 * @return
 	 */
-	public String getUnderlyingFileName() {
-		final File fileAsset = getFileAsset();
-		return fileAsset != null ? fileAsset.getName(): null;
-	}
+  private String computeUnderlyingFileName(final File fileAsset){
+	  return (this.underlyingFileName = fileAsset != null ? fileAsset.getName() : null);
+  }
 
 	/***
 	 * This access the logical file name stored on the table Identifier
@@ -172,12 +200,29 @@ public class FileAsset extends Contentlet implements IFileAsset {
 		return new BufferedInputStream(Files.newInputStream(getFileAsset().toPath()));
 	}
 
+    @Override
+	public void setBinary(final String velocityVarName, final File newFile)throws IOException{
+		file = null;
+		super.setBinary(velocityVarName, newFile);
+	}
+
+	@Override
+	public void setBinary(final com.dotcms.contenttype.model.field.Field field, final File newFile)throws IOException{
+		file = null;
+		super.setBinary(field, newFile);
+	}
+
 	public File getFileAsset() {
-		try {
-			return getBinary(FileAssetAPI.BINARY_FIELD);
-		} catch (IOException e) {
-			throw new DotStateException("Unable to find the fileAsset for :" + this.getInode());
+		// calling getBinary can be relatively expensive since it constantly verifies the existence of the file on disk.
+		// Therefore we'll keep a file reference at hand.
+		if (null == file) {
+			try {
+				file = getBinary(FileAssetAPI.BINARY_FIELD);
+			} catch (IOException e) {
+				throw new DotStateException("Unable to find the fileAsset for :" + this.getInode());
+			}
 		}
+		return file;
 	}
 
 	public boolean isDeleted() throws DotStateException, DotDataException, DotSecurityException {
@@ -258,9 +303,6 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	 }
 
-
-	 
-	 
 	 public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String,Object> map = super.getMap();
 		boolean live =  false;
@@ -317,4 +359,28 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	public String toString() {
 		return this.getFileName();
 	}
+
+	@Override
+	public boolean isLoaded() {
+		return null != fileDimension && null != underlyingFileName && fileSizeInternal > 0;
+	}
+
+	@Override
+	public void load() {
+		if (!isLoaded()) {
+			final File file = getFileAsset();
+			if (null != file) {
+				if (null == fileDimension) {
+					computeFileDimension(file);
+				}
+				if (null == underlyingFileName) {
+					computeUnderlyingFileName(file);
+				}
+				if (0 == fileSizeInternal) {
+					computeFileSize(file);
+				}
+			}
+		}
+	}
+
 }

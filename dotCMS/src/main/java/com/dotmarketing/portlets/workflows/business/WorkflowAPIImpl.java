@@ -1644,11 +1644,27 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final Set<WorkflowAction> workflowActions = new HashSet<>();
 
 		try {
-			final List<WorkflowAction> editingActions = this.findAvailableActions(contentlet, user, RenderMode.EDITING);
-			final List<WorkflowAction> listingActions = this.findAvailableActions(contentlet, user, RenderMode.LISTING);
-			workflowActions.addAll(editingActions);
-			workflowActions.addAll(listingActions);
+
+			if(contentlet == null || contentlet.getStructure() ==null) {
+
+				Logger.debug(this, () -> "the Contentlet: " + contentlet + " or their structure could be null");
+				throw new DotStateException("content is null");
+			}
+
+			final boolean isNew  			= !UtilMethods.isSet(contentlet.getInode());
+			final boolean isValidContentlet = isNew || contentlet.isWorking();
+			if(Host.HOST_VELOCITY_VAR_NAME.equals(contentlet.getStructure().getVelocityVarName()) || !isValidContentlet) {
+
+				return false;
+			}
+
+			final List<WorkflowStep> steps = findStepsByContentlet(contentlet, false);
+			workflowActions.addAll(isNew?
+					this.findActions(steps, user, contentlet.getContentType()):
+					this.findActions(steps, user, contentlet));
+
 		} catch (DotDataException | DotSecurityException e) {
+
 			Logger.error(this, e.getMessage(), e);
 		}
 
@@ -2550,7 +2566,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				+ ", canLock: "        + canLock + ", isLocked: " + isLocked);
 
 
-		return isNew? this.doFilterActions(actions, true, false, false, canLock, isLocked, renderMode, findActions(steps, user, contentlet.getContentType())):
+		return isNew?
+				this.doFilterActions(actions, true, false, false, canLock, isLocked, renderMode, findActions(steps, user, contentlet.getContentType())):
 				this.doFilterActions(actions, false, isPublish, isArchived, canLock, isLocked, renderMode, findActions(steps, user, contentlet));
 	}
 

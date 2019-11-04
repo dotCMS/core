@@ -1,17 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import java.io.IOException;
-import javax.servlet.http.HttpServletRequest;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.FileAssetDataGen;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotmarketing.business.APILocator;
@@ -23,6 +13,14 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import java.io.IOException;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class FileAssetTest {
 	
@@ -127,5 +125,5 @@ public class FileAssetTest {
   	  	 
   	  	fileAssetDataGen.remove(fileInEnglish);
 	}
-	
+
 }

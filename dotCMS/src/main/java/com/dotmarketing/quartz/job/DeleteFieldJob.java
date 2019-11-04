@@ -38,6 +38,8 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 
 /**
+ * @deprecated This job was replaced by {@link FieldAPI#delete(com.dotcms.contenttype.model.field.Field)}
+ * which internally calls {@link CleanUpFieldReferencesJob}
  * This Quartz Job is in charge of deleting a field from a specified Content
  * Type and its respective content from all the dotCMS contentlets that use such
  * a Content Type. The time taken by this job is determined by the number of
@@ -57,6 +59,7 @@ import com.liferay.portal.model.User;
  * @since Apr 26, 2016
  *
  */
+@Deprecated
 public class DeleteFieldJob extends DotStatefulJob {
 
 	public static final String JOB_DATA_MAP_CONTENT_TYPE = "structure";

@@ -142,7 +142,6 @@ public class UserAPITest extends IntegrationTestBase {
 		host.setHostname("test"+timeString+".demo.dotcms.com");
 		host.setIndexPolicy(IndexPolicy.FORCE);
 		host=hostAPI.save(host, systemUser, false);
-
 		/**
 		 * Add role
 		 */
@@ -229,7 +228,7 @@ public class UserAPITest extends IntegrationTestBase {
 		userAPI.save( userToDelete, systemUser, false );
 
 		roleAPI.addRoleToUser(newRole, userToDelete);
-
+		roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), userToDelete);
 		Role newUserUserRole = roleAPI.loadRoleByKey(userToDelete.getUserId());
 
 		String replacementUserName = "replacementuser"+timeString;
@@ -239,7 +238,7 @@ public class UserAPITest extends IntegrationTestBase {
 		userAPI.save( replacementUser, systemUser, false );
 
 		roleAPI.addRoleToUser(newRole, replacementUser);
-
+        roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), replacementUser);
 		Role replacementUserUserRole = roleAPI.loadRoleByKey(replacementUser.getUserId());
 
 		/**
