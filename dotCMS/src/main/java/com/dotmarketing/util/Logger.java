@@ -159,9 +159,19 @@ public class Logger{
      * a map with a 5 minute max lifespan
      */
     static ExpiringMap<Long, Long> logMap = new ExpiringMapBuilder().ttl(600*1000).size(2000).build();
-    
-    public static void warnEveryAndDebug(Class cl, String message, Throwable ex, int warnEveryMillis) {
-        if(ex==null) return;
+
+	/**
+	 * this method will print the message at WARN level every millis set
+	 * and print the message plus whole stack trace if at DEGUG level
+	 * @param cl
+	 * @param message
+	 * @param ex
+	 * @param warnEveryMillis
+	 */
+	public static void warnEveryAndDebug(final Class cl, final String message, final Throwable ex, final int warnEveryMillis) {
+        if(ex==null) {
+			return;
+		}
         final org.apache.logging.log4j.Logger logger = loadLogger(cl);    
         final StackTraceElement ste = ex.getStackTrace()[0];
 
@@ -176,7 +186,7 @@ public class Logger{
         logger.debug(message, ex);
     }
     
-    public static void warnEveryAndDebug(Class cl, Throwable ex, int ttlMillis) {
+    public static void warnEveryAndDebug(final Class cl, final Throwable ex, final int ttlMillis) {
         warnEveryAndDebug(cl,ex.getMessage(), ex, ttlMillis );
     }
     
