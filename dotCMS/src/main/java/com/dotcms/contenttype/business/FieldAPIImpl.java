@@ -45,6 +45,7 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -189,7 +190,7 @@ public class FieldAPIImpl implements FieldAPI {
             fieldFactory.moveSortOrderForward(type.id(), field.sortOrder());
         }
 
-        if (field instanceof RelationshipField) {
+        if (field instanceof RelationshipField && !field.deferRelationshipCreation()) {
 	        validateRelationshipField(field);
         }
 
@@ -200,7 +201,7 @@ public class FieldAPIImpl implements FieldAPI {
                       .build() : field);
 
         //if RelationshipField, Relationship record must be added/updated
-        if (field instanceof RelationshipField) {
+        if (field instanceof RelationshipField && !field.deferRelationshipCreation()) {
             Optional<Relationship> relationship = getRelationshipForField(result, contentTypeAPI,
                   type, user);
 

@@ -71,9 +71,10 @@ public abstract class Field implements FieldIf, Serializable {
 
 
   private static final long serialVersionUID = 5640078738113157867L;
+
   final static Date legacyFieldDate = new Date(1470845479000L); // 08/10/2016 @ 4:11pm (UTC)
 
-  @Value.Default
+    @Value.Default
   public boolean searchable() {
     return false;
   }
@@ -97,6 +98,11 @@ public abstract class Field implements FieldIf, Serializable {
   public boolean readOnly() {
     return false;
   }
+
+    @Value.Default
+    public boolean deferRelationshipCreation() {
+        return false;
+    }
 
   @Nullable
   public abstract String owner();

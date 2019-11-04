@@ -32,6 +32,7 @@ public interface FieldBuilder {
     FieldBuilder listed(boolean listed);
     FieldBuilder values(String values);
     FieldBuilder relationType(String relationType);
+    FieldBuilder deferRelationshipCreation(boolean deferRelationshipCreation);
     
 	public static FieldBuilder builder(Field field) throws DotStateException{
 		return builder(field.type()).from(field);
