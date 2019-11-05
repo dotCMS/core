@@ -56,7 +56,7 @@ public class UsersLogInConditionlet extends Conditionlet<UsersLogInConditionlet.
         	if((comparison && user!= null)||(!comparison && user == null)){
         		return true;
         	}
-        } catch(DotRuntimeException | PortalException | SystemException e){
+        } catch(DotRuntimeException e){
         	Logger.error(this, "Could not retrieved logged-in user from request: " + request.getRequestURL());
         }
         return false;
