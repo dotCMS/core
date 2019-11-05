@@ -33,18 +33,27 @@ export class DotApiPage {
             url: `/api/v1/page/json${params.url}`
         };
 
-        return this.dotCMSHttpClient
-            .request(params)
-            .then(async (res: Response) => {
-                if (res.status === 200) {
-                    const data = await res.json();
-                    return <DotCMSPageAsset>data.entity;
-                }
+        return this.dotCMSHttpClient.request(params).then(async (res: Response) => {
+            if (res.status === 200) {
+                const data = await res.json();
+                return <DotCMSPageAsset>data.entity;
+            }
 
-                throw <DotCMSError>{
-                    message: await res.text(),
-                    status: res.status
+            const response = await res.text();
+            let error: DotCMSError;
+            try {
+                error = {
+                    statusCode: res.status,
+                    message: JSON.parse(response).message
                 };
-            });
+            } catch {
+                error = {
+                    statusCode: res.status,
+                    message: response
+                };
+            }
+
+            throw error;
+        });
     }
 }

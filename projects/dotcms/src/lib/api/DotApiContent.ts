@@ -20,18 +20,20 @@ export class DotApiContent {
         return this.doRequest('/api/content/publish/1', params);
     }
 
-    private async doRequest<Content extends DotCMSContent>(url: string, params: Content): Promise<Response> {
-        const response = await this.dotCMSHttpClient
-            .request({
-                url,
-                method: 'POST',
-                body: JSON.stringify(params)
-            });
+    private async doRequest<Content extends DotCMSContent>(
+        url: string,
+        params: Content
+    ): Promise<Response> {
+        const response = await this.dotCMSHttpClient.request({
+            url,
+            method: 'POST',
+            body: JSON.stringify(params)
+        });
 
         if (response.status !== 200) {
             throw <DotCMSError>{
                 message: await response.text(),
-                status: response.status
+                statusCode: response.status
             };
         }
 

@@ -7,7 +7,7 @@ export const EDIT_PAGE_JS = `
 
     function getContainers() {
         var containers = [];
-        var containersNodeList = document.querySelectorAll('div[data-dot-object="container"]');
+        var containersNodeList = document.querySelectorAll('[data-dot-object="container"]');
 
         for (var i = 0; i < containersNodeList.length; i++) {
             containers.push(containersNodeList[i]);
@@ -19,7 +19,7 @@ export const EDIT_PAGE_JS = `
     function getDotNgModel() {
         var model = [];
         getContainers().forEach(function(container) {
-            var contentlets = Array.from(container.querySelectorAll('div[data-dot-object="contentlet"]'));
+            var contentlets = Array.from(container.querySelectorAll('[data-dot-object="contentlet"]'));
 
             model.push({
                 identifier: container.dataset.dotIdentifier,
@@ -43,7 +43,7 @@ export const EDIT_PAGE_JS = `
     }
 
     function checkIfContentletIsUnique(el, target) {
-        return Array.from(target.querySelectorAll("div[data-dot-object='contentlet']:not(.gu-transit)"))
+        return Array.from(target.querySelectorAll("[data-dot-object='contentlet']:not(.gu-transit)"))
             .map(node => node.dataset.dotInode).indexOf(el.dataset.dotInode) === -1;
     }
 

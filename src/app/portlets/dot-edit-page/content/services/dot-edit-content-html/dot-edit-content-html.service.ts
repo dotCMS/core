@@ -136,8 +136,8 @@ export class DotEditContentHtmlService {
     removeContentlet(container: DotPageContainer, content: DotPageContent): void {
         const doc = this.getEditPageDocument();
         const selector = [
-            `div[data-dot-object="container"][data-dot-identifier="${container.identifier}"][data-dot-uuid="${container.uuid}"] `,
-            `div[data-dot-object="contentlet"][data-dot-inode="${content.inode}"]`
+            `[data-dot-object="container"][data-dot-identifier="${container.identifier}"][data-dot-uuid="${container.uuid}"] `,
+            `[data-dot-object="contentlet"][data-dot-inode="${content.inode}"]`
         ].join('');
         const contenletEl = doc.querySelector(selector);
         contenletEl.remove();
@@ -157,7 +157,7 @@ export class DotEditContentHtmlService {
         const doc = this.getEditPageDocument();
         const currentContentlets: HTMLElement[] = Array.from(
             doc.querySelectorAll(
-                `div[data-dot-object="contentlet"][data-dot-identifier="${contentlet.identifier}"]`
+                `[data-dot-object="contentlet"][data-dot-identifier="${contentlet.identifier}"]`
             )
         );
         if (this.remoteRendered) {
@@ -196,7 +196,7 @@ export class DotEditContentHtmlService {
     renderAddedContentlet(contentlet: DotPageContent, eventType: PageModelChangeEventType): void {
         const doc = this.getEditPageDocument();
         const containerEl: HTMLElement = doc.querySelector(
-            `div[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${this.currentContainer.uuid}"]`
+            `[data-dot-object="container"][data-dot-identifier="${this.currentContainer.identifier}"][data-dot-uuid="${this.currentContainer.uuid}"]`
         );
 
         if (this.isContentExistInContainer(contentlet, containerEl)) {
@@ -231,7 +231,7 @@ export class DotEditContentHtmlService {
         const doc = this.getEditPageDocument();
         const containerEl: HTMLElement = doc.querySelector(
             [
-                'div[data-dot-object="container"]',
+                '[data-dot-object="container"]',
                 `[data-dot-identifier="${this.currentContainer.identifier}"]`,
                 `[data-dot-uuid="${this.currentContainer.uuid}"]`
             ].join('')
@@ -373,7 +373,7 @@ export class DotEditContentHtmlService {
     }
 
     private getCurrentContentlet(target: HTMLElement): DotPageContent {
-        const contentlet = <HTMLElement>target.closest('div[data-dot-object="contentlet"]');
+        const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
         return {
             identifier: contentlet.dataset.dotIdentifier,
             inode: contentlet.dataset.dotInode,
@@ -425,7 +425,7 @@ export class DotEditContentHtmlService {
             this.rowsMaxHeight[index] = 0;
             return containerRow.map((container: DotPageContainer) => {
                 const querySelector = [
-                    `div[data-dot-object="container"]`,
+                    `[data-dot-object="container"]`,
                     `[data-dot-identifier="${container.identifier}"]`,
                     `[data-dot-uuid="${container.uuid}"]`
                 ].join('');
@@ -449,7 +449,7 @@ export class DotEditContentHtmlService {
         contentlet: DotPageContent,
         containerEL: HTMLElement
     ): boolean {
-        const contentsSelector = `div[data-dot-object="contentlet"]`;
+        const contentsSelector = `[data-dot-object="contentlet"]`;
         const currentContentlets: HTMLElement[] = <HTMLElement[]>(
             Array.from(containerEL.querySelectorAll(contentsSelector).values())
         );
@@ -459,7 +459,7 @@ export class DotEditContentHtmlService {
     }
 
     private isFormExistInContainer(form: DotCMSContentType, containerEL: HTMLElement): boolean {
-        const contentsSelector = `div[data-dot-object="contentlet"]`;
+        const contentsSelector = `[data-dot-object="contentlet"]`;
         const currentContentlets: HTMLElement[] = <HTMLElement[]>(
             Array.from(containerEL.querySelectorAll(contentsSelector).values())
         );
@@ -532,7 +532,7 @@ export class DotEditContentHtmlService {
     private buttonClickHandler(target: HTMLElement, type: string) {
         this.updateContentletInode = this.shouldUpdateContentletInode(target);
 
-        const container = <HTMLElement>target.closest('div[data-dot-object="container"]');
+        const container = <HTMLElement>target.closest('[data-dot-object="container"]');
 
         this.iframeActions$.next({
             name: type,
@@ -673,7 +673,7 @@ export class DotEditContentHtmlService {
     private removeCurrentContentlet(): void {
         const doc = this.getEditPageDocument();
         const contentlets = doc.querySelectorAll(
-            `div[data-dot-object="contentlet"][data-dot-inode="${this.currentContentlet.inode}"]`
+            `[data-dot-object="contentlet"][data-dot-inode="${this.currentContentlet.inode}"]`
         );
 
         contentlets.forEach((contentlet) => {
@@ -684,7 +684,7 @@ export class DotEditContentHtmlService {
     private renderRelocatedContentlet(relocateInfo: DotRelocatePayload): void {
         const doc = this.getEditPageDocument();
         const contenletEl: HTMLElement = doc.querySelector(
-            `div[data-dot-object="contentlet"][data-dot-inode="${relocateInfo.contentlet.inode}"]`
+            `[data-dot-object="contentlet"][data-dot-inode="${relocateInfo.contentlet.inode}"]`
         );
 
         contenletEl.insertAdjacentElement('afterbegin', this.getLoadingIndicator());

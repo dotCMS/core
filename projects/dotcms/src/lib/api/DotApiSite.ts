@@ -15,7 +15,8 @@ export class DotApiSite {
         return this.dotCMSHttpClient
             .request({
                 url: `/api/v1/site/currentSite`
-            }).then(async (response: Response) => {
+            })
+            .then(async (response: Response) => {
                 if (response.status === 200) {
                     const data = await response.json();
                     const { map, ...site } = data.entity;
@@ -24,7 +25,7 @@ export class DotApiSite {
 
                 throw <DotCMSError>{
                     message: await response.text(),
-                    status: response.status
+                    statusCode: response.status
                 };
             });
     }

@@ -51,7 +51,7 @@ export const getEditPageCss = (timestampId: string): string => {
         background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQElEQVQoU2NkIAIEH/r5n5GQOpCitXbsjHgVwhSBDMOpEFkRToXoirAqxKYIQyEuRSgK8SmCKySkCKyQGEUghQCQPycYlScX0wAAAABJRU5ErkJggg==") !important;
     }
 
-    ${timestampId} div[data-dot-object="edit-content"] {
+    ${timestampId} [data-dot-object="edit-content"] {
         background-image: url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjNDQ0NDQ0IiBoZWlnaHQ9IjE4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gICAgPHBhdGggZD0iTTMgMTcuMjVWMjFoMy43NUwxNy44MSA5Ljk0bC0zLjc1LTMuNzVMMyAxNy4yNXpNMjAuNzEgNy4wNGMuMzktLjM5LjM5LTEuMDIgMC0xLjQxbC0yLjM0LTIuMzRjLS4zOS0uMzktMS4wMi0uMzktMS40MSAwbC0xLjgzIDEuODMgMy43NSAzLjc1IDEuODMtMS44M3oiLz4gICAgPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==) !important;
         background-position: center !important;
         background-repeat: no-repeat !important;
@@ -66,7 +66,7 @@ export const getEditPageCss = (timestampId: string): string => {
         z-index: 2147483647 !important;
     }
 
-    ${timestampId} div[data-dot-object="edit-content"]:hover {
+    ${timestampId} [data-dot-object="edit-content"]:hover {
         background-color: rgba(68, 68, 68, 0.1) !important;
         opacity: 1 !important;
     }

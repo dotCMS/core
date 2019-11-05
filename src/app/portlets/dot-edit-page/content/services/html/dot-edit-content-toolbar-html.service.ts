@@ -55,7 +55,7 @@ export class DotEditContentToolbarHtmlService {
             )
             .subscribe((isEnterpriseLicense: boolean) => {
                 const containers = Array.from(
-                    doc.querySelectorAll('div[data-dot-object="container"]')
+                    doc.querySelectorAll('[data-dot-object="container"]')
                 );
                 containers.forEach((container: HTMLElement) => {
                     const containerToolbar = document.createElement('div');
@@ -89,7 +89,7 @@ export class DotEditContentToolbarHtmlService {
                 'editpage.content.contentlet.menu.remove'
             ])
             .subscribe(() => {
-                const contentletQuery = `div[data-dot-object="contentlet"][data-dot-has-page-lang-version="true"]`;
+                const contentletQuery = `[data-dot-object="contentlet"][data-dot-has-page-lang-version="true"]`;
                 const contentlets: HTMLDivElement[] = Array.from(
                     doc.querySelectorAll(contentletQuery)
                 );
@@ -104,7 +104,9 @@ export class DotEditContentToolbarHtmlService {
         const contentletToolbar = document.createElement('div');
         contentletToolbar.classList.add('dotedit-contentlet__toolbar');
 
-        const vtls: HTMLElement[] = Array.from(contentlet.querySelectorAll('div[data-dot-object="vtl-file"]'));
+        const vtls: HTMLElement[] = Array.from(
+            contentlet.querySelectorAll('[data-dot-object="vtl-file"]')
+        );
 
         if (vtls.length) {
             contentletToolbar.innerHTML += this.getEditVtlButtons(vtls);

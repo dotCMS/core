@@ -1,8 +1,7 @@
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
 import { DotCMSError } from '../models';
 
-
- /**
+/**
  * DotCMS {@link https://dotcms.com/docs/latest/widgets | widgets handler}
  */
 export class DotApiWidget {
@@ -20,14 +19,15 @@ export class DotApiWidget {
         return this.dotCMSHttpClient
             .request({
                 url: `/api/widget/id/${widgetId}`
-            }).then(async (response: Response) => {
+            })
+            .then(async (response: Response) => {
                 if (response.status === 200) {
                     return response.text();
                 }
 
                 throw <DotCMSError>{
                     message: await response.text(),
-                    status: response.status
+                    statusCode: response.status
                 };
             });
     }

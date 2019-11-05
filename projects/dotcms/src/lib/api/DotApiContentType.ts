@@ -21,7 +21,7 @@ export class DotApiContentType {
         if (response.status !== 200) {
             throw <DotCMSError>{
                 message: await response.text(),
-                status: response.status
+                statusCode: response.status
             };
         }
 

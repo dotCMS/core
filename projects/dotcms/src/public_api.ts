@@ -12,7 +12,6 @@ import { DotCMSConfigurationParams, DotCMSFormConfig } from './lib/models';
 import { DotApiContent } from './lib/api/DotApiContent';
 import { DotApiContentType } from './lib/api/DotApiContentType';
 import { DotApiForm } from './lib/api/DotApiForm';
-import { defineCustomElements } from 'dotcms-field-elements/dist/loader';
 
 export interface DotCMSApp {
     auth: DotApiAuthorization;
@@ -23,7 +22,7 @@ export interface DotCMSApp {
     nav: DotApiNavigation;
     page: DotApiPage;
     site: DotApiSite;
-    form: { get: (formConfig: DotCMSFormConfig, win?: Window) => DotApiForm };
+    form: (formConfig: DotCMSFormConfig, win?: Window) => DotApiForm;
     widget: DotApiWidget;
     config: DotApiConfiguration;
     language: DotApiLanguage;
@@ -35,6 +34,7 @@ export const initDotCMS = (config: DotCMSConfigurationParams): DotCMSApp => {
     const apiConfig = new DotApiConfiguration(httpClient);
     const apiLanguage = new DotApiLanguage(apiConfig);
     const content = new DotApiContent(httpClient);
+    const dotApiContentType = new DotApiContentType(httpClient);
 
     return {
         auth: new DotApiAuthorization(),
@@ -43,17 +43,7 @@ export const initDotCMS = (config: DotCMSConfigurationParams): DotCMSApp => {
         contentType: new DotApiContentType(httpClient),
         esSearch: new DotApiElasticSearch(httpClient),
         event: new DotApiEvent(),
-        form: {
-            get: (formConfig: DotCMSFormConfig) => {
-                const dotApiContentType = new DotApiContentType(httpClient);
-                return new DotApiForm(
-                    dotApiContentType,
-                    formConfig,
-                    content,
-                    defineCustomElements,
-                );
-            }
-        },
+        form: (formConfig: DotCMSFormConfig) => new DotApiForm(dotApiContentType, formConfig),
         language: apiLanguage,
         nav: new DotApiNavigation(httpClient),
         page: new DotApiPage(httpClient, apiLanguage),

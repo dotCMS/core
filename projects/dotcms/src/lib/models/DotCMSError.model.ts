@@ -1,4 +1,4 @@
 export interface DotCMSError {
-    status: number;
+    statusCode: number;
     message: string;
 }

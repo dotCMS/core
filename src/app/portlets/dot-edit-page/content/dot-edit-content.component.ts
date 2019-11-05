@@ -81,9 +81,11 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
                 'remote-render-edit': ({ pathname }) => {
+                    console.log('remote-render-edit', pathname);
                     this.dotRouterService.goToEditPage(pathname.slice(1));
                 },
                 'load-edit-mode-page': (pageRendered: DotPageRender) => {
+                    console.log('load-edit-mode-page', pageRendered.page.pageURI);
                     /*
                         This is the events that gets emitted from the backend when the user
                         browse from the page internal links

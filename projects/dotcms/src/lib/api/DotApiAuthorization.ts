@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import { DotCMSAuthorizationLoginParams, DotCMSError } from '../models';
 
-function getErrorMessage(data: {[key: string]: any}) {
+function getErrorMessage(data: { [key: string]: any }) {
     if (data.errors) {
         return data.errors[0].message;
     }
@@ -16,7 +16,6 @@ function getErrorMessage(data: {[key: string]: any}) {
  *
  */
 export class DotApiAuthorization {
-
     /**
      * Given user, password and expiration date to get a DotCMS Autorization Token
      */
@@ -42,7 +41,7 @@ export class DotApiAuthorization {
 
             throw <DotCMSError>{
                 message: getErrorMessage(data),
-                status: res.status
+                statusCode: res.status
             };
         });
     }

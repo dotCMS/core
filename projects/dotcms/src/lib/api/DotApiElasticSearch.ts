@@ -19,19 +19,21 @@ export class DotApiElasticSearch {
      *
      */
     search(params: DotCMSElasticSearchParams): Promise<DotCMSElasticSearchResult> {
-        return this.dotCMSHttpClient.request({
-            url: '/api/es/search',
-            method: 'POST',
-            body: getEsQuery(params)
-        }).then(async (response: Response) => {
-            if (response.status === 200) {
-                return response.json();
-            }
+        return this.dotCMSHttpClient
+            .request({
+                url: '/api/es/search',
+                method: 'POST',
+                body: getEsQuery(params)
+            })
+            .then(async (response: Response) => {
+                if (response.status === 200) {
+                    return response.json();
+                }
 
-            throw <DotCMSError>{
-                message: await response.text(),
-                status: response.status
-            };
-        });
+                throw <DotCMSError>{
+                    message: await response.text(),
+                    statusCode: response.status
+                };
+            });
     }
 }

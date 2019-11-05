@@ -25,7 +25,7 @@ export class DotApiNavigation {
 
                 throw <DotCMSError>{
                     message: await res.text(),
-                    status: res.status
+                    statusCode: res.status
                 };
             });
     }

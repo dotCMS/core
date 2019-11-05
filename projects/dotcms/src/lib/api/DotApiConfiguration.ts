@@ -12,20 +12,22 @@ export class DotApiConfiguration {
         this.dotCMSHttpClient = httpClient;
     }
 
+    // TODO: CATCH THIS ERROR
     get(): Promise<DotCMSConfigurationItem> {
-        return this.dotCMSHttpClient.request({
-            url: '/api/v1/configuration'
-        })
-        .then(async (response: Response) => {
-            if (response.status === 200) {
-                const data = await response.json();
-                return data.entity;
-            }
+        return this.dotCMSHttpClient
+            .request({
+                url: '/api/v1/configuration'
+            })
+            .then(async (response: Response) => {
+                if (response.status === 200) {
+                    const data = await response.json();
+                    return data.entity;
+                }
 
-            throw <DotCMSError>{
-                message: await response.text(),
-                status: response.status
-            };
-        });
+                throw <DotCMSError>{
+                    message: await response.text(),
+                    statusCode: response.status
+                };
+            });
     }
 }
