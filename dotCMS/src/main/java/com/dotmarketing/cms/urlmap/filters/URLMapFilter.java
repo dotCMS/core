@@ -77,11 +77,7 @@ public class URLMapFilter implements Filter {
         }
 
         if (!timeMachine) {
-            try {
-                loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
-            } catch (Exception e) {
-                Logger.error(this, "Error retrieving logged in user", e);
-            }
+            loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
         }
 
         if (timeMachine || (null == loggedInUser || !loggedInUser.isBackendUser())) {

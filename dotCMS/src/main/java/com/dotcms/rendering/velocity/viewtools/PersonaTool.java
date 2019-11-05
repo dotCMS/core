@@ -44,7 +44,7 @@ public class PersonaTool implements ViewTool {
 		        boolean ADMIN_MODE =   PageMode.get(request) .isAdmin;
 				try {
 					user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
-				} catch (DotRuntimeException | PortalException | SystemException e) {
+				} catch (DotRuntimeException e) {
 					Logger.error(this.getClass(), e.getMessage());
 				}
 			}
