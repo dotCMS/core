@@ -43,15 +43,15 @@ public class ContentMapComparator implements Comparator<Contentlet> {
 
             if (value1 == null || value2 == null) {
                 return ret;
-            } else if (value1 instanceof Integer) {
+            } else if (value1 instanceof Integer && value2 instanceof Integer) {
                 ret = ((Integer)value1).compareTo((Integer)value2);
-            } else if (value1 instanceof Long) {
+            } else if (value1 instanceof Long && value2 instanceof Long) {
                 ret = ((Long)value1).compareTo((Long)value2);
-            } else if (value1 instanceof Date) {
+            } else if (value1 instanceof Date && value2 instanceof Date) {
                 ret = ((Date)value1).compareTo((Date)value2);
-            } else if (value1 instanceof Float) {
+            } else if (value1 instanceof Float && value2 instanceof Float) {
                 ret = ((Float)value1).compareTo((Float)value2);
-            } else if (value1 instanceof Boolean) {
+            } else if (value1 instanceof Boolean && value2 instanceof Boolean) {
                 ret = ((Boolean)value1).compareTo((Boolean)value2);
             } else {
                 ret = ((String)value1).compareTo((String)value2);

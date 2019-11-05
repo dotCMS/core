@@ -1444,6 +1444,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
             String sortBy)
             throws DotDataException, DotSecurityException {
+        Logger.warn(this,
+                "This implementation of ContentletAPI.filterRelatedContent is deprecated and no longer respects the sort. "
+                        + "Please, use any of the getRelatedContent implementations existing in the ContentletAPI instead ");
         return filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent, limit, offset);
     }
 
