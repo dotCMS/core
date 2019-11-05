@@ -25,7 +25,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -183,24 +182,22 @@ public class ContentUtils {
 		            query=query.replaceAll("\\+live\\:true", "").replaceAll("\\+working\\:true", "");
 		            String ffdate=ESMappingAPIImpl.datetimeFormat.format(futureDate);
 		            
-		            String notexpired=" +expdate:["+ffdate+" TO 29990101000000] ";
+		            String notexpired=" +expdate_dotraw:["+ffdate+" TO 29990101000000] ";
 		            String wquery=query + " +working:true " +
-		            		"+pubdate:["+ESMappingAPIImpl.datetimeFormat.format(new Date())+
+		            		"+pubdate_dotraw:["+ESMappingAPIImpl.datetimeFormat.format(new Date())+
 		            				" TO "+ffdate+"] "+notexpired;
 		            String lquery=query + " +live:true " + notexpired;
 		            
-		            PaginatedArrayList<Contentlet> wc=(PaginatedArrayList<Contentlet>)conAPI.search(wquery, limit, offset, sort, user, respectFrontendRoles);
-		            PaginatedArrayList<Contentlet> lc=(PaginatedArrayList<Contentlet>)conAPI.search(lquery, limit, offset, sort, user, respectFrontendRoles);
+		            PaginatedArrayList<Contentlet> wc = (PaginatedArrayList<Contentlet>)conAPI.search(wquery, limit, offset, sort, user, respectFrontendRoles);
+		            PaginatedArrayList<Contentlet> lc = (PaginatedArrayList<Contentlet>)conAPI.search(lquery, limit, offset, sort, user, respectFrontendRoles);
 		            ret.setQuery(lquery);
 		            // merging both results avoiding repeated inodes
-		            Set<String> inodes=new HashSet<String>();
-		            contentlets=new ArrayList<Contentlet>();
-		            ret.setTotalResults(
-		                    wc.getTotalResults()>lc.getTotalResults() ? 
-		                            wc.getTotalResults() : lc.getTotalResults());
-		            contentlets.addAll(wc);
-		            for(Contentlet cc : wc) 
+		            Set<String> inodes=new HashSet<>();
+		            contentlets=new ArrayList<>(wc);
+		            ret.setTotalResults(Math.max(wc.getTotalResults(), lc.getTotalResults()));
+		            for(Contentlet cc : wc) {
 		                inodes.add(cc.getInode());
+		            }
 		            for(Contentlet cc : lc) {
 		                if(!inodes.contains(cc.getInode())) {
 		                    contentlets.add(cc);
