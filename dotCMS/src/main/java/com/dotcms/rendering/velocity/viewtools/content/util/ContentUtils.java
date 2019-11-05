@@ -167,7 +167,7 @@ public class ContentUtils {
 		}
 		
 		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate){
-			return pull(query, offset, limit, sort, user, tmDate, false);
+			return pull(query, offset, limit, sort, user, tmDate, PageMode.get().respectAnonPerms);
 		}
 
 		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate, boolean respectFrontendRoles){
