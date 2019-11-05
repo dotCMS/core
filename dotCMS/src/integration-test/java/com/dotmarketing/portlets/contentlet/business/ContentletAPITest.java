@@ -21,6 +21,7 @@ import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -6761,27 +6762,28 @@ public class ContentletAPITest extends ContentletBaseTest {
             CacheLocator.getContentletCache().remove(commentsContentlet);
             CacheLocator.getContentletCache().remove(newsContentlet);
 
+            ESContentletAPIImpl contentletAPIImpl = new ESContentletAPIImpl();
             //Pull related content from comment child
-            List<Contentlet> result = contentletAPI
+            List<Contentlet> result = contentletAPIImpl
                     .filterRelatedContent(commentsContentlet, relationship, user, false, false, -1,
-                            -1, null);
+                            -1);
             assertNotNull(result);
             assertTrue(result.size() == 1);
             assertEquals(newsContentlet.getIdentifier(), result.get(0).getIdentifier());
 
             //pulling content from parent (English version)
-            result = contentletAPI
+            result = contentletAPIImpl
                     .filterRelatedContent(newsContentlet, relationship, user, false, false, -1,
-                            -1, null);
+                            -1);
 
             assertNotNull(result);
             assertTrue(result.size() == 1);
             assertEquals(commentsContentlet.getIdentifier(), result.get(0).getIdentifier());
 
             //pulling content from parent (Spanish version)
-            result = contentletAPI
+            result = contentletAPIImpl
                     .filterRelatedContent(newsContentletInSpanish, relationship, user, false, false, -1,
-                            -1, null);
+                            -1);
 
             assertNotNull(result);
             assertTrue(result.size() == 1);

@@ -841,8 +841,7 @@ public interface ContentletAPI {
 
 
     /**
-     * Internally called by getRelatedContent methods (handles all the logic to filter by parents or children)
-     * @param contentlet
+     * @deprecated This method should not be exposed. Use ContentletAPI.getRelated variations instead     * @param contentlet
      * @param rel
      * @param user
      * @param respectFrontendRoles
@@ -854,6 +853,7 @@ public interface ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Deprecated
     List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
             User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
             String sortBy)

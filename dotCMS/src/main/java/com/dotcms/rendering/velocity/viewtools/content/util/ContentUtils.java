@@ -553,7 +553,7 @@ public class ContentUtils {
                     //pulling children
                     final List<Contentlet> relatedContent = conAPI
                             .getRelatedContent(contentlet, relationship, !pullParents, user,
-                                    true, language, live);
+                                    true, -1, -1, sort, language, live);
 
                     if (relatedContent.isEmpty()) {
                         return Collections.emptyList();
@@ -563,7 +563,7 @@ public class ContentUtils {
                             .stream().map(cont -> cont.getIdentifier()).collect(
                                     Collectors.toList()))).append(")");
 
-                    final List<String> results = conAPI.searchIndex(pullQuery.toString(), limit,offset, null, user, true)
+                    final List<String> results = conAPI.searchIndex(pullQuery.toString(), limit,offset, sort, user, true)
                                     .stream()
                                     .map(cs-> cs.getIdentifier()).collect(Collectors.toList());
                     
@@ -571,8 +571,7 @@ public class ContentUtils {
                 } 
                 
                 //pulling parents
-                pullQuery.append(" +" + relationshipName + ":"
-                        + contentletIdentifier);
+                pullQuery.append(" +" + relationshipName + ":" + contentletIdentifier);
                 
                 return pull(pullQuery.toString(), offset, limit, sort, user, tmDate, true);
 
@@ -599,7 +598,8 @@ public class ContentUtils {
     }
 
     /**
-	 * Returns a list of related content given a Relationship and additional filtering criteria
+	 * @deprecated This method does not work for self related content. Use another pullRelatedField implementation in {@link ContentUtils}
+     * Returns a list of related content given a Relationship and additional filtering criteria
 	 * @param relationship
 	 * @param contentletIdentifier - Identifier of the contentlet
 	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
@@ -610,6 +610,7 @@ public class ContentUtils {
 	 * @param tmDate
 	 * @return Returns empty List if no results are found
 	 */
+    @Deprecated
 	public static List<Contentlet> pullRelatedField(final Relationship relationship,
 			final String contentletIdentifier, final String condition, final int limit,
 			final int offset, final String sort, final User user, final String tmDate) {
@@ -633,10 +634,10 @@ public class ContentUtils {
      */
     public static List<Contentlet> pullRelatedField(final Relationship relationship,
             final String contentletIdentifier, final String condition, final int limit,
-            final int offset, final String sort, final User user, final String tmDate,
+            final int offset, final String sort, final User user, final String tmDate, final boolean pullParents,
             final long language, final Boolean live) {
         return getPullResults(relationship, contentletIdentifier, condition, limit, offset, sort,
-                user, tmDate, false, language, live);
+                user, tmDate, pullParents, language, live);
     }
 
     /**

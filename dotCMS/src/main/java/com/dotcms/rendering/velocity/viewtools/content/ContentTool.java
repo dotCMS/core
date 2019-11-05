@@ -439,9 +439,11 @@ public class ContentTool implements ViewTool {
                             fieldVariable.split("\\" + StringPool.PERIOD)[1]);
             final Relationship relationship = APILocator.getRelationshipAPI()
                     .getRelationshipFromField(field, user);
+
+            final boolean pullParents = APILocator.getRelationshipAPI().isParentField(relationship, field);
             List<Contentlet> cons = ContentUtils
                     .pullRelatedField(relationship, contentletIdentifier,
-                            addDefaultsToQuery(condition), limit, offset, sort, user, tmDate,
+                            addDefaultsToQuery(condition), limit, offset, sort, user, tmDate, pullParents,
                             language.getId(), EDIT_OR_PREVIEW_MODE ? null : true);
 
             for (Contentlet cc : cons) {
