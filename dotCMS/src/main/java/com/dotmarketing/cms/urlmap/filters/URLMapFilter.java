@@ -21,15 +21,23 @@ import com.dotmarketing.cms.urlmap.URLMapAPIImpl;
 import com.dotmarketing.cms.urlmap.URLMapInfo;
 import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
 import com.dotmarketing.filters.Constants;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.util.Optional;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import org.apache.oro.text.regex.MalformedPatternException;
 import org.jetbrains.annotations.Nullable;
-
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.util.*;
 
 /**
  * This filter handles all requests regarding URL Maps. These URL maps on
@@ -57,9 +65,26 @@ public class URLMapFilter implements Filter {
                          final ServletResponse res,
                          final FilterChain chain) throws IOException, ServletException {
 
-        final HttpServletRequest request   = (HttpServletRequest) req;
+        final HttpServletRequest request = (HttpServletRequest) req;
+        HttpSession session = request.getSession(Boolean.FALSE);
 
-        if (!APILocator.getLoginServiceAPI().isLoggedIn(request)) {
+        User loggedInUser = null;
+
+        boolean timeMachine = Boolean.FALSE;
+        if (null != session) {
+            //Validate if it is a time machine request
+            timeMachine = session.getAttribute("tm_date") != null;
+        }
+
+        if (!timeMachine) {
+            try {
+                loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+            } catch (Exception e) {
+                Logger.error(this, "Error retrieving logged in user", e);
+            }
+        }
+
+        if (timeMachine || (null == loggedInUser || !loggedInUser.isBackendUser())) {
             try {
 
                 final long languageId = this.languageWebAPI.getLanguage(request).getId();
