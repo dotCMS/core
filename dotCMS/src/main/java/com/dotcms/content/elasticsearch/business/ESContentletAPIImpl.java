@@ -145,6 +145,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.liferay.portal.NoSuchUserException;
@@ -1446,8 +1447,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent, limit, offset);
     }
 
+    @VisibleForTesting
     @CloseDBIfOpened
-    public List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
+    List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
             User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset)
             throws DotDataException, DotSecurityException {
 
