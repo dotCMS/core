@@ -1857,7 +1857,7 @@ public interface ContentletAPIPreHook {
     }
 
     /**
-     * Internally called by getRelatedContent methods (handles all the logic to filter by parents or children)
+     * @deprecated This method should not be exposed. Use ContentletAPI.getRelated variations instead
      * @param contentlet
      * @param rel
      * @param user
@@ -1870,6 +1870,7 @@ public interface ContentletAPIPreHook {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Deprecated
     default boolean  filterRelatedContent(Contentlet contentlet, Relationship rel,
             User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
             String sortBy)
