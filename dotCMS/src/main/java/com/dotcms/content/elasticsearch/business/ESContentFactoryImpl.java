@@ -66,6 +66,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -900,13 +901,30 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @Override
     protected List<Contentlet> findByStructure(String structureInode, Date maxDate, int limit,
             int offset) throws DotDataException, DotStateException, DotSecurityException {
-        HibernateUtil hu = new HibernateUtil();
-        hu.setQuery("select inode from inode in class "
-                + com.dotmarketing.portlets.contentlet.business.Contentlet.class.getName() +
-                ", contentletvi in class " + ContentletVersionInfo.class.getName() +
-                " where type = 'contentlet' and structure_inode = '" + structureInode + "' " +
-                (maxDate!= null?" and mod_date <= '" + maxDate + "' ":"") +
-                " and contentletvi.identifier=inode.identifier and contentletvi.workingInode=inode.inode ");
+        final HibernateUtil hu = new HibernateUtil();
+        final StringBuilder select = new StringBuilder();
+        select.append("select inode from inode in class ")
+                .append(com.dotmarketing.portlets.contentlet.business.Contentlet.class.getName())
+                .append(", contentletvi in class ").append(ContentletVersionInfo.class.getName())
+                .append(" where type = 'contentlet' and structure_inode = '")
+                .append(structureInode).append("' " );
+
+        if (maxDate != null){
+            final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            if (DbConnectionFactory.isOracle()) {
+                select.append(" AND mod_date<=to_date('");
+                select.append(format.format(maxDate));
+                select.append("', 'YYYY-MM-DD HH24:MI:SS')");
+            } else {
+                select.append(" AND mod_date<='");
+                select.append(format.format(maxDate));
+                select.append("'");
+            }
+        }
+
+        select.append(" and contentletvi.identifier=inode.identifier and contentletvi.workingInode=inode.inode ");
+        hu.setQuery(select.toString());
+
         if (offset > 0) {
             hu.setFirstResult(offset);
         }
@@ -2367,7 +2385,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             ps.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
-            try(ResultSet rs = ps.executeQuery();)
+            try(ResultSet rs = ps.executeQuery())
             {
             	PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate());
                 for (int i = 1; rs.next(); i++) {
@@ -2382,6 +2400,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 }
 
                 ps2.executeBatch(); // insert remaining records
+            } catch (SQLException e) {
+                Logger.error(this, String.format("Error clearing field '%s' for Content Type with ID: %s",
+                        field.getVelocityVarName(), structureInode), e);
+                throw new DotDataException(String.format("Error clearing field '%s' for Content Type with ID: %s",
+                        field.getVelocityVarName(), structureInode), e);
             }
 
         } catch (SQLException e) {
@@ -2446,7 +2469,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     whereField.append(field.getFieldContentlet()).append(" != ");
                 }
             } else {
-                whereField.append(field.getFieldContentlet()).append(" != ");
+                if (field.getFieldContentlet().contains("text") && DbConnectionFactory.isOracle()){
+                    whereField.append(" TRIM(").append(field.getFieldContentlet()).append(") IS NOT NULL ");
+                } else{
+                    whereField.append(field.getFieldContentlet()).append(" != ");
+                }
             }
         }
 
@@ -2481,14 +2508,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 whereField.append(" > 0");
             }else {
                 update.append("''");
-                whereField.append("''");
+                if (!(field.getFieldContentlet().contains("text") && DbConnectionFactory.isOracle())){
+                    whereField.append("''");
+                }
             }
         }
 
         select.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");
 
         if (maxDate != null){
-            select.append(" AND mod_date <= '").append(maxDate).append("'");
+            final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            if (DbConnectionFactory.isOracle()) {
+                select.append(" AND mod_date<=to_date('");
+                select.append(format.format(maxDate));
+                select.append("', 'YYYY-MM-DD HH24:MI:SS')");
+            } else {
+                select.append(" AND mod_date<='");
+                select.append(format.format(maxDate));
+                select.append("'");
+            }
         }
 
         update.append(" WHERE inode = ?");
