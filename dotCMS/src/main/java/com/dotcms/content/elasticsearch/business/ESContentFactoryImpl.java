@@ -915,6 +915,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 select.append(" AND mod_date<=to_date('");
                 select.append(format.format(maxDate));
                 select.append("', 'YYYY-MM-DD HH24:MI:SS')");
+            } else if (DbConnectionFactory.isMsSql()){
+                    select.append(" AND mod_date <= CAST('");
+                    select.append(format.format(maxDate));
+                    select.append("' AS DATETIME)");
             } else {
                 select.append(" AND mod_date<='");
                 select.append(format.format(maxDate));
@@ -2516,12 +2520,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         select.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");
 
-        if (maxDate != null){
+        if (maxDate != null) {
             final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             if (DbConnectionFactory.isOracle()) {
                 select.append(" AND mod_date<=to_date('");
                 select.append(format.format(maxDate));
                 select.append("', 'YYYY-MM-DD HH24:MI:SS')");
+            } else if (DbConnectionFactory.isMsSql()){
+                select.append(" AND mod_date <= CAST('");
+                select.append(format.format(maxDate));
+                select.append("' AS DATETIME)");
             } else {
                 select.append(" AND mod_date<='");
                 select.append(format.format(maxDate));
