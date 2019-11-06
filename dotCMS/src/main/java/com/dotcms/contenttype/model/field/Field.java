@@ -99,11 +99,6 @@ public abstract class Field implements FieldIf, Serializable {
     return false;
   }
 
-    @Value.Default
-    public boolean skipRelationshipCreation() {
-        return false;
-    }
-
   @Nullable
   public abstract String owner();
 
