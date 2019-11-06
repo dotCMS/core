@@ -889,13 +889,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         if(respectFrontendRoles) {
             buffy.append("(permissions:p" + APILocator.getRoleAPI().loadCMSAnonymousRole().getId() + ".1p*) ");
-            if (user != null && !user.getUserId().equals("anonymous")) {
+            if (user != null && user.isFrontendUser()) {
                 buffy.append("(permissions:p" + APILocator.getRoleAPI().loadLoggedinSiteRole().getId() + ".1p*)");
             }
         }
         buffy.append(")");
         
-        if(user==null || "anonymous".equals(user.getUserId())) {
+        if(user==null || !user.isBackendUser()) {
             buffy.append(" +live:true ");
         }
         
