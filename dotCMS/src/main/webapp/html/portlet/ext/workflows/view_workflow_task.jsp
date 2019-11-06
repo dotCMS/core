@@ -1,3 +1,4 @@
+<%@page import="org.apache.commons.codec.digest.DigestUtils"%>
 <%@page import="com.dotmarketing.beans.WebAsset"%>
 <%@include file="/html/portlet/ext/workflows/init.jsp"%>
 
@@ -38,6 +39,17 @@ public String getPostedby(String postedBy){
 	return "unknown";
 }
 
+public String getGravatar(String postedBy){
+
+
+    try {
+        return DigestUtils.md5Hex(APILocator.getUserAPI().loadUserById(postedBy, APILocator.systemUser(), false).getEmailAddress().toLowerCase()).toString();
+
+    } catch (Exception e) {
+        
+    }
+    return "unknown";
+}
 %>
 <%
     WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
@@ -202,18 +214,27 @@ public String getPostedby(String postedBy){
     }
 
 
-     function serveFile(doStuff,conInode,velVarNm){
-
-         if(doStuff != ''){
-         window.open('/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
-         }else{
-         window.open('/contentAsset/raw-data/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
-         }
-     }
-
 
 </script>
+<style>
 
+.gravitarThingy{
+
+   position:absolute;
+    top:5px;
+    left:40px;
+   border-radius: 50%;
+   background-size: cover;
+   border:1px solid #eeeeee;
+   width:50px;
+   height:50px;
+   font-size: 24px;
+   text-align:center;
+   color:white;
+   font-weight: bold;
+   margin:auto;
+}
+</style>
 
 
 
@@ -303,10 +324,21 @@ public String getPostedby(String postedBy){
 		                    <% 
 		                        for(WorkflowTimelineItem comment : commentsHistory){ %>
 
-		                            <td style="width:200px;">
-		                                 <%=getPostedby(comment.roleId())%><br>(<%= DateUtil.prettyDateSince(comment.createdDate()) %>)
+		                            <td style="width:300px;position:relative;height:100px;">
+       
+                                            <div class="gravitarThingy" style="z-index:100;background-image:url('https://www.gravatar.com/avatar/<%=getGravatar(comment.roleId()) %>?d=blank'"></div>
+                                            <div class="gravitarThingy" style="z-index:4;color:#bbbbbb;vertical-align: middle;">
+                                            <div style="margin-top:10px;">
+                                            <%=getPostedby(comment.roleId()).substring(0,1) %>
+                                            </div></div>
+         
+                                         <div style="text-align: center; white-space: nowrap;position: absolute;bottom:5px;left:5px;right:5px;">
+                                         <%=getPostedby(comment.roleId())%><br><small>(<%= DateUtil.prettyDateSince(comment.createdDate()) %>)</small>
+                                        </div>
+                           
+		                                 
 		                            </td>
-		                             <td>
+		                             <td style="width:90%;vertical-align: top">
 		                               <div style="margin:5px;margin-top:0px;"><%= comment.commentDescription() %></div>
 		                             </td>
 		                            </td>
@@ -322,13 +354,15 @@ public String getPostedby(String postedBy){
 									 </portlet:actionURL>">
 									<input type="hidden" name="referer" value="<%= referer %>">
 									<input type="hidden" name="cmd" value="add_comment">
-									
-									<textarea id="comment" name="comment" class="mceNoEditor" rows="4" cols="60"></textarea>
-									<div class="buttonRow">
-									 <button dojoType="dijit.form.Button" type="button" onClick="dojo.byId('commentFormlet').submit()">
-									 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
-									 </button>
-									</div>
+									<div  style="max-width:600px;">
+									   <textarea id="comment" name="comment" class="mceNoEditor" rows="4" cols="60"></textarea>
+                                   
+      									<div class="buttonRow">
+      									 <button dojoType="dijit.form.Button" type="button" onClick="dojo.byId('commentFormlet').submit()">
+      									 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
+      									 </button>
+      									</div>
+                                     </div>
 									</form>
 		       
 		
@@ -376,9 +410,9 @@ public String getPostedby(String postedBy){
 		                    <tr <%=str_style %>>
 		                        <td>
 		                            <img border="0" src="/icon?i=<%= UtilMethods.encodeURIComponent(file.getFileName()) %>"> &nbsp;
-		                            <a href="#" onclick="javascript: serveFile('','<%= file.getInode()%>','fileAsset');">
+
 		                                <%= file.getFileName() %>
-		                            </a>
+		                
 		                        </td>
 		                        <td>
 		                            <button dojoType="dijit.form.Button" type="button" class="dijitButtonDanger" style="float: right;" href="javascript:removeFile('<%= file.getInode() %>')"><%= LanguageUtil.get(pageContext, "remove") %></button>
