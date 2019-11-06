@@ -54,7 +54,7 @@ public class ContentMapComparator implements Comparator<Contentlet> {
             } else if (value1 instanceof Boolean && value2 instanceof Boolean) {
                 ret = ((Boolean)value1).compareTo((Boolean)value2);
             } else {
-                ret = ((String)value1).compareTo((String)value2);
+                ret = (String.valueOf(value1)).compareTo(String.valueOf(value2));
             }
 
             if (direction.equals("asc")) {
