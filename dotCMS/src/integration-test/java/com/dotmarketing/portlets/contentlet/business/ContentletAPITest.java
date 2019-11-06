@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import static com.dotcms.datagen.TestDataUtils.getCommentsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static com.dotcms.datagen.TestDataUtils.relateContentTypes;
-import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotmarketing.business.APILocator.getContentTypeFieldAPI;
 import static java.io.File.separator;
@@ -24,6 +20,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
@@ -37,6 +34,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
@@ -1815,7 +1813,6 @@ public class ContentletAPITest extends ContentletBaseTest {
         //Cleaning the binary field
         contentletAPI.cleanField(structure, foundBinaryField, user, false);
 
-        //Validations
         assertFalse(((java.io.File) value).exists());
     }
 
@@ -3548,18 +3545,39 @@ public class ContentletAPITest extends ContentletBaseTest {
      */
     @Test
     public void testUpdatePublishExpireDatesFromIdentifier() throws Exception {
+
         final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        // set up a structure with pub/exp variables
-        Structure testStructure = createStructure( "JUnit Test Structure_" + String.valueOf( new Date().getTime() ) + "zzzvv", "junit_test_structure_" + String.valueOf( new Date().getTime() ) + "zzzvv" );
-        Field field = new Field( "JUnit Test Text", Field.FieldType.TEXT, Field.DataType.TEXT, testStructure, false, true, true, 1, false, false, false );
-        FieldFactory.saveField( field );
-        Field fieldPubDate = new Field( "Pub Date", Field.FieldType.DATE_TIME, Field.DataType.DATE, testStructure, false, true, true, 2, false, false, false );
-        FieldFactory.saveField( fieldPubDate );
-        Field fieldExpDate = new Field( "Exp Date", Field.FieldType.DATE_TIME, Field.DataType.DATE, testStructure, false, true, true, 3, false, false, false );
-        FieldFactory.saveField( fieldExpDate );
-        testStructure.setPublishDateVar(fieldPubDate.getVelocityVarName());
-        testStructure.setExpireDateVar(fieldExpDate.getVelocityVarName());
-        StructureFactory.saveStructure(testStructure);
+
+        List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+
+        com.dotcms.contenttype.model.field.Field publishField = new FieldDataGen()
+                .name("Pub Date")
+                .velocityVarName("sysPublishDate")
+                .defaultValue(null)
+                .type(DateField.class)
+                .next();
+        fields.add(publishField);
+
+        com.dotcms.contenttype.model.field.Field expireField = new FieldDataGen()
+                .name("Exp Date")
+                .velocityVarName("sysExpireDate")
+                .defaultValue(null)
+                .type(DateField.class)
+                .next();
+        fields.add(expireField);
+
+        com.dotcms.contenttype.model.field.Field textField = new FieldDataGen()
+                .name("JUnit Test Text")
+                .velocityVarName("title")
+                .next();
+        fields.add(textField);
+
+        // Creating the test content type
+        final ContentType testContentType = new ContentTypeDataGen()
+                .fields(fields)
+                .publishDateFieldVarName(publishField.variable())
+                .expireDateFieldVarName(expireField.variable())
+                .nextPersisted();
 
         // some dates to play with
 
@@ -3579,10 +3597,10 @@ public class ContentletAPITest extends ContentletBaseTest {
         // if we save using d1 & d1 then the identifier should
         // have those values after save
         Contentlet c1=new Contentlet();
-        c1.setStructureInode(testStructure.getInode());
-        c1.setStringProperty(field.getVelocityVarName(), "c1");
-        c1.setDateProperty(fieldPubDate.getVelocityVarName(), d1);
-        c1.setDateProperty(fieldExpDate.getVelocityVarName(), d2);
+        c1.setStructureInode(testContentType.inode());
+        c1.setStringProperty(textField.variable(), "c1");
+        c1.setDateProperty(publishField.variable(), d1);
+        c1.setDateProperty(expireField.variable(), d2);
         c1.setLanguageId(deflang);
         c1.setIndexPolicy(IndexPolicy.FORCE);
         c1=APILocator.getContentletAPI().checkin(c1, user, false);
@@ -3594,19 +3612,18 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull(ident.getSysPublishDate());
         assertNotNull(ident.getSysExpireDate());
 
-        assertTrue(dateFormat.format(d1)
-                .equals(dateFormat.format(ident.getSysPublishDate())));
-        assertTrue(dateFormat.format(d2).equals(dateFormat.format(ident.getSysExpireDate())));
+        assertEquals(dateFormat.format(d1), dateFormat.format(ident.getSysPublishDate()));
+        assertEquals(dateFormat.format(d2), dateFormat.format(ident.getSysExpireDate()));
 
 
         // if we save another language version for the same identifier
         // then the identifier should be updated with those dates d3&d4
         Contentlet c2=new Contentlet();
-        c2.setStructureInode(testStructure.getInode());
-        c2.setStringProperty(field.getVelocityVarName(), "c2");
+        c2.setStructureInode(testContentType.inode());
+        c2.setStringProperty(textField.variable(), "c2");
         c2.setIdentifier(c1.getIdentifier());
-        c2.setDateProperty(fieldPubDate.getVelocityVarName(), d3);
-        c2.setDateProperty(fieldExpDate.getVelocityVarName(), d4);
+        c2.setDateProperty(publishField.variable(), d3);
+        c2.setDateProperty(expireField.variable(), d4);
         c2.setLanguageId(altlang);
         c2.setIndexPolicy(IndexPolicy.FORCE);
         c2=APILocator.getContentletAPI().checkin(c2, user, false);
@@ -3615,36 +3632,28 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertNotNull(ident2.getSysPublishDate());
         assertNotNull(ident2.getSysExpireDate());
 
-        assertTrue(dateFormat.format(d3)
-                .equals(dateFormat.format(ident2.getSysPublishDate())));
-        assertTrue(dateFormat.format(d4)
-                .equals(dateFormat.format(ident2.getSysExpireDate())));
+        assertEquals(dateFormat.format(d3), dateFormat.format(ident2.getSysPublishDate()));
+        assertEquals(dateFormat.format(d4), dateFormat.format(ident2.getSysExpireDate()));
 
         // the other contentlet should have the same dates if we read it again
         Contentlet c11=APILocator.getContentletAPI().find(c1.getInode(), user, false);
-        assertTrue(dateFormat.format(d3).equals(dateFormat.format(c11.getDateProperty(fieldPubDate.getVelocityVarName()))));
-        assertTrue(dateFormat.format(d4).equals(dateFormat.format(c11.getDateProperty(fieldExpDate.getVelocityVarName()))));
-
+        assertEquals(dateFormat.format(d3),
+                dateFormat.format(c11.getDateProperty(publishField.variable())));
+        assertEquals(dateFormat.format(d4),
+                dateFormat.format(c11.getDateProperty(expireField.variable())));
 
         Thread.sleep(2000); // wait a bit for the index
         
         // also it should be in the index update with the new dates
-        String q="+structureName:"+testStructure.getVelocityVarName()+
+        String q = "+structureName:" + testContentType.variable() +
                 " +inode:"+c11.getInode()+
-                " +"+testStructure.getVelocityVarName()+"."+fieldPubDate.getVelocityVarName()+":"+ DateUtil.toLuceneDateTime(d3)+
-                " +"+testStructure.getVelocityVarName()+"."+fieldExpDate.getVelocityVarName()+":"+ DateUtil.toLuceneDateTime(d4);
+                " +" + testContentType.variable() + "." + publishField.variable() + ":" + DateUtil
+                .toLuceneDateTime(d3) +
+                " +" + testContentType.variable() + "." + expireField.variable() + ":" + DateUtil
+                .toLuceneDateTime(d4);
         final long count = APILocator.getContentletAPI().indexCount(q, user, false);
         assertEquals(1, count);
-        APILocator.getStructureAPI().delete(testStructure, user);
     }
-
-    private boolean compareDates(Date date1, Date date2) {
-
-        DateFormat dateFormat = SimpleDateFormat
-                .getDateTimeInstance(SimpleDateFormat.SHORT, SimpleDateFormat.SHORT);
-        return dateFormat.format(date1).equals(dateFormat.format(date2));
-    }
-
 
     @Test
     public void rangeQuery() throws Exception {
@@ -5279,7 +5288,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 false);
 
             Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(newsContent,
-                null, new ArrayList<>(), null, user, false);
+                    (ContentletRelationships) null, new ArrayList<>(), null, user, false);
 
             List<Category> existingCats = APILocator.getCategoryAPI().getParents(reCheckedinContent, user,
                 false);
@@ -5544,7 +5553,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         blogContent.setIndexPolicy(IndexPolicy.FORCE);
         blogContent.setIndexPolicyDependencies(IndexPolicy.FORCE);
         Contentlet reCheckedinContent = contentletAPI.checkinWithoutVersioning(blogContent,
-                null, null, null, user, false);
+                (ContentletRelationships) null, null, null, user, false);
 
         Relationship relationship = relationships.getRelationshipsRecords().get(0)
                 .getRelationship();
@@ -6693,99 +6702,52 @@ public class ContentletAPITest extends ContentletBaseTest {
     }
 
     @Test
-    public void testGetRelatedContentFromMultilingualContent()
-            throws DotSecurityException, DotDataException {
-
-        final ContentType news = getNewsLikeContentType("News");
-        final ContentType comments = getCommentsLikeContentType("Comments");
-        relateContentTypes(news, comments);
-
-        final ContentType newsContentType = contentTypeAPI.find("News");
-        final ContentType commentsContentType = contentTypeAPI.find("Comments");
-
-        Contentlet newsContentlet = null;
-        Contentlet newsContentletInSpanish = null;
-        Contentlet commentsContentlet = null;
-
+    public void testGetRelatedForSelfJoinsDoesNotCacheWhenPullByParentIsNull()
+            throws DotDataException, DotSecurityException, DotCacheException {
+        ContentType parentContentType = null;
         try {
-            //creates parent contentlet
-            ContentletDataGen dataGen = new ContentletDataGen(newsContentType.id());
+            final long time = System.currentTimeMillis();
+            parentContentType = createContentType("parentContentType" + time,
+                    BaseContentType.CONTENT);
 
-            //English version
-            newsContentlet = dataGen.languageId(languageAPI.getDefaultLanguage().getId())
-                    .setProperty("title", "News Test")
-                    .setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
-                    .setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+            //One side of the relationship is set parentContentType --> parentContentType (self-related as parent)
+            com.dotcms.contenttype.model.field.Field parentField = createRelationshipField("child",
+                    parentContentType.id(), parentContentType.variable());
+
+            //Setting the other side of the relationship parentContentType --> parentContentType (self-related as child)
+            com.dotcms.contenttype.model.field.Field childField = createRelationshipField("parent",
+                    parentContentType.id(),
+                    parentContentType.variable() + StringPool.PERIOD + parentField.variable());
+
+            final Relationship relationship = relationshipAPI
+                    .getRelationshipFromField(childField, user);
+
+            final ContentletDataGen dataGen = new ContentletDataGen(parentContentType.id());
+            Contentlet parentContent = dataGen.languageId(languageAPI.getDefaultLanguage().getId())
+                    .nextPersisted();
+
+            Contentlet childContent = dataGen.languageId(languageAPI.getDefaultLanguage().getId())
                     .next();
+            childContent.setRelated(childField.variable(), CollectionsUtils.list(parentContent));
 
-            //creates child contentlet
-            dataGen = new ContentletDataGen(commentsContentType.id());
-            commentsContentlet = dataGen
-                    .languageId(languageAPI.getDefaultLanguage().getId())
-                    .setProperty("title", "Comment for News")
-                    .setProperty("email", "testing@dotcms.com")
-                    .setProperty("comment", "Comment for News")
-                    .setPolicy(IndexPolicy.FORCE).nextPersisted();
+            childContent = contentletAPI.checkin(childContent, user, false);
 
-            //Saving relationship
-            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+            //Flush cache
+            CacheLocator.getRelationshipCache().removeRelationshipsByType(parentContentType);
 
-            newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentletAPI.getRelatedContent(parentContent, relationship, null, user, false);
+            contentletAPI.getRelatedContent(childContent, relationship, null, user, false);
 
-            newsContentlet = contentletAPI.checkin(newsContentlet,
-                    map(relationship, list(commentsContentlet)),
-                    null, user, false);
+            assertFalse(UtilMethods.isSet(CacheLocator.getRelationshipCache()
+                    .getRelatedContentMap(parentContent.getIdentifier())));
 
+            assertFalse(UtilMethods.isSet(CacheLocator.getRelationshipCache()
+                    .getRelatedContentMap(childContent.getIdentifier())));
 
-            //Spanish version
-            newsContentletInSpanish = contentletAPI.checkout(newsContentlet.getInode(), user, false);
-            newsContentletInSpanish.setIndexPolicy(IndexPolicy.FORCE);
-            newsContentletInSpanish.setInode("");
-            newsContentletInSpanish.setLanguageId(spanishLanguage.getId());
-
-            newsContentletInSpanish = contentletAPI.checkin(newsContentletInSpanish,  user, false);
-
-            CacheLocator.getContentletCache().remove(commentsContentlet);
-            CacheLocator.getContentletCache().remove(newsContentlet);
-
-            //Pull related content from comment child
-            List<Contentlet> result = contentletAPI
-                    .filterRelatedContent(commentsContentlet, relationship, user, false, false, -1,
-                            -1, null);
-            assertNotNull(result);
-            assertTrue(result.size() == 1);
-            assertEquals(newsContentlet.getIdentifier(), result.get(0).getIdentifier());
-
-            //pulling content from parent (English version)
-            result = contentletAPI
-                    .filterRelatedContent(newsContentlet, relationship, user, false, false, -1,
-                            -1, null);
-
-            assertNotNull(result);
-            assertTrue(result.size() == 1);
-            assertEquals(commentsContentlet.getIdentifier(), result.get(0).getIdentifier());
-
-            //pulling content from parent (Spanish version)
-            result = contentletAPI
-                    .filterRelatedContent(newsContentletInSpanish, relationship, user, false, false, -1,
-                            -1, null);
-
-            assertNotNull(result);
-            assertTrue(result.size() == 1);
-            assertEquals(commentsContentlet.getIdentifier(), result.get(0).getIdentifier());
         } finally {
-            if (newsContentlet != null && UtilMethods.isSet(newsContentlet.getInode())) {
-                ContentletDataGen.remove(newsContentlet);
+            if (parentContentType != null) {
+                contentTypeAPI.delete(parentContentType);
             }
-
-            if (newsContentletInSpanish != null && UtilMethods.isSet(newsContentletInSpanish.getInode())) {
-                ContentletDataGen.remove(newsContentletInSpanish);
-            }
-
-            if (commentsContentlet != null && UtilMethods.isSet(commentsContentlet.getInode())) {
-                ContentletDataGen.remove(commentsContentlet);
-            }
-
         }
     }
 }

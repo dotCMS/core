@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.page;
 
-import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
-import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
+import com.dotmarketing.portlets.htmlpageasset.business.render.*;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.TextField;
@@ -27,9 +26,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
-import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -40,6 +37,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -56,6 +54,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -87,6 +86,7 @@ public class PageResourceTest {
     private Container container1;
     private Container container2;
     private InitDataObject initDataObject;
+    private ContentType contentGenericType;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -159,6 +159,14 @@ public class PageResourceTest {
         APILocator.getVersionableAPI().setLive(pageAsset);
         pageAsset = HTMLPageAsset.class.cast(APILocator.getHTMLPageAssetAPI().getPageByPath(pagePath, host, defaultLang.getId(), true));
         assertNotNull(pageAsset.getIdentifier());
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        contentGenericType = contentTypeAPI.find("webPageContent");
+
+        final ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(contentGenericType.id());
+        cs.setCode("$!{body}");
+        container1 = APILocator.getContainerAPI().save(container1, list(cs), host, APILocator.systemUser(), false);
     }
 
 
@@ -776,5 +784,148 @@ public class PageResourceTest {
             }
         }
         assertNull(pageView.getViewAs().getPersona());
+    }
+
+
+    /**
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}
+     * Given Scenario: Create a page with not LIVE version, then publish the page, and then update the page to crate a
+     * new working version
+     * ExpectedResult: Should return a LIVE attribute to true just in after the page is publish
+     */
+
+    @Test()
+    public void shouldReturnLIVE() throws DotDataException, DotSecurityException {
+        when(request.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.PREVIEW_MODE.toString());
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(2, host, false);
+        HTMLPageAsset page = pageRenderTest.getPage();
+
+        when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
+
+        Response response = pageResource
+                .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
+                        String.valueOf(languageId), null);
+
+        PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertFalse(pageView.isLive());
+
+
+        //Publish the page
+        APILocator.getContentletAPI().publish(page, user, false);
+
+        response = pageResource
+                .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
+                        String.valueOf(languageId), null);
+
+        pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertTrue(pageView.isLive());
+
+        //Create a new working version
+        final Contentlet checkout = APILocator.getContentletAPI().checkout(page.getInode(), user, false);
+        APILocator.getContentletAPI().checkin(checkout, user, false);
+
+        response = pageResource
+                .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
+                        String.valueOf(languageId), null);
+
+        pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        assertTrue(pageView.isLive());
+    }
+
+
+    /**
+     * Method to test: {@link PageResource#saveLayout(HttpServletRequest, HttpServletResponse, PageForm)}
+     * Given Scenario: Create a page with a content into a container add using #parseContainer, and save a new layout to this page
+     * ExpectedResult: The content should not blows away (the UUID should kepp with the same value)
+     *
+     * @throws Exception
+     */
+    @Test
+    public void shouldKeepTheAParserContainerContentAfterLayoutSaved() throws DotDataException, DotSecurityException, IOException {
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final User systemUser = APILocator.systemUser();
+        final String modeParam = "PREVIEW_MODE";
+        when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.get(modeParam));
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        final String pageName = "testPage-"+System.currentTimeMillis();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template)
+                .languageId(languageId)
+                .pageURL(pageName)
+                .title(pageName)
+                .nextPersisted();
+
+        page.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        page.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        page.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        APILocator.getContentletAPI().publish(page, systemUser, false);
+
+        when(initDataObject.getUser()).thenReturn(systemUser);
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentGenericType.id())
+                .languageId(1)
+                .folder(folder)
+                .host(host)
+                .setProperty("title", "content1")
+                .setProperty("body", "content1")
+                .nextPersisted();
+
+        contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet1.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        APILocator.getContentletAPI().publish(contentlet1, systemUser, false);
+
+        MultiTree multiTree = new MultiTree(page.getIdentifier(), container1.getIdentifier(), contentlet1.getIdentifier(),"1",0);
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+        final Response response = pageResource
+                .render(request, this.response, page.getURI(), modeParam, null,
+                        String.valueOf(languageId), null);
+
+        final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) ((ResponseEntityView) response.getEntity()).getEntity();
+
+        assertEquals(htmlPageAssetRendered.getHtml(), "<div>content1</div><div></div>");
+
+        final ObjectMapper MAPPER = new ObjectMapper();
+        final String layoutString =
+                "{" +
+                    "\"layout\": {" +
+                        "\"body\": {" +
+                            "\"rows\": [" +
+                                "{" +
+                                    "\"columns\": [" +
+                                        "{" +
+                                            "\"leftOffset\": 1," +
+                                            "\"width\": 12," +
+                                            "\"containers\": [" +
+                                                "{" +
+                                                    "\"identifier\":\"" + container2.getIdentifier() + "\"," +
+                                                    "\"uuid\": \"1\"" +
+                                                "}" +
+                                            "]" +
+                                        "}" +
+                                    "]" +
+                                "}" +
+                             "]" +
+                          "}" +
+                    "}" +
+                "}";
+
+        final PageForm.Builder builder = MAPPER.readValue(layoutString, PageForm.Builder.class);
+        final Response layoutResponse = pageResource.saveLayout(request, this.response, builder.build());
+
+        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(page.getIdentifier());
+
+        assertEquals(1, multiTrees.size());
+        assertEquals("1", multiTrees.get(0).getRelationType());
     }
 }

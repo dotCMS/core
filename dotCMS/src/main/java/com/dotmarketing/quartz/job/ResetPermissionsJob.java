@@ -78,17 +78,12 @@ public class ResetPermissionsJob implements StatefulJob {
 		dataMap.put("permissionableId", perm.getPermissionId());
 
 		//TODO: For a major release, remove this logic and get userId as parameter
-		try {
-			if (UtilMethods.isSet(HttpServletRequestThreadLocal.INSTANCE.getRequest())){
-				userId = WebAPILocator.getUserWebAPI()
-						.getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest())
-						.getUserId();
-			}
-			dataMap.put("userId", userId);
-		} catch (PortalException | SystemException e) {
-			Logger.warn(CascadePermissionsJob.class, "Error getting user info for notification", e);
+		if (UtilMethods.isSet(HttpServletRequestThreadLocal.INSTANCE.getRequest())) {
+			userId = WebAPILocator.getUserWebAPI()
+					.getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest())
+					.getUserId();
 		}
-
+		dataMap.put("userId", userId);
 
 		final JobDetail jd = new JobDetail("ResetPermissionsJob-" + randomID, "dotcms_jobs", ResetPermissionsJob.class);
 		jd.setJobDataMap(dataMap);

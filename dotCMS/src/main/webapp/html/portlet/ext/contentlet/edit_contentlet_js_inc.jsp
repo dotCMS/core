@@ -644,7 +644,7 @@
             }
 
             if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"])) {
-                if (data['isHtmlPage'] && workingContentletInode.length === 0) {
+                if (data['isHtmlPage'] && workingContentletInode.length === 0 && !data["referer"].includes("relend")) {
                     customEventDetail = {
                         name: 'close'
                     };

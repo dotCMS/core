@@ -111,12 +111,6 @@ public class PreviewDesignTemplateServlet extends HttpServlet {
         } catch ( DotRuntimeException e ) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        } catch ( PortalException e ) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch ( SystemException e ) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
     }
 

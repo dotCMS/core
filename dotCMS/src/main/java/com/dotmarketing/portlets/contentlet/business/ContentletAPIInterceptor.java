@@ -277,6 +277,9 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+    /**
+     * @deprecated Use {@link ContentletAPIInterceptor#checkinWithoutVersioning(Contentlet, ContentletRelationships, List, List, User, boolean)}
+     */
 	@Override
 	public Contentlet checkinWithoutVersioning(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships,	List<Category> cats, List<Permission> permissions, User user,	boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException, DotContentletValidationException {
 		for(ContentletAPIPreHook pre : preHooks){
@@ -292,6 +295,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return c;
 	}
+
+    @Override
+    public Contentlet checkinWithoutVersioning(Contentlet contentlet, ContentletRelationships contentRelationships,	List<Category> cats, List<Permission> permissions, User user,	boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException, DotContentletValidationException {
+        for(ContentletAPIPreHook pre : preHooks){
+            boolean preResult = pre.checkinWithoutVersioning(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
+            if(!preResult){
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        Contentlet c = conAPI.checkinWithoutVersioning(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles);
+        for(ContentletAPIPostHook post : postHooks){
+            post.checkinWithoutVersioning(contentlet, contentRelationships, cats, permissions, user, respectFrontendRoles, c);
+        }
+        return c;
+    }
 
 	@Override
 	public Contentlet checkout(String contentletInode, User user,	boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
@@ -371,6 +390,23 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.cleanField(structure, field, user, respectFrontendRoles);
 		}
 	}
+
+    @Override
+    public void cleanField(Structure structure, Date deletionDate, Field field, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+        for(ContentletAPIPreHook pre : preHooks){
+            boolean preResult = pre.cleanField(structure, deletionDate, field, user, respectFrontendRoles);
+            if(!preResult){
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        conAPI.cleanField(structure, deletionDate, field, user, respectFrontendRoles);
+        for(ContentletAPIPostHook post : postHooks){
+            post.cleanField(structure, deletionDate, field, user, respectFrontendRoles);
+        }
+
+    }
 
 	@Override
 	public void cleanHostField(Structure structure, User user, boolean respectFrontendRoles)
@@ -619,6 +655,23 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         for (ContentletAPIPostHook post : postHooks) {
             post.deleteRelatedContent(contentlet, relationship, hasParent, user,
                     respectFrontendRoles, contentletsToBeRelated);
+        }
+    }
+
+    @Override
+    public void invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship,
+            boolean hasParent) {
+        for (ContentletAPIPreHook pre : preHooks) {
+            boolean preResult = pre.invalidateRelatedContentCache(contentlet, relationship, hasParent);
+            if (!preResult) {
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException(
+                        "The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        conAPI.invalidateRelatedContentCache(contentlet, relationship, hasParent);
+        for (ContentletAPIPostHook post : postHooks) {
+            post.invalidateRelatedContentCache(contentlet, relationship, hasParent);
         }
     }
 
@@ -1469,7 +1522,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
-	@Override
+    @Override
 	public void reindex() throws DotReindexStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.reindex();
@@ -1606,6 +1659,21 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+    /**
+     * @deprecated This method should not be exposed. Use ContentletAPI.getRelated variations instead
+     * @param contentlet
+     * @param rel
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParent
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Deprecated
     @Override
     public List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel, User user,
             boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
@@ -1620,7 +1688,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         }
         List<Contentlet> contentlets = conAPI
                 .filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent,
-                        limit, offset, sortBy);
+                        limit, offset, null);
         for(ContentletAPIPostHook post : postHooks){
             post.filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent,
                     limit, offset, sortBy);

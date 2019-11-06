@@ -94,17 +94,12 @@ public class CascadePermissionsJob implements StatefulJob {
 		dataMap.put("roleId", role.getId());
 
 		//TODO: For a major release, remove this logic and get userId as parameter
-		try {
-			if (UtilMethods.isSet(HttpServletRequestThreadLocal.INSTANCE.getRequest())){
-				userId = WebAPILocator.getUserWebAPI()
-						.getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest())
-						.getUserId();
-			}
-			dataMap.put("userId", userId);
-		} catch (PortalException | SystemException e) {
-			Logger.warn(CascadePermissionsJob.class, "Error getting user info for notification", e);
+		if (UtilMethods.isSet(HttpServletRequestThreadLocal.INSTANCE.getRequest())) {
+			userId = WebAPILocator.getUserWebAPI()
+					.getLoggedInUser(HttpServletRequestThreadLocal.INSTANCE.getRequest())
+					.getUserId();
 		}
-
+		dataMap.put("userId", userId);
 
 		JobDetail jd = new JobDetail("CascadePermissionsJob-" + randomID, "cascade_permissions_jobs", CascadePermissionsJob.class);
 		jd.setJobDataMap(dataMap);

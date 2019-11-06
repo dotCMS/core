@@ -47,9 +47,18 @@
                 }
             },
             {
+                "permissions": {
+                    "match": "permissions",
+                    "mapping": {
+                        "analyzer": "whitespace",
+                        "type": "text"
+                    }
+                }
+            },
+            {
                 "keywordmapping" : {
                     "match_pattern": "regex",
-                    "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap",
+                    "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|moduser|owner",
                     "mapping": {
                         "type": "keyword"
                     }

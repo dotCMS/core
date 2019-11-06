@@ -290,8 +290,8 @@ public interface ContentletAPIPreHook {
 	
 	/**
 	 * Will get all the contentlets for a structure and set the default values for a field on the contentlet.  
-	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all COntentlets will be cleaned make 
-	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
+	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all ontentlets will be cleaned make
+	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all the contentlets it will clean
 	 * as many as it can and throw the DotSecurityException  
 	 * @param structure
 	 * @param field
@@ -302,7 +302,26 @@ public interface ContentletAPIPreHook {
       return true;
     }
 
-	/**
+    /**
+     * Will get all the contentlets for a structure (whose modDate is lower than or equals to the deletion date)
+     * and set the default values for a field on the contentlet.
+     * Will check Write/Edit permissions on the Contentlet. So to guarantee all Contentlets will be cleaned make
+     * sure to pass in an Admin User.  If a user doesn't have permissions to clean all the contentlets it will clean
+     * as many as it can and throw the DotSecurityException
+     * @param structure
+     * @param deletionDate
+     * @param field
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     */
+    default boolean cleanField(final Structure structure, final Date deletionDate,
+            final Field field, final User user, final boolean respectFrontendRoles) {
+        return true;
+    }
+
+
+    /**
 	 * Will get all the contentlets for a structure and set the default values for the host fields  
 	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all COntentlets will be cleaned make 
 	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
@@ -718,7 +737,7 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 * @return
 	 */
-	public default boolean getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent, User user, boolean respectFrontendRoles){
+	public default boolean getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles){
       return true;
     }
 
@@ -742,7 +761,7 @@ public interface ContentletAPIPreHook {
      * @param sortBy
      * @return
      */
-    default boolean getRelatedContent(Contentlet contentlet, Relationship rel, boolean pullByParent,
+    default boolean getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent,
             User user, boolean respectFrontendRoles, int limit, int offset,
             String sortBy){
         return true;
@@ -982,7 +1001,8 @@ public interface ContentletAPIPreHook {
     }
 	
 	/**
-	 * Will check in a update of your contentlet without generate a new version. The inode of your contentlet must be different from 0.  
+	 * @deprecated Use {@link ContentletAPIPreHook#checkinWithoutVersioning(Contentlet, ContentletRelationships, List, List, User, boolean)} instead
+     * Will check in a update of your contentlet without generate a new version. The inode of your contentlet must be different from 0.
 	 * @param contentlet - The inode of your contentlet must be different from 0.
 	 * @param contentRelationships - Used to set relationships to updated contentlet version 
 	 * @param user
@@ -990,6 +1010,19 @@ public interface ContentletAPIPreHook {
 	 */
 	public default boolean checkinWithoutVersioning(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles){
       return true;
+    }
+
+    /**
+     * Will check in a update of your contentlet without generate a new version. The inode of your
+     * contentlet must be different from 0.
+     *
+     * @param contentlet - The inode of your contentlet must be different from 0.
+     * @param contentRelationships - Used to set relationships to updated contentlet version
+     */
+    default boolean checkinWithoutVersioning(Contentlet contentlet,
+            ContentletRelationships contentRelationships, List<Category> cats,
+            List<Permission> permissions, User user, boolean respectFrontendRoles) {
+        return true;
     }
 	
 	/**
@@ -1824,7 +1857,7 @@ public interface ContentletAPIPreHook {
     }
 
     /**
-     * Internally called by getRelatedContent methods (handles all the logic to filter by parents or children)
+     * @deprecated This method should not be exposed. Use ContentletAPI.getRelated variations instead
      * @param contentlet
      * @param rel
      * @param user
@@ -1837,6 +1870,7 @@ public interface ContentletAPIPreHook {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Deprecated
     default boolean  filterRelatedContent(Contentlet contentlet, Relationship rel,
             User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
             String sortBy)
@@ -1861,6 +1895,10 @@ public interface ContentletAPIPreHook {
     }
 
     default boolean getRelatedContent(Contentlet contentlet, Relationship rel, Boolean pullByParent, User user, boolean respectFrontendRoles, long language, Boolean live){
+        return true;
+    }
+
+    default boolean invalidateRelatedContentCache(Contentlet contentlet, Relationship relationship, boolean hasParent){
         return true;
     }
 }

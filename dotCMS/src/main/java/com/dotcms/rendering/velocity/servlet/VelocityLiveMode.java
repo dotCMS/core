@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -15,12 +16,14 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSUrlUtil;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import org.apache.velocity.context.Context;
@@ -124,6 +127,13 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 } else {
                     ClickstreamFactory.addRequest((HttpServletRequest) request, ((HttpServletResponse) response), host);
                 }
+            }
+
+            //Validate if template is publish, if not remove page from cache
+            if (!UtilMethods.isSet(APILocator.getTemplateAPI().findLiveTemplate(htmlPage.getTemplateId(),APILocator.systemUser(),false).getInode())) {
+                CacheLocator.getVeloctyResourceCache()
+                        .remove(new VelocityResourceKey((HTMLPageAsset) htmlPage, PageMode.LIVE,
+                                htmlPage.getLanguageId()));
             }
 
             // Begin page caching

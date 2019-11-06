@@ -18,10 +18,13 @@ import com.dotcms.repackage.com.maxmind.geoip2.model.CityResponse;
 import com.dotcms.repackage.com.maxmind.geoip2.record.City;
 import com.dotcms.repackage.com.maxmind.geoip2.record.Country;
 import com.dotcms.repackage.com.maxmind.geoip2.record.Subdivision;
+import com.dotcms.visitor.domain.Geolocation;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.rules.conditionlet.Location;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
+import io.vavr.control.Try;
 
 /**
  * Provides utility methods to interact with the GeoIP2 API City Database. This
@@ -60,15 +63,34 @@ public class GeoIp2CityDbUtil {
 	private static long lastModified = 0;
 	private static String dbPath = null;
 
-	/**
-	 * Singleton holder based on the initialization-on-demand approach.
-	 */
-	private static class SingletonHolder {
+    /**
+     * Singleton holder based on the initialization-on-demand approach.
+     * The use of the Try on the Config gives us the ability to Unit test this.
+     */
+    private enum SingletonHolder {
 
-		private static GeoIp2CityDbUtil INSTANCE = new GeoIp2CityDbUtil(
-				Config.getStringProperty("GEOIP2_CITY_DATABASE_PATH_OVERRIDE", Config.CONTEXT.getRealPath("/WEB-INF/geoip2/GeoLite2-City.mmdb")));
+        GEODB(Try.of(()-> Config.getStringProperty("GEOIP2_CITY_DATABASE_PATH_OVERRIDE", Config.CONTEXT.getRealPath("/WEB-INF/geoip2/GeoLite2-City.mmdb"))).getOrNull());
 
-	}
+        private final GeoIp2CityDbUtil geoDb;
+
+        SingletonHolder(String dbPath) {
+            this.geoDb = resolveDbPath(dbPath);
+        }
+        private GeoIp2CityDbUtil resolveDbPath(String dbPath) {
+            File db =(dbPath==null)  ? new File("GeoLite2-City.mmdb") : new File(dbPath) ;
+            // if we are running from source
+            if(!db.exists()) {
+                db = new File("src/main/webapp/WEB-INF/geoip2/GeoLite2-City.mmdb");
+            }
+           return  new GeoIp2CityDbUtil(db.getAbsolutePath());
+        }
+        
+        
+        
+        GeoIp2CityDbUtil getGeoDb() {
+            return this.geoDb;
+        }
+    }
 
 	/**
 	 * Returns a unique instance of the {@link GeoIp2CityDbUtil} class.
@@ -76,9 +98,21 @@ public class GeoIp2CityDbUtil {
 	 * @return The {@link GeoIp2CityDbUtil} instance.
 	 */
 	public static GeoIp2CityDbUtil getInstance() {
-		return SingletonHolder.INSTANCE;
+		return SingletonHolder.GEODB.getGeoDb();
 	}
 
+	@VisibleForTesting
+	public static long getLastModified() {
+	    GeoIp2CityDbUtil.getInstance();
+	    GeoIp2CityDbUtil.getDatabaseReader();
+	    return new Long(lastModified);
+	}
+	
+    @VisibleForTesting
+    public static String getDbPath() {
+        return new String(dbPath);
+    }
+	
 	/**
 	 * Private constructor that will initialize the connection to the local
 	 * GeoIP2 database. If the database file is updated, it will have to be
@@ -90,9 +124,10 @@ public class GeoIp2CityDbUtil {
 	 *             If the connection to the GeoIP2 database file cannot be
 	 *             established.
 	 */
-	private GeoIp2CityDbUtil(String databasePath) {
+	private GeoIp2CityDbUtil(final String databasePath) {
 		dbPath = databasePath;
 		File database = new File(databasePath);
+		if(!database.exists()) throw new DotRuntimeException("cannot find GeoDatabase, looking for:" + database.getAbsolutePath());
 		connectToDatabase(database);
 	}
 
@@ -108,11 +143,15 @@ public class GeoIp2CityDbUtil {
 	 *             If the connection to the GeoIP2 database file cannot be
 	 *             established.
 	 */
-	private static void connectToDatabase(File database) {
+	private static void connectToDatabase(final File database) {
 		try {
 			if (databaseReader != null) {
 				databaseReader.close();
 			}
+	         Logger.info(GeoIp2CityDbUtil.class,
+	                         "Connecting to GeoIP2 database:" + database);
+			
+			
 			databaseReader = new DatabaseReader.Builder(database).build();
 			lastModified = database.lastModified();
 		} catch (IOException e) {
@@ -354,4 +393,32 @@ public class GeoIp2CityDbUtil {
 		return calendar;
 	}
 
+	
+    public Geolocation getGeolocation(final String ipAddress) {
+	    return Try.of(()-> getGeolocation(InetAddress.getByName(ipAddress))).getOrElseThrow(e->new DotRuntimeException("unable to get geolocation for ip:" + ipAddress,e));
+	}
+	
+	
+    public Geolocation getGeolocation(final InetAddress ipAddress) {
+
+        CityResponse cityResponse = Try.of(()-> getDatabaseReader().city(ipAddress)).getOrElseThrow(e->new DotRuntimeException("unable to get geolocation for ip:" + ipAddress,e));
+        Geolocation.Builder builder = new Geolocation.Builder();
+        builder.withCity(cityResponse.getCity().getName())
+        .withContinent(cityResponse.getContinent().getName())
+        .withContinentCode(cityResponse.getContinent().getCode())
+        .withCountry(cityResponse.getCountry().getName())
+        .withCountryCode(cityResponse.getCountry().getIsoCode())
+        .withTimezone(cityResponse.getLocation().getTimeZone())
+        .withLatitude(cityResponse.getLocation().getLatitude())
+        .withLongitude(cityResponse.getLocation().getLongitude())
+        .withSubdivision(cityResponse.getMostSpecificSubdivision().getName())
+        .withIpAddress(ipAddress.getHostAddress())
+        .withSubdivisionCode(cityResponse.getMostSpecificSubdivision().getIsoCode());
+        return builder.build();
+    }
+    
+	
+	
+	
+	
 }

@@ -10,6 +10,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.business.FieldAPITest.UniqueConstraintTestCase.DuplicateType;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -25,6 +26,7 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
@@ -94,6 +96,41 @@ public class FieldAPITest extends IntegrationTestBase {
         };
     }
 
+    public static class UniqueConstraintTestCase {
+
+        boolean selfRelated;
+        enum DuplicateType {
+            //The parent field exists as a parent field in another relationship
+            PARENT_FIELD,
+            //The child field exists as a child field in another relationship
+            CHILD_FIELD,
+            //Both means that the parent field exists as a child field in another relationship
+            //Only applies for self joins
+            MIX_FROM_PARENT,
+            //Both means that the child field exists as a parent field in another relationship
+            //Only applies for self joins
+            MIX_FROM_CHILD
+        }
+        DuplicateType duplicateType;
+
+        public UniqueConstraintTestCase(final boolean selfRelated, final DuplicateType duplicateType) {
+            this.selfRelated = selfRelated;
+            this.duplicateType = duplicateType;
+        }
+    }
+
+    @DataProvider
+    public static Object[] UniqueConstraintTestCase(){
+        return new UniqueConstraintTestCase[]{
+                new UniqueConstraintTestCase(true, DuplicateType.PARENT_FIELD),
+                new UniqueConstraintTestCase(true, DuplicateType.CHILD_FIELD),
+                new UniqueConstraintTestCase(true, DuplicateType.MIX_FROM_PARENT),
+                new UniqueConstraintTestCase(true, DuplicateType.MIX_FROM_CHILD),
+                new UniqueConstraintTestCase(false, DuplicateType.PARENT_FIELD),
+                new UniqueConstraintTestCase(false, DuplicateType.CHILD_FIELD)
+        };
+    }
+
     @Test
     public void getFieldVariablesForField() throws Exception {
         // make sure its cached. see https://github.com/dotCMS/dotCMS/issues/2465
@@ -154,7 +191,7 @@ public class FieldAPITest extends IntegrationTestBase {
             parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
             childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
-            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
                     parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
@@ -192,7 +229,7 @@ public class FieldAPITest extends IntegrationTestBase {
             parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
             childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
-            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField(
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField(
                     "newRel",
                     parentContentType.id(), childContentType.variable(),
                     String.valueOf(MANY_TO_ONE.ordinal()));
@@ -237,14 +274,14 @@ public class FieldAPITest extends IntegrationTestBase {
             childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
             //Adding a RelationshipField to the parent
-            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
                     parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
                     parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
 
             //Adding a RelationshipField to the child
-            final Field childTypeRelationshipField = createAndSaveManyToManyRelationshipField("otherSideRel",
+            final Field childTypeRelationshipField = createAndSaveRelationshipField("otherSideRel",
                     childContentType.id(), fullFieldVar, CARDINALITY);
 
             final Relationship relationship = relationshipAPI.byTypeValue(fullFieldVar);
@@ -286,7 +323,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the parent
             //One side of the relationship is set parentContentType --> childContentType
-            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
                     parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
@@ -295,7 +332,7 @@ public class FieldAPITest extends IntegrationTestBase {
             //Adding a RelationshipField to the child
             //Setting the other side of the relationship childContentType --> parentContentType
             //Adding a RelationshipField to the child
-            final Field childTypeRelationshipField = createAndSaveManyToManyRelationshipField("otherSideRel",
+            final Field childTypeRelationshipField = createAndSaveRelationshipField("otherSideRel",
                     childContentType.id(), fullFieldVar, CARDINALITY);
 
             //Setting a new relationship childContentType --> newParentContentType
@@ -333,7 +370,7 @@ public class FieldAPITest extends IntegrationTestBase {
             newChildContentType = createAndSaveSimpleContentType("newChildContentType" + time);
 
             //Adding a RelationshipField to the parent
-            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
                     parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
@@ -341,7 +378,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //Adding a RelationshipField to the child
             //Setting the other side of the relationship childContentType --> parentContentType
-            createAndSaveManyToManyRelationshipField("otherSideRel",
+            createAndSaveRelationshipField("otherSideRel",
                     childContentType.id(), fullFieldVar, CARDINALITY);
 
             //Setting a new relationship parentContentType --> newChildContentType
@@ -379,14 +416,14 @@ public class FieldAPITest extends IntegrationTestBase {
             childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
             //Adding a RelationshipField to the parent
-            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
                     parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
                     parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
 
             //Adding a RelationshipField to the child
-            final Field childTypeRelationshipField = createAndSaveManyToManyRelationshipField("otherSideRel",
+            final Field childTypeRelationshipField = createAndSaveRelationshipField("otherSideRel",
                     childContentType.id(), fullFieldVar, CARDINALITY);
 
             //Removing child field
@@ -428,14 +465,14 @@ public class FieldAPITest extends IntegrationTestBase {
             childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
             //Adding a RelationshipField to the parent
-            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
                     parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
                     parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
 
             //Adding a RelationshipField to the child
-            final Field childTypeRelationshipField = createAndSaveManyToManyRelationshipField("otherSideRel",
+            final Field childTypeRelationshipField = createAndSaveRelationshipField("otherSideRel",
                     childContentType.id(), fullFieldVar, CARDINALITY);
 
             //Removing parent field
@@ -477,7 +514,7 @@ public class FieldAPITest extends IntegrationTestBase {
             childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
             //Adding a RelationshipField to the parent
-            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
                     parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
@@ -576,7 +613,7 @@ public class FieldAPITest extends IntegrationTestBase {
             parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
 
             //One side of the relationship is set parentContentType --> Youtube
-            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
                     parentContentType.id(), existingContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
@@ -612,7 +649,7 @@ public class FieldAPITest extends IntegrationTestBase {
             parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
             childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
-            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
                     parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final Field updatedField = fieldAPI
@@ -656,7 +693,7 @@ public class FieldAPITest extends IntegrationTestBase {
             parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
             childContentType = createAndSaveSimpleContentType("childContentType" + time);
 
-            final Field parentTypeRelationshipField = createAndSaveManyToManyRelationshipField("newRel",
+            final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
                     parentContentType.id(), childContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
@@ -713,7 +750,7 @@ public class FieldAPITest extends IntegrationTestBase {
         try {
             parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
 
-            final Field childField = createAndSaveManyToManyRelationshipField("newRel",
+            final Field childField = createAndSaveRelationshipField("newRel",
                     parentContentType.id(), parentContentType.variable(), CARDINALITY);
 
             final String fullFieldVar =
@@ -784,6 +821,60 @@ public class FieldAPITest extends IntegrationTestBase {
             contentTypeAPI.delete(type);
         }
     }
+
+    @UseDataProvider("UniqueConstraintTestCase")
+    @Test(expected = DotValidationException.class)
+    public void testSaveRelationshipWithDuplicateFieldsShouldThrowAnException(UniqueConstraintTestCase testCase)
+            throws DotDataException, DotSecurityException {
+        final long time = System.currentTimeMillis();
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        Relationship secondRelationship = null;
+        Field relationshipField;
+        final String fieldName = "newRel";
+        final String cardinality = (testCase.duplicateType == DuplicateType.CHILD_FIELD || testCase.duplicateType == DuplicateType.MIX_FROM_PARENT) ? String
+                .valueOf(ONE_TO_MANY.ordinal()) : String.valueOf(MANY_TO_ONE.ordinal());
+
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType" + time);
+            childContentType = testCase.selfRelated? parentContentType: createAndSaveSimpleContentType("childContentType" + time);
+
+            relationshipField = createAndSaveRelationshipField(fieldName, parentContentType.id(), childContentType.variable(), cardinality);
+
+            switch(testCase.duplicateType){
+                case CHILD_FIELD:
+                case PARENT_FIELD:
+                    secondRelationship = new Relationship(parentContentType, childContentType, relationshipField);
+                    break;
+                case MIX_FROM_CHILD:
+                    relationshipField = FieldBuilder.builder(relationshipField).values(String
+                            .valueOf(ONE_TO_MANY.ordinal())).build();
+                    secondRelationship = new Relationship(parentContentType, childContentType, relationshipField);
+                    break;
+                case MIX_FROM_PARENT:
+                    relationshipField = FieldBuilder.builder(relationshipField).values(String
+                                    .valueOf(MANY_TO_ONE.ordinal())).build();
+                    secondRelationship = new Relationship(parentContentType, childContentType, relationshipField);
+                    break;
+            }
+
+            relationshipAPI.save(secondRelationship);
+
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (!testCase.selfRelated && UtilMethods.isSet(childContentType) && UtilMethods
+                    .isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+
+
+    }
+
 
     @Test(expected = DotDataValidationException.class)
     public void testSave_UpdateExistingFieldWithDifferentContentType_ShouldThrowException()
@@ -896,11 +987,11 @@ public class FieldAPITest extends IntegrationTestBase {
     }
 
 
-    private Field createAndSaveManyToManyRelationshipField(final String relationshipName, final String parentTypeId,
+    private Field createAndSaveRelationshipField(final String fieldName, final String parentTypeId,
                                                  final String childTypeVar, final String cardinality)
             throws DotSecurityException, DotDataException {
 
-        final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
+        final Field field = FieldBuilder.builder(RelationshipField.class).name(fieldName)
                 .contentTypeId(parentTypeId).values(cardinality)
                 .relationType(childTypeVar).build();
 

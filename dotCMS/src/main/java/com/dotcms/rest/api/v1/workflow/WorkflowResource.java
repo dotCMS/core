@@ -66,6 +66,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -1386,11 +1387,7 @@ public class WorkflowResource {
         }
 
         if (contentlet.getMap().containsKey(Contentlet.RELATIONSHIP_KEY)) {
-
-            final  Map<Relationship, List<Contentlet>> relationshipListMap =
-                    (Map<Relationship, List<Contentlet>>) contentlet.getMap().get(Contentlet.RELATIONSHIP_KEY);
-            formBuilder.relationships(MapToContentletPopulator.
-                    INSTANCE.getContentletRelationshipsFromMap(contentlet, relationshipListMap));
+            formBuilder.relationships((ContentletRelationships) contentlet.getMap().get(Contentlet.RELATIONSHIP_KEY));
         }
 
         final List<Category> categories = MapToContentletPopulator.

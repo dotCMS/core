@@ -277,40 +277,40 @@
 			if(isNaN(parseInt(val)) || parseInt(val)==0){
 
 				if(preLoopEditorCreated){
-					preLoopEditor=aceRemover(preLoopEditor,"preLoopMask");
+					preLoopEditor=aceHide(preLoopEditor,"preLoopMask");
 					preLoopEditorCreated=false;
 				}
 
-                if(aceEditorCreated){
-				    aceEditor=aceArea("aceEditor", "codeMask");
-				    aceEditorCreated=false;
-			    }
+			    if(!aceEditorCreated){
+                    aceEditor=aceArea("aceEditor", "codeMask");
+                    aceEditorCreated=true;
+                }
 
 				if(postLoopEditorCreated){
-			   		postLoopEditor=aceRemover(postLoopEditor,"postLoopMask");
+			   		postLoopEditor=aceHide(postLoopEditor,"postLoopMask");
 					postLoopEditorCreated=false;
 				}
 
 				ele.style.display="none";
 				ele2.style.display="none";
 				ele3.style.display="none";
-				ele4.style.display="none";
+				ele4.style.display="inline";
 			}
 			else{
 				ele.style.display="inline";
 				ele2.style.display="inline";
 				ele3.style.display="inline";
-				ele4.style.display="inline";
+				ele4.style.display="none";
 
 				if(!preLoopEditorCreated){
 					preLoopEditor=aceArea("preLoopAceEditor" ,"preLoopMask");
 					preLoopEditorCreated=true;
 				}
 
-                if(!aceEditorCreated){
-				    aceEditor=aceArea("aceEditor", "codeMask");
-				    aceEditorCreated=true;
-			    }
+                if(aceEditorCreated){
+                    aceEditor=aceArea("aceEditor", "codeMask");
+                    aceEditorCreated=false;
+                }
 
 				if(!postLoopEditorCreated){
 					postLoopEditor=aceArea("postLoopAceEditor" ,"postLoopMask");
@@ -526,12 +526,18 @@
 		return editor;
 	}
 
+    function aceHide(removeEditor, textarea){
 
+		var editorText=removeEditor.getValue();
+		dojo.query('#'+textarea).style({display:'none'});
+		dojo.query('#'+textarea)[0].value=editorText;
+		return null;
+	}
 
 	function aceRemover(removeEditor, textarea){
 
 		var editorText=removeEditor.getValue();
-		dojo.query('#'+textarea).style({display:'none'});
+		dojo.query('#'+textarea).style({display:''});
 		dojo.query('#'+textarea)[0].value=editorText;
 		return null;
 	}

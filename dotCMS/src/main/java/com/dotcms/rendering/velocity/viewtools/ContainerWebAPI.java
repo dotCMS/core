@@ -1,11 +1,11 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
+
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -31,6 +31,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.jetbrains.annotations.Nullable;
 
 public class ContainerWebAPI implements ViewTool {
 
@@ -118,29 +119,55 @@ public class ContainerWebAPI implements ViewTool {
 
         pTag = (!availablePersonalizations.contains(pTag)) ? MultiTree.DOT_PERSONALIZATION_DEFAULT : pTag;
 
-        // if live mode, the content list will not have a colon in the key- as it was a velocity variable
-        List<String> contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag.replace(":", ""));
-        if(contentlets !=null ) {
-            return contentlets;
-        }
-        
-        // if edit or preview mode, the content list WILL have a colon in the key, as this is 
-        // a map in memory
-        contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag);
-        if(contentlets !=null ) {
-            return contentlets;
-        }
-        
-        // if called through the ContainerResource, the content list will appear under the default UUID, 
+		List<String> contentlets = new ArrayList<>();
+		if (ContainerUUID.UUID_LEGACY_VALUE.equals(uuid)) {
+			contentlets.addAll(
+					Optional.ofNullable(
+								getContentsIdByUUID(containerId, pTag, ContainerUUID.UUID_START_VALUE)
+							).orElse(Collections.EMPTY_LIST)
+			);
+
+			contentlets.addAll(
+					Optional.ofNullable(
+							getContentsIdByUUID(containerId, pTag, ContainerUUID.UUID_LEGACY_VALUE)
+					).orElse(Collections.EMPTY_LIST)
+			);
+		} else {
+			contentlets.addAll(
+					Optional.ofNullable(
+							getContentsIdByUUID(containerId, pTag, uuid)
+					).orElse(Collections.EMPTY_LIST));
+		}
+
+		if (!contentlets.isEmpty()) return contentlets;
+
+		// if called through the ContainerResource, the content list will appear under the default UUID,
         // as the content is just being rendered in the container and is not associated with any page
-        contentlets = (List<String>) ctx.get("contentletList" + containerId + Container.LEGACY_RELATION_TYPE);
+        contentlets = (List<String>) ctx.get("contentletList" + containerId + ContainerUUID.UUID_LEGACY_VALUE);
         if(contentlets !=null ) {
             return contentlets;
         }
         
         return new ArrayList<>();
     }
-	
+
+	@Nullable
+	private List<String> getContentsIdByUUID(String containerId, String pTag, String uuid) {
+		// if live mode, the content list will not have a colon in the key- as it was a velocity variable
+		List<String> contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag.replace(":", ""));
+		if(contentlets !=null ) {
+			return contentlets;
+		}
+
+		// if edit or preview mode, the content list WILL have a colon in the key, as this is
+		// a map in memory
+		contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag);
+		if(contentlets !=null ) {
+			return contentlets;
+		}
+		return null;
+	}
+
 	/**
 	 * This method checks if the logged in user (frontend) has the required permission over
 	 * the passed container id

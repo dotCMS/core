@@ -49,44 +49,59 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         this.isAutoPub=dotDavHelper.isAutoPub(path);
     }
     
-    public Resource createNew(String newName, InputStream in, Long length, String contentType) throws IOException, DotRuntimeException {
+    public Resource createNew(String newName, final InputStream in, final Long length, final String contentType) throws IOException, DotRuntimeException {
+
     	if(newName.matches("^\\.(.*)-Spotlight$")){
             // http://jira.dotmarketing.net/browse/DOTCMS-7285
     		newName = newName + ".spotlight";
     	}
    
-        User user=(User)HttpManager.request().getAuthorization().getTag();
+        final User user = (User)HttpManager.request().getAuthorization().getTag();
         
-        if(!path.endsWith("/")){
-            path = path + "/";
+        if(!this.path.endsWith("/")){
+            this.path = this.path + "/";
         }
 
-        newName = dotDavHelper.deleteSpecialCharacter(newName);
+        newName = this.dotDavHelper.deleteSpecialCharacter(newName);
         newName = newName.toLowerCase();
-        if(!dotDavHelper.isTempResource(newName)){
+
+        if(!dotDavHelper.isTempResource(newName)) {
+
             try {
-            	dotDavHelper.setResourceContent(path + newName, in, contentType, null, java.util.Calendar.getInstance().getTime(), user, isAutoPub);
-                final IFileAsset iFileAsset = dotDavHelper.loadFile(path + newName,user);
+
+                this.dotDavHelper.setResourceContent(this.path + newName, in, contentType, null,
+                        java.util.Calendar.getInstance().getTime(), user, this.isAutoPub);
+                final IFileAsset iFileAsset = this.dotDavHelper.loadFile(this.path + newName, user);
                 final Resource fileResource = new FileResourceImpl(iFileAsset, iFileAsset.getFileName());
                 return fileResource;
-                
-            }catch (Exception e){
-            	Logger.error(this, "An error occurred while creating new file: " + (newName != null ? newName : "Unknown") 
-                		+ " in this path: " + (path != null ? path : "Unknown") + " " 
+            } catch (Exception e) {
+
+            	Logger.warn(this, "An error occurred while creating new file: " +
+                        (newName != null ? newName : "Unknown")
+                		+ " in this path: " + (this.path != null ? this.path : "Unknown") + " "
                 		+ e.getMessage(), e);
             	throw new DotRuntimeException(e.getMessage(), e);
             }
         } else {
-            try {
-                originalPath = (!originalPath.endsWith("/"))?originalPath + "/":originalPath;
-                final File tempFile = dotDavHelper.createTempFile("/" + host.getHostname() + originalPath + newName);
-                FileUtils.copyStreamToFile(tempFile, in, null);
-                final Resource tempFileResource = new TempFileResourceImpl(tempFile, originalPath + newName, isAutoPub);
-                return tempFileResource;
-            } catch (Exception e){
-                Logger.error(this, "Error creating temp file", e);
-                throw new DotRuntimeException(e.getMessage(), e);
-            }
+
+            return this.createNewTemporalResource(newName, in);
+        }
+    } // createNew.
+
+    private Resource createNewTemporalResource (final String newName, final InputStream in) {
+
+        try {
+
+            this.originalPath = (!this.originalPath.endsWith("/"))? this.originalPath + "/":this.originalPath;
+            final File tempFile = this.dotDavHelper.createTempFile("/" + this.host.getHostname() + this.originalPath + newName);
+            FileUtils.copyStreamToFile(tempFile, in, null);
+            final Resource tempFileResource = new TempFileResourceImpl(tempFile, this.originalPath + newName, this.isAutoPub);
+            return tempFileResource;
+        } catch (Exception e){
+
+            Logger.debug(this, "Error creating temp file", e);
+            Logger.warn(this, "Error creating temp file", e);
+            throw new DotRuntimeException(e.getMessage(), e);
         }
     }
 
