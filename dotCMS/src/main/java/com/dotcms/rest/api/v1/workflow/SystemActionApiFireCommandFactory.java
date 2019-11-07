@@ -52,8 +52,8 @@ public class SystemActionApiFireCommandFactory {
                     .put(NEW,       (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasSaveActionlet(params._1))
                     .put(EDIT,      (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasSaveActionlet(params._1))
                     .put(PUBLISH,   this::hasPublishValid)
-                    .put(UNPUBLISH, (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasUnpublishActionlet(params._1))
-                    .put(ARCHIVE,   (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasArchiveActionlet(params._1))
+                    .put(UNPUBLISH, this::hasUnpublishValid)
+                    .put(ARCHIVE,   this::hasArchiveValid)
                     .put(UNARCHIVE, (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasUnarchiveActionlet(params._1))
                     .put(DELETE,    (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasDeleteActionlet(params._1))
                     .put(DESTROY,   (final Tuple2<WorkflowAction, Boolean> params) -> this.workflowAPI.hasDestroyActionlet(params._1))
@@ -91,6 +91,16 @@ public class SystemActionApiFireCommandFactory {
         return needSave? // if needs Save has to have save and unpublish actionlet
                 this.workflowAPI.hasSaveActionlet(action) && this.workflowAPI.hasUnpublishActionlet(action):
                 this.workflowAPI.hasUnpublishActionlet(action);
+    }
+
+    private boolean hasArchiveValid (final Tuple2<WorkflowAction, Boolean> params) {
+
+        final WorkflowAction action   = params._1;
+        final boolean        needSave = params._2;
+
+        return needSave? // if needs Save has to have save and archive actionlet
+                this.workflowAPI.hasSaveActionlet(action) && this.workflowAPI.hasArchiveActionlet(action):
+                this.workflowAPI.hasArchiveActionlet(action);
     }
 
     /**
@@ -293,6 +303,11 @@ public class SystemActionApiFireCommandFactory {
                 contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
             }
 
+            if (needSave) {
+
+                return fireUnPublishWithSave(contentlet, dependencies, actionId, user);
+            }
+
             Logger.info(this, "The contentlet : " + contentlet.getTitle()
                     + ", on the action id: " + actionId +
                     ", will do an unpublish");
@@ -300,6 +315,49 @@ public class SystemActionApiFireCommandFactory {
             contentletAPI.unpublish(contentlet, user, dependencies.isRespectAnonymousPermissions());
 
             return contentlet;
+        }
+
+        private Contentlet fireUnPublishWithSave(final Contentlet contentlet,
+                                               final ContentletDependencies dependencies,
+                                               final String actionId, final User user) throws DotDataException, DotSecurityException {
+
+            final String disableWorkflow         = Contentlet.DISABLE_WORKFLOW;
+            final boolean hasUnpublishActionlet  = UtilMethods.isSet(actionId)?
+                    workflowAPI.findAction(actionId, user).hasUnpublishActionlet():false;
+
+            // we do not want auto assign this checkin
+            if (!hasUnpublishActionlet) {
+
+                Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                        + ", on the action id: " + actionId +
+                        ", does not have unpublish, and has changes, so a checkin will be fired without assign to any step");
+                contentlet.setBoolProperty(disableWorkflow, true);
+            }
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
+            final Contentlet checkoutContentlet = new SaveContentActionlet()
+                    .checkout(contentlet, dependencies.getModUser());
+            final Contentlet checkinContentlet = contentletAPI.checkin(checkoutContentlet, dependencies);
+
+            if (!hasUnpublishActionlet) {
+
+                if (checkinContentlet.getMap().containsKey(disableWorkflow)) {
+                    checkinContentlet.getMap().remove(disableWorkflow);
+                }
+
+                if (UtilMethods.isSet(actionId)) {
+                    checkinContentlet.setActionId(actionId);
+                }
+
+                Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                        + ", on the action id: " + actionId +
+                        ", was checkin but does not have unpublish, so a unpublish will be fired (could autoassign if needed)");
+
+                contentletAPI.unpublish(checkinContentlet,
+                        user, dependencies.isRespectAnonymousPermissions());
+            }
+
+            return checkinContentlet;
         }
     }
 
@@ -334,6 +392,11 @@ public class SystemActionApiFireCommandFactory {
                 contentlet.setStringProperty(Contentlet.WORKFLOW_ASSIGN_KEY, dependencies.getWorkflowAssignKey());
             }
 
+            if (needSave) {
+
+                return fireArchiveWithSave(contentlet, dependencies, actionId, user);
+            }
+
             Logger.info(this, "The contentlet : " + contentlet.getTitle()
                     + ", on the action id: " + actionId +
                     ", will do an archive");
@@ -342,6 +405,49 @@ public class SystemActionApiFireCommandFactory {
 
             return contentlet;
         }
+    }
+
+    private Contentlet fireArchiveWithSave(final Contentlet contentlet,
+                                             final ContentletDependencies dependencies,
+                                             final String actionId, final User user) throws DotDataException, DotSecurityException {
+
+        final String disableWorkflow         = Contentlet.DISABLE_WORKFLOW;
+        final boolean hasArchiveActionlet  = UtilMethods.isSet(actionId)?
+                workflowAPI.findAction(actionId, user).hasArchiveActionlet():false;
+
+        // we do not want auto assign this checkin
+        if (!hasArchiveActionlet) {
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", on the action id: " + actionId +
+                    ", does not have archive, and has changes, so a checkin will be fired without assign to any step");
+            contentlet.setBoolProperty(disableWorkflow, true);
+        }
+
+        Logger.info(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
+        final Contentlet checkoutContentlet = new SaveContentActionlet()
+                .checkout(contentlet, dependencies.getModUser());
+        final Contentlet checkinContentlet = contentletAPI.checkin(checkoutContentlet, dependencies);
+
+        if (!hasArchiveActionlet) {
+
+            if (checkinContentlet.getMap().containsKey(disableWorkflow)) {
+                checkinContentlet.getMap().remove(disableWorkflow);
+            }
+
+            if (UtilMethods.isSet(actionId)) {
+                checkinContentlet.setActionId(actionId);
+            }
+
+            Logger.info(this, "The contentlet : " + contentlet.getTitle()
+                    + ", on the action id: " + actionId +
+                    ", was checkin but does not have archive, so a archive will be fired (could autoassign if needed)");
+
+            contentletAPI.archive(checkinContentlet,
+                    user, dependencies.isRespectAnonymousPermissions());
+        }
+
+        return checkinContentlet;
     }
 
     /////////////////
