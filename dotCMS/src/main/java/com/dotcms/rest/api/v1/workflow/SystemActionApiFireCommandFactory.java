@@ -515,39 +515,30 @@ public class SystemActionApiFireCommandFactory {
         final boolean hasUnarchiveActionlet  = UtilMethods.isSet(actionId)?
                 workflowAPI.findAction(actionId, user).hasUnarchiveActionlet():false;
 
-        // we do not want auto assign this checkin
+        if (UtilMethods.isSet(actionId)) {
+            contentlet.setActionId(actionId);
+        }
+
         if (!hasUnarchiveActionlet) {
 
             Logger.info(this, "The contentlet : " + contentlet.getTitle()
                     + ", on the action id: " + actionId +
-                    ", does not have unarchive, and has changes, so a checkin will be fired without assign to any step");
-            contentlet.setBoolProperty(disableWorkflow, true);
+                    ", does not have unarchive, so an unarchive will be fired (could autoassign if needed)");
+
+            contentletAPI.unarchive(contentlet,
+                    user, dependencies.isRespectAnonymousPermissions());
+        } else {
+
+            workflowAPI.fireContentWorkflow(contentlet, dependencies);
         }
 
-        Logger.info(this, "The contentlet : " + contentlet.getTitle() + ", will do a checkin");
+        Logger.info(this, "The contentlet : " + contentlet.getTitle() + " has been unarchive, will do a checkin to save the body");
+
+        // the contentlet is already unarchive, now we can do a save but not need to run a workflow.
+        contentlet.setBoolProperty(disableWorkflow, true);
         final Contentlet checkoutContentlet = new SaveContentActionlet()
                 .checkout(contentlet, dependencies.getModUser());
-        final Contentlet checkinContentlet = contentletAPI.checkin(checkoutContentlet, dependencies);
-
-        if (!hasUnarchiveActionlet) {
-
-            if (checkinContentlet.getMap().containsKey(disableWorkflow)) {
-                checkinContentlet.getMap().remove(disableWorkflow);
-            }
-
-            if (UtilMethods.isSet(actionId)) {
-                checkinContentlet.setActionId(actionId);
-            }
-
-            Logger.info(this, "The contentlet : " + contentlet.getTitle()
-                    + ", on the action id: " + actionId +
-                    ", was checkin but does not have unarchive, so an unarchive will be fired (could autoassign if needed)");
-
-            contentletAPI.unarchive(checkinContentlet,
-                    user, dependencies.isRespectAnonymousPermissions());
-        }
-
-        return checkinContentlet;
+        return contentletAPI.checkin(checkoutContentlet, dependencies);
     }
 
     ///////////////////
