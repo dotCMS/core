@@ -1082,9 +1082,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		                    	f = files[0];
 		                    	map.put(velocityVarName, f);
 		                    }
-		                } else {
-		                     Logger.warn(Contentlet.class,String.format("Failed to retrieve binary file. Folder `%s` does NOT exist.",binaryFileFolder.getPath()));
-		                }
+		                } 
 	            }catch(Exception e){
 	                Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+inode+"  velocityVaribleName : "+velocityVarName );
 	                throw new IOException("File System error.");
