@@ -220,19 +220,19 @@ public String getGravatar(String postedBy){
 
 .gravitarThingy{
 
-   position:absolute;
-    top:5px;
-    left:40px;
    border-radius: 50%;
    background-size: cover;
    border:1px solid #eeeeee;
-   width:50px;
-   height:50px;
+   width:40px;
+   height:40px;
    font-size: 24px;
    text-align:center;
    color:white;
    font-weight: bold;
-   margin:auto;
+   vertical-align: middle;
+   margin-left:auto;
+   margin-right:auto;
+
 }
 </style>
 
@@ -320,56 +320,58 @@ public String getGravatar(String postedBy){
 		
 		    <!-- START Comments -->
 		        <div id="commentsTab" dojoType="dijit.layout.ContentPane" title="Comments">
-		                <table class="listingTable">
+                    <div style="max-height:500px;overflow: auto;border:1px solid silver;max-width:1024px;padding:15px;">
+		                <table style="width:100%;padding: 0px;">
 		                    <% 
 		                        for(WorkflowTimelineItem comment : commentsHistory){ %>
-
-		                            <td style="width:300px;position:relative;height:100px;">
-       
-                                            <div class="gravitarThingy" style="z-index:100;background-image:url('https://www.gravatar.com/avatar/<%=getGravatar(comment.roleId()) %>?d=blank'"></div>
-                                            <div class="gravitarThingy" style="z-index:4;color:#bbbbbb;vertical-align: middle;">
+                                  <tr>
+		                            <td style="width:50px;vertical-align: top;padding: 15px 0px 15px 0px">
+                                        <div class="gravitarThingy" style="z-index:100;background-image:url('https://www.gravatar.com/avatar/<%=getGravatar(comment.roleId()) %>?d=blank'"></div>
+                                         <div class="gravitarThingy" style="z-index:4;color:#bbbbbb;margin-top:-40px;">
                                             <div style="margin-top:10px;">
-                                            <%=getPostedby(comment.roleId()).substring(0,1) %>
-                                            </div></div>
-         
-                                         <div style="text-align: center; white-space: nowrap;position: absolute;bottom:5px;left:5px;right:5px;">
-                                         <%=getPostedby(comment.roleId())%><br><small>(<%= DateUtil.prettyDateSince(comment.createdDate()) %>)</small>
+                                                <%=getPostedby(comment.roleId()).substring(0,1) %>
+                                            </div>
+                                         </div>
+		                            </td>
+                                     <td>
+                                        <div  style="border:1px solid silver;margin:10px 15px 14px 5px">
+                                          <div style="background: #efefef;padding:10px;"><b><%=getPostedby(comment.roleId())%></b> <%= DateUtil.prettyDateSince(comment.createdDate()) %>
+                                          
+                                          <div style="float:right;"><%=UtilMethods.dateToHTMLDate(comment.createdDate()) %> - <%=UtilMethods.dateToHTMLTime(comment.createdDate()) %></div>
+                                          
+                                          </div>
+                                          <div style="padding:15px;min-height: 70px"><%= Xss.strip(comment.commentDescription()) %></div>
                                         </div>
-                           
-		                                 
-		                            </td>
-		                             <td style="width:90%;vertical-align: top">
-		                               <div style="margin:5px;margin-top:0px;"><%= comment.commentDescription() %></div>
-		                             </td>
-		                            </td>
+                                     </td>
 		                        </tr>
+
 		                    <% } %>
-		            
-		                    <tr>
-		                        <th colspan=2><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Comments")) %>
-		
-									<form id="commentFormlet" method="post" action="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-									 <portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" />
-									 <portlet:param name="inode" value="<%= String.valueOf(task.getInode()) %>" />
-									 </portlet:actionURL>">
-									<input type="hidden" name="referer" value="<%= referer %>">
-									<input type="hidden" name="cmd" value="add_comment">
-									<div  style="max-width:600px;">
-									   <textarea id="comment" name="comment" class="mceNoEditor" rows="4" cols="60"></textarea>
-                                   
-      									<div class="buttonRow">
-      									 <button dojoType="dijit.form.Button" type="button" onClick="dojo.byId('commentFormlet').submit()">
-      									 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
-      									 </button>
-      									</div>
-                                     </div>
-									</form>
-		       
-		
-		                        </th>
-		                    </tr>
 		                </table>
-		
+		              </div>
+                      <div style="padding:20px;max-width:1024px;border-top:1px solid silver">
+                         <div id="commentFormletShow" class="buttonRow">
+                            <button dojoType="dijit.form.Button" type="button" onClick="document.getElementById('commentFormletShow').style.display='none';document.getElementById('commentFormlet').style.display=''">
+                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
+                            </button>
+                         </div>
+                         <form style="display: none; max-width:600px;margin:auto;" id="commentFormlet" method="post" action="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
+                            <portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" />
+                            <portlet:param name="inode" value="<%= String.valueOf(task.getInode()) %>" />
+                            </portlet:actionURL>">
+                            <input type="hidden" name="referer" value="<%= referer %>">
+                            <input type="hidden" name="cmd" value="add_comment">
+                           
+                            <textarea id="comment" name="comment" class="mceNoEditor" rows="4" cols="60"></textarea>
+                          
+                               <div class="buttonRow">
+                                <button dojoType="dijit.form.Button" type="button" onClick="dojo.byId('commentFormlet').submit()">
+                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
+                                </button>
+                               </div>
+                            </div>
+                           </form>
+               
+                        
 		        
 		
 		
