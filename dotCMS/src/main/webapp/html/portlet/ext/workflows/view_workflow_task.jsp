@@ -328,7 +328,7 @@ public String getGravatar(String postedBy){
 		                            <td style="width:50px;vertical-align: top;padding: 15px 0px 15px 0px">
                                         <div class="gravitarThingy" style="z-index:100;background-image:url('https://www.gravatar.com/avatar/<%=getGravatar(comment.roleId()) %>?d=blank'"></div>
                                          <div class="gravitarThingy" style="z-index:4;color:#bbbbbb;margin-top:-40px;">
-                                            <div style="margin-top:10px;">
+                                            <div style="margin-top:5px;">
                                                 <%=getPostedby(comment.roleId()).substring(0,1) %>
                                             </div>
                                          </div>
