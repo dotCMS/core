@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -33,6 +34,7 @@ public class ArchiveContentActionlet extends WorkFlowActionlet {
 
 			Logger.debug(this, ()-> "The contentlet: " + processor.getContentlet().getIdentifier() +
 								", will be archive");
+			processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 			APILocator.getContentletAPI().archive(processor.getContentlet(), processor.getUser(), false);
 		} catch (Exception e) {
 

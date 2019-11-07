@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.language.LanguageUtil;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class DeleteContentActionlet extends WorkFlowActionlet {
 
         try {
 
+            processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
             if (processor.getContentlet().isHTMLPage()) {
 
                 final int relatedContentTypes = APILocator.getContentTypeAPI(processor.getUser())
