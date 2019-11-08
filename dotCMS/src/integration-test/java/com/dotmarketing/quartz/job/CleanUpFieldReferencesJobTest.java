@@ -1,6 +1,7 @@
 package com.dotmarketing.quartz.job;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
@@ -19,6 +20,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -52,15 +54,12 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
         String name;
         Object fieldValue;
         String values;
-        Object expectedValue;
         Class fieldType;
 
-        public TestCase(final String name, final Object fieldValue, final String values,
-                final Object expectedValue, final Class fieldType) {
+        public TestCase(final String name, final Object fieldValue, final String values, final Class fieldType) {
             this.name = name;
             this.fieldValue = fieldValue;
             this.values = values;
-            this.expectedValue = expectedValue;
             this.fieldType = fieldType;
         }
     }
@@ -69,9 +68,9 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
     public static Object[] testCases() {
         return new TestCase[]{
                 new TestCase("checkboxFieldVarName", "CA",
-                        "Canada|CA\r\nMexico|MX\r\nUSA|US","", CheckboxField.class),
+                        "Canada|CA\r\nMexico|MX\r\nUSA|US", CheckboxField.class),
                 new TestCase("dateTimeFieldVarName", new Date(System.currentTimeMillis()-24*60*60*1000),
-                        null, new Date(), DateTimeField.class)
+                        null, DateTimeField.class)
 
         };
     }
@@ -132,12 +131,11 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
                 Calendar cal1 = Calendar.getInstance();
                 Calendar cal2 = Calendar.getInstance();
                 cal1.setTime((Date) fieldValue);
-                cal2.setTime((Date) testCase.expectedValue);
+                cal2.setTime((Date) testCase.fieldValue);
 
-                assertTrue(cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-                        cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR));
+                assertNotEquals(cal1.get(Calendar.DAY_OF_YEAR), cal2.get(Calendar.DAY_OF_YEAR));
             } else{
-                assertEquals(testCase.expectedValue, fieldValue);
+                assertEquals(DbConnectionFactory.isOracle()?null:"" , fieldValue);
             }
 
         } finally {
