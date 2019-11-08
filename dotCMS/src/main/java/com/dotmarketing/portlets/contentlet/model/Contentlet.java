@@ -26,7 +26,6 @@ import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -47,9 +46,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-
 import io.vavr.control.Try;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -116,6 +113,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
   public static final String DONT_VALIDATE_ME = "_dont_validate_me";
   public static final String DISABLE_WORKFLOW = "__disable_workflow__";
+  public static final String VALIDATE_EMPTY_FILE = "_validateEmptyFile_";
 
   // means the contentlet is being used on unit test mode.
   // this is only for unit test. do not use on production.
@@ -1069,8 +1067,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
             if ( map.get( INODE_KEY ) != null && InodeUtils.isSet( (String) map.get( INODE_KEY ) ) ) {
                 String inode = (String) map.get(INODE_KEY);
 	        	try{
-
-	        		java.io.File binaryFilefolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
+	        		java.io.File binaryFileFolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
 	                    + java.io.File.separator
 	                    + inode.charAt(0)
 	                    + java.io.File.separator
@@ -1079,13 +1076,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	                    + inode
 	                    + java.io.File.separator
 	                    + velocityVarName);
-	                    if(binaryFilefolder.exists()){
-	                    	java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
-		                    if(files.length > 0){
+	                    if(binaryFileFolder.exists()){
+	                    	java.io.File[] files = binaryFileFolder.listFiles(new BinaryFileFilter());
+		                    if(null != files && files.length > 0){
 		                    	f = files[0];
 		                    	map.put(velocityVarName, f);
 		                    }
-		                }
+		                } 
 	            }catch(Exception e){
 	                Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+inode+"  velocityVaribleName : "+velocityVarName );
 	                throw new IOException("File System error.");
@@ -1250,7 +1247,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
     public Boolean isHTMLPage() {
-        return getStructure().getStructureType() == BaseContentType.HTMLPAGE.getType();
+      return getContentType().baseType() == BaseContentType.HTMLPAGE;
     }
 
     /**
@@ -1258,7 +1255,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      * @return
      */
 	public boolean isFileAsset() {
-		return getStructure().getStructureType() == BaseContentType.FILEASSET.getType();
+		return getContentType().baseType() == BaseContentType.FILEASSET;
 	}
 
 	/**
@@ -1266,10 +1263,9 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @return
 	 */
     public boolean isHost() {
-        Structure hostStructure =
-                CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+      
 
-        return getStructure().getInode().equals(hostStructure.getInode());
+        return getContentType().variable().equals(Host.HOST_VELOCITY_VAR_NAME);
     }
 
 	/**

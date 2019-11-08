@@ -67,6 +67,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -907,18 +908,50 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return findContentlets(inodes);
 	}
 
-	@Override
-	protected List<Contentlet> findByStructure(String structureInode, int limit, int offset) throws DotDataException, DotStateException, DotSecurityException {
-	    HibernateUtil hu = new HibernateUtil();
-        hu.setQuery("select inode from inode in class " + com.dotmarketing.portlets.contentlet.business.Contentlet.class.getName() +
-                ", contentletvi in class "+ContentletVersionInfo.class.getName()+
-                " where type = 'contentlet' and structure_inode = '" + structureInode + "' " +
-                " and contentletvi.identifier=inode.identifier and contentletvi.workingInode=inode.inode ");
-        if(offset > 0)
+    @Override
+    protected List<Contentlet> findByStructure(String structureInode, int limit, int offset)
+            throws DotDataException, DotStateException, DotSecurityException {
+        return findByStructure(structureInode, null, limit, offset);
+    }
+
+    @Override
+    protected List<Contentlet> findByStructure(String structureInode, Date maxDate, int limit,
+            int offset) throws DotDataException, DotStateException, DotSecurityException {
+        final HibernateUtil hu = new HibernateUtil();
+        final StringBuilder select = new StringBuilder();
+        select.append("select inode from inode in class ")
+                .append(com.dotmarketing.portlets.contentlet.business.Contentlet.class.getName())
+                .append(", contentletvi in class ").append(ContentletVersionInfo.class.getName())
+                .append(" where type = 'contentlet' and structure_inode = '")
+                .append(structureInode).append("' " );
+
+        if (maxDate != null){
+            final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            if (DbConnectionFactory.isOracle()) {
+                select.append(" AND mod_date<=to_date('");
+                select.append(format.format(maxDate));
+                select.append("', 'YYYY-MM-DD HH24:MI:SS')");
+            } else if (DbConnectionFactory.isMsSql()){
+                    select.append(" AND mod_date <= CAST('");
+                    select.append(format.format(maxDate));
+                    select.append("' AS DATETIME)");
+            } else {
+                select.append(" AND mod_date<='");
+                select.append(format.format(maxDate));
+                select.append("'");
+            }
+        }
+
+        select.append(" and contentletvi.identifier=inode.identifier and contentletvi.workingInode=inode.inode ");
+        hu.setQuery(select.toString());
+
+        if (offset > 0) {
             hu.setFirstResult(offset);
-        if(limit > 0)
+        }
+        if (limit > 0) {
             hu.setMaxResults(limit);
-        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties =  hu.list();
+        }
+        List<com.dotmarketing.portlets.contentlet.business.Contentlet> fatties = hu.list();
         List<Contentlet> result = new ArrayList<Contentlet>();
         for (com.dotmarketing.portlets.contentlet.business.Contentlet fatty : fatties) {
             Contentlet content = convertFatContentletToContentlet(fatty);
@@ -926,7 +959,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             result.add(convertFatContentletToContentlet(fatty));
         }
         return result;
-	}
+    }
 
 	@Override
 	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
@@ -2369,15 +2402,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 *            - The Inode of the Content Type whose field will be deleted.
 	 * @param field
 	 *            - The {@link Field} that will be removed.
+     * @param maxDate
+     *            - Date used to filter contents whose mod_date is less than or equals to
 	 * @throws DotDataException
 	 *             An error occurred when updating the contents.
 	 */
-    protected void clearField(String structureInode, Field field) throws DotDataException {
+    protected void clearField(String structureInode, Date maxDate, Field field) throws DotDataException {
         // we are not a db field;
         if(field.getFieldContentlet() == null  || ! (field.getFieldContentlet().matches("^.*\\d+$"))){
           return;
         }
-        Queries queries = getQueries(field);
+        Queries queries = getQueries(field, maxDate);
         List<String> inodesToFlush = new ArrayList<>();
 
         Connection conn = DbConnectionFactory.getConnection();
@@ -2386,7 +2421,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             ps.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
-            try(ResultSet rs = ps.executeQuery();)
+            try(ResultSet rs = ps.executeQuery())
             {
             	PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate());
                 for (int i = 1; rs.next(); i++) {
@@ -2401,6 +2436,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 }
 
                 ps2.executeBatch(); // insert remaining records
+            } catch (SQLException e) {
+                Logger.error(this, String.format("Error clearing field '%s' for Content Type with ID: %s",
+                        field.getVelocityVarName(), structureInode), e);
+                throw new DotDataException(String.format("Error clearing field '%s' for Content Type with ID: %s",
+                        field.getVelocityVarName(), structureInode), e);
             }
 
         } catch (SQLException e) {
@@ -2414,12 +2454,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
+    protected void clearField(String structureInode, Field field) throws DotDataException {
+        clearField(structureInode, null, field);
+    }
+
+    /**
+     * @deprecated Use {@link ESContentFactoryImpl#getQueries(Field, Date)} instead
+     * @param field
+     * @return
+     */
+    @Deprecated
+    public Queries getQueries(Field field) {
+        return getQueries(field, null);
+    }
     /**
      *
      * @param field
      * @return
      */
-    public Queries getQueries(Field field) {
+    public Queries getQueries(final Field field, final Date maxDate) {
 
         StringBuilder select = new StringBuilder("SELECT inode FROM contentlet ");
         StringBuilder update = new StringBuilder("UPDATE contentlet SET ");
@@ -2452,7 +2505,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     whereField.append(field.getFieldContentlet()).append(" != ");
                 }
             } else {
-                whereField.append(field.getFieldContentlet()).append(" != ");
+                if (field.getFieldContentlet().contains("text") && DbConnectionFactory.isOracle()){
+                    whereField.append(" TRIM(").append(field.getFieldContentlet()).append(") IS NOT NULL ");
+                } else{
+                    whereField.append(field.getFieldContentlet()).append(" != ");
+                }
             }
         }
 
@@ -2487,11 +2544,31 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 whereField.append(" > 0");
             }else {
                 update.append("''");
-                whereField.append("''");
+                if (!(field.getFieldContentlet().contains("text") && DbConnectionFactory.isOracle())){
+                    whereField.append("''");
+                }
             }
         }
 
         select.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");
+
+        if (maxDate != null) {
+            final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            if (DbConnectionFactory.isOracle()) {
+                select.append(" AND mod_date<=to_date('");
+                select.append(format.format(maxDate));
+                select.append("', 'YYYY-MM-DD HH24:MI:SS')");
+            } else if (DbConnectionFactory.isMsSql()){
+                select.append(" AND mod_date <= CAST('");
+                select.append(format.format(maxDate));
+                select.append("' AS DATETIME)");
+            } else {
+                select.append(" AND mod_date<='");
+                select.append(format.format(maxDate));
+                select.append("'");
+            }
+        }
+
         update.append(" WHERE inode = ?");
 
         return new Queries().setSelect(select.toString()).setUpdate(update.toString());

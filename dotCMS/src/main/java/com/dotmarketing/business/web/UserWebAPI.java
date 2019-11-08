@@ -18,14 +18,12 @@ import com.liferay.portal.model.User;
 public interface UserWebAPI extends UserAPI {
 
 	/**
-	 * 
-	 * @param req
-	 * @return The logged in user (back-end or front-end), null if no user is logged in 
+	 * @return The logged in user (back-end or front-end), null if no user is logged in
 	 * @throws DotRuntimeException
-	 * @throws SystemException 
-	 * @throws PortalException 
+	 * @throws SystemException
+	 * @throws PortalException
 	 */
-	public abstract User getLoggedInUser(HttpServletRequest req) throws DotRuntimeException, PortalException, SystemException;
+	public abstract User getLoggedInUser(HttpServletRequest req);
 
 	/**
 	 * Tries to get the user from the session, if the session is not valid or the user is not logged returns null

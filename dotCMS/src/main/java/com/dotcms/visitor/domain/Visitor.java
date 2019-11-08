@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
+import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -60,6 +61,7 @@ public class Visitor implements Serializable {
 
     private final Set<String> pagesViewed = new HashSet<>();
 
+    private Geolocation geolocation=null;
     //private VisitorsJourney journey;
 
     public static Visitor newInstance(HttpServletRequest request) {
@@ -100,6 +102,17 @@ public class Visitor implements Serializable {
     }
 
     
+    public Geolocation getGeo() {
+        if(this.geolocation==null) {
+            this.geolocation =  this.getGeo(ipAddress.getHostAddress());
+        }
+        return this.geolocation;
+        
+    }
+    
+    public Geolocation getGeo(String ipAddress) {
+        return GeoIp2CityDbUtil.getInstance().getGeolocation(ipAddress);
+    }
     /**
      * Adds a persona to the visitors "possible personas"
      * without setting the visitor persona

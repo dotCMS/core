@@ -161,10 +161,13 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         // add CONTENT interface fields
         builder.fields(InterfaceType.CONTENTLET.getType().getFieldDefinitions());
 
+        // TODO commented while pending for researching. Do not remove 
+        /*
         if(InterfaceType.getInterfaceForBaseType(contentType.baseType())!=null) {
             builder.withInterface(InterfaceType.getInterfaceForBaseType(contentType.baseType()));
         }
-
+        */
+        
         final List<Field> fields = contentType.fields();
 
         fields.forEach((field)->{
@@ -218,7 +221,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final ContentletRelationships.ContentletRelationshipRecords
             records = contentletRelationships.new ContentletRelationshipRecords(
             relationship,
-            APILocator.getRelationshipAPI().isParent(relationship, contentType));
+            APILocator.getRelationshipAPI().isChildField(relationship, field));
 
         GraphQLOutputType outputType = typesMap.get(relatedContentType.variable()) != null
             ? typesMap.get(relatedContentType.variable())

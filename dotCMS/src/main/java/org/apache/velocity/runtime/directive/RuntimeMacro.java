@@ -1,5 +1,7 @@
 package org.apache.velocity.runtime.directive;
 
+import com.dotcms.rendering.velocity.services.DotResourceCache;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -357,10 +359,15 @@ public class RuntimeMacro extends Directive
             try{
                String[] macroMap = CacheLocator.getVeloctyResourceCache().getMacro(macroName);
                 if(macroMap != null && context.get(EVALING_MACRO)==null) {
-                    Context contextForEval = new VelocityContext(context);
-                    contextForEval.put(EVALING_MACRO, Boolean.TRUE);
-                    VelocityUtil.eval(macroMap[1], contextForEval);
-                    return this.render(context, writer, node);
+                    if(macroMap.length>0 && !macroMap[0].equals(DotResourceCache.MACRO404[0])) {
+                        Context contextForEval = new VelocityContext(context);
+                        contextForEval.put(EVALING_MACRO, Boolean.TRUE);
+                        VelocityUtil.eval(macroMap[1], contextForEval);
+                        return this.render(context, writer, node);
+                    }
+                }
+                else if(macroMap==null){
+                    CacheLocator.getVeloctyResourceCache().putMacro404(macroName);
                 }
             } catch (Exception e) {
               Logger.warn(this,"Unable to load macro #" + macroName + " called at " +
