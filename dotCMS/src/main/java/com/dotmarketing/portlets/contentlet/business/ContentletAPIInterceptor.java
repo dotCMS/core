@@ -1659,6 +1659,21 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+    /**
+     * @deprecated This method should not be exposed. Use ContentletAPI.getRelated variations instead
+     * @param contentlet
+     * @param rel
+     * @param user
+     * @param respectFrontendRoles
+     * @param pullByParent
+     * @param limit
+     * @param offset
+     * @param sortBy
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Deprecated
     @Override
     public List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel, User user,
             boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
@@ -1673,7 +1688,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
         }
         List<Contentlet> contentlets = conAPI
                 .filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent,
-                        limit, offset, sortBy);
+                        limit, offset, null);
         for(ContentletAPIPostHook post : postHooks){
             post.filterRelatedContent(contentlet, rel, user, respectFrontendRoles, pullByParent,
                     limit, offset, sortBy);

@@ -488,6 +488,8 @@ public class ContentResource {
         final String tmDate = (String) request.getSession().getAttribute("tm_date");
 
         type = UtilMethods.isSet(type) ? type : "json";
+
+        final String relatedOrder = UtilMethods.isSet(orderBy) ? orderBy: null;
         orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
 
         try {
@@ -515,12 +517,12 @@ public class ContentResource {
                 int i = 0;
                 for(String relationshipValue: related.split(",")){
                     if (i == 0) {
-                        contentlets.addAll(getPullRelated(user, limit, orderBy, tmDate,
+                        contentlets.addAll(getPullRelated(user, limit, relatedOrder, tmDate,
                                 processQuery(query), relationshipValue, language, live));
                     } else {
                         //filter the intersection in case multiple relationship
                         contentlets = contentlets.stream()
-                                .filter(getPullRelated(user, limit, orderBy, tmDate,
+                                .filter(getPullRelated(user, limit, relatedOrder, tmDate,
                                         processQuery(query), relationshipValue, language, live)::contains).collect(
                                         Collectors.toList());
                     }

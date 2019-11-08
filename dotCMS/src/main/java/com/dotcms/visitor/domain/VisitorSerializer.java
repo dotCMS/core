@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.google.common.collect.ImmutableMap;
+import io.vavr.control.Try;
 
 public class VisitorSerializer extends JsonSerializer<Visitor> {
 
@@ -49,6 +50,10 @@ public class VisitorSerializer extends JsonSerializer<Visitor> {
     }
     if (visitor.getDmid() != null) {
       visitorBuilder.put("dmid", visitor.getDmid());
+    }
+    Geolocation geo = Try.of(()->visitor.getGeo()).getOrNull();
+    if(geo!=null) {
+        visitorBuilder.put(geo, geo);
     }
     visitorBuilder.put("personas", visitor.getWeightedPersonas());
     gen.writeObject(visitorBuilder.build());

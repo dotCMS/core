@@ -16,7 +16,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
-
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -831,7 +831,28 @@ public class HibernateUtil {
 	public static void addCommitListener(final Runnable listener) throws DotHibernateException {
 	    addCommitListener(UUIDGenerator.generateUuid(),listener);
 	}
-
+	
+    /**
+     * Adds a commit listener to the current database transaction/session. There are several
+     * types of commit listeners, namely:
+     * <ul>
+     * <li>{@link DotSyncRunnable}</li>
+     * <li>{@link DotOrderedRunnable}</li>
+     * <li>{@link FlushCacheRunnable}</li>
+     * <li>{@link ReindexRunnable}</li>
+     * <li>Among others.</li>
+     * </ul>
+     * Commit listeners allow developers to execute code after a transaction has been committed
+     * or the session has ended.
+     *
+     * @param listener The commit listener wrapped as a {@link Runnable} object.
+     *
+     * @throws DotHibernateException An error occurred when registering the commit listener.
+     */
+    public static void addCommitListenerNoThrow(final Runnable listener)  {
+        Sneaky.sneaked(()->addCommitListener(UUIDGenerator.generateUuid(),listener));
+    }
+    
 	/**
 	 * Allows you to add an asynchronous commit listener to the current database
 	 * session/transaction. This means that the current flow of the application will take care of

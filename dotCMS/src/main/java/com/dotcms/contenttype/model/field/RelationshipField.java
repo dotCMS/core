@@ -40,7 +40,15 @@ public abstract class RelationshipField extends Field{
     public final List<DataTypes> acceptedDataTypes() {
         return ImmutableList.of(DataTypes.SYSTEM);
     }
-    public abstract static class Builder implements FieldBuilder {}
+
+    @Value.Default
+    public boolean skipRelationshipCreation() {
+        return false;
+    }
+
+    public abstract static class Builder implements RelationshipFieldBuilder {
+
+    }
 
     @JsonIgnore
     public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
