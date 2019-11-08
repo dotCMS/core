@@ -850,9 +850,9 @@ public class HibernateUtil {
      * @throws DotHibernateException An error occurred when registering the commit listener.
      */
     public static void addCommitListenerNoThrow(final Runnable listener)  {
-        Sneaky.sneaked(()->addCommitListener(UUIDGenerator.generateUuid(),listener));
+		addCommitListener(UUIDGenerator.generateUuid(),listener);
     }
-    
+
 	/**
 	 * Allows you to add an asynchronous commit listener to the current database
 	 * session/transaction. This means that the current flow of the application will take care of
