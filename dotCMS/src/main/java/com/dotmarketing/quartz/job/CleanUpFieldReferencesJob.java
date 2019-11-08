@@ -125,15 +125,13 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
         final SimpleTrigger trigger = new SimpleTrigger("deleteFieldStatefulTrigger-" + randomID,
                         "clean_up_field_reference_job_triggers", new Date(startTime));
 
-        HibernateUtil.addCommitListenerNoThrow(() -> {
-            Sneaky.sneaked(() -> {
-                Scheduler sched = QuartzUtils.getSequentialScheduler();
-                sched.scheduleJob(jd, trigger);
-            });
-        });
-
-
+        try {
+            Scheduler sched = QuartzUtils.getSequentialScheduler();
+            sched.scheduleJob(jd, trigger);
+        } catch (SchedulerException e) {
+            Logger.error(CleanUpFieldReferencesJob.class,
+                    "Error scheduling CleanUpFieldReferencesJob", e);
+            throw new DotRuntimeException("Error scheduling CleanUpFieldReferencesJob", e);
+        }
     }
-    
-
 }
