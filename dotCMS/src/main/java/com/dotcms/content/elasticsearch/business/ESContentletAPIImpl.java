@@ -3648,6 +3648,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
+        if (!isCheckInSafe(contentRelationships)){
+            throw new DotContentletStateException(
+                    "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode.");
+        }
+
         if(cats == null) {
             cats = getExistingContentCategories(contentlet);
         }
@@ -4370,6 +4375,31 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    /**
+     * Method that verifies if a check in operation can be executed.
+     * It is safe to execute a checkin if write operations can be performed on the ES cluster.
+     * Otherwise, check in will be allowed only if the contentlet to be saved does not have legacy relationships
+     * @param relationships ContentletRelationships with the records to be saved
+     * @return
+     */
+    private boolean isCheckInSafe(final ContentletRelationships relationships) {
+
+        if (relationships != null && relationships.getRelationshipsRecords().size() > 0) {
+            boolean isClusterReadOnly = new ESIndexAPI().isClusterInReadOnlyMode();
+
+            if (isClusterReadOnly) {
+                for (ContentletRelationships.ContentletRelationshipRecords records : relationships
+                        .getRelationshipsRecords()) {
+                    if (!records.getRelationship().isRelationshipField()){
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+
     }
 
     /**

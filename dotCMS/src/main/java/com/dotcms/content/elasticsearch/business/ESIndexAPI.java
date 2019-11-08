@@ -1329,4 +1329,22 @@ public class ESIndexAPI {
 				.readValue(response.getEntity().getContent(), mappingClass));
 	}
 
+    /**
+     *
+     * @return boolean
+     */
+	public boolean isClusterInReadOnlyMode(){
+        try {
+            final ClusterGetSettingsResponse response = RestHighLevelClientProvider.getInstance()
+                    .getClient().cluster()
+                    .getSettings(new ClusterGetSettingsRequest(), RequestOptions.DEFAULT);
+
+            return Boolean.valueOf(response.getSetting("cluster.blocks.read_only"));
+        } catch (IOException e) {
+            Logger.warnAndDebug(ESIndexAPI.class, "Error getting ES cluster settings", e);
+        }
+
+        return true;
+    }
+
 }
