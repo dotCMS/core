@@ -523,10 +523,9 @@ public class FieldAPIImpl implements FieldAPI {
           contentletAPI.reindex(structure);
       }
 
-      HibernateUtil.addCommitListenerNoThrow(()-> {
-          localSystemEventsAPI.notify(new FieldDeletedEvent(field.variable()));
-          CleanUpFieldReferencesJob.triggerCleanUpJob(field, user);
-      });
+      CleanUpFieldReferencesJob.triggerCleanUpJob(field, user);
+      localSystemEventsAPI.notify(new FieldDeletedEvent(field.variable()));
+
   }
 
     /**
