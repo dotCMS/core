@@ -3671,7 +3671,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        if (!isCheckInSafe(contentRelationships)){
+        if (!isCheckInSafe(contentRelationships, new ESIndexAPI())){
             throw new DotContentletStateException(
                     "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode.");
         }
@@ -4409,10 +4409,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param relationships ContentletRelationships with the records to be saved
      * @return
      */
-    private boolean isCheckInSafe(final ContentletRelationships relationships) {
+    @VisibleForTesting
+    boolean isCheckInSafe(final ContentletRelationships relationships, final ESIndexAPI esIndexAPI) {
 
         if (relationships != null && relationships.getRelationshipsRecords().size() > 0) {
-            boolean isClusterReadOnly = new ESIndexAPI().isClusterInReadOnlyMode();
+            boolean isClusterReadOnly = esIndexAPI.isClusterInReadOnlyMode();
 
             if (isClusterReadOnly) {
                 for (ContentletRelationships.ContentletRelationshipRecords records : relationships
