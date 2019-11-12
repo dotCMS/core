@@ -542,12 +542,8 @@ public class LoginServiceAPIFactory implements Serializable {
         public User getLoggedInUser(HttpServletRequest req ){
             User user = null;
 
-            if(req != null) {
-                try {
-                    user = userWebAPI.getLoggedInUser(req);
-                } catch (PortalException|SystemException e) {
-                    throw new UserLoggingException( e );
-                }
+            if (req != null) {
+                user = userWebAPI.getLoggedInUser(req);
             }
             return user;
         }

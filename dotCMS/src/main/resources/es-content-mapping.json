@@ -1,80 +1,87 @@
 {
-
-    "date_detection": true,
-    "dynamic_date_formats": [
-        "yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
-    ],
-    "dynamic_templates": [
-        {
-            "template_1": {
-                "match": "*_dotraw",
-                "mapping": {
-                    "type":  "keyword",
-                    "ignore_above": 8191
-                }
-            }
-        },
-        {
-            "textmapping": {
-                "match": "*_text",
-                "mapping": {
-                    "type": "text"
-                }
-            }
-        },
-        {
-            "strings_as_dates": {
-                "match": "originalstartdate||recurrencestart||recurrenceend",
-                "mapping": {
-                    "type": "date"
-                }
-            }
-        },
-
-        {
-            "geomapping": {
-                "match": "*latlon",
-                "mapping": {
-                    "type": "geo_point",
-                    "ignore_malformed": true
-                }
-            }
-        },
-        {
-            "geomapping_2": {
-                "match": "*latlong",
-                "mapping": {
-                    "type": "geo_point",
-                    "ignore_malformed": true
-                }
-            }
-        },
-        {
-            "keywordmapping" : {
-                "match_pattern": "regex",
-                "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap",
-                "mapping": {
-                    "type": "keyword"
-                }
-            }
-        },
-        {
-            "hostname" : {
-                "path_match": "host.hostname",
-                "mapping": {
-                    "type": "keyword"
-                }
-            }
-        },
-        {
-            "textmapping": {
-                "match_mapping_type": "string",
-                "mapping": {
-                    "analyzer": "my_analyzer",
-                    "store": "false",
-                    "type": "text"
-                }
-            }
-        }
-    ]
+      "date_detection": true,
+      "dynamic_date_formats": [
+          "yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+      ],
+      "dynamic_templates": [
+          {
+              "template_1": {
+                  "match": "*_dotraw",
+                  "mapping": {
+                      "type":  "keyword",
+                      "ignore_above": 8191
+                  }
+              }
+          },
+          {
+              "textmapping": {
+                  "match": "*_text",
+                  "mapping": {
+                      "type": "text"
+                  }
+              }
+          },
+          {
+              "strings_as_dates": {
+                  "match": "originalstartdate||recurrencestart||recurrenceend",
+                  "mapping": {
+                      "type": "date"
+                  }
+              }
+          },
+          {
+              "geomapping": {
+                  "match": "*latlon",
+                  "mapping": {
+                      "type": "geo_point",
+                      "ignore_malformed": true
+                  }
+              }
+          },
+          {
+              "geomapping_2": {
+                  "match": "*latlong",
+                  "mapping": {
+                      "type": "geo_point",
+                      "ignore_malformed": true
+                  }
+              }
+          },
+          {
+              "permissions": {
+                  "match": "permissions",
+                  "mapping": {
+                      "analyzer": "whitespace",
+                      "type": "text"
+                  }
+              }
+          },
+          {
+              "keywordmapping" : {
+                  "match_pattern": "regex",
+                  "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|moduser|owner",
+                  "mapping": {
+                      "type": "keyword"
+                  }
+              }
+          },
+          {
+              "hostname" : {
+                  "path_match": "host.hostname",
+                  "mapping": {
+                      "type": "keyword"
+                  }
+              }
+          },
+          {
+              "textmapping": {
+                  "match_mapping_type": "string",
+                  "mapping": {
+                      "analyzer": "my_analyzer",
+                      "store": "false",
+                      "type": "text"
+                  }
+              }
+          }
+      ]
 }

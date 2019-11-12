@@ -33,6 +33,7 @@ import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -192,18 +193,41 @@ public class ContainerFactoryImpl implements ContainerFactory {
     @Override
 	public Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive, final boolean includeHostOnPath) throws DotSecurityException, DotDataException {
 
-        if (!this.isValidContainerPath (folder) ||
-				!hasContainerAsset(host, folder)) {
+        if (!this.isValidContainerPath (folder)) {
 
-        	throw new NotFoundInDbException("On getting the container by folder, the folder: " + folder.getPath() +
+        	throw new NotFoundInDbException("On getting the container by folder, the folder: " + (folder != null ? folder.getPath() : "Unknown" ) +
 					" is not valid, it must be under: " + Constants.CONTAINER_FOLDER_PATH + " and must have a child file asset called: " +
 					Constants.CONTAINER_META_INFO_FILE_NAME);
 		}
+        final Identifier identifier = getContainerAsset(host, folder);
+        if(identifier==null) {
 
-        return FileAssetContainerUtil
-				.getInstance().fromAssets (host, folder, this.findContainerAssets(folder, user, showLive), showLive, includeHostOnPath);
+            throw new NotFoundInDbException("no container found under: " + folder.getPath() );
+        }
+
+        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI().
+				getContentletVersionInfo(identifier.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        final String inode = showLive && UtilMethods.isSet(contentletVersionInfo.getLiveInode()) ?
+				contentletVersionInfo.getLiveInode() : contentletVersionInfo.getWorkingInode();
+        Container container = containerCache.get(inode);
+
+        if(container==null) {
+
+            synchronized (identifier) {
+
+                if(container==null) {
+
+                    container = FileAssetContainerUtil.getInstance().fromAssets (host, folder,
+							this.findContainerAssets(folder, user, showLive), showLive, includeHostOnPath);
+                    if(container != null && container.getInode() != null) {
+                        containerCache.add(container);
+                    }
+                }
+            }
+        }
+
+        return container;
     }
-
     /*
     * Finds the containers on the file system, base on a folder
     * showLive in true means get just container published.
@@ -218,15 +242,17 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 * @param folder  folder
 	 * @return boolean
 	 */
-	private boolean hasContainerAsset(final Host host, final Folder folder) {
+	private Identifier getContainerAsset(final Host host, final Folder folder) {
 		try {
 
 			final Identifier identifier = this.identifierAPI.find(host, builder(folder.getPath(),
 					 Constants.CONTAINER_META_INFO_FILE_NAME).toString());
-			return null != identifier && UtilMethods.isSet(identifier.getId());
+			return identifier!=null  && UtilMethods.isSet(identifier.getId()) ? identifier : null;
 		} catch (Exception  e) {
-			return false;
+			Logger.warnAndDebug(this.getClass(),e);
+			return null;
 		}
+		
 	}
 
 	/*

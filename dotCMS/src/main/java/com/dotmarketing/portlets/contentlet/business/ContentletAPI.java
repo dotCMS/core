@@ -350,11 +350,11 @@ public interface ContentletAPI {
 	 * @throws DotStateException 
 	 */
 	public void publishRelatedHtmlPages(Contentlet contentlet) throws DotStateException, DotDataException;
-	
-	/**
+
+    /**
 	 * Will get all the contentlets for a structure and set the default values for a field on the contentlet.  
 	 * Will check Write/Edit permissions on the Contentlet. So to guarantee all Contentlets will be cleaned make
-	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean 
+	 * sure to pass in an Admin User.  If a user doesn't have permissions to clean all the contentlets it will clean
 	 * as many as it can and throw the DotSecurityException  
 	 * @param structure
 	 * @param field
@@ -364,6 +364,24 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public void cleanField(Structure structure, Field field, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
+
+    /**
+     * Will get all the contentlets for a structure (whose modDate is lower than or equals to the deletion date)
+     * and set the default values for a field on the contentlet.
+     * Will check Write/Edit permissions on the Contentlet. So to guarantee all Contentlets will be cleaned make
+     * sure to pass in an Admin User.  If a user doesn't have permissions to clean all teh contentlets it will clean
+     * as many as it can and throw the DotSecurityException
+     * @param structure
+     * @param deletionDate
+     * @param field
+     * @param user
+     * @param respectFrontendRoles
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    void cleanField(final Structure structure, final Date deletionDate, final Field field, final User user,
+            final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException;
 
 	/**
 	 * Will get all the contentlets for a structure and set the system host and system folder for the host values
@@ -823,8 +841,7 @@ public interface ContentletAPI {
 
 
     /**
-     * Internally called by getRelatedContent methods (handles all the logic to filter by parents or children)
-     * @param contentlet
+     * @deprecated This method should not be exposed. Use ContentletAPI.getRelated variations instead     * @param contentlet
      * @param rel
      * @param user
      * @param respectFrontendRoles
@@ -836,6 +853,7 @@ public interface ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Deprecated
     List<Contentlet> filterRelatedContent(Contentlet contentlet, Relationship rel,
             User user, boolean respectFrontendRoles, Boolean pullByParent, int limit, int offset,
             String sortBy)

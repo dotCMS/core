@@ -22,10 +22,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -167,47 +165,40 @@ public class ContentUtils {
 		}
 		
 		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate){
-			return pull(query, offset, limit, sort, user, tmDate, false);
+			return pull(query, offset, limit, sort, user, tmDate, PageMode.get().respectAnonPerms);
 		}
 
-		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate, boolean respectFrontendRoles){
-		    PaginatedArrayList<Contentlet> ret = new PaginatedArrayList<Contentlet>();
+		public static PaginatedArrayList<Contentlet> pull(String query, final int offset, final int limit, final String sort, final User user, final String tmDate, final boolean respectFrontendRoles){
+		    final PaginatedArrayList<Contentlet> ret = new PaginatedArrayList<>();
 		    
 			try {
 				//need to send the query with the defaults --- 
 			    List<Contentlet> contentlets=null;
 			    if(tmDate!=null && query.contains("+live:true")) {
 			        // with timemachine on!
-		            String datestr=tmDate;
-		            Date futureDate=new Date(Long.parseLong(datestr));
-		            query=query.replaceAll("\\+live\\:true", "").replaceAll("\\+working\\:true", "");
-		            String ffdate=ESMappingAPIImpl.datetimeFormat.format(futureDate);
+                    final Date futureDate = new Date(Long.parseLong(tmDate));
+                    query = query.replaceAll("\\+live\\:true", "")
+                            .replaceAll("\\+working\\:true", "");
+                    final String formatedDate = ESMappingAPIImpl.datetimeFormat.format(futureDate);
+
+                    final String notExpired = " +expdate_dotraw:[" + formatedDate + " TO 29990101000000] ";
+                    final String workingQuery = query + " +working:true " +
+                            "+pubdate_dotraw:[" + ESMappingAPIImpl.datetimeFormat.format(new Date())
+                            +
+                            " TO " + formatedDate + "] " + notExpired;
+                    final String liveQuery = query + " +live:true " + notExpired;
 		            
-		            String notexpired=" +expdate:["+ffdate+" TO 29990101000000] ";
-		            String wquery=query + " +working:true " +
-		            		"+pubdate:["+ESMappingAPIImpl.datetimeFormat.format(new Date())+
-		            				" TO "+ffdate+"] "+notexpired;
-		            String lquery=query + " +live:true " + notexpired;
-		            
-		            PaginatedArrayList<Contentlet> wc=(PaginatedArrayList<Contentlet>)conAPI.search(wquery, limit, offset, sort, user, respectFrontendRoles);
-		            PaginatedArrayList<Contentlet> lc=(PaginatedArrayList<Contentlet>)conAPI.search(lquery, limit, offset, sort, user, respectFrontendRoles);
-		            ret.setQuery(lquery);
-		            // merging both results avoiding repeated inodes
-		            Set<String> inodes=new HashSet<String>();
-		            contentlets=new ArrayList<Contentlet>();
-		            ret.setTotalResults(
-		                    wc.getTotalResults()>lc.getTotalResults() ? 
-		                            wc.getTotalResults() : lc.getTotalResults());
-		            contentlets.addAll(wc);
-		            for(Contentlet cc : wc) 
-		                inodes.add(cc.getInode());
-		            for(Contentlet cc : lc) {
-		                if(!inodes.contains(cc.getInode())) {
-		                    contentlets.add(cc);
-		                    inodes.add(cc.getInode());
-		                }
-		            }
-		            
+		            final PaginatedArrayList<Contentlet> workingContent = (PaginatedArrayList<Contentlet>)conAPI.search(workingQuery, limit, offset, sort, user, respectFrontendRoles);
+                    final PaginatedArrayList<Contentlet> liveContent = (PaginatedArrayList<Contentlet>)conAPI.search(liveQuery, limit, offset, sort, user, respectFrontendRoles);
+		            ret.setQuery(liveQuery);
+
+					contentlets = new ArrayList<>(workingContent);
+					ret.setTotalResults(Math.max(workingContent.getTotalResults(), liveContent.getTotalResults()));
+
+					// merging both results avoiding repeated inodes
+					final Set<String> inodes = workingContent.stream().map(Contentlet::getInode).collect(Collectors.toSet());
+                    contentlets.addAll(liveContent.stream().filter(contentlet -> !inodes.contains(contentlet.getInode())).collect(Collectors.toList()));
+
 		            // sorting the result
 		            if(UtilMethods.isSet(sort) && !sort.trim().equals("random")) {
 	    	            final String[] sorts=sort.split(",");
@@ -233,8 +224,9 @@ public class ContentUtils {
 		            }
 		            
 		            // truncate to respect limit
-		            if(contentlets.size()>limit)
-		                contentlets=contentlets.subList(0, limit);
+		            if(contentlets.size()>limit){
+		                contentlets = contentlets.subList(0, limit);
+		            }
 			    }
 			    else {
 			        // normal query
@@ -243,8 +235,7 @@ public class ContentUtils {
 			        ret.setQuery(query);
 			        contentlets=conts;
 			    }
-				for(Contentlet c : contentlets)
-					ret.add(c);
+				ret.addAll(contentlets);
 			} 
 			catch (Throwable e) {
 				String msg = e.getMessage();
@@ -553,7 +544,7 @@ public class ContentUtils {
                     //pulling children
                     final List<Contentlet> relatedContent = conAPI
                             .getRelatedContent(contentlet, relationship, !pullParents, user,
-                                    true, language, live);
+                                    true, -1, -1, sort, language, live);
 
                     if (relatedContent.isEmpty()) {
                         return Collections.emptyList();
@@ -563,7 +554,7 @@ public class ContentUtils {
                             .stream().map(cont -> cont.getIdentifier()).collect(
                                     Collectors.toList()))).append(")");
 
-                    final List<String> results = conAPI.searchIndex(pullQuery.toString(), limit,offset, null, user, true)
+                    final List<String> results = conAPI.searchIndex(pullQuery.toString(), limit,offset, sort, user, true)
                                     .stream()
                                     .map(cs-> cs.getIdentifier()).collect(Collectors.toList());
                     
@@ -571,8 +562,7 @@ public class ContentUtils {
                 } 
                 
                 //pulling parents
-                pullQuery.append(" +" + relationshipName + ":"
-                        + contentletIdentifier);
+                pullQuery.append(" +" + relationshipName + ":" + contentletIdentifier);
                 
                 return pull(pullQuery.toString(), offset, limit, sort, user, tmDate, true);
 
@@ -599,7 +589,8 @@ public class ContentUtils {
     }
 
     /**
-	 * Returns a list of related content given a Relationship and additional filtering criteria
+	 * @deprecated This method does not work for self related content. Use another pullRelatedField implementation in {@link ContentUtils}
+     * Returns a list of related content given a Relationship and additional filtering criteria
 	 * @param relationship
 	 * @param contentletIdentifier - Identifier of the contentlet
 	 * @param condition - Extra conditions to add to the query. like +title:Some Title.  Can be Null
@@ -610,6 +601,7 @@ public class ContentUtils {
 	 * @param tmDate
 	 * @return Returns empty List if no results are found
 	 */
+    @Deprecated
 	public static List<Contentlet> pullRelatedField(final Relationship relationship,
 			final String contentletIdentifier, final String condition, final int limit,
 			final int offset, final String sort, final User user, final String tmDate) {
@@ -633,10 +625,10 @@ public class ContentUtils {
      */
     public static List<Contentlet> pullRelatedField(final Relationship relationship,
             final String contentletIdentifier, final String condition, final int limit,
-            final int offset, final String sort, final User user, final String tmDate,
+            final int offset, final String sort, final User user, final String tmDate, final boolean pullParents,
             final long language, final Boolean live) {
         return getPullResults(relationship, contentletIdentifier, condition, limit, offset, sort,
-                user, tmDate, false, language, live);
+                user, tmDate, pullParents, language, live);
     }
 
     /**

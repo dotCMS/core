@@ -40,9 +40,9 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -488,6 +488,8 @@ public class ContentResource {
         final String tmDate = (String) request.getSession().getAttribute("tm_date");
 
         type = UtilMethods.isSet(type) ? type : "json";
+
+        final String relatedOrder = UtilMethods.isSet(orderBy) ? orderBy: null;
         orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
 
         try {
@@ -515,12 +517,12 @@ public class ContentResource {
                 int i = 0;
                 for(String relationshipValue: related.split(",")){
                     if (i == 0) {
-                        contentlets.addAll(getPullRelated(user, limit, orderBy, tmDate,
+                        contentlets.addAll(getPullRelated(user, limit, relatedOrder, tmDate,
                                 processQuery(query), relationshipValue, language, live));
                     } else {
                         //filter the intersection in case multiple relationship
                         contentlets = contentlets.stream()
-                                .filter(getPullRelated(user, limit, orderBy, tmDate,
+                                .filter(getPullRelated(user, limit, relatedOrder, tmDate,
                                         processQuery(query), relationshipValue, language, live)::contains).collect(
                                         Collectors.toList());
                     }
@@ -780,17 +782,14 @@ public class ContentResource {
             }
             addedRelationships.add(relationship);
 
-            final boolean isParent =
-                    relationshipAPI.sameParentAndChild(relationship) ? field.variable()
-                            .equalsIgnoreCase(relationship.getChildRelationName())
-                            : relationshipAPI.isParent(relationship, contentlet.getContentType());
+            final boolean isChildField = relationshipAPI.isChildField(relationship, field);
 
             ContentletRelationships.ContentletRelationshipRecords relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
-                    relationship, isParent);
+                    relationship, isChildField);
 
             List records = addRelatedContentToXMLMap(request, response, render, user, depth, respectFrontendRoles,
                     contentlet,
-                    addedRelationships, language, live, field, isParent);
+                    addedRelationships, language, live, field, isChildField);
 
             objectMap.put(field.variable(),
                     relationshipRecords.doesAllowOnlyOne() && records.size() > 0 ? records.get(0)
@@ -801,24 +800,24 @@ public class ContentResource {
                 com.dotcms.contenttype.model.field.Field otherSideField = null;
                 if (relationship.getParentRelationName() != null
                         && relationship.getChildRelationName() != null) {
-                    if (relationshipAPI.isParent(relationship, contentlet.getContentType())) {
-                        if (fields.containsKey(relationship.getChildRelationName())) {
-                            otherSideField = fields.get(relationship.getChildRelationName());
-                        }
-                    } else {
+                    if (isChildField) {
                         if (fields.containsKey(relationship.getParentRelationName())) {
                             otherSideField = fields.get(relationship.getParentRelationName());
+                        }
+                    } else {
+                        if (fields.containsKey(relationship.getChildRelationName())) {
+                            otherSideField = fields.get(relationship.getChildRelationName());
                         }
                     }
                 }
                 if (otherSideField != null){
 
                     relationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
-                            relationship, !isParent);
+                            relationship, !isChildField);
 
                     records = addRelatedContentToXMLMap(request, response, render, user, depth, respectFrontendRoles,
                             contentlet,
-                            addedRelationships, language, live, otherSideField, !isParent);
+                            addedRelationships, language, live, otherSideField, !isChildField);
 
                     objectMap.put(otherSideField.variable(),
                             relationshipRecords.doesAllowOnlyOne() && records.size() > 0 ? records.get(0)
@@ -1024,19 +1023,16 @@ public class ContentResource {
             }
             addedRelationships.add(relationship);
 
-            final boolean isParent =
-                    relationshipAPI.sameParentAndChild(relationship) ? field.variable()
-                            .equalsIgnoreCase(relationship.getChildRelationName())
-                            : relationshipAPI.isParent(relationship, contentlet.getContentType());
+            final boolean isChildField = relationshipAPI.isChildField(relationship, field);
 
             final ContentletRelationships contentletRelationships = new ContentletRelationships(
                     contentlet);
             ContentletRelationships.ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
-                    relationship, isParent);
+                    relationship, isChildField);
 
             JSONArray jsonArray = addRelatedContentToJsonArray(request, response, render, user, depth,
                     respectFrontendRoles,
-                    contentlet, addedRelationships, language, live, field, isParent);
+                    contentlet, addedRelationships, language, live, field, isChildField);
 
             jsonObject.put(field.variable(), getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
 
@@ -1046,13 +1042,13 @@ public class ContentResource {
 
                 if (relationship.getParentRelationName() != null
                         && relationship.getChildRelationName() != null) {
-                    if (relationshipAPI.isParent(relationship, contentlet.getContentType())) {
-                        if (fields.containsKey(relationship.getChildRelationName())) {
-                            otherSideField = fields.get(relationship.getChildRelationName());
-                        }
-                    } else {
+                    if (isChildField) {
                         if (fields.containsKey(relationship.getParentRelationName())) {
                             otherSideField = fields.get(relationship.getParentRelationName());
+                        }
+                    } else {
+                        if (fields.containsKey(relationship.getChildRelationName())) {
+                            otherSideField = fields.get(relationship.getChildRelationName());
                         }
                     }
                 }
@@ -1060,10 +1056,10 @@ public class ContentResource {
                 if (otherSideField != null){
 
                     records = contentletRelationships.new ContentletRelationshipRecords(
-                            relationship, !isParent);
+                            relationship, !isChildField);
                     jsonArray = addRelatedContentToJsonArray(request, response, render, user, depth,
                             respectFrontendRoles,
-                            contentlet, addedRelationships, language, live, otherSideField, !isParent);
+                            contentlet, addedRelationships, language, live, otherSideField, !isChildField);
 
                     jsonObject.put(otherSideField.variable(),
                             getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
@@ -1565,8 +1561,7 @@ public class ContentResource {
             throws URISyntaxException {
         boolean live = init.getParamsMap().containsKey("publish");
         boolean clean = false;
-        final boolean ALLOW_FRONT_END_SAVING = Config
-            .getBooleanProperty("REST_API_CONTENT_ALLOW_FRONT_END_SAVING", false);
+        PageMode mode = PageMode.get();
 
         try {
 
@@ -1574,7 +1569,7 @@ public class ContentResource {
 
             // preparing categories
             List<Category> categories = MapToContentletPopulator.INSTANCE.getCategories
-                    (contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
+                    (contentlet, init.getUser(), mode.respectAnonPerms);
             // running a workflow action?
             final ContentWorkflowResult contentWorkflowResult = processWorkflowAction(contentlet, init, live);
             final ContentletRelationships relationships = (ContentletRelationships) contentlet
@@ -1588,16 +1583,16 @@ public class ContentResource {
 
                 contentlet.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
                 contentlet = APILocator.getContentletAPI()
-                        .checkin(contentlet, relationships, categories, null, init.getUser(), ALLOW_FRONT_END_SAVING);
+                        .checkin(contentlet, relationships, categories, null, init.getUser(), mode.respectAnonPerms);
                 if (live) {
                     APILocator.getContentletAPI()
-                            .publish(contentlet, init.getUser(), ALLOW_FRONT_END_SAVING);
+                            .publish(contentlet, init.getUser(), mode.respectAnonPerms);
                 }
             } else {
 
                 contentlet = APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
                         new ContentletDependencies.Builder()
-                        .respectAnonymousPermissions(ALLOW_FRONT_END_SAVING)
+                        .respectAnonymousPermissions(mode.respectAnonPerms)
                         .modUser(init.getUser()).categories(categories)
                         .relationships(relationships)
                         .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent())
