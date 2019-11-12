@@ -1950,26 +1950,49 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public boolean destroy(final List<Contentlet> contentlets, final User user, final boolean respectFrontendRoles) throws DotDataException,
             DotSecurityException {
-        
+
+        boolean destroyed = false;
+
         if (contentlets == null || contentlets.size() == 0) {
             
             Logger.info(this, "No contents passed to delete so returning");
             return false;
         }
-        
-        this.logContentletActivity(contentlets, "Destroying Content", user);
-        
+
+        final List<Contentlet> contentletsToDelete = new ArrayList<>();
         for (final Contentlet contentlet : contentlets) {
-            
-            if (contentlet.getInode().equals("")) {
-                
+
+            final Optional<Boolean> deleteOpt = this.checkAndRunDestroyAsWorkflow(contentlet, user, respectFrontendRoles);
+            if (!deleteOpt.isPresent()) {
+
+                contentletsToDelete.add(contentlet);
+            } else {
+
+                Logger.info(this, "A Workflow has been ran instead of destroy the contentlet: " +
+                        contentlet.getIdentifier());
+                destroyed |= deleteOpt.get();
+            }
+        }
+
+        return  !contentletsToDelete.isEmpty()?
+             this.internalDestroy(contentletsToDelete, user, respectFrontendRoles):destroyed;
+    }
+
+    private boolean internalDestroy (final List<Contentlet> contentlets, final User user, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+
+        this.logContentletActivity(contentlets, "Destroying Content", user);
+
+        for (final Contentlet contentlet : contentlets) {
+
+            if (StringPool.BLANK.equals(contentlet.getInode())) {
+
                 this.logContentletActivity(contentlet, "Error Destroying Content", user);
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
             }
-            
+
             this.canLock(contentlet, user);
         }
-        
+
         final List<Contentlet> filterContentlets = this.permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_PUBLISH,
                 respectFrontendRoles, user);
 

@@ -1248,6 +1248,10 @@ public class DotWebdavHelper {
 
 					try{
 						conAPI.archive(fileAssetCont, user, false);
+						if (UtilMethods.isSet(fileAssetCont.getActionId())) {
+
+							fileAssetCont.getMap().remove(Contentlet.WORKFLOW_ACTION_KEY);
+						}
 					}catch (Exception e) {
 						Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 						throw new DotDataException(e.getMessage(), e);
