@@ -1980,7 +1980,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final HttpServletRequest request1 = getHttpRequest();
             final Response response1 = workflowResource
                     .fireActionDefault(request1, new EmptyHttpResponse(), null, null,
-                            languageAPI.getDefaultLanguage().getId(), SystemAction.PUBLISH,  fireActionForm1);
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), SystemAction.PUBLISH,  fireActionForm1);
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
             final ResponseEntityView fireEntityView1 = ResponseEntityView.class
@@ -2000,7 +2000,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final HttpServletRequest request2 = getHttpRequest();
             final Response response2 = workflowResource
                     .fireActionDefault(request2, new EmptyHttpResponse(), null, null,
-                            languageAPI.getDefaultLanguage().getId(), SystemAction.PUBLISH,  fireActionForm2);
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), SystemAction.PUBLISH,  fireActionForm2);
             final int statusCode2 = response2.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode2);
             final ResponseEntityView fireEntityView2 = ResponseEntityView.class
@@ -2078,7 +2078,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
             final HttpServletRequest request1 = getHttpRequest();
             final Response response1 = workflowResource
                     .fireActionDefault(request1, new EmptyHttpResponse(), null, null,
-                            languageAPI.getDefaultLanguage().getId(), SystemAction.PUBLISH,  fireActionForm1);
+                            String.valueOf(languageAPI.getDefaultLanguage().getId()), SystemAction.PUBLISH,  fireActionForm1);
             final int statusCode1 = response1.getStatus();
             assertEquals(Status.OK.getStatusCode(), statusCode1);
             final ResponseEntityView fireEntityView1 = ResponseEntityView.class
