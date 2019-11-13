@@ -11,15 +11,15 @@
         "publish:dev": "rm -rf dist;npm run build:prod;cp package.json ./dist/package.json;npm run createpackagejson;cd dist;npm publish",
         "publish:doc:docms": "typedoc projects/dotcms/src/lib/ --options projects/dotcms/typedoc.json; gh-pages --dist ./dist-docs/dotcms --dest ./docs/dotcms",
         "publish:doc:docms-models": "typedoc projects/dotcms-models/src/ --options projects/dotcms-models/typedoc.json; gh-pages --dist ./dist-docs/dotcms-models --dest ./docs/dotcms-models",
-        "publish:docs": "npm run publish:doc:docms;npm run publish:doc:docms-models",
+        "publish:storybook": "build-storybook --config-dir .storybook --output-dir .out/design;storybook-to-ghpages --existing-output-dir=.out; rm -rf .out",
+        "publish:docs": "npm run publish:storybook;npm run publish:doc:docms;npm run publish:doc:docms-models",
         "build:dev": "ng build --configuration=development",
         "build:prod": "ng build --configuration=production --prod dotcms-ui",
         "build:libs": "ng build dotcms-js; ng build dot-rules; ng build dot-layout-grid",
         "docker:test": "npm run docker:build;docker run --rm core-web npm test -- dotcms-ui --watch=false",
         "docker:build": "docker build -t core-web .",
         "storybook": "start-storybook -p 6006",
-        "build-storybook": "build-storybook",
-        "deploy-storybook": "storybook-to-ghpages"
+        "build-storybook": "build-storybook"
     },
     "repository": {
         "type": "git",
