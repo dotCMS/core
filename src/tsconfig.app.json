@@ -8,6 +8,7 @@
         "src/test.ts",
         "**/*.spec.ts",
         "**/*.mock.ts",
-        "**/**/dot-test-bed.ts"
+        "**/**/dot-test-bed.ts",
+        "**/*.stories.ts"
     ]
 }
