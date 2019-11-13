@@ -60,8 +60,14 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     const openOverlay = () => {
-        const personaSelector = hostFixture.debugElement.query(By.css('dot-persona-selected-item'));
-        personaSelector.nativeElement.click();
+        const personaSelector: DotPersonaSelectorComponent = hostFixture.debugElement.query(
+            By.css('dot-persona-selector')
+        ).componentInstance;
+        personaSelector.disabled = false;
+        const personaSelectedItem = hostFixture.debugElement.query(
+            By.css('dot-persona-selected-item')
+        );
+        personaSelectedItem.triggerEventHandler('click', new MouseEvent('mousedown'));
         hostFixture.detectChanges();
     };
 
@@ -97,7 +103,6 @@ describe('DotPersonaSelectorComponent', () => {
         de = hostFixture.debugElement.query(By.css('dot-persona-selector'));
         component = de.componentInstance;
         paginatorService = hostFixture.debugElement.injector.get(PaginatorService);
-        // hostFixture.componentInstance.pageId = mockDotPage.identifier;
         hostFixture.detectChanges();
         dropdown = de.query(By.css('dot-searchable-dropdown'));
     });
@@ -114,19 +119,16 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should call page change', () => {
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of([mockDotPersona]));
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(of([{ ...mockDotPersona }]));
         dropdown.triggerEventHandler('pageChange', { filter: '', first: 10, rows: 10 });
         expect(paginatorService.getWithOffset).toHaveBeenCalledWith(10);
     });
 
     it('should set dot-searchable-dropdown with right attributes', () => {
-        hostFixture.whenStable().then(() => {
-            expect(dropdown.componentInstance.labelPropertyName).toBe('name');
-            expect(dropdown.componentInstance.optionsWidth).toBe(448);
-            expect(dropdown.componentInstance.rows).toBe(10);
-            expect(dropdown.componentInstance.totalRecords).toBe(1);
-            expect(dropdown.componentInstance.data).toEqual([mockDotPersona]);
-        });
+        expect(dropdown.componentInstance.labelPropertyName).toBe('name');
+        expect(dropdown.componentInstance.optionsWidth).toBe(448);
+        expect(dropdown.componentInstance.rows).toBe(10);
+        expect(dropdown.componentInstance.totalRecords).toBe(1);
     });
 
     it('should call toggle when selected dot-persona-selected-item', () => {
@@ -196,7 +198,6 @@ describe('DotPersonaSelectorComponent', () => {
             dropdown.triggerEventHandler('filterChange', 'Bill');
             addPersonaIcon.nativeElement.click();
             hostFixture.detectChanges();
-
             expect(dropdown.componentInstance.toggleOverlayPanel).toHaveBeenCalled();
             expect(personaDialog.visible).toBe(true);
             expect(personaDialog.personaName).toBe('Bill');
@@ -204,7 +205,7 @@ describe('DotPersonaSelectorComponent', () => {
 
         it('should emit persona and refresh the list on Add new persona', () => {
             spyOn(component.selected, 'emit');
-            spyOn(paginatorService, 'getWithOffset');
+            spyOn(paginatorService, 'getWithOffset').and.returnValue(of([mockDotPersona]));
             spyOn(dropdown.componentInstance, 'resetPanelMinHeight');
 
             personaDialog.createdPersona.emit(defaultPersona);

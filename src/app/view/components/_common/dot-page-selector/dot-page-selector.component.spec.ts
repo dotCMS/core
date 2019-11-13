@@ -173,7 +173,7 @@ describe('DotPageSelectorComponent', () => {
     });
 
     it('should search for pages', () => {
-        spyOn(dotPageSelectorService, 'search').and.callThrough();
+        spyOn(dotPageSelectorService, 'search').and.returnValue(observableOf({ ...mockDotSiteSelectorResults }));
         autocomplete.triggerEventHandler('completeMethod', searchPageObj);
         expect(dotPageSelectorService.search).toHaveBeenCalledWith(searchPageObj.query);
     });
