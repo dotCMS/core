@@ -42,7 +42,7 @@ describe('DotApiWidget', () => {
 
         dotApiWidget.getHtml('123').catch((err: DotCMSError) => {
             expect(err).toEqual({
-                status: 500,
+                statusCode: 500,
                 message: 'Error'
             });
         });

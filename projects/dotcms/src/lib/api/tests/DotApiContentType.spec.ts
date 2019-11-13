@@ -49,7 +49,7 @@ describe('DotApiContentType', () => {
             expect(httpClient.request).toHaveBeenCalledWith({ url: '/api/v1/contenttype/id/123' });
         });
 
-        it('should request a content type\'s fields', () => {
+        it("should request a content type's fields", () => {
             dotApiContentType.getLayout('123').then((data) => {
                 expect(data).toEqual(expectedMsg.entity.layout);
             });
@@ -72,7 +72,7 @@ describe('DotApiContentType', () => {
         it('should throw error Get()', () => {
             dotApiContentType.get('123').catch((err: DotCMSError) => {
                 expect(err).toEqual({
-                    status: 500,
+                    statusCode: 500,
                     message: 'Error'
                 });
             });
@@ -81,11 +81,10 @@ describe('DotApiContentType', () => {
         it('should throw error getLayout()', () => {
             dotApiContentType.getLayout('123').catch((err: DotCMSError) => {
                 expect(err).toEqual({
-                    status: 500,
+                    statusCode: 500,
                     message: 'Error'
                 });
             });
         });
     });
-
 });

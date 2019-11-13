@@ -27,9 +27,7 @@ describe('DotApiContent', () => {
 
         beforeEach(() => {
             spyOn(httpClient, 'request').and.returnValue(
-                new Promise((resolve) =>
-                    resolve(responseExpected)
-                )
+                new Promise((resolve) => resolve(responseExpected))
             );
         });
 
@@ -73,7 +71,7 @@ describe('DotApiContent', () => {
         it('should throw error Save()', () => {
             dotApiContent.save('123').catch((err: DotCMSError) => {
                 expect(err).toEqual({
-                    status: 500,
+                    statusCode: 500,
                     message: 'Error'
                 });
             });
@@ -82,7 +80,7 @@ describe('DotApiContent', () => {
         it('should throw error Publish()', () => {
             dotApiContent.publish('123').catch((err: DotCMSError) => {
                 expect(err).toEqual({
-                    status: 500,
+                    statusCode: 500,
                     message: 'Error'
                 });
             });

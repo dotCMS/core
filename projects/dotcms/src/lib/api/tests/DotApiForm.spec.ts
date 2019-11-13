@@ -26,16 +26,31 @@ const fieldReturned = [
 ];
 
 const contentTypeReturned: DotCMSContentType = {
+    baseType: '',
     clazz: 'A',
     defaultType: true,
+    description: '',
+    detailPage: '',
+    expireDateVar: 'string',
     fields: fieldReturned,
     fixed: true,
     folder: 'FolderA',
     host: 'HostA',
+    iDate: 123456789,
+    id: '',
+    layout: [],
+    modDate: 987654321,
+    multilingualable: true,
+    nEntries: 100,
     name: 'TestA',
     owner: 'me',
+    publishDateVar: '',
     system: true,
-    variable: 'contentTest1'
+    systemActionMappings: {},
+    urlMapPattern: '',
+    variable: 'contentTest1',
+    versionable: true,
+    workflows: []
 };
 
 /** @hidden */
@@ -47,153 +62,24 @@ class DotApiContentTypeMock {
     }
 }
 
-/** @hidden */
-class DotApiContentMock {
-    constructor(private fail = false) {}
-
-    save(): Promise<any> {
-        return new Promise((resolve, reject) => {
-            if (this.fail) {
-                reject({
-                    status: 500
-                });
-            } else {
-                resolve({
-                    status: 200
-                });
-            }
-        });
-    }
-}
-
 describe('DotApiForm', () => {
-    let dotApiContent;
     let dotApiContentType;
     let dotApiForm;
-    let defineCustomElements;
 
-    beforeEach(() => {
+    beforeEach(() => {});
+
+    dotApiContentType = new DotApiContentTypeMock();
+    it('should get form content type', (done) => {
         dotApiContentType = new DotApiContentTypeMock();
-        defineCustomElements = jasmine.createSpy('defineCustomElements');
-    });
-
-    it('should render a dot-form', (done) => {
-        dotApiContent = new DotApiContentMock();
-        const expectedForm = `<dot-form></dot-form>`;
-
         const config = {
-            identifier: '321',
-            onSuccess: () => {},
-            onError: () => {}
+            identifier: '321'
         };
-        const container = document.createElement('div');
-        spyOn(container, 'append').and.callThrough();
 
-        dotApiForm = new DotApiForm(dotApiContentType, config, dotApiContent, defineCustomElements);
-        expect(defineCustomElements).toHaveBeenCalledTimes(1);
-        expect(defineCustomElements).toHaveBeenCalledWith(window);
+        dotApiForm = new DotApiForm(dotApiContentType, config);
 
-        dotApiForm.render(container).then(() => {
-            expect(container.append).toHaveBeenCalledTimes(1);
-            expect(container.innerHTML).toBe(expectedForm);
+        dotApiForm.get().then((result) => {
+            console.log(result);
             done();
-        });
-    });
-
-    it('should render form on specified window', () => {
-        dotApiContent = new DotApiContentMock();
-        const customWin: Window = { ...window };
-
-        const config = {
-            identifier: '321',
-            onSuccess: () => {},
-            onError: () => {},
-            win: customWin
-        };
-
-        dotApiForm = new DotApiForm(dotApiContentType, config, dotApiContent, defineCustomElements);
-
-        expect(defineCustomElements).toHaveBeenCalledTimes(1);
-        expect(defineCustomElements).toHaveBeenCalledWith(customWin);
-    });
-
-    it('should add labels to dot-form', (done) => {
-        dotApiContent = new DotApiContentMock();
-        const config = {
-            identifier: '321',
-            labels: {
-                submit: 'Enviar',
-                reset: 'Clear'
-            }
-        };
-
-        dotApiForm = new DotApiForm(dotApiContentType, config, dotApiContent, defineCustomElements);
-
-        const container = document.createElement('div');
-        dotApiForm.render(container).then(() => {
-            const formTag = container.querySelector('dot-form');
-            expect(formTag.getAttribute('submit-label')).toBe('Enviar');
-            expect(formTag.getAttribute('reset-label')).toBe('Clear');
-            done();
-        });
-    });
-
-    it('should save content and call onSuccess', (done) => {
-        const onError = jasmine.createSpy();
-
-        dotApiContent = new DotApiContentMock();
-        const config = {
-            identifier: '321',
-            onSuccess: jasmine.createSpy().and.callFake((data) => {
-                expect(data).toEqual(
-                    {
-                        status: 200
-                    },
-                    'onSuccess called correctly'
-                );
-                done();
-            }),
-            onError: () => {}
-        };
-
-        dotApiForm = new DotApiForm(dotApiContentType, config, dotApiContent, defineCustomElements);
-
-        const container = document.createElement('div');
-        dotApiForm.render(container).then(() => {
-            const formTag = container.querySelector('dot-form');
-            const customEvent = document.createEvent('CustomEvent');
-            customEvent.initCustomEvent('onSubmit', true, false, {});
-            formTag.dispatchEvent(customEvent);
-            expect(onError).toHaveBeenCalledTimes(0);
-        });
-    });
-
-    it('should save content and call onError', (done) => {
-        const onSuccess = jasmine.createSpy();
-        dotApiContent = new DotApiContentMock(true);
-        const config = {
-            identifier: '321',
-            onSuccess: () => {},
-            onError: jasmine.createSpy().and.callFake((data) => {
-                expect(data).toEqual(
-                    {
-                        status: 500
-                    },
-                    'onError called correctly'
-                );
-                done();
-            })
-        };
-
-        dotApiForm = new DotApiForm(dotApiContentType, config, dotApiContent, defineCustomElements);
-
-        const container = document.createElement('div');
-        dotApiForm.render(container).then(() => {
-            const formTag = container.querySelector('dot-form');
-            const customEvent = document.createEvent('CustomEvent');
-            customEvent.initCustomEvent('onSubmit', true, false, {});
-            formTag.dispatchEvent(customEvent);
-            expect(onSuccess).toHaveBeenCalledTimes(0);
         });
     });
 });
