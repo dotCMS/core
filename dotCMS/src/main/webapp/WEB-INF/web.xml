@@ -87,6 +87,11 @@
         <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
 		<async-supported>true</async-supported>
     </filter>
+	<filter>
+		<filter-name>InterceptorSocketIOFilter</filter-name>
+		<filter-class>com.dotmarketing.filters.InterceptorSocketIOFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
 	<!--END DOTMARKETING FILTERS-->
 	
 	
@@ -96,7 +101,6 @@
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTER-MAPPINGS -->
  	<!-- END FILTER-MAPPINGS -->
- 	
 	<!--DOTMARKETING FILTER-MAPPINGS-->
 	<filter-mapping>
 		<filter-name>InterceptorFilter</filter-name>
@@ -152,6 +156,10 @@
 	<filter-mapping>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<url-pattern>/c/*</url-pattern>
+	</filter-mapping>
+	<filter-mapping>
+		<filter-name>InterceptorSocketIOFilter</filter-name>
+		<url-pattern>/socket.io/*</url-pattern>
 	</filter-mapping>
 	<!--END DOTMARKETING FILTER-MAPPINGS-->
 	
@@ -264,7 +272,6 @@
 		<servlet-class>com.liferay.portal.servlet.InitServlet</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
-
 	<servlet>
 		<servlet-name>MainServlet</servlet-name>
 		<servlet-class>com.liferay.portal.servlet.MainServlet</servlet-class>
@@ -419,7 +426,6 @@
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/edit/*</url-pattern>
     </servlet-mapping>
-
     
 	<servlet-mapping>
         <servlet-name>login_edit_mode</servlet-name>
