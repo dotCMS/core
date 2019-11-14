@@ -1,7 +1,7 @@
 import { storiesOf, moduleMetadata } from '@storybook/angular';
 // import { action } from '@storybook/addon-actions';
 
-import { DotAvatarComponent } from '../app/view/components/_common/dot-avatar/dot-avatar.component';
+import { DotAvatarComponent } from './dot-avatar.component';
 
 storiesOf('DotAvatarComponent', module)
     .addDecorator(
