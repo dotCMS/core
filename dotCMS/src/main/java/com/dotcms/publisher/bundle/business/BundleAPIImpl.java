@@ -1,21 +1,38 @@
 package com.dotcms.publisher.bundle.business;
 
+import com.dotcms.publisher.assets.business.PushedAssetsFactory;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.util.DotPreconditions;
+
+import java.util.Date;
 import java.util.List;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 public class BundleAPIImpl implements BundleAPI {
 
-	private final BundleFactory bundleFactory;
+	private final BundleFactory       bundleFactory;
+	private final PushedAssetsFactory pushedAssetsFactory;
+	private final PublishAuditAPI     publishAuditAPI;
+	private final UserAPI             userAPI;
 
 	public BundleAPIImpl() {
-		bundleFactory = FactoryLocator.getBundleFactory();
+
+		this.bundleFactory       = FactoryLocator.getBundleFactory();
+		this.pushedAssetsFactory = FactoryLocator.getPushedAssetsFactory();
+		this.publishAuditAPI     = PublishAuditAPI.getInstance();
+		this.userAPI             = APILocator.getUserAPI();
 	}
 
 	@WrapInTransaction
@@ -83,6 +100,57 @@ public class BundleAPIImpl implements BundleAPI {
 	public void deleteBundle(String id) throws DotDataException {
 		bundleFactory.deleteBundle(id);
 
+	}
+
+	@WrapInTransaction
+	@Override
+	public void deleteBundleAndDependencies(final String bundleId, final User user) throws DotDataException {
+
+		// todo: check bundle deleting permissions with user
+
+		try {
+
+			this.publishAuditAPI.deletePublishAuditStatus(bundleId);
+		} catch (DotPublisherException e) {
+
+			throw new DotDataException(e);
+		}
+
+		Logger.info(this, "Removing all assets for a bundle");
+		this.pushedAssetsFactory.deletePushedAssetsByBundle(bundleId);
+
+		Logger.info(this, "Removing all assets from bundle: " + bundleId);
+		this.bundleFactory.deleteAllAssetsFromBundle(bundleId);
+
+		Logger.info(this, "Removing environments from bundle: " + bundleId);
+		this.bundleFactory.deleteBundleEnvironmentByBundle(bundleId);
+
+		Logger.info(this, "Removing bundle: " + bundleId);
+		this.deleteBundle(bundleId);
+	}
+
+	@WrapInTransaction
+	@Override
+	public void deleteBundleAndDependenciesOlderThan(final Date olderThan, final User user) throws DotDataException {
+
+		final int limit          = 100;
+		int offset               = 0;
+		final boolean isAdmin    = this.userAPI.isCMSAdmin(user);
+		List<Bundle> sentBundles = isAdmin?
+				this.bundleFactory.findSentBundles(olderThan, limit, offset):
+				this.bundleFactory.findSentBundles(olderThan, user.getUserId(), limit, offset);
+
+		Logger.info(this, "Deleting bundles older than: " + olderThan);
+		while (UtilMethods.isSet(sentBundles)) {
+
+			for (final Bundle bundle : sentBundles) {
+				this.deleteBundleAndDependencies(bundle.getId(), user);
+			}
+			offset     += limit + 1;
+			sentBundles = isAdmin?
+					this.bundleFactory.findSentBundles(olderThan, limit, offset):
+					this.bundleFactory.findSentBundles(olderThan, user.getUserId(), limit, offset);
+		}
 	}
 
 	@WrapInTransaction

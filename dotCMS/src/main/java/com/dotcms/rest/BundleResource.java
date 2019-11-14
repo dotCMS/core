@@ -1,13 +1,17 @@
 package com.dotcms.rest;
 
 import com.dotcms.publisher.bundle.bean.Bundle;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+
+import javax.ws.rs.*;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+
+import com.dotcms.publisher.bundle.business.BundleAPI;
+import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.workflow.form.WorkflowStepAddForm;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -22,13 +26,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.util.Date;
 import java.util.List;
 
 
 @Path("/bundle")
 public class BundleResource {
 
-    private final WebResource webResource = new WebResource();
+    private final WebResource     webResource     = new WebResource();
+    private final PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
+    private final BundleAPI       bundleAPI       = APILocator.getBundleAPI();
 
     /**
      * Returns a list of un-send bundles (haven't been sent to any Environment) filtered by owner and name
@@ -217,5 +224,84 @@ public class BundleResource {
 
         return responseResource.response( "true" );
 	}
+
+    /**
+     * Deletes all bundles by identifier
+     * @param request
+     * @param response
+     * @param deleteBundlesByIdentifierForm
+     * @return
+     */
+	@DELETE
+    @Path("/ids")
+    @Produces("application/json")
+    public Response deleteBundlesByIdentifiers(@Context final HttpServletRequest request,
+                                               @Context final HttpServletResponse response,
+                                               final DeleteBundlesByIdentifierForm  deleteBundlesByIdentifierForm) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.info(this, "Deleting the bundles: " + deleteBundlesByIdentifierForm.getIdentifiers()
+                + " by the user: " + initData.getUser().getUserId());
+
+        try {
+
+            for (final String bundleId : deleteBundlesByIdentifierForm.getIdentifiers()) {
+
+                this.bundleAPI.deleteBundleAndDependencies(bundleId, initData.getUser());
+            }
+
+            return Response.ok(new ResponseEntityView("All bundles deleted")).build();
+        } catch (DotDataException e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on deleteBundlesByIdentifiers, couldn't delete the identifiers: " + deleteBundlesByIdentifierForm.getIdentifiers() +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // deleteBundlesByIdentifiers.
+
+    /**
+     * Deletes bundles older than a date. (unsent are not going to be deleted)
+     * @param request
+     * @param response
+     * @param olderThan
+     * @return
+     */
+    @DELETE
+    @Path("/olderthan")
+    @Produces("application/json")
+    public Response deleteBundlesOlderThan(@Context final HttpServletRequest request,
+                                           @Context final HttpServletResponse response,
+                                           final Date     olderThan) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.info(this, "Deleting the bundles older than: " + olderThan
+                + " by the user: " + initData.getUser().getUserId());
+
+        try {
+
+            this.bundleAPI.deleteBundleAndDependenciesOlderThan(olderThan, initData.getUser());
+
+            return Response.ok(new ResponseEntityView("All bundles deleted")).build();
+        } catch (DotDataException e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on deleteBundlesByIdentifiers, couldn't delete bundles older than: " + olderThan +
+                            ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // deleteBundlesByIdentifiers.
 
 }

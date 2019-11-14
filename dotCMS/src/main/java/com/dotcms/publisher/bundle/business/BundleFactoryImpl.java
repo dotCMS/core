@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.ULID;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 
 public class BundleFactoryImpl extends BundleFactory {
 
@@ -55,7 +56,7 @@ public class BundleFactoryImpl extends BundleFactory {
     @Override
     public List<Bundle> findUnsendBundles ( String userId, int limit, int offset ) throws DotDataException {
 
-        List<Bundle> bundles = new ArrayList<Bundle>();
+        List<Bundle> bundles = new ArrayList<>();
 
         if ( !UtilMethods.isSet( userId ) ) {
             return bundles;
@@ -76,6 +77,47 @@ public class BundleFactoryImpl extends BundleFactory {
 
         return bundles;
     }
+
+	@Override
+	public List<Bundle> findSentBundles(final Date olderThan, final String userId, final int limit, final int offset)  throws DotDataException {
+
+		final ImmutableList.Builder<Bundle> bundles = new ImmutableList.Builder<>();
+
+		if ( !UtilMethods.isSet( userId ) ) {
+			return bundles.build();
+		}
+
+		final List<Map<String, Object>> bundlesResultList =
+				new DotConnect().setSQL(SELECT_SENT_BUNDLES_BY_OWNER)
+								.addParam(userId).addParam(olderThan)
+			                    .setMaxRows(limit).setStartRow(offset).loadObjectResults();
+
+		for (final Map<String, Object> row : bundlesResultList) {
+
+			final Bundle bundle = PublisherUtil.getBundleByMap(row);
+			bundles.add( bundle );
+		}
+
+		return bundles.build();
+	}
+
+	@Override
+	public List<Bundle> findSentBundles(final Date olderThan, final int limit, final int offset)  throws DotDataException {
+
+		final ImmutableList.Builder<Bundle> bundles = new ImmutableList.Builder<>();
+
+		final List<Map<String, Object>> bundlesResultList =
+				new DotConnect().setSQL(SELECT_SENT_BUNDLES_BY_ADMIN).addParam(olderThan)
+						.setMaxRows(limit).setStartRow(offset).loadObjectResults();
+
+		for (final Map<String, Object> row : bundlesResultList) {
+
+			final Bundle bundle = PublisherUtil.getBundleByMap(row);
+			bundles.add( bundle );
+		}
+
+		return bundles.build();
+	}
 
     @Override
     public List<Bundle> findUnsendBundlesByName ( String userId, String likeName, int limit, int offset ) throws DotDataException {
@@ -199,6 +241,18 @@ public class BundleFactoryImpl extends BundleFactory {
 
 		dc.loadResult();
 
+	}
+
+	public void deleteAllAssetsFromBundle (final String bundleId) throws DotDataException {
+
+		if(!UtilMethods.isSet(bundleId)) {
+
+			return;
+		}
+
+		new DotConnect()
+			.setSQL(DELETE_ALL_ASSETS_FROM_BUNDLE)
+			.addParam(bundleId).loadResult();
 	}
 
 	@Override

@@ -59,6 +59,15 @@ public abstract class PublishAuditAPI {
 	 */
 	//Delete
 	public abstract void deletePublishAuditStatus(String bundleId) throws DotPublisherException;
+
+	/**
+	 * Remove a list of publish bundles.
+	 * @param bundleIds {@link List}
+	 * @return List of bundle id deleted
+	 * @throws DotPublisherException
+	 */
+	//Delete
+	public abstract List<String>  deletePublishAuditStatus(List<String> bundleIds) throws DotPublisherException;
 	
 	/**
 	 * Get a publish status given the bundle identifier

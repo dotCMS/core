@@ -40,6 +40,15 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 
 	}
 
+	public void deletePushedAssetsByBundle(final String bundleId)  throws DotDataException {
+
+		final DotConnect db = new DotConnect();
+		db.setSQL(DELETE_ASSETS_BY_BUNDLE);
+		db.addParam(bundleId);
+		db.loadResult();
+		cache.clearCache();
+	}
+
 	@Override
 	public void deletePushedAssets(String assetId)
 			throws DotDataException {

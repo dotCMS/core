@@ -11,6 +11,8 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -157,38 +159,40 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 
+	@WrapInTransaction
+	@Override
+	public List<String> deletePublishAuditStatus(final List<String> bundleIds) throws DotPublisherException {
+
+		final ImmutableList.Builder<String> deletedBundleIds = new ImmutableList.Builder<>();
+
+		for (final String bundleId: bundleIds) {
+
+			this.deletePublishAuditStatus(bundleId);
+			deletedBundleIds.add(bundleId);
+		}
+
+		return deletedBundleIds.build();
+	}
 	private final String DELETESQL="delete from publishing_queue_audit where bundle_id = ? ";
 
+	@WrapInTransaction
 	@Override
-	public void deletePublishAuditStatus(String bundleId) throws DotPublisherException {
-	    boolean local=false;
-		try{
-			local = HibernateUtil.startLocalTransactionIfNeeded();
-			DotConnect dc = new DotConnect();
-			dc.setSQL(DELETESQL);
-			dc.addParam(bundleId);
+	public void deletePublishAuditStatus(final String bundleId) throws DotPublisherException {
 
-			dc.loadResult();
+		try {
 
-			if(local) {
-			    HibernateUtil.closeAndCommitTransaction();
-			}
-		}catch(Exception e){
-		    if(local) {
-    			try {
-    				HibernateUtil.rollbackTransaction();
-    			} catch (DotHibernateException e1) {
-    				Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e1);
-    			}
-		    }
-			Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e);
+			Logger.info(this, "Deleting the bundle: " + bundleId);
+			
+			new DotConnect()
+					.setSQL(DELETESQL)
+					.addParam(bundleId)
+					.loadResult();
+		} catch(Exception e) {
+
+			Logger.error(PublishAuditAPIImpl.class, e.getMessage(), e);
 			throw new DotPublisherException(
 					"Unable to remove element in publish queue audit table:" +
 					"with the following bundle_id "+bundleId+" "+ e.getMessage(), e);
-		} finally {
-			if(local) {
-				HibernateUtil.closeSessionSilently();
-			}
 		}
 	}
 
