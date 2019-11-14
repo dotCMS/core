@@ -11,6 +11,7 @@ import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
@@ -57,7 +58,7 @@ public interface DotLoader {
                 File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
                 f.mkdirs();
                 f.delete();
-                try (final VelocityPrettyWriter out = new VelocityPrettyWriter(System.out)) {
+                try (final VelocityPrettyWriter out = new VelocityPrettyWriter(new FileOutputStream(f))) {
                     out.write(strOut);
                 }
             } catch (Exception e) {
