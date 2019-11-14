@@ -20,21 +20,19 @@ package org.apache.velocity.runtime.resource;
  */
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.DotResourceLoader;
-import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
-
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
-
-import com.liferay.portal.model.User;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.collections.ExtendedProperties;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -46,8 +44,6 @@ import org.apache.velocity.runtime.resource.loader.ResourceLoaderFactory;
 import org.apache.velocity.util.ClassUtils;
 import org.apache.velocity.util.StringUtils;
 import org.jetbrains.annotations.Nullable;
-
-import javax.servlet.http.HttpServletRequest;
 
 
 /**
@@ -205,7 +201,7 @@ public class ResourceManagerImpl
          */
         if (cacheObject == null)
         {
-            cacheObject = new ResourceCacheImpl();
+            cacheObject = CacheLocator.getVeloctyResourceCache();
         }
 
         globalCache = (ResourceCache) cacheObject;

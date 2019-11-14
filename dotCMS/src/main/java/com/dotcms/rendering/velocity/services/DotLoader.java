@@ -7,17 +7,13 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-
-import java.io.BufferedWriter;
+import com.liferay.portal.model.User;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
-import com.liferay.portal.model.User;
 /**
  * The DotLoaders exist to distill CMS objects down to Velocity templates - 
  * which can then be cached in Velocity and parsed very quickly.
@@ -61,20 +57,24 @@ public interface DotLoader {
                 File f = new File(ConfigUtils.getDynamicVelocityPath() + java.io.File.separator + filePath);
                 f.mkdirs();
                 f.delete();
-                try (final VelocityPrettyWriter out = new VelocityPrettyWriter(new FileOutputStream(f))) {
+                try (final VelocityPrettyWriter out = new VelocityPrettyWriter(System.out)) {
                     out.write(strOut);
                 }
             } catch (Exception e) {
                 new DotStateException(e);
             }
         }
-        try {
-            return new ByteArrayInputStream(strOut.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e1) {
-            Logger.error(this.getClass(), e1.getMessage(), e1);
-            return new ByteArrayInputStream(strOut.getBytes());
 
-        }
+        //  This is very useful for debugging purposes un-comment as needed
+        //  try {
+        //    final VelocityPrettyWriter out = new VelocityPrettyWriter(System.out);
+        //    out.write(strOut);
+        //    out.flush();
+        //  } catch (Exception e) {
+        //      Logger.error(DotLoader.class,e);
+        //  }
+
+        return new ByteArrayInputStream(strOut.getBytes(StandardCharsets.UTF_8));
     }
 
 }
