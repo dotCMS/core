@@ -186,6 +186,10 @@ public class ContainerLoader implements DotLoader {
             .append(container.getInode())
             .append("')");
 
+        velocityCodeBuilder.append("#if(!$UtilMethods.isSet($user)) ")
+        .append("#set($user = $cmsuser.getLoggedInUser($request)) ")
+        .append("#end");
+
         // START CONTENT LOOP
 
         // the viewtool call to get the list of contents for the container
@@ -278,7 +282,7 @@ public class ContainerLoader implements DotLoader {
                   velocityCodeBuilder.append("#end");
 
                   // if the content should be published then force to show the working version
-                  velocityCodeBuilder.append("#if($UtilMethods.isSet($_ident.sysPublishDate) && ($_tmdate.after($_ident.sysPublishDate) || $_tmdate.equals($_ident.sysPublishDate) ))");
+                  velocityCodeBuilder.append("#if($UtilMethods.isSet($_ident.sysPublishDate) && ($_tmdate.equals($_ident.sysPublishDate) || $_tmdate.after($_ident.sysPublishDate)))");
                   velocityCodeBuilder.append("#set($_show_working_=true)");
                   velocityCodeBuilder.append("#end");
 
@@ -336,7 +340,7 @@ public class ContainerLoader implements DotLoader {
                     if (mode.showLive) {
                         // flag `$_show_working_` is set to true only when time-machine is on
                         //if time-machine's on.. no need to check for permissions since anonymous users can not visualize working content since 5.
-                        velocityCodeBuilder.append("#if($_show_working_ || $contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
+                        velocityCodeBuilder.append("#if($contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
                     }
                     
                         // ### START BODY ###
