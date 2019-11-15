@@ -2,6 +2,7 @@ package com.dotcms.publisher.bundle.business;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.environment.bean.Environment;
@@ -153,7 +154,8 @@ public interface BundleAPI {
 	 *
 	 * @param olderThan {@link Date} will remove all sent bundles older than it
 	 * @param user      {@link User} User to check the deleting permissions
+	 * @return Set of bundle ids deleted
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
 	 */
-	void deleteBundleAndDependenciesOlderThan(Date olderThan, User user) throws DotDataException;
+	Set<String> deleteBundleAndDependenciesOlderThan(Date olderThan, User user) throws DotDataException;
 }

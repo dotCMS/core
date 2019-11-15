@@ -7,6 +7,7 @@ import com.dotcms.util.DotPreconditions;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -18,6 +19,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 
 public class BundleAPIImpl implements BundleAPI {
@@ -131,8 +133,9 @@ public class BundleAPIImpl implements BundleAPI {
 
 	@WrapInTransaction
 	@Override
-	public void deleteBundleAndDependenciesOlderThan(final Date olderThan, final User user) throws DotDataException {
+	public Set<String> deleteBundleAndDependenciesOlderThan(final Date olderThan, final User user) throws DotDataException {
 
+		final ImmutableSet.Builder<String> bundlesDeleted = new ImmutableSet.Builder<>();
 		final int limit          = 100;
 		int offset               = 0;
 		final boolean isAdmin    = this.userAPI.isCMSAdmin(user);
@@ -144,13 +147,18 @@ public class BundleAPIImpl implements BundleAPI {
 		while (UtilMethods.isSet(sentBundles)) {
 
 			for (final Bundle bundle : sentBundles) {
+
 				this.deleteBundleAndDependencies(bundle.getId(), user);
+				bundlesDeleted.add(bundle.getId());
 			}
+
 			offset     += limit + 1;
 			sentBundles = isAdmin?
 					this.bundleFactory.findSentBundles(olderThan, limit, offset):
 					this.bundleFactory.findSentBundles(olderThan, user.getUserId(), limit, offset);
 		}
+
+		return bundlesDeleted.build();
 	}
 
 	@WrapInTransaction

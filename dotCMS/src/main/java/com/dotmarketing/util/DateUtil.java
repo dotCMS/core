@@ -11,6 +11,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
@@ -615,5 +616,26 @@ public class DateUtil {
 	public static void sleep (final long millis) {
 
 		ThreadUtils.sleep(millis);
+	}
+
+	/**
+	 * Parse the iso string date as a {@link Date}
+	 * @param stringDate {@link String}
+	 * @return Date
+	 */
+	public static Date parseISO(final String stringDate) {
+
+		return toDate(OffsetDateTime.parse(stringDate).toInstant());
+
+	}
+
+	/**
+	 * Convert {@link Instant} to {@link Date}
+	 * @param instant the instant
+	 * @return the equivalent date
+	 */
+	public static Date toDate (final Instant instant) {
+
+		return new Date(instant.toEpochMilli());
 	}
 }

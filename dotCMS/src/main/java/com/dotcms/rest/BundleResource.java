@@ -11,6 +11,8 @@ import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.param.DateParam;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.workflow.form.WorkflowStepAddForm;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -273,12 +275,12 @@ public class BundleResource {
      * @param olderThan
      * @return
      */
-    @DELETE
-    @Path("/olderthan")
+   /* @DELETE
+    @Path("/olderthan/{olderThan}")
     @Produces("application/json")
     public Response deleteBundlesOlderThan(@Context final HttpServletRequest request,
                                            @Context final HttpServletResponse response,
-                                           final Date     olderThan) {
+                                           @PathParam("olderThan") final DateParam olderThan) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -292,9 +294,8 @@ public class BundleResource {
 
         try {
 
-            this.bundleAPI.deleteBundleAndDependenciesOlderThan(olderThan, initData.getUser());
-
-            return Response.ok(new ResponseEntityView("All bundles deleted")).build();
+            return Response.ok(new ResponseEntityView(CollectionsUtils.map("bundlesDeleted",
+                    this.bundleAPI.deleteBundleAndDependenciesOlderThan(olderThan, initData.getUser())))).build();
         } catch (DotDataException e) {
 
             Logger.error(this.getClass(),
@@ -302,6 +303,6 @@ public class BundleResource {
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
-    } // deleteBundlesByIdentifiers.
+    } */// deleteBundlesByIdentifiers.
 
 }

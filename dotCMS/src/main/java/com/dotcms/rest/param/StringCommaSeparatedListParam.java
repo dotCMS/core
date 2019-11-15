@@ -1,4 +1,4 @@
-package com.dotcms.rest;
+package com.dotcms.rest.param;
 
 import com.liferay.util.StringPool;
 
@@ -12,18 +12,18 @@ import java.util.Arrays;
  *     @Path("/ids/{strings}")
  *     public Response mymethod(@Context HttpServletRequest request,
  *                              @Context final HttpServletResponse response,
- *                              final StringCommaSeparatedList idList) {
+ *                              final StringCommaSeparatedListParam idList) {
  * </code>
  *
  * @author jsanca
  */
-public class StringCommaSeparatedList extends ArrayList<String> {
+public class StringCommaSeparatedListParam extends ArrayList<String> {
 
     /**
      * Constructor
      * @param params String comma separated strings
      */
-    public StringCommaSeparatedList(final String params) {
+    public StringCommaSeparatedListParam(final String params) {
 
         super(Arrays.asList(params.split(StringPool.COMMA)));
     }
