@@ -36,7 +36,6 @@ import java.util.List;
 public class BundleResource {
 
     private final WebResource     webResource     = new WebResource();
-    private final PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
     private final BundleAPI       bundleAPI       = APILocator.getBundleAPI();
 
     /**
@@ -275,7 +274,7 @@ public class BundleResource {
      * @param olderThan
      * @return
      */
-   /* @DELETE
+    @DELETE
     @Path("/olderthan/{olderThan}")
     @Produces("application/json")
     public Response deleteBundlesOlderThan(@Context final HttpServletRequest request,
@@ -303,6 +302,6 @@ public class BundleResource {
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
-    } */// deleteBundlesByIdentifiers.
+    } // deleteBundlesByIdentifiers.
 
 }

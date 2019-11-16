@@ -1,5 +1,6 @@
 package com.dotcms.publisher.bundle.business;
 
+import com.dotcms.business.LazyUserAPIWrapper;
 import com.dotcms.publisher.assets.business.PushedAssetsFactory;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -34,7 +35,7 @@ public class BundleAPIImpl implements BundleAPI {
 		this.bundleFactory       = FactoryLocator.getBundleFactory();
 		this.pushedAssetsFactory = FactoryLocator.getPushedAssetsFactory();
 		this.publishAuditAPI     = PublishAuditAPI.getInstance();
-		this.userAPI             = APILocator.getUserAPI();
+		this.userAPI             = new LazyUserAPIWrapper(); // we need this lazyness to avoid init issues.
 	}
 
 	@WrapInTransaction

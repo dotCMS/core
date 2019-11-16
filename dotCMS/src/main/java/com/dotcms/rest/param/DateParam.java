@@ -2,6 +2,7 @@ package com.dotcms.rest.param;
 
 import com.dotmarketing.util.DateUtil;
 
+import java.text.ParseException;
 import java.util.Date;
 
 /**
@@ -10,7 +11,7 @@ import java.util.Date;
  */
 public class DateParam extends Date {
 
-    public DateParam(final String stringDate) {
+    public DateParam(final String stringDate) throws ParseException {
 
         super(DateUtil.parseISO (stringDate).getTime());
     }

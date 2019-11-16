@@ -8,17 +8,20 @@ import com.liferay.util.StringPool;
 import org.apache.commons.lang.StringUtils;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalField;
 import java.util.Calendar;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.dotcms.util.DotPreconditions.checkNotNull;
+import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 
 /**
  * Provides utility methods to interact with {@link Date} objects, date formats,
@@ -618,14 +621,22 @@ public class DateUtil {
 		ThreadUtils.sleep(millis);
 	}
 
+	private static final DateTimeFormatter SIMPLE_ISO_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
 	/**
 	 * Parse the iso string date as a {@link Date}
 	 * @param stringDate {@link String}
 	 * @return Date
 	 */
-	public static Date parseISO(final String stringDate) {
+	public static Date parseISO(final String stringDate) throws ParseException {
 
-		return toDate(OffsetDateTime.parse(stringDate).toInstant());
+		if (!UtilMethods.isSet(stringDate)) {
+
+			return null;
+		}
+		return  stringDate.length() <= 10? // yyyy-MM-dd
+				new SimpleDateFormat("yyyy-MM-dd").parse(stringDate):
+				toDate(OffsetDateTime.parse(stringDate).toInstant());
 
 	}
 
