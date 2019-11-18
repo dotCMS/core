@@ -20,6 +20,7 @@ import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -64,6 +65,8 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         try {
             if (getUser() == null ||
                     !APILocator.getRoleAPI().doesUserHaveRole(getUser(), APILocator.getRoleAPI().loadCMSAdminRole())) {
+                SecurityLogger.logInfo(TimeMachineAjaxAction.class,
+                   ()-> "Only users with `admin` Role should be accessing Time-Machine otherwise the feature will not work correctly.");
                 response.sendError(401);
                 return;
             }

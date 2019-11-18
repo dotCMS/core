@@ -186,10 +186,6 @@ public class ContainerLoader implements DotLoader {
             .append(container.getInode())
             .append("')");
 
-        velocityCodeBuilder.append("#if(!$UtilMethods.isSet($user)) ")
-        .append("#set($user = $cmsuser.getLoggedInUser($request)) ")
-        .append("#end");
-
         // START CONTENT LOOP
 
         // the viewtool call to get the list of contents for the container
@@ -270,10 +266,11 @@ public class ContainerLoader implements DotLoader {
 
             velocityCodeBuilder.append("#foreach ($contentletId in $CONTENTLETS )");
 
-            velocityCodeBuilder.append("#set($_show_working_=false)");
+              velocityCodeBuilder.append("#set($_show_working_=false)");
 
             //Time-machine block begin
               velocityCodeBuilder.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
+
                   velocityCodeBuilder.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\"))))");
                   velocityCodeBuilder.append("#set($_ident=$webapi.findIdentifierById($contentletId))");
                   // if the content has expired we rewrite the identifier so it isn't loaded
@@ -288,6 +285,10 @@ public class ContainerLoader implements DotLoader {
 
                   velocityCodeBuilder.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_)")
                     .append("#set($contentletId='')") // working contentlet still not published
+                  .append("#end");
+
+                  velocityCodeBuilder.append("#if(!$UtilMethods.isSet($user)) ")
+                    .append("#set($user = $cmsuser.getLoggedInUser($request)) ")
                   .append("#end");
 
             //end of time-machine block
@@ -338,9 +339,7 @@ public class ContainerLoader implements DotLoader {
                 
                     // ##Checking permission to see content
                     if (mode.showLive) {
-                        // flag `$_show_working_` is set to true only when time-machine is on
-                        //if time-machine's on.. no need to check for permissions since anonymous users can not visualize working content since 5.
-                        velocityCodeBuilder.append("#if($contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
+                        velocityCodeBuilder.append("#if($_show_working_ || $contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
                     }
                     
                         // ### START BODY ###
@@ -351,7 +350,9 @@ public class ContainerLoader implements DotLoader {
                             for (int i = 0; i < containerContentTypeList.size(); i++) {
                                 ContainerStructure cs = containerContentTypeList.get(i);
                                 String ifelse = (i == 0) ? "if" : "elseif";
-                                velocityCodeBuilder.append("#" + ifelse + "($ContentletStructure ==\"" + cs.getStructureId() + "\")");
+                                velocityCodeBuilder.append("#").append(ifelse)
+                                        .append("($ContentletStructure ==\"")
+                                        .append(cs.getStructureId()).append("\")");
                                 velocityCodeBuilder.append(cs.getCode());
                             }
                             if (containerContentTypeList.size() > 0) {
