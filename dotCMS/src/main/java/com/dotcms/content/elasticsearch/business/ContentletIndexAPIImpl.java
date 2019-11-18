@@ -4,12 +4,12 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.CollectionsUtils;
@@ -53,7 +53,6 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -72,7 +71,6 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
-import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.unit.ByteSizeUnit;
@@ -81,7 +79,6 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
-
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
 
 public class ContentletIndexAPIImpl implements ContentletIndexAPI {
@@ -1045,12 +1042,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public List<String> listDotCMSClosedIndices() {
-        List<String> indexNames = new ArrayList<>();
-        List<String> list = APILocator.getESIndexAPI().getClosedIndexes();
-        for (String idx : list)
-            if (isDotCMSIndexName(idx))
-                indexNames.add(idx);
-        return indexNames;
+       return APILocator.getESIndexAPI().getClosedIndexes();
     }
 
     /**
@@ -1060,20 +1052,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     @SuppressWarnings("unchecked")
     public List<String> listDotCMSIndices() {
-        final Request request = new Request("GET", "_cat/indices?format=json");
-        final List<Map<String, String>> indices = APILocator.getESIndexAPI()
-                .performLowLevelRequest(request, List.class);
 
-        List<String> indexes = indices.stream()
-                .filter(indexMap->indexMap.get("status").equals("open"))
-                .map(indexMap->indexMap.get("index"))
-                .filter(this::isDotCMSIndexName)
-                .collect(Collectors.toList());
-
-        indexes.sort(new IndexSortByDate());
-
-        return indexes;
+        return APILocator.getESIndexAPI().getIndices(true, true);
     }
+
+
 
     public void activateIndex(String indexName) throws DotDataException {
         IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
@@ -1129,23 +1112,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (info.reindex_live != null)
             newIdx.add(info.reindex_live);
         return newIdx;
-    }
-
-    private class IndexSortByDate implements Comparator<String> {
-        public int compare(String o1, String o2) {
-            if (o1 == null || o2 == null) {
-                return 0;
-            }
-            if (o1.indexOf("_") < 0) {
-                return 1;
-            }
-            if (o2.indexOf("_") < 0) {
-                return -1;
-            }
-            String one = o1.split("_")[1];
-            String two = o2.split("_")[1];
-            return two.compareTo(one);
-        }
     }
 
     public String getActiveIndexName(String type) throws DotDataException {

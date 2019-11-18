@@ -1,5 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ContentletIndexAPI.ES_LIVE_INDEX_NAME;
+import static com.dotcms.content.elasticsearch.business.ContentletIndexAPI.ES_WORKING_INDEX_NAME;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -33,6 +35,7 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,6 +53,7 @@ import java.util.zip.ZipOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest.Level;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -80,6 +84,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.GetAliasesResponse;
 import org.elasticsearch.client.Request;
@@ -94,7 +99,6 @@ import org.elasticsearch.cluster.health.ClusterIndexHealth;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.repositories.fs.FsRepository;
@@ -139,6 +143,23 @@ public class ESIndexAPI {
 		this.serverAPI = APILocator.getServerAPI();
 		this.clusterAPI = APILocator.getClusterAPI();
 	}
+
+    private class IndexSortByDate implements Comparator<String> {
+        public int compare(String o1, String o2) {
+            if (o1 == null || o2 == null) {
+                return 0;
+            }
+            if (o1.indexOf("_") < 0) {
+                return 1;
+            }
+            if (o2.indexOf("_") < 0) {
+                return -1;
+            }
+            String one = o1.split("_")[1];
+            String two = o2.split("_")[1];
+            return two.compareTo(one);
+        }
+    }
 
 	@VisibleForTesting
 	protected ESIndexAPI(final ContentletIndexAPIImpl iapi, final ESIndexHelper esIndexHelper,
@@ -589,11 +610,33 @@ public class ESIndexAPI {
 	 * @throws IOException
 	 */
     public void moveIndexBackToCluster(final String index) throws IOException {
-		final XContentBuilder builder = jsonBuilder().startObject().startObject("index");
+
+        int replicas = 0;
+        if (clusterAPI.isTransportAutoWire()){
+            int serverCount;
+
+            try {
+                serverCount = APILocator.getServerAPI().getAliveServersIds().length;
+            } catch (DotDataException e) {
+                Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
+                serverCount = 1;
+            }
+            // formula is (live server count (including the ones that are down but not yet timed out) - 1)
+
+            if(serverCount>0) {
+                replicas = serverCount - 1;
+            }
+        }
+
+        Settings settings =
+                Settings.builder()
+                        .put("index.number_of_replicas", replicas)
+                        .put("index.routing.allocation.include._name","*")
+                        .build();
 
 		UpdateSettingsRequest request = new UpdateSettingsRequest(index);
 		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-		request.settings(builder.endObject().endObject().toString(), XContentType.JSON);
+		request.settings(settings);
 		RestHighLevelClientProvider.getInstance().getClient()
 				.indices().putSettings(request, RequestOptions.DEFAULT);
     }
@@ -831,22 +874,43 @@ public class ESIndexAPI {
         AdminLogger.log(this.getClass(), "openIndex", "Index: " + indexName + " opened");
     }
 
+    /**
+     * Obtain a list of dotCMS indexes
+     * @param expandToOpenIndices open indices must be returned
+     * @param expandToClosedIndices closed indices must be returned
+     * @return List of indices names sorted by creation date
+     */
+    public List<String> getIndices(final boolean expandToOpenIndices, final boolean expandToClosedIndices) {
+        final List<String> indexes = new ArrayList<>();
+        try {
+
+            GetIndexRequest request = new GetIndexRequest(ES_WORKING_INDEX_NAME + "_*");
+            request.indicesOptions(IndicesOptions.fromOptions(false, false, expandToOpenIndices, expandToClosedIndices));
+
+            //Searching for working indexes
+            indexes.addAll(Arrays.asList(
+                    RestHighLevelClientProvider.getInstance().getClient().indices()
+                            .get(request, RequestOptions.DEFAULT).getIndices()));
+
+            //Searching for live indexes
+            request = new GetIndexRequest(ES_LIVE_INDEX_NAME + "_*");
+            request.indicesOptions(IndicesOptions.fromOptions(false, false, expandToOpenIndices, expandToClosedIndices));
+
+            indexes.addAll(Arrays.asList(
+                    RestHighLevelClientProvider.getInstance().getClient().indices()
+                            .get(request, RequestOptions.DEFAULT).getIndices()));
+            indexes.sort(new IndexSortByDate());
+        } catch (ElasticsearchStatusException | IOException e) {
+            Logger.warnAndDebug(ContentletIndexAPIImpl.class, "The list of indexes cannot be returned. Reason: " + e.getMessage(), e);
+        }
+
+        return indexes;
+    }
+
+
     public List<String> getClosedIndexes() {
 
-    	final Request request = new Request("GET", "/_cluster/state/metadata/");
-		final Map<String, Object> jsonMap = performLowLevelRequest(request);
-
-		final Map<String, Object> metadata = (Map<String, Object>) jsonMap.get("metadata");
-		final Map<String, Object> indices = (Map<String, Object>)metadata.get("indices");
-
-		final List<String> closedIndices = new ArrayList<>();
-		indices.forEach((key, value) -> {
-			if (((Map<String, String>) value).get("state").equals("close")) {
-				closedIndices.add(key);
-			}
-		});
-
-		return closedIndices;
+        return getIndices(false, true);
     }
 
     public Status getIndexStatus(String indexName) throws DotDataException {
