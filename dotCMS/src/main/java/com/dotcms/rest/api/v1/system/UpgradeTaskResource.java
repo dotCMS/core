@@ -6,11 +6,8 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
-import org.glassfish.jersey.server.JSONP;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.ForbiddenException;
@@ -20,6 +17,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * This Resource has the ability to run an upgrade task, only for ADMIN logged users
@@ -28,6 +26,17 @@ import javax.ws.rs.core.Response;
 @Path("/v1/upgradetask")
 public class UpgradeTaskResource {
 
+    /**
+     * Post to run an upgrade task.
+     * Must be logged backend admin user to ran it
+     * If the class can not be upload, 404
+     * If the upgrade exists, but does not need to ran, 304
+     * If upgrande ran ok, 200
+     * @param request
+     * @param response
+     * @param upgradeTaskForm
+     * @return
+     */
     @POST
     @JSONP
     @NoCache
@@ -77,6 +86,7 @@ public class UpgradeTaskResource {
             }
         } catch (Exception e) { // this is an unknown error, so we report as a 500.
 
+            Logger.error(this, e.getMessage(), e);
             res = Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e).build();
         }
 

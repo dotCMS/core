@@ -6,6 +6,10 @@ import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+/**
+ * Form to run an upgrade task
+ * @author jsanca
+ */
 @JsonDeserialize(builder = UpgradeTaskForm.Builder.class)
 public class UpgradeTaskForm extends Validated {
 
@@ -18,6 +22,7 @@ public class UpgradeTaskForm extends Validated {
     }
 
     private UpgradeTaskForm(final Builder builder) {
+        super();
         this.upgradeTaskClass = builder.upgradeTaskClass;
         checkValid();
     }

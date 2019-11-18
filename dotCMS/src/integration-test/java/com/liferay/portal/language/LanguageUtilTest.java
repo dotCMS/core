@@ -82,7 +82,7 @@ public class LanguageUtilTest {
         Assert.assertEquals(expectedBaseId, LanguageUtil.getLanguageId("fr-CR"));
         Logger.info(this, "Testing fr_FR");
         Assert.assertEquals(expectedFrId,   LanguageUtil.getLanguageId("fr_FR"));
-        Logger.info(this, "Testing FR_CR");
+        Logger.info(this, "Testing FR_FR");
         Assert.assertEquals(expectedFrId,   LanguageUtil.getLanguageId("FR_FR"));
         Logger.info(this, "Testing fr-FR");
         Assert.assertEquals(expectedFrId,   LanguageUtil.getLanguageId("fr-FR"));

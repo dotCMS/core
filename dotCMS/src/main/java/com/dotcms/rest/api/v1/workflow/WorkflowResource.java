@@ -1499,6 +1499,14 @@ public class WorkflowResource {
         }
     } // fireAction.
 
+    /**
+     * Check preconditions.
+     * If contentlet can not be found, 404
+     * if contentlet is not can not be a default action: UNPUBLISH, UNARCHIVE, DELETE, DESTROY
+     * @param contentlet
+     * @param systemAction
+     * @throws NotFoundInDbException
+     */
     private void checkContentletState(final Contentlet contentlet, final SystemAction systemAction)
             throws NotFoundInDbException {
 

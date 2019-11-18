@@ -1705,6 +1705,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    /**
+     * check if a workflow may be run instead of the delete api call itself.
+     * @param contentletIn
+     * @param user
+     * @param respectFrontendRoles
+     * @return Optional boolean, present if the workflow ran with a result of the delete operation.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     private Optional<Boolean> checkAndRunDeleteAsWorkflow(final Contentlet contentletIn, final User user,
             final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
@@ -1864,6 +1873,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return deleteContentlets(contentlets, user, respectFrontendRoles, false);
     }
 
+    /**
+     * check if a workflow may be run instead of the destroy api call itself.
+     * @param contentletIn
+     * @param user
+     * @param respectFrontendRoles
+     * @return Optional boolean, present if the workflow ran with a result of the delete operation.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     private Optional<Boolean> checkAndRunDestroyAsWorkflow(final Contentlet contentletIn, final User user,
             final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
@@ -2609,6 +2627,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         archive(contentlet, user, respectFrontendRoles, false);
     }
 
+    /**
+     * check if a workflow may be run instead of the archive api call itself.
+     * @param contentletIn
+     * @param user
+     * @param respectFrontendRoles
+     * @return Optional Contentlet, present is the workflow ran and returns the contentlet archived.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     private Optional<Contentlet> checkAndRunArchiveAsWorkflow(final Contentlet contentletIn, final User user,
                                                        final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
@@ -3016,6 +3043,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         unpublish(contentlet, user, respectFrontendRoles, ThreadContextUtil.isReindex()?-1:0);
     }
 
+    /**
+     * check if a workflow may be run instead of the unpublish api call itself.
+     * @param contentletIn
+     * @param user
+     * @param respectFrontendRoles
+     * @return Optional contentlet, present if ran the workflow, returns the contentlet unpublish
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
      private Optional<Contentlet> checkAndRunUnpublishAsWorkflow(final Contentlet contentletIn, final User user,
                                                        final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
@@ -3204,6 +3240,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    /**
+     * check if a workflow may be run instead of the unarchive api call itself.
+     * @param contentletIn
+     * @param user
+     * @param respectFrontendRoles
+     * @return Optional Contentlet, if present means the workflow ran, returns the contentlet unarchived
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     private Optional<Contentlet> checkAndRunUnarchiveAsWorkflow(final Contentlet contentletIn, final User user,
                                                        final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
@@ -4053,6 +4098,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    /**
+     * check if a workflow may be run instead of the publish api call itself.
+     * @param contentletIn
+     * @param user
+     * @param respectFrontendRoles
+     * @return Optional Contentlet, present if workflow ran
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     private Optional<Contentlet> checkAndRunPublishAsWorkflow(final Contentlet contentletIn, final User user,
                                                        final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
