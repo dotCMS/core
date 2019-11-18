@@ -23,7 +23,6 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.services.DotResourceLoader;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -201,7 +200,7 @@ public class ResourceManagerImpl
          */
         if (cacheObject == null)
         {
-            cacheObject = CacheLocator.getVeloctyResourceCache();
+            cacheObject = new ResourceCacheImpl();
         }
 
         globalCache = (ResourceCache) cacheObject;
