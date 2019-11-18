@@ -3,10 +3,12 @@ package com.dotmarketing.quartz;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
@@ -156,9 +158,16 @@ public class DotJobStore extends JobStoreCMT {
 		super.initialize(loadHelper, signaler);
 	}
 
-	protected void closeConnection(Connection con) {
-		DbConnectionFactory.closeSilently();
-		CloseUtils.closeQuietly(con);
+	protected void closeConnection(final Connection conn) {
+	    if(DbConnectionFactory.connectionExists()) {
+	        final Connection conn2 = DbConnectionFactory.getConnection();
+	        if(conn == conn2) {
+	            Logger.warnAndDebug(this.getClass(), new DotRuntimeException("Quartz using a dotCMS connection, should not be.  Closing"));
+	            DbConnectionFactory.closeSilently();
+	        }
+	    }
+	    CloseUtils.closeQuietly(conn);
+
 	}
 
 }
