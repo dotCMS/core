@@ -15,6 +15,7 @@ import javax.servlet.ServletContext;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeParseException;
 import java.util.Calendar;
 import java.util.*;
 import org.junit.runner.RunWith;
@@ -347,5 +348,47 @@ public class DateUtilTest extends UnitTestBase {
 
         assertNotNull(result);
         assertTrue(result.contains(DateUtil.ERROR_DATE));
+    }
+
+    @Test
+    public void test_parseISO_null()  throws ParseException {
+        final Date date1 = DateUtil.parseISO(null);
+
+        assertNull(date1);
+
+        final Date date2 = DateUtil.parseISO("");
+
+        assertNull(date2);
+    }
+
+
+    @Test(expected=ParseException.class)
+    public void test_parseISO_bad_date()  throws ParseException {
+
+        final Date date1 = DateUtil.parseISO("2010");
+
+        assertNull(date1);
+    }
+
+    @Test()
+    public void test_parseISO_short_date() throws ParseException {
+
+        final Date date1 = DateUtil.parseISO("1981-10-04");
+
+        assertNotNull(date1);
+        assertEquals("Year should be 1981", 81,date1.getYear());
+        assertEquals("Month should be Octuber", Calendar.OCTOBER, date1.getMonth());
+        assertEquals("Day should be 4", 4, date1.getDate());
+    }
+
+    @Test()
+    public void test_parseISO_longiso_date() throws ParseException {
+
+        final Date date1 = DateUtil.parseISO("2015-02-05T02:05:17+00:00");
+
+        assertNotNull(date1);
+        assertEquals("Year should be 2015", 115,date1.getYear());
+        assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
+        assertEquals("Day should be 4", 4, date1.getDate());
     }
 }
