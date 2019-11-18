@@ -25,6 +25,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -63,10 +64,14 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
         Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
         Object arglist[] = new Object[] { request, response };
         try {
-            if (getUser() == null ||
-                    !APILocator.getRoleAPI().doesUserHaveRole(getUser(), APILocator.getRoleAPI().loadCMSAdminRole())) {
+            final User user = getUser();
+            if (user == null ||
+                    !APILocator.getRoleAPI()
+                            .doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
                 SecurityLogger.logInfo(TimeMachineAjaxAction.class,
-                   ()-> "Only users with `admin` Role should be accessing Time-Machine otherwise the feature will not work correctly.");
+                        () -> String
+                                .format("User `%s` does not have an Admin Role. Only users with `admin` Role should be accessing Time-Machine otherwise this feature will not work correctly.",
+                                        user == null ? "unknown" : user.getUserId()));
                 response.sendError(401);
                 return;
             }
