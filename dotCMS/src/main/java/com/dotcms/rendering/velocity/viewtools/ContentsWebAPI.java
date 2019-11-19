@@ -1,6 +1,5 @@
 package com.dotcms.rendering.velocity.viewtools;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Identifier;
@@ -14,7 +13,6 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -1133,13 +1131,14 @@ public class ContentsWebAPI implements ViewTool {
 	 * This method checks if the logged in user (frontend) has the required permission over
 	 * the passed contentlet id
 	 */
-	public boolean doesUserHasPermission (String contentInode, int permission, User user, boolean respectFrontendRoles) throws DotDataException {
+	public boolean doesUserHasPermission (final String contentInode, final int permission, final User user, final boolean respectFrontendRoles) throws DotDataException {
 		try {
 			if(!InodeUtils.isSet(contentInode))
 				return false;
-			Contentlet cont = conAPI.find(contentInode, user, respectFrontendRoles);
+			final Contentlet cont = conAPI.find(contentInode, user, respectFrontendRoles);
 			return perAPI.doesUserHavePermission(cont, permission, user, respectFrontendRoles);
 		} catch (DotSecurityException e) {
+		    Logger.warn(ContainerWebAPI.class,()->String.format(" user `%s` does not have permission over content with inode `%s` ",user,contentInode) );
 			return false;
 		}
 	}
