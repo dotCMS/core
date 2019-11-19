@@ -1,9 +1,13 @@
 package com.dotcms.rest;
 
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.param.DateParam;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
@@ -19,6 +23,8 @@ import org.apache.commons.lang.StringEscapeUtils;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -31,6 +37,7 @@ import static com.dotcms.publisher.business.PublishAuditStatus.Status.*;
 @Path("/bundle")
 public class BundleResource {
 
+    public  static final String BUNDLE_THREAD_POOL_SUBMITTER_NAME = "bundlepolling";
     private final WebResource     webResource     = new WebResource();
     private final BundleAPI       bundleAPI       = APILocator.getBundleAPI();
 
@@ -224,16 +231,19 @@ public class BundleResource {
 
     /**
      * Deletes all bundles by identifier
+     * Note: The process could be heavy, so it is handle by async response
      * @param request
      * @param response
+     * @param asyncResponse response is async
      * @param deleteBundlesByIdentifierForm
      * @return
      */
 	@DELETE
     @Path("/ids")
     @Produces("application/json")
-    public Response deleteBundlesByIdentifiers(@Context final HttpServletRequest request,
+    public void deleteBundlesByIdentifiers(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response,
+                                               @Suspended final AsyncResponse asyncResponse,
                                                final DeleteBundlesByIdentifierForm  deleteBundlesByIdentifierForm) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -246,22 +256,41 @@ public class BundleResource {
         Logger.info(this, "Deleting the bundles: " + deleteBundlesByIdentifierForm.getIdentifiers()
                 + " by the user: " + initData.getUser().getUserId());
 
-        try {
+        final DotSubmitter dotSubmitter = DotConcurrentFactory
+                .getInstance().getSubmitter(BUNDLE_THREAD_POOL_SUBMITTER_NAME);
+        dotSubmitter.execute(() -> {
 
-            for (final String bundleId : deleteBundlesByIdentifierForm.getIdentifiers()) {
+            Response restResponse = null;
 
-                this.bundleAPI.deleteBundleAndDependencies(bundleId, initData.getUser());
+            try {
+
+                this.deleteBundleByIdentifier(deleteBundlesByIdentifierForm, initData);
+                restResponse = Response.ok(new ResponseEntityView(
+                        CollectionsUtils.map("bundlesDeleted", deleteBundlesByIdentifierForm.getIdentifiers()))
+                        ).build();
+                asyncResponse.resume(restResponse);
+            } catch (DotDataException e) {
+
+                Logger.error(this.getClass(),
+                        "Exception on deleteBundlesByIdentifiers, couldn't delete the identifiers: "
+                                + deleteBundlesByIdentifierForm.getIdentifiers() +
+                                ", exception message: " + e.getMessage(), e);
+                restResponse = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+                asyncResponse.resume(restResponse);
             }
 
-            return Response.ok(new ResponseEntityView("All bundles deleted")).build();
-        } catch (DotDataException e) {
-
-            Logger.error(this.getClass(),
-                    "Exception on deleteBundlesByIdentifiers, couldn't delete the identifiers: " + deleteBundlesByIdentifierForm.getIdentifiers() +
-                            ", exception message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+            asyncResponse.resume(Response.ok(new ResponseEntityView("All bundles deleted")).build());
+        });
     } // deleteBundlesByIdentifiers.
+
+    @WrapInTransaction
+    private void deleteBundleByIdentifier(final DeleteBundlesByIdentifierForm deleteBundlesByIdentifierForm, final InitDataObject initData) throws DotDataException {
+
+        for (final String bundleId : deleteBundlesByIdentifierForm.getIdentifiers()) {
+
+            this.bundleAPI.deleteBundleAndDependencies(bundleId, initData.getUser());
+        }
+    }
 
     /**
      * Deletes bundles older than a date. (unsent are not going to be deleted)

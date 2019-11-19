@@ -1,6 +1,7 @@
 package com.dotcms.publisher.bundle.business;
 
 import com.dotcms.business.LazyUserAPIWrapper;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.publisher.assets.business.PushedAssetsFactory;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -148,7 +149,7 @@ public class BundleAPIImpl implements BundleAPI {
 			this.deleteBundleAndDependencies(bundle, user);
 		} else {
 
-			// todo: throe 404 ecxeption
+			throw new NotFoundInDbException("The bundle id: " + bundleId + " does not exists");
 		}
 	}
 
