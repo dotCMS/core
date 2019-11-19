@@ -223,12 +223,17 @@ public class ImportContentletsAction extends DotPortletAction {
 							byte[] bytes = (byte[]) httpSession.getAttribute("file_to_import");
 							ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
 							String eCode = (String) httpSession.getAttribute(ENCODE_TYPE);
-							if (importContentletsForm.getLanguage() == -1)
-								reader = new InputStreamReader(new ByteArrayInputStream(bytes), Charset.forName("UTF-8"));
-							else if(eCode != null)
-								reader = new InputStreamReader(new ByteArrayInputStream(bytes), Charset.forName(eCode));
-							else
-								reader = new InputStreamReader(new ByteArrayInputStream(bytes));	
+							if (importContentletsForm.getLanguage() == -1) {
+								reader = new InputStreamReader(new ByteArrayInputStream(bytes),
+										Charset.forName("UTF-8"));
+							}
+							else if(eCode != null) {
+								reader = new InputStreamReader(new ByteArrayInputStream(bytes),
+										Charset.forName(eCode));
+							}
+							else {
+								reader = new InputStreamReader(new ByteArrayInputStream(bytes));
+							}
 							csvreader = new CsvReader(reader);
 							csvreader.setSafetySwitch(false);
 								
@@ -236,13 +241,15 @@ public class ImportContentletsAction extends DotPortletAction {
 								if (csvreader.readHeaders()) {
 									csvHeaders = csvreader.getHeaders();
 									for (int column = 0; column < csvHeaders.length; ++column) {
-										if (csvHeaders[column].equals(languageCodeHeader))
+										if (csvHeaders[column].equals(languageCodeHeader)) {
 											languageCodeHeaderColumn = column;
-										if (csvHeaders[column].equals(countryCodeHeader))
+										}
+										if (csvHeaders[column].equals(countryCodeHeader)) {
 											countryCodeHeaderColumn = column;
-											
-										if ((-1 < languageCodeHeaderColumn) && (-1 < countryCodeHeaderColumn))
+										}
+										if ((-1 < languageCodeHeaderColumn) && (-1 < countryCodeHeaderColumn)) {
 											break;
+										}
 									}
 								}
 							}
@@ -261,8 +268,10 @@ public class ImportContentletsAction extends DotPortletAction {
 							int contentsToImport=0;
 							for(String counter: counters){
 								String counterArray[]=counter.split("=");
-								if(counterArray[0].equals("newContent") || counterArray[0].equals("contentToUpdate"))
-									contentsToImport=contentsToImport + Integer.parseInt(counterArray[1]);		
+								if(counterArray[0].equals("newContent") || counterArray[0].equals("contentToUpdate")) {
+									contentsToImport =
+											contentsToImport + Integer.parseInt(counterArray[1]);
+								}
 							}
 							
 							final List<String> inodes= importresults.get("lastInode");
