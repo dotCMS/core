@@ -15,8 +15,11 @@ public abstract class BundleFactory {
 
     protected final static String SELECT_UNSEND_BUNDLES = "SELECT * FROM publishing_bundle where publish_date is null and expire_date is null and owner = ? order by id desc";
 
-    protected final static String SELECT_SENT_BUNDLES_BY_OWNER = "SELECT * FROM publishing_bundle where publish_date < ? and owner = ? order by id desc";
-    protected final static String SELECT_SENT_BUNDLES_BY_ADMIN = "SELECT * FROM publishing_bundle where publish_date < ? order by id desc";
+    protected final static String SELECT_SENT_BUNDLES_BY_OWNER            = "SELECT * FROM publishing_bundle where publish_date is not null owner = ? order by id desc";  // todo: I think publish should be != null
+    protected final static String SELECT_SENT_BUNDLES_BY_ADMIN            = "SELECT * FROM publishing_bundle where publish_date is not null order by id desc";
+
+    protected final static String SELECT_SENT_BUNDLES_OLDER_THAN_BY_OWNER = "SELECT * FROM publishing_bundle where publish_date < ? and owner = ? order by id desc";
+    protected final static String SELECT_SENT_BUNDLES_ORDER_THAN_BY_ADMIN = "SELECT * FROM publishing_bundle where publish_date < ? order by id desc";
 
     protected final static String SELECT_UNSEND_BUNDLES_LIKE_NAME = "SELECT * FROM publishing_bundle " +
             "where publish_date is null and expire_date is null and owner = ? and UPPER(name) like UPPER(?) order by publish_date desc";
@@ -74,7 +77,6 @@ public abstract class BundleFactory {
      */
     public abstract List<Bundle> findSentBundles(Date olderThan, String userId, int limit, int offset)  throws DotDataException;
 
-
     /**
      * Finds sent bundles older than "olderThan" (suppose the user that calls this method is an admin)
      * @param olderThan {@link Date}    will remove the bundles older than
@@ -84,6 +86,25 @@ public abstract class BundleFactory {
      * @throws DotDataException
      */
     public abstract List<Bundle> findSentBundles(Date olderThan, int limit, int offset)  throws DotDataException;
+
+    /**
+     * Finds sent bundles older than "olderThan" (suppose the user that calls this method is an admin)
+     * @param limit     {@link Integer} limit for pagination
+     * @param offset    {@link Integer} offset for pagination
+     * @return List of Bundles, empty if nothing to return
+     * @throws DotDataException
+     */
+    public abstract List<Bundle> findSentBundles(int limit, int offset)  throws DotDataException;
+
+    /**
+     * Finds sent bundles older than "olderThan" (suppose the user that calls this method is an admin)
+     * @param userId    {@link String}  will remove the bundles own by userId
+     * @param limit     {@link Integer} limit for pagination
+     * @param offset    {@link Integer} offset for pagination
+     * @return List of Bundles, empty if nothing to return
+     * @throws DotDataException
+     */
+    public abstract List<Bundle> findSentBundles(String userId, int limit, int offset)  throws DotDataException;
 
     /**
      * Returns a list on un-send bundles (haven't been sent to any Environment) filtered by owner and name.

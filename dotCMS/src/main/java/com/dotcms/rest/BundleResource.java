@@ -1,19 +1,11 @@
 package com.dotcms.rest;
 
 import com.dotcms.publisher.bundle.bean.Bundle;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-
 import com.dotcms.publisher.bundle.business.BundleAPI;
-import com.dotcms.publisher.business.DotPublisherException;
-import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.param.DateParam;
 import com.dotcms.util.CollectionsUtils;
-import com.dotcms.workflow.form.WorkflowStepAddForm;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -26,11 +18,15 @@ import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.*;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.util.Date;
 import java.util.List;
 
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.*;
 
 @Path("/bundle")
 public class BundleResource {
@@ -302,6 +298,109 @@ public class BundleResource {
                             ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
-    } // deleteBundlesByIdentifiers.
+    } // deleteBundlesOlderThan.
+
+    /**
+     * Deletes all sent bundles
+     * @param request
+     * @param response
+     * @return
+     */
+    @DELETE
+    @Path("/all")
+    @Produces("application/json")
+    public Response deleteAll(@Context final HttpServletRequest request,
+                              @Context final HttpServletResponse response) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.info(this, "Deleting all bundles by the user: " + initData.getUser().getUserId());
+
+        try {
+
+            return Response.ok(new ResponseEntityView(CollectionsUtils.map("bundlesDeleted",
+                    this.bundleAPI.deleteAllBundles(initData.getUser())))).build();
+        } catch (DotDataException e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on deleteAll, couldn't delete bundles, exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // deleteAll.
+
+    /**
+     * Deletes all failed sent bundles
+     * @param request
+     * @param response
+     * @return
+     */
+    @DELETE
+    @Path("/all/fail")
+    @Produces("application/json")
+    public Response deleteAllFail(@Context final HttpServletRequest request,
+                              @Context final HttpServletResponse response) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.info(this, "Deleting all failed bundles by the user: " + initData.getUser().getUserId());
+
+        try {
+
+            return Response.ok(new ResponseEntityView(CollectionsUtils.map("bundlesDeleted",
+                        this.bundleAPI.deleteAllBundles(initData.getUser(),
+                                FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,
+                                FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH)
+                    ))).build();
+        } catch (DotDataException e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on deleteAllFail, couldn't delete the fail bundles, exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // deleteAllFail.
+
+    /**
+     * Deletes all success sent bundles
+     * @param request
+     * @param response
+     * @return
+     */
+    @DELETE
+    @Path("/all/success")
+    @Produces("application/json")
+    public Response deleteSuccessFail(@Context final HttpServletRequest request,
+                                  @Context final HttpServletResponse response) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.info(this, "Deleting all success bundles by the user: " + initData.getUser().getUserId());
+
+        try {
+
+            return Response.ok(new ResponseEntityView(CollectionsUtils.map("bundlesDeleted",
+                    this.bundleAPI.deleteAllBundles(initData.getUser(), SUCCESS)
+            ))).build();
+        } catch (DotDataException e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on deleteSuccessFail, couldn't delete the success bundles, exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    } // deleteSuccessFail.
 
 }

@@ -88,7 +88,7 @@ public class BundleFactoryImpl extends BundleFactory {
 		}
 
 		final List<Map<String, Object>> bundlesResultList =
-				new DotConnect().setSQL(SELECT_SENT_BUNDLES_BY_OWNER)
+				new DotConnect().setSQL(SELECT_SENT_BUNDLES_OLDER_THAN_BY_OWNER)
 								.addParam(userId).addParam(olderThan)
 			                    .setMaxRows(limit).setStartRow(offset).loadObjectResults();
 
@@ -107,7 +107,48 @@ public class BundleFactoryImpl extends BundleFactory {
 		final ImmutableList.Builder<Bundle> bundles = new ImmutableList.Builder<>();
 
 		final List<Map<String, Object>> bundlesResultList =
-				new DotConnect().setSQL(SELECT_SENT_BUNDLES_BY_ADMIN).addParam(olderThan)
+				new DotConnect().setSQL(SELECT_SENT_BUNDLES_ORDER_THAN_BY_ADMIN).addParam(olderThan)
+						.setMaxRows(limit).setStartRow(offset).loadObjectResults();
+
+		for (final Map<String, Object> row : bundlesResultList) {
+
+			final Bundle bundle = PublisherUtil.getBundleByMap(row);
+			bundles.add( bundle );
+		}
+
+		return bundles.build();
+	}
+
+	@Override
+	public List<Bundle> findSentBundles(final String userId, final int limit, final int offset)  throws DotDataException {
+
+		final ImmutableList.Builder<Bundle> bundles = new ImmutableList.Builder<>();
+
+		if ( !UtilMethods.isSet( userId ) ) {
+			return bundles.build();
+		}
+
+		final List<Map<String, Object>> bundlesResultList =
+				new DotConnect().setSQL(SELECT_SENT_BUNDLES_BY_OWNER)
+						.addParam(userId)
+						.setMaxRows(limit).setStartRow(offset).loadObjectResults();
+
+		for (final Map<String, Object> row : bundlesResultList) {
+
+			final Bundle bundle = PublisherUtil.getBundleByMap(row);
+			bundles.add( bundle );
+		}
+
+		return bundles.build();
+	}
+
+	@Override
+	public  List<Bundle> findSentBundles(final int limit, final int offset)  throws DotDataException {
+
+		final ImmutableList.Builder<Bundle> bundles = new ImmutableList.Builder<>();
+
+		final List<Map<String, Object>> bundlesResultList =
+				new DotConnect().setSQL(SELECT_SENT_BUNDLES_BY_ADMIN)
 						.setMaxRows(limit).setStartRow(offset).loadObjectResults();
 
 		for (final Map<String, Object> row : bundlesResultList) {

@@ -621,8 +621,6 @@ public class DateUtil {
 		ThreadUtils.sleep(millis);
 	}
 
-	private static final DateTimeFormatter SIMPLE_ISO_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
 	/**
 	 * Parse the iso string date as a {@link Date}
 	 * @param stringDate {@link String}

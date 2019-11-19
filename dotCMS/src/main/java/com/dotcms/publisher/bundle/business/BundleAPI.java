@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.model.User;
@@ -158,4 +159,21 @@ public interface BundleAPI {
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
 	 */
 	Set<String> deleteBundleAndDependenciesOlderThan(Date olderThan, User user) throws DotDataException;
+
+	/**
+	 * Deletes all bundles, if the user is admin will delete all bundles, otherwise only the bundles allowed to the user.
+	 * @param user {@link User}
+	 * @return Set of bundle identifiers deleted
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+	Set<String>  deleteAllBundles(User user) throws DotDataException;
+
+	/**
+	 * Deletes all bundles, if the user is admin will delete all bundles, otherwise only the bundles allowed to the user.
+	 * @param user {@link User}
+	 * @param statuses {@link com.dotcms.publisher.business.PublishAuditStatus.Status} array of statuses
+	 * @return Set of bundle identifiers deleted
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+	Set<String>  deleteAllBundles(User user, PublishAuditStatus.Status ...statuses) throws DotDataException;
 }

@@ -4,8 +4,10 @@ import com.dotcms.business.LazyUserAPIWrapper;
 import com.dotcms.publisher.assets.business.PushedAssetsFactory;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.util.DotPreconditions;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -16,8 +18,11 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
@@ -102,24 +107,25 @@ public class BundleAPIImpl implements BundleAPI {
 	@Override
 	public void deleteBundle(String id) throws DotDataException {
 		bundleFactory.deleteBundle(id);
-
 	}
 
-	@WrapInTransaction
-	@Override
-	public void deleteBundleAndDependencies(final String bundleId, final User user) throws DotDataException {
+	private void deleteBundleAndDependencies (final Bundle bundle, final User user) throws DotDataException {
 
-		// todo: check bundle deleting permissions with user
+		final String bundleId = bundle.getId();
+		this.validateBundleDeletePermission(user, bundle);
+
+		Logger.info(this, "Removing bundle: " + bundleId + " and dependencies by: " + user.getUserId());
 
 		try {
 
+			Logger.info(this, "Removing audit status for a bundle: " + bundleId);
 			this.publishAuditAPI.deletePublishAuditStatus(bundleId);
 		} catch (DotPublisherException e) {
 
 			throw new DotDataException(e);
 		}
 
-		Logger.info(this, "Removing all assets for a bundle");
+		Logger.info(this, "Removing all pushed assets for a bundle: " + bundleId);
 		this.pushedAssetsFactory.deletePushedAssetsByBundle(bundleId);
 
 		Logger.info(this, "Removing all assets from bundle: " + bundleId);
@@ -130,6 +136,26 @@ public class BundleAPIImpl implements BundleAPI {
 
 		Logger.info(this, "Removing bundle: " + bundleId);
 		this.deleteBundle(bundleId);
+	}
+
+	@WrapInTransaction
+	@Override
+	public void deleteBundleAndDependencies(final String bundleId, final User user) throws DotDataException {
+
+		final Bundle bundle = this.getBundleById(bundleId);
+		this.deleteBundleAndDependencies(bundle, user);
+	}
+
+	private void validateBundleDeletePermission(final User user, final Bundle bundle) throws DotDataException {
+
+		/**
+		if (!APILocator.getPermissionAPI().doesUserHavePermission(bundle,
+				PermissionAPI.PERMISSION_EDIT, user, false)) {
+
+			throw new DotSecurityException("User : " + user.getUserId() +
+					", is not allowed to delete the bundle: " + bundleId)
+		}*/
+		// todo: bundle is not a permissionable yet, so can not validate yet.
 	}
 
 	@WrapInTransaction
@@ -149,14 +175,103 @@ public class BundleAPIImpl implements BundleAPI {
 
 			for (final Bundle bundle : sentBundles) {
 
+				this.deleteBundleAndDependencies(bundle, user);
+				bundlesDeleted.add(bundle.getId());
+			}
+
+			sentBundles = isAdmin?
+					this.bundleFactory.findSentBundles(olderThan, limit, offset):
+					this.bundleFactory.findSentBundles(olderThan, user.getUserId(), limit, offset);
+		}
+
+		return bundlesDeleted.build();
+	}
+
+	@WrapInTransaction
+	@Override
+	public Set<String>  deleteAllBundles(final User user,
+										 final PublishAuditStatus.Status ...statuses) throws DotDataException {
+
+		final ImmutableSet.Builder<String> bundlesDeleted = new ImmutableSet.Builder<>();
+		final int limit          = 100;
+		final int offset         = 0;
+		final boolean isAdmin    = this.userAPI.isCMSAdmin(user);
+		List<Bundle> sentBundles = isAdmin?
+				this.bundleFactory.findSentBundles(limit, offset):
+				this.bundleFactory.findSentBundles(user.getUserId(), limit, offset);
+
+		Logger.info(this, "Deleting all bundles with statuses: "
+				+ Arrays.asList(statuses));
+		while (UtilMethods.isSet(sentBundles)) {
+
+			for (final Bundle bundle : sentBundles) {
+
+				try {
+
+					final PublishAuditStatus status =
+							this.publishAuditAPI.getPublishAuditStatus(bundle.getId());
+
+					if (this.containsStatus (status, statuses)) {
+
+						this.deleteBundleAndDependencies(bundle, user);
+						bundlesDeleted.add(bundle.getId());
+					}
+				} catch (final DotPublisherException e) {
+
+					throw new DotDataException(e);
+				}
+			}
+
+			sentBundles = isAdmin?
+					this.bundleFactory.findSentBundles(limit, offset):
+					this.bundleFactory.findSentBundles(user.getUserId(), limit, offset);
+		}
+
+		return bundlesDeleted.build();
+	} // deleteAllBundles.
+
+	private boolean containsStatus(final PublishAuditStatus          bundleStatus,
+								   final PublishAuditStatus.Status[] statuses) {
+
+		if (null != bundleStatus && null != bundleStatus.getStatus()) {
+
+			for (final PublishAuditStatus.Status status : statuses) {
+
+				if (bundleStatus.getStatus() == status) {
+
+					return true;
+				}
+			}
+		}
+
+		return false;
+	} // containsStatus.
+
+	@WrapInTransaction
+	@Override
+	public Set<String>  deleteAllBundles(final User user)
+			throws DotDataException {
+
+		final ImmutableSet.Builder<String> bundlesDeleted = new ImmutableSet.Builder<>();
+		final int limit          = 100;
+		final int offset         = 0;
+		final boolean isAdmin    = this.userAPI.isCMSAdmin(user);
+		List<Bundle> sentBundles = isAdmin?
+				this.bundleFactory.findSentBundles(limit, offset):
+				this.bundleFactory.findSentBundles(user.getUserId(), limit, offset);
+
+		Logger.info(this, "Deleting all bundles...");
+		while (UtilMethods.isSet(sentBundles)) {
+
+			for (final Bundle bundle : sentBundles) {
+
 				this.deleteBundleAndDependencies(bundle.getId(), user);
 				bundlesDeleted.add(bundle.getId());
 			}
 
-			offset     += limit + 1;
 			sentBundles = isAdmin?
-					this.bundleFactory.findSentBundles(olderThan, limit, offset):
-					this.bundleFactory.findSentBundles(olderThan, user.getUserId(), limit, offset);
+					this.bundleFactory.findSentBundles(limit, offset):
+					this.bundleFactory.findSentBundles(user.getUserId(), limit, offset);
 		}
 
 		return bundlesDeleted.build();
