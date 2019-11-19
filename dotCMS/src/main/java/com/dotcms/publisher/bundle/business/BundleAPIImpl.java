@@ -143,7 +143,13 @@ public class BundleAPIImpl implements BundleAPI {
 	public void deleteBundleAndDependencies(final String bundleId, final User user) throws DotDataException {
 
 		final Bundle bundle = this.getBundleById(bundleId);
-		this.deleteBundleAndDependencies(bundle, user);
+		if (null != bundle) {
+
+			this.deleteBundleAndDependencies(bundle, user);
+		} else {
+
+			// todo: throe 404 ecxeption
+		}
 	}
 
 	private void validateBundleDeletePermission(final User user, final Bundle bundle) throws DotDataException {
@@ -197,7 +203,7 @@ public class BundleAPIImpl implements BundleAPI {
 		final int offset         = 0;
 		final boolean isAdmin    = this.userAPI.isCMSAdmin(user);
 		List<Bundle> sentBundles = isAdmin?
-				this.bundleFactory.findSentBundles(limit, offset):
+				this.bundleFactory.findSentBundles(limit, offset): // todo: modify this method in order to use publishing_queue_audit,
 				this.bundleFactory.findSentBundles(user.getUserId(), limit, offset);
 
 		Logger.info(this, "Deleting all bundles with statuses: "

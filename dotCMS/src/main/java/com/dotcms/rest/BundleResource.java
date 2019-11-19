@@ -310,7 +310,7 @@ public class BundleResource {
     @Path("/all")
     @Produces("application/json")
     public Response deleteAll(@Context final HttpServletRequest request,
-                              @Context final HttpServletResponse response) {
+                              @Context final HttpServletResponse response) { /// todo: double check if this is ok
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -343,7 +343,7 @@ public class BundleResource {
     @Path("/all/fail")
     @Produces("application/json")
     public Response deleteAllFail(@Context final HttpServletRequest request,
-                              @Context final HttpServletResponse response) {
+                              @Context final HttpServletResponse response) {  // todo: do this async response
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
