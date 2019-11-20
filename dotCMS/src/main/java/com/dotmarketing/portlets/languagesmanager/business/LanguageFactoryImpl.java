@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 /**
  * Implementation class for the {@link LanguageFactory}.
@@ -54,6 +55,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	private static final String INSERT_LANGUAGE_BY_ID="insert into language (id,language_code,country_code,language,country) values (?,?,?,?,?)";
 	private static final String SELECT_LANGUAGE_BY_LANG_AND_COUNTRY_CODES="select * from language where lower(language_code) = ? and lower(country_code) = ?";
 	private static final String SELECT_LANGUAGE_BY_LANG_CODE_ONLY="select * from language where lower(language_code) = ? and (country_code = '' OR country_code IS NULL)";
+	private static final String SELECT_FIRST_LANGUAGE_BY_LANG_CODE_ONLY="select * from language where lower(language_code) = ?";
 	private static final String SELECT_LANGUAGE_BY_ID="select * from language where id = ?";
 	private static final String SELECT_ALL_LANGUAGES="select * from language where id <> ? order by language_code ";
 
@@ -583,8 +585,6 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	@Override
 	protected Language getFallbackLanguage(final String languageCode) {
 
-		Language lang = null;
-
 		try {
 
 			return fromDbMap(new DotConnect()
@@ -600,6 +600,22 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		}
 
 	} // getFallbackLanguage.
+
+	@Override
+	protected Optional<Language> getFindFirstLanguageByCode(final String languageCode) {
+
+		try {
+
+			return Optional.ofNullable(fromDbMap(new DotConnect()
+					.setSQL(SELECT_FIRST_LANGUAGE_BY_LANG_CODE_ONLY)
+					.addParam(languageCode.toLowerCase())
+					.loadObjectResults().stream().findFirst().orElse(null)));
+		} catch (DotDataException e) {
+
+			Logger.error(LanguageFactoryImpl.class, "getFindFirstLanguageByCode failed:" + e, e);
+			throw new DotRuntimeException(e.toString());
+		}
+	}
 
 	@Override
 	protected int deleteLanguageById(final Language language) {

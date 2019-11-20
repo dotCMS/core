@@ -1296,7 +1296,6 @@ public class DotWebdavHelper {
 						throw new DotDataException(e.getMessage(), e);
 					}
 
-
 					fileResourceCache.remove(uri + "|" + user.getUserId());
 				}
 			}

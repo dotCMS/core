@@ -2363,8 +2363,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				if (UtilMethods.isSet(processor.getContentlet()) && processor.getContentlet().needsReindex()) {
 
 					Logger.info(this, "Needs reindex, adding the contentlet to the index at the end of the workflow execution");
-				  final Contentlet content = processor.getContentlet();
-				  final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
+				    final Contentlet content = processor.getContentlet();
+				    final ThreadContext threadContext = ThreadContextUtil.getOrCreateContext();
 					final boolean includeDependencies = null != threadContext && threadContext.isIncludeDependencies();
 					this.contentletIndexAPI.addContentToIndex(content, includeDependencies);
 					Logger.info(this, "Added contentlet to the index at the end of the workflow execution, dependencies: " + includeDependencies);
