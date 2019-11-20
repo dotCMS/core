@@ -1,5 +1,7 @@
 package com.dotmarketing.business;
 
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditAPIImpl;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Queue;
@@ -949,6 +951,15 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Creates a single instance of the {@link PublishAuditAPIImpl} class.
+	 *
+	 * @return The {@link PublishAuditAPIImpl} class.
+	 */
+	public static PublishAuditAPI getPublishAuditAPI() {
+		return (PublishAuditAPI) getInstance(APIIndex.PUBLISH_AUDIT_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1086,7 +1097,8 @@ enum APIIndex
 	API_TOKEN_API,
 	GRAPHQL_API,
 	URLMAP_API,
-	CONTENT_TYPE_FIELD_LAYOUT_API;
+	CONTENT_TYPE_FIELD_LAYOUT_API,
+	PUBLISH_AUDIT_API;
 
 
 
@@ -1165,6 +1177,7 @@ enum APIIndex
 	        case API_TOKEN_API: return new ApiTokenAPI();
 			case URLMAP_API: return new URLMapAPIImpl();
 			case CONTENT_TYPE_FIELD_LAYOUT_API: return new ContentTypeFieldLayoutAPIImpl();
+			case PUBLISH_AUDIT_API: return PublishAuditAPIImpl.getInstance();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

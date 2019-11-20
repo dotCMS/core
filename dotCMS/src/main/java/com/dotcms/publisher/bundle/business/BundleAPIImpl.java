@@ -7,6 +7,7 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.util.CloseUtils;
+import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.util.DotPreconditions;
 
 import java.io.BufferedWriter;
@@ -42,7 +43,7 @@ public class BundleAPIImpl implements BundleAPI {
 
 		this.bundleFactory       = FactoryLocator.getBundleFactory();
 		this.pushedAssetsFactory = FactoryLocator.getPushedAssetsFactory();
-		this.publishAuditAPI     = PublishAuditAPI.getInstance();
+		this.publishAuditAPI     = APILocator.getPublishAuditAPI();
 		this.userAPI             = new LazyUserAPIWrapper(); // we need this lazyness to avoid init issues.
 	}
 
@@ -256,9 +257,12 @@ public class BundleAPIImpl implements BundleAPI {
 		final int limit          = 100;
 		final int offset         = 0;
 		final boolean isAdmin    = this.userAPI.isCMSAdmin(user);
-		List<Bundle> sentBundles = isAdmin?
-				this.bundleFactory.findSentBundles(limit, offset): // todo: modify this method in order to use publishing_queue_audit,
-				this.bundleFactory.findSentBundles(user.getUserId(), limit, offset);
+		final List<Status> statusList = Arrays.asList(statuses);
+		List<String> bundleIDs = isAdmin ? publishAuditAPI.getBundleIdByStatus(statusList,limit,offset) :
+				publishAuditAPI.getBundleIdByStatusFilterByOwner(statusList,limit,offset,user.getUserId());
+//		List<Bundle> sentBundles = isAdmin?
+//				this.bundleFactory.findSentBundles(limit, offset): // todo: modify this method in order to use publishing_queue_audit,
+//				this.bundleFactory.findSentBundles(user.getUserId(), limit, offset);
 
 		Logger.info(this, "Deleting all bundles with statuses: "
 				+ Arrays.asList(statuses));
