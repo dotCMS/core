@@ -21,14 +21,10 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.environment.bean.Environment;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -181,10 +177,9 @@ public class BundleAPIImpl implements BundleAPI {
 		try {
 
 			Logger.info(this, "Deleting bundles older than: " + olderThan);
-			final File bundlesFile = this.createTempFileToDeleteForOlderBundles(olderThan, user.getUserId(), isAdmin);
-			try (final Stream<String> streamLines = Files.lines(bundlesFile.toPath())) {
+			try (final Stream<String> bundleIds = this.getOlderBundleIds(olderThan, user.getUserId(), isAdmin)) {
 
-				streamLines.forEachOrdered( bundleId -> {
+				bundleIds.forEachOrdered( bundleId -> {
 
 					this.internalDeleteBundleAndDependencies(bundleId, user);
 					bundlesDeleted.add(bundleId);
@@ -198,16 +193,22 @@ public class BundleAPIImpl implements BundleAPI {
 		return bundlesDeleted.build();
 	}
 
-	private File createTempFileToDeleteForOlderBundles (final Date olderThan, final String userId, final boolean isAdmin)
+	private Stream<String> getOlderBundleIds(final Date olderThan, final String userId, final boolean isAdmin)
 			throws IOException, DotDataException {
 
-		final File tempFile       = FileUtil.createTemporalFile("bundle-to-delete");
+		final File tempFile       = FileUtil.createTemporalFile("bundle-older-delete");
 		final int limit           = 100;
 		int offset                = 0;
 		List<Bundle> sentBundles  = isAdmin?
 				this.bundleFactory.findSentBundles(olderThan, limit, offset):
 				this.bundleFactory.findSentBundles(olderThan, userId, limit, offset);
 		BufferedWriter fileWriter = null;
+
+		// if the initial is less than limit, return it
+		if (UtilMethods.isSet(sentBundles) && sentBundles.size() < limit) {
+
+			return sentBundles.stream().map(Bundle::getId);
+		}
 
 		try {
 
@@ -220,6 +221,8 @@ public class BundleAPIImpl implements BundleAPI {
 					fileWriter.newLine();
 				}
 
+				fileWriter.flush();
+
 				offset       += limit + 1;
 				sentBundles   = isAdmin?
 						this.bundleFactory.findSentBundles(olderThan, limit, offset):
@@ -230,7 +233,7 @@ public class BundleAPIImpl implements BundleAPI {
 			CloseUtils.closeQuietly(fileWriter);
 		}
 
-		return tempFile;
+		return Files.lines(tempFile.toPath());
 	}
 
 	private void internalDeleteBundleAndDependencies(final String bundleId, final User user) {
