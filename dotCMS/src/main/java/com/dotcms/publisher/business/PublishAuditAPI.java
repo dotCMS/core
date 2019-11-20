@@ -1,6 +1,7 @@
 package com.dotcms.publisher.business;
 
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotmarketing.exception.DotDataException;
 import java.util.Date;
 import java.util.List;
 
@@ -152,5 +153,25 @@ public abstract class PublishAuditAPI {
      * otherwise.
      */
     public abstract boolean isPublishRetry(final String bundleId);
+
+	/**
+	 * Returns a list of bundle ids according the diff status
+	 *
+	 * @param statusList List of Status
+	 * @return list of bundle ids
+	 */
+	public abstract List<String> getBundleIdByStatus(final List<Status> statusList, final int limit, final int offset)
+			throws DotDataException;
+
+	/**
+	 * Returns a list of bundle ids according the diff status that the user id is the owner
+	 *
+	 * @param statusList List of Status
+	 * @param userId owner of the bundles
+	 * @return
+	 * @throws DotDataException
+	 */
+	public abstract List<String> getBundleIdByStatusFilterByOwner(final List<Status> statusList, final int limit, final int offset, final String userId)
+			throws DotDataException;
 
 }
