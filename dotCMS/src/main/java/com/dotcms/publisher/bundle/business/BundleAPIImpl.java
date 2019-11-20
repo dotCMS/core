@@ -6,25 +6,27 @@ import com.dotcms.publisher.assets.business.PushedAssetsFactory;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.util.CloseUtils;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.util.DotPreconditions;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.*;
+import java.util.stream.Stream;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.environment.bean.Environment;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
@@ -171,33 +173,84 @@ public class BundleAPIImpl implements BundleAPI {
 	public Set<String> deleteBundleAndDependenciesOlderThan(final Date olderThan, final User user) throws DotDataException {
 
 		final ImmutableSet.Builder<String> bundlesDeleted = new ImmutableSet.Builder<>();
-		final int limit          = 100;
-		int offset               = 0;
-		final boolean isAdmin    = this.userAPI.isCMSAdmin(user);
-		List<Bundle> sentBundles = isAdmin?
-				this.bundleFactory.findSentBundles(olderThan, limit, offset):
-				this.bundleFactory.findSentBundles(olderThan, user.getUserId(), limit, offset);
+		final boolean isAdmin = this.userAPI.isCMSAdmin(user);
 
-		Logger.info(this, "Deleting bundles older than: " + olderThan);
-		while (UtilMethods.isSet(sentBundles)) {
+		try {
 
-			for (final Bundle bundle : sentBundles) {
+			Logger.info(this, "Deleting bundles older than: " + olderThan);
+			try (final Stream<String> bundleIds = this.getOlderBundleIds(olderThan, user.getUserId(), isAdmin)) {
 
-				this.deleteBundleAndDependencies(bundle, user);
-				bundlesDeleted.add(bundle.getId());
+				bundleIds.forEachOrdered( bundleId -> {
+
+					this.internalDeleteBundleAndDependencies(bundleId, user);
+					bundlesDeleted.add(bundleId);
+				});
 			}
+		} catch (IOException e) {
 
-			sentBundles = isAdmin?
-					this.bundleFactory.findSentBundles(olderThan, limit, offset):
-					this.bundleFactory.findSentBundles(olderThan, user.getUserId(), limit, offset);
+			throw new DotDataException(e);
 		}
 
 		return bundlesDeleted.build();
 	}
 
+	private Stream<String> getOlderBundleIds(final Date olderThan, final String userId, final boolean isAdmin)
+			throws IOException, DotDataException {
+
+		final File tempFile       = FileUtil.createTemporalFile("bundle-older-delete");
+		final int limit           = 100;
+		int offset                = 0;
+		List<Bundle> sentBundles  = isAdmin?
+				this.bundleFactory.findSentBundles(olderThan, limit, offset):
+				this.bundleFactory.findSentBundles(olderThan, userId, limit, offset);
+		BufferedWriter fileWriter = null;
+
+		// if the initial is less than limit, return it
+		if (UtilMethods.isSet(sentBundles) && sentBundles.size() < limit) {
+
+			return sentBundles.stream().map(Bundle::getId);
+		}
+
+		try {
+
+			fileWriter = new BufferedWriter(new FileWriter(tempFile));
+			while (UtilMethods.isSet(sentBundles)) {
+
+				for (final Bundle bundle : sentBundles) {
+
+					fileWriter.write(bundle.getId());
+					fileWriter.newLine();
+				}
+
+				fileWriter.flush();
+
+				offset       += limit + 1;
+				sentBundles   = isAdmin?
+						this.bundleFactory.findSentBundles(olderThan, limit, offset):
+						this.bundleFactory.findSentBundles(olderThan, userId, limit, offset);
+			}
+		} finally {
+
+			CloseUtils.closeQuietly(fileWriter);
+		}
+
+		return Files.lines(tempFile.toPath());
+	}
+
+	private void internalDeleteBundleAndDependencies(final String bundleId, final User user) {
+
+		try {
+
+			this.deleteBundleAndDependencies(bundleId, user);
+		} catch (DotDataException e) {
+
+			throw new DotRuntimeException(e);
+		}
+	}
+
 	@WrapInTransaction
 	@Override
-	public Set<String>  deleteAllBundles(final User user,
+	public Set<String> deleteAllBundles(final User user,
 										 final PublishAuditStatus.Status ...statuses) throws DotDataException {
 
 		final ImmutableSet.Builder<String> bundlesDeleted = new ImmutableSet.Builder<>();
