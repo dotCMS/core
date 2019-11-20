@@ -126,31 +126,6 @@ public interface BundleAPI {
 	public void deleteBundleAndDependencies(String id, User user) throws DotDataException;
 
 	/**
-	 * updates the Bundle with the given id
-	 *
-	 *
-	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
-	 */
-	public void updateBundle(Bundle bundle) throws DotDataException;
-
-	/**
-	 * updates the Bundles owned by userId with the owner given by replacementUserId
-	 *
-	 *
-	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
-	 */
-    public void updateOwnerReferences( String userId, String replacementUserId ) throws DotDataException;
-
-	/**
-	 * deletes the Asset with the given assetId from the Bundle with the given bundleId
-	 *
-	 *
-	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
-	 */
-	public void deleteAssetFromBundle(String assetId, String bundleId) throws DotDataException;
-
-
-	/**
 	 * Deletes all sent bundles older than order than olderThan argument
 	 *
 	 * @param olderThan {@link Date} will remove all sent bundles older than it
@@ -176,4 +151,29 @@ public interface BundleAPI {
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
 	 */
 	Set<String>  deleteAllBundles(User user, PublishAuditStatus.Status ...statuses) throws DotDataException;
+
+	/**
+	 * updates the Bundle with the given id
+	 *
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+	public void updateBundle(Bundle bundle) throws DotDataException;
+
+	/**
+	 * updates the Bundles owned by userId with the owner given by replacementUserId
+	 *
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+    public void updateOwnerReferences( String userId, String replacementUserId ) throws DotDataException;
+
+	/**
+	 * deletes the Asset with the given assetId from the Bundle with the given bundleId
+	 *
+	 *
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+	public void deleteAssetFromBundle(String assetId, String bundleId) throws DotDataException;
+
 }
