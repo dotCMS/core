@@ -207,60 +207,27 @@ public class BundleAPIImpl implements BundleAPI {
 		final List<Status> statusList = Arrays.asList(statuses);
 		List<String> bundleIDs = isAdmin ? publishAuditAPI.getBundleIdByStatus(statusList,limit,offset) :
 				publishAuditAPI.getBundleIdByStatusFilterByOwner(statusList,limit,offset,user.getUserId());
-//		List<Bundle> sentBundles = isAdmin?
-//				this.bundleFactory.findSentBundles(limit, offset): // todo: modify this method in order to use publishing_queue_audit,
-//				this.bundleFactory.findSentBundles(user.getUserId(), limit, offset);
 
-		Logger.info(this, "Deleting all bundles with statuses: "
-				+ Arrays.asList(statuses));
-		while (UtilMethods.isSet(sentBundles)) {
+		Logger.info(this, "Deleting all bundles with statuses: " + Arrays.asList(statuses));
 
-			for (final Bundle bundle : sentBundles) {
+		while (UtilMethods.isSet(bundleIDs)) {
 
-				try {
+			for (final String bundleId : bundleIDs) {
 
-					final PublishAuditStatus status =
-							this.publishAuditAPI.getPublishAuditStatus(bundle.getId());
-
-					if (this.containsStatus (status, statuses)) {
-
-						this.deleteBundleAndDependencies(bundle, user);
-						bundlesDeleted.add(bundle.getId());
-					}
-				} catch (final DotPublisherException e) {
-
-					throw new DotDataException(e);
-				}
+				this.deleteBundleAndDependencies(this.getBundleById(bundleId),user);
+				bundlesDeleted.add(bundleId);
 			}
 
-			sentBundles = isAdmin?
-					this.bundleFactory.findSentBundles(limit, offset):
-					this.bundleFactory.findSentBundles(user.getUserId(), limit, offset);
+			bundleIDs = isAdmin ? publishAuditAPI.getBundleIdByStatus(statusList,limit,offset) :
+					publishAuditAPI.getBundleIdByStatusFilterByOwner(statusList,limit,offset,user.getUserId());
 		}
 
 		return bundlesDeleted.build();
 	} // deleteAllBundles.
 
-	private boolean containsStatus(final PublishAuditStatus          bundleStatus,
-								   final PublishAuditStatus.Status[] statuses) {
-
-		if (null != bundleStatus && null != bundleStatus.getStatus()) {
-
-			for (final PublishAuditStatus.Status status : statuses) {
-
-				if (bundleStatus.getStatus() == status) {
-
-					return true;
-				}
-			}
-		}
-
-		return false;
-	} // containsStatus.
-
 	@WrapInTransaction
 	@Override
-	public Set<String>  deleteAllBundles(final User user)
+	public Set<String>  deleteAllBundles(final User user)//todo: this should pull the bundles from the publishing_queue_audit??
 			throws DotDataException {
 
 		final ImmutableSet.Builder<String> bundlesDeleted = new ImmutableSet.Builder<>();

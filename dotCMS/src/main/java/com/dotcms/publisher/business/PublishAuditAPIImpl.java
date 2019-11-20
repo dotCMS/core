@@ -44,7 +44,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	private static final String SELECT_BUNDLEID_BY_STATUS = "SELECT bundle_id from publishing_queue_audit WHERE status = ? ";
 	private static final String OR_STATUS_CLAUSE = " or publishing_queue_audit.status = ? ";
 	private static final String SELECT_BUNDLEID_BY_STATUS_AND_OWNER = "SELECT bundle_id from publishing_queue_audit join publishing_bundle on publishing_queue_audit.bundle_id = publishing_bundle.id "
-			+ "WHERE publishing_bundle.owner= ? and publishing_queue_audit.status = ? ";
+			+ "WHERE publishing_bundle.owner= ? and (publishing_queue_audit.status = ? ";
 
 
 	/**
@@ -396,15 +396,16 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		List<String> bundleIds = new ArrayList<>();
 		final DotConnect dc = new DotConnect();
 		String sql = SELECT_BUNDLEID_BY_STATUS_AND_OWNER;
-		dc.addParam(userId);
 		if(statusList.size() > 1){
 			for(int i = 1;i<statusList.size();i++){
 				sql += OR_STATUS_CLAUSE;
 			}
 		}
+		sql += ")";
 		dc.setSQL(sql);
 		dc.setMaxRows(limit);
 		dc.setStartRow(offset);
+		dc.addParam(userId);
 		for(final Status status : statusList){
 			dc.addParam(status.getCode());
 		}
