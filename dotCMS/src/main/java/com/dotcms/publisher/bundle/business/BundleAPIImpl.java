@@ -116,6 +116,7 @@ public class BundleAPIImpl implements BundleAPI {
 		bundleFactory.deleteBundle(id);
 	}
 
+	@WrapInTransaction
 	private void internalDeleteBundleAndDependencies (final String bundleId, final User user) throws DotDataException { // todo: make this batcheable
 
 		this.validateBundleDeletePermission(user, bundleId);
@@ -171,7 +172,7 @@ public class BundleAPIImpl implements BundleAPI {
 		// todo: bundle is not a permissionable yet, so can not validate yet.
 	}
 
-	@WrapInTransaction
+	// no mark as a wrap in transaction, it is one trax per bundle to delete.
 	@Override
 	public Set<String> deleteBundleAndDependenciesOlderThan(final Date olderThan, final User user) throws DotDataException {
 
@@ -180,7 +181,8 @@ public class BundleAPIImpl implements BundleAPI {
 
 		try {
 
-			Logger.info(this, "Deleting bundles older than: " + olderThan);
+			Logger.info(this, "Deleting bundles older than: " + olderThan
+					+ " by the user :" + user.getUserId());
 			try (final Stream<String> bundleIds = this.getOlderBundleIds(olderThan, user.getUserId(), isAdmin)) {
 
 				bundleIds.forEachOrdered(bundleId -> {
@@ -227,7 +229,7 @@ public class BundleAPIImpl implements BundleAPI {
 		}
 	}
 
-	@WrapInTransaction
+	// no mark as a wrap in transaction, it is one trax per bundle to delete.
 	@Override
 	public Set<String> deleteAllBundles(final User user,
 										 final PublishAuditStatus.Status ...statuses) throws DotDataException {
@@ -276,7 +278,7 @@ public class BundleAPIImpl implements BundleAPI {
 		);
 	}
 
-	@WrapInTransaction
+	// no mark as a wrap in transaction, it is one trax per bundle to delete.
 	@Override
 	public Set<String>  deleteAllBundles(final User user) throws DotDataException {
 

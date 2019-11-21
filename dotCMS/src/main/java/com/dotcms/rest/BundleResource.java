@@ -280,7 +280,7 @@ public class BundleResource {
         });
     } // deleteBundlesByIdentifiers.
 
-    @WrapInTransaction
+    // one transaction for each bundle
     private void deleteBundleByIdentifier(final DeleteBundlesByIdentifierForm deleteBundlesByIdentifierForm, final InitDataObject initData) throws DotDataException {
 
         for (final String bundleId : deleteBundlesByIdentifierForm.getIdentifiers()) {
