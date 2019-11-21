@@ -13,6 +13,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -369,10 +370,12 @@ public class BundleResource {
 
             try {
 
+                final PublishAuditStatus.Status [] statuses = Config.getCustomArrayProperty("bundle.delete.all.statuses",
+                        PublishAuditStatus.Status::valueOf, PublishAuditStatus.Status.class,
+                        ()-> new PublishAuditStatus.Status[] {FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,
+                                FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH, SUCCESS});
                 restResponse = Response.ok(new ResponseEntityView(CollectionsUtils.map("bundlesDeleted",
-                        this.bundleAPI.deleteAllBundles(initData.getUser(),
-                                FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,
-                                FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH,SUCCESS)
+                        this.bundleAPI.deleteAllBundles(initData.getUser(), statuses)
                 ))).build();
                 asyncResponse.resume(restResponse);
             } catch (DotDataException e) {
@@ -415,11 +418,13 @@ public class BundleResource {
             Response restResponse = null;
             try {
 
+                final PublishAuditStatus.Status [] statuses = Config.getCustomArrayProperty("bundle.delete.fail.statuses",
+                        PublishAuditStatus.Status::valueOf, PublishAuditStatus.Status.class,
+                        ()-> new PublishAuditStatus.Status[] {FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,
+                                FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH});
                 restResponse = Response.ok(new ResponseEntityView(CollectionsUtils.map("bundlesDeleted",
-                        this.bundleAPI.deleteAllBundles(initData.getUser(),
-                                FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,
-                                FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH)
-                ))).build();
+                                     this.bundleAPI.deleteAllBundles(initData.getUser(), statuses)
+                                ))).build();
                 asyncResponse.resume(restResponse);
             } catch (DotDataException e) {
 
@@ -461,8 +466,11 @@ public class BundleResource {
             Response restResponse = null;
             try {
 
+                final PublishAuditStatus.Status [] statuses = Config.getCustomArrayProperty("bundle.delete.success.statuses",
+                        PublishAuditStatus.Status::valueOf, PublishAuditStatus.Status.class,
+                        ()-> new PublishAuditStatus.Status[] {SUCCESS});
                 restResponse = Response.ok(new ResponseEntityView(CollectionsUtils.map("bundlesDeleted",
-                        this.bundleAPI.deleteAllBundles(initData.getUser(), SUCCESS)
+                        this.bundleAPI.deleteAllBundles(initData.getUser(), statuses)
                 ))).build();
                 asyncResponse.resume(restResponse);
             } catch (DotDataException e) {

@@ -458,7 +458,7 @@ public class Config {
 												  final Supplier<T[]> defaultSupplier) {
 
 		final String [] values = getStringArrayProperty(name);
-		return UtilMethods.isSet(values)?convert(values, clazz, stringToEntityTransformer): defaultSupplier.get();
+		return props.containsKey(name)?convert(values, clazz, stringToEntityTransformer): defaultSupplier.get();
 	}
 
 	private static <T> T[] convert(final String[] values, final Class<T> clazz, final StringToEntityTransformer<T> stringToEntityTransformer) {

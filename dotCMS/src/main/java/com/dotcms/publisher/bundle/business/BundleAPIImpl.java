@@ -10,7 +10,8 @@ import com.dotcms.util.CloseUtils;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.util.DotPreconditions;
 
-import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.*;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -30,11 +31,9 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 public class BundleAPIImpl implements BundleAPI {
 
@@ -179,6 +178,9 @@ public class BundleAPIImpl implements BundleAPI {
 
 		final ImmutableSet.Builder<String> bundlesDeleted = new ImmutableSet.Builder<>();
 		final boolean isAdmin = this.userAPI.isCMSAdmin(user);
+		final int  bundleSleepCount   = Config.getIntProperty ("bundle.sleep.count",  10);  // each 10 deletes
+		final long millisBundleSleep  = Config.getLongProperty("bundle.sleep.millis", 25l); // wait 25 millis
+		final MutableInt deletedCount = new MutableInt(0);
 
 		try {
 
@@ -188,8 +190,10 @@ public class BundleAPIImpl implements BundleAPI {
 
 				bundleIds.forEachOrdered(bundleId -> {
 
-					this.internalDeleteBundleAndDependenciesThrowRuntime(bundleId, user);
+					this.internalDeleteBundleAndDependenciesThrowRuntime(bundleId, user,
+							deletedCount.getValue(), bundleSleepCount, millisBundleSleep);
 					bundlesDeleted.add(bundleId);
+					deletedCount.increment();
 				});
 			}
 		} catch (IOException e) {
@@ -219,12 +223,16 @@ public class BundleAPIImpl implements BundleAPI {
 				);
 	}
 
-	private void internalDeleteBundleAndDependenciesThrowRuntime(final String bundleId, final User user) {
+	private void internalDeleteBundleAndDependenciesThrowRuntime(final String bundleId, final User user,
+																 final int currentCount, final int bundleSleepCount,
+																 final long millisBundleSleep) {
 
 		try {
 
 			this.internalDeleteBundleAndDependencies(bundleId, user);
-			DateUtil.sleep(10); // we decided to wait a bit in order to avoid starvation on the db connections
+			if (currentCount % bundleSleepCount == 0) {
+				DateUtil.sleep(millisBundleSleep); // we decided to wait a bit in order to avoid starvation on the db connections
+			}
 		} catch (DotDataException e) {
 
 			throw new DotRuntimeException(e);
@@ -239,6 +247,9 @@ public class BundleAPIImpl implements BundleAPI {
 		final ImmutableSet.Builder<String> bundlesDeleted = new ImmutableSet.Builder<>();
 		final boolean isAdmin         = this.userAPI.isCMSAdmin(user);
 		final List<Status> statusList = Arrays.asList(statuses);
+		final int  bundleSleepCount   = Config.getIntProperty ("bundle.sleep.count",  10);  // each 10 deletes
+		final long millisBundleSleep  = Config.getLongProperty("bundle.sleep.millis", 25l); // wait 25 millis
+		final MutableInt deletedCount = new MutableInt(0);
 
 		try {
 
@@ -248,8 +259,10 @@ public class BundleAPIImpl implements BundleAPI {
 
 				bundleIds.forEachOrdered(bundleId -> {
 
-					this.internalDeleteBundleAndDependenciesThrowRuntime(bundleId, user);
+					this.internalDeleteBundleAndDependenciesThrowRuntime(
+							bundleId, user, deletedCount.getValue(), bundleSleepCount, millisBundleSleep);
 					bundlesDeleted.add(bundleId);
+					deletedCount.increment();
 				});
 			}
 		} catch (IOException e) {
