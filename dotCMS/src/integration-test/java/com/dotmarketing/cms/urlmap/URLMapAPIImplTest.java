@@ -18,7 +18,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
@@ -37,8 +36,6 @@ public class URLMapAPIImplTest {
     private static Host host;
 
     private URLMapAPIImpl urlMapAPI;
-    private static final String newsPatternPrefix =
-            "/testpattern" + System.currentTimeMillis() + "/";
     private static HTMLPageAsset detailPage;
 
     @BeforeClass
@@ -70,8 +67,9 @@ public class URLMapAPIImplTest {
     @Test
     public void shouldReturnContentletWhenTheContentExists()
             throws DotDataException, DotSecurityException {
-
-        final Contentlet newsTestContent = createURLMapperContentType();
+        final String newsPatternPrefix =
+                "/testpattern" + System.currentTimeMillis() + "/";
+        final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix);
         final UrlMapContext context = getUrlMapContext(systemUser, host,
                 newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"));
 
@@ -86,7 +84,8 @@ public class URLMapAPIImplTest {
     @Test
     public void shouldReturnNullWhenTheContentNotExists()
             throws DotDataException, DotSecurityException {
-
+        final String newsPatternPrefix =
+                "/testpattern" + System.currentTimeMillis() + "/";
         final UrlMapContext context = getUrlMapContext(systemUser, host,
                 newsPatternPrefix
                         + "u-s-labor-department-moves-forward-on-retirement-advice-proposal-esp"
@@ -100,7 +99,8 @@ public class URLMapAPIImplTest {
     @Test
     public void shouldNotMatchUrlStaringWithAPI()
             throws DotDataException {
-
+        final String newsPatternPrefix =
+                "/testpattern" + System.currentTimeMillis() + "/";
         final UrlMapContext context = getUrlMapContext(systemUser, host,
                     "/api/v1/page/render" +
                         newsPatternPrefix
@@ -124,9 +124,12 @@ public class URLMapAPIImplTest {
     @Test(expected = DotSecurityException.class)
     public void shouldThrowDotSecurityExceptionWhenUserDontHavePermission()
             throws DotDataException, DotSecurityException {
-        final Contentlet newsTestContent = createURLMapperContentType();
+        final String newsPatternPrefix =
+                "/testpattern" + System.currentTimeMillis() + "/";
+        final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix);
 
         final User newUser = new UserDataGen().nextPersisted();
+
         final UrlMapContext context = getUrlMapContext(newUser, host,
                 newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"));
 
@@ -177,7 +180,7 @@ public class URLMapAPIImplTest {
                 });
     }
 
-    private static Contentlet createURLMapperContentType() {
+    private static Contentlet createURLMapperContentType(final String newsPatternPrefix) {
 
         final ContentType newsContentType = getNewsLikeContentType(
                 "News" + System.currentTimeMillis(),
