@@ -46,9 +46,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class URLMapAPIImpl implements URLMapAPI {
 
-    @VisibleForTesting
-    volatile Collection<ContentTypeURLPattern> patternsCache;
-
+    private volatile Collection<ContentTypeURLPattern> patternsCache;
     private final UserWebAPI wuserAPI = WebAPILocator.getUserWebAPI();
     private final HostWebAPI whostAPI = WebAPILocator.getHostWebAPI();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();;
@@ -146,10 +144,24 @@ public class URLMapAPIImpl implements URLMapAPI {
 
     private boolean containsRegEx(final String uri) {
         try {
-            final String mastRegEx = CacheLocator.getContentTypeCache().getURLMasterPattern();
+            final String mastRegEx = this.getURLMasterPattern();
 
             final String url = !uri.endsWith(StringPool.FORWARD_SLASH) ? uri + StringPool.FORWARD_SLASH : uri;
             return mastRegEx != null && RegEX.contains(url, mastRegEx);
+        } catch (NotFoundURLPatternException e) {
+            return false;
+        }
+    }
+
+    private static String getURLMasterPattern() {
+        try {
+            final String mastRegEx = CacheLocator.getContentTypeCache().getURLMasterPattern();
+
+            if (mastRegEx == null) {
+                throw new NotFoundURLPatternException();
+            }
+
+            return mastRegEx;
         } catch (DotCacheException e) {
             throw new DotRuntimeException(e);
         }
@@ -369,4 +381,6 @@ public class URLMapAPIImpl implements URLMapAPI {
             return matches;
         }
     }
+
+    private static class NotFoundURLPatternException extends RuntimeException {}
 }
