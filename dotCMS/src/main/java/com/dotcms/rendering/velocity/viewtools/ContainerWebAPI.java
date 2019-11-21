@@ -133,7 +133,10 @@ public class ContainerWebAPI implements ViewTool {
 					).orElse(Collections.EMPTY_LIST)
 			);
 		} else {
-			contentlets.addAll(getContentsIdByUUID(containerId, pTag, uuid));
+			contentlets.addAll(
+					Optional.ofNullable(
+							getContentsIdByUUID(containerId, pTag, uuid)
+					).orElse(Collections.EMPTY_LIST));
 		}
 
 		if (!contentlets.isEmpty()) return contentlets;

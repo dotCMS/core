@@ -564,7 +564,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
 
         if(!isAHostOpen) {
-            treeHostSelected(myHostId, null);
+            treeHostSelected(null, null);
         }
 
         Element.hide($('loadingContentListing'));
@@ -1252,7 +1252,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             setTimeout('reloadContent()',1000);
             if(data.assetType == "folder"){
                 setTimeout(function(){
-                    BrowserAjax.getTree(myHostId, initializeTree);
+                    BrowserAjax.getTree(null, initializeTree);
                 },1000);
             }
         } else {
@@ -1517,7 +1517,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             reloadContent ();
             showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-copy-another-folder-with-the-same-name-already-exists-in-the-destination")) %>');
         } else {
-            BrowserAjax.getTree(myHostId, initializeTree);
+            BrowserAjax.getTree(null, initializeTree);
             showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-copied")) %>');
         }
     }
@@ -1530,7 +1530,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
     function moveFolderCallback (response) {
         if(response == '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-moved")) %>'){
-            BrowserAjax.getTree(myHostId, initializeTree);
+            BrowserAjax.getTree(null, initializeTree);
             showDotCMSSystemMessage(response);
         } else {
             reloadContent ();

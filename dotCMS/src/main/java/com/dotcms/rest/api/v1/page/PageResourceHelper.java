@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -274,6 +275,8 @@ public class PageResourceHelper implements Serializable {
             }
             return newlyContainerUUID != null ? newlyContainerUUID
                     : ContainerUUID.UUID_DEFAULT_VALUE;
+        } if (ParseContainer.isParserContainerUUID(uniqueId)) {
+            return uniqueId;
         } else {
             ContainerUUIDChanged change = pageForm.getChange(containerId, uniqueId);
             if (change == null && containerPath != null) {//Searching also by path if nothing found

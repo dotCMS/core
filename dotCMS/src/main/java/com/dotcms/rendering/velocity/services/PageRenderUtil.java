@@ -7,7 +7,10 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.rendering.velocity.directive.ParseContainer;
+import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
 import com.dotcms.util.CollectionsUtils;
@@ -40,6 +43,7 @@ import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
@@ -87,6 +91,7 @@ public class PageRenderUtil implements Serializable {
     final List<ContainerRaw> containersRaw;
     final long languageId;
     final Host site;
+    final TemplateLayout templateLayout;
 
 
     public PageRenderUtil(
@@ -102,23 +107,17 @@ public class PageRenderUtil implements Serializable {
         this.mode = mode;
         this.languageId=languageId;
         this.widgetPreExecute = new StringBuilder();
+        final Template template = APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, !mode.showLive);
+        this.templateLayout = template != null && template.isDrawed() ? DotTemplateTool.themeLayout(template.getInode()) : null;
         this.contextMap = populateContext();
         this.containersRaw = populateContainers();
         this.site = null == site? APILocator.getHostAPI().findDefaultHost(user, mode.respectAnonPerms):site;
-
-    }
-
-    public PageRenderUtil(final IHTMLPage htmlPage, final User user, final PageMode mode, final long languageId)
-            throws DotSecurityException, DotDataException {
-        this(htmlPage, user, mode, languageId, null);
-
     }
 
     public PageRenderUtil(final IHTMLPage htmlPage, final User user, final PageMode mode)
             throws DotSecurityException, DotDataException {
         this(htmlPage,user, mode, htmlPage.getLanguageId(), null);
     }
-
 
     private Map<String, Object> populateContext() throws DotDataException, DotSecurityException {
         final Map<String, Object> ctxMap = Maps.newHashMap();
@@ -302,6 +301,10 @@ public class PageRenderUtil implements Serializable {
             final Map<String, List<String>> containerUuidPersona = Maps.newHashMap();
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
 
+                final String uniqueUUIDForRender = needParseContainerPrefix(container, uniqueId) ?
+                                ParseContainer.getDotParserContainerUUID(uniqueId) :
+                                uniqueId;
+
                 if(ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
                     continue;
                 }
@@ -315,8 +318,9 @@ public class PageRenderUtil implements Serializable {
                     if (contentlet == null) {
                         continue;
                     }
+
                     containerUuidPersona
-                        .computeIfAbsent(containerId + uniqueId + personalizedContentlet.getPersonalization(), k-> Lists.newArrayList())
+                        .computeIfAbsent(containerId + uniqueUUIDForRender + personalizedContentlet.getPersonalization(), k-> Lists.newArrayList())
                         .add(personalizedContentlet.getContentletId());
                     contextMap.put("EDIT_CONTENT_PERMISSION" + contentlet.getIdentifier(),
                                     permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
@@ -348,11 +352,7 @@ public class PageRenderUtil implements Serializable {
                     }
                 }
 
-                final Collection<String> contentsId = personalizedContentletMap.stream()
-                        .map(contentletMap -> (String) contentletMap.get("identifier"))
-                        .collect(Collectors.toList());
-
-                contentMaps.put((uniqueId.startsWith(CONTAINER_UUID_PREFIX)) ? uniqueId : CONTAINER_UUID_PREFIX + uniqueId, personalizedContentletMap);
+                contentMaps.put(CONTAINER_UUID_PREFIX + uniqueUUIDForRender, personalizedContentletMap);
             }
             for(Map.Entry<String,List<String>> entry : containerUuidPersona.entrySet()) {
                 contextMap.put("contentletList" + entry.getKey(), entry.getValue());
@@ -364,6 +364,14 @@ public class PageRenderUtil implements Serializable {
         }
         
         return raws;
+    }
+
+    private boolean needParseContainerPrefix(final Container container, final String uniqueId) {
+        final String containerIdOrPath = (container instanceof FileAssetContainer) ?
+                ((FileAssetContainer) container).getPath() : container.getIdentifier();
+
+        return !ParseContainer.isParserContainerUUID(uniqueId) &&
+                    (templateLayout == null || !templateLayout.existsContainer(containerIdOrPath, uniqueId));
     }
 
     @Nullable

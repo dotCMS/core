@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -66,6 +67,14 @@ public interface FileAssetAPI {
 	 * @throws DotStateException
 	 */
 	List<IFileAsset> fromContentletsI(List<Contentlet> cons) throws DotStateException;
+
+	/**
+	 *
+	 * @param fileAsset
+	 * @return
+	 * @throws DotStateException
+	 */
+	FileAssetMap fromFileAsset(final FileAsset fileAsset) throws DotStateException;
 
 	/**
 	 *
@@ -316,4 +325,17 @@ public interface FileAssetAPI {
 	public String getMimeType (String filename);
 
 	public String getRealAssetPathTmpBinary();
+
+	/**
+	 * this returns a fileAsset for a given inode - if the inode is in cache as a FileAsset, then this method will return it
+	 * If the inode is in cache as a contentlet, then it will be converted to a FileAsset, re-added to cache and return it
+	 * Otherwise, it will throw a DotStateException that the FileAsset was not found
+	 * @param inode
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+  FileAsset find(String inode, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 }

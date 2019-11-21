@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
@@ -138,14 +139,38 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         return this.relationshipFactory.relatedContentTrees(relationship, contentlet, hasParent);
     }
 
+    /**
+     * @deprecated For relationship fields use {@link RelationshipAPI#isChildField(Relationship, com.dotcms.contenttype.model.field.Field)} instead
+     * @param rel
+     * @param st
+     * @return
+     */
+    @Deprecated
     @Override
     public boolean isParent(Relationship rel, ContentTypeIf st) {
         return this.relationshipFactory.isParent(rel, st);
     }
 
     @Override
+    public boolean isChildField(Relationship rel, com.dotcms.contenttype.model.field.Field field) {
+        return this.relationshipFactory.isChildField(rel, field);
+    }
+
+    /**
+     * @deprecated For relationship fields use {@link RelationshipAPI#isParentField(Relationship, com.dotcms.contenttype.model.field.Field)} instead
+     * @param rel
+     * @param st
+     * @return
+     */
+    @Deprecated
+    @Override
     public boolean isChild(Relationship rel, ContentTypeIf st) {
         return this.relationshipFactory.isChild(rel, st);
+    }
+
+    @Override
+    public boolean isParentField(Relationship rel, com.dotcms.contenttype.model.field.Field field) {
+        return this.relationshipFactory.isParentField(rel, field);
     }
 
     @Override
@@ -156,7 +181,96 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @WrapInTransaction
     @Override
     public void save(Relationship relationship) throws DotDataException {
+        checkRelationshipConstraints(relationship);
         this.relationshipFactory.save(relationship);
+    }
+
+    /**
+     * Guarantees a unique relationship for a field
+     * @param relationship
+     */
+    private void checkRelationshipConstraints(final Relationship relationship)
+            throws DotDataException {
+
+        if (relationship.isRelationshipField() && doesRelationshipFieldAlreadyExist(relationship)) {
+            Logger.error(this, "The relationship " + relationship.getRelationTypeValue() +" already exists");
+            throw new DotValidationException(
+                    "The relationship " + relationship.getRelationTypeValue() +" already exists");
+        }
+    }
+
+    /**
+     * @param relationship
+     * @return
+     * @throws DotDataException
+     */
+    private boolean doesRelationshipFieldAlreadyExist(final Relationship relationship)
+            throws DotDataException {
+
+        List<Relationship> relationships;
+        //Checks if it is a self-joined relationship
+        if (sameParentAndChild(relationship)){
+            relationships = byContentType(relationship.getChildStructure());
+            boolean duplicatesFound = false;
+
+            if (relationship.getParentRelationName() != null) {
+
+                //Verifies that the parent field does not belong to another relationship as parent
+                duplicatesFound = relationships.stream().anyMatch(
+                        rel -> relationship.getParentRelationName()
+                                .equals(rel.getParentRelationName())
+                                && !rel.getInode().equals(relationship.getInode()) && rel
+                                .isRelationshipField());
+
+                //Verifies that the parent field does not belong to another relationship as child
+                duplicatesFound |= relationships.stream().anyMatch(
+                        rel -> relationship.getParentRelationName()
+                                .equals(rel.getChildRelationName())
+                                && !rel.getInode().equals(relationship.getInode()) && rel
+                                .isRelationshipField());
+            }
+
+
+            if (relationship.getChildRelationName() != null) {
+                //Verifies that the child field does not belong to another relationship as parent
+                duplicatesFound |= relationships.stream().anyMatch(
+                        rel -> relationship.getChildRelationName()
+                                .equals(rel.getParentRelationName())
+                                && !rel.getInode().equals(relationship.getInode()) && rel
+                                .isRelationshipField());
+
+                //Verifies that the child field does not belong to another relationship as child
+                duplicatesFound |= relationships.stream().anyMatch(
+                        rel -> relationship.getChildRelationName()
+                                .equals(rel.getChildRelationName())
+                                && !rel.getInode().equals(relationship.getInode()) && rel
+                                .isRelationshipField());
+            }
+
+            return duplicatesFound;
+        }else {
+            //Verifies that the parent field does not belong to another relationship
+            if (relationship.getParentRelationName() != null) {
+                relationships = byChild(relationship.getChildStructure());
+                return relationships.stream().anyMatch(
+                        rel -> relationship.getParentRelationName()
+                                .equals(rel.getParentRelationName())
+                                && !rel.getInode().equals(relationship.getInode()) && rel
+                                .isRelationshipField());
+            }
+
+            //Verifies that the child field does not belong to another relationship
+            if (relationship.getChildRelationName() != null) {
+                relationships = byParent(relationship.getParentStructure());
+                return relationships.stream().anyMatch(
+                        rel -> relationship.getChildRelationName()
+                                .equals(rel.getChildRelationName())
+                                && !rel.getInode().equals(relationship.getInode()) && rel
+                                .isRelationshipField());
+            }
+        }
+
+        return false;
     }
 
     @WrapInTransaction
@@ -166,8 +280,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
         this.relationshipFactory.save(relationship);
     }
 
-    private void checkReadOnlyFields(final Relationship relationship, final String inode)
-            throws DotDataException {
+    private void checkReadOnlyFields(final Relationship relationship, final String inode) {
         if (UtilMethods.isSet(inode) && UtilMethods.isSet(relationship)) {
 
             //Check if the relationship already exists
@@ -196,7 +309,7 @@ public class RelationshipAPIImpl implements RelationshipAPI {
     @WrapInTransaction
     @Override
     public void create(Relationship relationship) throws DotDataException {
-        this.relationshipFactory.save(relationship);
+        save(relationship);
     }
 
     @WrapInTransaction
