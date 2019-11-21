@@ -4,6 +4,7 @@ import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertFalse;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
@@ -17,11 +18,15 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
+
+import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -32,9 +37,9 @@ public class URLMapAPIImplTest {
     private static Host host;
 
     private URLMapAPIImpl urlMapAPI;
-    private static Contentlet newsTestContent;
     private static final String newsPatternPrefix =
             "/testpattern" + System.currentTimeMillis() + "/";
+    private static HTMLPageAsset detailPage;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -44,27 +49,17 @@ public class URLMapAPIImplTest {
         host = new SiteDataGen().nextPersisted();
 
         final String parent1Name = "news-events";
-        Folder parent1 = new FolderDataGen().name(parent1Name).title(parent1Name).site(host)
+        final Folder parent1 = new FolderDataGen().name(parent1Name).title(parent1Name).site(host)
                 .nextPersisted();
         final String parent2Name = "news";
-        Folder parent2 = new FolderDataGen().name(parent2Name).title(parent2Name).parent(parent1)
+        final Folder parent2 = new FolderDataGen().name(parent2Name).title(parent2Name).parent(parent1)
                 .nextPersisted();
 
-        Template template = new TemplateDataGen().nextPersisted();
-        HTMLPageAsset contentlet = new HTMLPageDataGen(parent2, template)
+        final Template template = new TemplateDataGen().nextPersisted();
+        detailPage = new HTMLPageDataGen(parent2, template)
                 .pageURL("news-detail")
                 .title("news-detail")
                 .nextPersisted();
-
-        final ContentType newsContentType = getNewsLikeContentType(
-                "News" + System.currentTimeMillis(),
-                host,
-                contentlet.getIdentifier(),
-                newsPatternPrefix + "{urlTitle}");
-
-        newsTestContent = TestDataUtils
-                .getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                        newsContentType.id(), host);
     }
 
     @Before
@@ -76,6 +71,7 @@ public class URLMapAPIImplTest {
     public void shouldReturnContentletWhenTheContentExists()
             throws DotDataException, DotSecurityException {
 
+        final Contentlet newsTestContent = createURLMapperContentType();
         final UrlMapContext context = getUrlMapContext(systemUser, host,
                 newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"));
 
@@ -103,7 +99,7 @@ public class URLMapAPIImplTest {
 
     @Test
     public void shouldNotMatchUrlStaringWithAPI()
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
 
         final UrlMapContext context = getUrlMapContext(systemUser, host,
                     "/api/v1/page/render" +
@@ -128,6 +124,7 @@ public class URLMapAPIImplTest {
     @Test(expected = DotSecurityException.class)
     public void shouldThrowDotSecurityExceptionWhenUserDontHavePermission()
             throws DotDataException, DotSecurityException {
+        final Contentlet newsTestContent = createURLMapperContentType();
 
         final User newUser = new UserDataGen().nextPersisted();
         final UrlMapContext context = getUrlMapContext(newUser, host,
@@ -136,6 +133,62 @@ public class URLMapAPIImplTest {
         urlMapAPI.processURLMap(context);
     }
 
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Procces dorAdmin URL when not any URL Mapper exists
+     * ExpectedResult: Should return a {@link Optional#empty()}
+     */
+    @Test
+    public void processURLMapWithoutUrlMap() throws DotDataException, DotSecurityException {
+        deleteAllUrlMapperContentType();
+        final UrlMapContext context = getUrlMapContext(systemUser, host, "/dotAdmin");
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        assertFalse(urlMapInfoOptional.isPresent());
+    }
+
+    /**
+     * methodToTest {@link URLMapAPIImpl#isUrlPattern(UrlMapContext)}}
+     * Given Scenario: Call  isUrlPattern with dorAdmin URL when not any URL Mapper exists
+     * ExpectedResult: Should return false
+     */
+    @Test
+    public void isUrlPatternWithoutUrlMap() throws DotDataException {
+        deleteAllUrlMapperContentType();
+        final UrlMapContext context = getUrlMapContext(systemUser, host, "/dotAdmin");
+        assertFalse(urlMapAPI.isUrlPattern(context));
+    }
+
+    private static void deleteAllUrlMapperContentType() throws DotDataException {
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+        final List<SimpleStructureURLMap> structureURLMapPatterns =
+                contentTypeAPI.findStructureURLMapPatterns();
+
+        structureURLMapPatterns
+                .stream()
+                .map((SimpleStructureURLMap simpleStructureURLMap) -> simpleStructureURLMap.getInode())
+                .forEach(contenTypeInode -> {
+                    try {
+                        contentTypeAPI.delete(contentTypeAPI.find(contenTypeInode));
+                    } catch (DotSecurityException | DotDataException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
+
+    private static Contentlet createURLMapperContentType() {
+
+        final ContentType newsContentType = getNewsLikeContentType(
+                "News" + System.currentTimeMillis(),
+                host,
+                detailPage.getIdentifier(),
+                newsPatternPrefix + "{urlTitle}");
+
+        return TestDataUtils
+                .getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        newsContentType.id(), host);
+    }
 
     private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri) {
         return UrlMapContextBuilder.builder()
