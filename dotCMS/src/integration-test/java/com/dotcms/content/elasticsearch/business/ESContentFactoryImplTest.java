@@ -417,19 +417,32 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         final DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern(testCase.formatPattern);
 
-        final String query = "+contentType:" + contentType.variable() + " +" + contentType.variable()
+        //Test date ranges with TO (upper case)
+        String query = "+contentType:" + contentType.variable() + " +" + contentType.variable()
                 + ".sysPublishDate:[" + yesterday.format(myFormatObj) + " TO " + tomorrow
                 .format(myFormatObj) + "]";
 
-        final SearchHits searchHits = instance.indexSearch(query,-1, -1, null);
+        SearchHits searchHits = instance.indexSearch(query,-1, -1, null);
+        validateQueryResults(contentlet, searchHits);
 
-        //Starting some validations
+        //Test date ranges with to (lower case)
+        query = "+contentType:" + contentType.variable() + " +" + contentType.variable()
+                + ".sysPublishDate:[" + yesterday.format(myFormatObj) + " to " + tomorrow
+                .format(myFormatObj) + "]";
+
+        searchHits = instance.indexSearch(query,-1, -1, null);
+
+        validateQueryResults(contentlet, searchHits);
+
+    }
+
+    private void validateQueryResults(final Contentlet contentlet, final SearchHits searchHits) {
+        //Validate results
         assertNotNull(searchHits.getTotalHits());
         assertTrue(searchHits.getTotalHits() > 0);
 
-        SearchHit[] hits = searchHits.getHits();
+        final SearchHit[] hits = searchHits.getHits();
         assertEquals(contentlet.getInode(), hits[0].getSourceAsMap().get("inode"));
-
     }
 
 }
