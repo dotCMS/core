@@ -10,6 +10,7 @@ import com.dotcms.util.CloseUtils;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.util.DotPreconditions;
 
+import com.dotmarketing.util.DateUtil;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -223,6 +224,7 @@ public class BundleAPIImpl implements BundleAPI {
 		try {
 
 			this.internalDeleteBundleAndDependencies(bundleId, user);
+			DateUtil.sleep(10); // we decided to wait a bit in order to avoid starvation on the db connections
 		} catch (DotDataException e) {
 
 			throw new DotRuntimeException(e);
@@ -278,53 +280,6 @@ public class BundleAPIImpl implements BundleAPI {
 		);
 	}
 
-	// no mark as a wrap in transaction, it is one trax per bundle to delete.
-	@Override
-	public Set<String>  deleteAllBundles(final User user) throws DotDataException {
-
-		final ImmutableSet.Builder<String> bundlesDeleted = new ImmutableSet.Builder<>();
-		final boolean isAdmin = this.userAPI.isCMSAdmin(user);
-
-		Logger.info(this, "Deleting all bundles by user: " + user.getUserId());
-
-		try {
-
-			Logger.info(this, "Deleting all bundles by user: " + user.getUserId());
-			try (final Stream<String> bundleIds = this.getAllBundleIds(user.getUserId(), isAdmin)) {
-
-				bundleIds.forEachOrdered(bundleId -> {
-
-					this.internalDeleteBundleAndDependenciesThrowRuntime(bundleId, user);
-					bundlesDeleted.add(bundleId);
-				});
-			}
-		} catch (IOException e) {
-
-			throw new DotDataException(e);
-		}
-
-		return bundlesDeleted.build();
-	}
-
-	private Stream<String> getAllBundleIds(final String userId, final boolean isAdmin)
-			throws IOException {
-
-		return this.getBundleIds(
-				(Integer limit, Integer offset) -> {
-
-					try {
-						return isAdmin?
-								this.bundleFactory.findSentBundles(limit, offset):
-								this.bundleFactory.findSentBundles(userId, limit, offset);
-					} catch (DotDataException e) {
-
-						throw new DotRuntimeException(e);
-					}
-				},
-				Bundle::getId
-		);
-	}
-
 	/**
 	 * Returns a streamable list of bundles id, candidates to delete.
 	 * @param bundleFinder {@link BiFunction} this function will receive the limit and current offset and returns the list of T bundles
@@ -344,7 +299,7 @@ public class BundleAPIImpl implements BundleAPI {
 
 
 		// if the initial is less than limit, return it
-		if (UtilMethods.isSet(sentBundles) && sentBundles.size() <= limit) {
+		if (UtilMethods.isSet(sentBundles) && sentBundles.size() < limit) {
 
 			return sentBundles.stream().map(bundleToIdentifierConverter::apply);
 		}
@@ -361,7 +316,7 @@ public class BundleAPIImpl implements BundleAPI {
 
 				fileWriter.flush();
 
-				offset       += limit + 1;
+				offset       += limit;
 				sentBundles   = bundleFinder.apply(limit, offset);
 			}
 		}

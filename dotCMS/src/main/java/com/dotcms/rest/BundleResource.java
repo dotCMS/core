@@ -339,7 +339,7 @@ public class BundleResource {
     } // deleteBundlesOlderThan.
 
     /**
-     * Deletes all sent bundles
+     * Deletes all failed and succeed bundles
      * Note: The process could be heavy, so it is handle by async response
      * @param request
      * @param response
@@ -350,7 +350,7 @@ public class BundleResource {
     @Produces("application/json")
     public void deleteAll(@Context   final HttpServletRequest request,
                           @Context   final HttpServletResponse response,
-                          @Suspended final AsyncResponse asyncResponse) { /// todo: double check if this is ok
+                          @Suspended final AsyncResponse asyncResponse) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -370,7 +370,10 @@ public class BundleResource {
             try {
 
                 restResponse = Response.ok(new ResponseEntityView(CollectionsUtils.map("bundlesDeleted",
-                        this.bundleAPI.deleteAllBundles(initData.getUser())))).build();
+                        this.bundleAPI.deleteAllBundles(initData.getUser(),
+                                FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,
+                                FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH,SUCCESS)
+                ))).build();
                 asyncResponse.resume(restResponse);
             } catch (DotDataException e) {
 
