@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.dateFormat;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
@@ -2085,26 +2086,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         private static String findAndReplaceQueryDates(String query) {
             query = RegEX.replaceAll(query, " ", "\\s{2,}");
 
-            List<RegExMatch> matches = RegEX.find(query, "[\\+\\-\\!\\(]?" + "structureName" + ":(\\S+)\\)?");
-            String structureVarName = null;
-            if ((matches != null) && (0 < matches.size()))
-                structureVarName = matches.get(0).getGroups().get(0).getMatch();
-
-            if (!UtilMethods.isSet(structureVarName)) {
-                matches = RegEX.find(query, "[\\+\\-\\!\\(]?" + "structureName".toLowerCase() + ":(\\S+)\\)?");
-                if ((matches != null) && (0 < matches.size()))
-                    structureVarName = matches.get(0).getGroups().get(0).getMatch();
-            }
-
-            if (!UtilMethods.isSet(structureVarName)) {
-                Logger.debug(ESContentFactoryImpl.class, "Structure Variable Name not found");
-            }
-            if(structureVarName!=null){
-	            Structure selectedStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureVarName);
-	            if ((selectedStructure == null) || !InodeUtils.isSet(selectedStructure.getInode())) {
-	                Logger.debug(ESContentFactoryImpl.class, "Structure not found");
-	            }
-            }
+            List<RegExMatch> matches;
+            String structureVarName;
 
             //delete additional blank spaces on date range
             if(UtilMethods.contains(query, "[ ")) {
@@ -2127,7 +2110,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     clauses.set(clauses.size() - 1, clauses.get(clauses.size() - 1) + " " + token);
                 } else if (token.matches("\\[\\S*")) {
                     clauses.set(clauses.size() - 1, clauses.get(clauses.size() - 1) + token);
-                } else if (token.matches("to")) {
+                } else if (token.matches("TO")) {
                     clauses.set(clauses.size() - 1, clauses.get(clauses.size() - 1) + " " + token);
                 } else if (token.matches("\\S*\\]")) {
                     clauses.set(clauses.size() - 1, clauses.get(clauses.size() - 1) + " " + token);
@@ -2185,15 +2168,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     if (clause.startsWith(structureVarName + "." + field.getVelocityVarName().toLowerCase() + ":") || clause.startsWith("moddate:")) {
                         replace = new String(clause);
                         if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()) || clause.startsWith("moddate:")) {
-                            matches = RegEX.find(replace, "\\[(\\d{1,2}/\\d{1,2}/\\d{4}) to ");
+                            matches = RegEX.find(replace, "\\[(\\d{1,2}/\\d{1,2}/\\d{4}) TO ");
                             for (RegExMatch regExMatch : matches) {
-                                replace = replace.replace("[" + regExMatch.getGroups().get(0).getMatch() + " to ", "["
-                                        + regExMatch.getGroups().get(0).getMatch() + " 00:00:00 to ");
+                                replace = replace.replace("[" + regExMatch.getGroups().get(0).getMatch() + " TO ", "["
+                                        + regExMatch.getGroups().get(0).getMatch() + " 00:00:00 TO ");
                             }
 
-                            matches = RegEX.find(replace, " to (\\d{1,2}/\\d{1,2}/\\d{4})\\]");
+                            matches = RegEX.find(replace, " TO (\\d{1,2}/\\d{1,2}/\\d{4})\\]");
                             for (RegExMatch regExMatch : matches) {
-                                replace = replace.replace(" to " + regExMatch.getGroups().get(0).getMatch() + "]", " to "
+                                replace = replace.replace(" TO " + regExMatch.getGroups().get(0).getMatch() + "]", " TO "
                                         + regExMatch.getGroups().get(0).getMatch() + " 23:59:59]");
                             }
                         }
@@ -2206,27 +2189,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 }
             }
 
-            matches = RegEX.find(query, "\\[([0-9]*)(\\*+) to ");
+            matches = RegEX.find(query, "\\[([0-9]*)(\\*+) TO ");
             for (RegExMatch regExMatch : matches) {
-                query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + regExMatch.getGroups().get(1).getMatch() + " to ", "["
-                        + regExMatch.getGroups().get(0).getMatch() + " to ");
+                query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + regExMatch.getGroups().get(1).getMatch() + " TO ", "["
+                        + regExMatch.getGroups().get(0).getMatch() + " TO ");
             }
 
-            matches = RegEX.find(query, " to ([0-9]*)(\\*+)\\]");
+            matches = RegEX.find(query, " TO ([0-9]*)(\\*+)\\]");
             for (RegExMatch regExMatch : matches) {
-                query = query.replace(" to " + regExMatch.getGroups().get(0).getMatch() + regExMatch.getGroups().get(1).getMatch() + "]", " to "
+                query = query.replace(" TO " + regExMatch.getGroups().get(0).getMatch() + regExMatch.getGroups().get(1).getMatch() + "]", " TO "
                         + regExMatch.getGroups().get(0).getMatch() + "]");
             }
 
-            matches = RegEX.find(query, "\\[([0-9]*) (to) ([0-9]*)\\]");
+            matches = RegEX.find(query, "\\[([0-9]*) (TO) ([0-9]*)\\]");
             if(matches.isEmpty()){
-            	matches = RegEX.find(query, "\\[([a-z0-9]*) (to) ([a-z0-9]*)\\]");
+            	matches = RegEX.find(query, "\\[([a-z0-9]*) (TO) ([a-z0-9]*)\\]");
             }
             for (RegExMatch regExMatch : matches) {
-                query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + " to "
+                query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + " TO "
                         + regExMatch.getGroups().get(2).getMatch() + "]", "["
                         + replaceDateTimeFormatInClause(regExMatch.getGroups().get(0).getMatch())
-                        + " to " + replaceDateTimeFormatInClause(
+                        + " TO " + replaceDateTimeFormatInClause(
                         regExMatch.getGroups().get(2).getMatch())
                         + "]");
             }
@@ -2273,6 +2256,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
         replace = DateUtil.replaceDateTimeWithFormat(replace,
                 "\\\"?(\\d{4}\\d{2}\\d{2}\\d{2}\\d{2}\\d{2})\\\"?",
                 datetimeFormat.getPattern());
+
+        // Format yyyyMMdd
+        replace = DateUtil.replaceDateTimeWithFormat(replace,
+                "\\\"?(\\d{4}\\d{2}\\d{2})\\\"?", dateFormat.getPattern());
 
         // Format MM/dd/yyyy
         replace = DateUtil.replaceDateWithFormat(replace, "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4})\\\"?");
