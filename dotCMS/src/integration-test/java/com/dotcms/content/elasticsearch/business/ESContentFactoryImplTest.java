@@ -26,9 +26,14 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -44,7 +49,9 @@ import org.elasticsearch.search.SearchHits;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     private static Host site;
@@ -57,14 +64,38 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         site = new SiteDataGen().nextPersisted();
     }
-
-    /*@AfterClass
-    public static void cleanup() throws DotDataException, DotSecurityException {
-
-        cleanupDebug(ESContentFactoryImplTest.class);
-    }*/
     
     final ESContentFactoryImpl instance = new ESContentFactoryImpl();
+
+    public static class TestCase {
+
+        String formatPattern;
+
+        public TestCase(final String formatPattern) {
+            this.formatPattern = formatPattern;
+        }
+    }
+
+    @DataProvider
+    public static Object[] testCases() {
+        return new TestCase[]{
+                new TestCase("MM/dd/yyyy hh:mm:ssa"),
+                new TestCase("MM/dd/yyyy hh:mm:ss a"),
+                new TestCase("MM/dd/yyyy hh:mm a"),
+                new TestCase("MM/dd/yyyy hh:mma"),
+                new TestCase("MM/dd/yyyy HH:mm:ss"),
+                new TestCase("MM/dd/yyyy HH:mm"),
+                new TestCase("yyyyMMddHHmmss"),
+                new TestCase("yyyyMMdd"),
+                new TestCase("MM/dd/yyyy"),
+                new TestCase("hh:mm:ssa"),
+                new TestCase("hh:mm:ss a"),
+                new TestCase("HH:mm:ss"),
+                new TestCase("hh:mma"),
+                new TestCase("hh:mm a"),
+                new TestCase("HH:mm")
+        };
+    }
 
     @Test
     public void test_indexCount_not_found_async() throws Exception {
@@ -122,8 +153,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         Assert.assertEquals(0, inodesSet.size());
     }
 
-    
-    
     /**
      * When calling the findContentlets(List<String> inodes), it should return the 
      * contentlets in the same order as they were asked for, meaning, if the list
@@ -182,11 +211,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         
         
     }
-    
-    
-    
-    
-    
     
     @Test
     public void saveContentlets() throws Exception {
@@ -361,6 +385,51 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                         .delete(secondVersion.getContentType());
             }
         }
+    }
+
+    @Test
+    @UseDataProvider("testCases")
+    public void testIndexSearchFilteringByDates(final TestCase testCase){
+        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+
+        LocalDateTime today, yesterday, tomorrow;
+
+        final LocalDateTime now = LocalDateTime.now();
+
+        if (testCase.formatPattern.equals("hh:mm:ssa") || testCase.formatPattern.equals("hh:mm:ss a") ||
+             testCase.formatPattern.equals("HH:mm:ss") || testCase.formatPattern.equals("hh:mma") ||
+             testCase.formatPattern.equals("hh:mm a") || testCase.formatPattern.equals("HH:mm")){
+            today = LocalDateTime.of(1970, 1, 1, now.getHour(), now.getMinute(), now.getSecond());
+            yesterday = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
+            tomorrow = LocalDateTime.of(1970, 1, 1, 23, 59, 59);
+        } else{
+            today = now;
+            yesterday = today.minusDays(1).withHour(0).withMinute(0).withSecond(0);
+            tomorrow = today.plusDays(1).withHour(23).withMinute(59).withSecond(59);
+        }
+
+
+        Contentlet contentlet = TestDataUtils.getNewsContent(false, languageId, contentType.id());
+        contentlet.setDateProperty("sysPublishDate", Date.from(today.atZone(ZoneId.systemDefault()).toInstant()));
+
+        contentlet = ContentletDataGen.checkin(contentlet, IndexPolicy.WAIT_FOR);
+
+        final DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern(testCase.formatPattern);
+
+        final String query = "+contentType:" + contentType.variable() + " +" + contentType.variable()
+                + ".sysPublishDate:[" + yesterday.format(myFormatObj) + " TO " + tomorrow
+                .format(myFormatObj) + "]";
+
+        final SearchHits searchHits = instance.indexSearch(query,-1, -1, null);
+
+        //Starting some validations
+        assertNotNull(searchHits.getTotalHits());
+        assertTrue(searchHits.getTotalHits() > 0);
+
+        SearchHit[] hits = searchHits.getHits();
+        assertEquals(contentlet.getInode(), hits[0].getSourceAsMap().get("inode"));
+
     }
 
 }
