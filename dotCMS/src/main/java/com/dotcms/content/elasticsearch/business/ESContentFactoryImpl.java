@@ -131,9 +131,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@VisibleForTesting
 	public static final String LUCENE_RESERVED_KEYWORDS_REGEX = "OR|AND|NOT|TO";
 
-    @VisibleForTesting
     //Date formats supported by dotCMS in lucene queries
-    static final Map<String, String> LUCENE_DATE_TIME_FORMAT_PATTERN = new LinkedHashMap<String, String>(){
+    private static final Map<String, String> LUCENE_DATE_TIME_FORMAT_PATTERN = new LinkedHashMap<String, String>(){
         {
             put("MM/dd/yyyy hh:mm:ssa",
                     "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?");

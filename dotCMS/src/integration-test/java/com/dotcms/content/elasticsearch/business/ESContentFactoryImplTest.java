@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.LUCENE_DATE_TIME_FORMAT_PATTERN;
 import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.LUCENE_TIME_FORMAT_PATTERNS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -80,9 +79,23 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     @DataProvider
     public static Object[] testCases() {
-        return LUCENE_DATE_TIME_FORMAT_PATTERN.keySet().stream()
-                .map(pattern -> new TestCase(pattern)).collect(Collectors.toList()).toArray();
-
+        return new TestCase[]{
+                new TestCase("MM/dd/yyyy hh:mm:ssa"),
+                new TestCase("MM/dd/yyyy hh:mm:ss a"),
+                new TestCase("MM/dd/yyyy hh:mm a"),
+                new TestCase("MM/dd/yyyy hh:mma"),
+                new TestCase("MM/dd/yyyy HH:mm:ss"),
+                new TestCase("MM/dd/yyyy HH:mm"),
+                new TestCase("yyyyMMddHHmmss"),
+                new TestCase("yyyyMMdd"),
+                new TestCase("MM/dd/yyyy"),
+                new TestCase("hh:mm:ssa"),
+                new TestCase("hh:mm:ss a"),
+                new TestCase("HH:mm:ss"),
+                new TestCase("hh:mma"),
+                new TestCase("hh:mm a"),
+                new TestCase("HH:mm")
+        };
     }
 
     @Test
