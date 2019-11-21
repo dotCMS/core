@@ -138,14 +138,6 @@ public interface BundleAPI {
 	/**
 	 * Deletes all bundles, if the user is admin will delete all bundles, otherwise only the bundles allowed to the user.
 	 * @param user {@link User}
-	 * @return Set of bundle identifiers deleted
-	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
-	 */
-	Set<String>  deleteAllBundles(User user) throws DotDataException;
-
-	/**
-	 * Deletes all bundles, if the user is admin will delete all bundles, otherwise only the bundles allowed to the user.
-	 * @param user {@link User}
 	 * @param statuses {@link com.dotcms.publisher.business.PublishAuditStatus.Status} array of statuses
 	 * @return Set of bundle identifiers deleted
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
