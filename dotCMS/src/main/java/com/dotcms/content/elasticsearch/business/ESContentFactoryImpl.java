@@ -69,6 +69,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -130,8 +131,52 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@VisibleForTesting
 	public static final String LUCENE_RESERVED_KEYWORDS_REGEX = "OR|AND|NOT|TO";
 
-    private static final Map<String, String> LUCENE_DATE_TIME_FORMAT_PATTERN = new LinkedHashMap<>();
+    @VisibleForTesting
+    //Date formats supported by dotCMS in lucene queries
+    static final Map<String, String> LUCENE_DATE_TIME_FORMAT_PATTERN = new LinkedHashMap<String, String>(){
+        {
+            put("MM/dd/yyyy hh:mm:ssa",
+                    "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?");
 
+            put("MM/dd/yyyy hh:mm:ss a",
+                    "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?");
+
+            put("MM/dd/yyyy hh:mm a",
+                    "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?");
+
+            put("MM/dd/yyyy hh:mma",
+                    "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?");
+
+            put("MM/dd/yyyy HH:mm:ss",
+                    "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2})\\\"?");
+
+            put("MM/dd/yyyy HH:mm",
+                    "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2})\\\"?");
+
+            put(datetimeFormat.getPattern(),
+                    "\\\"?(\\d{4}\\d{2}\\d{2}\\d{2}\\d{2}\\d{2})\\\"?");
+
+            put(dateFormat.getPattern(), "\\\"?(\\d{4}\\d{2}\\d{2})\\\"?");
+
+            put("MM/dd/yyyy", "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4})\\\"?");
+
+            put("hh:mm:ssa", "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?");
+
+            put("hh:mm:ss a", "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?");
+
+            put("HH:mm:ss", "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2})\\\"?");
+
+            put("hh:mma", "\\\"?(\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?");
+
+            put("hh:mm a", "\\\"?(\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?");
+
+            put("HH:mm", "\\\"?(\\d{1,2}:\\d{1,2})\\\"?");
+        }
+    };
+
+    @VisibleForTesting
+    static final List<String> LUCENE_TIME_FORMAT_PATTERNS = new ArrayList<>(
+            Arrays.asList("hh:mm:ssa", "hh:mm:ss a", "HH:mm:ss", "hh:mma", "hh:mm a", "HH:mm"));
 
     /**
 	 * Default factory constructor that initializes the connection with the
@@ -142,49 +187,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         this.languageAPI     =  APILocator.getLanguageAPI();
         this.client          = new ESClient();
         this.indiciesAPI     = APILocator.getIndiciesAPI();
-
-        //Date formats supported by dotCMS in lucene queries
-        LUCENE_DATE_TIME_FORMAT_PATTERN.put("MM/dd/yyyy hh:mm:ssa",
-                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN.put("MM/dd/yyyy hh:mm:ss a",
-                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN.put("MM/dd/yyyy hh:mm a",
-                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN.put("MM/dd/yyyy hh:mma",
-                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN.put("MM/dd/yyyy HH:mm:ss",
-                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2})\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN.put("MM/dd/yyyy HH:mm",
-                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2})\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN.put(datetimeFormat.getPattern(),
-                "\\\"?(\\d{4}\\d{2}\\d{2}\\d{2}\\d{2}\\d{2})\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN
-                .put(dateFormat.getPattern(), "\\\"?(\\d{4}\\d{2}\\d{2})\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN.put("MM/dd/yyyy", "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4})\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN
-                .put("hh:mm:ssa", "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN
-                .put("hh:mm:ss a", "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN.put("HH:mm:ss", "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2})\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN
-                .put("hh:mma", "\\\"?(\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN
-                .put("hh:mm a", "\\\"?(\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?");
-
-        LUCENE_DATE_TIME_FORMAT_PATTERN.put("HH:mm", "\\\"?(\\d{1,2}:\\d{1,2})\\\"?");
 	}
 
 	@Override
@@ -2290,9 +2292,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         String result;
 
         for (Map.Entry<String, String> pattern: LUCENE_DATE_TIME_FORMAT_PATTERN.entrySet()){
-            if (pattern.getKey().equals("hh:mm:ssa") || pattern.getKey().equals("hh:mm:ss a") ||
-                    pattern.getKey().equals("HH:mm:ss") || pattern.getKey().equals("hh:mma") ||
-                    pattern.getKey().equals("hh:mm a") || pattern.getKey().equals("HH:mm")){
+            if (LUCENE_TIME_FORMAT_PATTERNS.contains(pattern.getKey())){
                 result = DateUtil
                         .replaceTimeWithFormat(unformattedDate, pattern.getValue(), pattern.getKey());
             } else{

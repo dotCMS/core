@@ -1,5 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.LUCENE_DATE_TIME_FORMAT_PATTERN;
+import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.LUCENE_TIME_FORMAT_PATTERNS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -78,23 +80,9 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     @DataProvider
     public static Object[] testCases() {
-        return new TestCase[]{
-                new TestCase("MM/dd/yyyy hh:mm:ssa"),
-                new TestCase("MM/dd/yyyy hh:mm:ss a"),
-                new TestCase("MM/dd/yyyy hh:mm a"),
-                new TestCase("MM/dd/yyyy hh:mma"),
-                new TestCase("MM/dd/yyyy HH:mm:ss"),
-                new TestCase("MM/dd/yyyy HH:mm"),
-                new TestCase("yyyyMMddHHmmss"),
-                new TestCase("yyyyMMdd"),
-                new TestCase("MM/dd/yyyy"),
-                new TestCase("hh:mm:ssa"),
-                new TestCase("hh:mm:ss a"),
-                new TestCase("HH:mm:ss"),
-                new TestCase("hh:mma"),
-                new TestCase("hh:mm a"),
-                new TestCase("HH:mm")
-        };
+        return LUCENE_DATE_TIME_FORMAT_PATTERN.keySet().stream()
+                .map(pattern -> new TestCase(pattern)).collect(Collectors.toList()).toArray();
+
     }
 
     @Test
@@ -397,9 +385,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         final LocalDateTime now = LocalDateTime.now();
 
-        if (testCase.formatPattern.equals("hh:mm:ssa") || testCase.formatPattern.equals("hh:mm:ss a") ||
-             testCase.formatPattern.equals("HH:mm:ss") || testCase.formatPattern.equals("hh:mma") ||
-             testCase.formatPattern.equals("hh:mm a") || testCase.formatPattern.equals("HH:mm")){
+        if (LUCENE_TIME_FORMAT_PATTERNS.contains(testCase.formatPattern)){
             today = LocalDateTime.of(1970, 1, 1, now.getHour(), now.getMinute(), now.getSecond());
             yesterday = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
             tomorrow = LocalDateTime.of(1970, 1, 1, 23, 59, 59);
