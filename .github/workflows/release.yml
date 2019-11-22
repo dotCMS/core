@@ -1,0 +1,33 @@
+name: Release workflow
+on: push
+
+jobs:
+  release:
+    name: Release Action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+          ref: release-5.2.2
+      - run: |
+        echo $GITHUB_WORKSPACE
+        ls $GITHUB_WORKSPACE
+      - name: Checkout enterprise
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+          repository: https://github.com/dotCMS/core.git
+          ref: release-5.2.2
+          token: ${{ secrets.GITHUB_ENTERPRISE_TOKEN }}
+      - name: Checkout core-web
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+          repository: https://github.com/dotCMS/core-web.git
+          ref: release-5.2.2
+      #- uses: actions/checkout@v1
+      # - uses: ./.github/actions/release
+      #  env:
+      #    COMPANY: "dotCMS"
