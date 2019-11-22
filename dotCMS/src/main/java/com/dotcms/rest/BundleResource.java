@@ -33,6 +33,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -334,6 +335,11 @@ public class BundleResource {
     public Response deleteBundlesOlderThan(@Context   final HttpServletRequest request,
                                        @Context   final HttpServletResponse response,
                                        @PathParam("olderThan") final ISODateParam olderThan) {
+
+        if(olderThan.after(new Date())) {
+
+            throw new IllegalArgumentException("To avoid deleting bundles that publish in the future, the date can not be after the current date");
+        }
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
