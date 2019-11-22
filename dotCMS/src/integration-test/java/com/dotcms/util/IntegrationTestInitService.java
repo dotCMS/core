@@ -8,6 +8,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.liferay.util.SystemProperties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.mockito.Mockito;
@@ -34,24 +35,28 @@ public class IntegrationTestInitService {
     }
 
     public void init() throws Exception {
-        if (initCompleted.compareAndSet(false, true)) {
-            TestingJndiDatasource.init();
-            ConfigTestHelper._setupFakeTestingContext();
+        try {
+            if (initCompleted.compareAndSet(false, true)) {
+                TestingJndiDatasource.init();
+                ConfigTestHelper._setupFakeTestingContext();
 
-            CacheLocator.init();
-            FactoryLocator.init();
-            APILocator.init();
+                CacheLocator.init();
+                FactoryLocator.init();
+                APILocator.init();
 
-            //Running the always run startup tasks
-            StartupTasksUtil.getInstance().init();
+                //Running the always run startup tasks
+                StartupTasksUtil.getInstance().init();
 
-            //For these tests fire the reindex immediately
-            Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", false);
-            Config.setProperty("ASYNC_COMMIT_LISTENERS", false);
+                //For these tests fire the reindex immediately
+                Config.setProperty("ASYNC_REINDEX_COMMIT_LISTENERS", false);
+                Config.setProperty("ASYNC_COMMIT_LISTENERS", false);
 
-            Config.setProperty("NETWORK_CACHE_FLUSH_DELAY", (long) 0);
-            // Init other dotCMS services.
-            DotInitializationService.getInstance().initialize();
+                Config.setProperty("NETWORK_CACHE_FLUSH_DELAY", (long) 0);
+                // Init other dotCMS services.
+                DotInitializationService.getInstance().initialize();
+            }
+        } catch(Exception e) {
+            Logger.error(this, "Error initializing Integration Test Init Service", e);
         }
     }
 
