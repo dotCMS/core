@@ -31,6 +31,7 @@ import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -175,6 +176,48 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 ContentletDataGen.remove(commentsContentlet);
             }
 
+        }
+    }
+
+    @Test(expected= DotContentletStateException.class)
+    public void testCheckInWithLegacyRelationshipsAndReadOnlyClusterShouldThrowAnException()
+            throws DotDataException, DotSecurityException {
+        final long time = System.currentTimeMillis();
+        ContentType contentType = null;
+        final ESContentletAPIImpl contentletAPIImpl = new ESContentletAPIImpl();
+
+        try {
+            contentType = createContentType("test" + time);
+
+            final Structure structure = new StructureTransformer(contentType).asStructure();
+
+            final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+            final ContentletRelationships contentletRelationship = new ContentletRelationships(
+                    contentlet);
+
+            final Relationship relationship = new Relationship(structure, structure,
+                    "parent" + contentType.variable(), "child" + contentType.variable(),
+                    RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal(), false, false);
+
+            final ContentletRelationshipRecords relationshipsRecord = contentletRelationship.new ContentletRelationshipRecords(
+                    relationship,
+                    false);
+
+            contentletRelationship
+                    .setRelationshipsRecords(CollectionsUtils.list(relationshipsRecord));
+
+            final ESIndexAPI esIndexAPI = Mockito.mock(ESIndexAPI.class);
+
+            contentletAPIImpl.setEsIndexAPI(esIndexAPI);
+
+            Mockito.when(esIndexAPI.isClusterInReadOnlyMode()).thenReturn(true);
+
+            contentletAPIImpl.checkin(contentlet, contentletRelationship, null, null, user, false);
+
+        }finally{
+            if (contentType != null && contentType.id() != null){
+                contentTypeAPI.delete(contentType);
+            }
         }
     }
 

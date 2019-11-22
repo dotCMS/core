@@ -214,6 +214,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String CHECKIN_IN_PROGRESS                      = "__checkin_in_progress__";
 
     private final ContentletIndexAPIImpl  indexAPI;
+    private ESIndexAPI            esIndexAPI;
     private final ESContentFactoryImpl  contentFactory;
     private final PermissionAPI         permissionAPI;
     private final CategoryAPI           categoryAPI;
@@ -250,6 +251,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     public ESContentletAPIImpl () {
         indexAPI = new ContentletIndexAPIImpl();
+        esIndexAPI = new ESIndexAPI();
         fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
         permissionAPI = APILocator.getPermissionAPI();
@@ -3671,7 +3673,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        if (!isCheckInSafe(contentRelationships, new ESIndexAPI())){
+        if (!isCheckInSafe(contentRelationships, getEsIndexAPI())){
             throw new DotContentletStateException(
                     "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode.");
         }
@@ -4400,6 +4402,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    @VisibleForTesting
+    ESIndexAPI getEsIndexAPI() {
+        return esIndexAPI;
+    }
+
+    @VisibleForTesting
+    void setEsIndexAPI(ESIndexAPI esIndexAPI) {
+        this.esIndexAPI = esIndexAPI;
     }
 
     /**
