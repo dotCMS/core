@@ -18,6 +18,7 @@ services:
       WAIT_DB_FOR: 2m
     depends_on:
       - database
+      - elasticsearch
     ports:
       - "15005:5005"
     volumes:
