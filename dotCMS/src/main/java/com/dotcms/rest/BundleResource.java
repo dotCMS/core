@@ -327,7 +327,7 @@ public class BundleResource {
                 restResponse = Response.ok(new ResponseEntityView(CollectionsUtils.map("bundlesDeleted",
                         this.bundleAPI.deleteBundleAndDependenciesOlderThan(olderThan, initData.getUser())))).build();
                 asyncResponse.resume(restResponse);
-            } catch (DotDataException e) {
+            } catch (Exception e) {
 
                 Logger.error(this.getClass(),
                         "Exception on deleteBundlesByIdentifiers, couldn't delete bundles older than: " + olderThan +
