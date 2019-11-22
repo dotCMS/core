@@ -1,5 +1,9 @@
 package com.dotcms.rest;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.UserSessionBean;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
@@ -262,7 +266,7 @@ public class BundleResource {
 
         final DotSubmitter dotSubmitter = DotConcurrentFactory
                 .getInstance().getSubmitter(BUNDLE_THREAD_POOL_SUBMITTER_NAME);
-        final Locale locale = LocaleUtil.getLocale(request);
+        final Locale locale    = LocaleUtil.getLocale(request);
 
         dotSubmitter.execute(() -> {
 
@@ -301,8 +305,9 @@ public class BundleResource {
 
     private void sendSuccessDeleteBundleMessage(final int bundleDeletesSize,
                                                 final InitDataObject initData,
-                                                final Locale locale) {
+                                                final Locale locale) throws DotDataException {
 
+	    final String userId  = initData.getUser().getUserId();
         final String message = Try.of(()->LanguageUtil.get(locale, "bundle.deleted.success.msg", bundleDeletesSize))
                 .onFailure(e -> Logger.error(this, e.getMessage()))
                 .getOrElse(bundleDeletesSize + " Bundles Deleted Successfully");
@@ -310,7 +315,15 @@ public class BundleResource {
         this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder()
                 .setMessage(message)
                 .setLife(DateUtil.SEVEN_SECOND_MILLIS)
-                .setSeverity(MessageSeverity.INFO).create(), Collections.singletonList(initData.getUser().getUserId()));
+                .setSeverity(MessageSeverity.INFO).create(), Collections.singletonList(userId));
+
+        APILocator.getSystemEventsAPI().push(SystemEventType.DELETE_BUNDLE,
+                new Payload(
+                        message,
+                        Visibility.USER,
+                        userId
+                )
+        );
     }
 
     // one transaction for each bundle
@@ -348,7 +361,7 @@ public class BundleResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final Locale locale = LocaleUtil.getLocale(request);
+        final Locale locale    = LocaleUtil.getLocale(request);
 
         Logger.info(this, "Deleting the bundles older than: " + olderThan
                 + " by the user: " + initData.getUser().getUserId());
@@ -396,7 +409,7 @@ public class BundleResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final Locale locale = LocaleUtil.getLocale(request);
+        final Locale locale    = LocaleUtil.getLocale(request);
 
         Logger.info(this, "Deleting all bundles by the user: " + initData.getUser().getUserId());
 
@@ -444,7 +457,7 @@ public class BundleResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final Locale locale = LocaleUtil.getLocale(request);
+        final Locale locale    = LocaleUtil.getLocale(request);
 
         Logger.info(this, "Deleting all failed bundles by the user: " + initData.getUser().getUserId());
 
@@ -491,7 +504,7 @@ public class BundleResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final Locale locale = LocaleUtil.getLocale(request);
+        final Locale locale    = LocaleUtil.getLocale(request);
 
         Logger.info(this, "Deleting all success bundles by the user: " + initData.getUser().getUserId());
 
