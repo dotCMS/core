@@ -2,6 +2,7 @@ package com.dotcms.rest.config;
 
 import com.dotcms.contenttype.model.field.FieldTypeResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationResource;
+import com.dotcms.rest.api.v1.system.UpgradeTaskResource;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
@@ -156,8 +157,8 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 
 					REST_CLASSES.add(PersonalizationResource.class);
 					REST_CLASSES.add(TempFileResource.class);
-					
-					
+
+					REST_CLASSES.add(UpgradeTaskResource.class);
 				}
 			}
 		}

@@ -502,7 +502,6 @@ public class FieldAPIImpl implements FieldAPI {
 
       fieldFactory.moveSortOrderBackward(type.id(), oldField.sortOrder());
 
-      CleanUpFieldReferencesJob.triggerCleanUpJob(field, user);
       fieldFactory.delete(field);
 
       ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action",
@@ -524,9 +523,9 @@ public class FieldAPIImpl implements FieldAPI {
           contentletAPI.reindex(structure);
       }
 
-      HibernateUtil.addCommitListener(()-> {
-          localSystemEventsAPI.notify(new FieldDeletedEvent(field.variable()));
-      });
+      CleanUpFieldReferencesJob.triggerCleanUpJob(field, user);
+      localSystemEventsAPI.notify(new FieldDeletedEvent(field.variable()));
+
   }
 
     /**

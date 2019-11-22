@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -39,6 +40,7 @@ public class UnpublishContentActionlet extends WorkFlowActionlet {
 
 			if (hasLiveVersion) {
 
+				processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 				APILocator.getContentletAPI().unpublish(processor.getContentlet(), processor.getUser(), false);
 				Logger.debug(this, ()->"Unpublished: " + processor.getContentlet().getIdentifier());
 			} else {

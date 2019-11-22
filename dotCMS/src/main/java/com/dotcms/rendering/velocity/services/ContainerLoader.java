@@ -265,28 +265,35 @@ public class ContainerLoader implements DotLoader {
             // FOR LOOP
 
             velocityCodeBuilder.append("#foreach ($contentletId in $CONTENTLETS )");
-            
-                velocityCodeBuilder.append("#set($_show_working_=false)");
-                // if timemachine future enabled
-                velocityCodeBuilder.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
-                velocityCodeBuilder.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\"))))");
-                velocityCodeBuilder.append("#set($_ident=$webapi.findIdentifierById($contentletId))");
-    
-                // if the content has expired we rewrite the identifier so it isn't loaded
-                velocityCodeBuilder.append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
-                velocityCodeBuilder.append("#set($contentletId='')");
-                velocityCodeBuilder.append("#end");
-    
-                // if the content should be published then force to show the working version
-                velocityCodeBuilder.append("#if($UtilMethods.isSet($_ident.sysPublishDate) && $_tmdate.after($_ident.sysPublishDate))");
-                velocityCodeBuilder.append("#set($_show_working_=true)");
-                velocityCodeBuilder.append("#end");
-    
-                velocityCodeBuilder.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_)")
+
+              velocityCodeBuilder.append("#set($_show_working_=false)");
+
+            //Time-machine block begin
+              velocityCodeBuilder.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
+
+                  velocityCodeBuilder.append("#set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\"))))");
+                  velocityCodeBuilder.append("#set($_ident=$webapi.findIdentifierById($contentletId))");
+                  // if the content has expired we rewrite the identifier so it isn't loaded
+                  velocityCodeBuilder.append("#if($UtilMethods.isSet($_ident.sysExpireDate) && $_tmdate.after($_ident.sysExpireDate))");
+                  velocityCodeBuilder.append("#set($contentletId='')");
+                  velocityCodeBuilder.append("#end");
+
+                  // if the content should be published then force to show the working version
+                  velocityCodeBuilder.append("#if($UtilMethods.isSet($_ident.sysPublishDate) && ($_tmdate.equals($_ident.sysPublishDate) || $_tmdate.after($_ident.sysPublishDate)))");
+                  velocityCodeBuilder.append("#set($_show_working_=true)");
+                  velocityCodeBuilder.append("#end");
+
+                  velocityCodeBuilder.append("#if(! $webapi.contentHasLiveVersion($contentletId) && ! $_show_working_)")
                     .append("#set($contentletId='')") // working contentlet still not published
-                    .append("#end");
-                velocityCodeBuilder.append("#end");
-    
+                  .append("#end");
+
+                  velocityCodeBuilder.append("#if(!$UtilMethods.isSet($user)) ")
+                    .append("#set($user = $cmsuser.getLoggedInUser($request)) ")
+                  .append("#end");
+
+            //end of time-machine block
+              velocityCodeBuilder.append("#end");
+
                 velocityCodeBuilder.append("#set($CONTENT_INODE = '')");
                 velocityCodeBuilder.append("#set($CONTENT_BASE_TYPE = '')");
                 velocityCodeBuilder.append("#set($CONTENT_LANGUAGE = '')");
@@ -298,9 +305,9 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#if($contentletId != '')");
                 velocityCodeBuilder.append("#contentDetail($contentletId)");
                 velocityCodeBuilder.append("#end");
-    
+
                 velocityCodeBuilder.append("#set($HAVE_A_VERSION=($CONTENT_INODE != ''))");
-                
+
                 if (mode == PageMode.EDIT_MODE) {
                     velocityCodeBuilder.append("<div")
                         .append(" data-dot-object=")
@@ -331,31 +338,41 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#if($HAVE_A_VERSION)");
                 
                     // ##Checking permission to see content
-                    if (mode.showLive) velocityCodeBuilder.append("#if($contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
+                    if (mode.showLive) {
+                        velocityCodeBuilder.append("#if($_show_working_ || $contents.doesUserHasPermission($CONTENT_INODE, 1, $user, true))");
+                    }
                     
                         // ### START BODY ###
                         velocityCodeBuilder.append("#if($isWidget==true)").append("$widgetCode");
                         velocityCodeBuilder.append("#elseif($isForm==true)").append("$formCode");
                         velocityCodeBuilder.append("#else");
-            
+
                             for (int i = 0; i < containerContentTypeList.size(); i++) {
                                 ContainerStructure cs = containerContentTypeList.get(i);
                                 String ifelse = (i == 0) ? "if" : "elseif";
-                                velocityCodeBuilder.append("#" + ifelse + "($ContentletStructure ==\"" + cs.getStructureId() + "\")");
+                                velocityCodeBuilder.append("#").append(ifelse)
+                                        .append("($ContentletStructure ==\"")
+                                        .append(cs.getStructureId()).append("\")");
                                 velocityCodeBuilder.append(cs.getCode());
                             }
-                            if (containerContentTypeList.size() > 0) velocityCodeBuilder.append("#end");
+                            if (containerContentTypeList.size() > 0) {
+                                velocityCodeBuilder.append("#end");
+                            }
                             
                         // ### END BODY ###
                         velocityCodeBuilder.append("#end");
         
-                    if (mode.showLive) velocityCodeBuilder.append("#end");
+                    if (mode.showLive) {
+                        velocityCodeBuilder.append("#end");
+                    }
                     
                 // end if content exists in language 
                 velocityCodeBuilder.append("#end");
 
                // end content dot-data-content
-            if (mode == PageMode.EDIT_MODE) velocityCodeBuilder.append("</div>");
+            if (mode == PageMode.EDIT_MODE) {
+                velocityCodeBuilder.append("</div>");
+            }
                 
                 // ##End of foreach loop
             velocityCodeBuilder.append("#end");
