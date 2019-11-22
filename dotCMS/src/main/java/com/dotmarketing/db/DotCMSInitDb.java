@@ -116,7 +116,10 @@ public class DotCMSInitDb {
 		
 		ImportExportUtil ieu = new ImportExportUtil();
 		if(ieu.validateZipFile(starterZip)){
-		    Try.run((()->ieu.doImport(pw))).onFailure(e-> new DotRuntimeException(e));
+		    Try.run((()->ieu.doImport(pw)))
+					.onFailure(
+							e-> {throw new DotRuntimeException(e);}
+					);
 
 		}
 	}
