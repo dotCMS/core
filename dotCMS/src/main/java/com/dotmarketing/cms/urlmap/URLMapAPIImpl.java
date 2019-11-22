@@ -1,6 +1,5 @@
 package com.dotmarketing.cms.urlmap;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -54,8 +53,8 @@ public class URLMapAPIImpl implements URLMapAPI {
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
     /**
-     * Return true if any {@link com.dotcms.contenttype.model.type.UrlMapable} matching with
-     * {@link UrlMapContext#getUri()}, in otherwise return false
+     * Return true if any {@link com.dotcms.contenttype.model.type.UrlMapable} matches with
+     * {@link UrlMapContext#getUri()}, otherwise return false
      *
      * @param urlMapContext
      * @return

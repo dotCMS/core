@@ -32,6 +32,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class URLMapAPIImplTest {
+    public static final String TEST_PATTERN = "/testpattern";
     private static User systemUser;
     private static Host host;
 
@@ -68,7 +69,7 @@ public class URLMapAPIImplTest {
     public void shouldReturnContentletWhenTheContentExists()
             throws DotDataException, DotSecurityException {
         final String newsPatternPrefix =
-                "/testpattern" + System.currentTimeMillis() + "/";
+                TEST_PATTERN + System.currentTimeMillis() + "/";
         final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix);
         final UrlMapContext context = getUrlMapContext(systemUser, host,
                 newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"));
@@ -138,7 +139,7 @@ public class URLMapAPIImplTest {
 
     /**
      * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
-     * Given Scenario: Procces dorAdmin URL when not any URL Mapper exists
+     * Given Scenario: Process dotAdmin URL when not any URL Mapper exists
      * ExpectedResult: Should return a {@link Optional#empty()}
      */
     @Test
@@ -153,7 +154,7 @@ public class URLMapAPIImplTest {
 
     /**
      * methodToTest {@link URLMapAPIImpl#isUrlPattern(UrlMapContext)}}
-     * Given Scenario: Call  isUrlPattern with dorAdmin URL when not any URL Mapper exists
+     * Given Scenario: Call  isUrlPattern with dotAdmin URL when not any URL Mapper exists
      * ExpectedResult: Should return false
      */
     @Test
