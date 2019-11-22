@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESContentFactoryImpl.LUCENE_TIME_FORMAT_PATTERNS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -78,7 +77,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     @DataProvider
-    public static Object[] testCases() {
+    public static Object[] dateTimeTestCases() {
         return new TestCase[]{
                 new TestCase("MM/dd/yyyy hh:mm:ssa"),
                 new TestCase("MM/dd/yyyy hh:mm:ss a"),
@@ -88,7 +87,13 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 new TestCase("MM/dd/yyyy HH:mm"),
                 new TestCase("yyyyMMddHHmmss"),
                 new TestCase("yyyyMMdd"),
-                new TestCase("MM/dd/yyyy"),
+                new TestCase("MM/dd/yyyy")
+        };
+    }
+
+    @DataProvider
+    public static Object[] timeTestCases() {
+        return new TestCase[]{
                 new TestCase("hh:mm:ssa"),
                 new TestCase("hh:mm:ss a"),
                 new TestCase("HH:mm:ss"),
@@ -389,53 +394,85 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     @Test
-    @UseDataProvider("testCases")
-    public void testIndexSearchFilteringByDates(final TestCase testCase){
-        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+    @UseDataProvider("dateTimeTestCases")
+    public void testIndexSearchFilteringByDateTime(final TestCase testCase){
 
         LocalDateTime today, yesterday, tomorrow;
 
         final LocalDateTime now = LocalDateTime.now();
 
-        if (LUCENE_TIME_FORMAT_PATTERNS.contains(testCase.formatPattern)){
-            today = LocalDateTime.of(1970, 1, 1, now.getHour(), now.getMinute(), now.getSecond());
-            yesterday = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
-            tomorrow = LocalDateTime.of(1970, 1, 1, 23, 59, 59);
-        } else{
-            today = now;
-            yesterday = today.minusDays(1).withHour(0).withMinute(0).withSecond(0);
-            tomorrow = today.plusDays(1).withHour(23).withMinute(59).withSecond(59);
-        }
+        today = now;
+        yesterday = today.minusDays(1).withHour(0).withMinute(0).withSecond(0);
+        tomorrow = today.plusDays(1).withHour(23).withMinute(59).withSecond(59);
 
+        buildLuceneQueryAndTest(testCase, today, yesterday, tomorrow);
+    }
 
+    @Test
+    @UseDataProvider("timeTestCases")
+    public void testIndexSearchFilteringByTime(final TestCase testCase){
+
+        LocalDateTime today, yesterday, tomorrow;
+
+        final LocalDateTime now = LocalDateTime.now();
+        today = LocalDateTime.of(1970, 1, 1, now.getHour(), now.getMinute(), now.getSecond());
+        yesterday = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
+        tomorrow = LocalDateTime.of(1970, 1, 1, 23, 59, 59);
+
+        buildLuceneQueryAndTest(testCase, today, yesterday, tomorrow);
+    }
+
+    /**
+     *
+     * @param testCase
+     * @param today
+     * @param yesterday
+     * @param tomorrow
+     */
+    private void buildLuceneQueryAndTest(final TestCase testCase, final LocalDateTime today,
+            final LocalDateTime yesterday, final LocalDateTime tomorrow) {
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        Contentlet contentlet = createNewsContent(contentType, today);
+        final DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern(testCase.formatPattern);
+
+        //Test time ranges with TO (upper case)
+        String query = String.format(
+                "+contentType:%1$s +%1$s.sysPublishDate:[%2$s  TO  %3$s]", contentType.variable(),
+                yesterday.format(myFormatObj), tomorrow.format(myFormatObj));
+
+        runLuceneQueryAndValidateResults(query, contentlet);
+
+        //Test time ranges with to (lower case)
+        query = String.format(
+                "+contentType:%1$s +%1$s.sysPublishDate:[%2$s  to  %3$s]", contentType.variable(),
+                yesterday.format(myFormatObj), tomorrow.format(myFormatObj));
+
+        runLuceneQueryAndValidateResults(query, contentlet);
+    }
+
+    /**
+     * Creates a content with a specific publish date
+     * @param contentType
+     * @param today
+     * @return
+     */
+    private Contentlet createNewsContent(final ContentType contentType, final LocalDateTime today) {
+        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         Contentlet contentlet = TestDataUtils.getNewsContent(false, languageId, contentType.id());
         contentlet.setDateProperty("sysPublishDate", Date.from(today.atZone(ZoneId.systemDefault()).toInstant()));
 
         contentlet = ContentletDataGen.checkin(contentlet, IndexPolicy.WAIT_FOR);
-
-        final DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern(testCase.formatPattern);
-
-        //Test date ranges with TO (upper case)
-        String query = "+contentType:" + contentType.variable() + " +" + contentType.variable()
-                + ".sysPublishDate:[" + yesterday.format(myFormatObj) + " TO " + tomorrow
-                .format(myFormatObj) + "]";
-
-        SearchHits searchHits = instance.indexSearch(query,-1, -1, null);
-        validateQueryResults(contentlet, searchHits);
-
-        //Test date ranges with to (lower case)
-        query = "+contentType:" + contentType.variable() + " +" + contentType.variable()
-                + ".sysPublishDate:[" + yesterday.format(myFormatObj) + " to " + tomorrow
-                .format(myFormatObj) + "]";
-
-        searchHits = instance.indexSearch(query,-1, -1, null);
-
-        validateQueryResults(contentlet, searchHits);
-
+        return contentlet;
     }
 
-    private void validateQueryResults(final Contentlet contentlet, final SearchHits searchHits) {
+    /**
+     *
+     * @param query
+     * @param contentlet
+     */
+    private void runLuceneQueryAndValidateResults(final String query, final Contentlet contentlet) {
+        final SearchHits searchHits = instance.indexSearch(query,-1, -1, null);
+
         //Validate results
         assertNotNull(searchHits.getTotalHits());
         assertTrue(searchHits.getTotalHits() > 0);
