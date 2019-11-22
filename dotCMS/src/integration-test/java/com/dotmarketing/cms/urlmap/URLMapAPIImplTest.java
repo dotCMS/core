@@ -65,6 +65,11 @@ public class URLMapAPIImplTest {
         urlMapAPI = new URLMapAPIImpl();
     }
 
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url when both the Content Type and Content exists
+     * ExpectedResult: Should return a {@link URLMapInfo} wit the right content ans detail page
+     */
     @Test
     public void shouldReturnContentletWhenTheContentExists()
             throws DotDataException, DotSecurityException {
@@ -82,46 +87,72 @@ public class URLMapAPIImplTest {
         assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
     }
 
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url when the Content Type exists but the content nos exists
+     * ExpectedResult: Should return a {@link Optional#empty()}
+     */
     @Test
     public void shouldReturnNullWhenTheContentNotExists()
             throws DotDataException, DotSecurityException {
+
         final String newsPatternPrefix =
-                "/testpattern" + System.currentTimeMillis() + "/";
+                TEST_PATTERN + System.currentTimeMillis() + "/";
+        createURLMapperContentType(newsPatternPrefix);
+
         final UrlMapContext context = getUrlMapContext(systemUser, host,
-                newsPatternPrefix
-                        + "u-s-labor-department-moves-forward-on-retirement-advice-proposal-esp"
-                        + System.currentTimeMillis());
+                newsPatternPrefix + "not-exists-content");
 
         final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
 
         assertFalse(urlMapInfoOptional.isPresent());
     }
 
+    /**
+     * methodToTest {@link URLMapAPIImpl#isUrlPattern(UrlMapContext)}
+     * Given Scenario: Request a URL with the api prefix
+     * ExpectedResult: Should return false, even when the Content Type and the Content exists
+     */
     @Test
     public void shouldNotMatchUrlStaringWithAPI()
             throws DotDataException {
         final String newsPatternPrefix =
                 "/testpattern" + System.currentTimeMillis() + "/";
+        final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix);
+
         final UrlMapContext context = getUrlMapContext(systemUser, host,
-                    "/api/v1/page/render" +
-                        newsPatternPrefix
-                        + "u-s-labor-department-moves-forward-on-retirement-advice-proposal-esp"
-                        + System.currentTimeMillis());
+                    "/api" + newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"));
 
         assertFalse(urlMapAPI.isUrlPattern(context));
     }
 
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Request a not detail page's URL
+     * ExpectedResult: Should return false
+     */
     @Test
     public void shouldReturnNullWhenThePageUriIsNotDetailPage()
             throws DotDataException, DotSecurityException {
 
-        final UrlMapContext context = getUrlMapContext(systemUser, host, "/about-us/index");
+        final Folder folder = new FolderDataGen().nextPersisted();
+
+        final Template template = new TemplateDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template)
+                .nextPersisted();
+
+        final UrlMapContext context = getUrlMapContext(systemUser, host, page.getURI());
 
         final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
 
         assertFalse(urlMapInfoOptional.isPresent());
     }
 
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Request a detail page's URL, but with limited user who not have READ permission to the content
+     * ExpectedResult: Should throw a {@link DotSecurityException}
+     */
     @Test(expected = DotSecurityException.class)
     public void shouldThrowDotSecurityExceptionWhenUserDontHavePermission()
             throws DotDataException, DotSecurityException {
