@@ -2,16 +2,13 @@ package com.dotcms.rest;
 
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
-import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.rest.param.DateParam;
-import com.dotcms.util.CollectionsUtils;
+import com.dotcms.rest.param.ISODateParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -22,28 +19,24 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.LocaleUtil;
-import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.*;
-import static com.dotcms.util.CollectionsUtils.*;
 
 @Path("/bundle")
 public class BundleResource {
@@ -245,16 +238,16 @@ public class BundleResource {
     /**
      * Deletes all bundles by identifier
      * Note: the response will be notified by socket message
-     * @param request
-     * @param response
-     * @param deleteBundlesByIdentifierForm
+     * @param request   {@link HttpServletRequest}
+     * @param response  {@link HttpServletResponse}
+     * @param deleteBundlesByIdentifierForm {@link DeleteBundlesByIdentifierForm} contains the set of bundle ids to delete.
      */
 	@DELETE
     @Path("/ids")
     @Produces("application/json")
     public Response deleteBundlesByIdentifiers(@Context   final HttpServletRequest request,
-                                           @Context   final HttpServletResponse response,
-                                           final DeleteBundlesByIdentifierForm  deleteBundlesByIdentifierForm) {
+                                               @Context   final HttpServletResponse response,
+                                               final DeleteBundlesByIdentifierForm  deleteBundlesByIdentifierForm) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -293,37 +286,30 @@ public class BundleResource {
 
     private void sendErrorDeleteBundleMessage(final InitDataObject initData,
                                               final Locale locale,
-                                              final DotDataException e) {
-        String message = StringPool.BLANK;
+                                              final Exception e) {
 
-        try {
-            message = LanguageUtil.get(locale, "bundle.deleted.error.msg", e.getMessage());
-        } catch (LanguageException le) {
-            message = "An error occurred deleting bundles, please check the log, error message: " + e.getMessage();
-        }
+        final String message = Try.of(()->LanguageUtil.get(locale, "bundle.deleted.error.msg", e.getMessage()))
+                .onFailure(ex -> Logger.error(this, e.getMessage()))
+                .getOrElse("An error occurred deleting bundles, please check the log, error message: " + e.getMessage());
 
         this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder()
                 .setMessage(message)
                 .setLife(DateUtil.TEN_SECOND_MILLIS)
-                .setSeverity(MessageSeverity.ERROR).create(), Arrays.asList(initData.getUser().getUserId()));
+                .setSeverity(MessageSeverity.ERROR).create(), Collections.singletonList(initData.getUser().getUserId()));
     }
 
     private void sendSuccessDeleteBundleMessage(final int bundleDeletesSize,
                                                 final InitDataObject initData,
                                                 final Locale locale) {
-        String message = StringPool.BLANK;
 
-        try {
-
-            message = LanguageUtil.get(locale, "bundle.deleted.success.msg", bundleDeletesSize);
-        } catch (LanguageException e) {
-            message = bundleDeletesSize + " Bundles Deleted Successfully";
-        }
+        final String message = Try.of(()->LanguageUtil.get(locale, "bundle.deleted.success.msg", bundleDeletesSize))
+                .onFailure(e -> Logger.error(this, e.getMessage()))
+                .getOrElse(bundleDeletesSize + " Bundles Deleted Successfully");
 
         this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder()
                 .setMessage(message)
                 .setLife(DateUtil.SEVEN_SECOND_MILLIS)
-                .setSeverity(MessageSeverity.INFO).create(), Arrays.asList(initData.getUser().getUserId()));
+                .setSeverity(MessageSeverity.INFO).create(), Collections.singletonList(initData.getUser().getUserId()));
     }
 
     // one transaction for each bundle
@@ -338,16 +324,16 @@ public class BundleResource {
     /**
      * Deletes bundles older than a date. (unsent are not going to be deleted)
      * Note: the response will be notified by socket message
-     * @param request
-     * @param response
-     * @param olderThan
+     * @param request   {@link HttpServletRequest}
+     * @param response  {@link HttpServletResponse}
+     * @param olderThan {@link ISODateParam} an ISO date, should be before now to be valid
      */
     @DELETE
     @Path("/olderthan/{olderThan}")
     @Produces("application/json")
     public Response deleteBundlesOlderThan(@Context   final HttpServletRequest request,
                                        @Context   final HttpServletResponse response,
-                                       @PathParam("olderThan") final DateParam olderThan) {
+                                       @PathParam("olderThan") final ISODateParam olderThan) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -371,7 +357,7 @@ public class BundleResource {
                         this.bundleAPI.deleteBundleAndDependenciesOlderThan(olderThan, initData.getUser()).size();
 
                 this.sendSuccessDeleteBundleMessage(bundleDeletedSize, initData, locale);
-            } catch (DotDataException e) {
+            } catch (Exception e) {
 
                 Logger.error(this.getClass(),
                         "Exception on deleteBundlesOlderThan, couldn't delete bundles older than: " + olderThan +
@@ -388,8 +374,8 @@ public class BundleResource {
     /**
      * Deletes all failed and succeed bundles
      * Note: the response will be notified by socket message
-     * @param request
-     * @param response
+     * @param request   {@link HttpServletRequest}
+     * @param response  {@link HttpServletResponse}
      */
     @DELETE
     @Path("/all")
@@ -436,8 +422,8 @@ public class BundleResource {
     /**
      * Deletes all failed  bundles
      * Note: the response will be notified by socket message
-     * @param request
-     * @param response
+     * @param request   {@link HttpServletRequest}
+     * @param response  {@link HttpServletResponse}
      */
     @DELETE
     @Path("/all/fail")
@@ -483,8 +469,8 @@ public class BundleResource {
     /**
      * Deletes all success bundles
      * Note: the response will be notified by socket message
-     * @param request
-     * @param response
+     * @param request   {@link HttpServletRequest}
+     * @param response  {@link HttpServletResponse}
      */
     @DELETE
     @Path("/all/success")

@@ -176,6 +176,10 @@ public class BundleAPIImpl implements BundleAPI {
 	@Override
 	public Set<String> deleteBundleAndDependenciesOlderThan(final Date olderThan, final User user) throws DotDataException {
 
+		if(olderThan.after(new Date())){
+			throw new IllegalArgumentException("To avoid deleting bundles that publish in the future, the date can not be after the current date");
+		}
+
 		final ImmutableSet.Builder<String> bundlesDeleted = new ImmutableSet.Builder<>();
 		final boolean isAdmin = this.userAPI.isCMSAdmin(user);
 		final int  bundleSleepCount   = Config.getIntProperty ("bundle.sleep.count",  10);  // each 10 deletes
