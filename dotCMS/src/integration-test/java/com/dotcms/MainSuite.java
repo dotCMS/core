@@ -2,6 +2,7 @@ package com.dotcms;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.util.TestConfig;
@@ -220,7 +221,8 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class,
         CleanUpFieldReferencesJobTest.class,
         ESContentletAPIImplTest.class,
-        TestConfig.class
+        TestConfig.class,
+        PublishAuditAPITest.class
 })
 public class MainSuite {
 
