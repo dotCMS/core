@@ -1330,7 +1330,8 @@ public class ESIndexAPI {
 	}
 
     /**
-     *
+     * Creates a request to get the value of the setting cluster.blocks.read_only, which returns
+     * true if the Elastic Search cluster is in read only mode
      * @return boolean
      */
 	public boolean isClusterInReadOnlyMode(){
