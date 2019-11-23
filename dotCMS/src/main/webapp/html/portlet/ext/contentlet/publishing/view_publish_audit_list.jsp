@@ -141,18 +141,56 @@
 
 	}
 
-	function deleteAudits(){
+	function deleteSelectedAudits(){
+		var data =  {
+			'identifiers': getSelectedAuditsIds()
+		}
+		var dataAsJson = dojo.toJson(data);
+		var xhrArgs = {
+			url: "/api/bundle/ids",
+			postData: dataAsJson,
+			handleAs: "json",
+			headers : {
+				'Accept' : 'application/json',
+				'Content-Type' : 'application/json;charset=utf-8',
+			},
+			load: function(data) {
+				console.log('====DATA====', data);
+				refreshAuditList();
+			},
+			error: function(error){
+				console.log('====ERROR====', error);
+			}
+		};
+		dojo.xhrDelete(xhrArgs);
+		dijit.byId('deleteBundleActions').hide();
+	}
 
-		var deleteMe="";
-		 dojo.query(".chkBoxAudits input").forEach(function(box){
+	function deleteAllAudits() {
+		if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.all.confirmation")) %>')) {
+			console.log('TODO: Delete All Audits');
+		} else {
+			dijit.byId('deleteBundleActions').hide();
+		}
+	}
+
+	function deleteSuccessAudits() {
+		console.log('TODO: Success Audits');
+	}
+
+	function deleteFailAudits() {
+		console.log('TODO: Delete Fail Audits');
+	}
+
+	function getSelectedAuditsIds() {
+		var ids = [];
+		dojo.query(".chkBoxAudits input").forEach(function(box){
 			var j= dijit.byId(box.id);
 			if(j.checked){
-				deleteMe+=j.getValue()+",";
+				ids.push(j.getValue());
 			}
-
-		})
-		var url="&deleteAudit="+deleteMe;
-		refreshAuditList(url);
+		});
+		return ids;
 	}
 
    /**
