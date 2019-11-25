@@ -92,7 +92,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				CollectionsUtils.set(Config.getStringArrayProperty("RESERVEDFOLDERNAMES",
 					new String[]{"WEB-INF", "META-INF", "assets", "dotcms", "html", "portal",
 							"email_backups",
-							"DOTLESS", "DOTSASS"})
+							"DOTLESS", "DOTSASS", "dotAdmin", "custom_elements"})
 				).stream().map(String::toUpperCase).collect(Collectors.toSet())
 			);
 
