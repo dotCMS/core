@@ -15,7 +15,7 @@ public abstract class BundleFactory {
 
     protected final static String SELECT_UNSEND_BUNDLES = "SELECT * FROM publishing_bundle where publish_date is null and expire_date is null and owner = ? order by id desc";
 
-    protected final static String SELECT_SENT_BUNDLES_BY_OWNER            = "SELECT * FROM publishing_bundle where publish_date is not null owner = ? order by id desc";
+    protected final static String SELECT_SENT_BUNDLES_BY_OWNER            = "SELECT * FROM publishing_bundle where publish_date is not null and owner = ? order by id desc";
     protected final static String SELECT_SENT_BUNDLES_BY_ADMIN            = "SELECT * FROM publishing_bundle where publish_date is not null order by id desc";
 
     protected final static String SELECT_SENT_BUNDLES_OLDER_THAN_BY_OWNER = "SELECT * FROM publishing_bundle where publish_date < ? and owner = ? order by id desc";
