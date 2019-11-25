@@ -475,7 +475,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         //Validate results
         assertNotNull(searchHits.getTotalHits());
-        assertTrue(searchHits.getTotalHits() > 0);
+        assertTrue(searchHits.getTotalHits().value > 0);
 
         final SearchHit[] hits = searchHits.getHits();
         assertEquals(contentlet.getInode(), hits[0].getSourceAsMap().get("inode"));
