@@ -1,10 +1,9 @@
 package com.dotcms;
 
-import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
-import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
-
 import com.dotcms.junit.MainBaseSuite;
+import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
+import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
