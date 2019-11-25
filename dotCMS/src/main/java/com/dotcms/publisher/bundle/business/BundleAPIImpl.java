@@ -2,11 +2,10 @@ package com.dotcms.publisher.bundle.business;
 
 import com.dotcms.business.LazyUserAPIWrapper;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.publisher.assets.business.PushedAssetsFactory;
+import com.dotcms.publisher.assets.business.PushedAssetsAPI;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
-import com.dotcms.util.CloseUtils;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.util.DotPreconditions;
 
@@ -38,14 +37,14 @@ import org.apache.commons.lang3.mutable.MutableInt;
 public class BundleAPIImpl implements BundleAPI {
 
 	private final BundleFactory       bundleFactory;
-	private final PushedAssetsFactory pushedAssetsFactory;
+	private final PushedAssetsAPI pushedAssetsAPI;
 	private final PublishAuditAPI     publishAuditAPI;
 	private final UserAPI             userAPI;
 
 	public BundleAPIImpl() {
 
 		this.bundleFactory       = FactoryLocator.getBundleFactory();
-		this.pushedAssetsFactory = FactoryLocator.getPushedAssetsFactory();
+		this.pushedAssetsAPI     = APILocator.getPushedAssetsAPI();
 		this.publishAuditAPI     = APILocator.getPublishAuditAPI();
 		this.userAPI             = new LazyUserAPIWrapper(); // we need this lazyness to avoid init issues.
 	}
@@ -134,7 +133,7 @@ public class BundleAPIImpl implements BundleAPI {
 		}
 
 		Logger.info(this, "Removing all pushed assets for a bundle: " + bundleId);
-		this.pushedAssetsFactory.deletePushedAssetsByBundle(bundleId);
+		this.pushedAssetsAPI.deletePushedAssetsByBundleId(bundleId);
 
 		Logger.info(this, "Removing all assets from bundle: " + bundleId);
 		this.bundleFactory.deleteAllAssetsFromBundle(bundleId);
