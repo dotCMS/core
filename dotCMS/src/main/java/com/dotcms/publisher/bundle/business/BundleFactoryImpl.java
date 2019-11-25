@@ -89,7 +89,7 @@ public class BundleFactoryImpl extends BundleFactory {
 
 		final List<Map<String, Object>> bundlesResultList =
 				new DotConnect().setSQL(SELECT_SENT_BUNDLES_OLDER_THAN_BY_OWNER)
-								.addParam(userId).addParam(olderThan)
+								.addParam(olderThan).addParam(userId)
 			                    .setMaxRows(limit).setStartRow(offset).loadObjectResults();
 
 		for (final Map<String, Object> row : bundlesResultList) {
