@@ -1,0 +1,147 @@
+{
+	"info": {
+		"_postman_id": "b4e08301-39ba-4f59-9eb0-a32312c5a907",
+		"name": "Bundle Resource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Delete",
+			"item": [
+				{
+					"name": "Delete Bundle By Id Non User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						},
+						"description": "Tries to call a delete bundle by id, without user."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle Non-Existing  Bundles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle by Future Date",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						},
+						"description": "Tries to delete a bundle by date, in a far far future day"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle by Date Non User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						},
+						"description": "Tries to delete a bundle by date, without user"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle by Date Success",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						},
+						"description": "Tries to delete a bundle by date"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle by Fail Non User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						},
+						"description": "Tries to delete a bundle failed, without user"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle Failed Success",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						},
+						"description": "Tries to delete a bundle failed"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle by Success Non User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						},
+						"description": "Tries to delete a bundle success, without user"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle Success",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						},
+						"description": "Tries to delete a bundle failed"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle by All Non User ",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						},
+						"description": "Tries to delete a bundle all, without user"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Bundle All",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						},
+						"description": "Tries to delete a bundle all"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"protocolProfileBehavior": {}
+}
