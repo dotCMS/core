@@ -221,6 +221,12 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test for isCheckInSafe method with legacy relationships. It should return false when the cluster
+     * is in read only mode
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void testIsCheckInSafeWithLegacyRelationshipsShouldReturnFalse()
             throws DotDataException, DotSecurityException {
@@ -261,6 +267,12 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test for isCheckInSafe method with relationship fields. It should return true when the cluster
+     * is in read only mode
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void testIsCheckInSafeWithRelationshipsFieldsShouldReturnTrue()
             throws DotDataException, DotSecurityException {
@@ -304,6 +316,9 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test for isCheckInSafe method without relationships. It should return true no matter the cluster status
+     */
     @Test
     public void testIsCheckInSafeWithoutRelationshipsShouldReturnTrue() {
         final ESIndexAPI esIndexAPI = Mockito.mock(ESIndexAPI.class);
