@@ -4427,17 +4427,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (relationships != null && relationships.getRelationshipsRecords().size() > 0) {
             boolean isClusterReadOnly = esIndexAPI.isClusterInReadOnlyMode();
 
-            if (isClusterReadOnly) {
-                for (ContentletRelationships.ContentletRelationshipRecords records : relationships
-                        .getRelationshipsRecords()) {
-                    if (!records.getRelationship().isRelationshipField()){
-                        return false;
-                    }
-                }
+            if (isClusterReadOnly && hasLegacyRelationships(relationships)) {
+                return false;
             }
         }
         return true;
 
+    }
+
+    /**
+     * Given a ContentletRelationships object, verifies if there is any legacy relationship on it
+     * @param relationships
+     * @return
+     */
+    private boolean hasLegacyRelationships(ContentletRelationships relationships) {
+        for (ContentletRelationshipRecords records : relationships
+                .getRelationshipsRecords()) {
+            if (!records.getRelationship().isRelationshipField()){
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
