@@ -22,7 +22,7 @@ import java.util.Map;
  *
  * @author nollymar
  */
-public class LuceneQueryDateTimeFormatter {
+public final class LuceneQueryDateTimeFormatter {
 
     private LuceneQueryDateTimeFormatter(){
 
@@ -77,19 +77,19 @@ public class LuceneQueryDateTimeFormatter {
      * @param query
      * @return
      */
-    static String findAndReplaceQueryDates(String query) {
-        query = RegEX.replaceAll(query, " ", "\\s{2,}");
+    static String findAndReplaceQueryDates(final String query) {
+        String queryResult = RegEX.replaceAll(query, " ", "\\s{2,}");
 
         //delete additional blank spaces on date range
-        if(UtilMethods.contains(query, "[ ")) {
-            query = query.replace("[ ", "[");
+        if(UtilMethods.contains(queryResult, "[ ")) {
+            queryResult = queryResult.replace("[ ", "[");
         }
 
-        if(UtilMethods.contains(query, " ]")) {
-            query = query.replace(" ]", "]");
+        if(UtilMethods.contains(queryResult, " ]")) {
+            queryResult = queryResult.replace(" ]", "]");
         }
 
-        final String clausesStr = RegEX.replaceAll(query, "", "[\\+\\-\\(\\)]*");
+        final String clausesStr = RegEX.replaceAll(queryResult, "", "[\\+\\-\\(\\)]*");
         final String[] tokens = clausesStr.split(" ");
         final List<String> clauses = new ArrayList<>();
 
@@ -186,31 +186,31 @@ public class LuceneQueryDateTimeFormatter {
                         replace = replaceDateTimeFormatInClause(replace);
                     }
 
-                    query = query.replace(clause, replace);
+                    queryResult = queryResult.replace(clause, replace);
 
                     break;
                 }
             }
         }
 
-        matches = RegEX.find(query, "\\[([0-9]*)(\\*+) TO ");
+        matches = RegEX.find(queryResult, "\\[([0-9]*)(\\*+) TO ");
         for (final RegExMatch regExMatch : matches) {
-            query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + regExMatch.getGroups().get(1).getMatch() + " TO ", "["
+            queryResult = queryResult.replace("[" + regExMatch.getGroups().get(0).getMatch() + regExMatch.getGroups().get(1).getMatch() + " TO ", "["
                     + regExMatch.getGroups().get(0).getMatch() + " TO ");
         }
 
-        matches = RegEX.find(query, " TO ([0-9]*)(\\*+)\\]");
+        matches = RegEX.find(queryResult, " TO ([0-9]*)(\\*+)\\]");
         for (final RegExMatch regExMatch : matches) {
-            query = query.replace(" TO " + regExMatch.getGroups().get(0).getMatch() + regExMatch.getGroups().get(1).getMatch() + "]", " TO "
+            queryResult = queryResult.replace(" TO " + regExMatch.getGroups().get(0).getMatch() + regExMatch.getGroups().get(1).getMatch() + "]", " TO "
                     + regExMatch.getGroups().get(0).getMatch() + "]");
         }
 
-        matches = RegEX.find(query, "\\[([0-9]*) (TO) ([0-9]*)\\]");
+        matches = RegEX.find(queryResult, "\\[([0-9]*) (TO) ([0-9]*)\\]");
         if(matches.isEmpty()){
-            matches = RegEX.find(query, "\\[([a-z0-9]*) (TO) ([a-z0-9]*)\\]");
+            matches = RegEX.find(queryResult, "\\[([a-z0-9]*) (TO) ([a-z0-9]*)\\]");
         }
         for (final RegExMatch regExMatch : matches) {
-            query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + " TO "
+            queryResult = queryResult.replace("[" + regExMatch.getGroups().get(0).getMatch() + " TO "
                     + regExMatch.getGroups().get(2).getMatch() + "]", "["
                     + replaceDateTimeFormatInClause(regExMatch.getGroups().get(0).getMatch())
                     + " TO " + replaceDateTimeFormatInClause(
@@ -219,11 +219,11 @@ public class LuceneQueryDateTimeFormatter {
         }
 
         //https://github.com/elasticsearch/elasticsearch/issues/2980
-        if (query.contains( "/" )) {
-            query = query.replaceAll( "/", "\\\\/" );
+        if (queryResult.contains( "/" )) {
+            queryResult = queryResult.replaceAll( "/", "\\\\/" );
         }
 
-        return query;
+        return queryResult;
     }
 
 
