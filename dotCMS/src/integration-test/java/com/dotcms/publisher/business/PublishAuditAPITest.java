@@ -17,19 +17,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class PublishAuditAPITest {
 
     private static PublishAuditAPI publishAuditAPI;
+    private static User adminUser;
 
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         publishAuditAPI = APILocator.getPublishAuditAPI();
+        adminUser = APILocator.systemUser();
     }
 
     @Test
@@ -43,6 +44,8 @@ public class PublishAuditAPITest {
         assertNotNull(publishAuditStatus1.getStatus());
         assertNotNull(publishAuditStatus1.getCreateDate());
         assertEquals(bundleID,publishAuditStatus.getBundleId());
+
+        publishAuditAPI.deletePublishAuditStatus(bundleID);
     }
 
     @Test
@@ -57,6 +60,9 @@ public class PublishAuditAPITest {
         assertFalse(listOfBundleIDS.isEmpty());
         assertTrue(listOfBundleIDS.contains(bundleID_Success));
         assertFalse(listOfBundleIDS.contains(bundleID_FailedToPublish));
+
+        publishAuditAPI.deletePublishAuditStatus(listOfBundleIDS);
+        publishAuditAPI.deletePublishAuditStatus(bundleID_FailedToPublish);
     }
 
     @Test
@@ -86,6 +92,10 @@ public class PublishAuditAPITest {
         assertTrue(listOfBundleIDS.contains(bundleID_FailedToSendSome));
         assertTrue(listOfBundleIDS.contains(bundleID_FailedToBundle));
         assertTrue(listOfBundleIDS.contains(bundleID_FailedToSent));
+
+        publishAuditAPI.deletePublishAuditStatus(listOfBundleIDS);
+        publishAuditAPI.deletePublishAuditStatus(bundleID_Success);
+        publishAuditAPI.deletePublishAuditStatus(bundleID_PublishingBundle);
     }
 
     @Test
@@ -93,12 +103,17 @@ public class PublishAuditAPITest {
             throws DotDataException, DotPublisherException {
         final User newUser = new UserDataGen().nextPersisted();
         final String newUserId = newUser.getUserId();
-        final String adminUserId = APILocator.systemUser().getUserId();
+        final String adminUserId = adminUser.getUserId();
+        final List<String> allBundleIdsList = new ArrayList<>();
 
         final String bundleID_Success_Owned_Admin = insertPublishingBundle(adminUserId,UUIDGenerator.generateUuid(),Status.SUCCESS);
+        allBundleIdsList.add(bundleID_Success_Owned_Admin);
         final String bundleID_FailToPublish_Owned_Admin = insertPublishingBundle(adminUserId,UUIDGenerator.generateUuid(),Status.FAILED_TO_PUBLISH);
+        allBundleIdsList.add(bundleID_FailToPublish_Owned_Admin);
         final String bundleID_Success_Owned_User = insertPublishingBundle(newUserId,UUIDGenerator.generateUuid(),Status.SUCCESS);
+        allBundleIdsList.add(bundleID_Success_Owned_User);
         final String bundleID_FailToPublish_Owned_User = insertPublishingBundle(newUserId,UUIDGenerator.generateUuid(),Status.FAILED_TO_PUBLISH);
+        allBundleIdsList.add(bundleID_FailToPublish_Owned_User);
 
         final List<String> listOfBundleIDS = publishAuditAPI.getBundleIdByStatusFilterByOwner(new ArrayList<>(Arrays.asList(Status.SUCCESS)),
                 100,0,newUserId);
@@ -108,6 +123,8 @@ public class PublishAuditAPITest {
         assertFalse(listOfBundleIDS.contains(bundleID_Success_Owned_Admin));
         assertFalse(listOfBundleIDS.contains(bundleID_FailToPublish_Owned_User));
         assertTrue(listOfBundleIDS.contains(bundleID_Success_Owned_User));
+
+        deletePublishingBundle(allBundleIdsList);
     }
 
     @Test
@@ -115,16 +132,25 @@ public class PublishAuditAPITest {
             throws DotDataException, DotPublisherException {
         final User newUser = new UserDataGen().nextPersisted();
         final String newUserId = newUser.getUserId();
-        final String adminUserId = APILocator.systemUser().getUserId();
+        final String adminUserId = adminUser.getUserId();
+        final List<String> allBundleIdsList = new ArrayList<>();
 
         final String bundleID_Success_Owned_Admin = insertPublishingBundle(adminUserId,UUIDGenerator.generateUuid(),Status.SUCCESS);
+        allBundleIdsList.add(bundleID_Success_Owned_Admin);
         final String bundleID_FailToPublish_Owned_Admin = insertPublishingBundle(adminUserId,UUIDGenerator.generateUuid(),Status.FAILED_TO_PUBLISH);
+        allBundleIdsList.add(bundleID_FailToPublish_Owned_Admin);
         final String bundleID_Success_Owned_User = insertPublishingBundle(newUserId,UUIDGenerator.generateUuid(),Status.SUCCESS);
+        allBundleIdsList.add(bundleID_Success_Owned_User);
         final String bundleID_FailToPublish_Owned_User = insertPublishingBundle(newUserId,UUIDGenerator.generateUuid(),Status.FAILED_TO_PUBLISH);
+        allBundleIdsList.add(bundleID_FailToPublish_Owned_User);
         final String bundleID_FailToBundle_Owned_User = insertPublishingBundle(newUserId,UUIDGenerator.generateUuid(),Status.FAILED_TO_BUNDLE);
+        allBundleIdsList.add(bundleID_FailToBundle_Owned_User);
         final String bundleID_FailToSendSome_Owned_User = insertPublishingBundle(newUserId,UUIDGenerator.generateUuid(),Status.FAILED_TO_SEND_TO_SOME_GROUPS);
+        allBundleIdsList.add(bundleID_FailToSendSome_Owned_User);
         final String bundleID_FailToSendAll_Owned_Admin = insertPublishingBundle(adminUserId,UUIDGenerator.generateUuid(),Status.FAILED_TO_SEND_TO_ALL_GROUPS);
+        allBundleIdsList.add(bundleID_FailToSendAll_Owned_Admin);
         final String bundleID_FailToSent_Owned_Admin = insertPublishingBundle(adminUserId,UUIDGenerator.generateUuid(),Status.FAILED_TO_SENT);
+        allBundleIdsList.add(bundleID_FailToSent_Owned_Admin);
 
 
         final List<String> listOfBundleIDS = publishAuditAPI.getBundleIdByStatusFilterByOwner(new ArrayList<>(
@@ -141,6 +167,8 @@ public class PublishAuditAPITest {
         assertTrue(listOfBundleIDS.contains(bundleID_FailToBundle_Owned_User));
         assertTrue(listOfBundleIDS.contains(bundleID_FailToPublish_Owned_User));
         assertTrue(listOfBundleIDS.contains(bundleID_FailToSendSome_Owned_User));
+
+        deletePublishingBundle(allBundleIdsList);
     }
 
     private String insertPublishAuditStatus(final Status status, final String bundleID) throws DotPublisherException {
@@ -166,8 +194,9 @@ public class PublishAuditAPITest {
         return bundleId;
     }
 
-    @AfterClass
-    public static void cleanup() throws DotDataException {
-        APILocator.getBundleAPI().deleteAllBundles(APILocator.systemUser());
+    private void deletePublishingBundle(final List<String> listOfIds) throws DotDataException {
+        for(final String bundleId : listOfIds){
+            APILocator.getBundleAPI().deleteBundleAndDependencies(bundleId,adminUser);
+        }
     }
 }
