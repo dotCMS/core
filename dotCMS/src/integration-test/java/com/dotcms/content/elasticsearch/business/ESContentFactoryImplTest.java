@@ -432,7 +432,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     private void buildLuceneQueryAndTest(final TestCase testCase, final LocalDateTime today,
             final LocalDateTime yesterday, final LocalDateTime tomorrow) {
         final ContentType contentType = TestDataUtils.getNewsLikeContentType();
-        Contentlet contentlet = createNewsContent(contentType, today);
+        final Contentlet contentlet = createNewsContent(contentType, today);
         final DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern(testCase.formatPattern);
 
         //Test time ranges with TO (upper case)

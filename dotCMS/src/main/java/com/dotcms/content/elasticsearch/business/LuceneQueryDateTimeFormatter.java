@@ -24,9 +24,12 @@ import java.util.Map;
  */
 public class LuceneQueryDateTimeFormatter {
 
+    private LuceneQueryDateTimeFormatter(){
+
+    }
 
     //Date formats supported by dotCMS in lucene queries
-    private static final Map<String, String> LUCENE_DATE_TIME_FORMAT_PATTERN = new LinkedHashMap<String, String>(){
+    private static final Map<String, String> LUCENE_DATE_TIME_FORMAT_PATTERNS = new LinkedHashMap<String, String>(){
         {
             put("MM/dd/yyyy hh:mm:ssa",
                     "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?");
@@ -86,12 +89,11 @@ public class LuceneQueryDateTimeFormatter {
             query = query.replace(" ]", "]");
         }
 
-        String clausesStr = RegEX.replaceAll(query, "", "[\\+\\-\\(\\)]*");
-        String[] tokens = clausesStr.split(" ");
-        String token;
-        List<String> clauses = new ArrayList<String>();
-        for (int pos = 0; pos < tokens.length; ++pos) {
-            token = tokens[pos];
+        final String clausesStr = RegEX.replaceAll(query, "", "[\\+\\-\\(\\)]*");
+        final String[] tokens = clausesStr.split(" ");
+        final List<String> clauses = new ArrayList<>();
+
+        for (final String token: tokens) {
             if (token.matches("\\S+\\.\\S+:\\S*")) {
                 clauses.add(token);
             } else if (token.matches("\\d+:\\S*")) {
@@ -110,20 +112,20 @@ public class LuceneQueryDateTimeFormatter {
         }
 
         //DOTCMS - 4127
-        List<Field> dateFields = new ArrayList<Field>();
+        final List<Field> dateFields = new ArrayList<Field>();
         String tempStructureVarName;
         Structure tempStructure;
 
-        for (String clause: clauses) {
+        for (final String clause: clauses) {
 
             // getting structure names from query
-            if(clause.indexOf('.') >= 0 && (clause.indexOf('.') < clause.indexOf(':'))){
+            if(clause.indexOf('.') >= 0 && clause.indexOf('.') < clause.indexOf(':')){
 
                 tempStructureVarName = clause.substring(0, clause.indexOf('.'));
                 tempStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(tempStructureVarName);
 
                 if (UtilMethods.isSet(tempStructure) && UtilMethods.isSet(tempStructure.getVelocityVarName())) {
-                    List<Field> tempStructureFields = new ArrayList<>(FieldsCache
+                    final List<Field> tempStructureFields = new ArrayList<>(FieldsCache
                             .getFieldsByStructureVariableName(
                                     tempStructure.getVelocityVarName()));
 
@@ -150,8 +152,8 @@ public class LuceneQueryDateTimeFormatter {
         String replace;
         List<RegExMatch> matches;
         String structureVarName;
-        for (String clause: clauses) {
-            for (Field field: dateFields) {
+        for (final String clause: clauses) {
+            for (final Field field: dateFields) {
 
                 structureVarName = CacheLocator.getContentTypeCache()
                         .getStructureByInode(field.getStructureInode()).getVelocityVarName()
@@ -161,13 +163,13 @@ public class LuceneQueryDateTimeFormatter {
                     replace = new String(clause);
                     if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()) || clause.startsWith("moddate:")) {
                         matches = RegEX.find(replace, "\\[(\\d{1,2}/\\d{1,2}/\\d{4}) TO ");
-                        for (RegExMatch regExMatch : matches) {
+                        for (final RegExMatch regExMatch : matches) {
                             replace = replace.replace("[" + regExMatch.getGroups().get(0).getMatch() + " TO ", "["
                                     + regExMatch.getGroups().get(0).getMatch() + " 00:00:00 TO ");
                         }
 
                         matches = RegEX.find(replace, " TO (\\d{1,2}/\\d{1,2}/\\d{4})\\]");
-                        for (RegExMatch regExMatch : matches) {
+                        for (final RegExMatch regExMatch : matches) {
                             replace = replace.replace(" TO " + regExMatch.getGroups().get(0).getMatch() + "]", " TO "
                                     + regExMatch.getGroups().get(0).getMatch() + " 23:59:59]");
                         }
@@ -179,7 +181,7 @@ public class LuceneQueryDateTimeFormatter {
                                     + ":")) {
                         replace = structureVarName + "." + field.getVelocityVarName()
                                 .toLowerCase() + ":" + replaceDateTimeFormatInClause(
-                                replace.substring(replace.indexOf(":") + 1));
+                                replace.substring(replace.indexOf(':') + 1));
                     } else {
                         replace = replaceDateTimeFormatInClause(replace);
                     }
@@ -192,13 +194,13 @@ public class LuceneQueryDateTimeFormatter {
         }
 
         matches = RegEX.find(query, "\\[([0-9]*)(\\*+) TO ");
-        for (RegExMatch regExMatch : matches) {
+        for (final RegExMatch regExMatch : matches) {
             query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + regExMatch.getGroups().get(1).getMatch() + " TO ", "["
                     + regExMatch.getGroups().get(0).getMatch() + " TO ");
         }
 
         matches = RegEX.find(query, " TO ([0-9]*)(\\*+)\\]");
-        for (RegExMatch regExMatch : matches) {
+        for (final RegExMatch regExMatch : matches) {
             query = query.replace(" TO " + regExMatch.getGroups().get(0).getMatch() + regExMatch.getGroups().get(1).getMatch() + "]", " TO "
                     + regExMatch.getGroups().get(0).getMatch() + "]");
         }
@@ -207,7 +209,7 @@ public class LuceneQueryDateTimeFormatter {
         if(matches.isEmpty()){
             matches = RegEX.find(query, "\\[([a-z0-9]*) (TO) ([a-z0-9]*)\\]");
         }
-        for (RegExMatch regExMatch : matches) {
+        for (final RegExMatch regExMatch : matches) {
             query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + " TO "
                     + regExMatch.getGroups().get(2).getMatch() + "]", "["
                     + replaceDateTimeFormatInClause(regExMatch.getGroups().get(0).getMatch())
@@ -233,7 +235,7 @@ public class LuceneQueryDateTimeFormatter {
     static String replaceDateTimeFormatInClause(final String unformattedDate) {
         String result;
 
-        for (Map.Entry<String, String> pattern: LUCENE_DATE_TIME_FORMAT_PATTERN.entrySet()){
+        for (final Map.Entry<String, String> pattern: LUCENE_DATE_TIME_FORMAT_PATTERNS.entrySet()){
             if (LUCENE_TIME_FORMAT_PATTERNS.contains(pattern.getKey())){
                 result = DateUtil
                         .replaceTimeWithFormat(unformattedDate, pattern.getValue(), pattern.getKey());
