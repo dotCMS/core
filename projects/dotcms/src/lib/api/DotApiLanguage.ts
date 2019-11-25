@@ -22,7 +22,7 @@ export class DotApiLanguage {
         return language ? `${language.id}` : null;
     }
 
-    private async getLanguages(): Promise<DotCMSLanguageItem[]> {
+    async getLanguages(): Promise<DotCMSLanguageItem[]> {
         if (this._languagesConf) {
             return this._languagesConf;
         }
