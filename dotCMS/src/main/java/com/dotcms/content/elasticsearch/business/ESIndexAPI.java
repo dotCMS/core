@@ -670,6 +670,9 @@ public class ESIndexAPI {
         map.put("index.mapping.nested_fields.limit",
                 Config.getIntProperty("ES_INDEX_MAPPING_NESTED_FIELDS_LIMITS", 5000));
 
+		map.put("index.query.default_field",
+				Config.getStringProperty("ES_INDEX_QUERY_DEFAULT_FIELD", "catchall"));
+
 		final CreateIndexRequest request = new CreateIndexRequest(indexName);
 		request.settings(map);
 		request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
