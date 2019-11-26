@@ -30,6 +30,13 @@
         width: 110px;
         text-align: center;
     }
+
+    #deleteBundlesInProgress{
+        display: none;
+        text-align: center;
+        margin-bottom:16px;
+    }
+
 </style>
 
 <script type="text/javascript">
@@ -286,6 +293,7 @@
 
 
         <div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
+            <div id="deleteBundlesInProgress"></div>
             <div class="portlet-toolbar">
 				<div class="portlet-toolbar__actions-primary">
                     
