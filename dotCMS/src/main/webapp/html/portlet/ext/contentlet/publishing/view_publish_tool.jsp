@@ -83,13 +83,20 @@
             myCp.destroyRecursive(false);
         }
         myCp = new dojox.layout.ContentPane({
-            id: "auditContent"
+            id: "auditContent",
+            onLoad: () => { setDeleteButtonState() }
         }).placeAt("audit_results");
 
         myCp.attr("href", url);
 
         myCp.refresh();
 
+
+
+    }
+
+    function setDeleteButtonState() {
+        dijit.byId('deleteAuditsBtn').setDisabled(dojo.query(".chkBoxAudits").length ? false : true);
     }
 
     function loadUnpushedBundles() {

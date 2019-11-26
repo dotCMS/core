@@ -170,7 +170,6 @@
 
 	function deleteAllAudits() {
 		if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.all.confirmation")) %>')) {
-			console.log('TODO: Delete All Audits');
 			deleteAuditsAPICall('/api/bundle/all');
 		} else {
 			dijit.byId('deleteBundleActions').hide();
