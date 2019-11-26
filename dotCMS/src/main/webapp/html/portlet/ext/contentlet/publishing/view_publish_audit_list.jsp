@@ -178,11 +178,11 @@
 	}
 
 	function deleteSuccessAudits() {
-		deleteAuditsAPICall('/api/bundle/success');
+		deleteAuditsAPICall('/api/bundle/all/success');
 	}
 
 	function deleteFailAudits() {
-		deleteAuditsAPICall('/api/bundle/fail');
+		deleteAuditsAPICall('/api/bundle/all/fail');
 	}
 
 	function getSelectedAuditsIds() {
