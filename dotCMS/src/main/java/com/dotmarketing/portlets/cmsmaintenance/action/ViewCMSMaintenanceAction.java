@@ -63,7 +63,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.ZipUtil;
 import com.google.common.collect.ImmutableList;
-import com.liferay.portal.ejb.ImageLocalManagerUtil;
+
 import com.liferay.portal.ejb.PortletPreferencesLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -822,24 +822,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				_bout.close();
 			}
 
-			/* image */
-			_list = ImageLocalManagerUtil.getImages();
 
-			/*
-			 * The changes in this part were made for Oracle databases. Oracle has problems when
-			 * getString() method is called on a LONG field on an Oracle database. Because of this,
-			 * the object is loaded from liferay and DotConnect is not used
-			 * http://jira.dotmarketing.net/browse/DOTCMS-1911
-			 */
-
-			_xstream = new XStream(new DomDriver());
-			_writing = new File(backupTempFilePath + "/Image.xml");
-			_bout = new BufferedOutputStream(Files.newOutputStream(_writing.toPath()));
-			try {
-				_xstream.toXML(_list, _bout);
-			} finally {
-				_bout.close();
-			}
 
 			/* portlet */
 

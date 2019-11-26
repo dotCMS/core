@@ -50,13 +50,7 @@
 		<property name="autoLogin" type="com.liferay.util.dao.hibernate.BooleanType" />
 		<property name="strangers" type="com.liferay.util.dao.hibernate.BooleanType" />
 	</class>
-	<class name="com.liferay.portal.ejb.ImageHBM" table="Image">
-		<!--<cache usage="read-write" />-->
-		<id name="imageId" type="java.lang.String">
-			<generator class="assigned" />
-		</id>
-		<property name="text" column="text_" />
-	</class>
+
 	
 	<class name="com.liferay.portal.ejb.PasswordTrackerHBM" table="PasswordTracker">
 		<!--<cache usage="read-write" />-->
@@ -139,16 +133,6 @@
 	</class>
 	
 
-	<class name="com.liferay.portlet.admin.ejb.AdminConfigHBM" table="AdminConfig">
-		<!--<cache usage="read-write" />-->
-		<id name="configId" type="java.lang.String">
-			<generator class="assigned" />
-		</id>
-		<property name="companyId" />
-		<property name="type" column="type_" />
-		<property name="name" />
-		<property name="config" />
-	</class>
 
 
 	

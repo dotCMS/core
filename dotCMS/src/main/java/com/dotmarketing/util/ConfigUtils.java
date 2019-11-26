@@ -59,7 +59,19 @@ public class ConfigUtils {
 	public static String getLucenePath() {
 		return getDynamicContentPath() + File.separator + "dotlucene";
 	}
-
+	
+    public static final File getClusterFolder() {
+        File clusterFolder = new File(getAssetsFolder(), "cluster");
+        clusterFolder.mkdirs();
+        return clusterFolder;
+    }
+    
+    public static final File getAssetsFolder() {
+        File assetsFolder = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() );
+        assetsFolder.mkdirs();
+        return assetsFolder;
+    }
+    
 	public static String getBackupPath() {
 		return getDynamicContentPath() + File.separator + "backup";
 	}
@@ -107,9 +119,10 @@ public class ConfigUtils {
                 APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
                         + "static_publishing");
 
-        final File folder = FileUtil.mkDirsIfNeeded(path);
+        final File folder = new File(path);
+        folder.mkdirs();
 
-        return folder.getPath();
+        return folder.getAbsolutePath();
     } //getStaticPublishPath.
 
 	public static String getServerId(){

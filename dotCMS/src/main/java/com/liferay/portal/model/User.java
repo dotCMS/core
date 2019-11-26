@@ -35,7 +35,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotmarketing.util.json.JSONIgnore;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.Recipient;
 import com.liferay.util.LocaleUtil;
@@ -214,7 +214,7 @@ public class User extends UserModel implements Recipient {
 			return false;
 		}
 	}
-	@JsonIgnore
+	@JSONIgnore
 	public void setResolution(String resolution) {
 		if (Validator.isNull(resolution)) {
 			resolution = PropsUtil.get(
@@ -223,7 +223,7 @@ public class User extends UserModel implements Recipient {
 
 		super.setResolution(resolution);
 	}
-	@JsonIgnore
+	@JSONIgnore
 	public void setRefreshRate(String refreshRate) {
 		if (Validator.isNull(refreshRate)) {
 			refreshRate = PropsUtil.get(

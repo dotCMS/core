@@ -29,7 +29,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.CompanyUtil;
-import com.liferay.portal.ejb.ImageManagerUtil;
+
 import com.liferay.portal.model.Company;
 import com.liferay.util.FileUtil;
 import java.io.BufferedInputStream;
@@ -131,7 +131,7 @@ public class PublicCompanyFactory extends CompanyUtil {
 				CloseUtils.closeQuietly(in);
 			}
 
-			ImageManagerUtil.updateImage("dotcms.org", baout.toByteArray());
+
 
 		} catch (Exception e) {
 			Logger.debug(PublicCompanyFactory.class,e.getMessage());
