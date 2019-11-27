@@ -18,6 +18,7 @@ services:
       WAIT_DB_FOR: 2m
     depends_on:
       - database
+      - elasticsearch
     ports:
       - "15005:5005"
     volumes:
@@ -36,16 +37,5 @@ services:
       - db_net
 
   elasticsearch:
-    image: es-open-distro:latest
-    ports:
-      - "9200:9200"
-      - "9600:9600"
-    environment:
-      "PROVIDER_ELASTICSEARCH_HEAP_SIZE": '1500m'
-      "PROVIDER_ELASTICSEARCH_DNSNAMES": 'elasticsearch'
-      "ES_ADMIN_PASSWORD": 'admin'
-      discovery.type: single-node
-
-
     networks:
       - es_net

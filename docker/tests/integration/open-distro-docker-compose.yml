@@ -1,0 +1,17 @@
+# https://docs.docker.com/compose/compose-file/compose-versioning/
+version: "3.7"
+
+# https://docs.docker.com/compose/compose-file/
+
+services:
+
+  elasticsearch:
+    image: "gcr.io/cicd-246518/es-open-distro:1.2.0"
+    ports:
+      - "19200:9200"
+      - "19600:9600"
+    environment:
+      "PROVIDER_ELASTICSEARCH_HEAP_SIZE": '1500m'
+      "PROVIDER_ELASTICSEARCH_DNSNAMES": 'elasticsearch'
+      "ES_ADMIN_PASSWORD": 'admin'
+      discovery.type: single-node

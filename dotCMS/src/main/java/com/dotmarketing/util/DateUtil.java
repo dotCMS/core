@@ -46,7 +46,7 @@ public class DateUtil {
 	public static final String DIFF_DAYS = "diffDays";
 	public static final String DIFF_HOURS = "diffHours";
 	public static final String DIFF_MINUTES = "diffMinutes";
-	public static final String LUCENE_DATE_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+	public static final String LUCENE_DATE_TIME_PATTERN = "yyyy-MM-dd't'HH:mm:ss";
 	public static final SimpleDateFormat LUCENE_DATE_TIME_FORMAT = new SimpleDateFormat(
             LUCENE_DATE_TIME_PATTERN);
 	public static final String LUCENE_DATE_PATTERN = "yyyy-MM-dd";

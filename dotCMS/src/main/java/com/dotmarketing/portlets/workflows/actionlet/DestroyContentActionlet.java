@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -39,7 +40,9 @@ public class DestroyContentActionlet extends WorkFlowActionlet {
 
         try {
 
-            APILocator.getContentletAPI().destroy(processor.getContentlet(), processor.getUser(), false);
+            processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+            processor.getContextMap().put("destroy",
+                    APILocator.getContentletAPI().destroy(processor.getContentlet(), processor.getUser(), false));
             processor.setTask(null);
             processor.setContentlet(null);
             processor.abortProcessor();
