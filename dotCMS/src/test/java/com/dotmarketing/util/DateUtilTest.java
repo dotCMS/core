@@ -384,7 +384,7 @@ public class DateUtilTest extends UnitTestBase {
     @Test()
     public void test_parseISO_longiso_date() throws ParseException {
 
-        final Date date1 = DateUtil.parseISO("2015-02-05T02:05:17+00:00");
+        final Date date1 = DateUtil.parseISO("2015-02-04T12:05:17+00:00");
 
         assertNotNull(date1);
         assertEquals("Year should be 2015", 115,date1.getYear());
