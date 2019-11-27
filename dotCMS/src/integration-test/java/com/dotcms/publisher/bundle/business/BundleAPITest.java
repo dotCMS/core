@@ -113,7 +113,7 @@ public class BundleAPITest {
         assertNotNull(bundleAPI.getBundleById(bundleIdUser));
         assertNotNull(bundleAPI.getBundleById(bundleIdAdmin_futureDate));
 
-        Set<String> bundlesDeleted = bundleAPI.deleteBundleAndDependenciesOlderThan(new Date(),adminUser);
+        final Set<String> bundlesDeleted = bundleAPI.deleteBundleAndDependenciesOlderThan(new Date(),adminUser);
         assertTrue(bundlesDeleted.contains(bundleIdAdmin));
         assertTrue(bundlesDeleted.contains(bundleIdUser));
         assertFalse(bundlesDeleted.contains(bundleIdAdmin_futureDate));
@@ -135,7 +135,7 @@ public class BundleAPITest {
         assertNotNull(bundleAPI.getBundleById(bundleIdUser));
         assertNotNull(bundleAPI.getBundleById(bundleIdUser_futureDate));
 
-        Set<String> bundlesDeleted = bundleAPI.deleteBundleAndDependenciesOlderThan(new Date(),newUser);
+        final Set<String> bundlesDeleted = bundleAPI.deleteBundleAndDependenciesOlderThan(new Date(),newUser);
         assertTrue(bundlesDeleted.contains(bundleIdUser));
         assertFalse(bundlesDeleted.contains(bundleIdAdmin));
         assertFalse(bundlesDeleted.contains(bundleIdUser_futureDate));
@@ -162,7 +162,7 @@ public class BundleAPITest {
         assertNotNull(bundleAPI.getBundleById(bundleIdAdmin_failedPublish));
         assertNotNull(bundleAPI.getBundleById(bundleIdUser_failedBundle));
 
-        Set<String> bundlesDeleted = bundleAPI.deleteAllBundles(adminUser,Status.SUCCESS,Status.FAILED_TO_PUBLISH);
+        final Set<String> bundlesDeleted = bundleAPI.deleteAllBundles(adminUser,Status.SUCCESS,Status.FAILED_TO_PUBLISH);
         assertTrue(bundlesDeleted.contains(bundleIdAdmin_success));
         assertTrue(bundlesDeleted.contains(bundleIdUser_success));
         assertTrue(bundlesDeleted.contains(bundleIdAdmin_failedPublish));
@@ -191,7 +191,7 @@ public class BundleAPITest {
         assertNotNull(bundleAPI.getBundleById(bundleIdAdmin_failedPublish));
         assertNotNull(bundleAPI.getBundleById(bundleIdUser_failedBundle));
 
-        Set<String> bundlesDeleted = bundleAPI.deleteAllBundles(newUser,Status.FAILED_TO_BUNDLE);
+        final Set<String> bundlesDeleted = bundleAPI.deleteAllBundles(newUser,Status.FAILED_TO_BUNDLE);
         assertTrue(bundlesDeleted.contains(bundleIdUser_failedBundle));
         assertFalse(bundlesDeleted.contains(bundleIdAdmin_failedPublish));
         assertFalse(bundlesDeleted.contains(bundleIdAdmin_success));

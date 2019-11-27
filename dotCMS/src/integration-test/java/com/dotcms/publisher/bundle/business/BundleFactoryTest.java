@@ -66,8 +66,8 @@ public class BundleFactoryTest {
             bundleIdsAdmin.add(insertPublishingBundle(newUserId, new Date()));
         }
 
-        List<Bundle> bundlesSent = bundleFactory.findSentBundles(100,0);
-        List<String> bundlesSentIds = bundlesSent.stream().map(Bundle::getId).collect(Collectors.toList());
+        final List<Bundle> bundlesSent = bundleFactory.findSentBundles(100,0);
+        final List<String> bundlesSentIds = bundlesSent.stream().map(Bundle::getId).collect(Collectors.toList());
 
         //All bundles should be returned since the Admin can see all the bundles
         for(final String bundleId : bundleIdsAdmin){
@@ -93,8 +93,8 @@ public class BundleFactoryTest {
             bundleIdsUser.add(insertPublishingBundle(newUserId, new Date()));
         }
 
-        List<Bundle> bundlesSent = bundleFactory.findSentBundles(newUserId,100,0);
-        List<String> bundlesSentIds = bundlesSent.stream().map(Bundle::getId).collect(Collectors.toList());
+        final List<Bundle> bundlesSent = bundleFactory.findSentBundles(newUserId,100,0);
+        final List<String> bundlesSentIds = bundlesSent.stream().map(Bundle::getId).collect(Collectors.toList());
 
         //Bundles that the owner is the Admin should not be returned
         for(final String bundleId : bundleIdsAdmin){
@@ -129,9 +129,9 @@ public class BundleFactoryTest {
         //Create a bundle with today date
         final String bundleTodayDate = insertPublishingBundle(systemUserId,new Date());
 
-        List<Bundle> bundlesSent = bundleFactory.findSentBundles(DateUtil.addDate(new Date(),
+        final List<Bundle> bundlesSent = bundleFactory.findSentBundles(DateUtil.addDate(new Date(),
                 Calendar.DAY_OF_MONTH,-1),100,0);
-        List<String> bundlesSentIds = bundlesSent.stream().map(Bundle::getId).collect(Collectors.toList());
+        final List<String> bundlesSentIds = bundlesSent.stream().map(Bundle::getId).collect(Collectors.toList());
 
         //All bundles on the list should be returned since the Admin can see all the bundles
         for(final String bundleId : bundleIdsAdmin){
@@ -166,9 +166,9 @@ public class BundleFactoryTest {
         //Create a bundle with today date
         final String bundleTodayDate = insertPublishingBundle(newUserId,new Date());
 
-        List<Bundle> bundlesSent = bundleFactory.findSentBundles(DateUtil.addDate(new Date(),
+        final List<Bundle> bundlesSent = bundleFactory.findSentBundles(DateUtil.addDate(new Date(),
                 Calendar.DAY_OF_MONTH,-1),newUserId,100,0);
-        List<String> bundlesSentIds = bundlesSent.stream().map(Bundle::getId).collect(Collectors.toList());
+        final List<String> bundlesSentIds = bundlesSent.stream().map(Bundle::getId).collect(Collectors.toList());
 
         //Bundles that the owner is the Admin should not be returned
         for(final String bundleId : bundleIdsAdmin){

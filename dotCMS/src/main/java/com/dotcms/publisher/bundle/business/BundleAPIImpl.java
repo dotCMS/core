@@ -128,7 +128,7 @@ public class BundleAPIImpl implements BundleAPI {
 			Logger.info(this, "Removing audit status for a bundle: " + bundleId);
 			this.publishAuditAPI.deletePublishAuditStatus(bundleId);
 		} catch (DotPublisherException e) {
-
+			Logger.error(this,"Error Removing audit status for bundle: " + bundleId,e);
 			throw new DotDataException(e);
 		}
 
@@ -200,7 +200,7 @@ public class BundleAPIImpl implements BundleAPI {
 				});
 			}
 		} catch (IOException e) {
-
+			Logger.error(this,"Error Removing bundles older than: " + olderThan + " by the user :" + user.getUserId(),e);
 			throw new DotDataException(e);
 		}
 
@@ -218,7 +218,7 @@ public class BundleAPIImpl implements BundleAPI {
 								this.bundleFactory.findSentBundles(olderThan, limit, offset):
 								this.bundleFactory.findSentBundles(olderThan, userId, limit, offset);
 					} catch (DotDataException e) {
-
+						Logger.error(this,"Error getting bundles ids older than: " + olderThan + " by the user :" + userId,e);
 						throw new DotRuntimeException(e);
 					}
 				},
@@ -237,7 +237,7 @@ public class BundleAPIImpl implements BundleAPI {
 				DateUtil.sleep(millisBundleSleep); // we decided to wait a bit in order to avoid starvation on the db connections
 			}
 		} catch (DotDataException e) {
-
+			Logger.error(this,"Error Removing bundle: " + bundleId + " by the user :" + user.getUserId(),e);
 			throw new DotRuntimeException(e);
 		}
 	}
@@ -269,7 +269,8 @@ public class BundleAPIImpl implements BundleAPI {
 				});
 			}
 		} catch (IOException e) {
-
+			Logger.error(this, "Deleting all bundles with statuses: " + Arrays.asList(statuses) +
+					"by the user: " + user.getUserId(),e);
 			throw new DotDataException(e);
 		}
 
@@ -288,7 +289,8 @@ public class BundleAPIImpl implements BundleAPI {
 								this.publishAuditAPI.getBundleIdByStatus(statusList, limit, offset) :
 								this.publishAuditAPI.getBundleIdByStatusFilterByOwner(statusList, limit, offset, userId);
 					} catch (DotDataException e) {
-
+						Logger.error(this, "Error getting all bundles with statuses: " + statusList.toString() +
+								"by the user: " + userId,e);
 						throw new DotRuntimeException(e);
 					}
 				},

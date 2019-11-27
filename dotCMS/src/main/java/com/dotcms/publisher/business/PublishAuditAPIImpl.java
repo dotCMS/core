@@ -191,7 +191,8 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 					.loadResult();
 		} catch(Exception e) {
 
-			Logger.error(PublishAuditAPIImpl.class, e.getMessage(), e);
+			Logger.error(PublishAuditAPIImpl.class, "Unable to remove element in publish queue audit table:" +
+					"with the following bundle_id "+bundleId, e);
 			throw new DotPublisherException(
 					"Unable to remove element in publish queue audit table:" +
 					"with the following bundle_id "+bundleId+" "+ e.getMessage(), e);
