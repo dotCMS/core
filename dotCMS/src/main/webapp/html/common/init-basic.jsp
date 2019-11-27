@@ -25,9 +25,6 @@
 <%@ page import="com.liferay.portlet.RenderParametersPool" %>
 <%@ page import="com.liferay.portlet.RenderRequestImpl" %>
 <%@ page import="com.liferay.portlet.RenderResponseImpl" %>
-
-<%@ page import="com.liferay.portlet.admin.model.EmailConfig" %>
-
 <%@ page import="com.liferay.util.BrowserSniffer" %>
 <%@ page import="com.liferay.util.CollectionFactory" %>
 <%@ page import="com.liferay.util.CookieUtil" %>
