@@ -31,8 +31,7 @@
         text-align: center;
     }
 
-    #deleteBundlesInProgress{
-        display: none;
+    .deleteBundlesMessage{
         text-align: center;
         margin-bottom:16px;
     }
@@ -300,7 +299,6 @@
 
 
         <div id="audit" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Audit") %>" >
-            <div id="deleteBundlesInProgress"></div>
             <div class="portlet-toolbar">
 				<div class="portlet-toolbar__actions-primary">
                     
@@ -371,4 +369,5 @@
             </td>
         </tr>
     </table>
+    <div class="deleteBundlesMessage"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.process.info")) %></div>
 </div>

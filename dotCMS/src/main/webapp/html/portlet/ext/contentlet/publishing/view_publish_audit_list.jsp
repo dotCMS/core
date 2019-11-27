@@ -150,11 +150,8 @@
 			'Accept' : 'application/json',
 			'Content-Type' : 'application/json;charset=utf-8',
 			},
-			load: function(data) {
-				disableDeleteElements(data.entity);
-			},
-			error: function(error){
-			}
+			load: function(data) {},
+			error: function(error){}
 		};
 		dojo.xhrDelete(xhrArgs);
 		dijit.byId('deleteBundleActions').hide();
@@ -193,19 +190,6 @@
 			}
 		});
 		return ids;
-	}
-
-	function disableDeleteElements(message) {
-		var messageContainer = document.getElementById('deleteBundlesInProgress');
-		var auditContentTable = document.getElementById('auditContent');
-		messageContainer.innerText = message;
-		messageContainer.style.display = 'block';
-		auditContentTable.style.pointerEvents = 'none';
-		dojo.query('#auditContent input[type="checkbox"]').forEach(function(box){
-			var checkbox= dijit.byId(box.id);
-			checkbox.setDisabled(true)
-		});
-		dijit.byId('deleteAuditsBtn').setDisabled(true);
 	}
 
    /**
