@@ -2,11 +2,10 @@ package com.dotcms.publisher.bundle.business;
 
 import com.dotcms.business.LazyUserAPIWrapper;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.publisher.assets.business.PushedAssetsFactory;
+import com.dotcms.publisher.assets.business.PushedAssetsAPI;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
-import com.dotcms.util.CloseUtils;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.util.DotPreconditions;
 
@@ -38,14 +37,14 @@ import org.apache.commons.lang3.mutable.MutableInt;
 public class BundleAPIImpl implements BundleAPI {
 
 	private final BundleFactory       bundleFactory;
-	private final PushedAssetsFactory pushedAssetsFactory;
+	private final PushedAssetsAPI pushedAssetsAPI;
 	private final PublishAuditAPI     publishAuditAPI;
 	private final UserAPI             userAPI;
 
 	public BundleAPIImpl() {
 
 		this.bundleFactory       = FactoryLocator.getBundleFactory();
-		this.pushedAssetsFactory = FactoryLocator.getPushedAssetsFactory();
+		this.pushedAssetsAPI     = APILocator.getPushedAssetsAPI();
 		this.publishAuditAPI     = APILocator.getPublishAuditAPI();
 		this.userAPI             = new LazyUserAPIWrapper(); // we need this lazyness to avoid init issues.
 	}
@@ -134,7 +133,7 @@ public class BundleAPIImpl implements BundleAPI {
 		}
 
 		Logger.info(this, "Removing all pushed assets for a bundle: " + bundleId);
-		this.pushedAssetsFactory.deletePushedAssetsByBundle(bundleId);
+		this.pushedAssetsAPI.deletePushedAssetsByBundleId(bundleId);
 
 		Logger.info(this, "Removing all assets from bundle: " + bundleId);
 		this.bundleFactory.deleteAllAssetsFromBundle(bundleId);
@@ -155,21 +154,20 @@ public class BundleAPIImpl implements BundleAPI {
 
 			this.internalDeleteBundleAndDependencies(bundleId, user);
 		} else {
-
+			Logger.error(this,"The bundle id: " + bundleId + " does not exists");
 			throw new NotFoundInDbException("The bundle id: " + bundleId + " does not exists");
 		}
 	}
 
 	private void validateBundleDeletePermission(final User user, final String bundleId) throws DotDataException {
 
-		/**
-		if (!APILocator.getPermissionAPI().doesUserHavePermission(bundle,
-				PermissionAPI.PERMISSION_EDIT, user, false)) {
-
-			throw new DotSecurityException("User : " + user.getUserId() +
-					", is not allowed to delete the bundle: " + bundleId)
-		}*/
-		// 	todo: bundle is not a permissionable yet, so can not validate yet.
+		//This is meanwhile we make bundles permissionable, if the user is not an admin only the owner of the bundle can delete it
+		if(!userAPI.isCMSAdmin(user)){
+			if(!getBundleById(bundleId).getOwner().equals(user.getUserId())){
+				Logger.error(this,"User: " + user.getUserId() + " is not an admin or is not the owner of the bundle");
+				throw new DotDataException("User: " + user.getUserId() + " is not an admin or is not the owner of the bundle");
+			}
+		}
 	}
 
 	// no mark as a wrap in transaction, it is one trax per bundle to delete.
@@ -177,6 +175,7 @@ public class BundleAPIImpl implements BundleAPI {
 	public Set<String> deleteBundleAndDependenciesOlderThan(final Date olderThan, final User user) throws DotDataException {
 
 		if(olderThan.after(new Date())){
+			Logger.error(this,"To avoid deleting bundles that publish in the future, the date can not be after the current date");
 			throw new IllegalArgumentException("To avoid deleting bundles that publish in the future, the date can not be after the current date");
 		}
 

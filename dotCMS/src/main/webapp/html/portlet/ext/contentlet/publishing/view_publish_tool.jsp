@@ -26,10 +26,16 @@
         margin-bottom: 10px;
     }
 
-    #deleteBundleActions .dijitButton{
+    #deleteBundleActions .dijitButton {
         width: 110px;
         text-align: center;
     }
+
+    .deleteBundlesMessage {
+        text-align: center;
+        margin: 16px;
+    }
+
 </style>
 
 <script type="text/javascript">
@@ -76,13 +82,20 @@
             myCp.destroyRecursive(false);
         }
         myCp = new dojox.layout.ContentPane({
-            id: "auditContent"
+            id: "auditContent",
+            onLoad: () => { setDeleteButtonState() }
         }).placeAt("audit_results");
 
         myCp.attr("href", url);
 
         myCp.refresh();
 
+
+
+    }
+
+    function setDeleteButtonState() {
+        dijit.byId('deleteAuditsBtn').setDisabled(dojo.query(".chkBoxAudits").length ? false : true);
     }
 
     function loadUnpushedBundles() {
@@ -331,7 +344,7 @@
     </form>
 </div>
 
-<div dojoType="dijit.Dialog" id="deleteBundleActions" title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.title" )) %>'>
+<div dojoType="dijit.Dialog" autofocus="false" id="deleteBundleActions" title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.title" )) %>'>
     <table class="sTypeTable">
         <tr>
             <td id="selectedBundlesBtnContainer">
@@ -356,4 +369,5 @@
             </td>
         </tr>
     </table>
+    <div class="deleteBundlesMessage"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.process.info")) %></div>
 </div>
