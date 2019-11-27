@@ -1,28 +1,38 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
+import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedMap.Builder;
+import com.google.common.collect.Ordering;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
+
+import static com.google.common.collect.Ordering.*;
 
 /**
  * Json Serializer of {@link HTMLPageAssetInfoSerializer}
  */
 public class HTMLPageAssetInfoSerializer extends JsonSerializer<HTMLPageAssetInfo> {
     @Override
-    public void serialize(HTMLPageAssetInfo htmlPageAssetInfo, JsonGenerator jsonGenerator,
-                          SerializerProvider serializerProvider) throws IOException {
+    public void serialize(final HTMLPageAssetInfo htmlPageAssetInfo, final JsonGenerator jsonGenerator,
+                          final SerializerProvider serializerProvider) throws IOException {
 
-        ImmutableMap.Builder<Object, Object> pageMapBuilder = ImmutableMap.builder()
-                .putAll(((HTMLPageAsset) htmlPageAssetInfo.getPage()).getMap())
-                .put("workingInode", htmlPageAssetInfo.getWorkingInode())
+        final ContentletToMapTransformer transformer = new ContentletToMapTransformer(htmlPageAssetInfo.getPage());
+        final Map<String, Object> pageContentletMap  = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
+
+        final Builder<Object, Object> pageMapBuilder =
+                new Builder<>(Comparator.comparing(Object::toString))
+                .putAll(pageContentletMap)
+                .put("workingInode",  htmlPageAssetInfo.getWorkingInode())
                 .put("shortyWorking", htmlPageAssetInfo.getShortyWorking())
-                .put("canEdit", htmlPageAssetInfo.isCanEdit())
-                .put("canRead", htmlPageAssetInfo.isCanRead())
+                .put("canEdit",       htmlPageAssetInfo.isCanEdit())
+                .put("canRead",       htmlPageAssetInfo.isCanRead())
                 .putAll(getLockMap(htmlPageAssetInfo));
 
         if(htmlPageAssetInfo.getLiveInode() != null) {
