@@ -26,14 +26,14 @@
         margin-bottom: 10px;
     }
 
-    #deleteBundleActions .dijitButton{
+    #deleteBundleActions .dijitButton {
         width: 110px;
         text-align: center;
     }
 
-    .deleteBundlesMessage{
+    .deleteBundlesMessage {
         text-align: center;
-        margin-bottom:16px;
+        margin: 16px;
     }
 
 </style>
@@ -344,7 +344,7 @@
     </form>
 </div>
 
-<div dojoType="dijit.Dialog" id="deleteBundleActions" title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.title" )) %>'>
+<div dojoType="dijit.Dialog" autofocus="false" id="deleteBundleActions" title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.title" )) %>'>
     <table class="sTypeTable">
         <tr>
             <td id="selectedBundlesBtnContainer">
