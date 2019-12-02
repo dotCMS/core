@@ -8,11 +8,16 @@ import { By } from '@angular/platform-browser';
 import { SafePipe } from './../../../../pipes/safe-url.pipe';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { IframeComponent } from './iframe.component';
-import { LoginService } from 'dotcms-js';
+import { LoginService, DotcmsEventsService } from 'dotcms-js';
 import { LoginServiceMock } from '../../../../../test/login-service.mock';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
+import { DotcmsEventsServiceMock } from '@tests/dotcms-events-service.mock';
+
+const fakeHtmlEl = {
+    hello: 'html'
+};
 
 @Component({
     selector: 'dot-loading-indicator',
@@ -27,24 +32,29 @@ describe('IframeComponent', () => {
     let iframeEl: DebugElement;
     let dotIframeService: DotIframeService;
     let dotUiColorsService: DotUiColorsService;
+    let dotcmsEventsService: DotcmsEventsServiceMock;
     let loginService: LoginService;
 
-    beforeEach(
-        async(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [IframeComponent, MockDotLoadingIndicatorComponent, SafePipe],
-                imports: [RouterTestingModule, DotOverlayMaskModule],
-                providers: [
-                    DotLoadingIndicatorService,
-                    IframeOverlayService,
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    }
-                ]
-            });
-        })
-    );
+    dotcmsEventsService = new DotcmsEventsServiceMock();
+
+    beforeEach(async(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [IframeComponent, MockDotLoadingIndicatorComponent, SafePipe],
+            imports: [RouterTestingModule, DotOverlayMaskModule],
+            providers: [
+                DotLoadingIndicatorService,
+                IframeOverlayService,
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: DotcmsEventsService,
+                    useValue: dotcmsEventsService
+                }
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(IframeComponent);
@@ -61,6 +71,47 @@ describe('IframeComponent', () => {
         comp.src = 'etc/etc?hello=world';
         fixture.detectChanges();
         iframeEl = de.query(By.css('iframe'));
+    });
+
+    describe('trigger reload postMessage', () => {
+        beforeEach(() => {
+            comp.iframeElement.nativeElement = {
+                location: {
+                    reload: jasmine.createSpy('reload')
+                },
+                contentWindow: {
+                    postMessage: jasmine.createSpy('postMessage'),
+                    document: {
+                        body: {
+                            innerHTML: '<html></html>'
+                        },
+                        querySelector: () => fakeHtmlEl,
+                        addEventListener: jasmine.createSpy('docAddEventListener'),
+                        removeEventListener: jasmine.createSpy('docRemoveEventListener')
+                    },
+                    addEventListener: jasmine.createSpy('docAddEventListener'),
+                    removeEventListener: jasmine.createSpy('docRemoveEventListener')
+                }
+            };
+        });
+
+        it('should reload on DELETE_BUNDLE and on publishing-queue portlet websocket event', () => {
+            dotcmsEventsService.triggerSubscribeTo('DELETE_BUNDLE', {
+                name: 'DELETE_BUNDLE'
+            });
+            expect(comp.iframeElement.nativeElement.contentWindow.postMessage).toHaveBeenCalledWith(
+                'reload'
+            );
+        });
+
+        it('should reload on PAGE_RELOAD websocket event', () => {
+            dotcmsEventsService.triggerSubscribeTo('PAGE_RELOAD', {
+                name: 'PAGE_RELOAD'
+            });
+            expect(comp.iframeElement.nativeElement.contentWindow.postMessage).toHaveBeenCalledWith(
+                'reload'
+            );
+        });
     });
 
     it('should have iframe element', () => {
@@ -111,10 +162,6 @@ describe('IframeComponent', () => {
     });
 
     it('should reload colors', () => {
-        const fakeHtmlEl = {
-            hello: 'html'
-        };
-
         comp.iframeElement = {
             nativeElement: {
                 contentWindow: {
@@ -134,10 +181,6 @@ describe('IframeComponent', () => {
         let fakeHtmlEl;
 
         beforeEach(() => {
-            fakeHtmlEl = {
-                hello: 'html'
-            };
-
             comp.iframeElement.nativeElement = {
                 contentWindow: {
                     document: {

@@ -4,7 +4,7 @@ import { ActivatedRoute, UrlSegment } from '@angular/router';
 
 import { BehaviorSubject } from 'rxjs';
 
-import { SiteService, DotcmsEventsService, LoggerService, DotEventTypeWrapper } from 'dotcms-js';
+import { SiteService, LoggerService } from 'dotcms-js';
 
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { DotMenuService } from '@services/dot-menu.service';
@@ -26,7 +26,6 @@ export class IframePortletLegacyComponent implements OnInit {
         private dotLoadingIndicatorService: DotLoadingIndicatorService,
         private dotMenuService: DotMenuService,
         private dotRouterService: DotRouterService,
-        private dotcmsEventsService: DotcmsEventsService,
         private route: ActivatedRoute,
         private dotIframeEventsHandler: DotIframeEventsHandler,
         public loggerService: LoggerService,
@@ -46,7 +45,6 @@ export class IframePortletLegacyComponent implements OnInit {
             }
         });
         this.setIframeSrc();
-        this.bindGlobalEvents();
     }
 
     /**
@@ -72,56 +70,6 @@ export class IframePortletLegacyComponent implements OnInit {
         } else {
             this.setUrl(this.url.getValue());
         }
-    }
-
-    private bindGlobalEvents(): void {
-        const events: string[] = [
-            'SAVE_FOLDER',
-            'UPDATE_FOLDER',
-            'DELETE_FOLDER',
-            'SAVE_PAGE_ASSET',
-            'UPDATE_PAGE_ASSET',
-            'ARCHIVE_PAGE_ASSET',
-            'UN_ARCHIVE_PAGE_ASSET',
-            'DELETE_PAGE_ASSET',
-            'PUBLISH_PAGE_ASSET',
-            'UN_PUBLISH_PAGE_ASSET',
-            'SAVE_FILE_ASSET',
-            'UPDATE_FILE_ASSET',
-            'ARCHIVE_FILE_ASSET',
-            'UN_ARCHIVE_FILE_ASSET',
-            'DELETE_FILE_ASSET',
-            'PUBLISH_FILE_ASSET',
-            'UN_PUBLISH_FILE_ASSET',
-            'SAVE_LINK',
-            'UPDATE_LINK',
-            'ARCHIVE_LINK',
-            'UN_ARCHIVE_LINK',
-            'MOVE_LINK',
-            'COPY_LINK',
-            'DELETE_LINK',
-            'PUBLISH_LINK',
-            'UN_PUBLISH_LINK',
-            'MOVE_FOLDER',
-            'COPY_FOLDER',
-            'MOVE_FILE_ASSET',
-            'COPY_FILE_ASSET',
-            'MOVE_PAGE_ASSET',
-            'COPY_PAGE_ASSET'
-        ];
-
-        this.dotcmsEventsService
-            .subscribeToEvents<any>(events)
-            .subscribe((event: DotEventTypeWrapper<any>) => {
-                if (this.dotRouterService.currentPortlet.id === 'site-browser') {
-                    this.loggerService.debug(
-                        'Capturing Site Browser event',
-                        event.name,
-                        event.data
-                    );
-                    // TODO: When we finish the migration of the site browser this event will be handle.....
-                }
-            });
     }
 
     private setIframeSrc(): void {

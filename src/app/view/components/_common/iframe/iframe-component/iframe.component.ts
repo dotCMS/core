@@ -10,15 +10,16 @@ import {
     OnDestroy
 } from '@angular/core';
 
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, filter } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 
-import { LoginService } from 'dotcms-js';
+import { LoginService, DotcmsEventsService, DotEventTypeWrapper, LoggerService } from 'dotcms-js';
 
 import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-iframe',
@@ -44,11 +45,14 @@ export class IframeComponent implements OnInit, OnDestroy {
 
     constructor(
         private dotIframeService: DotIframeService,
+        private dotRouterService: DotRouterService,
+        private dotUiColorsService: DotUiColorsService,
+        private dotcmsEventsService: DotcmsEventsService,
         private loginService: LoginService,
         private ngZone: NgZone,
-        private dotUiColorsService: DotUiColorsService,
         public dotLoadingIndicatorService: DotLoadingIndicatorService,
-        public iframeOverlayService: IframeOverlayService
+        public iframeOverlayService: IframeOverlayService,
+        public loggerService: LoggerService
     ) {}
 
     ngOnInit(): void {
@@ -84,6 +88,8 @@ export class IframeComponent implements OnInit, OnDestroy {
                     this.dotUiColorsService.setColors(doc.querySelector('html'));
                 }
             });
+
+        this.bindGlobalEvents();
     }
 
     ngOnDestroy(): void {
@@ -109,6 +115,68 @@ export class IframeComponent implements OnInit, OnDestroy {
         if (this.isIframeHaveContent()) {
             this.handleIframeEvents($event);
         }
+    }
+
+    private bindGlobalEvents(): void {
+        const events: string[] = [
+            'SAVE_FOLDER',
+            'UPDATE_FOLDER',
+            'DELETE_FOLDER',
+            'SAVE_PAGE_ASSET',
+            'UPDATE_PAGE_ASSET',
+            'ARCHIVE_PAGE_ASSET',
+            'UN_ARCHIVE_PAGE_ASSET',
+            'DELETE_PAGE_ASSET',
+            'PUBLISH_PAGE_ASSET',
+            'UN_PUBLISH_PAGE_ASSET',
+            'SAVE_FILE_ASSET',
+            'UPDATE_FILE_ASSET',
+            'ARCHIVE_FILE_ASSET',
+            'UN_ARCHIVE_FILE_ASSET',
+            'DELETE_FILE_ASSET',
+            'PUBLISH_FILE_ASSET',
+            'UN_PUBLISH_FILE_ASSET',
+            'SAVE_LINK',
+            'UPDATE_LINK',
+            'ARCHIVE_LINK',
+            'UN_ARCHIVE_LINK',
+            'MOVE_LINK',
+            'COPY_LINK',
+            'DELETE_LINK',
+            'PUBLISH_LINK',
+            'UN_PUBLISH_LINK',
+            'MOVE_FOLDER',
+            'COPY_FOLDER',
+            'MOVE_FILE_ASSET',
+            'COPY_FILE_ASSET',
+            'MOVE_PAGE_ASSET',
+            'COPY_PAGE_ASSET',
+            'DELETE_BUNDLE',
+            'PAGE_RELOAD'
+        ];
+
+        const webSocketEvents$ = this.dotcmsEventsService
+            .subscribeToEvents<any>(events)
+            .pipe(takeUntil(this.destroy$));
+
+        webSocketEvents$
+            .pipe(filter(() => this.dotRouterService.currentPortlet.id === 'site-browser'))
+            .subscribe((event: DotEventTypeWrapper<any>) => {
+                this.loggerService.debug('Capturing Site Browser event', event.name, event.data);
+            });
+
+        webSocketEvents$
+            .pipe(
+                filter(
+                    (event: DotEventTypeWrapper<any>) =>
+                        (this.iframeElement.nativeElement.contentWindow &&
+                            event.name === 'DELETE_BUNDLE') ||
+                        event.name === 'PAGE_RELOAD' // Provinding this event so backend devs can reload the jsp easily
+                )
+            )
+            .subscribe(() => {
+                this.iframeElement.nativeElement.contentWindow.postMessage('reload');
+            });
     }
 
     private emitKeyDown($event: KeyboardEvent): void {
@@ -138,7 +206,7 @@ export class IframeComponent implements OnInit, OnDestroy {
     private handleErrors(error: number): void {
         const errorMapHandler = {
             401: () => {
-                this.loginService.logOutUser().subscribe(_data => {});
+                this.loginService.logOutUser().subscribe((_data) => {});
             }
         };
 
