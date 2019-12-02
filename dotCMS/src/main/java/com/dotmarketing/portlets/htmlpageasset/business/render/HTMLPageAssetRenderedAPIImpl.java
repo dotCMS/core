@@ -268,10 +268,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         IHTMLPage htmlPageAsset = findPageByContext(host, context);
 
         if (htmlPageAsset == null){
-            htmlPageUrl = findByURLMap(context, host, request);
+            htmlPageUrl   = findByURLMap(context, host, request);
             htmlPageAsset = getPageByUri(context.getPageMode(), host, htmlPageUrl.getPageUrl());
         } else {
-            htmlPageUrl = new HTMLPageUrl(htmlPageAsset);
+            htmlPageUrl   = new HTMLPageUrl(htmlPageAsset);
         }
 
         htmlPageUrl.setHTMLPage((HTMLPageAsset) htmlPageAsset);

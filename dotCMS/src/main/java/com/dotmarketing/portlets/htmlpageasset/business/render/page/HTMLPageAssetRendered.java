@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import java.util.Collection;
 
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
@@ -30,8 +31,23 @@ public class HTMLPageAssetRendered extends PageView {
 
         super(site, template, containers, page, layout, canCreateTemplate, canEditTemplate, viewAs, pageUrlMapper, live);
         this.html = html;
+    }
 
+    public HTMLPageAssetRendered(final Host site,
+                                 final Template template,
+                                 final Collection<? extends ContainerRaw> containers,
+                                 final HTMLPageAssetInfo page,
+                                 final TemplateLayout layout,
+                                 final String html,
+                                 final boolean canCreateTemplate,
+                                 final boolean canEditTemplate,
+                                 final ViewAsPageStatus viewAs,
+                                 final String pageUrlMapper,
+                                 final boolean live,
+                                 final Contentlet contentlet) {
 
+        super(site, template, containers, page, layout, canCreateTemplate, canEditTemplate, viewAs, pageUrlMapper, live, contentlet);
+        this.html = html;
     }
 
     public String getHtml() {

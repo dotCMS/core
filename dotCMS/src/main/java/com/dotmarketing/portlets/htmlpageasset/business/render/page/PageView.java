@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.*;
 
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
@@ -40,6 +41,8 @@ public class PageView implements Serializable {
     private final ViewAsPageStatus viewAs;
     private final boolean canCreateTemplate;
     private final boolean canEditTemplate;
+    // content associated to the url content map
+    private final Contentlet urlContent;
     private int numberContents = 0;
     final String pageUrlMapper;
     final boolean live;
@@ -76,6 +79,43 @@ public class PageView implements Serializable {
         this.pageUrlMapper = pageUrlMapper;
         this.numberContents = getContentsNumber();
         this.live = live;
+        this.urlContent = null;
+    }
+
+    /**
+     * Creates an instance of this class.
+     *
+     * @param site       The {@link Host} where the HTML Page lives in.
+     * @param template   The {@link Template} associated to the HTML Page.
+     * @param containers The map of Containers and their respective relationships with Content
+     *                   Types.
+     * @param page       The {@link HTMLPageAsset} object.
+     * @param layout     The {@link TemplateLayout} that specifies the design of the template.
+     */
+    PageView(final Host site,
+             final Template template,
+             final Collection<? extends ContainerRaw> containers,
+             final HTMLPageAssetInfo page,
+             final TemplateLayout layout,
+             final boolean canCreateTemplate,
+             final boolean canEditTemplate,
+             final ViewAsPageStatus viewAs,
+             final String pageUrlMapper,
+             final boolean live,
+             final Contentlet urlContent) {
+
+        this.site = site;
+        this.template = template;
+        this.containers = containers;
+        this.htmlPageAssetInfo = page;
+        this.layout = layout;
+        this.viewAs = viewAs;
+        this.canCreateTemplate = canCreateTemplate;
+        this.canEditTemplate = canEditTemplate;
+        this.pageUrlMapper = pageUrlMapper;
+        this.numberContents = getContentsNumber();
+        this.live = live;
+        this.urlContent = urlContent;
     }
 
     public boolean isLive() {
@@ -183,5 +223,9 @@ public class PageView implements Serializable {
 
     public String getPageUrlMapper() {
         return pageUrlMapper;
+    }
+
+    public Contentlet getUrlContent() {
+        return urlContent;
     }
 }

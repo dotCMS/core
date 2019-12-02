@@ -138,20 +138,46 @@ public class HTMLPageAssetRenderedBuilder {
         final PageRenderUtil pageRenderUtil = new PageRenderUtil(
                 htmlPageAssetInfo.getPage(), systemUser, mode, language.getId(), this.site);
 
+        final Optional<Contentlet> urlContentletOpt = this.findUrlContentlet (request);
+
         if (!rendered) {
+
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
-            return new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates,
-                    canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live);
+
+            return urlContentletOpt.isPresent()?
+                    new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates,
+                            canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live, urlContentletOpt.get()):
+                    new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates,
+                            canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live);
         } else {
             final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode).build();
             final String pageHTML = this.getPageHTML();
-            return new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
-                    canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live
-            );
+            return urlContentletOpt.isPresent()?
+                    new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
+                        canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live, urlContentletOpt.get()):
+                    new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
+                            canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live);
         }
+    }
+
+    private Optional<Contentlet> findUrlContentlet(final HttpServletRequest request) throws DotDataException, DotSecurityException {
+
+        Contentlet contentlet = null;
+
+        if (request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE) != null) {
+
+            final String inode = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
+            contentlet         = this.contentletAPI.find(inode, user, false);
+        } else if (null != request.getAttribute(WebKeys.WIKI_CONTENTLET)) {
+
+            final String id    = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET);
+            contentlet         = this.contentletAPI.findContentletByIdentifierAnyLanguage(id);
+        }
+
+        return Optional.ofNullable(contentlet);
     }
 
     @CloseDBIfOpened
