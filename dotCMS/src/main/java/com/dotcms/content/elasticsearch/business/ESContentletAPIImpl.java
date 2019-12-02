@@ -1214,7 +1214,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         relationshipAPI.isChildField(relationship, theField);
                 final ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
                         relationship, isChildField);
-                records.setRecords(contentlet.getRelated(theField.variable(), user, respectFrontEndRoles, isChildField));
+                records.setRecords(contentlet
+                        .getRelated(theField.variable(), user, respectFrontEndRoles, isChildField,
+                                contentlet.getLanguageId(), null));
                 contentletRelationships.setRelationshipsRecords(CollectionsUtils.list(records));
                 return contentletRelationships;
             } else {
