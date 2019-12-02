@@ -137,16 +137,6 @@ public class FileAssetContainerUtil {
         Logger.warn(FileAssetContainerUtil.class, ()->  String.format(" extracted hostName `%s`",finalString));
 
         return (UtilMethods.isSet(tmp) ? tmp : null);
-
-        /*
-
-        final int startsHost = null != path ? path.indexOf(HOST_INDICATOR) : -1;
-        final int endsHost =
-                -1 != startsHost ? path.indexOf(FORWARD_SLASH, startsHost + HOST_INDICATOR.length())
-                        : -1;
-        return startsHost != -1 && endsHost != -1 ?
-                path.substring(startsHost + HOST_INDICATOR.length(), endsHost) : null;
-         */
     }
 
     public String getContainerIdFromPath(final String fullPath) throws DotDataException {
