@@ -1,14 +1,23 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -24,14 +33,16 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
-import io.vavr.API;
 import java.util.Date;
+import java.util.List;
 import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -39,9 +50,12 @@ import org.junit.Test;
 public class ContentMapTest extends IntegrationTestBase {
 
     private static ContentletAPI contentletAPI;
+    private static ContentTypeAPI contentTypeAPI;
     private static Host defaultHost;
+    private static FieldAPI fieldAPI;
     private static HostAPI hostAPI;
     private static LanguageAPI languageAPI;
+    private static RelationshipAPI relationshipAPI;
     private static UserAPI userAPI;
     private static User user;
 
@@ -50,13 +64,16 @@ public class ContentMapTest extends IntegrationTestBase {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        hostAPI = APILocator.getHostAPI();
-        userAPI = APILocator.getUserAPI();
-        user    = userAPI.getSystemUser();
+        hostAPI  = APILocator.getHostAPI();
+        userAPI  = APILocator.getUserAPI();
+        user     = userAPI.getSystemUser();
+        fieldAPI = APILocator.getContentTypeFieldAPI();
 
         contentletAPI  = APILocator.getContentletAPI();
+        contentTypeAPI = APILocator.getContentTypeAPI(user);
         languageAPI    = APILocator.getLanguageAPI();
-        defaultHost     = hostAPI.findDefaultHost(user, false);
+        defaultHost    = hostAPI.findDefaultHost(user, false);
+        relationshipAPI = APILocator.getRelationshipAPI();
     }
 
     /**
@@ -120,6 +137,145 @@ public class ContentMapTest extends IntegrationTestBase {
         APILocator.getCategoryAPI().delete(rootCategory,user,false);
 
 
+    }
+
+    /**
+     * Test {@link ContentMap#get(String)} method applied on a relationship field of a content that
+     * has multilingual related content. Only versions of related content in the parent language
+     * should be retrieved
+     */
+    @Test
+    public void testGetRelationshipFieldFromContentMapWithMultilingualRelatedContent()
+            throws DotDataException, DotSecurityException {
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try {
+            //Create content types
+            parentContentType = createContentType("parentContentType");
+            childContentType = createContentType("childContentType");
+
+            //Create Text and Relationship Fields
+            final String textFieldString = "title";
+            createTextField(textFieldString, parentContentType.id());
+            createTextField(textFieldString, childContentType.id());
+
+            final Field relationshipField = createRelationshipField("newRel",
+                    parentContentType.id(),
+                    childContentType.variable(), String.valueOf(
+                            RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()));
+
+            //Create Contentlet
+            final ContentletDataGen parentContentletDataGen = new ContentletDataGen(
+                    parentContentType.id());
+            final ContentletDataGen childContentletDataGen = new ContentletDataGen(
+                    childContentType.id());
+
+            Contentlet contentletParent = parentContentletDataGen
+                    .setProperty(textFieldString, "parent Contentlet").next();
+
+            //Children in English
+            Contentlet contentletChild = childContentletDataGen
+                    .setProperty(textFieldString, "child Contentlet").nextPersisted();
+            contentletChild = ContentletDataGen.publish(contentletChild);
+
+            Contentlet contentletChild2 = childContentletDataGen
+                    .setProperty(textFieldString, "child Contentlet 2").nextPersisted();
+            contentletChild2 = ContentletDataGen.publish(contentletChild2);
+
+            //Children in Spanish
+            Contentlet contentletChild3 = childContentletDataGen
+                    .setProperty(textFieldString, "child Contentlet 3")
+                    .setProperty(Contentlet.LANGUAGEID_KEY,
+                            TestDataUtils.getSpanishLanguage().getId()).nextPersisted();
+            contentletChild3 = ContentletDataGen.publish(contentletChild3);
+
+            final Relationship relationship = relationshipAPI
+                    .getRelationshipFromField(relationshipField, user);
+
+            //Relate contentlets
+            final ContentletRelationships contentletRelationships = new ContentletRelationships(
+                    contentletParent);
+
+            final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords = contentletRelationships.new ContentletRelationshipRecords(
+                    relationship, true);
+            contentletRelationshipRecords.setRecords(
+                    CollectionsUtils.list(contentletChild, contentletChild2, contentletChild3));
+            contentletRelationships.getRelationshipsRecords().add(contentletRelationshipRecords);
+
+            //Checkin of the parent to validate Relationships
+            contentletParent = contentletAPI
+                    .checkin(contentletParent, contentletRelationships, null, null, user, false);
+            contentletParent = ContentletDataGen.publish(contentletParent);
+
+            final Context velocityContext = mock(Context.class);
+
+            final ContentMap contentMap = new ContentMap(contentletParent,
+                    userAPI.getAnonymousUser(),
+                    PageMode.LIVE, defaultHost, velocityContext);
+
+            List<ContentMap> result = (List) contentMap.get(relationshipField.variable());
+            assertNotNull(result);
+            assertEquals(2, result.size());
+            assertEquals(contentletChild.getIdentifier(), result.get(0).get("identifier"));
+            assertEquals(contentletChild2.getIdentifier(), result.get(1).get("identifier"));
+
+        } finally {
+            if (parentContentType != null) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (childContentType != null) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    /**
+     *
+     * @param name
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private ContentType createContentType(final String name) throws DotSecurityException, DotDataException {
+        return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
+                FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(name)
+                .owner(user.getUserId()).build());
+    }
+
+    /**
+     *
+     * @param fieldName
+     * @param contentTypeId
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Field createTextField(final String fieldName, final String contentTypeId)
+            throws DotSecurityException, DotDataException {
+
+        final Field field = FieldBuilder.builder(TextField.class).name(fieldName).contentTypeId(contentTypeId).build();
+
+        return fieldAPI.save(field, user);
+    }
+
+    /**
+     *
+     * @param relationshipName
+     * @param parentTypeId
+     * @param childTypeVar
+     * @param cardinality
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Field createRelationshipField(final String relationshipName, final String parentTypeId,
+            final String childTypeVar, final String cardinality)
+            throws DotSecurityException, DotDataException {
+
+        final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
+                .contentTypeId(parentTypeId).values(cardinality).relationType(childTypeVar).build();
+
+        return fieldAPI.save(field, user);
     }
 
 }
