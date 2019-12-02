@@ -213,7 +213,7 @@ public class ContentMapTest extends IntegrationTestBase {
                     userAPI.getAnonymousUser(),
                     PageMode.LIVE, defaultHost, velocityContext);
 
-            List<ContentMap> result = (List) contentMap.get(relationshipField.variable());
+            final List<ContentMap> result = (List) contentMap.get(relationshipField.variable());
             assertNotNull(result);
             assertEquals(2, result.size());
             assertEquals(contentletChild.getIdentifier(), result.get(0).get("identifier"));
