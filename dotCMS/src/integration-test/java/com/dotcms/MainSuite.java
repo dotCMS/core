@@ -198,7 +198,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.db.DbConnectionFactoryTest.class,
         com.dotmarketing.db.DbConnectionFactoryUtilTest.class,
         com.dotmarketing.db.HibernateUtilTest.class,
-        com.dotmarketing.quartz.job.DeleteFieldJobTest.class,
         com.dotmarketing.quartz.job.BinaryCleanupJobTest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
         com.dotcms.osgi.OSGIUtilTest.class,
