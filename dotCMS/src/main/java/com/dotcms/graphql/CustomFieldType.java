@@ -91,7 +91,7 @@ public enum CustomFieldType {
         customFieldTypes.put("KEY_VALUE", TypeUtil.createObjectType("KeyValue", keyValueTypeFields, null));
 
         final Map<String, GraphQLOutputType> languageTypeFields = new HashMap<>();
-        languageTypeFields.put("id", GraphQLInt);
+        languageTypeFields.put("id", GraphQLLong);
         languageTypeFields.put("languageCode", GraphQLString);
         languageTypeFields.put("countryCode", GraphQLString);
         languageTypeFields.put("language", GraphQLString);
