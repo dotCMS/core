@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "7f6cbbfd-30d7-4511-8e4b-e866aa2aa0d6",
-		"name": "Workflow Resource Tests copy",
+		"name": "Workflow Resource Tests",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
