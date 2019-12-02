@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.page;
 
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -229,6 +230,13 @@ public class PageResource {
 
         if (deviceInode != null) {
             request.getSession().setAttribute(WebKeys.CURRENT_DEVICE, deviceInode);
+        }
+
+        final HttpSession session = request.getSession(false);
+        if(null != session){
+            // Time Machine-Date affects the logic on the vtls that conform parts of the rendered pages.
+            // so.. we better get rid of it.
+            session.removeAttribute("tm_date");
         }
 
         final PageView pageRendered = this.htmlPageAssetRenderedAPI.getPageRendered(

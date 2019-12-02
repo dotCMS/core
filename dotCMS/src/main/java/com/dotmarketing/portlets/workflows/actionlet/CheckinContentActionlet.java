@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -32,6 +33,7 @@ public class CheckinContentActionlet extends WorkFlowActionlet {
 	public void executeAction(WorkflowProcessor processor,Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
 		try {
 
+			processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 			APILocator.getContentletAPI().unlock(processor.getContentlet(), processor.getUser(),
 					processor.getContentletDependencies() != null
 							&& processor.getContentletDependencies().isRespectAnonymousPermissions());
