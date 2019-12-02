@@ -272,6 +272,12 @@
         dijit.byId('deleteBundleActions').show();
     }
 
+    window.addEventListener('message', function(e) {
+        if (e.data === 'reload') {
+            doAuditFilter();
+        }
+    })
+
 </script>
 
 <div class="portlet-main">
