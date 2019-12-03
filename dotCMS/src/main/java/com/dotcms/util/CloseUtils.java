@@ -1,7 +1,5 @@
 package com.dotcms.util;
 
-import java.io.IOException;
-
 /**
  * CloseUtils
  * @author jsanca

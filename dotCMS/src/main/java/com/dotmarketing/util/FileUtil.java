@@ -25,6 +25,29 @@ public class FileUtil {
 	private static Set<String> extensions = new HashSet<String>();
 
 	/**
+	 * Creates a temporal file with unique name
+	 * @param prefix String name
+	 * @return File
+	 * @throws IOException
+	 */
+	public static File createTemporalFile (final String prefix) throws IOException {
+
+		return createTemporalFile(prefix, null);
+	}
+
+	/**
+	 * Creates a temporal file with unique name
+	 * @param prefix String name
+	 * @param extension String optional extension, if null "tmp" will be use
+	 * @return File
+	 * @throws IOException
+	 */
+	public static File createTemporalFile (final String prefix, final String extension) throws IOException {
+
+		return File.createTempFile(prefix + System.currentTimeMillis(), UtilMethods.isSet(extension)?extension:"tmp");
+	}
+
+	/**
 	 * This method takes a string of a filename or extension and maps it to a
 	 * known .png file in the /html/image/icons/directory
 	 * 
@@ -32,7 +55,6 @@ public class FileUtil {
 	 *            is the filename or extension
 	 * @return
 	 */
-
 	public static String getIconExtension(String x) {
 		if(x==null){
 			return "ukn";

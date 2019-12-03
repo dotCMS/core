@@ -1,34 +1,56 @@
 package com.dotcms.rest;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.UserSessionBean;
+import com.dotcms.api.system.event.Visibility;
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.publisher.bundle.bean.Bundle;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
+import com.dotcms.publisher.bundle.business.BundleAPI;
+import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.rest.param.ISODateParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.util.LocaleUtil;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.*;
+import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
+import static com.dotcms.publisher.business.PublishAuditStatus.Status.*;
 
 @Path("/bundle")
 public class BundleResource {
 
-    private final WebResource webResource = new WebResource();
+    public  static final String BUNDLE_THREAD_POOL_SUBMITTER_NAME = "bundlepolling";
+    private final WebResource            webResource            = new WebResource();
+    private final BundleAPI              bundleAPI              = APILocator.getBundleAPI();
+    private final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+
 
     /**
      * Returns a list of un-send bundles (haven't been sent to any Environment) filtered by owner and name
@@ -217,5 +239,296 @@ public class BundleResource {
 
         return responseResource.response( "true" );
 	}
+
+    /**
+     * Deletes all bundles by identifier
+     * Note: the response will be notified by socket message
+     * @param request   {@link HttpServletRequest}
+     * @param response  {@link HttpServletResponse}
+     * @param deleteBundlesByIdentifierForm {@link DeleteBundlesByIdentifierForm} contains the set of bundle ids to delete.
+     */
+	@DELETE
+    @Path("/ids")
+    @Produces("application/json")
+    public Response deleteBundlesByIdentifiers(@Context   final HttpServletRequest request,
+                                               @Context   final HttpServletResponse response,
+                                               final DeleteBundlesByIdentifierForm  deleteBundlesByIdentifierForm) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        Logger.info(this, "Deleting the bundles: " + deleteBundlesByIdentifierForm.getIdentifiers()
+                + " by the user: " + initData.getUser().getUserId());
+
+        final DotSubmitter dotSubmitter = DotConcurrentFactory
+                .getInstance().getSubmitter(BUNDLE_THREAD_POOL_SUBMITTER_NAME);
+        final Locale locale    = LocaleUtil.getLocale(request);
+
+        dotSubmitter.execute(() -> {
+
+            try {
+
+                this.deleteBundleByIdentifier(deleteBundlesByIdentifierForm, initData);
+                this.sendSuccessDeleteBundleMessage(deleteBundlesByIdentifierForm.getIdentifiers().size(), initData, locale);
+            } catch (DotDataException e) {
+
+                Logger.error(this.getClass(),
+                        "Exception on deleteBundlesByIdentifiers, couldn't delete the identifiers: "
+                                + deleteBundlesByIdentifierForm.getIdentifiers() +
+                                ", exception message: " + e.getMessage(), e);
+
+                this.sendErrorDeleteBundleMessage(initData, locale, e);
+            }
+        });
+
+        return Response.ok(new ResponseEntityView(
+                "Removing bundles in a separated process, the result of the operation will be notified")).build();
+    } // deleteBundlesByIdentifiers.
+
+    private void sendErrorDeleteBundleMessage(final InitDataObject initData,
+                                              final Locale locale,
+                                              final Exception e) {
+
+        final String message = Try.of(()->LanguageUtil.get(locale, "bundle.deleted.error.msg", e.getMessage()))
+                .onFailure(ex -> Logger.error(this, e.getMessage()))
+                .getOrElse("An error occurred deleting bundles, please check the log, error message: " + e.getMessage());
+
+        this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder()
+                .setMessage(message)
+                .setLife(DateUtil.TEN_SECOND_MILLIS)
+                .setSeverity(MessageSeverity.ERROR).create(), Collections.singletonList(initData.getUser().getUserId()));
+    }
+
+    private void sendSuccessDeleteBundleMessage(final int bundleDeletesSize,
+                                                final InitDataObject initData,
+                                                final Locale locale) throws DotDataException {
+
+	    final String userId  = initData.getUser().getUserId();
+        final String message = Try.of(()->LanguageUtil.get(locale, "bundle.deleted.success.msg", bundleDeletesSize))
+                .onFailure(e -> Logger.error(this, e.getMessage()))
+                .getOrElse(bundleDeletesSize + " Bundles Deleted Successfully");
+
+        this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder()
+                .setMessage(message)
+                .setLife(DateUtil.SEVEN_SECOND_MILLIS)
+                .setSeverity(MessageSeverity.INFO).create(), Collections.singletonList(userId));
+
+        APILocator.getSystemEventsAPI().push(SystemEventType.DELETE_BUNDLE,
+                new Payload(
+                        message,
+                        Visibility.USER,
+                        userId
+                )
+        );
+    }
+
+    // one transaction for each bundle
+    private void deleteBundleByIdentifier(final DeleteBundlesByIdentifierForm deleteBundlesByIdentifierForm, final InitDataObject initData) throws DotDataException {
+
+        for (final String bundleId : deleteBundlesByIdentifierForm.getIdentifiers()) {
+
+            this.bundleAPI.deleteBundleAndDependencies(bundleId, initData.getUser());
+        }
+    }
+
+    /**
+     * Deletes bundles older than a date. (unsent are not going to be deleted)
+     * Note: the response will be notified by socket message
+     * @param request   {@link HttpServletRequest}
+     * @param response  {@link HttpServletResponse}
+     * @param olderThan {@link ISODateParam} an ISO date, should be before now to be valid
+     */
+    @DELETE
+    @Path("/olderthan/{olderThan}")
+    @Produces("application/json")
+    public Response deleteBundlesOlderThan(@Context   final HttpServletRequest request,
+                                       @Context   final HttpServletResponse response,
+                                       @PathParam("olderThan") final ISODateParam olderThan) {
+
+        if(olderThan.after(new Date())) {
+
+            throw new IllegalArgumentException("To avoid deleting bundles that publish in the future, the date can not be after the current date");
+        }
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final Locale locale    = LocaleUtil.getLocale(request);
+
+        Logger.info(this, "Deleting the bundles older than: " + olderThan
+                + " by the user: " + initData.getUser().getUserId());
+
+        final DotSubmitter dotSubmitter = DotConcurrentFactory
+                .getInstance().getSubmitter(BUNDLE_THREAD_POOL_SUBMITTER_NAME);
+        dotSubmitter.execute(() -> {
+
+            try {
+
+                final int bundleDeletedSize =
+                        this.bundleAPI.deleteBundleAndDependenciesOlderThan(olderThan, initData.getUser()).size();
+
+                this.sendSuccessDeleteBundleMessage(bundleDeletedSize, initData, locale);
+            } catch (Exception e) {
+
+                Logger.error(this.getClass(),
+                        "Exception on deleteBundlesOlderThan, couldn't delete bundles older than: " + olderThan +
+                                ", exception message: " + e.getMessage(), e);
+
+                this.sendErrorDeleteBundleMessage(initData, locale, e);
+            }
+        });
+
+        return Response.ok(new ResponseEntityView(
+                "Removing bundles in a separated process, the result of the operation will be notified")).build();
+    } // deleteBundlesOlderThan.
+
+    /**
+     * Deletes all failed and succeed bundles
+     * Note: the response will be notified by socket message
+     * @param request   {@link HttpServletRequest}
+     * @param response  {@link HttpServletResponse}
+     */
+    @DELETE
+    @Path("/all")
+    @Produces("application/json")
+    public Response deleteAll(@Context   final HttpServletRequest request,
+                              @Context   final HttpServletResponse response) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final Locale locale    = LocaleUtil.getLocale(request);
+
+        Logger.info(this, "Deleting all bundles by the user: " + initData.getUser().getUserId());
+
+        final DotSubmitter dotSubmitter = DotConcurrentFactory
+                .getInstance().getSubmitter(BUNDLE_THREAD_POOL_SUBMITTER_NAME);
+        dotSubmitter.execute(() -> {
+
+            try {
+
+                final PublishAuditStatus.Status [] statuses = Config.getCustomArrayProperty("bundle.delete.all.statuses",
+                        PublishAuditStatus.Status::valueOf, PublishAuditStatus.Status.class,
+                        ()-> new PublishAuditStatus.Status[] {FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,
+                                FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH, SUCCESS});
+
+                final int bundleDeletedSize = this.bundleAPI.deleteAllBundles(initData.getUser(), statuses).size();
+                this.sendSuccessDeleteBundleMessage(bundleDeletedSize, initData, locale);
+            } catch (DotDataException e) {
+
+                Logger.error(this.getClass(),
+                        "Exception on deleteAll, couldn't delete bundles, exception message: " + e.getMessage(), e);
+                this.sendErrorDeleteBundleMessage(initData, locale, e);
+            }
+        });
+
+        return Response.ok(new ResponseEntityView(
+                "Removing bundles in a separated process, the result of the operation will be notified")).build();
+    } // deleteAll.
+
+    /**
+     * Deletes all failed  bundles
+     * Note: the response will be notified by socket message
+     * @param request   {@link HttpServletRequest}
+     * @param response  {@link HttpServletResponse}
+     */
+    @DELETE
+    @Path("/all/fail")
+    @Produces("application/json")
+    public Response deleteAllFail(@Context   final HttpServletRequest request,
+                              @Context   final HttpServletResponse response) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final Locale locale    = LocaleUtil.getLocale(request);
+
+        Logger.info(this, "Deleting all failed bundles by the user: " + initData.getUser().getUserId());
+
+        final DotSubmitter dotSubmitter = DotConcurrentFactory
+                .getInstance().getSubmitter(BUNDLE_THREAD_POOL_SUBMITTER_NAME);
+        dotSubmitter.execute(() -> {
+
+            try {
+
+                final PublishAuditStatus.Status [] statuses = Config.getCustomArrayProperty("bundle.delete.fail.statuses",
+                        PublishAuditStatus.Status::valueOf, PublishAuditStatus.Status.class,
+                        ()-> new PublishAuditStatus.Status[] {FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,
+                                FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH});
+                final int bundleDeletedSize = this.bundleAPI.deleteAllBundles(initData.getUser(), statuses).size();
+                this.sendSuccessDeleteBundleMessage(bundleDeletedSize, initData, locale);
+            } catch (DotDataException e) {
+
+                Logger.error(this.getClass(),
+                        "Exception on deleteAllFail, couldn't delete the fail bundles, exception message: " + e.getMessage(), e);
+                this.sendErrorDeleteBundleMessage(initData, locale, e);
+            }
+        });
+
+        return Response.ok(new ResponseEntityView(
+                "Removing bundles in a separated process, the result of the operation will be notified")).build();
+    } // deleteAllFail.
+
+    /**
+     * Deletes all success bundles
+     * Note: the response will be notified by socket message
+     * @param request   {@link HttpServletRequest}
+     * @param response  {@link HttpServletResponse}
+     */
+    @DELETE
+    @Path("/all/success")
+    @Produces("application/json")
+    public Response deleteAllSuccess(@Context final HttpServletRequest request,
+                                      @Context final HttpServletResponse response) {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final Locale locale    = LocaleUtil.getLocale(request);
+
+        Logger.info(this, "Deleting all success bundles by the user: " + initData.getUser().getUserId());
+
+        final DotSubmitter dotSubmitter = DotConcurrentFactory
+                .getInstance().getSubmitter(BUNDLE_THREAD_POOL_SUBMITTER_NAME);
+        dotSubmitter.execute(() -> {
+
+            try {
+
+                final PublishAuditStatus.Status [] statuses = Config.getCustomArrayProperty("bundle.delete.success.statuses",
+                        PublishAuditStatus.Status::valueOf, PublishAuditStatus.Status.class,
+                        ()-> new PublishAuditStatus.Status[] {SUCCESS});
+                final int bundleDeletedSize = this.bundleAPI.deleteAllBundles(initData.getUser(), statuses).size();
+                this.sendSuccessDeleteBundleMessage(bundleDeletedSize, initData, locale);
+            } catch (DotDataException e) {
+
+                Logger.error(this.getClass(),
+                        "Exception on deleteAllSuccess, couldn't delete the success bundles, exception message: " + e.getMessage(), e);
+                this.sendErrorDeleteBundleMessage(initData, locale, e);
+            }
+        });
+
+        return Response.ok(new ResponseEntityView(
+                "Removing bundles in a separated process, the result of the operation will be notified")).build();
+    } // deleteAllSuccess.
 
 }

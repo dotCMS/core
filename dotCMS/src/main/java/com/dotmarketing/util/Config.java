@@ -6,6 +6,7 @@ import com.dotcms.util.ConfigurationInterpolator;
 import com.dotcms.util.FileWatcherAPI;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
+import com.dotcms.util.transform.StringToEntityTransformer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.google.common.collect.ImmutableSet;
@@ -13,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Array;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.Date;
@@ -438,7 +440,39 @@ public class Config {
 	    _refreshProperties ();
 	    return props.getStringArray(name);
 	}
-	
+
+	/**
+	 * Transform an array into an array of entity, needs a transformer to convert the string from the config to object
+	 * and the class.
+	 * In addition if the name does not exists, the supplier will be invoke
+	 * @param name {@link String} name of the array property
+	 * @param stringToEntityTransformer {@link StringToEntityTransformer} transformer to string to T
+	 * @param clazz {@link Class}
+	 * @param defaultSupplier {@link Supplier}
+	 * @param <T>
+	 * @return Array of T
+	 */
+	public static <T>  T[] getCustomArrayProperty(final String name,
+												  final StringToEntityTransformer<T> stringToEntityTransformer,
+												  final Class<T> clazz,
+												  final Supplier<T[]> defaultSupplier) {
+
+		final String [] values = getStringArrayProperty(name);
+		return props.containsKey(name)?convert(values, clazz, stringToEntityTransformer): defaultSupplier.get();
+	}
+
+	private static <T> T[] convert(final String[] values, final Class<T> clazz, final StringToEntityTransformer<T> stringToEntityTransformer) {
+
+		final T[] entities = (T[]) Array.newInstance(clazz, values.length);
+
+		for (int i = 0; i < values.length; ++i) {
+
+			entities[i] = stringToEntityTransformer.from(values[i]);
+		}
+
+		return entities;
+	}
+
 	/**
 	 * If config value == null, returns the default
 	 * @param name
