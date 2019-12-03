@@ -24,7 +24,9 @@ export class DotApiPage {
         if (params.language) {
             params = {
                 ...params,
-                language: await this.dotAppLanguage.getId(params.language)
+                language: isNaN(params.language as any)
+                    ? await this.dotAppLanguage.getId(params.language)
+                    : params.language
             };
         }
 
