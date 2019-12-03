@@ -49,6 +49,7 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -107,7 +108,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	private final FolderFactory folderFactory = FactoryLocator.getFolderFactory();
 	private final PermissionAPI permissionAPI = getPermissionAPI();
 
-    @CloseDBIfOpened
+	@CloseDBIfOpened
 	public Folder findFolderByPath(final String path, final Host host,
 								   final User user, final boolean respectFrontEndPermissions) throws DotStateException,
 			DotDataException, DotSecurityException {
@@ -615,7 +616,7 @@ public class FolderAPIImpl implements FolderAPI  {
 	public void validateFolderName(final String folderName) throws DotDataException {
 		if (UtilMethods.isSet(folderName)
 				&& reservedFolderNames.contains(folderName.toUpperCase())) {
-			throw new DotDataException("Folder can't be saved. You entered a reserved folder name");
+			throw new InvalidFolderNameException("Folder can't be saved. You entered a reserved folder name");
 		}
 	}
 
