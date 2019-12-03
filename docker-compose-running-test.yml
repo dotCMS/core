@@ -1,0 +1,13 @@
+version: '2'
+services:
+  core-web-test:
+    image: "${IMAGE_BASE_NAME}"
+    environment:
+      GOOGLE_CREDENTIALS_BASE64:
+      CURRENT_BRANCH:
+      COMMIT_SHORT:
+      GITHUB_USER:
+      GITHUB_USER_TOKEN:
+      PULL_REQUEST:
+      WORKING_DIR:
+    command: sh /usr/src/app/testing/run_and_storage.sh

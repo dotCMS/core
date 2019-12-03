@@ -1,0 +1,17 @@
+steps:
+
+  # Run the integration tests image
+  - name: 'docker/compose:1.24.1'
+    env:
+      - 'IMAGE_BASE_NAME=gcr.io/$PROJECT_ID/core-web-test-image:$_COMMIT_SHORT'
+      - 'GOOGLE_CREDENTIALS_BASE64=$_GOOGLE_CREDENTIALS_BASE64'
+      - 'CURRENT_BRANCH=$_CURRENT_BRANCH'
+      - 'COMMIT_SHORT=$_COMMIT_SHORT'
+      - 'GITHUB_USER=$_GITHUB_USER'
+      - 'GITHUB_USER_TOKEN=$_GITHUB_USER_TOKEN'
+      - 'PULL_REQUEST=$_PULL_REQUEST'
+    args: ['-f', './docker-compose-running-test.yml',
+           'up',
+           '--abort-on-container-exit']
+
+timeout: 4800s

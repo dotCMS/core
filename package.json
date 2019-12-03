@@ -16,7 +16,7 @@
         "build:dev": "ng build --configuration=development",
         "build:prod": "ng build --configuration=production --prod dotcms-ui",
         "build:libs": "ng build dotcms-js; ng build dot-rules; ng build dot-layout-grid",
-        "docker:test": "npm run docker:build;docker run --rm core-web npm test -- dotcms-ui --watch=false",
+        "docker:test": "npm run docker:build;IMAGE_BASE_NAME=core-web docker-compose -f docker-compose-running-test.yml up",
         "docker:build": "docker build -t core-web .",
         "storybook": "start-storybook -p 6006",
         "build-storybook": "build-storybook"
@@ -80,6 +80,7 @@
         "karma": "~3.1.1",
         "karma-chrome-launcher": "~2.2.0",
         "karma-coverage-istanbul-reporter": "^2.0.1",
+        "karma-html-reporter": "^0.2.7",
         "karma-jasmine": "~1.1.2",
         "karma-jasmine-html-reporter": "^0.2.2",
         "mock-socket": "^8.0.5",
