@@ -85,7 +85,24 @@ public interface PushedAssetsAPI {
 	 */
 	public PushedAsset getLastPushForAsset(String assetId, String environmentId, String endpointIds)  throws DotDataException;
 
+	/**
+	 * deletes the push assets entries for the given Bundle Id
+	 *
+	 * @param	bundleId	the id of the bundle
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
 
-	
-	
+	public void deletePushedAssetsByBundleId(final String bundleId)  throws DotDataException;
+	/**
+	 * returns all the push assets for a given bundleId and EnvironmentId
+	 *
+	 * @param	bundleId	the id of the bundle
+	 * @param	environmentId	the id of the environment
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+
+	public List<PushedAsset> getPushedAssetsByBundleIdAndEnvironmentId(final String bundleId, final String environmentId)  throws DotDataException;
+
+
+
 }

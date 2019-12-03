@@ -201,14 +201,14 @@ public class MessageActionlet extends WorkFlowActionlet {
                                               final HttpServletRequest request, final HttpServletResponse response) {
 
         final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
-        final String velocityMessage        = this.evalVelocilyMessage(processor, message, request, response);
+        final String velocityMessage        = this.evalVelocityMessage(processor, message, request, response);
         return systemMessageBuilder.setMessage(velocityMessage)
                 .setLife(lifeMillis)
                 .setSeverity(severity).create();
     }
 
-    protected String evalVelocilyMessage (final WorkflowProcessor processor, final String message,
-                                          final HttpServletRequest request, final HttpServletResponse response) {
+    protected String evalVelocityMessage(final WorkflowProcessor processor, final String message,
+                                         final HttpServletRequest request, final HttpServletResponse response) {
 
         final Context velocityContext = VelocityUtil.getInstance().getContext(request, response);
         String velocityMessage        = message;

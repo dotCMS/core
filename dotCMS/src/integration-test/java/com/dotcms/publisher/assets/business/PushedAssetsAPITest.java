@@ -10,14 +10,15 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.AlreadyExistException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import io.vavr.API;
 import org.jetbrains.annotations.NotNull;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,9 +26,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -142,15 +144,23 @@ public class PushedAssetsAPITest extends IntegrationTestBase {
         return pushedAssets;
     }
 
+    @Test
+    public void test_deletePushedAssetsByBundleId() throws DotSecurityException, DotDataException {
+        final PushedAssetsAPI  pushedAssetsAPI = APILocator.getPushedAssetsAPI();
+        final User adminUser = APILocator.systemUser();
+        final String bundleId = UUIDGenerator.generateUuid();
+        final String environmentId = UUIDGenerator.generateUuid();
+        for(int i=0;i<3;i++) {
+            final PushedAsset pushedAsset = new PushedAsset(bundleId, UUIDGenerator.generateUuid(),
+                    "content", new Date(), environmentId,
+                    UUIDGenerator.generateUuid(), adminUser.getNickName());
+            pushedAssetsAPI.savePushedAsset(pushedAsset);
+        }
+        assertFalse(pushedAssetsAPI.getPushedAssetsByBundleIdAndEnvironmentId(bundleId,environmentId).isEmpty());
 
-    /**
-     * Remove the content type and workflows created
-     */
-    @AfterClass
-    public static void cleanup()
-            throws DotDataException, DotSecurityException, InterruptedException, ExecutionException, AlreadyExistException {
+        pushedAssetsAPI.deletePushedAssetsByBundleId(bundleId);
 
-
+        assertTrue(pushedAssetsAPI.getPushedAssetsByBundleIdAndEnvironmentId(bundleId,environmentId).isEmpty());
     }
 
 
