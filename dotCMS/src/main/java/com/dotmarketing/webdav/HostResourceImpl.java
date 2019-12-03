@@ -268,14 +268,12 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			Folder f = dotDavHelper.createFolder(path + newName, user);
 			FolderResourceImpl fr = new FolderResourceImpl(f, path + newName + "/");
 			return fr;
+		} catch(InvalidFolderNameException e) {
+			Logger.warnAndDebug(HostResourceImpl.class, e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage());
 		} catch (Exception e) {
-			if(e instanceof InvalidFolderNameException) {
-				Logger.warnAndDebug(HostResourceImpl.class, e.getMessage(), e);
-				throw new DotRuntimeException(e.getMessage());
-			} else {
-				Logger.error(this, e.getMessage(), e);
-				throw new DotRuntimeException(e.getMessage(), e);
-			}
+			Logger.error(this, e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
 	
