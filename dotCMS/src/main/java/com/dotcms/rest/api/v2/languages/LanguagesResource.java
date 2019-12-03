@@ -6,6 +6,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -102,6 +103,37 @@ public class LanguagesResource {
         } catch (Exception e) {
             final String langCode = languageForm == null ? "" : languageForm.getLanguageCode();
             Logger.error(this.getClass(), "Exception on save, Language code: " + langCode
+                    + ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    /**
+     * Persists a new {@link Language}
+     *
+     * @param request HttpServletRequest
+     * @param languageId languageId
+     * @param languageForm LanguageForm
+     * @return Response
+     */
+    @PUT
+    @Path("/{languageId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response updateLanguage(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("languageId") final String languageId,
+            final LanguageForm languageForm) {
+        this.webResource.init(null, request, response,
+                true, PortletID.LANGUAGES.toString());
+        try {
+            DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Expected Request body was empty.");
+            DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
+            final Language language = saveOrUpdateLanguage(languageId, languageForm);
+            return Response.ok(new ResponseEntityView(language)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Exception on update, Language id: " + languageId
                     + ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }

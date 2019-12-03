@@ -9,8 +9,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 @JsonDeserialize(builder = LanguageForm.Builder.class)
 public class LanguageForm extends Validated {
 
-    @NotNull
-    @Size(min = 2, max = 100)
     private final String languageCode;
 
     private final String countryCode;
