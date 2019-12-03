@@ -6,14 +6,11 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap.Builder;
-import com.google.common.collect.Ordering;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
-
-import static com.google.common.collect.Ordering.*;
 
 /**
  * Json Serializer of {@link HTMLPageAssetInfoSerializer}
