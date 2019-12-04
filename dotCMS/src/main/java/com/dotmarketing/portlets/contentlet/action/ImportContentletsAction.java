@@ -1,6 +1,9 @@
 package com.dotmarketing.portlets.contentlet.action;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -261,7 +264,7 @@ public class ImportContentletsAction extends DotPortletAction {
 								httpSession.removeAttribute("importSession");
 								importresults = _processFile(importId, httpSession, user,
 										csvHeaders, csvreader, languageCodeHeaderColumn,
-										countryCodeHeaderColumn, reader);
+										countryCodeHeaderColumn, reader,req);
 							}
 											
 							final List<String> counters= importresults.get("counters");
@@ -474,7 +477,7 @@ public class ImportContentletsAction extends DotPortletAction {
 		ImportContentletsForm importForm = (ImportContentletsForm) form;
 		httpReq.getSession().setAttribute("fileName", importForm.getFileName());
 		String currentSiteId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-		HashMap<String, List<String>> results = ImportUtil.importFile(importId, currentSiteId, importForm.getStructure(), importForm.getFields(), true, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader, importForm.getWorkflowActionId());
+		HashMap<String, List<String>> results = ImportUtil.importFile(importId, currentSiteId, importForm.getStructure(), importForm.getFields(), true, (importForm.getLanguage() == -1), user, importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader, importForm.getWorkflowActionId(),httpReq);
 		req.setAttribute("previewResults", results);
 	}
 
@@ -507,8 +510,12 @@ public class ImportContentletsAction extends DotPortletAction {
 	 */
 	private HashMap<String, List<String>> _processFile(final long importId, final HttpSession session,
 			final User user, final String[] csvHeaders, final CsvReader csvreader,
-			final int languageCodeHeaderColumn, final int countryCodeHeaderColumn, final Reader reader)
+			final int languageCodeHeaderColumn, final int countryCodeHeaderColumn, final Reader reader, final ActionRequest req)
 			throws Exception {
+		final ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+		//This needs to be done since this is running in a thread and the request expires before ending
+		//and we need the headers and some attributes to download the file
+		final HttpServletRequest httpReq = new MockHeaderRequest(new MockSessionRequest(new MockAttributeRequest(reqImpl.getHttpServletRequest())));
 		final ImportContentletsForm importForm = (ImportContentletsForm) session
 				.getAttribute("form_to_import");
 		final String currentSiteId = (String) session
@@ -517,7 +524,7 @@ public class ImportContentletsAction extends DotPortletAction {
 				.importFile(importId, currentSiteId, importForm.getStructure(),
 						importForm.getFields(), false, (importForm.getLanguage() == -1), user,
 						importForm.getLanguage(), csvHeaders, csvreader, languageCodeHeaderColumn,
-						countryCodeHeaderColumn, reader, importForm.getWorkflowActionId());
+						countryCodeHeaderColumn, reader, importForm.getWorkflowActionId(), httpReq);
 		return results;
 	}
 
