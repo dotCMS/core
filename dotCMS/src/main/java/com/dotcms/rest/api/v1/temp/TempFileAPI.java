@@ -400,13 +400,4 @@ public class TempFileAPI {
     
   }
 
-//  public boolean isFileDownloadable(){
-//
-//  }
-
-  
-
-  
-  
-  
 }
