@@ -1,24 +1,5 @@
 package com.dotcms.graphql;
 
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
-import com.dotcms.graphql.datafetcher.FolderFieldDataFetcher;
-import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
-import com.dotcms.graphql.datafetcher.SiteFieldDataFetcher;
-import com.dotcms.graphql.datafetcher.TitleImageFieldDataFetcher;
-import com.dotcms.graphql.datafetcher.UserDataFetcher;
-import com.dotcms.graphql.resolver.ContentResolver;
-import com.dotmarketing.util.Logger;
-
-import graphql.schema.GraphQLOutputType;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import graphql.scalars.ExtendedScalars;
-import graphql.schema.GraphQLInterfaceType;
-
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.BASE_TYPE;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CONTENT_TYPE;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.IDENTIFIER;
@@ -28,43 +9,8 @@ import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.MOD_
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.TITLE;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.URL_MAP;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKING;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.*;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_METADATA_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SHOW_ON_MENU_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SORT_ORDER_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_TITLE_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.FormContentType.*;
-import static com.dotcms.contenttype.model.type.KeyValueContentType.KEY_VALUE_KEY_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.KeyValueContentType.KEY_VALUE_VALUE_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_CACHE_TTL_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_FRIENDLY_NAME_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_HTTP_REQUIRED_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_PAGE_METADATA_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_REDIRECT_URL_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_SEO_DESCRIPTION_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_SEO_KEYWORDS_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_SHOW_ON_MENU_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_SORT_ORDER_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_TEMPLATE_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PageContentType.PAGE_URL_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_DESCRIPTION_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_NAME_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_OTHER_TAGS_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_PHOTO_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.VanityUrlContentType.ACTION_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.VanityUrlContentType.FORWARD_TO_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.VanityUrlContentType.ORDER_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.VanityUrlContentType.URI_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_CODE_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_PRE_EXECUTE_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_TITLE_FIELD_VAR;
-import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_USAGE_FIELD_VAR;
 import static com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import static com.dotcms.graphql.util.TypeUtil.createInterfaceType;
-import static com.dotcms.graphql.util.TypeUtil.createObjectType;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.FOLDER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
@@ -74,9 +20,21 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
-import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
-import static graphql.schema.GraphQLList.list;
+
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.graphql.datafetcher.FolderFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
+import com.dotcms.graphql.datafetcher.SiteFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.TitleImageFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.UserDataFetcher;
+import com.dotcms.graphql.resolver.ContentResolver;
+import com.dotmarketing.util.Logger;
+import graphql.schema.GraphQLInterfaceType;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public enum InterfaceType {
     CONTENTLET,
