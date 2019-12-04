@@ -72,3 +72,4 @@ dotCMS/src/main/generated/
 docker/tests/integration/output
 docker/tests/integration/license
 docker/tests/integration/backup
+*.launch

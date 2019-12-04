@@ -33,7 +33,7 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
     
     public BasicFolderResourceImpl(String path) {
         this.originalPath = path;
-        this.path=path.toLowerCase();
+        this.path=path;
         try {
             this.host=APILocator.getHostAPI().findByName(
                     dotDavHelper.getHostName(path),APILocator.getUserAPI().getSystemUser(),false);

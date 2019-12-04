@@ -59,7 +59,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	 * @see com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
 	 */
 	public CollectionResource createCollection(String newName) throws DotRuntimeException {
-		newName = newName.toLowerCase();
+
 
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		String folderPath ="";

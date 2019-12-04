@@ -1,12 +1,10 @@
 package com.dotmarketing.webdav;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
 import com.dotcms.repackage.com.bradmcevoy.http.Auth;
 import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.FolderResource;
@@ -15,7 +13,6 @@ import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
 import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
 import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
 import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
-import com.dotcms.repackage.com.bradmcevoy.http.LockableResource;
 import com.dotcms.repackage.com.bradmcevoy.http.LockingCollectionResource;
 import com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource;
 import com.dotcms.repackage.com.bradmcevoy.http.PropFindableResource;
@@ -24,7 +21,6 @@ import com.dotcms.repackage.com.bradmcevoy.http.Request.Method;
 import com.dotcms.repackage.com.bradmcevoy.http.Resource;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.ConflictException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.LockedException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotcms.repackage.com.bradmcevoy.http.exceptions.PreConditionFailedException;
 import com.dotmarketing.beans.Host;
@@ -74,8 +70,8 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			}
 
 		} catch (DotDataException e) {
-			Logger.error(this,"The endpoint you are trying to use could not be valid, please check.");
-			Logger.error(HostResourceImpl.class, e.getMessage(),
+			Logger.warn(this,"The endpoint you are trying to use could not be valid, please check.");
+			Logger.warnAndDebug(HostResourceImpl.class, e.getMessage(),
 					e);
 			throw new DotRuntimeException(e.getMessage(), e);
 		}

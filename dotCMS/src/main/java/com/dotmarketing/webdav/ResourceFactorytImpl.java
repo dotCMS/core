@@ -43,7 +43,7 @@ public class ResourceFactorytImpl implements ResourceFactory, Initable {
 	 */
     @WrapInTransaction
 	public Resource getResource(String davHost, String url) {
-		url = url.toLowerCase();
+
     	Logger.debug(this, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
 		try{
 			dotDavHelper.stripMapping(url);//method also sets the language
