@@ -12,7 +12,6 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Config;
