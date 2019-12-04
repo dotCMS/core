@@ -160,7 +160,7 @@ public class LanguageAPIImpl implements LanguageAPI {
 	@WrapInTransaction
 	@Override
 	public void saveLanguage(final Language language) {
-		DotPreconditions.checkNotNull(language, "Language can't be null");
+		DotPreconditions.checkArgument(language!=null, "Language can't be null");
 		DotPreconditions.checkArgument(UtilMethods.isSet(language.getLanguageCode()),
 				"Language Code can't be null or empty");
 		DotPreconditions.checkArgument(UtilMethods.isSet(language.getLanguage()),

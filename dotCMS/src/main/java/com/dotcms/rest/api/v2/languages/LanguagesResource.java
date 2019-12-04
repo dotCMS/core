@@ -3,40 +3,44 @@ package com.dotcms.rest.api.v2.languages;
 import static com.dotcms.rest.ResponseEntityView.OK;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.util.DotPreconditions;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.PortletID;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.apache.commons.beanutils.BeanUtils;
-import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.I18NForm;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.I18NUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-
+import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.List;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.apache.commons.beanutils.BeanUtils;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * Language end point
@@ -89,7 +93,14 @@ public class LanguagesResource {
      *
      * @param request HttpServletRequest
      * @param languageForm LanguageForm
-     * @return Response
+     * @return JSON response including the following properties of the {@link Language}:
+     *  <ul>
+     *  <li>{@code id}
+     *  <li>{@code languageCode}
+     *  <li>{@code countryCode}
+     *  <li>{@code language}
+     *  <li>{@code country}
+     *  </ul>
      */
     @POST
     @JSONP
@@ -111,7 +122,14 @@ public class LanguagesResource {
      * @param request HttpServletRequest
      * @param languageId languageId
      * @param languageForm LanguageForm
-     * @return Response
+     * @return JSON response including the following properties of the {@link Language}:
+     *  <ul>
+     *  <li>{@code id}
+     *  <li>{@code languageCode}
+     *  <li>{@code countryCode}
+     *  <li>{@code language}
+     *  <li>{@code country}
+     *  </ul>
      */
     @PUT
     @Path("/{languageId}")
@@ -136,7 +154,7 @@ public class LanguagesResource {
      *
      * @param request HttpServletRequest
      * @param languageId languageId
-     * @return Response
+     * @return 200 response with "Ok" message
      */
     @DELETE
     @Path("/{languageId}")
@@ -183,7 +201,7 @@ public class LanguagesResource {
         return newLanguage;
     }
 
-    private boolean doesLanguageExist(String languageId) {
+    private boolean doesLanguageExist(final String languageId) {
         return languageAPI.getLanguage(languageId)!=null &&
                 languageAPI.getLanguage(languageId).getId()>0;
     }
