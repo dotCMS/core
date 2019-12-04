@@ -191,7 +191,7 @@ public class PageResource {
      * http://localhost:8080/api/v1/page/render/about-us/locations/index
      * </pre>
      *
-     * @param request The {@link HttpServletRequest} object.
+     * @param originalRequest The {@link HttpServletRequest} object.
      * @param response The {@link HttpServletResponse} object.
      * @param uri The path to the HTML Page whose information will be retrieved.
      * @param modeParam {@link PageMode}
@@ -204,7 +204,7 @@ public class PageResource {
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/render/{uri: .*}")
-    public Response render(@Context final HttpServletRequest request,
+    public Response render(@Context final HttpServletRequest originalRequest,
                                    @Context final HttpServletResponse response,
                                    @PathParam("uri") final String uri,
                                    @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
@@ -216,6 +216,7 @@ public class PageResource {
                 "Rendering page: uri -> %s mode-> %s language -> persona -> %s device_inode -> %s live -> %b",
                 uri, modeParam, languageId, personaId, deviceInode));
 
+        final HttpServletRequest request = this.pageResourceHelper.decorateRequest (originalRequest);
         // Force authentication
         final InitDataObject auth = webResource.init(request, response, true);
         final User user = auth.getUser();
