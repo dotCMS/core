@@ -1,6 +1,6 @@
 {
     "name": "dotcms",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "scripts": {
         "doc": "typedoc src/lib --options typedoc.json"
     },
