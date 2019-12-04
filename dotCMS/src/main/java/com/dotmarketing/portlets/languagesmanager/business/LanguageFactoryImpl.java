@@ -185,7 +185,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			return lang;
 		} catch (DotDataException e) {
 			Logger.error(LanguageFactoryImpl.class, "getLanguage failed - id:" + id + " message: " + e);
-			throw new DotRuntimeException(e);
+			throw new DoesNotExistException(e);
 		}
 
 	}

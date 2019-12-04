@@ -6,10 +6,12 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -98,16 +100,9 @@ public class LanguagesResource {
             final LanguageForm languageForm) {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
-        try {
-            DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
-            final Language language = saveOrUpdateLanguage(null, languageForm);
-            return Response.ok(new ResponseEntityView(language)).build(); // 200
-        } catch (Exception e) {
-            final String langCode = languageForm == null ? "" : languageForm.getLanguageCode();
-            Logger.error(this.getClass(), "Exception on save, Language code: " + langCode
-                    + ", exception message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+        DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
+        final Language language = saveOrUpdateLanguage(null, languageForm);
+        return Response.ok(new ResponseEntityView(language)).build(); // 200
     }
 
     /**
@@ -129,16 +124,10 @@ public class LanguagesResource {
             final LanguageForm languageForm) {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
-        try {
-            DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
-            DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
-            final Language language = saveOrUpdateLanguage(languageId, languageForm);
-            return Response.ok(new ResponseEntityView(language)).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Exception on update, Language id: " + languageId
-                    + ", exception message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+        DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
+        DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
+        final Language language = saveOrUpdateLanguage(languageId, languageForm);
+        return Response.ok(new ResponseEntityView(language)).build(); // 200
     }
 
     /**
@@ -158,16 +147,10 @@ public class LanguagesResource {
             @PathParam("languageId") final String languageId) {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
-        try {
-            DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
-            final Language language = languageAPI.getLanguage(languageId);
-            languageAPI.deleteLanguage(language);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Exception on delete, Language id: " + languageId
-                    + ", exception message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+        DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
+        final Language language = languageAPI.getLanguage(languageId);
+        languageAPI.deleteLanguage(language);
+        return Response.ok(new ResponseEntityView(OK)).build(); // 200
     }
 
     @POST
@@ -185,13 +168,8 @@ public class LanguagesResource {
         final Language newLanguage = new Language();
 
         if (StringUtils.isSet(languageId)) {
-            try {
-                final Language origLanguage = this.languageAPI.getLanguage(languageId);
-                BeanUtils.copyProperties(newLanguage, origLanguage);
-            } catch (Exception e) {
-                Logger.debug(this.getClass(), () -> "Unable to find language with id:" + languageId);
-                throw new DoesNotExistException(e.getMessage(), e);
-            }
+            final Language origLanguage = this.languageAPI.getLanguage(languageId);
+            Sneaky.sneaked(()->BeanUtils.copyProperties(newLanguage, origLanguage));
         }
 
         newLanguage.setLanguageCode(form.getLanguageCode());
