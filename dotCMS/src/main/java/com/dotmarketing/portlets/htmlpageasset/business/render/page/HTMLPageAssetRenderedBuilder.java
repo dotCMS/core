@@ -173,7 +173,7 @@ public class HTMLPageAssetRenderedBuilder {
 
         Contentlet contentlet = null;
 
-        if (request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE) != null) {
+        if (null != request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE)) {
 
             final String inode = (String)request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
             contentlet         = this.contentletAPI.find(inode, user, false);
