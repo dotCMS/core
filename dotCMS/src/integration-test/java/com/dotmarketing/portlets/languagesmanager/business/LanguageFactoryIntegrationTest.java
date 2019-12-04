@@ -12,6 +12,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Config;
@@ -58,6 +59,11 @@ public class LanguageFactoryIntegrationTest extends IntegrationTestBase {
         final Language language = languageFactory.getDefaultLanguage();
         assertEquals(language.getLanguageCode(), "en");
         assertEquals(language.getLanguage(), "English");
+    }
+
+    @Test
+    public void test_getLanguage_NonExistingLanguage_ReturnsNull(){
+        assertNull(languageFactory.getLanguage("nonExisting"));
     }
 
     @Test

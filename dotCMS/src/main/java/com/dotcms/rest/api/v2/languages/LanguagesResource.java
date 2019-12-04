@@ -125,6 +125,7 @@ public class LanguagesResource {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
         DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
+        DotPreconditions.isTrue(doesLanguageExist(languageId), DoesNotExistException.class, ()->"Language not found");
         DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
         final Language language = saveOrUpdateLanguage(languageId, languageForm);
         return Response.ok(new ResponseEntityView(language)).build(); // 200
@@ -148,6 +149,7 @@ public class LanguagesResource {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
         DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
+        DotPreconditions.isTrue(doesLanguageExist(languageId), DoesNotExistException.class, ()->"Language not found");
         final Language language = languageAPI.getLanguage(languageId);
         languageAPI.deleteLanguage(language);
         return Response.ok(new ResponseEntityView(OK)).build(); // 200
@@ -179,5 +181,10 @@ public class LanguagesResource {
 
         this.languageAPI.saveLanguage(newLanguage);
         return newLanguage;
+    }
+
+    private boolean doesLanguageExist(String languageId) {
+        return languageAPI.getLanguage(languageId)!=null &&
+                languageAPI.getLanguage(languageId).getId()>0;
     }
 }

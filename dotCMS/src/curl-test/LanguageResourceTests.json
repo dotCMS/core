@@ -532,9 +532,9 @@
 								"exec": [
 									"pm.test(\"Status code is 404\", function () { pm.response.to.be.notFound });",
 									"",
-									"pm.test(\"Should show error msg about invalid Language id\", function () {",
+									"pm.test(\"Should show Language not found message\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.message).to.eql(\"getLanguage failed for id:invalidId\");",
+									"    pm.expect(jsonData.message).to.eql(\"Language not found\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -751,9 +751,9 @@
 								"exec": [
 									"pm.test(\"Status code is 404\", function () { pm.response.to.be.notFound });",
 									"",
-									"pm.test(\"Should show error msg about invalid Language id\", function () {",
+									"pm.test(\"Should show Language not found message\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.message).to.eql(\"getLanguage failed for id:invalidId\");",
+									"    pm.expect(jsonData.message).to.eql(\"Language not found\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -770,15 +770,6 @@
 								"value": "application/json"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": "",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
 							"raw": "{{serverURL}}/api/v2/languages/invalidId",
 							"host": [
@@ -800,9 +791,9 @@
 	],
 	"variable": [
 		{
-			"id": "9da8ab55-e068-4a96-930f-a669741a0a8e",
+			"id": "0b55a3cb-f35a-45e7-9309-da5b15746da5",
 			"key": "languageId",
-			"value": 1575483694154,
+			"value": 1575488414435,
 			"type": "number"
 		}
 	],
