@@ -1019,14 +1019,14 @@ public class DotWebdavHelper {
 		return folder;
 	}
 
-	public void move(String fromPath, String toPath, User user,boolean autoPublish)throws IOException, DotDataException {
-		String resourceFromPath = fromPath;
+	public void move(final String fromPath, final String toPath, User user,boolean autoPublish)throws IOException, DotDataException {
+
 		final String fromPathStripped = stripMapping(fromPath);
-		toPath = stripMapping(toPath);
+		final String toPathStripped = stripMapping(toPath);
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
 
 		String hostName = getHostname(fromPathStripped);
-		String toParentPath = getFolderName(getPath(toPath));
+		String toParentPath = getFolderName(getPath(toPathStripped));
 
 		Host host;
 		Folder toParentFolder;
@@ -1040,7 +1040,7 @@ public class DotWebdavHelper {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			throw new IOException(e.getMessage(),e);
 		}
-		if (isResource(resourceFromPath,user)) {
+		if (isResource(fromPath,user)) {
 			try {
 				if (!perAPI.doesUserHavePermission(toParentFolder,
 						PermissionAPI.PERMISSION_READ, user, false)) {
@@ -1057,14 +1057,14 @@ public class DotWebdavHelper {
 			try{
 				Identifier identifier  = APILocator.getIdentifierAPI().find(host, getPath(fromPathStripped));
 
-				Identifier identTo  = APILocator.getIdentifierAPI().find(host, getPath(toPath));
+				Identifier identTo  = APILocator.getIdentifierAPI().find(host, getPath(toPathStripped));
 				boolean destinationExists=identTo!=null && InodeUtils.isSet(identTo.getId());
 
 				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 					Contentlet fileAssetCont = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 					if(!destinationExists) {
-						if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
-							String fileName = getFileName(toPath);
+						if (getFolderName(fromPathStripped).equals(getFolderName(toPathStripped))) {
+							String fileName = getFileName(toPathStripped);
 							if(fileName.contains(".")){
 								fileName = fileName.substring(0, fileName.lastIndexOf("."));
 							}
@@ -1112,23 +1112,23 @@ public class DotWebdavHelper {
 					Logger.error(DotWebdavHelper.class,e1.getMessage(),e1);
 					throw new IOException(e1.getMessage());
 				}
-				if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
-					Logger.debug(this, "Calling Folderfactory to rename " + fromPathStripped + " to " + toPath);
+				if (getFolderName(fromPathStripped).equals(getFolderName(toPathStripped))) {
+					Logger.debug(this, "Calling Folderfactory to rename " + fromPathStripped + " to " + toPathStripped);
 					try{
 						// Folder must end with "/", otherwise we get the parent folder
-						String folderToPath = getPath(toPath);
+						String folderToPath = getPath(toPathStripped);
 						if(!folderToPath.endsWith("/")) { folderToPath = folderToPath + "/"; }
 
 						Folder folder = folderAPI.findFolderByPath(folderToPath, host, user, false);
-						removeObject(toPath, user);
+						removeObject(toPathStripped, user);
 						fc.removeFolder(folder, idapi.find(folder));
 					}catch (Exception e) {
-						Logger.debug(this, "Unable to delete toPath " + toPath);
+						Logger.debug(this, "Unable to delete toPath " + toPathStripped);
 					}
 					boolean renamed = false;
 					try{
 						Folder folder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
-						renamed = folderAPI.renameFolder(folder, getFileName(toPath),user,false);
+						renamed = folderAPI.renameFolder(folder, getFileName(toPathStripped),user,false);
 						fc.removeFolder(folder,idapi.find(folder));
 						//folderAPI.updateMovedFolderAssets(folder);
 					}catch (Exception e) {
@@ -1172,10 +1172,10 @@ public class DotWebdavHelper {
 					Logger.error(DotWebdavHelper.class,e.getMessage(),e);
 					throw new IOException(e.getMessage(),e);
 				}
-				if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
+				if (getFolderName(fromPathStripped).equals(getFolderName(toPathStripped))) {
 					final Folder fromfolder = Try.of(()->folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false)).get();
 					try{
-						folderAPI.renameFolder(fromfolder, getFileName(toPath),user,false);
+						folderAPI.renameFolder(fromfolder, getFileName(toPathStripped),user,false);
 						fc.removeFolder(fromfolder,idapi.find(fromfolder));
 					}catch (Exception e) {
 						if(fromfolder.getName().contains("untitled folder")){
@@ -1428,16 +1428,12 @@ public class DotWebdavHelper {
 	}
 
 	public String deleteSpecialCharacter(String fileName) throws IOException {
+	    
+	    
+	    
+	    
 		if (UtilMethods.isSet(fileName)) {
-			fileName = fileName.replace("\\", "");
-			fileName = fileName.replace(":", "");
-			fileName = fileName.replace("*", "");
-			fileName = fileName.replace("?", "");
-			fileName = fileName.replace("\"", "");
-			fileName = fileName.replace("<", "");
-			fileName = fileName.replace(">", "");
-			fileName = fileName.replace("|", "");
-			fileName = fileName.replace("+", " ");
+			fileName = com.dotmarketing.util.StringUtils.sanitizeFileName(fileName);
 			if (!UtilMethods.isSet(fileName)) {
 				throw new IOException(
 						"Please specify a name without special characters \\/:*?\"<>|");
