@@ -56,6 +56,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.naming.InvalidNameException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -1044,7 +1045,7 @@ public class FolderAPITest {//24 contentlets
 		return reservedFolderNames.toArray();
 	}
 
-	@Test(expected = DotDataException.class)
+	@Test(expected = InvalidNameException.class)
 	@UseDataProvider("reservedFolderNames")
 	public void testSave_BlacklistedName_ShouldFail(final String reservedName)
 			throws DotDataException, DotSecurityException {

@@ -613,7 +613,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
-	public void validateFolderName(final String folderName) throws DotDataException {
+	public void validateFolderName(final String folderName) {
 		if (UtilMethods.isSet(folderName)
 				&& reservedFolderNames.contains(folderName.toUpperCase())) {
 			throw new InvalidFolderNameException("Folder can't be saved. You entered a reserved folder name");
