@@ -1,16 +1,19 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
-import java.io.Serializable;
-import java.util.*;
-
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Represents the different parts that make up the structure of an HTML Page in the system and its
@@ -48,74 +51,22 @@ public class PageView implements Serializable {
     final boolean live;
 
     /**
-     * Creates an instance of this class.
-     *
-     * @param site       The {@link Host} where the HTML Page lives in.
-     * @param template   The {@link Template} associated to the HTML Page.
-     * @param containers The map of Containers and their respective relationships with Content
-     *                   Types.
-     * @param page       The {@link HTMLPageAsset} object.
-     * @param layout     The {@link TemplateLayout} that specifies the design of the template.
+     * Creates an instance of this class based on a builder.
      */
-    PageView(final Host site,
-             final Template template,
-             final Collection<? extends ContainerRaw> containers,
-             final HTMLPageAssetInfo page,
-             final TemplateLayout layout,
-             final boolean canCreateTemplate,
-             final boolean canEditTemplate,
-             final ViewAsPageStatus viewAs,
-             final String pageUrlMapper,
-             final boolean live) {
+    PageView(final Builder builder) {
 
-        this.site = site;
-        this.template = template;
-        this.containers = containers;
-        this.htmlPageAssetInfo = page;
-        this.layout = layout;
-        this.viewAs = viewAs;
-        this.canCreateTemplate = canCreateTemplate;
-        this.canEditTemplate = canEditTemplate;
-        this.pageUrlMapper = pageUrlMapper;
+        this.site = builder.site;
+        this.template =  builder.template;
+        this.containers =  builder.containers;
+        this.htmlPageAssetInfo =  builder.page;
+        this.layout =  builder.layout;
+        this.viewAs =  builder.viewAs;
+        this.canCreateTemplate =  builder.canCreateTemplate;
+        this.canEditTemplate =  builder.canEditTemplate;
+        this.pageUrlMapper = builder.pageUrlMapper;
         this.numberContents = getContentsNumber();
-        this.live = live;
-        this.urlContent = null;
-    }
-
-    /**
-     * Creates an instance of this class.
-     *
-     * @param site       The {@link Host} where the HTML Page lives in.
-     * @param template   The {@link Template} associated to the HTML Page.
-     * @param containers The map of Containers and their respective relationships with Content
-     *                   Types.
-     * @param page       The {@link HTMLPageAsset} object.
-     * @param layout     The {@link TemplateLayout} that specifies the design of the template.
-     */
-    PageView(final Host site,
-             final Template template,
-             final Collection<? extends ContainerRaw> containers,
-             final HTMLPageAssetInfo page,
-             final TemplateLayout layout,
-             final boolean canCreateTemplate,
-             final boolean canEditTemplate,
-             final ViewAsPageStatus viewAs,
-             final String pageUrlMapper,
-             final boolean live,
-             final Contentlet urlContent) {
-
-        this.site = site;
-        this.template = template;
-        this.containers = containers;
-        this.htmlPageAssetInfo = page;
-        this.layout = layout;
-        this.viewAs = viewAs;
-        this.canCreateTemplate = canCreateTemplate;
-        this.canEditTemplate = canEditTemplate;
-        this.pageUrlMapper = pageUrlMapper;
-        this.numberContents = getContentsNumber();
-        this.live = live;
-        this.urlContent = urlContent;
+        this.live = builder.live;
+        this.urlContent = builder.urlContent;
     }
 
     public boolean isLive() {
@@ -228,4 +179,84 @@ public class PageView implements Serializable {
     public Contentlet getUrlContent() {
         return urlContent;
     }
+
+    public static class Builder {
+
+        //  The {@link Host} where the HTML Page lives in.
+        private  Host site;
+        // The {@link Template} associated to the HTML Page.
+        private  Template template;
+        // The map of Containers and their respective relationships with Content Types
+        private  Collection<? extends ContainerRaw> containers;
+        private  HTMLPageAssetInfo page;
+        // The {@link TemplateLayout} that specifies the design of the template
+        private  TemplateLayout layout;
+        private  ViewAsPageStatus viewAs;
+        private  boolean canCreateTemplate;
+        private  boolean canEditTemplate;
+        // content associated to the url content map
+        private  Contentlet urlContent;
+        private String pageUrlMapper;
+        private boolean live;
+
+        public Builder site(final Host site) {
+            this.site = site;
+            return this;
+        }
+
+        public Builder template(final Template template) {
+            this.template = template;
+            return this;
+        }
+
+        public Builder containers(final Collection<? extends ContainerRaw> containers) {
+            this.containers = containers;
+            return this;
+        }
+
+        public Builder page(final HTMLPageAssetInfo page) {
+            this.page = page;
+            return this;
+        }
+
+        public Builder layout(final TemplateLayout layout) {
+            this.layout = layout;
+            return this;
+        }
+
+        public Builder viewAs(final ViewAsPageStatus viewAs) {
+            this.viewAs = viewAs;
+            return this;
+        }
+
+        public Builder canCreateTemplate(final boolean canCreateTemplate) {
+            this.canCreateTemplate = canCreateTemplate;
+            return this;
+        }
+
+        public Builder canEditTemplate(final boolean canEditTemplate) {
+            this.canEditTemplate = canEditTemplate;
+            return this;
+        }
+
+        public Builder urlContent(final Contentlet urlContent) {
+            this.urlContent = urlContent;
+            return this;
+        }
+
+        public Builder pageUrlMapper(final String pageUrlMapper) {
+            this.pageUrlMapper = pageUrlMapper;
+            return this;
+        }
+
+        public Builder live(final boolean live) {
+            this.live = live;
+            return this;
+        }
+
+        public PageView build() {
+            return new PageView(this);
+        }
+    }
+
 }

@@ -143,23 +143,29 @@ public class HTMLPageAssetRenderedBuilder {
         if (!rendered) {
 
             final Collection<? extends ContainerRaw> containers =  pageRenderUtil.getContainersRaw();
+            final PageView.Builder pageViewBuilder = new PageView.Builder().site(site).template(template).containers(containers)
+                    .page(htmlPageAssetInfo).layout(layout).canCreateTemplate(canCreateTemplates)
+                    .canEditTemplate(canEditTemplate).viewAs(this.getViewAsStatus(mode, pagePersonalizationSet))
+                    .pageUrlMapper(pageUrlMapper).live(live);
+            urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
 
-            return urlContentletOpt.isPresent()?
-                    new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates,
-                            canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live, urlContentletOpt.get()):
-                    new PageView(site, template, containers, htmlPageAssetInfo, layout, canCreateTemplates,
-                            canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live);
+            return pageViewBuilder.build();
         } else {
+
             final Context velocityContext  = pageRenderUtil
                     .addAll(VelocityUtil.getInstance().getContext(request, response));
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode).build();
             final String pageHTML = this.getPageHTML();
-            return urlContentletOpt.isPresent()?
-                    new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
-                        canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live, urlContentletOpt.get()):
-                    new HTMLPageAssetRendered(site, template, containers, htmlPageAssetInfo, layout, pageHTML,
-                            canCreateTemplates, canEditTemplate, this.getViewAsStatus(mode, pagePersonalizationSet), pageUrlMapper, live);
+
+            final HTMLPageAssetRendered.RenderedBuilder pageViewBuilder = new HTMLPageAssetRendered.RenderedBuilder().html(pageHTML);
+            pageViewBuilder.site(site).template(template).containers(containers)
+                    .page(htmlPageAssetInfo).layout(layout).canCreateTemplate(canCreateTemplates)
+                    .canEditTemplate(canEditTemplate).viewAs(this.getViewAsStatus(mode, pagePersonalizationSet))
+                    .pageUrlMapper(pageUrlMapper).live(live);
+            urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
+
+            return pageViewBuilder.build();
         }
     }
 

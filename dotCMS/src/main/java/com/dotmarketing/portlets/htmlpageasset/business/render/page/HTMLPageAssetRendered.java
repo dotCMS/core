@@ -1,14 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 
-import java.util.Collection;
-
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.model.Template;
 
 /**
  * It is a {@link PageView} rendered
@@ -17,43 +10,30 @@ import com.dotmarketing.portlets.templates.model.Template;
 public class HTMLPageAssetRendered extends PageView {
     private final String html;
 
-    public HTMLPageAssetRendered(final Host site,
-                                 final Template template,
-                                 final Collection<? extends ContainerRaw> containers,
-                                 final HTMLPageAssetInfo page,
-                                 final TemplateLayout layout,
-                                 final String html,
-                                 final boolean canCreateTemplate,
-                                 final boolean canEditTemplate,
-                                 final ViewAsPageStatus viewAs,
-                                 final String pageUrlMapper,
-                                 final boolean live) {
+    public HTMLPageAssetRendered(final RenderedBuilder builder) {
 
-        super(site, template, containers, page, layout, canCreateTemplate, canEditTemplate, viewAs, pageUrlMapper, live);
-        this.html = html;
-    }
-
-    public HTMLPageAssetRendered(final Host site,
-                                 final Template template,
-                                 final Collection<? extends ContainerRaw> containers,
-                                 final HTMLPageAssetInfo page,
-                                 final TemplateLayout layout,
-                                 final String html,
-                                 final boolean canCreateTemplate,
-                                 final boolean canEditTemplate,
-                                 final ViewAsPageStatus viewAs,
-                                 final String pageUrlMapper,
-                                 final boolean live,
-                                 final Contentlet contentlet) {
-
-        super(site, template, containers, page, layout, canCreateTemplate, canEditTemplate, viewAs, pageUrlMapper, live, contentlet);
-        this.html = html;
+        super(builder);
+        this.html = builder.html;
     }
 
     public String getHtml() {
         return html;
     }
 
+    public static class RenderedBuilder extends PageView.Builder {
+
+        private String html;
+
+        public RenderedBuilder html (final String html) {
+
+            this.html = html;
+            return this;
+        }
+
+        public HTMLPageAssetRendered build() {
+            return new HTMLPageAssetRendered(this);
+        }
+    }
 
 
 
