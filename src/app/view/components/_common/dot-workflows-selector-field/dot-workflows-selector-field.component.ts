@@ -4,6 +4,7 @@ import { DotCMSWorkflow } from 'dotcms-models';
 import { Component, OnInit, forwardRef } from '@angular/core';
 import { DotMessageService } from '@services/dot-messages-service';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
+import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-workflows-selector-field',
@@ -45,10 +46,12 @@ export class DotWorkflowsSelectorFieldComponent implements ControlValueAccessor,
 
     ngOnInit() {
         this.options$ = this.dotWorkflowService.get();
-        this.label$ = this.dotMessageService.getMessages([
-            'dot.common.select.workflows',
-            'dot.common.archived'
-        ]);
+        this.dotMessageService
+            .getMessages(['dot.common.select.workflows', 'dot.common.archived'])
+            .pipe(take(1))
+            .subscribe(res => {
+                this.messagesKey = res;
+            });
     }
 
     /**
