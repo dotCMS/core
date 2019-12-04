@@ -1,6 +1,7 @@
 package com.dotcms.graphql;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.graphql.datafetcher.ContentletDataFetcher;
 import com.dotcms.graphql.datafetcher.FolderFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteFieldDataFetcher;
@@ -9,6 +10,7 @@ import com.dotcms.graphql.datafetcher.UserDataFetcher;
 import com.dotcms.graphql.resolver.ContentResolver;
 import com.dotmarketing.util.Logger;
 
+import graphql.schema.GraphQLOutputType;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -62,6 +64,7 @@ import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_TITLE_F
 import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_USAGE_FIELD_VAR;
 import static com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import static com.dotcms.graphql.util.TypeUtil.createInterfaceType;
+import static com.dotcms.graphql.util.TypeUtil.createObjectType;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.FOLDER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
@@ -120,69 +123,27 @@ public enum InterfaceType {
 
         interfaceTypes.put("CONTENTLET", createInterfaceType("Contentlet", contentFields, new ContentResolver()));
 
-
         interfaceTypes.put("CONTENT", createInterfaceType(CONTENT_INTERFACE_NAME, contentFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> fileAssetFields = new HashMap<>(contentFields);
-        fileAssetFields.put(FILEASSET_FILE_NAME_FIELD_VAR, new TypeFetcher(GraphQLString));
-        fileAssetFields.put(FILEASSET_DESCRIPTION_FIELD_VAR, new TypeFetcher(GraphQLString));
-        fileAssetFields.put(FILEASSET_FILEASSET_FIELD_VAR, new TypeFetcher(CustomFieldType.BINARY.getType()));
-        fileAssetFields.put(FILEASSET_METADATA_FIELD_VAR, new TypeFetcher(list(CustomFieldType.KEY_VALUE.getType())));
-        fileAssetFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString)));
-        fileAssetFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt));
-
         interfaceTypes.put("FILEASSET", createInterfaceType(FILE_INTERFACE_NAME, fileAssetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> pageAssetFields = new HashMap<>(contentFields);
-        pageAssetFields.put(PAGE_URL_FIELD_VAR, new TypeFetcher(GraphQLString));
-        pageAssetFields.put(PAGE_TEMPLATE_FIELD_VAR, new TypeFetcher(GraphQLString));
-        pageAssetFields.put(PAGE_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString)));
-        pageAssetFields.put(PAGE_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt));
-        pageAssetFields.put(PAGE_CACHE_TTL_FIELD_VAR, new TypeFetcher(GraphQLString));
-        pageAssetFields.put(PAGE_FRIENDLY_NAME_FIELD_VAR, new TypeFetcher(GraphQLString));
-        pageAssetFields.put(PAGE_REDIRECT_URL_FIELD_VAR, new TypeFetcher(GraphQLString));
-        pageAssetFields.put(PAGE_HTTP_REQUIRED_FIELD_VAR, new TypeFetcher(list(GraphQLString)));
-        pageAssetFields.put(PAGE_SEO_DESCRIPTION_FIELD_VAR, new TypeFetcher(GraphQLString));
-        pageAssetFields.put(PAGE_SEO_KEYWORDS_FIELD_VAR, new TypeFetcher(GraphQLString));
-        pageAssetFields.put(PAGE_PAGE_METADATA_FIELD_VAR, new TypeFetcher(GraphQLString));
-
         interfaceTypes.put("HTMLPAGE", createInterfaceType(PAGE_INTERFACE_NAME, pageAssetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> personaFields = new HashMap<>(contentFields);
-        personaFields.put(PERSONA_NAME_FIELD_VAR, new TypeFetcher(GraphQLString));
-        personaFields.put(PERSONA_KEY_TAG_FIELD_VAR, new TypeFetcher(GraphQLString));
-        personaFields.put(PERSONA_PHOTO_FIELD_VAR, new TypeFetcher(CustomFieldType.BINARY.getType()));
-        personaFields.put(PERSONA_OTHER_TAGS_FIELD_VAR, new TypeFetcher(list(GraphQLString)));
-        personaFields.put(PERSONA_DESCRIPTION_FIELD_VAR, new TypeFetcher(GraphQLString));
-
         interfaceTypes.put("PERSONA", createInterfaceType(PERSONA_INTERFACE_NAME, personaFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> widgetFields = new HashMap<>(contentFields);
-        widgetFields.put(WIDGET_TITLE_FIELD_VAR, new TypeFetcher(GraphQLString));
-        widgetFields.put(WIDGET_CODE_FIELD_VAR, new TypeFetcher(GraphQLString));
-        widgetFields.put(WIDGET_USAGE_FIELD_VAR, new TypeFetcher(GraphQLString));
-        widgetFields.put(WIDGET_PRE_EXECUTE_FIELD_VAR, new TypeFetcher(GraphQLString));
-
         interfaceTypes.put("WIDGET", createInterfaceType(WIDGET_INTERFACE_NAME, widgetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> vanityUrlFields = new HashMap<>(contentFields);
-        vanityUrlFields.put(URI_FIELD_VAR, new TypeFetcher(GraphQLString));
-        vanityUrlFields.put(FORWARD_TO_FIELD_VAR, new TypeFetcher(GraphQLString));
-        vanityUrlFields.put(ACTION_FIELD_VAR, new TypeFetcher(GraphQLString));
-        vanityUrlFields.put(ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt));
-
         interfaceTypes.put("VANITY_URL", createInterfaceType(VANITY_URL_INTERFACE_NAME, vanityUrlFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> keyValueFields = new HashMap<>(contentFields);
-        keyValueFields.put(KEY_VALUE_KEY_FIELD_VAR, new TypeFetcher(GraphQLString));
-        keyValueFields.put(KEY_VALUE_VALUE_FIELD_VAR, new TypeFetcher(GraphQLString));
-
         interfaceTypes.put("KEY_VALUE", createInterfaceType(KEY_VALUE_INTERFACE_NAME, keyValueFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> formFields = new HashMap<>(contentFields);
-        formFields.put(FORM_SUCCESS_CALLBACK, new TypeFetcher(GraphQLString));
-        formFields.put(FORM_EMAIL_FIELD_VAR, new TypeFetcher(GraphQLString));
-
         interfaceTypes.put("FORM", createInterfaceType(FORM_INTERFACE_NAME, formFields, new ContentResolver()));
     }
 
