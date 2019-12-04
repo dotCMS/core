@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v2.languages;
 
+import static com.dotcms.rest.ResponseEntityView.OK;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.DotPreconditions;
@@ -109,7 +111,7 @@ public class LanguagesResource {
     }
 
     /**
-     * Persists a new {@link Language}
+     * Updates an already persisted {@link Language}
      *
      * @param request HttpServletRequest
      * @param languageId languageId
@@ -128,12 +130,41 @@ public class LanguagesResource {
         this.webResource.init(null, request, response,
                 true, PortletID.LANGUAGES.toString());
         try {
-            DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Expected Request body was empty.");
+            DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
             DotPreconditions.notNull(languageForm,"Expected Request body was empty.");
             final Language language = saveOrUpdateLanguage(languageId, languageForm);
             return Response.ok(new ResponseEntityView(language)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception on update, Language id: " + languageId
+                    + ", exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    /**
+     * Deletes an already persisted {@link Language}
+     *
+     * @param request HttpServletRequest
+     * @param languageId languageId
+     * @return Response
+     */
+    @DELETE
+    @Path("/{languageId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response deleteLanguage(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("languageId") final String languageId) {
+        this.webResource.init(null, request, response,
+                true, PortletID.LANGUAGES.toString());
+        try {
+            DotPreconditions.checkArgument(UtilMethods.isSet(languageId),"Language Id is required.");
+            final Language language = languageAPI.getLanguage(languageId);
+            languageAPI.deleteLanguage(language);
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Exception on delete, Language id: " + languageId
                     + ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }

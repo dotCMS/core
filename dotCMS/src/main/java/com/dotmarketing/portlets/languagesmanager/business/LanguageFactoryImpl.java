@@ -5,6 +5,7 @@ import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -134,7 +135,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			return getLanguage(codes[0], codes[1]);
 		} catch (Exception e) {
 			Logger.error(LanguageFactoryImpl.class, "getLanguage failed for id:" + languageId,e);
-			throw new DotRuntimeException("getLanguage failed for id:" + languageId, e);
+			throw new DoesNotExistException("getLanguage failed for id:" + languageId, e);
 
 		}
 
