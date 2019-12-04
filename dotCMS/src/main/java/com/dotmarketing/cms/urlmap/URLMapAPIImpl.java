@@ -376,6 +376,4 @@ public class URLMapAPIImpl implements URLMapAPI {
             return matches;
         }
     }
-
-    private static class NotFoundURLPatternException extends RuntimeException {}
 }
