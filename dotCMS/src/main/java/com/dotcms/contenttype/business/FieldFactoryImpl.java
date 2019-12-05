@@ -29,6 +29,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,19 @@ public class FieldFactoryImpl implements FieldFactory {
   public List<Field> byContentTypeVar(String var) throws DotDataException {
     return selectByContentTypeVarInDb(var);
   }
+    @Override
+    public List<FieldVariable> byFieldVariableKey(final String key) throws DotDataException {
+        DotConnect dc = new DotConnect();
+        dc.setSQL(sql.selectFieldVarByKey);
+        dc.addParam(key);
+
+        List<Map<String, Object>> results = dc.loadObjectResults();
+        if (results.size() == 0) {
+            return Collections.emptyList();
+        }
+
+        return new DbFieldVariableTransformer(dc.loadObjectResults()).asList();
+    }
 
   @Override
   public void delete(Field field) throws DotDataException {

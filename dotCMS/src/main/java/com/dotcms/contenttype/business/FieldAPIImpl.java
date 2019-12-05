@@ -46,6 +46,8 @@ import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
@@ -471,6 +473,26 @@ public class FieldAPIImpl implements FieldAPI {
       
       //update Content Type mod_date to detect the changes done on the field variables
       contentTypeAPI.updateModDate(type);
+
+      //Validates custom mapping format
+      if (var.key().equals(FieldVariable.ES_CUSTOM_MAPPING_KEY)){
+          try {
+              new JSONObject(var.value());
+          } catch (JSONException e) {
+              final String message = "Invalid format on field variable value. Value should be a JSON object. Field variable: "
+                      + var.key() + ". Field: " + field.name() + ". Content Type: " + type
+                      .name();
+              Logger.warnAndDebug(FieldAPIImpl.class, message, e);
+          }
+
+          //Verifies the field is marked as System Indexed. In case it isn't, the field will be updated with this flag on
+          if (!field.indexed()) {
+              save(FieldBuilder.builder(field).indexed(true).build(), user);
+              Logger.info(this, "Field " + type.variable() + "." + field.variable()
+                      + " has been marked as System Indexed as it has defined a field variable with key "
+                      + FieldVariable.ES_CUSTOM_MAPPING_KEY);
+          }
+      }
       
       return newFieldVariable;
   }

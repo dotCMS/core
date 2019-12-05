@@ -10,11 +10,17 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldFactory;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
@@ -38,9 +44,11 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
@@ -173,8 +181,120 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
         mappingAPI.putMapping(indexName, "content", mapping);
+        addCustomMapping(indexName);
 
         return true;
+    }
+
+    /**
+     * Sets a custom index mapping for relationships and also for mapping defined on field variables
+     * using `esCustomMapping` property
+     * @param indexName - Index where mapping will be updated
+     */
+    private void addCustomMapping(final String indexName)  {
+
+        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+        final Set<String> mappedRelationships = addCustomMappingFromFieldVariables(indexName,
+                relationshipAPI);
+
+        addCustomMappingForRelationships(indexName, relationshipAPI, mappedRelationships);
+    }
+
+    /**
+     * Sets a mapping for all relationships except for those that contains its custom mapping using field variables
+     * @param indexName - Index where mapping will be updated
+     * @param relationshipAPI
+     * @param mappedRelationships - Mapping already set for relationships through field variables
+     * View {@link ContentletIndexAPIImpl#addCustomMappingFromFieldVariables(String, RelationshipAPI)}
+     */
+    private void addCustomMappingForRelationships(final String indexName, final RelationshipAPI relationshipAPI,
+            final Set<String> mappedRelationships) {
+        final List<Relationship> relationships = relationshipAPI.dbAll();
+
+        for(final Relationship relationship: relationships){
+            final String relationshipName = relationship.getRelationTypeValue().toLowerCase();
+            if (!mappedRelationships.contains(relationshipName)) {
+                final JSONObject properties = new JSONObject();
+                try{
+                    properties.put("properties", new JSONObject()
+                            .put(relationshipName,
+                                    new JSONObject("{\n"
+                                            + "\"type\":  \"keyword\",\n"
+                                            + "\"ignore_above\": 8191\n"
+                                            + "}")));
+                    mappingAPI.putMapping(indexName, "content", properties.toString());
+                } catch (Exception e) {
+                    Logger.warn(this,
+                            "Error updating ES mapping for relationship " + relationshipName
+                                    + ". Custom mapping will be ignored.", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Sets a mapping defined on field variables
+     * @param indexName - Index where mapping will be updated
+     * @param relationshipAPI
+     * @return Collection of relationship names whose mapping was set
+     */
+    private Set<String> addCustomMappingFromFieldVariables(final String indexName,
+            final RelationshipAPI relationshipAPI) {
+        final FieldFactory fieldFactory = FactoryLocator.getFieldFactory();
+        final Set<String> mappedRelationships = new HashSet<>();
+
+        final User user;
+        try {
+            user = APILocator.getUserAPI().getSystemUser();
+
+            //Find field variables
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+            final List<FieldVariable> fieldVariables = fieldFactory
+                    .byFieldVariableKey(FieldVariable.ES_CUSTOM_MAPPING_KEY);
+
+            for (final FieldVariable fieldVariable : fieldVariables) {
+                Field field = null;
+                ContentType type = null;
+                try {
+                    field = fieldFactory.byId(fieldVariable.fieldId());
+                    type = contentTypeAPI.find(field.contentTypeId());
+                    final JSONObject jsonObject = new JSONObject();
+                    final JSONObject properties = new JSONObject();
+
+                    jsonObject.put(type.variable().toLowerCase(),
+                            new JSONObject()
+                                    .put("properties", new JSONObject()
+                                            .put(field.variable()
+                                                            .toLowerCase(),
+                                                    new JSONObject(fieldVariable.value()))));
+                    properties.put("properties", jsonObject);
+                    mappingAPI.putMapping(indexName, "content", properties.toString());
+
+                    if (field instanceof RelationshipField) {
+                        final Relationship relationship = relationshipAPI
+                                .getRelationshipFromField(field, user);
+                        mappedRelationships.add(relationship.getRelationTypeValue().toLowerCase());
+                    }
+                } catch (Exception e) {
+                    String message = "Error setting custom index mapping from field variable " + fieldVariable.key();
+
+                    if (field != null){
+                        message += ". Field: " + field.name();
+                    }
+
+                    if (type != null) {
+                        message += ". Content Type: " + type.name();
+                    }
+
+                    message += ". Custom mapping will be ignored.";
+                    Logger.warn(this, message, e);
+                }
+            }
+        } catch (DotDataException e) {
+            Logger.warn(this, "Error setting custom index mapping for index " + indexName, e);
+        }
+        return mappedRelationships;
     }
 
     /**
@@ -182,7 +302,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * /live_TIMESTAMP with (aliases live_read, live_write, workinglive)
      *
      * @return the timestamp string used as suffix for indices
-     * @throws ElasticsearchException if Murphy comes arround
+     * @throws ElasticsearchException if Murphy comes around
      * @throws DotDataException
      */
     private synchronized String initIndex() throws ElasticsearchException, DotDataException {
