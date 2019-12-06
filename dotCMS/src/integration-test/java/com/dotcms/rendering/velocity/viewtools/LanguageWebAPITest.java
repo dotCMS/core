@@ -193,6 +193,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 
 			language = new Language();
 			language.setLanguageCode("es");
+			language.setLanguage("Español");
 			APILocator.getLanguageAPI().saveLanguage(language);
 		}
 		spanishNoCountryLanguage =
@@ -215,6 +216,7 @@ public class LanguageWebAPITest extends IntegrationTestBase {
 
 			language = new Language();
 			language.setLanguageCode("es");
+			language.setLanguage("Español");
 			language.setCountryCode("CR");
 			APILocator.getLanguageAPI().saveLanguage(language);
 		}
