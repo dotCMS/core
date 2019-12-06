@@ -8,11 +8,16 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -31,11 +36,13 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -49,10 +56,16 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.ThreadUtils;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -61,7 +74,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.apache.felix.framework.OSGIUtil;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -87,13 +99,24 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
     private static Language defaultLanguage;
 
+    private static ContentletAPI contentletAPI;
+    private static ContentletIndexAPI indexAPI;
+    private static ContentTypeAPI contentTypeAPI;
+    private static ESMappingAPIImpl esMappingAPI;
+    private static FieldAPI fieldAPI;
+    private static HostAPI hostAPI;
+    private static LanguageAPI languageAPI;
+    private static RelationshipAPI relationshipAPI;
+
+
     @BeforeClass
     public static void prepare () throws Exception {
     	//Setting web app environment
         IntegrationTestInitService.getInstance().init();
 
-        HostAPI hostAPI = APILocator.getHostAPI();
-        LanguageAPI languageAPI = APILocator.getLanguageAPI();
+        hostAPI = APILocator.getHostAPI();
+        languageAPI = APILocator.getLanguageAPI();
+        fieldAPI  = APILocator.getContentTypeFieldAPI();
 
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();
@@ -101,6 +124,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
       
         //Getting the default language
         defaultLanguage = languageAPI.getDefaultLanguage();
+
+        contentletAPI = APILocator.getContentletAPI();
+        esMappingAPI = new ESMappingAPIImpl();
+        indexAPI = APILocator.getContentletIndexAPI();
+        relationshipAPI = APILocator.getRelationshipAPI();
+        contentTypeAPI = APILocator.getContentTypeAPI(user);
 
         /*
         ORIGINAL TEXT
@@ -133,14 +162,14 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                     .variable("velocityVarNameTesting" + time).detailPage("pageNotExists")
                     .build();
 
-            type = APILocator.getContentTypeAPI(user).save(type);
+            type = contentTypeAPI.save(type);
 
             final Field titleField =
                     FieldBuilder.builder(TextField.class).name("testTitle").variable("testTitle")
                             .unique(true)
                             .contentTypeId(type.id()).dataType(
                             DataTypes.TEXT).build();
-            APILocator.getContentTypeFieldAPI().save(titleField, user);
+            fieldAPI.save(titleField, user);
 
             final Contentlet contentlet = new ContentletDataGen(type.id())
                     .setProperty("testTitle", "TestContent").nextPersisted();
@@ -148,24 +177,23 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             final List<Contentlet> contentlets = new ArrayList<>();
             contentlets.add(contentlet);
 
-            APILocator.getContentletIndexAPI().addContentToIndex(contentlets);
+            indexAPI.addContentToIndex(contentlets);
 
-            assertTrue(APILocator.getContentletAPI()
+            assertTrue(contentletAPI
                     .indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0);
         }finally {
             if(type!=null){
-                APILocator.getContentTypeAPI(user).delete(type);
+                contentTypeAPI.delete(type);
             }
         }
 
     }
 
     private void generateTestContentlets(final int count) throws Exception {
-        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final long languageId = languageAPI.getDefaultLanguage().getId();
 
-        final ContentType webPageContentContentType = APILocator
-                .getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
-        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        final ContentType webPageContentContentType = contentTypeAPI.find("webPageContent");
+        final Host host = hostAPI.findDefaultHost(user, false);
 
         for (int i = 0; i <= count; i++) {
             new ContentletDataGen(
@@ -183,7 +211,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         generateTestContentlets(50);
 
-        final List<Contentlet>   contentlets = APILocator.getContentletAPI().findAllContent(0, 100)
+        final List<Contentlet>   contentlets = contentletAPI.findAllContent(0, 100)
                 .stream().filter(Objects::nonNull).collect(Collectors.toList());
 
         assertNotNull(contentlets);
@@ -206,12 +234,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         contentletsWaitForRefresh.stream().forEach(contentlet -> contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR));
 
 
-        APILocator.getContentletIndexAPI().addContentToIndex(contentlets);
+        indexAPI.addContentToIndex(contentlets);
 
         for (final Contentlet contentlet : contentletsDefaultRefresh) {
 
             if (null != contentlet.getInode()) {
-                final boolean exists = APILocator.getContentletAPI().indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0;
+                final boolean exists = contentletAPI.indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0;
                 System.out.println(contentlet.getIdentifier() + " with default strategy was indexed: " + exists);
             }
         }
@@ -219,7 +247,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         for (final Contentlet contentlet : contentletsImmediateRefresh) {
 
             if (null != contentlet.getInode()) {
-                final boolean exists = APILocator.getContentletAPI().indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0;
+                final boolean exists = contentletAPI.indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0;
                 System.out.println(contentlet.getIdentifier() + " with immediate strategy was indexed: " + exists);
                 assertTrue(contentlet.getIdentifier() + " with immediate strategy was indexed: " + exists, exists);
             }
@@ -228,7 +256,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         for (final Contentlet contentlet : contentletsWaitForRefresh) {
 
             if (null != contentlet.getInode()) {
-                final boolean exists = APILocator.getContentletAPI().indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0;
+                final boolean exists = contentletAPI.indexCount("+identifier:" + contentlet.getIdentifier(), user, false) > 0;
                 System.out.println(contentlet.getIdentifier() + " with wait for strategy was indexed: " + exists);
                 assertTrue(contentlet.getIdentifier() + " with wait for strategy was indexed: " + exists, exists);
             }
@@ -246,8 +274,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void createContentIndexAndDelete () throws Exception {
-
-        ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
@@ -341,8 +367,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     @Ignore
     public void activateDeactivateIndex () throws Exception {
 
-        ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
-
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
         String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
@@ -393,8 +417,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     @Test
     public void isDotCMSIndexName () throws Exception {
 
-        ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
-
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
         String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
@@ -418,8 +440,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void optimize () throws Exception {
-
-        ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
@@ -457,9 +477,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     @Test
     public void addRemoveContentToIndex () throws Exception {
 
-        ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
-        ContentletAPI contentletAPI = APILocator.getContentletAPI();
-
         //Creating a test structure
         Structure testStructure = loadTestStructure();
         //Creating a test contentlet
@@ -495,11 +512,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             assertTrue( result == null || result.isEmpty() );
         } finally {
             try {
-                APILocator.getContentletAPI().destroy(testContentlet, user, false );
+                contentletAPI.destroy(testContentlet, user, false );
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            APILocator.getContentTypeAPI(user).delete(new StructureTransformer(testStructure).from());
+            contentTypeAPI.delete(new StructureTransformer(testStructure).from());
         }
     }
 
@@ -514,9 +531,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     @Test
     @Ignore
     public void removeContentFromIndexByStructureInode () throws Exception {
-
-        ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
-        ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
         //Creating a test structure
         Structure testStructure = loadTestStructure();
@@ -553,11 +567,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         } finally {
             try {
-                APILocator.getContentletAPI().destroy(testContentlet, user, false );
+                contentletAPI.destroy(testContentlet, user, false );
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            APILocator.getContentTypeAPI(user).delete(new StructureTransformer(testStructure).from());
+            contentTypeAPI.delete(new StructureTransformer(testStructure).from());
         }
     }
 
@@ -706,9 +720,9 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             assertEquals(0, siteSearchResults.getTotalResults());
         } finally {
             //And finally remove the index
-            APILocator.getContentTypeAPI(user).delete(new StructureTransformer(testStructure).from());
+            contentTypeAPI.delete(new StructureTransformer(testStructure).from());
             try {
-                APILocator.getContentletAPI().destroy(testContentlet, user, false);
+                contentletAPI.destroy(testContentlet, user, false);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -722,11 +736,8 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     	Folder testFolder = null;
     	Structure testStructure = null;
     	Contentlet testContent = null;
-    	ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
     	try {
-	    	ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
-
 	    	//Creating a test structure
 	    	PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
@@ -752,7 +763,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                             .required(true).indexed(true).listed(true)
                             .contentTypeId(testStructure.id()).dataType(
                             DataTypes.DATE).build();
-            field = APILocator.getContentTypeFieldAPI().save(field,user);
+            field = fieldAPI.save(field,user);
 
 	    	//Creating a test contentlet
 	    	testContent = new Contentlet();
@@ -808,7 +819,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     content.setIndexPolicy(IndexPolicy.FORCE);
 
     // check in the content
-    content = APILocator.getContentletAPI().checkin(content, user, false);
+    content = contentletAPI.checkin(content, user, false);
 
     assertTrue(content.getIdentifier() != null);
     assertTrue(content.isWorking());
@@ -817,33 +828,33 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     // publish the content
     content.setIndexPolicy(IndexPolicy.FORCE);
     content.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
-    APILocator.getContentletAPI().publish(content, user, false);
+    contentletAPI.publish(content, user, false);
     String liveInode = content.getInode();
     assertTrue(content.isLive());
     content.setInode(null);
     title = "version2";
     content.setStringProperty("title", title);
     content.setIndexPolicy(IndexPolicy.FORCE);
-    content = APILocator.getContentletAPI().checkin(content, user, false);
+    content = contentletAPI.checkin(content, user, false);
     assertTrue(content.getIdentifier() != null);
     assertTrue(content.isWorking());
     assertFalse(content.isLive());
     assertTrue(content.hasLiveVersion());
     String workingInode = content.getInode();
-    List<ContentletSearch> liveSearch = APILocator.getContentletAPI().searchIndex("+identifier:" + content.getIdentifier() + " +live:true", 1, 0, "modDate", user, false);
-    List<ContentletSearch> workingSearch = APILocator.getContentletAPI().searchIndex("+identifier:" + content.getIdentifier() + " +live:false", 1, 0, "modDate", user, false);
+    List<ContentletSearch> liveSearch = contentletAPI.searchIndex("+identifier:" + content.getIdentifier() + " +live:true", 1, 0, "modDate", user, false);
+    List<ContentletSearch> workingSearch = contentletAPI.searchIndex("+identifier:" + content.getIdentifier() + " +live:false", 1, 0, "modDate", user, false);
     assert(liveSearch.size()>0);
     assert(workingSearch.size()>0);
     assert(liveSearch.get(0).getInode().equals(liveInode));
     assert(workingSearch.get(0).getInode().equals(workingInode));
     assert(!workingSearch.get(0).getInode().equals(liveInode));
     
-    APILocator.getContentletIndexAPI().removeContentFromIndex(content);
+    indexAPI.removeContentFromIndex(content);
     ReindexThread.startThread();
     APILocator.getReindexQueueAPI().addContentletReindex(content);
     ThreadUtils.sleep(10000);
-    liveSearch = APILocator.getContentletAPI().searchIndex("+identifier:" + content.getIdentifier() + " +live:true", 1, 0, "modDate", user, false);
-    workingSearch = APILocator.getContentletAPI().searchIndex("+identifier:" + content.getIdentifier() + " +live:false", 1, 0, "modDate", user, false);
+    liveSearch = contentletAPI.searchIndex("+identifier:" + content.getIdentifier() + " +live:true", 1, 0, "modDate", user, false);
+    workingSearch = contentletAPI.searchIndex("+identifier:" + content.getIdentifier() + " +live:false", 1, 0, "modDate", user, false);
     assert(liveSearch.size()>0);
     assert(workingSearch.size()>0);
     assert(liveSearch.get(0).getInode().equals(liveInode));
@@ -932,11 +943,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         StructureFactory.saveStructure( testStructure );
         CacheLocator.getContentTypeCache().add( testStructure );
         //Adding test field
-        Field field =
+        final Field field =
                 FieldBuilder.builder(WysiwygField.class).name("Wysiwyg").variable("wysiwyg").required(true).indexed(true).listed(true)
                         .contentTypeId(testStructure.id()).dataType(
                         DataTypes.LONG_TEXT).build();
-        field = APILocator.getContentTypeFieldAPI().save(field,user);
+        fieldAPI.save(field,user);
 
         return testStructure;
     }
@@ -955,7 +966,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         testContentlet.setHost( defaultHost.getIdentifier() );
         testContentlet.setLanguageId( defaultLanguage.getId() );
         testContentlet.setStringProperty( "wysiwyg", stemmerText );
-        testContentlet = APILocator.getContentletAPI().checkin( testContentlet, user, false );
+        testContentlet = contentletAPI.checkin( testContentlet, user, false );
 
         //Make it live
         APILocator.getVersionableAPI().setLive( testContentlet );
@@ -1041,8 +1052,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
     public boolean wasContentRemoved ( String query ) {
 
-        ContentletAPI contentletAPI = APILocator.getContentletAPI();
-
         boolean removed = false;
         int counter = 0;
         while ( counter < 300 ) {
@@ -1072,8 +1081,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
     @Test
     public void testRemoveContentFromIndex() throws DotDataException, DotSecurityException {
-        final ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
-        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
         final ContentType type = new ContentTypeDataGen()
                 .fields(ImmutableList
@@ -1091,7 +1098,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         baseCon = contentletAPI.checkin(baseCon, user, false);
         contents.add(baseCon);
 
-        List<Language> languages = APILocator.getLanguageAPI().getLanguages();
+        List<Language> languages = languageAPI.getLanguages();
         if (languages.size() < 5) {
             // create 3 langauges
             for (int i = 0; i < 3; i++) {
@@ -1099,14 +1106,14 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 newLang.setCountry("x" + i);
                 newLang.setLanguage("en");
                 newLang.setCountryCode("x" + i);
-                APILocator.getLanguageAPI().saveLanguage(newLang);
+                languageAPI.saveLanguage(newLang);
             }
         }
         languages = new ArrayList<>();
-        languages.addAll(APILocator.getLanguageAPI().getLanguages());
+        languages.addAll(languageAPI.getLanguages());
 
         languages.removeIf(
-                l -> l.getId() == APILocator.getLanguageAPI().getDefaultLanguage().getId());
+                l -> l.getId() == languageAPI.getDefaultLanguage().getId());
         languages = languages.subList(0, (languages.size() > 5) ? 5 : languages.size());
 
         // building contentents in multiple languages
@@ -1173,5 +1180,144 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         assertTrue(contentletAPI.indexCount("+identifier:" + baseCon.getIdentifier(), user, false)
                 == 0);
 
+    }
+
+    /**
+     * This test creates an index with two custom mapped fields: a text field and a relationship field.
+     * Additionally, it creates a legacy relationship without a custom mapping in order to verify that
+     * relationships in general are mapped as keywords by default, unless a custom mapping is defined for a specific case
+     * @throws Exception
+     */
+    @Test
+    public void testCreateContentIndexWithCustomMappings() throws Exception {
+
+        String workingIndex = null;
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        try {
+            parentContentType = new ContentTypeDataGen().nextPersisted();
+            childContentType = new ContentTypeDataGen().nextPersisted();
+
+            //Adding fields
+            Field ageField = FieldBuilder.builder(TextField.class)
+                    .name("age").contentTypeId(parentContentType.id()).indexed(false).build();
+            ageField = fieldAPI.save(ageField, user);
+
+            Field relationshipField = FieldBuilder.builder(RelationshipField.class)
+                    .name("relationshipField")
+                    .contentTypeId(parentContentType.id())
+                    .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                    .relationType(parentContentType.variable()).build();
+
+            relationshipField = fieldAPI.save(relationshipField, user);
+
+            //Create legacy relationship
+            final Relationship legacyRelationship = createLegacyRelationship(parentContentType,
+                    childContentType);
+
+            //Adding field variables
+            final FieldVariable ageVariable = ImmutableFieldVariable.builder()
+                    .fieldId(ageField.inode())
+                    .name("ageMapping").key(FieldVariable.ES_CUSTOM_MAPPING_KEY).value("{\n"
+                            + "                \"type\": \"long\"\n"
+                            + "              }").userId(user.getUserId())
+                    .build();
+
+            fieldAPI.save(ageVariable, user);
+
+            FieldVariable relVariable = ImmutableFieldVariable.builder()
+                    .fieldId(relationshipField.inode())
+                    .name("relMapping").key(FieldVariable.ES_CUSTOM_MAPPING_KEY).value("{\n"
+                            + "                \"type\": \"text\"\n"
+                            + "              }").userId(user.getUserId())
+                    .build();
+
+            relVariable = fieldAPI.save(relVariable, user);
+
+            final Field updatedField = fieldAPI.find(relVariable.fieldId());
+
+            //Verify ageField is updated as System Indexed
+            assertTrue(updatedField.indexed());
+
+            //Build the index name
+            String timestamp = String.valueOf(new Date().getTime());
+            workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timestamp;
+
+            //Create a working index
+            boolean result = indexAPI.createContentIndex(workingIndex);
+            //Validate
+            assertTrue(result);
+
+            //verify mapping
+            final String mapping = esMappingAPI.getMapping(workingIndex, "content");
+
+            //parse json mapping and validate
+            assertNotNull(mapping);
+
+            final JSONObject contentJSON = (JSONObject) (new JSONObject(mapping)).get("content");
+            final JSONObject propertiesJSON = (JSONObject) contentJSON.get("properties");
+            final JSONObject contentTypeJSON = (JSONObject) ((JSONObject) propertiesJSON
+                    .get(parentContentType.variable().toLowerCase())).get("properties");
+
+            //validate age mapping results
+            final Map ageMapping = ((JSONObject) contentTypeJSON
+                    .get(ageField.variable().toLowerCase())).getAsMap();
+            assertNotNull(ageMapping);
+            assertEquals(1, ageMapping.size());
+            assertEquals("long", ageMapping.get("type"));
+
+            //validate relationship field mapping results
+            final Map relationshipMapping = ((JSONObject) contentTypeJSON
+                    .get(relationshipField.variable().toLowerCase())).getAsMap();
+            assertNotNull(relationshipMapping);
+            assertEquals(1, relationshipMapping.size());
+            assertEquals("text", relationshipMapping.get("type"));
+
+            //validate legacy relationship
+            final Map legacyRelationshipMapping = ((JSONObject) propertiesJSON
+                    .get(legacyRelationship.getRelationTypeValue().toLowerCase())).getAsMap();
+            assertNotNull(ageMapping);
+            assertEquals(2, legacyRelationshipMapping.size());
+            assertEquals("keyword", legacyRelationshipMapping.get("type"));
+            assertEquals(8191, legacyRelationshipMapping.get("ignore_above"));
+
+        } finally {
+            if (workingIndex != null) {
+                indexAPI.delete(workingIndex);
+            }
+
+            if (parentContentType != null && parentContentType.inode() != null) {
+                ContentTypeDataGen.remove(parentContentType);
+            }
+
+            if (childContentType != null && childContentType.inode() != null) {
+                ContentTypeDataGen.remove(childContentType);
+            }
+        }
+    }
+
+    public static Relationship createLegacyRelationship(final ContentType parentContentType,
+            final ContentType childContentType) {
+        final String relationTypeValue = parentContentType.name() + "-" + childContentType.name();
+
+        Relationship relationship;
+        relationship = relationshipAPI.byTypeValue(relationTypeValue);
+        if (null != relationship) {
+            return relationship;
+        } else {
+            relationship = new Relationship();
+            relationship.setParentRelationName(parentContentType.name());
+            relationship.setChildRelationName(childContentType.name());
+            relationship.setCardinality(0);
+            relationship.setRelationTypeValue(relationTypeValue);
+            relationship.setParentStructureInode(parentContentType.inode());
+            relationship.setChildStructureInode(childContentType.id());
+            try {
+                relationshipAPI.create(relationship);
+            } catch (Exception e) {
+                throw new DotRuntimeException(e);
+            }
+        }
+        return relationship;
     }
 }
