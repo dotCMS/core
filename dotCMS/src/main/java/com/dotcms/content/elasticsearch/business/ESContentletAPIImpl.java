@@ -2010,7 +2010,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
             }
 
-            this.canLock(contentlet, user);
+            final List<Contentlet> versions =  this.findAllVersions(APILocator.getIdentifierAPI().find(contentlet.getIdentifier()),
+                    user, respectFrontendRoles);
+
+            for (final Contentlet version : versions) {
+                this.canLock(version, user);
+            }
         }
 
         final List<Contentlet> filterContentlets = this.permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_PUBLISH,
