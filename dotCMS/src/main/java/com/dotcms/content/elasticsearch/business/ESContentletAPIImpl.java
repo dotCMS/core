@@ -2010,7 +2010,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
             }
 
-            final List<Contentlet> versions =  this.findAllVersions(APILocator.getIdentifierAPI().find(contentlet.getIdentifier()),
+            final boolean bringOldVersions  = false;  // we do not want old version in order to be more efficient
+            final List<Contentlet> versions =  this.findAllVersions(APILocator.getIdentifierAPI().find(contentlet.getIdentifier()), bringOldVersions,
                     user, respectFrontendRoles);
 
             for (final Contentlet version : versions) {
