@@ -5,7 +5,6 @@ import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTok
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
@@ -818,7 +817,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         String indexToHit;
 
         try {
-            indexToHit = APILocator.getIndiciesAPI().loadIndicies().working;
+            indexToHit = APILocator.getIndiciesAPI().loadIndicies().getWorking();
         }
         catch(DotDataException ee) {
             Logger.fatal(this, "Can't get indicies information",ee);
@@ -972,7 +971,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 			final  SearchRequest searchRequest = new SearchRequest();
 			searchRequest.source(searchSourceBuilder);
-			searchRequest.indices((live ? info.live : info.working));
+			searchRequest.indices((live ? info.getLive() : info.getWorking()));
 
             final SearchResponse response = Sneaky.sneak(()->
                     RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
@@ -1370,9 +1369,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return 0;
         }
         if(query.contains("+live:true") && !query.contains("+deleted:true")) {
-            indexToHit = info.live;
+            indexToHit = info.getLive();
         } else {
-            indexToHit = info.working;
+            indexToHit = info.getWorking();
         }
 
         SearchRequest searchRequest = getCountSearchRequest(qq);
@@ -1403,7 +1402,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         SearchRequest searchRequest = getCountSearchRequest(queryStringQuery);
         searchRequest.indices(query.contains("+live:true") && !query.contains("+deleted:true")?
-                info.live: info.working);
+                info.getLive(): info.getWorking());
 
         final SearchResponse response = Sneaky.sneak(()->
                 RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
@@ -1436,7 +1435,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
         SearchRequest searchRequest = getCountSearchRequest(queryStringQuery);
         searchRequest.indices(query.contains("+live:true") && !query.contains("+deleted:true")?
-                info.live: info.working);
+                info.getLive(): info.getWorking());
 
         RestHighLevelClientProvider.getInstance().getClient().searchAsync(searchRequest, RequestOptions.DEFAULT,
                         new ActionListener<SearchResponse>() {
@@ -1538,9 +1537,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        return null;
 	    }
 	    if(query.contains("+live:true") && !query.contains("+deleted:true"))
-	        indexToHit=info.live;
+	        indexToHit=info.getLive();
 	    else
-	        indexToHit=info.working;
+	        indexToHit=info.getWorking();
 
 
         SearchRequest searchRequest = new SearchRequest();

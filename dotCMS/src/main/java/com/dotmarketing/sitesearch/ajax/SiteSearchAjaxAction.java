@@ -265,7 +265,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
     	    String indexName = ESIndexHelper.INSTANCE.getIndexNameOrAlias(map,"indexName",
 					"indexAlias", APILocator.getESIndexAPI());
     	    response.setContentType("text/plain");
-            response.getWriter().println(APILocator.getIndiciesAPI().loadIndicies().site_search.equals(indexName) ? "default" : "inactive");
+            response.getWriter().println(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch().equals(indexName) ? "default" : "inactive");
 	    }
 	    catch(Exception ex) {
 	        throw new RuntimeException(ex);
@@ -275,7 +275,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 	@Override
     public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response) throws IOException {
 	    try {
-            String defaultIndex=APILocator.getIndiciesAPI().loadIndicies().site_search;
+            String defaultIndex=APILocator.getIndiciesAPI().loadIndicies().getSiteSearch();
             List<String> ret=new ArrayList<String>();
             for(String ii : APILocator.getSiteSearchAPI().listIndices())
                 if(defaultIndex==null || !defaultIndex.equals(ii))

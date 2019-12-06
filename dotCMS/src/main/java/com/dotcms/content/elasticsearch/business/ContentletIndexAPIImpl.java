@@ -8,7 +8,6 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.DotMappingException;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
@@ -53,7 +52,6 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -94,7 +92,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private static final ESIndexAPI esIndexApi = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
-    public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
+
 
     public ContentletIndexAPIImpl() {
         queueApi = APILocator.getReindexQueueAPI();
@@ -102,14 +100,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     public synchronized void getRidOfOldIndex() throws DotDataException {
         IndiciesInfo idxs = APILocator.getIndiciesAPI().loadIndicies();
-        if (idxs.working != null)
-            delete(idxs.working);
-        if (idxs.live != null)
-            delete(idxs.live);
-        if (idxs.reindex_working != null)
-            delete(idxs.reindex_working);
-        if (idxs.reindex_live != null)
-            delete(idxs.reindex_live);
+        if (idxs.getWorking() != null)
+            delete(idxs.getWorking());
+        if (idxs.getLive() != null)
+            delete(idxs.getLive());
+        if (idxs.getReindexWorking() != null)
+            delete(idxs.getReindexWorking());
+        if (idxs.getReindexLive() != null)
+            delete(idxs.getReindexLive());
     }
 
     /**
@@ -120,7 +118,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     private synchronized boolean indexReady() throws DotDataException {
         IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        return info.working != null && info.live != null;
+        return info.getWorking() != null && info.getLive() != null;
     }
 
     /**
@@ -185,24 +183,21 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (indexReady())
             return "";
         try {
-            final String timeStamp = timestampFormatter.format(new Date());
 
-            final String workingIndex = ES_WORKING_INDEX_NAME + "_" + timeStamp;
-            final String liveIndex = ES_LIVE_INDEX_NAME + "_" + timeStamp;
+            final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
+            final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
 
-            createContentIndex(workingIndex, 0);
-            createContentIndex(liveIndex, 0);
-
-            IndiciesInfo info = new IndiciesInfo();
-            info.working = workingIndex;
-            info.live = liveIndex;
-
-            IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
-
-            if (oldInfo != null && oldInfo.site_search != null){
-                info.site_search = oldInfo.site_search;
+            if (oldInfo != null && oldInfo.getSiteSearch() != null){
+                builder.setSiteSearch(oldInfo.getSiteSearch());
             }
+
+            final IndiciesInfo info = builder.build();
+            final String timeStamp = info.cretaeNewIndiciesName(IndexType.WORKING, IndexType.LIVE);
+
             APILocator.getIndiciesAPI().point(info);
+
+            createContentIndex(info.getWorking(), 0);
+            createContentIndex(info.getLive(), 0);
 
             return timeStamp;
         } catch (Exception e) {
@@ -278,23 +273,22 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (indexReady() && !isInFullReindex()) {
             try {
 
-                final String timeStamp = timestampFormatter.format(new Date());
+                final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
+                final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
 
-                // index names for new index
-                final String workingIndex = ES_WORKING_INDEX_NAME + "_" + timeStamp;
-                final String liveIndex = ES_LIVE_INDEX_NAME + "_" + timeStamp;
+                builder.setWorking(oldInfo.getWorking());
+                builder.setLive(oldInfo.getLive());
+                builder.setSiteSearch(oldInfo.getSiteSearch());
 
-                createContentIndex(workingIndex);
-                createContentIndex(liveIndex);
+                final IndiciesInfo info = builder.build();
+                final String timeStamp = info.cretaeNewIndiciesName(IndexType.REINDEX_WORKING, IndexType.REINDEX_LIVE);
 
-                IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-                IndiciesInfo newinfo = new IndiciesInfo();
-                newinfo.working = info.working;
-                newinfo.live = info.live;
-                newinfo.reindex_working = workingIndex;
-                newinfo.reindex_live = liveIndex;
-                newinfo.site_search = info.site_search;
-                APILocator.getIndiciesAPI().point(newinfo);
+                APILocator.getIndiciesAPI().point(info);
+
+                createContentIndex(info.getReindexWorking(), 0);
+                createContentIndex(info.getReindexLive(), 0);
+
+                APILocator.getIndiciesAPI().point(info);
 
                 return timeStamp;
             } catch (Exception e) {
@@ -307,7 +301,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @CloseDBIfOpened
     public boolean isInFullReindex() throws DotDataException {
         IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        return info.reindex_working != null && info.reindex_live != null;
+        return info.getReindexWorking() != null && info.getReindexLive() != null;
     }
 
     @CloseDBIfOpened
@@ -345,19 +339,23 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 }
             }
 
-            final IndiciesInfo newInfo = new IndiciesInfo();
-            newInfo.live = oldInfo.reindex_live;
-            newInfo.working = oldInfo.reindex_working;
-            newInfo.site_search = oldInfo.site_search;
+            final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
+
+            builder.setLive(oldInfo.getReindexLive());
+            builder.setWorking(oldInfo.getReindexWorking());
+            builder.setSiteSearch(oldInfo.getSiteSearch());
+
+            final IndiciesInfo newInfo = builder.build();
+
             logSwitchover(oldInfo);
             APILocator.getIndiciesAPI().point(newInfo);
 
             DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
                 try {
                     Logger.info(this.getClass(), "Updating and optimizing ElasticSearch Indexes");
-                    esIndexApi.moveIndexBackToCluster(newInfo.working);
-                    esIndexApi.moveIndexBackToCluster(newInfo.live);
-                    optimize(ImmutableList.of(newInfo.working, newInfo.live));
+                    esIndexApi.moveIndexBackToCluster(newInfo.getWorking());
+                    esIndexApi.moveIndexBackToCluster(newInfo.getLive());
+                    optimize(ImmutableList.of(newInfo.getWorking(), newInfo.getLive()));
                 } catch (Exception e) {
                     Logger.warnAndDebug(this.getClass(), "unable to expand ES replicas:" + e.getMessage(), e);
                 }
@@ -373,9 +371,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private long reindexTimeElapsedInLong() {
         try {
             final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
-            if (oldInfo.reindex_working != null) {
-                Date startTime = timestampFormatter.parse(oldInfo.reindex_working.replace("working_", ""));
-                return System.currentTimeMillis() - startTime.getTime();
+            if (oldInfo.getReindexWorking() != null) {
+                return oldInfo.getIndexTimeStamp(IndexType.REINDEX_WORKING);
             }
         } catch (Exception e) {
             Logger.debug(this, "unable to parse time:" + e, e);
@@ -409,8 +406,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             Logger.info(this, "Reindex took        : " + duration.get() );
         }
         Logger.info(this, "Switching Server Id : " + ConfigUtils.getServerId() );
-        Logger.info(this, "Old indicies        : [" + oldInfo.working + "," + oldInfo.live + "]");
-        Logger.info(this, "New indicies        : [" + oldInfo.reindex_working + "," + oldInfo.reindex_live + "]");
+        Logger.info(this, "Old indicies        : [" + oldInfo.getWorking() + "," + oldInfo.getLive() + "]");
+        Logger.info(this, "New indicies        : [" + oldInfo.getReindexWorking() + "," + oldInfo.getReindexLive() + "]");
         Logger.info(this, "-------------------------------");
 
     }
@@ -695,12 +692,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
                 if (this.isWorking(contentlet)) {
                     mapping = gson.toJson(mappingAPI.toMap(contentlet));
-                    if (!forReindex || info.reindex_working == null) {
-                        bulk.add(new IndexRequest(info.working, "_doc", id)
+                    if (!forReindex || info.getReindexWorking() == null) {
+                        bulk.add(new IndexRequest(info.getWorking(), "_doc", id)
                                 .source(mapping, XContentType.JSON));
                     }
-                    if (info.reindex_working != null) {
-                        bulk.add(new IndexRequest(info.reindex_working, "_doc", id)
+                    if (info.getReindexWorking() != null) {
+                        bulk.add(new IndexRequest(info.getReindexWorking(), "_doc", id)
                                 .source(mapping, XContentType.JSON));
                     }
                 }
@@ -709,12 +706,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     if (mapping == null) {
                         mapping = gson.toJson(mappingAPI.toMap(contentlet));
                     }
-                    if (!forReindex || info.reindex_live == null) {
-                        bulk.add(new IndexRequest(info.live, "_doc", id)
+                    if (!forReindex || info.getReindexLive() == null) {
+                        bulk.add(new IndexRequest(info.getLive(), "_doc", id)
                                 .source(mapping, XContentType.JSON));
                     }
-                    if (info.reindex_live != null) {
-                        bulk.add(new IndexRequest(info.reindex_live, "_doc", id)
+                    if (info.getReindexLive() != null) {
+                        bulk.add(new IndexRequest(info.getReindexLive(), "_doc", id)
                                 .source(mapping, XContentType.JSON));
                     }
                 }
@@ -907,11 +904,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 break;
         }
 
-        bulkRequest.add(new DeleteRequest(info.live, "_doc", id));
+        bulkRequest.add(new DeleteRequest(info.getLive(), "_doc", id));
 
-        if (info.reindex_live != null) {
+        if (info.getReindexLive() != null) {
 
-            bulkRequest.add(new DeleteRequest(info.reindex_live, "_doc", id));
+            bulkRequest.add(new DeleteRequest(info.getReindexLive(), "_doc", id));
         }
 
         if (!onlyLive) {
@@ -923,9 +920,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 reindexDependenciesForDeletedContent(contentlet, relationships, indexPolicyDependencies);
             }
 
-            bulkRequest.add(new DeleteRequest(info.working, "_doc", id));
-            if (info.reindex_working != null) {
-                bulkRequest.add(new DeleteRequest(info.reindex_working, "_doc", id));
+            bulkRequest.add(new DeleteRequest(info.getWorking(), "_doc", id));
+            if (info.getReindexWorking() != null) {
+                bulkRequest.add(new DeleteRequest(info.getReindexWorking(), "_doc", id));
             }
         }
 
@@ -993,12 +990,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         // collecting indexes
         final List<String> idxs = new ArrayList<>();
-        idxs.add(info.working);
-        idxs.add(info.live);
-        if (info.reindex_working != null)
-            idxs.add(info.reindex_working);
-        if (info.reindex_live != null)
-            idxs.add(info.reindex_live);
+        idxs.add(info.getWorking());
+        idxs.add(info.getLive());
+        if (info.getReindexWorking() != null)
+            idxs.add(info.getReindexWorking());
+        if (info.getReindexLive() != null)
+            idxs.add(info.getReindexLive());
         String[] idxsArr = new String[idxs.size()];
         idxsArr = idxs.toArray(idxsArr);
 
@@ -1020,13 +1017,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
             IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
-            final String rew = info.reindex_working;
-            final String rel = info.reindex_live;
+            final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
+            builder.setWorking(info.getWorking());
+            builder.setLive(info.getLive());
+            builder.setSiteSearch(info.getSiteSearch());
 
-            IndiciesInfo newinfo = new IndiciesInfo();
-            newinfo.working = info.working;
-            newinfo.live = info.live;
-            newinfo.site_search = info.site_search;
+            IndiciesInfo newinfo = builder.build();
+
+            final String rew = info.getReindexWorking();
+            final String rel = info.getReindexLive();
+
             APILocator.getIndiciesAPI().point(newinfo);
 
             esIndexApi.moveIndexBackToCluster(rew);
@@ -1037,8 +1037,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
     }
 
-    public boolean isDotCMSIndexName(String indexName) {
-        return indexName.startsWith(ES_WORKING_INDEX_NAME + "_") || indexName.startsWith(ES_LIVE_INDEX_NAME + "_");
+    public boolean isDotCMSIndexName(final String indexName) {
+        return IndexType.WORKING.is(indexName) || IndexType.LIVE.is(indexName);
     }
 
     public List<String> listDotCMSClosedIndices() {
@@ -1059,68 +1059,63 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
 
     public void activateIndex(String indexName) throws DotDataException {
-        IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        IndiciesInfo newinfo = new IndiciesInfo();
-        newinfo.working = info.working;
-        newinfo.live = info.live;
-        newinfo.reindex_working = info.reindex_working;
-        newinfo.reindex_live = info.reindex_live;
-        newinfo.site_search = info.site_search;
-        if (indexName.startsWith(ES_WORKING_INDEX_NAME)) {
-            newinfo.working = indexName;
-        } else if (indexName.startsWith(ES_LIVE_INDEX_NAME)) {
-            newinfo.live = indexName;
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+        final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
+
+        if (IndexType.WORKING.is(indexName)) {
+            builder.setWorking(indexName);
+        } else if (IndexType.LIVE.is(indexName)) {
+            builder.setLive(indexName);
         }
-        APILocator.getIndiciesAPI().point(newinfo);
+        APILocator.getIndiciesAPI().point(builder.build());
     }
 
     public void deactivateIndex(String indexName) throws DotDataException, IOException {
-        IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        IndiciesInfo newinfo = new IndiciesInfo();
-        newinfo.working = info.working;
-        newinfo.live = info.live;
-        newinfo.reindex_working = info.reindex_working;
-        newinfo.reindex_live = info.reindex_live;
-        newinfo.site_search = info.site_search;
-        if (indexName.equals(info.working)) {
-            newinfo.working = null;
-        } else if (indexName.equals(info.live)) {
-            newinfo.live = null;
-        } else if (indexName.equals(info.reindex_working)) {
-            esIndexApi.moveIndexBackToCluster(info.reindex_working);
-            newinfo.reindex_working = null;
-        } else if (indexName.equals(info.reindex_live)) {
-            esIndexApi.moveIndexBackToCluster(info.reindex_live);
-            newinfo.reindex_live = null;
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+        final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
+
+        if (IndexType.WORKING.is(indexName)) {
+            builder.setWorking(null);
+        } else if (IndexType.LIVE.is(indexName)) {
+            builder.setLive(null);
+        } else if (IndexType.REINDEX_WORKING.is(indexName)) {
+            esIndexApi.moveIndexBackToCluster(info.getReindexWorking());
+            builder.setReindexWorking(null);
+        } else if (IndexType.REINDEX_LIVE.is(indexName)) {
+            esIndexApi.moveIndexBackToCluster(info.getReindexLive());
+            builder.setReindexLive(null);
         }
-        APILocator.getIndiciesAPI().point(newinfo);
+        APILocator.getIndiciesAPI().point(builder.build());
     }
 
     public synchronized List<String> getCurrentIndex() throws DotDataException {
         List<String> newIdx = new ArrayList<String>();
         IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        newIdx.add(info.working);
-        newIdx.add(info.live);
+        newIdx.add(info.getWorking());
+        newIdx.add(info.getLive());
         return newIdx;
     }
 
     public synchronized List<String> getNewIndex() throws DotDataException {
         List<String> newIdx = new ArrayList<String>();
         IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        if (info.reindex_working != null)
-            newIdx.add(info.reindex_working);
-        if (info.reindex_live != null)
-            newIdx.add(info.reindex_live);
+
+        if (info.getReindexWorking() != null)
+            newIdx.add(info.getReindexWorking());
+        if (info.getReindexLive() != null)
+            newIdx.add(info.getReindexLive());
         return newIdx;
     }
 
-    public String getActiveIndexName(String type) throws DotDataException {
+    public String getActiveIndexName(final String type) throws DotDataException {
         IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        if (type.equalsIgnoreCase(ES_WORKING_INDEX_NAME)) {
-            return info.working;
-        } else if (type.equalsIgnoreCase(ES_LIVE_INDEX_NAME)) {
-            return info.live;
+
+        if (IndexType.WORKING.is(type)) {
+            return info.getWorking();
+        } else if (IndexType.LIVE.is(type)) {
+            return info.getLive();
         }
+
         return null;
     }
 

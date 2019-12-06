@@ -6,7 +6,7 @@ import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -42,13 +42,13 @@ public class ESReindexationProcessStatus implements Serializable {
     @CloseDBIfOpened
     public static String currentIndexPath() throws DotDataException {
         IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        return "[" + info.working + "," + info.live + "]";
+        return "[" + info.getWorking() + "," + info.getLive() + "]";
     }
 
     @CloseDBIfOpened
     public static String getNewIndexPath() throws DotDataException {
         IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        return "[" + info.reindex_working + "," + info.reindex_live + "]";
+        return "[" + info.getReindexWorking() + "," + info.getReindexLive() + "]";
     }
 
     @CloseDBIfOpened

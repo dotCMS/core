@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo.IndexTypes;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -15,6 +13,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 
+import io.swagger.models.auth.In;
 import io.vavr.control.Try;
 
 public class IndiciesFactory {
@@ -38,25 +37,27 @@ public class IndiciesFactory {
                 }
                 info = cache.get();
                 if (info == null) {
-                    info = new IndiciesInfo();
+                    final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
                     final DotConnect dc = new DotConnect();
                     dc.setSQL("SELECT index_name,index_type FROM indicies");
                     final List<Map<String, Object>> results = dc.loadResults(conn);
                     for (Map<String, Object> rr : results) {
                         String name = (String) rr.get("index_name");
                         String type = (String) rr.get("index_type");
-                        if (type.equalsIgnoreCase(IndexTypes.WORKING.toString())) {
-                            info.working = name;
-                        } else if (type.equalsIgnoreCase(IndexTypes.LIVE.toString())) {
-                            info.live = name;
-                        } else if (type.equalsIgnoreCase(IndexTypes.REINDEX_LIVE.toString())) {
-                            info.reindex_live = name;
-                        } else if (type.equalsIgnoreCase(IndexTypes.REINDEX_WORKING.toString())) {
-                            info.reindex_working = name;
-                        } else if (type.equalsIgnoreCase(IndexTypes.SITE_SEARCH.toString())) {
-                            info.site_search = name;
+                        if (type.equalsIgnoreCase(IndexType.WORKING.toString())) {
+                            builder.setWorking(name);
+                        } else if (type.equalsIgnoreCase(IndexType.LIVE.toString())) {
+                            builder.setLive(name);
+                        } else if (type.equalsIgnoreCase(IndexType.REINDEX_LIVE.toString())) {
+                            builder.setReindexLive(name);
+                        } else if (type.equalsIgnoreCase(IndexType.REINDEX_WORKING.toString())) {
+                            builder.setReindexWorking(name);
+                        } else if (type.equalsIgnoreCase(IndexType.SITE_SEARCH.toString())) {
+                            builder.setSiteSearch(name);
                         }
                     }
+
+                    info = builder.build();
                     cache.put(info);
                 }
             }
@@ -80,7 +81,7 @@ public class IndiciesFactory {
         DotConnect dc = new DotConnect();
         final String insertSQL = "INSERT INTO indicies VALUES(?,?)";
         final String deleteSQL = "DELETE from indicies where index_type=? or index_name=?";
-        for (IndexTypes type : IndexTypes.values()) {
+        for (IndexType type : IndexType.values()) {
             final String indexType = type.toString().toLowerCase();
             final String newValue = Try.of(() -> (String) IndiciesInfo.class.getDeclaredField(indexType).get(newInfo)).getOrNull();
 

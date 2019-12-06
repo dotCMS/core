@@ -138,9 +138,9 @@ public class SiteSearchJobImpl {
             Map<String,String> aliasMap=iapi.getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices());
 
             if(counter==1){
-	            if(indexAlias.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)){
+	            if(indexAlias.equals(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch())){
 	            	Logger.info(this, "Index Alias is DEFAULT");
-	                indexName = APILocator.getIndiciesAPI().loadIndicies().site_search;
+	                indexName = APILocator.getIndiciesAPI().loadIndicies().getSiteSearch();
 	            }
 	            else if(indexAlias.equals("create-new")){
 	            	Logger.info(this, "Index Alias is default");

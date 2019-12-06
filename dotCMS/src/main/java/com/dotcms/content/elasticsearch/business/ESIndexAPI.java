@@ -1,7 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ContentletIndexAPI.ES_LIVE_INDEX_NAME;
-import static com.dotcms.content.elasticsearch.business.ContentletIndexAPI.ES_WORKING_INDEX_NAME;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -9,6 +7,7 @@ import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
@@ -33,19 +32,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -109,6 +100,8 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
 public class ESIndexAPI {
+
+
 
     private  final String MAPPING_MARKER = "mapping=";
     private  final String JSON_RECORD_DELIMITER = "---+||+-+-";
@@ -490,12 +483,12 @@ public class ESIndexAPI {
 	 * @return
 	 */
 	public  Set<String> listIndices() {
-		final GetIndexRequest request = new GetIndexRequest("*");
-		final GetIndexResponse response = Sneaky.sneak(()->(
-				RestHighLevelClientProvider.getInstance().getClient()
-						.indices().get(request, RequestOptions.DEFAULT)));
-
-		return new HashSet<>(Arrays.asList(response.getIndices()));
+		return new HashSet<>(this.getIndices(
+				true,
+				true,
+				IndexType.WORKING.getPattern(),
+				IndexType.LIVE.getPattern()
+		));
 	}
 
 	/**
@@ -674,6 +667,7 @@ public class ESIndexAPI {
 				Config.getStringProperty("ES_INDEX_QUERY_DEFAULT_FIELD", "catchall"));
 
 		final CreateIndexRequest request = new CreateIndexRequest(indexName);
+
 		request.settings(map);
 		request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
 		final CreateIndexResponse createIndexResponse =
@@ -884,34 +878,72 @@ public class ESIndexAPI {
      * @return List of indices names sorted by creation date
      */
     public List<String> getIndices(final boolean expandToOpenIndices, final boolean expandToClosedIndices) {
-        final List<String> indexes = new ArrayList<>();
-        try {
+		final List<String> indexes = new ArrayList<>();
+		indexes.addAll(
+			this.getIndices(
+				expandToOpenIndices,
+				expandToClosedIndices,
+				IndexType.WORKING.getPattern(),
+					IndexType.LIVE.getPattern()
+			)
+		);
 
-            GetIndexRequest request = new GetIndexRequest(ES_WORKING_INDEX_NAME + "_*");
-            request.indicesOptions(IndicesOptions.fromOptions(false, false, expandToOpenIndices, expandToClosedIndices));
-
-            //Searching for working indexes
-            indexes.addAll(Arrays.asList(
-                    RestHighLevelClientProvider.getInstance().getClient().indices()
-                            .get(request, RequestOptions.DEFAULT).getIndices()));
-
-            //Searching for live indexes
-            request = new GetIndexRequest(ES_LIVE_INDEX_NAME + "_*");
-            request.indicesOptions(IndicesOptions.fromOptions(false, false, expandToOpenIndices, expandToClosedIndices));
-
-            indexes.addAll(Arrays.asList(
-                    RestHighLevelClientProvider.getInstance().getClient().indices()
-                            .get(request, RequestOptions.DEFAULT).getIndices()));
-            indexes.sort(new IndexSortByDate());
-        } catch (ElasticsearchStatusException | IOException e) {
-            Logger.warnAndDebug(ContentletIndexAPIImpl.class, "The list of indexes cannot be returned. Reason: " + e.getMessage(), e);
-        }
-
-        return indexes;
+		indexes.sort(new IndexSortByDate());
+		return indexes;
     }
 
 
-    public List<String> getClosedIndexes() {
+	private Collection<String> getIndices(
+			final boolean expandToOpenIndices,
+			final boolean expandToClosedIndices,
+			final String... indices) {
+
+		final List<String> indexes = new ArrayList<>();
+		try {
+
+			GetIndexRequest request = new GetIndexRequest(indices);
+
+			request.indicesOptions(
+					IndicesOptions.fromOptions(
+							false, false,
+							expandToOpenIndices,
+							expandToClosedIndices
+					)
+			);
+
+			//Searching for working indexes
+			indexes.addAll(Arrays.asList(
+					RestHighLevelClientProvider.getInstance().getClient().indices()
+							.get(request, RequestOptions.DEFAULT).getIndices()));
+
+			return indexes.stream()
+					.filter(indexName -> {
+						final String clusterId = getClusterIdFromIndexName(indexName);
+						return clusterId == null || clusterId.equals(ClusterFactory.getClusterId());
+					})
+					.map(this::removeClusterIdFromIndexName)
+					.sorted(new IndexSortByDate())
+					.collect(Collectors.toList());
+		} catch (ElasticsearchStatusException | IOException e) {
+			Logger.warnAndDebug(ContentletIndexAPIImpl.class, "The list of indexes cannot be returned. Reason: " + e.getMessage(), e);
+		}
+
+		return indexes;
+	}
+
+	private String removeClusterIdFromIndexName(final String indexName) {
+		final String[] indexNameSplit = indexName.split(".");
+		return indexNameSplit.length == 1 ?
+				indexNameSplit[0] :
+				indexNameSplit[1];
+	}
+
+	private String getClusterIdFromIndexName(final String indexName) {
+		final String[] indexNameSplit = indexName.split(".");
+		return indexNameSplit.length == 1 ? null : indexNameSplit[0].split("_")[1];
+	}
+
+	public List<String> getClosedIndexes() {
 
         return getIndices(false, true);
     }
