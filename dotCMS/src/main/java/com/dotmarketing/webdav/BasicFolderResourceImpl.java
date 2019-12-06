@@ -63,7 +63,6 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         }
 
         newName = this.dotDavHelper.deleteSpecialCharacter(newName);
-        //newName = newName.toLowerCase();
 
         if(!dotDavHelper.isTempResource(newName)) {
 
