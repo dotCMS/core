@@ -18,9 +18,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -28,10 +25,8 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
-@RunWith(DataProviderRunner.class)
 public class LanguageAPITest {
 	private static User systemUser;
 	
@@ -213,22 +208,11 @@ public class LanguageAPITest {
     
     assertEquals(LanguageUtil.get( new Locale("en", "us"), SYSTEM_PROPERTYFILE_KEY ), translatedMap.get(SYSTEM_PROPERTYFILE_KEY) );
   }
-
-	@DataProvider
-	public static Object[] dataProviderSaveLanguage() {
-
-		return new Language[]{
-				null,
-				new Language(0, "", null, null, null),
-				new Language(0, "it", null, null, null),
-				new Language(0, "", "IT", null, null),
-		};
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	@UseDataProvider("dataProviderSaveLanguage")
-	public void test_saveLanguage_InvalidLanguage_ShouldThrowException(final Language language) {
-  		APILocator.getLanguageAPI().saveLanguage(language);
-	}
-
+  
+	
+	
+	
+	
+	
+	
 }

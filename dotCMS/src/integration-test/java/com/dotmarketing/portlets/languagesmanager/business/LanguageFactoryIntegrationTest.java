@@ -61,11 +61,6 @@ public class LanguageFactoryIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    public void test_getLanguage_NonExistingLanguage_ReturnsNull(){
-        assertNull(languageFactory.getLanguage("nonExisting"));
-    }
-
-    @Test
     public void test_insert_language_then_find_then_remove() {
 
         final Language danish = new Language(0, "da", "DK ", "Danish", "Denmark");

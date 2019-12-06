@@ -6,7 +6,6 @@ import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.google.common.annotations.VisibleForTesting;
@@ -159,11 +158,6 @@ public class LanguageAPIImpl implements LanguageAPI {
 	@WrapInTransaction
 	@Override
 	public void saveLanguage(final Language language) {
-		DotPreconditions.checkArgument(language!=null, "Language can't be null");
-		DotPreconditions.checkArgument(UtilMethods.isSet(language.getLanguageCode()),
-				"Language Code can't be null or empty");
-		DotPreconditions.checkArgument(UtilMethods.isSet(language.getLanguage()),
-				"Language String can't be null or empty");
 
         factory.saveLanguage(language);
         Logger.debug(this, "Created language: " + language);
