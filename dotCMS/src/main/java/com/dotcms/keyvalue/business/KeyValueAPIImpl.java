@@ -169,7 +169,7 @@ public class KeyValueAPIImpl implements KeyValueAPI {
             if (UtilMethods.isSet(contentType) && UtilMethods.isSet(contentType.variable())) {
                 query.append(" +").append(contentType.variable()).append(".key_dotraw:\"").append(key).append("\"");
             } else {
-                query.append(".key_dotraw:\"").append(key).append("\"");
+                query.append("+key_dotraw:\"").append(key).append("\"");
             }
 
             query.append((languageId >= 0) ? " +languageId:" + languageId : StringPool.BLANK);
