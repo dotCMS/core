@@ -115,9 +115,9 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	@Override
 	protected Language getLanguage(final String languageId) {
 
-        if(!UtilMethods.isSet(languageId)){
-           throw new IllegalArgumentException("languageId is expected to have a value.");
-        }
+		if(!UtilMethods.isSet(languageId)){
+			throw new IllegalArgumentException("languageId is expected to have a value.");
+		}
 
 		// if we have a number
 		if(!languageId.contains("_")){
@@ -126,6 +126,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 				return getLanguage(parsedLangId);
 			} catch (NumberFormatException e) {
 				Logger.debug(LanguageFactoryImpl.class, "getLanguage failed passed id is not numeric. Value from parameter: " + languageId, e);
+				return null;
 			}
 		}
 
@@ -501,7 +502,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		ReadableByteChannel inputChannel = null;
 		WritableByteChannel outputChannel = null;
 		try (final InputStream tempFileInputStream = Files.newInputStream(tempFile.toPath());
-			 final OutputStream fileOutputStream = Files.newOutputStream(file.toPath())) {
+				final OutputStream fileOutputStream = Files.newOutputStream(file.toPath())) {
 
 			if (file.exists() && tempFile.exists()) {
 
@@ -571,8 +572,8 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			//Force the reading of the languages files as we add/remove/edit keys
 			// doing instanceof so tests don't fail with Mockito
 			if(Config.CONTEXT.getAttribute( Globals.MESSAGES_KEY ) instanceof MultiMessageResources) {
-  			MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute( Globals.MESSAGES_KEY );
-  			messages.reload();
+				MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute( Globals.MESSAGES_KEY );
+				messages.reload();
 			}
 		} catch (IOException e) {
 			Logger.error(this, "A IOException as occurred while saving the properties files", e);
@@ -666,9 +667,9 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 	}
 
-    private synchronized long nextId(){
-       return System.currentTimeMillis();
-    }
+	private synchronized long nextId(){
+		return System.currentTimeMillis();
+	}
 
 	private List<Language> fromDbList(final List<Map<String, Object>> resultSet) {
 		return  new ArrayList<>(new LanguageTransformer(resultSet).asList());

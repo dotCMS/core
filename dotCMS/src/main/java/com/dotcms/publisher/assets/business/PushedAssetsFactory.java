@@ -12,6 +12,7 @@ public abstract class PushedAssetsFactory {
 	protected static String SELECT_ASSETS_BY_ASSET_ID= "SELECT * FROM publishing_pushed_assets WHERE asset_id = ? ORDER BY push_date";
 	protected static String SELECT_ASSETS_BY_ENV_ID= "SELECT * FROM publishing_pushed_assets WHERE environment_id = ?";
 	protected static String DELETE_ASSETS_BY_BUNDLE_ENV= "DELETE FROM publishing_pushed_assets WHERE bundle_id = ? and environment_id = ?";
+	protected static String DELETE_ASSETS_BY_BUNDLE    = "DELETE FROM publishing_pushed_assets WHERE bundle_id = ?";
 	protected static String DELETE_ASSETS_BY_ASSET_ID= "DELETE FROM publishing_pushed_assets WHERE asset_id = ?";
 	protected static String DELETE_ASSETS_BY_ASSET_ID_AND_ENV = "DELETE FROM publishing_pushed_assets WHERE asset_id = ?  and environment_id = ?";
 	protected static String DELETE_ASSETS_BY_ENVIRONMENT_ID= "DELETE FROM publishing_pushed_assets WHERE environment_id = ?";
@@ -21,7 +22,22 @@ public abstract class PushedAssetsFactory {
 
 	public abstract void savePushedAsset(PushedAsset asset) throws DotDataException;
 
+	/**
+	 * Deletes all pushed assets for an environment and bundle
+	 * from: publishing_pushed_assets
+	 * @param bundleId      {@link String} bundle id
+	 * @param environmentId {@link String} environment id
+	 * @throws DotDataException
+	 */
 	public abstract void deletePushedAssets(String bundleId, String environmentId)  throws DotDataException;
+
+	/**
+	 * Deletes all pushed assets for a bundle in any environments
+	 * from: publishing_pushed_assets
+	 * @param bundleId {@link String} bundle id
+	 * @throws DotDataException
+	 */
+	public abstract void deletePushedAssetsByBundle(String bundleId)  throws DotDataException;
 
 	public abstract void deletePushedAssets(String assetId)  throws DotDataException;
 

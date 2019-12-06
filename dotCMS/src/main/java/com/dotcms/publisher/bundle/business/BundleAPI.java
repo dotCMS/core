@@ -1,10 +1,14 @@
 package com.dotcms.publisher.bundle.business;
 
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.exception.DotDataException;
+import com.liferay.portal.model.User;
 
 public interface BundleAPI {
 
@@ -112,6 +116,35 @@ public interface BundleAPI {
 	public void deleteBundle(String id) throws DotDataException;
 
 	/**
+	 * Deletes a bundle with given id, plus all dependencies such as asset in the queue, audit, etc.
+	 *
+	 * Assets will be removed by cron job
+	 * @param id {@link String}
+	 * @param user {@link com.liferay.portal.model.User} user to use to check permissions
+	 * @throws DotDataException
+	 */
+	public void deleteBundleAndDependencies(String id, User user) throws DotDataException;
+
+	/**
+	 * Deletes all sent bundles older than order than olderThan argument
+	 *
+	 * @param olderThan {@link Date} will remove all sent bundles older than it
+	 * @param user      {@link User} User to check the deleting permissions
+	 * @return Set of bundle ids deleted
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+	Set<String> deleteBundleAndDependenciesOlderThan(Date olderThan, User user) throws DotDataException;
+
+	/**
+	 * Deletes all bundles, if the user is admin will delete all bundles, otherwise only the bundles allowed to the user.
+	 * @param user {@link User}
+	 * @param statuses {@link com.dotcms.publisher.business.PublishAuditStatus.Status} array of statuses
+	 * @return Set of bundle identifiers deleted
+	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 */
+	Set<String>  deleteAllBundles(User user, PublishAuditStatus.Status ...statuses) throws DotDataException;
+
+	/**
 	 * updates the Bundle with the given id
 	 *
 	 *
@@ -134,7 +167,5 @@ public interface BundleAPI {
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
 	 */
 	public void deleteAssetFromBundle(String assetId, String bundleId) throws DotDataException;
-
-
 
 }

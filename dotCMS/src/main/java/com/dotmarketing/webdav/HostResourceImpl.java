@@ -1,5 +1,8 @@
 package com.dotmarketing.webdav;
 
+import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
+import com.dotmarketing.util.UtilMethods;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -265,6 +268,9 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			Folder f = dotDavHelper.createFolder(path + newName, user);
 			FolderResourceImpl fr = new FolderResourceImpl(f, path + newName + "/");
 			return fr;
+		} catch(InvalidFolderNameException e) {
+			Logger.warnAndDebug(HostResourceImpl.class, e.getMessage(), e);
+			throw e;
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
