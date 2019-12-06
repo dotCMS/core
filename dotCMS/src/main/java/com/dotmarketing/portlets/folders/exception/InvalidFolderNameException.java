@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.folders.exception;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 
 /**
  * Exception thrown when a {@link com.dotmarketing.portlets.folders.model.Folder} is tried
@@ -9,7 +10,7 @@ import com.dotmarketing.exception.DotDataException;
  *
  */
 
-public class InvalidFolderNameException extends DotDataException {
+public class InvalidFolderNameException extends DotRuntimeException {
 
     public InvalidFolderNameException(final String reservedFolderNameErrorMessage) {
         super(reservedFolderNameErrorMessage);

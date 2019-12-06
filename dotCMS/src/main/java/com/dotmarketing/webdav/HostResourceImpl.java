@@ -270,7 +270,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			return fr;
 		} catch(InvalidFolderNameException e) {
 			Logger.warnAndDebug(HostResourceImpl.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage());
+			throw e;
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);

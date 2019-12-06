@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
@@ -56,6 +57,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.naming.InvalidNameException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -1044,7 +1046,7 @@ public class FolderAPITest {//24 contentlets
 		return reservedFolderNames.toArray();
 	}
 
-	@Test(expected = DotDataException.class)
+	@Test(expected = InvalidFolderNameException.class)
 	@UseDataProvider("reservedFolderNames")
 	public void testSave_BlacklistedName_ShouldFail(final String reservedName)
 			throws DotDataException, DotSecurityException {
@@ -1082,7 +1084,7 @@ public class FolderAPITest {//24 contentlets
 		folderAPI.copy(invalidFolder, newHost, APILocator.systemUser(), false);
 	}
 
-	@Test(expected = DotDataException.class)
+	@Test(expected = InvalidFolderNameException.class)
 	@UseDataProvider("reservedFolderNames")
 	public void testRename_BlacklistedName_ShouldFail(final String reservedName)
 			throws DotDataException, DotSecurityException {
@@ -1094,7 +1096,7 @@ public class FolderAPITest {//24 contentlets
 		folderAPI.renameFolder(folder,reservedName,user,false);
 	}
 
-	@Test(expected = DotDataException.class)
+	@Test(expected = InvalidFolderNameException.class)
 	@UseDataProvider("reservedFolderNames")
 	public void testCreateFolders_BlacklistedName_ShouldFail(final String reservedName)
 			throws DotDataException, DotSecurityException {
