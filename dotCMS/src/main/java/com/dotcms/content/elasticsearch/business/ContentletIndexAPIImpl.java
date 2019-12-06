@@ -4,6 +4,10 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.MessageType;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -48,6 +52,8 @@ import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -67,6 +73,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -225,11 +232,36 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                                             + "}")));
                     mappingAPI.putMapping(indexName, "content", properties.toString());
                 } catch (Exception e) {
-                    Logger.warn(this,
-                            "Error updating ES mapping for relationship " + relationshipName
-                                    + ". Custom mapping will be ignored.", e);
+                    handleInvalidCustomMappingError(indexName, relationshipName);
+                    final String message = "Error updating index mapping for relationship " + relationshipName
+                            + ". This custom mapping will be ignored for index: " + indexName;
+                    Logger.warn(this, message, e);
                 }
             }
+        }
+    }
+
+    /**
+     *
+     * @param indexName
+     * @param fieldName
+     */
+    private void handleInvalidCustomMappingError(final String indexName, final String fieldName) {
+
+        final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+
+        try {
+            systemMessageEventUtil.pushMessage(
+                    new SystemMessageBuilder()
+                            .setMessage(LanguageUtil.format(Locale.getDefault(),
+                                    "notification.reindexing.custom.mapping.error",
+                                    new String[]{fieldName, indexName}, false))
+                            .setSeverity(MessageSeverity.ERROR)
+                            .setType(MessageType.SIMPLE_MESSAGE)
+                            .setLife(6000)
+                            .create(), null);
+        } catch (LanguageException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
@@ -277,6 +309,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         mappedRelationships.add(relationship.getRelationTypeValue().toLowerCase());
                     }
                 } catch (Exception e) {
+                    handleInvalidCustomMappingError(indexName, field != null? field.variable():"[]");
                     String message = "Error setting custom index mapping from field variable " + fieldVariable.key();
 
                     if (field != null){
@@ -287,7 +320,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         message += ". Content Type: " + type.name();
                     }
 
-                    message += ". Custom mapping will be ignored.";
+                    message += ". Custom mapping will be ignored for index: " + indexName;
                     Logger.warn(this, message, e);
                 }
             }

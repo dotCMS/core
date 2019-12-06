@@ -479,10 +479,7 @@ public class FieldAPIImpl implements FieldAPI {
           try {
               new JSONObject(var.value());
           } catch (JSONException e) {
-              final String message = "Invalid format on field variable value. Value should be a JSON object. Field variable: "
-                      + var.key() + ". Field: " + field.name() + ". Content Type: " + type
-                      .name();
-              Logger.warnAndDebug(FieldAPIImpl.class, message, e);
+              handleInvalidCustomMappingError(var, user, field, type, e);
           }
 
           //Verifies the field is marked as System Indexed. In case it isn't, the field will be updated with this flag on
@@ -497,7 +494,43 @@ public class FieldAPIImpl implements FieldAPI {
       return newFieldVariable;
   }
 
-  @Override
+    /**
+     *
+     * @param fieldVariable
+     * @param user
+     * @param field
+     * @param type
+     * @param exception
+     */
+    private void handleInvalidCustomMappingError(final FieldVariable fieldVariable, final User user,
+            final Field field, final ContentType type, final JSONException exception) {
+        final String[] messageParameters = new String[]{fieldVariable.key(), field.name(), type.name()};
+        final String message;
+        try {
+            message = "Invalid format on field variable value. Value should be a JSON object. Field variable: "
+                    + fieldVariable.key() + ". Field: " + field.name() + ". Content Type: " + type
+                    .name();
+
+            final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+
+            systemMessageEventUtil.pushMessage(
+                    new SystemMessageBuilder()
+                            .setMessage(LanguageUtil.get(
+                                    user.getLocale(),
+                                    "message.fieldvariables.invalid.custom.mapping"))
+                            .setSeverity(MessageSeverity.WARNING)
+                            .setType(MessageType.SIMPLE_MESSAGE)
+                            .setLife(6000)
+                            .create(),
+                    list(user.getUserId())
+            );
+            Logger.warnAndDebug(FieldAPIImpl.class, message, exception);
+        } catch (LanguageException ex) {
+            throw new DotRuntimeException(ex);
+        }
+    }
+
+    @Override
   public void delete(final Field field) throws DotDataException {
 	  try {
 		  this.delete(field, this.userAPI.getSystemUser());
