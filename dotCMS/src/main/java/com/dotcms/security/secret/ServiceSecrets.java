@@ -7,14 +7,14 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ServiceIntegrationBean implements Serializable {
+public class ServiceSecrets implements Serializable {
 
     private String serviceKey;
 
     private Map<String,Secret> secrets;
 
     @JsonCreator
-    public ServiceIntegrationBean( @JsonProperty("serviceKey")  final String serviceKey, @JsonProperty("secrets") final Map<String, Secret> secrets) {
+    public ServiceSecrets( @JsonProperty("serviceKey")  final String serviceKey, @JsonProperty("secrets") final Map<String, Secret> secrets) {
         this.serviceKey = serviceKey;
         this.secrets = secrets;
     }
@@ -32,8 +32,8 @@ public class ServiceIntegrationBean implements Serializable {
         private Map<String,Secret> secretMap = new HashMap<>();
         private String serviceKey;
 
-        ServiceIntegrationBean build(){
-            return new ServiceIntegrationBean(serviceKey, ImmutableMap.copyOf(secretMap));
+        ServiceSecrets build(){
+            return new ServiceSecrets(serviceKey, ImmutableMap.copyOf(secretMap));
         }
 
         Builder withServiceKey(final String serviceKey){

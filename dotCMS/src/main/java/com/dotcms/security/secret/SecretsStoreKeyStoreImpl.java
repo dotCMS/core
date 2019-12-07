@@ -12,8 +12,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import javax.crypto.SecretKey;
@@ -158,7 +158,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      */
     public Optional<char[]> getValue(final String variableKey) {
 
-        char[] fromCache = getFromCache(variableKey.toLowerCase(),
+        char[] fromCache = getFromCache(variableKey,
                 () -> loadValueFromStore(variableKey));
 
         return Arrays.equals(fromCache, CACHE_404) ? Optional.empty() : Optional.ofNullable(decrypt(fromCache));
@@ -174,12 +174,12 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     private char[] loadValueFromStore(final String variableKey) {
         try {
            final KeyStore ks = getSecretsStore();
-            if (ks.containsAlias(variableKey.toLowerCase())) {
-                PasswordProtection keyStorePP = new PasswordProtection(loadStorePassword());
-                SecretKeyFactory factory = SecretKeyFactory.getInstance(
+            if (ks.containsAlias(variableKey)) {
+                final PasswordProtection keyStorePP = new PasswordProtection(loadStorePassword());
+                final SecretKeyFactory factory = SecretKeyFactory.getInstance(
                         SECRETS_STORE_SECRET_KEY_FACTORY_TYPE);
-                SecretKeyEntry ske = (SecretKeyEntry) ks.getEntry(variableKey, keyStorePP);
-                return ((PBEKeySpec) factory.getKeySpec(ske.getSecretKey(), PBEKeySpec.class)).getPassword();
+                final SecretKeyEntry secretKeyEntry = (SecretKeyEntry) ks.getEntry(variableKey, keyStorePP);
+                return ((PBEKeySpec) factory.getKeySpec(secretKeyEntry.getSecretKey(), PBEKeySpec.class)).getPassword();
             } else {
                 return CACHE_404;
             }
@@ -191,7 +191,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
 
 
     @Override
-    public Collection<String> listKeys() {
+    public List<String> listKeys() {
         final KeyStore keyStore = getSecretsStore();
         return Sneaky.sneak(() -> Collections.list(keyStore.aliases()));
     }
@@ -226,7 +226,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
             final SecretKey generatedSecret = factory.generateSecret(new PBEKeySpec(encrypt(variableValue).toCharArray()));
             final KeyStore keyStore = getSecretsStore();
             final PasswordProtection keyStorePP = new PasswordProtection(loadStorePassword());
-            keyStore.setEntry(variableKey.toLowerCase(), new KeyStore.SecretKeyEntry(generatedSecret), keyStorePP);
+            keyStore.setEntry(variableKey, new KeyStore.SecretKeyEntry(generatedSecret), keyStorePP);
             saveSecretsStore(keyStore);
         } catch (Exception e) {
             Logger.warn(this.getClass(), "Unable to save secret from " + SECRETS_STORE_FILE + ": " + e);
@@ -242,10 +242,10 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     public void deleteValue(final String secretKey) {
         try {
             final KeyStore ks = getSecretsStore();
-            ks.deleteEntry(secretKey.toLowerCase());
+            ks.deleteEntry(secretKey);
             saveSecretsStore(ks);
             flushCache();
-        } catch (Exception e) {
+        } catch (KeyStoreException e) {
             Logger.warn(this.getClass(), "Unable to delete secret from  " + SECRETS_STORE_FILE + ": " + e);
             throw new DotRuntimeException(e);
         }
@@ -293,7 +293,6 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
             CacheLocator.getCacheAdministrator().put(key, retVal, SECRETS_CACHE_GROUP);
         }
         return retVal;
-
     }
 
     private void flushCache() {

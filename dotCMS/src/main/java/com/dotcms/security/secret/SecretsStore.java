@@ -1,6 +1,6 @@
 package com.dotcms.security.secret;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import com.dotmarketing.util.Config;
 import io.vavr.control.Try;
@@ -13,14 +13,14 @@ public interface SecretsStore {
      * @param variableKey
      * @return
      */
-    public Optional<char[]> getValue(final String variableKey);
+    Optional<char[]> getValue(final String variableKey);
 
     /**
      * Lists the keys - keys can be case insensitive (forced lowercase) based on the implementation
      * 
      * @return
      */
-    public Collection<String> listKeys();
+    List<String> listKeys();
 
     /**
      * deletes all the entries in the secretsStore

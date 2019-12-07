@@ -56,7 +56,7 @@ public class SecretsStoreKeyStoreImplTest {
         final String value = UUIDGenerator.generateUuid();
 
         secretsStore.saveValue(key, value.toCharArray());
-        Optional<char[]> optionalChars = secretsStore.getValue(key);
+        final Optional<char[]> optionalChars = secretsStore.getValue(key);
         assertTrue(optionalChars.isPresent());
         final String returnValue = new String(optionalChars.get());
         assertEquals("stored value is the same", value, returnValue);
@@ -156,9 +156,9 @@ public class SecretsStoreKeyStoreImplTest {
         final String value = UUIDGenerator.generateUuid();
         secretsStore.saveValue(key, value.toCharArray());
 
-        assert (secretsStore.getValue(key).isPresent());
+        assertTrue (secretsStore.getValue(key).isPresent());
         secretsStore.deleteValue(key);
-        assert (!secretsStore.getValue(key).isPresent());
+        assertFalse(secretsStore.getValue(key).isPresent());
 
     }
 
@@ -168,7 +168,7 @@ public class SecretsStoreKeyStoreImplTest {
         final String uuid = UUIDGenerator.generateUuid();
         final SecretsStore secretsStore = SecretsStore.INSTANCE.get();
         final Optional<char[]> val = secretsStore.getValue(uuid);
-        assert (!val.isPresent());
+        assertFalse(val.isPresent());
     }
 
     /**
@@ -195,10 +195,10 @@ public class SecretsStoreKeyStoreImplTest {
         secretsStore.saveValue(key3, value3.toCharArray());
 
         final Collection<String> keys = secretsStore.listKeys();
-        assert (keys.size() > 2);
-        assert (keys.contains(key.toLowerCase()));
-        assert (keys.contains(key2.toLowerCase()));
-        assert (keys.contains(key3.toLowerCase()));
+        assertTrue (keys.size() > 2);
+        assertTrue (keys.contains(key.toLowerCase()));
+        assertTrue (keys.contains(key2.toLowerCase()));
+        assertTrue (keys.contains(key3.toLowerCase()));
     }
 
 
@@ -207,8 +207,7 @@ public class SecretsStoreKeyStoreImplTest {
         final String uuid = UUIDGenerator.generateUuid();
         final SecretsStore secretsStore = SecretsStore.INSTANCE.get();
         final String encrypted = ((SecretsStoreKeyStoreImpl) secretsStore).encrypt(uuid);
-        assert (uuid
-                .equals(new String(((SecretsStoreKeyStoreImpl) secretsStore).decrypt(encrypted))));
+        assertEquals(uuid,new String(((SecretsStoreKeyStoreImpl) secretsStore).decrypt(encrypted)));
 
     }
 
