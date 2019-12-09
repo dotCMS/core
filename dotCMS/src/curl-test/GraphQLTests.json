@@ -1,0 +1,266 @@
+{
+	"info": {
+		"_postman_id": "e4c02256-efdf-4443-b440-e9b6969ae17d",
+		"name": "GraphQL",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get content in new Language",
+			"item": [
+				{
+					"name": "Create new Language",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "15429282-9992-4368-ae75-25dc04657fd5",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "599e89fa-c26c-4a5c-b6cf-9283cf40ce40",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Structure\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Structure {{$randomBankAccount}}\",\n\t\"variable\": \"myStructure{{$randomBankAccount}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fire default action Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d39d847f-84cc-4777-a4ee-33610815b4c1",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"title\":\"Content in Italian\", \n       \"contentHost\":\"demo.dotcms.com\",\n       \"body\":\"This is a content in Italian\",\n       \"indexPolicy\":\"force\",\n       \"languageId\":\"{{languageId}}\",\n       \"name\":\"whatever\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get New Language Should Succeed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "eb12ad0e-11d3-4593-8356-6972c0959cd6",
+								"exec": [
+									"pm.test(\"Content in new Language should be retrieved\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(jsonData)",
+									"    var contentIdentifier = pm.collectionVariables.get(\"contentIdentifier\")",
+									"    var collectionName = pm.collectionVariables.get(\"contentTypeVariable\")+\"Collection\"",
+									"    pm.expect(jsonData.data[collectionName][0].identifier).to.eql(contentIdentifier);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVariable}}Collection(limit: 20) {\n    identifier\n    conLanguage {\n      id\n      languageCode\n      country\n      countryCode\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"variable": [
+		{
+			"id": "89937b51-88a3-4312-8053-55caf2b41701",
+			"key": "languageId",
+			"value": 1575934290535,
+			"type": "number"
+		},
+		{
+			"id": "65285396-9c37-46d8-bd02-3cc497071a44",
+			"key": "contentId",
+			"value": null,
+			"type": "any"
+		},
+		{
+			"id": "96a479fe-2bc6-4592-bb75-cff5b8586c30",
+			"key": "contentTypeVariable",
+			"value": "myStructure09578274",
+			"type": "string"
+		},
+		{
+			"id": "7db620dd-06a6-4733-b813-9b7d9126797f",
+			"key": "contentIdentifier",
+			"value": "8bbb3295-5152-408a-94d7-071b4cc05856",
+			"type": "string"
+		},
+		{
+			"id": "69e4b136-0ef1-4199-8cfa-c32f5988199a",
+			"key": "structureVariable",
+			"value": "myStructure94983807",
+			"type": "string"
+		}
+	],
+	"protocolProfileBehavior": {}
+}
