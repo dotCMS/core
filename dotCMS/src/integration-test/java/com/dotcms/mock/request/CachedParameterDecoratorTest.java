@@ -40,7 +40,5 @@ public class CachedParameterDecoratorTest extends IntegrationTestBase {
         Assert.assertEquals(expectedItalyId, languageId1);
         Assert.assertEquals(expectedBaseId,  languageId2);
 
-        APILocator.getLanguageAPI().deleteLanguage(baseLanguage);
-        APILocator.getLanguageAPI().deleteLanguage(itLanguage);
     }
 }
