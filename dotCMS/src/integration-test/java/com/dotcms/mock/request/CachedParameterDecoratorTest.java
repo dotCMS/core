@@ -9,6 +9,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.Locale;
+import java.util.Random;
+
 public class CachedParameterDecoratorTest extends IntegrationTestBase {
 
 
@@ -21,14 +24,18 @@ public class CachedParameterDecoratorTest extends IntegrationTestBase {
     @Test
     public void testDecorate() throws Exception {
 
-        final Language baseLanguage  = new LanguageDataGen().languageCode("it").countryCode(null).nextPersisted();
-        final Language itLanguage    = new LanguageDataGen().languageCode("it").countryCode("IT").nextPersisted();
+        final String[] languageCodes = Locale.getISOLanguages();
+        final int      languageIndex = new Random().nextInt(languageCodes.length);
+        final String   languageCode  = languageCodes[languageIndex];
+
+        final Language baseLanguage  = new LanguageDataGen().languageCode(languageCode).countryCode(null).nextPersisted();
+        final Language itLanguage    = new LanguageDataGen().languageCode(languageCode).countryCode("IT").nextPersisted();
         final long expectedBaseId  = baseLanguage.getId();
         final long expectedItalyId = itLanguage.getId();
         final LanguageIdParameterDecorator languageIdParameterDecorator = new LanguageIdParameterDecorator();
 
-        final long languageId1  = Long.parseLong(new CachedParameterDecorator(languageIdParameterDecorator).decorate("it_IT"));
-        final long languageId2  = Long.parseLong(new CachedParameterDecorator(languageIdParameterDecorator).decorate("it"));
+        final long languageId1  = Long.parseLong(new CachedParameterDecorator(languageIdParameterDecorator).decorate(languageCode + "_IT"));
+        final long languageId2  = Long.parseLong(new CachedParameterDecorator(languageIdParameterDecorator).decorate(languageCode));
 
         Assert.assertEquals(expectedItalyId, languageId1);
         Assert.assertEquals(expectedBaseId,  languageId2);
