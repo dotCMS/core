@@ -3,8 +3,11 @@ package com.dotcms;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
+import com.dotcms.publisher.bundle.business.BundleFactoryTest;
+import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
+import com.dotmarketing.util.TestConfig;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -199,7 +202,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.db.DbConnectionFactoryTest.class,
         com.dotmarketing.db.DbConnectionFactoryUtilTest.class,
         com.dotmarketing.db.HibernateUtilTest.class,
-        com.dotmarketing.quartz.job.DeleteFieldJobTest.class,
         com.dotmarketing.quartz.job.BinaryCleanupJobTest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
         com.dotcms.osgi.OSGIUtilTest.class,
@@ -220,7 +222,10 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class,
         CleanUpFieldReferencesJobTest.class,
         ESContentletAPIImplTest.class,
-        CachedParameterDecoratorTest.class
+        CachedParameterDecoratorTest.class,
+        TestConfig.class,
+        PublishAuditAPITest.class,
+        BundleFactoryTest.class
 })
 public class MainSuite {
 

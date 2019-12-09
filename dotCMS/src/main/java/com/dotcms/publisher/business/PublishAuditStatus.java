@@ -40,6 +40,7 @@ public class PublishAuditStatus implements Serializable {
 		public int getCode() {
 			return code;
 		}
+
 	}
 	
 	private String bundleId;

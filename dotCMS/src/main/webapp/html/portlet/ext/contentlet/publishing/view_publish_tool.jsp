@@ -18,6 +18,25 @@
 
 <%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
 
+<style>
+    #deleteBundleActions table {
+        width:95%;
+        border-collapse: separate;
+        border-spacing: 10px 15px;
+        margin-bottom: 10px;
+    }
+
+    #deleteBundleActions .dijitButton {
+        width: 110px;
+        text-align: center;
+    }
+
+    .deleteBundlesMessage {
+        text-align: center;
+        margin: 16px;
+    }
+
+</style>
 
 <script type="text/javascript">
 
@@ -63,13 +82,20 @@
             myCp.destroyRecursive(false);
         }
         myCp = new dojox.layout.ContentPane({
-            id: "auditContent"
+            id: "auditContent",
+            onLoad: () => { setDeleteButtonState() }
         }).placeAt("audit_results");
 
         myCp.attr("href", url);
 
         myCp.refresh();
 
+
+
+    }
+
+    function setDeleteButtonState() {
+        dijit.byId('deleteAuditsBtn').setDisabled(dojo.query(".chkBoxAudits").length ? false : true);
     }
 
     function loadUnpushedBundles() {
@@ -240,6 +266,18 @@
         refreshAuditList("");
     }
 
+    function deleteBundlesOptions(){
+        var selectedBundlesContainer = document.getElementById('selectedBundlesBtnContainer');
+        selectedBundlesContainer.style.display = getSelectedAuditsIds().length ? 'block' : 'none' ;
+        dijit.byId('deleteBundleActions').show();
+    }
+
+    window.addEventListener('message', function(e) {
+        if (e.data === 'reload') {
+            doAuditFilter();
+        }
+    })
+
 </script>
 
 <div class="portlet-main">
@@ -279,7 +317,7 @@
                     <button  dojoType="dijit.form.Button" onClick="showBundleUpload();" iconClass="uploadIcon">
                         <%= LanguageUtil.get(pageContext, "publisher_upload") %>
                     </button>
-                    <button dojoType="dijit.form.Button" onClick="deleteAudits();" id="deleteAuditsBtn" iconClass="deleteIcon" class="dijitButtonDanger">
+                    <button dojoType="dijit.form.Button" onClick="deleteBundlesOptions();" id="deleteAuditsBtn" iconClass="actionIcon" class="dijitButtonDanger">
                         <%= LanguageUtil.get(pageContext, "Delete") %>
                     </button>
                     <button  dojoType="dijit.form.Button" onClick="doAuditFilter();" class="dijitButtonFlat">
@@ -310,4 +348,32 @@
         </div>
 
     </form>
+</div>
+
+<div dojoType="dijit.Dialog" autofocus="false" id="deleteBundleActions" title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.title" )) %>'>
+    <table class="sTypeTable">
+        <tr>
+            <td id="selectedBundlesBtnContainer">
+                <button id="deleteSelectedBundles" dojoType="dijit.form.Button" class="dijitButton" onClick="deleteSelectedAudits()">
+                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.selected")) %>
+                </button>
+            </td>
+            <td>
+                <button id="deleteALLBundles" dojoType="dijit.form.Button" class="dijitButton" onClick="deleteAllAudits()">
+                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.all")) %>
+                </button>
+            </td>
+            <td>
+                <button id="deleteSuccessBundles" dojoType="dijit.form.Button" class="dijitButton" onClick="deleteSuccessAudits()">
+                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.success")) %>
+                </button>
+            </td>
+            <td>
+                <button id="deleteFailBundles" dojoType="dijit.form.Button" class="dijitButton" onClick="deleteFailAudits()">
+                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.failed")) %>
+                </button>
+            </td>
+        </tr>
+    </table>
+    <div class="deleteBundlesMessage"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bundle.delete.process.info")) %></div>
 </div>
