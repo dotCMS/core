@@ -200,23 +200,20 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     private void addCustomMapping(final String indexName)  {
 
-        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+        final Set<String> mappedRelationships = addCustomMappingFromFieldVariables(indexName);
 
-        final Set<String> mappedRelationships = addCustomMappingFromFieldVariables(indexName,
-                relationshipAPI);
-
-        addCustomMappingForRelationships(indexName, relationshipAPI, mappedRelationships);
+        addCustomMappingForRelationships(indexName, mappedRelationships);
     }
 
     /**
      * Sets a mapping for all relationships except for those that contains its custom mapping using field variables
      * @param indexName - Index where mapping will be updated
-     * @param relationshipAPI
      * @param mappedRelationships - Mapping already set for relationships through field variables
-     * View {@link ContentletIndexAPIImpl#addCustomMappingFromFieldVariables(String, RelationshipAPI)}
+     * View {@link ContentletIndexAPIImpl#addCustomMappingFromFieldVariables(String)}
      */
-    private void addCustomMappingForRelationships(final String indexName, final RelationshipAPI relationshipAPI,
+    private void addCustomMappingForRelationships(final String indexName,
             final Set<String> mappedRelationships) {
+        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
         final List<Relationship> relationships = relationshipAPI.dbAll();
 
         for(final Relationship relationship: relationships){
@@ -268,11 +265,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     /**
      * Sets a mapping defined on field variables
      * @param indexName - Index where mapping will be updated
-     * @param relationshipAPI
      * @return Collection of relationship names whose mapping was set
      */
-    private Set<String> addCustomMappingFromFieldVariables(final String indexName,
-            final RelationshipAPI relationshipAPI) {
+    private Set<String> addCustomMappingFromFieldVariables(final String indexName) {
+        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
         final FieldFactory fieldFactory = FactoryLocator.getFieldFactory();
         final Set<String> mappedRelationships = new HashSet<>();
 
@@ -309,8 +305,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         mappedRelationships.add(relationship.getRelationTypeValue().toLowerCase());
                     }
                 } catch (Exception e) {
-                    handleInvalidCustomMappingError(indexName, field != null? field.variable():"[]");
-                    String message = "Error setting custom index mapping from field variable " + fieldVariable.key();
+                    handleInvalidCustomMappingError(indexName,
+                            type != null ? type.variable() + "." + field.variable() : "[]");
+                    String message = "Error setting custom index mapping from field variable "
+                            + fieldVariable.key();
 
                     if (field != null){
                         message += ". Field: " + field.name();

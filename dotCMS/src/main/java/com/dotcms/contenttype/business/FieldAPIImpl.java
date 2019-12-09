@@ -504,7 +504,6 @@ public class FieldAPIImpl implements FieldAPI {
      */
     private void handleInvalidCustomMappingError(final FieldVariable fieldVariable, final User user,
             final Field field, final ContentType type, final JSONException exception) {
-        final String[] messageParameters = new String[]{fieldVariable.key(), field.name(), type.name()};
         final String message;
         try {
             message = "Invalid format on field variable value. Value should be a JSON object. Field variable: "
