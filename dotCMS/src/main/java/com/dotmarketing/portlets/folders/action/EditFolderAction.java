@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.AddContentToFolderPermissionException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.business.FolderFactory;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.folders.struts.FolderForm;
 import com.dotmarketing.portlets.links.model.Link;
@@ -397,16 +398,11 @@ public class EditFolderAction extends DotPortletAction {
 			SessionMessages.add(req, "message", message);
 			Logger.error(this, e.getMessage(), e);
 			throw e;
-		} catch(DotDataException ex) {
+		} catch(InvalidFolderNameException e ) {
 			HibernateUtil.rollbackTransaction();
-			if(ex.getMessage().contains("reserved folder name")) {
-				SessionMessages.add(req, "message", "message.folder.save.reservedName");
-				Logger.error(this,
-						"ERROR: Cannot save folder '" + parentPath + folderForm.getName());
-			} else {
-				SessionMessages.add(req, "message", "message.folder.save.error");
-				Logger.error(this, "ERROR: Cannot save folder '" + parentPath + folderForm.getName() + "'", ex);
-			}
+			SessionMessages.add(req, "message", "message.folder.save.reservedName");
+			Logger.error(this,
+					"ERROR: Cannot save folder '" + parentPath + folderForm.getName());
 		} catch(Exception ex) {
 			HibernateUtil.rollbackTransaction();
 			SessionMessages.add(req, "message", "message.folder.save.error");
