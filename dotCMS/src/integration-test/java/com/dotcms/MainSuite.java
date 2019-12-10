@@ -2,6 +2,7 @@ package com.dotcms;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
@@ -220,6 +221,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class,
         CleanUpFieldReferencesJobTest.class,
         ESContentletAPIImplTest.class,
+        CachedParameterDecoratorTest.class,
         TestConfig.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class
