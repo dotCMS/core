@@ -65,6 +65,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -1373,10 +1374,14 @@ public class WorkflowResource {
         }
 
         final PageMode pageMode = PageMode.get(request);
+        final IndexPolicy indexPolicy = contentlet.getIndexPolicy()!=null
+                ? contentlet.getIndexPolicy()
+                : IndexPolicyProvider.getInstance().forSingleContent();
+
         final ContentletDependencies.Builder formBuilder = new ContentletDependencies.Builder();
         formBuilder.respectAnonymousPermissions(pageMode.respectAnonPerms).
                 workflowActionId(actionId).modUser(user)
-                .indexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
+                .indexPolicy(indexPolicy);
 
         if(fireActionForm != null) {
 
