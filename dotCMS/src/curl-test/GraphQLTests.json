@@ -156,7 +156,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"title\":\"Content in Italian\", \n       \"contentHost\":\"demo.dotcms.com\",\n       \"body\":\"This is a content in Italian\",\n       \"indexPolicy\":\"force\",\n       \"languageId\":\"{{languageId}}\",\n       \"name\":\"whatever\"\n    }\n}",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"title\":\"Content in Italian\", \n       \"contentHost\":\"demo.dotcms.com\",\n       \"body\":\"This is a content in Italian\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"languageId\":\"{{languageId}}\",\n       \"name\":\"whatever\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -232,31 +232,31 @@
 	],
 	"variable": [
 		{
-			"id": "89937b51-88a3-4312-8053-55caf2b41701",
+			"id": "3b642566-94ef-4548-9fff-44554b44269d",
 			"key": "languageId",
 			"value": 1575934290535,
 			"type": "number"
 		},
 		{
-			"id": "65285396-9c37-46d8-bd02-3cc497071a44",
+			"id": "73844b9e-e138-48f2-b400-2448aa360199",
 			"key": "contentId",
 			"value": null,
 			"type": "any"
 		},
 		{
-			"id": "96a479fe-2bc6-4592-bb75-cff5b8586c30",
+			"id": "3eb31604-6380-4c93-95a9-c63ae41d500c",
 			"key": "contentTypeVariable",
 			"value": "myStructure09578274",
 			"type": "string"
 		},
 		{
-			"id": "7db620dd-06a6-4733-b813-9b7d9126797f",
+			"id": "287978c4-3d10-4f08-9906-e83997e4f29b",
 			"key": "contentIdentifier",
 			"value": "8bbb3295-5152-408a-94d7-071b4cc05856",
 			"type": "string"
 		},
 		{
-			"id": "69e4b136-0ef1-4199-8cfa-c32f5988199a",
+			"id": "bc67ab59-0a14-4f2c-a989-58503a30e792",
 			"key": "structureVariable",
 			"value": "myStructure94983807",
 			"type": "string"
