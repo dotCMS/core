@@ -91,16 +91,14 @@ public class FieldFactoryImpl implements FieldFactory {
   }
     @Override
     public List<FieldVariable> byFieldVariableKey(final String key) throws DotDataException {
-        DotConnect dc = new DotConnect();
+        final DotConnect dc = new DotConnect();
         dc.setSQL(sql.selectFieldVarByKey);
         dc.addParam(key);
 
-        List<Map<String, Object>> results = dc.loadObjectResults();
-        if (results.size() == 0) {
-            return Collections.emptyList();
-        }
+        final List<Map<String, Object>> results = dc.loadObjectResults();
 
-        return new DbFieldVariableTransformer(dc.loadObjectResults()).asList();
+        return UtilMethods.isSet(results) ? new DbFieldVariableTransformer(dc.loadObjectResults())
+                .asList() : Collections.emptyList();
     }
 
   @Override

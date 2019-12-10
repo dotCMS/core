@@ -495,7 +495,7 @@ public class FieldAPIImpl implements FieldAPI {
   }
 
     /**
-     *
+     * Sends a system message (warning) when a custom mapping is invalid
      * @param fieldVariable
      * @param user
      * @param field
