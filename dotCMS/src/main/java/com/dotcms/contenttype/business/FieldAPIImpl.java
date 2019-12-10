@@ -46,6 +46,8 @@ import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
@@ -471,11 +473,63 @@ public class FieldAPIImpl implements FieldAPI {
       
       //update Content Type mod_date to detect the changes done on the field variables
       contentTypeAPI.updateModDate(type);
+
+      //Validates custom mapping format
+      if (var.key().equals(FieldVariable.ES_CUSTOM_MAPPING_KEY)){
+          try {
+              new JSONObject(var.value());
+          } catch (JSONException e) {
+              handleInvalidCustomMappingError(var, user, field, type, e);
+          }
+
+          //Verifies the field is marked as System Indexed. In case it isn't, the field will be updated with this flag on
+          if (!field.indexed()) {
+              save(FieldBuilder.builder(field).indexed(true).build(), user);
+              Logger.info(this, "Field " + type.variable() + "." + field.variable()
+                      + " has been marked as System Indexed as it has defined a field variable with key "
+                      + FieldVariable.ES_CUSTOM_MAPPING_KEY);
+          }
+      }
       
       return newFieldVariable;
   }
 
-  @Override
+    /**
+     * Sends a system message (warning) when a custom mapping is invalid
+     * @param fieldVariable
+     * @param user
+     * @param field
+     * @param type
+     * @param exception
+     */
+    private void handleInvalidCustomMappingError(final FieldVariable fieldVariable, final User user,
+            final Field field, final ContentType type, final JSONException exception) {
+        final String message;
+        try {
+            message = "Invalid format on field variable value. Value should be a JSON object. Field variable: "
+                    + fieldVariable.key() + ". Field: " + field.name() + ". Content Type: " + type
+                    .name();
+
+            final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+
+            systemMessageEventUtil.pushMessage(
+                    new SystemMessageBuilder()
+                            .setMessage(LanguageUtil.get(
+                                    user.getLocale(),
+                                    "message.fieldvariables.invalid.custom.mapping"))
+                            .setSeverity(MessageSeverity.WARNING)
+                            .setType(MessageType.SIMPLE_MESSAGE)
+                            .setLife(6000)
+                            .create(),
+                    list(user.getUserId())
+            );
+            Logger.warnAndDebug(FieldAPIImpl.class, message, exception);
+        } catch (LanguageException ex) {
+            throw new DotRuntimeException(ex);
+        }
+    }
+
+    @Override
   public void delete(final Field field) throws DotDataException {
 	  try {
 		  this.delete(field, this.userAPI.getSystemUser());
