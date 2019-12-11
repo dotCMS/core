@@ -149,13 +149,19 @@ public class BundleAPIImpl implements BundleAPI {
 	@Override
 	public void deleteBundleAndDependencies(final String bundleId, final User user) throws DotDataException {
 
-		final Bundle bundle = this.getBundleById(bundleId);
-		if (null != bundle) {
+		try {
+			final PublishAuditStatus bundle = this.publishAuditAPI.getPublishAuditStatus(bundleId);
+			if (null != bundle) {
 
-			this.internalDeleteBundleAndDependencies(bundleId, user);
-		} else {
-			Logger.error(this,"The bundle id: " + bundleId + " does not exists");
-			throw new NotFoundInDbException("The bundle id: " + bundleId + " does not exists");
+				this.internalDeleteBundleAndDependencies(bundleId, user);
+			} else {
+				Logger.error(this, "The bundle id: " + bundleId + " does not exists");
+				throw new NotFoundInDbException("The bundle id: " + bundleId + " does not exists");
+			}
+		} catch (DotPublisherException e) {
+
+			Logger.error(this, e.getMessage(), e);
+			throw new DotDataException(e);
 		}
 	}
 
@@ -172,7 +178,7 @@ public class BundleAPIImpl implements BundleAPI {
 
 	// no mark as a wrap in transaction, it is one trax per bundle to delete.
 	@Override
-	public Set<String> deleteBundleAndDependenciesOlderThan(final Date olderThan, final User user) throws DotDataException {
+	public BundleDeleteResult deleteBundleAndDependenciesOlderThan(final Date olderThan, final User user) throws DotDataException {
 
 		if(olderThan.after(new Date())){
 			Logger.error(this,"To avoid deleting bundles that publish in the future, the date can not be after the current date");
@@ -180,10 +186,12 @@ public class BundleAPIImpl implements BundleAPI {
 		}
 
 		final ImmutableSet.Builder<String> bundlesDeleted = new ImmutableSet.Builder<>();
+		final ImmutableSet.Builder<String> bundlesFailed = new ImmutableSet.Builder<>();
 		final boolean isAdmin = this.userAPI.isCMSAdmin(user);
 		final int  bundleSleepCount   = Config.getIntProperty ("bundle.sleep.count",  10);  // each 10 deletes
 		final long millisBundleSleep  = Config.getLongProperty("bundle.sleep.millis", 25l); // wait 25 millis
 		final MutableInt deletedCount = new MutableInt(0);
+		final MutableInt failedCount  = new MutableInt(0);
 
 		try {
 
@@ -193,18 +201,25 @@ public class BundleAPIImpl implements BundleAPI {
 
 				bundleIds.forEachOrdered(bundleId -> {
 
-					this.internalDeleteBundleAndDependenciesThrowRuntime(bundleId, user,
-							deletedCount.getValue(), bundleSleepCount, millisBundleSleep);
-					bundlesDeleted.add(bundleId);
-					deletedCount.increment();
+					if (this.internalDeleteBundleAndDependencies(bundleId, user,
+							deletedCount.getValue(), bundleSleepCount, millisBundleSleep)) {
+						bundlesDeleted.add(bundleId);
+						deletedCount.increment();
+					} else {
+						bundlesFailed.add(bundleId);
+						failedCount.increment();
+					}
 				});
 			}
+
+			Logger.info(this, "Deleted " + deletedCount.getValue()
+					+ " bundles, failed " + failedCount.getValue() + " bundles");
 		} catch (IOException e) {
 			Logger.error(this,"Error Removing bundles older than: " + olderThan + " by the user :" + user.getUserId(),e);
 			throw new DotDataException(e);
 		}
 
-		return bundlesDeleted.build();
+		return new BundleDeleteResult(bundlesFailed.build(), bundlesDeleted.build());
 	}
 
 	private Stream<String> getOlderBundleIds(final Date olderThan, final String userId, final boolean isAdmin)
@@ -226,10 +241,11 @@ public class BundleAPIImpl implements BundleAPI {
 				);
 	}
 
-	private void internalDeleteBundleAndDependenciesThrowRuntime(final String bundleId, final User user,
-																 final int currentCount, final int bundleSleepCount,
-																 final long millisBundleSleep) {
+	private boolean internalDeleteBundleAndDependencies(final String bundleId, final User user,
+														final int currentCount, final int bundleSleepCount,
+														final long millisBundleSleep) {
 
+		boolean success = true;
 		try {
 
 			this.internalDeleteBundleAndDependencies(bundleId, user);
@@ -237,22 +253,27 @@ public class BundleAPIImpl implements BundleAPI {
 				DateUtil.sleep(millisBundleSleep); // we decided to wait a bit in order to avoid starvation on the db connections
 			}
 		} catch (DotDataException e) {
-			Logger.error(this,"Error Removing bundle: " + bundleId + " by the user :" + user.getUserId(),e);
-			throw new DotRuntimeException(e);
+
+			Logger.error(this,"Error Removing bundle: " + bundleId + " by the user :" + user.getUserId(), e);
+			success = false;
 		}
+
+		return success;
 	}
 
 	// no mark as a wrap in transaction, it is one trax per bundle to delete.
 	@Override
-	public Set<String> deleteAllBundles(final User user,
+	public BundleDeleteResult deleteAllBundles(final User user,
 										 final PublishAuditStatus.Status ...statuses) throws DotDataException {
 
+		final ImmutableSet.Builder<String> bundlesFailed  = new ImmutableSet.Builder<>();
 		final ImmutableSet.Builder<String> bundlesDeleted = new ImmutableSet.Builder<>();
 		final boolean isAdmin         = this.userAPI.isCMSAdmin(user);
 		final List<Status> statusList = Arrays.asList(statuses);
 		final int  bundleSleepCount   = Config.getIntProperty ("bundle.sleep.count",  10);  // each 10 deletes
 		final long millisBundleSleep  = Config.getLongProperty("bundle.sleep.millis", 25l); // wait 25 millis
 		final MutableInt deletedCount = new MutableInt(0);
+		final MutableInt failedCount = new MutableInt(0);
 
 		try {
 
@@ -262,10 +283,14 @@ public class BundleAPIImpl implements BundleAPI {
 
 				bundleIds.forEachOrdered(bundleId -> {
 
-					this.internalDeleteBundleAndDependenciesThrowRuntime(
-							bundleId, user, deletedCount.getValue(), bundleSleepCount, millisBundleSleep);
-					bundlesDeleted.add(bundleId);
-					deletedCount.increment();
+					if (this.internalDeleteBundleAndDependencies(bundleId, user,
+							deletedCount.getValue(), bundleSleepCount, millisBundleSleep)) {
+						bundlesDeleted.add(bundleId);
+						deletedCount.increment();
+					} else {
+						bundlesFailed.add(bundleId);
+						failedCount.increment();
+					}
 				});
 			}
 		} catch (IOException e) {
@@ -274,7 +299,10 @@ public class BundleAPIImpl implements BundleAPI {
 			throw new DotDataException(e);
 		}
 
-		return bundlesDeleted.build();
+		Logger.info(this, "Deleted " + deletedCount.getValue()
+				+ " bundles, failed " + failedCount.getValue() + " bundles");
+
+		return new BundleDeleteResult(bundlesFailed.build(), bundlesDeleted.build());
 	} // deleteAllBundles.
 
 	private Stream<String> getAllBundleIds(final List<Status> statusList, final String userId, final boolean isAdmin)
