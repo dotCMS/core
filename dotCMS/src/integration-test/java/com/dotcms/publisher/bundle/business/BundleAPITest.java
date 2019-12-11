@@ -9,6 +9,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
@@ -59,10 +60,13 @@ public class BundleAPITest {
     }
 
     @Test
-    public void test_deleteBundleAndDependencies_byAdmin() throws DotDataException {
+    public void test_deleteBundleAndDependencies_byAdmin()
+            throws DotDataException, DotPublisherException {
         final User newUser = new UserDataGen().nextPersisted();
         final String bundleIdAdmin = insertPublishingBundle(adminUser.getUserId(),new Date());
+        insertPublishAuditStatus(Status.FAILED_TO_BUNDLE,bundleIdAdmin);
         final String bundleIdUser = insertPublishingBundle(newUser.getUserId(),new Date());
+        insertPublishAuditStatus(Status.FAILED_TO_BUNDLE,bundleIdUser);
 
         assertNotNull(bundleAPI.getBundleById(bundleIdAdmin));
         assertNotNull(bundleAPI.getBundleById(bundleIdUser));
@@ -201,5 +205,21 @@ public class BundleAPITest {
         assertNotNull(bundleAPI.getBundleById(bundleIdUser_success));
         assertNotNull(bundleAPI.getBundleById(bundleIdAdmin_failedPublish));
         assertNull(bundleAPI.getBundleById(bundleIdUser_failedBundle));
+    }
+    /**
+     * This test is for deleting a bundle by id, when that bundle was uploaded.
+     * Since it was uploaded only lives on the publishing_queue_audit table.
+     * @throws DotDataException
+     * @throws DotPublisherException
+     */
+    @Test
+    public void test_deleteBundleById_uploadedBundle() throws DotDataException, DotPublisherException {
+        final String bundleId = UUIDGenerator.generateUuid();
+        insertPublishAuditStatus(Status.SUCCESS,bundleId);
+        final PublishAuditAPI publishAuditStatus = APILocator.getPublishAuditAPI();
+        assertNotNull(publishAuditStatus.getPublishAuditStatus(bundleId));
+
+        bundleAPI.deleteBundleAndDependencies(bundleId,adminUser);
+        assertNull(publishAuditStatus.getPublishAuditStatus(bundleId));
     }
 }
