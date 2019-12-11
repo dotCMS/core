@@ -130,19 +130,19 @@ public interface BundleAPI {
 	 *
 	 * @param olderThan {@link Date} will remove all sent bundles older than it
 	 * @param user      {@link User} User to check the deleting permissions
-	 * @return Set of bundle ids deleted
+	 * @return BundleDeleteResult, Set of bundle ids deleted
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
 	 */
-	Set<String> deleteBundleAndDependenciesOlderThan(Date olderThan, User user) throws DotDataException;
+	BundleDeleteResult deleteBundleAndDependenciesOlderThan(Date olderThan, User user) throws DotDataException;
 
 	/**
 	 * Deletes all bundles, if the user is admin will delete all bundles, otherwise only the bundles allowed to the user.
 	 * @param user {@link User}
 	 * @param statuses {@link com.dotcms.publisher.business.PublishAuditStatus.Status} array of statuses
-	 * @return Set of bundle identifiers deleted
+	 * @return BundleDeleteResult, Set of bundle identifiers deleted
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
 	 */
-	Set<String>  deleteAllBundles(User user, PublishAuditStatus.Status ...statuses) throws DotDataException;
+	BundleDeleteResult  deleteAllBundles(User user, PublishAuditStatus.Status ...statuses) throws DotDataException;
 
 	/**
 	 * updates the Bundle with the given id

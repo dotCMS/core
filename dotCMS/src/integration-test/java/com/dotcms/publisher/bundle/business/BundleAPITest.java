@@ -9,6 +9,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
+import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
@@ -59,10 +60,13 @@ public class BundleAPITest {
     }
 
     @Test
-    public void test_deleteBundleAndDependencies_byAdmin() throws DotDataException {
+    public void test_deleteBundleAndDependencies_byAdmin()
+            throws DotDataException, DotPublisherException {
         final User newUser = new UserDataGen().nextPersisted();
         final String bundleIdAdmin = insertPublishingBundle(adminUser.getUserId(),new Date());
+        insertPublishAuditStatus(Status.FAILED_TO_BUNDLE,bundleIdAdmin);
         final String bundleIdUser = insertPublishingBundle(newUser.getUserId(),new Date());
+        insertPublishAuditStatus(Status.FAILED_TO_BUNDLE,bundleIdUser);
 
         assertNotNull(bundleAPI.getBundleById(bundleIdAdmin));
         assertNotNull(bundleAPI.getBundleById(bundleIdUser));
@@ -113,7 +117,7 @@ public class BundleAPITest {
         assertNotNull(bundleAPI.getBundleById(bundleIdUser));
         assertNotNull(bundleAPI.getBundleById(bundleIdAdmin_futureDate));
 
-        final Set<String> bundlesDeleted = bundleAPI.deleteBundleAndDependenciesOlderThan(new Date(),adminUser);
+        final Set<String> bundlesDeleted = bundleAPI.deleteBundleAndDependenciesOlderThan(new Date(),adminUser).getDeleteBundleSet();
         assertTrue(bundlesDeleted.contains(bundleIdAdmin));
         assertTrue(bundlesDeleted.contains(bundleIdUser));
         assertFalse(bundlesDeleted.contains(bundleIdAdmin_futureDate));
@@ -135,7 +139,7 @@ public class BundleAPITest {
         assertNotNull(bundleAPI.getBundleById(bundleIdUser));
         assertNotNull(bundleAPI.getBundleById(bundleIdUser_futureDate));
 
-        final Set<String> bundlesDeleted = bundleAPI.deleteBundleAndDependenciesOlderThan(new Date(),newUser);
+        final Set<String> bundlesDeleted = bundleAPI.deleteBundleAndDependenciesOlderThan(new Date(),newUser).getDeleteBundleSet();
         assertTrue(bundlesDeleted.contains(bundleIdUser));
         assertFalse(bundlesDeleted.contains(bundleIdAdmin));
         assertFalse(bundlesDeleted.contains(bundleIdUser_futureDate));
@@ -162,7 +166,7 @@ public class BundleAPITest {
         assertNotNull(bundleAPI.getBundleById(bundleIdAdmin_failedPublish));
         assertNotNull(bundleAPI.getBundleById(bundleIdUser_failedBundle));
 
-        final Set<String> bundlesDeleted = bundleAPI.deleteAllBundles(adminUser,Status.SUCCESS,Status.FAILED_TO_PUBLISH);
+        final Set<String> bundlesDeleted = bundleAPI.deleteAllBundles(adminUser,Status.SUCCESS,Status.FAILED_TO_PUBLISH).getDeleteBundleSet();
         assertTrue(bundlesDeleted.contains(bundleIdAdmin_success));
         assertTrue(bundlesDeleted.contains(bundleIdUser_success));
         assertTrue(bundlesDeleted.contains(bundleIdAdmin_failedPublish));
@@ -191,7 +195,7 @@ public class BundleAPITest {
         assertNotNull(bundleAPI.getBundleById(bundleIdAdmin_failedPublish));
         assertNotNull(bundleAPI.getBundleById(bundleIdUser_failedBundle));
 
-        final Set<String> bundlesDeleted = bundleAPI.deleteAllBundles(newUser,Status.FAILED_TO_BUNDLE);
+        final Set<String> bundlesDeleted = bundleAPI.deleteAllBundles(newUser,Status.FAILED_TO_BUNDLE).getDeleteBundleSet();
         assertTrue(bundlesDeleted.contains(bundleIdUser_failedBundle));
         assertFalse(bundlesDeleted.contains(bundleIdAdmin_failedPublish));
         assertFalse(bundlesDeleted.contains(bundleIdAdmin_success));
@@ -201,5 +205,21 @@ public class BundleAPITest {
         assertNotNull(bundleAPI.getBundleById(bundleIdUser_success));
         assertNotNull(bundleAPI.getBundleById(bundleIdAdmin_failedPublish));
         assertNull(bundleAPI.getBundleById(bundleIdUser_failedBundle));
+    }
+    /**
+     * This test is for deleting a bundle by id, when that bundle was uploaded.
+     * Since it was uploaded only lives on the publishing_queue_audit table.
+     * @throws DotDataException
+     * @throws DotPublisherException
+     */
+    @Test
+    public void test_deleteBundleById_uploadedBundle() throws DotDataException, DotPublisherException {
+        final String bundleId = UUIDGenerator.generateUuid();
+        insertPublishAuditStatus(Status.SUCCESS,bundleId);
+        final PublishAuditAPI publishAuditStatus = APILocator.getPublishAuditAPI();
+        assertNotNull(publishAuditStatus.getPublishAuditStatus(bundleId));
+
+        bundleAPI.deleteBundleAndDependencies(bundleId,adminUser);
+        assertNull(publishAuditStatus.getPublishAuditStatus(bundleId));
     }
 }
