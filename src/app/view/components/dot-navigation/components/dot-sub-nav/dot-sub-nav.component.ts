@@ -8,7 +8,7 @@ import { DotMenu, DotMenuItem } from '@models/navigation';
             state(
                 'expanded',
                 style({
-                    height: '*',
+                    height: '!',
                     overflow: 'hidden'
                 })
             ),

@@ -15,15 +15,17 @@ a {
     text-decoration: none;
 }
 
-.dot-nav-sub {
-    &__link {
-        padding: 14px $basic-padding 13px 56px; // top and bottom padding to get min 48px height
-        align-items: center;
-        display: flex;
-        min-height: $navigation-item-height;
+.dot-nav-sub__link {
+    display: block;
+    padding: $basic-padding $basic-padding $basic-padding 56px;
+    transition: background-color $basic-speed ease;
 
-        &--active {
-            background-color: $brand-primary;
-        }
+    &:hover {
+        background-color: rgba(var(--color-white_rgb), 0.1);
+    }
+
+    &--active,
+    &--active:hover {
+        background-color: $brand-primary;
     }
 }
