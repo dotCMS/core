@@ -48,7 +48,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -192,13 +191,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             }
 
             final IndiciesInfo info = builder.build();
-            final String timeStamp = info.cretaeNewIndiciesName(IndexType.WORKING, IndexType.LIVE);
-
-            APILocator.getIndiciesAPI().point(info);
+            final String timeStamp = info.createNewIndiciesName(IndexType.WORKING, IndexType.LIVE);
 
             createContentIndex(info.getWorking(), 0);
             createContentIndex(info.getLive(), 0);
 
+            APILocator.getIndiciesAPI().point(info);
             return timeStamp;
         } catch (Exception e) {
             throw new ElasticsearchException(e.getMessage(), e);
@@ -281,7 +279,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 builder.setSiteSearch(oldInfo.getSiteSearch());
 
                 final IndiciesInfo info = builder.build();
-                final String timeStamp = info.cretaeNewIndiciesName(IndexType.REINDEX_WORKING, IndexType.REINDEX_LIVE);
+                final String timeStamp = info.createNewIndiciesName(IndexType.REINDEX_WORKING, IndexType.REINDEX_LIVE);
 
                 APILocator.getIndiciesAPI().point(info);
 
