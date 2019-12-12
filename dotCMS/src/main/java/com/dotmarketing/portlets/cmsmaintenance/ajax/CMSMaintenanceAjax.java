@@ -465,6 +465,9 @@ public class CMSMaintenanceAjax {
 					_tablesToDump.add(x);
 
 			}
+			_tablesToDump.removeIf(t->t.getName().contains("HBM"));
+			
+			
 			XStream _xstream = null;
 			HibernateUtil _dh = null;
 			List _list = null;
