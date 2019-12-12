@@ -190,6 +190,7 @@ public class LanguagesResource {
         if (StringUtils.isSet(languageId)) {
             final Language origLanguage = this.languageAPI.getLanguage(languageId);
             Sneaky.sneaked(()->BeanUtils.copyProperties(newLanguage, origLanguage));
+            newLanguage.setId(origLanguage.getId());
         }
 
         newLanguage.setLanguageCode(form.getLanguageCode());
