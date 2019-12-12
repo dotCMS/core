@@ -321,6 +321,7 @@
 									"    pm.expect(jsonData.entity.countryCode).to.eql(\"IT\");",
 									"    pm.expect(jsonData.entity.language).to.eql(\"Italian Updated\");",
 									"    pm.expect(jsonData.entity.country).to.eql(\"Italy\");",
+									"    pm.expect(jsonData.entity.id).to.eql(pm.collectionVariables.get(\"languageId\"))",
 									"});"
 								],
 								"type": "text/javascript"
@@ -791,9 +792,9 @@
 	],
 	"variable": [
 		{
-			"id": "54d5f0f8-b355-455a-9ce6-4983b8c0a292",
+			"id": "660e642e-fca8-4a93-b5b3-25f63619bef3",
 			"key": "languageId",
-			"value": 1575488414435,
+			"value": 1576101466295,
 			"type": "number"
 		}
 	],
