@@ -189,7 +189,7 @@ public class FieldAPIImpl implements FieldAPI {
             fieldFactory.moveSortOrderForward(type.id(), field.sortOrder());
         }
 
-        if (field instanceof RelationshipField) {
+        if (field instanceof RelationshipField && !(((RelationshipField)field).skipRelationshipCreation())) {
 	        validateRelationshipField(field);
         }
 
@@ -200,7 +200,7 @@ public class FieldAPIImpl implements FieldAPI {
                       .build() : field);
 
         //if RelationshipField, Relationship record must be added/updated
-        if (field instanceof RelationshipField) {
+        if (field instanceof RelationshipField && !(((RelationshipField)field).skipRelationshipCreation())) {
             Optional<Relationship> relationship = getRelationshipForField(result, contentTypeAPI,
                   type, user);
 

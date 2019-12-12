@@ -195,7 +195,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
         if (!this.isValidContainerPath (folder)) {
 
-        	throw new NotFoundInDbException("On getting the container by folder, the folder: " + folder.getPath() +
+        	throw new NotFoundInDbException("On getting the container by folder, the folder: " + (folder != null ? folder.getPath() : "Unknown" ) +
 					" is not valid, it must be under: " + Constants.CONTAINER_FOLDER_PATH + " and must have a child file asset called: " +
 					Constants.CONTAINER_META_INFO_FILE_NAME);
 		}

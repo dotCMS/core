@@ -3110,9 +3110,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     relatedContentList.add(currentContent);
                 }
             } catch (DotDataException | DotSecurityException | DotContentletStateException e) {
-                Logger.warnAndDebug(this.getClass(),
-                        "Error trying to get a live version for content with identifier "
-                                + identifier, e);
+                Logger.warnEveryAndDebug(this.getClass(),
+                        "No live version for contentlet identifier "
+                                + identifier, e, 5000);
             }
         }
 
@@ -5799,7 +5799,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(FactoryLocator.getRelationshipFactory().sameParentAndChild(relationship)){
                     if (contentsInRelationship.stream().anyMatch(con -> contentlet.getIdentifier().equals(con.getIdentifier()))) {
                         Logger.error(this, "Cannot relate content [" + contentletId + "] to itself");
-                        hasError |= true;
+                        hasError = true;
                         cve.addInvalidContentRelationship(relationship, contentsInRelationship);
                     }
                     if(!cr.isHasParent()){
@@ -5810,7 +5810,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // if i am the parent
                 if (FactoryLocator.getRelationshipFactory().isParent(relationship,contentType) && isRelationshipParent) {
                     if (relationship.isChildRequired() && contentsInRelationship.isEmpty()) {
-                        hasError |= true;
+                        hasError = true;
                         Logger.error(this, "Error in Contentlet [" + contentletId + "]: Child relationship [" + relationship
                                 .getRelationTypeValue() + "] is required.");
                         cve.addRequiredRelationship(relationship, contentsInRelationship);
@@ -5836,12 +5836,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                         .append("] because it is already related to parent content [")
                                         .append(relatedContents.get(0).getIdentifier()).append("]");
                                 Logger.error(this, error.toString());
-                                hasError |= true;
+                                hasError = true;
                                 cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
                             }
 
                             if (!contentInRelationship.getContentTypeId().equalsIgnoreCase(relationship.getChildStructureInode())) {
-                                hasError |= true;
+                                hasError = true;
                                 Logger.error(this, "Content Type of Contentlet [" + contentInRelationship
                                         .getIdentifier() + "] does not match the Content Type in child relationship [" +
                                         relationship.getRelationTypeValue() + "]");
@@ -5854,7 +5854,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 } else if (FactoryLocator.getRelationshipFactory().isChild(relationship, contentType)) {
                     if (relationship.isParentRequired() && contentsInRelationship.isEmpty()) {
-                        hasError |= true;
+                        hasError = true;
                         Logger.error(this, "Error in Contentlet [" + contentletId + "]: Parent relationship [" + relationship
                                 .getRelationTypeValue() + "] is required.");
                         cve.addRequiredRelationship(relationship, contentsInRelationship);
@@ -5870,13 +5870,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         }
                         error.append("]");
                         Logger.error(this, error.toString());
-                        hasError |= true;
+                        hasError = true;
                         cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
                     }
 
                     for (final Contentlet contentInRelationship : contentsInRelationship) {
                         if (!UtilMethods.isSet(contentInRelationship.getContentTypeId())) {
-                            hasError |= true;
+                            hasError = true;
                             Logger.error(this, "Contentlet with Identifier [" + contentletId + "] has an empty " +
                                     "Content Type Inode");
                             cve.addInvalidContentRelationship(relationship, contentsInRelationship);
@@ -5884,14 +5884,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         }
                         if (null != relationship.getParentStructureInode() && !contentInRelationship.getContentTypeId().equalsIgnoreCase(
                                 relationship.getParentStructureInode())) {
-                            hasError |= true;
+                            hasError = true;
                             Logger.error(this, "Content Type of Contentlet [" + contentletId + "] does not match the " +
                                     "Content Type in relationship [" + relationship.getRelationTypeValue() + "]");
                             cve.addInvalidContentRelationship(relationship, contentsInRelationship);
                         }
                     }
                 } else {
-                    hasError |= true;
+                    hasError = true;
                     Logger.error(this, "Relationship [" + relationship.getRelationTypeValue() + "] is neither parent nor child" +
                             " of Contentlet [" + contentletId + "]");
                     cve.addBadRelationship(relationship, contentsInRelationship);
