@@ -1,10 +1,8 @@
 package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import io.vavr.control.Try;
-import org.h2.fulltext.IndexInfo;
 
 import java.io.Serializable;
 import java.text.ParseException;
@@ -59,7 +57,8 @@ public class IndiciesInfo implements Serializable {
     }
 
     public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
-    private final static String INDEX_NAME_PATTERN = "cluster_%s.%s_%s";
+    public static final String CLUSTER_PREFIX = "cluster_";
+    private final static String INDEX_NAME_PATTERN = CLUSTER_PREFIX + "%s.%s_%s";
 
     private final Map<IndexType, String> indiciesNames = new HashMap<>();
 
@@ -92,11 +91,11 @@ public class IndiciesInfo implements Serializable {
     }
 
     public long getIndexTimeStamp(final IndexType indexType) {
-        Date startTime = null;
+        Date startTime;
         try {
-            startTime = timestampFormatter
-                    .parse(indiciesNames.get(indexType)
-                    .replace(indexType.getPrefix() + "_", ""));
+            final String indexName = indiciesNames.get(indexType);
+            final String indexTimestamp = indexName.substring(indexName.lastIndexOf("_") + 1);
+            startTime = timestampFormatter.parse(indexTimestamp);
 
             return System.currentTimeMillis() - startTime.getTime();
         } catch (ParseException e) {
@@ -104,7 +103,7 @@ public class IndiciesInfo implements Serializable {
         }
     }
 
-    public String cretaeNewIndiciesName(final IndexType... indiciesType) {
+    public String createNewIndiciesName(final IndexType... indiciesType) {
         final String timeStamp = timestampFormatter.format(new Date());
 
         for (final IndexType indexType : indiciesType) {
