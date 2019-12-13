@@ -13,8 +13,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 
-import io.swagger.models.auth.In;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.PropertyUtils;
 
 public class IndiciesFactory {
 
@@ -83,7 +83,8 @@ public class IndiciesFactory {
         final String deleteSQL = "DELETE from indicies where index_type=? or index_name=?";
         for (IndexType type : IndexType.values()) {
             final String indexType = type.toString().toLowerCase();
-            final String newValue = Try.of(() -> (String) IndiciesInfo.class.getDeclaredField(indexType).get(newInfo)).getOrNull();
+            final String newValue = Try.of(() -> (String) PropertyUtils
+                    .getProperty(newInfo, type.getPropertyName())).getOrNull();
 
             dc.setSQL(deleteSQL).addParam(indexType).addParam(newValue).loadResult(conn);
             if (newValue != null) {
