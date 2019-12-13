@@ -66,7 +66,7 @@ for(String x : indexHosts){
 	catch(Exception e){}
 }
 
-boolean hasDefaultIndex = APILocator.getIndiciesAPI().loadIndicies().site_search != null;
+boolean hasDefaultIndex = APILocator.getIndiciesAPI().loadIndicies().getSiteSearch() != null;
 
 
 List<Language> langs=APILocator.getLanguageAPI().getLanguages();
@@ -172,7 +172,7 @@ boolean hasPath = false;
 					<%for(String x : indexes){ %>
 						<option value="<%=alias.get(x) == null ? x:alias.get(x)%>" <%=(x.equals(indexName)||(alias.get(x)!=null && alias.get(x).equals(indexName))) ? "selected='true'": ""%>>
 						  <%=alias.get(x) == null ? x:alias.get(x) %>
-						  <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ?
+						  <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch())) ?
 						          "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %>
 						</option>
 					<%} %>

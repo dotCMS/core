@@ -2481,7 +2481,7 @@ alter table tag alter column user_id NVARCHAR(MAX);
 
 -- ****** Indicies Data Storage *******
 create table indicies (
-  index_name NVARCHAR(30) primary key,
+  index_name NVARCHAR(100) primary key,
   index_type NVARCHAR(16) not null unique
 );
 -- ****** Log Console Table *******

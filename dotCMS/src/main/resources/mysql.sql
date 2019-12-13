@@ -2138,7 +2138,7 @@ alter table tag_inode add constraint fk_tag_inode_tagid foreign key (tag_id) ref
 
 -- ****** Indicies Data Storage *******
 create table indicies (
-  index_name varchar(30) primary key,
+  index_name varchar(100) primary key,
   index_type varchar(16) not null unique
 );
 

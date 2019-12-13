@@ -110,7 +110,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<%ClusterIndexHealth health = map.get(x); %>
 		<%IndexStats status = indexInfo.get(x); %>
 
-		<%boolean active =x.equals(info.site_search);%>
+		<%boolean active =x.equals(info.getSiteSearch());%>
 		<%	Date d = null;
 			String myDate = null;
 			try{
@@ -179,7 +179,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 <%--   RIGHT CLICK MENUS --%>
 
 		<%for(String x : indices){%>
-			<%boolean active =x.equals(info.site_search);%>
+			<%boolean active =x.equals(info.getSiteSearch());%>
 
 			<%ClusterIndexHealth health = map.get(x); %>
 			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 

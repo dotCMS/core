@@ -19,7 +19,7 @@ IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
 
 
-String testIndex = (request.getParameter("testIndex") == null) ? info.site_search : request.getParameter("testIndex");
+String testIndex = (request.getParameter("testIndex") == null) ? info.getSiteSearch() : request.getParameter("testIndex");
 String testQuery = request.getParameter("testQuery");
 
 
@@ -108,7 +108,7 @@ dojo.connect(dijit.byId("testQuery"), 'onkeypress', function (evt) {
 				
 				<select id="testIndex" name="testIndex" dojoType="dijit.form.FilteringSelect" style="width:250px;">
 					<%for(String x : indices){ %>
-						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
+						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch())) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
 					<%} %>
 				</select>
 				
