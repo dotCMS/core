@@ -173,16 +173,21 @@ public class ESIndexAPI {
 		final Map<String, Object> indices = (Map<String, Object>)jsonMap.get("indices");
 
 		indices.forEach((key, value)-> {
-			Map<String, Object> indexStats = (Map<String, Object>) ((Map<String, Object>)
-					indices.get(key)).get("primaries");
+            if (doesIndexBelongToCluster(key)) {
 
-			int numOfDocs = (int) ((Map<String, Object>) indexStats.get("docs"))
-					.get("count");
+                final Map<String, Object> indexStats = (Map<String, Object>) ((Map<String, Object>)
+                        indices.get(key)).get("primaries");
 
-			int sizeInBytes = (int) ((Map<String, Object>) indexStats.get("store"))
-					.get("size_in_bytes");
+                int numOfDocs = (int) ((Map<String, Object>) indexStats.get("docs"))
+                        .get("count");
 
-			indexStatsMap.put(key, new IndexStats(key, numOfDocs, sizeInBytes));
+                int sizeInBytes = (int) ((Map<String, Object>) indexStats.get("store"))
+                        .get("size_in_bytes");
+
+                final String indexNameWithoutPrefix = removeClusterIdFromIndexName(key);
+                indexStatsMap.put(indexNameWithoutPrefix,
+                        new IndexStats(indexNameWithoutPrefix, numOfDocs, sizeInBytes));
+            }
 		});
 
 		return indexStatsMap;
@@ -728,15 +733,21 @@ public class ESIndexAPI {
      * returns cluster health
      * @return
      */
-    public Map<String,ClusterIndexHealth> getClusterHealth() {
-		ClusterHealthRequest request = new ClusterHealthRequest();
-		request.level(Level.INDICES);
-		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-		ClusterHealthResponse response = Sneaky.sneak(()->
-				RestHighLevelClientProvider.getInstance().getClient()
-						.cluster().health(request,RequestOptions.DEFAULT));
+    public Map<String, ClusterIndexHealth> getClusterHealth() {
+        final ClusterHealthRequest request = new ClusterHealthRequest();
 
-		return response.getIndices();
+        request.level(Level.INDICES);
+        request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+
+        final ClusterHealthResponse response = Sneaky.sneak(() ->
+                RestHighLevelClientProvider.getInstance().getClient()
+                        .cluster().health(request, RequestOptions.DEFAULT));
+
+        //returns indexes that belong to the cluster
+        return response.getIndices().entrySet().stream()
+                .filter(x -> doesIndexBelongToCluster(x.getKey()))
+                .collect(Collectors
+                        .toMap(x -> removeClusterIdFromIndexName(x.getKey()), x -> x.getValue()));
     }
 
 	/**
@@ -918,9 +929,8 @@ public class ESIndexAPI {
 
 			return indexes.stream()
 					.filter(indexName -> {
-						final String clusterId = getClusterIdFromIndexName(indexName);
-						return clusterId == null || clusterId.equals(ClusterFactory.getClusterId());
-					})
+                        return doesIndexBelongToCluster(indexName);
+                    })
 					.map(this::removeClusterIdFromIndexName)
 					.sorted(new IndexSortByDate())
 					.collect(Collectors.toList());
@@ -931,16 +941,25 @@ public class ESIndexAPI {
 		return indexes;
 	}
 
-	private String removeClusterIdFromIndexName(final String indexName) {
-		final String[] indexNameSplit = indexName.split(".");
+    private boolean doesIndexBelongToCluster(final String indexName) {
+        final String clusterId = getClusterIdFromIndexName(indexName).orElse(null);
+        return clusterId == null || clusterId.equals(ClusterFactory.getClusterId());
+    }
+
+    public String removeClusterIdFromIndexName(final String indexName) {
+		final String[] indexNameSplit = indexName.split("\\.");
 		return indexNameSplit.length == 1 ?
 				indexNameSplit[0] :
 				indexNameSplit[1];
 	}
 
-	private String getClusterIdFromIndexName(final String indexName) {
-		final String[] indexNameSplit = indexName.split(".");
-		return indexNameSplit.length == 1 ? null : indexNameSplit[0].split("_")[1];
+	private Optional<String> getClusterIdFromIndexName(final String indexName) {
+		final String[] indexNameSplit = indexName.split("\\.");
+		if (indexNameSplit.length > 1 && indexNameSplit[0].split("_").length > 1){
+		    return Optional.of(indexNameSplit[0].split("_")[1]);
+        }
+
+		return Optional.empty();
 	}
 
 	public List<String> getClosedIndexes() {
