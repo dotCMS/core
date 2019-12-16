@@ -121,22 +121,32 @@ public class FileAssetContainerUtil {
     }
 
     //demo.dotcms.com/application/containers/test/
-    public String getHostName (final String path) {
-        String tmp = path;
-        final List<String> pageModePrefixList = Stream.of(PageMode.values()).map(pageMode -> String.format("/%s/",pageMode.name())).collect(Collectors.toList());
-        for(final String prefix: pageModePrefixList){
-           if(tmp.startsWith(prefix)){
-             tmp = tmp.substring(prefix.length());
-             break;
-           }
+    public String getHostName(final String path) {
+        try {
+            String tmp = path;
+            final List<String> pageModePrefixList = Stream.of(PageMode.values())
+                    .map(pageMode -> String.format("/%s/", pageMode.name()))
+                    .collect(Collectors.toList());
+            for (final String prefix : pageModePrefixList) {
+                if (tmp.startsWith(prefix)) {
+                    tmp = tmp.substring(prefix.length());
+                    break;
+                }
+            }
+
+            tmp = tmp.replaceAll(HOST_INDICATOR, "");
+            tmp = tmp.substring(0, tmp.indexOf(CONTAINER_FOLDER_PATH));
+            final String finalString = tmp;
+            Logger.warn(FileAssetContainerUtil.class,
+                    () -> String.format(" extracted hostName `%s`", finalString));
+
+            return (UtilMethods.isSet(tmp) ? tmp : null);
+        } catch (Exception e) {
+            Logger.error(FileAssetContainer.class, String.format(
+                    "An error occurred while extracting host name from path `%s` defaulting to systemHost ",
+                    path), e);
+            return null;
         }
-
-        tmp = tmp.replaceAll(HOST_INDICATOR,"");
-        tmp = tmp.substring(0,tmp.indexOf(CONTAINER_FOLDER_PATH));
-        final String finalString = tmp;
-        Logger.warn(FileAssetContainerUtil.class, ()->  String.format(" extracted hostName `%s`",finalString));
-
-        return (UtilMethods.isSet(tmp) ? tmp : null);
     }
 
     public String getContainerIdFromPath(final String fullPath) throws DotDataException {
