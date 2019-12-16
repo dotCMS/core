@@ -1,6 +1,6 @@
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
-<%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
+<%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>

@@ -1,5 +1,5 @@
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
-<%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
+<%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
