@@ -75,10 +75,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.apache.felix.framework.OSGIUtil;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -1243,7 +1239,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             assertTrue(result);
 
             //verify mapping
-            final String mapping = esMappingAPI.getMapping(workingIndex, "content");
+            final String mapping = esMappingAPI.getMapping(workingIndex);
 
             //parse json mapping and validate
             assertNotNull(mapping);

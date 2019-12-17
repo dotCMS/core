@@ -223,7 +223,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                                             + "\"type\":  \"keyword\",\n"
                                             + "\"ignore_above\": 8191\n"
                                             + "}")));
-                    mappingAPI.putMapping(indexName, "content", properties.toString());
+                    mappingAPI.putMapping(indexName, properties.toString());
                 } catch (Exception e) {
                     handleInvalidCustomMappingError(indexName, relationshipName);
                     final String message = "Error updating index mapping for relationship " + relationshipName
@@ -293,7 +293,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                                                             .toLowerCase(),
                                                     new JSONObject(fieldVariable.value()))));
                     properties.put("properties", jsonObject);
-                    mappingAPI.putMapping(indexName, "content", properties.toString());
+                    mappingAPI.putMapping(indexName, properties.toString());
 
                     if (field instanceof RelationshipField) {
                         final Relationship relationship = relationshipAPI
