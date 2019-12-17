@@ -108,8 +108,8 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         final File secretStoreFile = createStoreIfNeeded();
         try {
             final KeyStore keyStore = KeyStore.getInstance(SECRETS_STORE_KEYSTORE_TYPE);
-            try (InputStream in = Files.newInputStream(secretStoreFile.toPath())) {
-                keyStore.load(in, loadStorePassword());
+            try (InputStream inputStream = Files.newInputStream(secretStoreFile.toPath())) {
+                keyStore.load(inputStream, loadStorePassword());
             }
 
             return keyStore;
@@ -157,7 +157,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      */
     public Optional<char[]> getValue(final String variableKey) {
 
-        char[] fromCache = getFromCache(variableKey,
+        final char[] fromCache = getFromCache(variableKey,
                 () -> loadValueFromStore(variableKey));
 
         return Arrays.equals(fromCache, CACHE_404) ? Optional.empty() : Optional.ofNullable(decrypt(fromCache));
@@ -241,9 +241,9 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     @Override
     public void deleteValue(final String secretKey) {
         try {
-            final KeyStore ks = getSecretsStore();
-            ks.deleteEntry(secretKey);
-            saveSecretsStore(ks);
+            final KeyStore keyStore = getSecretsStore();
+            keyStore.deleteEntry(secretKey);
+            saveSecretsStore(keyStore);
             flushCache(secretKey);
         } catch (KeyStoreException e) {
             Logger.warn(this.getClass(), "Unable to delete secret from  " + SECRETS_STORE_FILE + ": " + e);
@@ -286,7 +286,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         return decrypt(new String(encryptedString));
     }
 
-    private char[] getFromCache(final String key, Supplier<char[]> defaultValue) {
+    private char[] getFromCache(final String key, final Supplier<char[]> defaultValue) {
         char[] retVal = (char[]) CacheLocator.getCacheAdministrator().getNoThrow(key, SECRETS_CACHE_GROUP);
         if (retVal == null) {
             retVal = defaultValue.get();

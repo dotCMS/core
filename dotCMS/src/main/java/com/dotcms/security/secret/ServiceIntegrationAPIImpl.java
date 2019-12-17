@@ -30,7 +30,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     private LayoutAPI layoutAPI;
     private SecretsStore secretsStore;
 
-    private ObjectMapper objectMapper = new ObjectMapper()
+    private final ObjectMapper objectMapper = new ObjectMapper()
             //.enable(SerializationFeature.INDENT_OUTPUT)
             .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
     ;
