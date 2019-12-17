@@ -39,7 +39,7 @@ public class ESSiteSearchAPITest {
     public void testCreateSiteSearchIndexAndMakeItDefault() throws IOException, DotDataException {
 
         final String timeStamp = String.valueOf(new Date().getTime());
-        final String indexName = ES_SITE_SEARCH_NAME + timeStamp;
+        final String indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
         final String aliasName = "indexAlias" + timeStamp;
 
         siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
