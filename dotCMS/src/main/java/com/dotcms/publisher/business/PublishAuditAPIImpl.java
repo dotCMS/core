@@ -6,11 +6,14 @@ import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.mapper.PublishAuditStatusMapper;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +30,22 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 
 	private static PublishAuditAPIImpl instance= null;
 	private PublishAuditStatusMapper mapper = null;
+	//This query select all bundles that are pending for a final status (final statuses FAILED_TO_PUBLISH or SUCCESS)
+	private static final String SELECT_PENDING_BUNDLES = "SELECT * FROM publishing_queue_audit " +
+			"WHERE status = ? or status = ? or status = ? or status = ? or status = ? or status = ?";
+	private static final String INSERT_PUBLISHING_QUEUE_AUDIT ="insert into publishing_queue_audit(bundle_id, status, status_pojo, status_updated, create_date) values(?,?,?,?,?)";
+	private static final String UPDATE_STATUS_STATUSPOJO_BY_BUNDLEID ="update publishing_queue_audit set status = ?, status_pojo = ?  where bundle_id = ? ";
+	private static final String UPDATE_ALL_BY_BUNDLEID ="update publishing_queue_audit set status = ?, status_pojo = ?, create_date = ?, status_updated = ? where bundle_id = ? ";
+	private static final String DELETE_BY_BUNDLEID ="delete from publishing_queue_audit where bundle_id = ? ";
+	private static final String SELECT_ALL_BY_BUNDLEID = "select * from publishing_queue_audit where bundle_id = ? ";
+	private static final String SELECT_ALL_ORDER_BY_STATUSUPDATED_DESC = "SELECT * FROM publishing_queue_audit order by status_updated desc";
+	private static final String SELECT_MAX_CREATEDATE_BY_STATUS_ISNOT_BUNDLING = "select max(c.create_date) as max_date from publishing_queue_audit c where c.status != ? ";
+	private static final String SELECT_COUNT = "SELECT count(*) as count FROM publishing_queue_audit ";
+	private static final String SELECT_BUNDLEID_BY_STATUS = "SELECT bundle_id from publishing_queue_audit WHERE status = ? ";
+	private static final String OR_STATUS_CLAUSE = " or publishing_queue_audit.status = ? ";
+	private static final String SELECT_BUNDLEID_BY_STATUS_AND_OWNER = "SELECT bundle_id from publishing_queue_audit join publishing_bundle on publishing_queue_audit.bundle_id = publishing_bundle.id "
+			+ "WHERE publishing_bundle.owner= ? and (publishing_queue_audit.status = ? ";
+
 
 	/**
 	 * Returns a singleton instance of the {@link PublishAuditAPI}.
@@ -48,17 +67,6 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		mapper = new PublishAuditStatusMapper();
 	}
 
-	private final String MANDATORY_FIELDS=
-			"bundle_id, "+
-			"status, "+
-			"status_pojo, "+
-			"status_updated, "+
-			"create_date ";
-
-	private final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?" ;
-
-	private final String INSERTSQL="insert into publishing_queue_audit("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
-
 	@Override
 	public void insertPublishAuditStatus(PublishAuditStatus pa)
 			throws DotPublisherException {
@@ -67,7 +75,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			try{
 				localt=HibernateUtil.startLocalTransactionIfNeeded();
 				DotConnect dc = new DotConnect();
-				dc.setSQL(INSERTSQL);
+				dc.setSQL(INSERT_PUBLISHING_QUEUE_AUDIT);
 				dc.addParam(pa.getBundleId());
 				dc.addParam(pa.getStatus().getCode());
 
@@ -98,9 +106,6 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 
-	private final String UPDATESQL="update publishing_queue_audit set status = ?, status_pojo = ?  where bundle_id = ? ";
-	private final String UPDATESQL_CREATION_DATE="update publishing_queue_audit set status = ?, status_pojo = ?, create_date = ?, status_updated = ? where bundle_id = ? ";
-
 	@WrapInTransaction
     @Override
     public void updatePublishAuditStatus(String bundleId, Status newStatus, PublishAuditHistory history ) throws DotPublisherException {
@@ -115,9 +120,9 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 			local = HibernateUtil.startLocalTransactionIfNeeded();
 			DotConnect dc = new DotConnect();
             if ( updateDates ) {
-                dc.setSQL( UPDATESQL_CREATION_DATE );
+                dc.setSQL(UPDATE_ALL_BY_BUNDLEID);
             } else {
-                dc.setSQL( UPDATESQL );
+                dc.setSQL(UPDATE_STATUS_STATUSPOJO_BY_BUNDLEID);
             }
             dc.addParam(newStatus.getCode());
 
@@ -157,44 +162,42 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 
-	private final String DELETESQL="delete from publishing_queue_audit where bundle_id = ? ";
-
+	@WrapInTransaction
 	@Override
-	public void deletePublishAuditStatus(String bundleId) throws DotPublisherException {
-	    boolean local=false;
-		try{
-			local = HibernateUtil.startLocalTransactionIfNeeded();
-			DotConnect dc = new DotConnect();
-			dc.setSQL(DELETESQL);
-			dc.addParam(bundleId);
+	public List<String> deletePublishAuditStatus(final List<String> bundleIds) throws DotPublisherException {
 
-			dc.loadResult();
+		final ImmutableList.Builder<String> deletedBundleIds = new ImmutableList.Builder<>();
 
-			if(local) {
-			    HibernateUtil.closeAndCommitTransaction();
-			}
-		}catch(Exception e){
-		    if(local) {
-    			try {
-    				HibernateUtil.rollbackTransaction();
-    			} catch (DotHibernateException e1) {
-    				Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e1);
-    			}
-		    }
-			Logger.debug(PublishAuditAPIImpl.class,e.getMessage(),e);
+		for (final String bundleId: bundleIds) {
+
+			this.deletePublishAuditStatus(bundleId);
+			deletedBundleIds.add(bundleId);
+		}
+
+		return deletedBundleIds.build();
+	}
+
+	@WrapInTransaction
+	@Override
+	public void deletePublishAuditStatus(final String bundleId) throws DotPublisherException {
+
+		try {
+
+			Logger.info(this, "Deleting the bundle: " + bundleId);
+			
+			new DotConnect()
+					.setSQL(DELETE_BY_BUNDLEID)
+					.addParam(bundleId)
+					.loadResult();
+		} catch(Exception e) {
+
+			Logger.error(PublishAuditAPIImpl.class, "Unable to remove element in publish queue audit table:" +
+					"with the following bundle_id "+bundleId, e);
 			throw new DotPublisherException(
 					"Unable to remove element in publish queue audit table:" +
 					"with the following bundle_id "+bundleId+" "+ e.getMessage(), e);
-		} finally {
-			if(local) {
-				HibernateUtil.closeSessionSilently();
-			}
 		}
 	}
-
-	private final String SELECTSQL=
-			"SELECT * "+
-			"FROM publishing_queue_audit a where a.bundle_id = ? ";
 
 	@Override
 	@CloseDBIfOpened
@@ -203,7 +206,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 
 		try{
 			DotConnect dc = new DotConnect();
-			dc.setSQL(SELECTSQL);
+			dc.setSQL(SELECT_ALL_BY_BUNDLEID);
 
 			dc.addParam(bundleId);
 
@@ -222,16 +225,12 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 
-	private final String SELECTSQLALL=
-			"SELECT * "+
-			"FROM publishing_queue_audit order by status_updated desc";
-
 	@Override
 	@CloseDBIfOpened
 	public List<PublishAuditStatus> getAllPublishAuditStatus() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
-			dc.setSQL(SELECTSQLALL);
+			dc.setSQL(SELECT_ALL_ORDER_BY_STATUSUPDATED_DESC);
 
 			return mapper.mapRows(dc.loadObjectResults());
 		}catch(Exception e){
@@ -244,7 +243,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	public List<PublishAuditStatus> getAllPublishAuditStatus(Integer limit, Integer offset) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
-			dc.setSQL(SELECTSQLALL);
+			dc.setSQL(SELECT_ALL_ORDER_BY_STATUSUPDATED_DESC);
 
 			dc.setStartRow(offset);
 			dc.setMaxRows(limit);
@@ -256,16 +255,11 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 
-	private final String SELECTSQLMAXDATE=
-			"select max(c.create_date) as max_date "+
-			"from publishing_queue_audit c " +
-			"where c.status != ? ";
-
 	@Override
 	public Date getLastPublishAuditStatusDate() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
-			dc.setSQL(SELECTSQLMAXDATE);
+			dc.setSQL(SELECT_MAX_CREATEDATE_BY_STATUS_ISNOT_BUNDLING);
 
 			dc.addParam(Status.BUNDLING.getCode());
 
@@ -282,15 +276,11 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 
-	private final String SELECTSQLALLCOUNT=
-			"SELECT count(*) as count "+
-			"FROM publishing_queue_audit ";
-
 	@Override
 	public Integer countAllPublishAuditStatus() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
-			dc.setSQL(SELECTSQLALLCOUNT);
+			dc.setSQL(SELECT_COUNT);
 			return Integer.parseInt(dc.loadObjectResults().get(0).get("count").toString());
 		}catch(Exception e){
 			Logger.debug(PublisherUtil.class,e.getMessage(),e);
@@ -298,16 +288,11 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 		}
 	}
 
-	private final String SELECTSQLPENDING=
-			"SELECT * "+
-			"FROM publishing_queue_audit " +
-			"WHERE status = ? or status = ? or status = ? or status = ? or status = ? or status = ?";
-
 	@Override
 	public List<PublishAuditStatus> getPendingPublishAuditStatus() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
-			dc.setSQL(SELECTSQLPENDING);
+			dc.setSQL(SELECT_PENDING_BUNDLES);
 			dc.addParam(Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 			dc.addParam(Status.FAILED_TO_SEND_TO_SOME_GROUPS.getCode());
 			dc.addParam(Status.FAILED_TO_SEND_TO_ALL_GROUPS.getCode());
@@ -379,5 +364,58 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 
         return isRetry;
     }
+
+    @CloseDBIfOpened
+	@Override
+	public List<String> getBundleIdByStatus(final List<Status> statusList, final int limit, final int offset) throws DotDataException {
+		List<String> bundleIds = new ArrayList<>();
+		final DotConnect dc = new DotConnect();
+		String sql = SELECT_BUNDLEID_BY_STATUS;
+		if(statusList.size() > 1){
+			for(int i = 1;i<statusList.size();i++){
+				sql += OR_STATUS_CLAUSE;
+			}
+		}
+		dc.setSQL(sql);
+		dc.setMaxRows(limit);
+		dc.setStartRow(offset);
+		for(final Status status : statusList){
+			dc.addParam(status.getCode());
+		}
+
+		for(final Map<String,Object> resultMap : dc.loadObjectResults()) {
+			bundleIds.add((String) resultMap.get("bundle_id"));
+		}
+
+		return bundleIds;
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public List<String> getBundleIdByStatusFilterByOwner(final List<Status> statusList,
+			final int limit, final int offset, final String userId) throws DotDataException {
+		List<String> bundleIds = new ArrayList<>();
+		final DotConnect dc = new DotConnect();
+		String sql = SELECT_BUNDLEID_BY_STATUS_AND_OWNER;
+		if(statusList.size() > 1){
+			for(int i = 1;i<statusList.size();i++){
+				sql += OR_STATUS_CLAUSE;
+			}
+		}
+		sql += ")";
+		dc.setSQL(sql);
+		dc.setMaxRows(limit);
+		dc.setStartRow(offset);
+		dc.addParam(userId);
+		for(final Status status : statusList){
+			dc.addParam(status.getCode());
+		}
+
+		for(final Map<String,Object> resultMap : dc.loadObjectResults()) {
+			bundleIds.add((String) resultMap.get("bundle_id"));
+		}
+
+		return bundleIds;
+	}
 
 }

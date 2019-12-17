@@ -1217,7 +1217,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         relationshipAPI.isChildField(relationship, theField);
                 final ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
                         relationship, isChildField);
-                records.setRecords(contentlet.getRelated(theField.variable(), user, respectFrontEndRoles, isChildField));
+                records.setRecords(contentlet
+                        .getRelated(theField.variable(), user, respectFrontEndRoles, isChildField,
+                                contentlet.getLanguageId(), null));
                 contentletRelationships.setRelationshipsRecords(CollectionsUtils.list(records));
                 return contentletRelationships;
             } else {
@@ -2010,7 +2012,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
             }
 
-            this.canLock(contentlet, user);
+            final boolean bringOldVersions  = false;  // we do not want old version in order to be more efficient
+            final List<Contentlet> versions =  this.findAllVersions(APILocator.getIdentifierAPI().find(contentlet.getIdentifier()), bringOldVersions,
+                    user, respectFrontendRoles);
+
+            for (final Contentlet version : versions) {
+                this.canLock(version, user);
+            }
         }
 
         final List<Contentlet> filterContentlets = this.permissionAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_PUBLISH,
@@ -7066,13 +7074,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @WrapInTransaction
     @Override
     public Contentlet copyContentlet(final Contentlet sourceContentlet, final Host host, final Folder folder, final User user, final String copySuffix, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+
         Contentlet copyContentlet = new Contentlet();
         String newIdentifier = StringPool.BLANK;
-        ArrayList<Contentlet> versionsToCopy = new ArrayList<>();
         List<Contentlet> versionsToMarkWorking = new ArrayList<>();
         Map<String, Map<String, Contentlet>> contentletsToCopyRules = Maps.newHashMap();
         final Identifier sourceContentletIdentifier = APILocator.getIdentifierAPI().find(sourceContentlet.getIdentifier());
-        versionsToCopy.addAll(findAllVersions(sourceContentletIdentifier, false, user, respectFrontendRoles));
+        List<Contentlet> versionsToCopy = new ArrayList<>(
+                findAllVersions(sourceContentletIdentifier, false, user, respectFrontendRoles));
 
         // we need to save the versions from older-to-newer to make sure the last save
         // is the current version
@@ -7080,8 +7089,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         for(Contentlet contentlet : versionsToCopy){
 
-            boolean isContentletLive = false;
-            boolean isContentletWorking = false;
+            final boolean isContentletLive = contentlet.isLive();
+            final boolean isContentletWorking = contentlet.isWorking();
 
             if (user == null) {
                 throw new DotSecurityException("A user must be specified.");
@@ -7095,11 +7104,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Contentlet newContentlet = new Contentlet();
             newContentlet.setStructureInode(contentlet.getStructureInode());
             copyProperties(newContentlet, contentlet.getMap(),true);
-
-            if(contentlet.isLive())
-                isContentletLive = true;
-            if(contentlet.isWorking())
-                isContentletWorking = true;
 
             newContentlet.setInode(StringPool.BLANK);
             newContentlet.setIdentifier(StringPool.BLANK);
@@ -7254,21 +7258,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        for(Contentlet con : versionsToMarkWorking){
+        for(final Contentlet con : versionsToMarkWorking){
             APILocator.getVersionableAPI().setWorking(con);
         }
 
         if (sourceContentlet.isHTMLPage()) {
-            // If the content is an HTML Page then copy page associated contentlets
-            final List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(sourceContentlet.getIdentifier());
-            for (final MultiTree multitree : pageContents) {
-
-                APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(copyContentlet.getIdentifier(),
-                        multitree.getContainer(),
-                        multitree.getContentlet(),
-                        multitree.getRelationType(),
-                        multitree.getTreeOrder(), 
-                        multitree.getPersonalization()));
+            final boolean copyingSite = (!copyContentlet.getHost().equals(sourceContentlet.getHost()));
+            if (!copyingSite) { // We only want to execute this logic if we're not copying a whole site.
+                // If the content is an HTML Page then copy page associated contentlets
+                final List<MultiTree> pageContents = APILocator.getMultiTreeAPI()
+                        .getMultiTrees(sourceContentlet.getIdentifier());
+                for (final MultiTree multitree : pageContents) {
+                    APILocator.getMultiTreeAPI()
+                            .saveMultiTree(new MultiTree(copyContentlet.getIdentifier(),
+                                    multitree.getContainer(),
+                                    multitree.getContentlet(),
+                                    multitree.getRelationType(),
+                                    multitree.getTreeOrder(),
+                                    multitree.getPersonalization()));
+                }
             }
         }
 

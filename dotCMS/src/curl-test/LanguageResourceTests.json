@@ -1,0 +1,802 @@
+{
+	"info": {
+		"_postman_id": "b1872329-741b-4a2d-9467-129256164829",
+		"name": "LanguageResource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "CreateLanguage",
+			"item": [
+				{
+					"name": "CreateLanguageSuccess",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "31581b95-4105-4560-9e6e-fd89f9d6bffc",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									"",
+									"pm.test(\"languageCode returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+									"});",
+									"",
+									"pm.test(\"countryCode returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+									"});",
+									"",
+									"pm.test(\"language returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"language\");",
+									"});",
+									"",
+									"pm.test(\"country returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"country\");",
+									"});",
+									"",
+									"pm.test(\"Expected Language info returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.languageCode).to.eql(\"it\");",
+									"    pm.expect(jsonData.entity.countryCode).to.eql(\"IT\");",
+									"    pm.expect(jsonData.entity.language).to.eql(\"Italian\");",
+									"    pm.expect(jsonData.entity.country).to.eql(\"Italy\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateLanguageMissingLanguageString",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "15429282-9992-4368-ae75-25dc04657fd5",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () { pm.response.to.be.badRequest });",
+									"",
+									"pm.test(\"Should show error msg about Language string\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"Language String can't be null or empty\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"languageCode\":\"it\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateLanguageMissingLanguageCode",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "15429282-9992-4368-ae75-25dc04657fd5",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () { pm.response.to.be.badRequest });",
+									"",
+									"pm.test(\"Should show error msg about Language Code\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"Language Code can't be null or empty\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"language\":\"Italian\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "UpdateLanguage",
+			"item": [
+				{
+					"name": "Pre-test-CreateLanguage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "15429282-9992-4368-ae75-25dc04657fd5",
+								"exec": [
+									"pm.test(\"Expected Language info returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.languageCode).to.eql(\"it\");",
+									"    pm.expect(jsonData.entity.countryCode).to.eql(\"IT\");",
+									"    pm.expect(jsonData.entity.language).to.eql(\"Italian\");",
+									"    pm.expect(jsonData.entity.country).to.eql(\"Italy\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateLanguageSuccess",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "15429282-9992-4368-ae75-25dc04657fd5",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									"",
+									"pm.test(\"Expected Language info returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.languageCode).to.eql(\"it\");",
+									"    pm.expect(jsonData.entity.countryCode).to.eql(\"IT\");",
+									"    pm.expect(jsonData.entity.language).to.eql(\"Italian Updated\");",
+									"    pm.expect(jsonData.entity.country).to.eql(\"Italy\");",
+									"    pm.expect(jsonData.entity.id).to.eql(pm.collectionVariables.get(\"languageId\"))",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "16d5bbaa-9f4c-4895-b72f-7db1ed4f9a19",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian Updated\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/{{languageId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"{{languageId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateLanguageMissingLanguageString",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "15429282-9992-4368-ae75-25dc04657fd5",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () { pm.response.to.be.badRequest });",
+									"",
+									"pm.test(\"Should show error msg about Language string\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"Language String can't be null or empty\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"languageCode\":\"it\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/{{languageId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"{{languageId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateLanguageMissingLanguageCode",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "15429282-9992-4368-ae75-25dc04657fd5",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () { pm.response.to.be.badRequest });",
+									"",
+									"pm.test(\"Should show error msg about Language Code\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"Language Code can't be null or empty\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"language\":\"Italian\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/{{languageId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"{{languageId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateLanguageInvalidLanguageId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5a246c0f-ae29-4cc5-90c7-7d2a3f3fb89d",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () { pm.response.to.be.notFound });",
+									"",
+									"pm.test(\"Should show Language not found message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"Language not found\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian Updated\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/invalidId",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"invalidId"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "DeleteLanguage",
+			"item": [
+				{
+					"name": "Pre-test-CreateLanguage",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "15429282-9992-4368-ae75-25dc04657fd5",
+								"exec": [
+									"pm.test(\"Expected Language info returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.languageCode).to.eql(\"it\");",
+									"    pm.expect(jsonData.entity.countryCode).to.eql(\"IT\");",
+									"    pm.expect(jsonData.entity.language).to.eql(\"Italian\");",
+									"    pm.expect(jsonData.entity.country).to.eql(\"Italy\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"languageId\", jsonData.entity.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteLanguageSuccess",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "15429282-9992-4368-ae75-25dc04657fd5",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "16d5bbaa-9f4c-4895-b72f-7db1ed4f9a19",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"languageCode\":\"it\",\n\t\"language\":\"Italian Updated\", \n\t\"countryCode\":\"IT\", \n\t\"country\":\"Italy\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/{{languageId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"{{languageId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteLanguageInvalidLanguageId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5a246c0f-ae29-4cc5-90c7-7d2a3f3fb89d",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () { pm.response.to.be.notFound });",
+									"",
+									"pm.test(\"Should show Language not found message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"Language not found\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages/invalidId",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages",
+								"invalidId"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"variable": [
+		{
+			"id": "660e642e-fca8-4a93-b5b3-25f63619bef3",
+			"key": "languageId",
+			"value": 1576101466295,
+			"type": "number"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

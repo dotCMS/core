@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "1c48c3c2-c1a5-404e-afba-922e7599ed41",
+		"_postman_id": "7f6cbbfd-30d7-4511-8e4b-e866aa2aa0d6",
 		"name": "Workflow Resource Tests",
 		"description": "Test the necesary validations to every end point of the worlflow resource ",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -8,7 +8,6 @@
 	"item": [
 		{
 			"name": "findSchemas",
-			"description": "Returns all schemes non-archived associated to a content type. 401 if the user does not have permission.\n\n@Path(\"/schemes\")",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -38,7 +37,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes",
 							"host": [
@@ -110,7 +108,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes",
 							"host": [
@@ -128,6 +125,7 @@
 					"response": []
 				}
 			],
+			"description": "Returns all schemes non-archived associated to a content type. 401 if the user does not have permission.\n\n@Path(\"/schemes\")",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -149,11 +147,11 @@
 						]
 					}
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "findAllSchemesAndSchemesByContentType",
-			"description": "Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission\n\n@Path(\"/schemes/schemescontenttypes/{contentTypeId}\")",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -183,7 +181,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/schemescontenttypes/2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
 							"host": [
@@ -250,7 +247,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/schemescontenttypes/2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
 							"host": [
@@ -318,7 +314,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/schemescontenttypes/2a3e91e4-fbbf-4876-8c5b-2233c1739b0",
 							"host": [
@@ -392,7 +387,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/schemescontenttypes/2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
 							"host": [
@@ -412,6 +406,7 @@
 					"response": []
 				}
 			],
+			"description": "Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission\n\n@Path(\"/schemes/schemescontenttypes/{contentTypeId}\")",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -433,11 +428,11 @@
 						]
 					}
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "findStepsByScheme",
-			"description": "Return Steps associated to the scheme, 404 if does not exists. 401 if the user does not have permission\n\n@Path(\"/schemes/{schemeId}/steps\")",
 			"item": [
 				{
 					"name": "UserCredentialValidation",
@@ -467,7 +462,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/steps",
 							"host": [
@@ -550,7 +544,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/steps",
 							"host": [
@@ -622,7 +615,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/ad61a59e1-a49c-46f2-a929-db2b4bfa88b2/steps",
 							"host": [
@@ -705,7 +697,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a49c/steps",
 							"host": [
@@ -724,11 +715,12 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "Return Steps associated to the scheme, 404 if does not exists. 401 if the user does not have permission\n\n@Path(\"/schemes/{schemeId}/steps\")",
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "findAvailableActions",
-			"description": "This method return all the available actions for an inode\n\n@Path(\"/contentlet/{inode}/actions\")\n",
 			"item": [
 				{
 					"name": "UserCredentialValidations",
@@ -758,7 +750,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/contentlet/47327d24-c894-4433-aa4b-0977f458e574/actions",
 							"host": [
@@ -821,7 +812,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a8/actions",
 							"host": [
@@ -889,7 +879,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a/actions",
 							"host": [
@@ -957,7 +946,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a/actions",
 							"host": [
@@ -1025,7 +1013,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/contentlet/c9d74fae-7e9c-4283-b0de-335f8105e5a/actions",
 							"host": [
@@ -1045,6 +1032,7 @@
 					"response": []
 				}
 			],
+			"description": "This method return all the available actions for an inode\n\n@Path(\"/contentlet/{inode}/actions\")\n",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -1066,11 +1054,11 @@
 						]
 					}
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "findAction",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -1100,7 +1088,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436",
 							"host": [
@@ -1167,7 +1154,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c803",
 							"host": [
@@ -1234,7 +1220,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436",
 							"host": [
@@ -1301,7 +1286,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c803d",
 							"host": [
@@ -1319,11 +1303,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "findActionByStep",
-			"description": "Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -1353,7 +1337,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions/b9d89c80-3d88-4311-8365-187323c96436",
 							"host": [
@@ -1422,7 +1405,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-17a/actions/b9d89c80-3d88-4311-8365-187323c96436",
 							"host": [
@@ -1491,7 +1473,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions/b9d89c80-3da",
 							"host": [
@@ -1560,7 +1541,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions/b9d89c80-3d88-4311-8365-187323c96436",
 							"host": [
@@ -1629,7 +1609,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd17/actions/b9d89c803d",
 							"host": [
@@ -1650,6 +1629,7 @@
 					"response": []
 				}
 			],
+			"description": "Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -1671,11 +1651,11 @@
 						]
 					}
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "findActionsByStep (all the actions)",
-			"description": "Returns a collection of actions associated to the step, if step does not have any will returns 200 and an empty list.\n\n@Path(\"/steps/{stepId}/actions\")",
 			"item": [
 				{
 					"name": "userCredentialsValidation",
@@ -1705,7 +1685,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions",
 							"host": [
@@ -1773,7 +1752,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19a/actions",
 							"host": [
@@ -1847,7 +1825,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions",
 							"host": [
@@ -1921,7 +1898,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions",
 							"host": [
@@ -1995,7 +1971,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd17/actions",
 							"host": [
@@ -2015,6 +1990,7 @@
 					"response": []
 				}
 			],
+			"description": "Returns a collection of actions associated to the step, if step does not have any will returns 200 and an empty list.\n\n@Path(\"/steps/{stepId}/actions\")",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -2036,11 +2012,11 @@
 						]
 					}
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "SaveAction",
-			"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n@Path(\"/actions\")",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -2610,6 +2586,7 @@
 					"response": []
 				}
 			],
+			"description": "Saves an action, by default the action is associated to the schema, however if the stepId is set will be automatically associated to the step too.\n@Path(\"/actions\")",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -2631,11 +2608,11 @@
 						]
 					}
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "findActionByScheme",
-			"description": "Returns a set of actions associated to the schemeId\n\n@Path(\"/schemes/{schemeId}/actions\")",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -2665,7 +2642,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/actions",
 							"host": [
@@ -2733,7 +2709,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2a/actions",
 							"host": [
@@ -2839,7 +2814,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/actions",
 							"host": [
@@ -2945,7 +2919,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/actions",
 							"host": [
@@ -3051,7 +3024,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a4/actions",
 							"host": [
@@ -3071,6 +3043,7 @@
 					"response": []
 				}
 			],
+			"description": "Returns a set of actions associated to the schemeId\n\n@Path(\"/schemes/{schemeId}/actions\")",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -3092,11 +3065,11 @@
 						]
 					}
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "findStepById",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialValidation",
@@ -3134,7 +3107,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/94178d17-96a0-4e08-b9aa-94214a7fb31e",
 							"host": [
@@ -3201,7 +3173,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/dc3c9cd0-8467-404b-bf95-cb7df3fbc293",
 							"host": [
@@ -3268,7 +3239,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/adc3c9cd0-8467-404b-bf95-cb7df3fbc293",
 							"host": [
@@ -3335,7 +3305,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/dc3c9cd0-846740",
 							"host": [
@@ -3353,11 +3322,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "findAvailableDefaultActionsByContentType",
-			"description": "Returns all the possible default actions associated to the content type workflow schemes. 401 if the user does not have permission.\n\n@Path(\"/defaultactions/contenttype/{contentTypeId}\")",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -3395,7 +3364,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/defaultactions/contenttype/2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
 							"host": [
@@ -3463,7 +3431,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/defaultactions/contenttype/2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
 							"host": [
@@ -3537,7 +3504,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/defaultactions/contenttype/a2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
 							"host": [
@@ -3557,6 +3523,7 @@
 					"response": []
 				}
 			],
+			"description": "Returns all the possible default actions associated to the content type workflow schemes. 401 if the user does not have permission.\n\n@Path(\"/defaultactions/contenttype/{contentTypeId}\")",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -3578,11 +3545,11 @@
 						]
 					}
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "findAvailableDefaultActionsBySchemes",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -3620,7 +3587,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/defaultactions/schemes",
 							"host": [
@@ -3687,7 +3653,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/defaultactions/schemes?ids=d61a59e1-a49c-46f2-a929-db2b4bfa88b2",
 							"host": [
@@ -3760,7 +3725,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/defaultactions/schemes?ids=e61a59e1-a49c-46f2-a929-db2b4bfa88b2",
 							"host": [
@@ -3833,7 +3797,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/defaultactions/schemes?ids=d61a59e1a4",
 							"host": [
@@ -3857,11 +3820,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "findInitialAvailableActionsByContentType",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialValidation",
@@ -3899,7 +3862,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/initialactions/contenttype/2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
 							"host": [
@@ -3972,7 +3934,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/initialactions/contenttype/2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
 							"host": [
@@ -4045,7 +4006,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/initialactions/contenttype/2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
 							"host": [
@@ -4114,7 +4074,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/initialactions/contenttype/a2a3e91e4-fbbf-4876-8c5b-2233c1739b05",
 							"host": [
@@ -4133,11 +4092,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "UpdateAction",
-			"description": "This resource updates the workflow action 404 if the id does not exist\n@Path(\"/actions/{actionId}\")",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -4639,6 +4598,7 @@
 					"response": []
 				}
 			],
+			"description": "This resource updates the workflow action 404 if the id does not exist\n@Path(\"/actions/{actionId}\")",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -4660,11 +4620,11 @@
 						]
 					}
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "SaveActionToStep",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialValidation",
@@ -5259,11 +5219,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "ImportScheme",
-			"description": "",
 			"item": [
 				{
 					"name": "User Credentials Validations",
@@ -5759,11 +5719,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "DeleteStep",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -5793,7 +5753,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/c6035d07-8e8f-4a71-ad93-93adabf13906",
 							"host": [
@@ -5867,7 +5826,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/4ec41c51-4006-4713-a28d-d42a719934ac",
 							"host": [
@@ -5934,7 +5892,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/ee24a4cb-2d15-4c98-b1bd-6327126451f3",
 							"host": [
@@ -6001,7 +5958,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/ee24a4cb-2d15-4c98-b1bd-6327126451f3",
 							"host": [
@@ -6068,7 +6024,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/zee24a4cb-2d15-4c98-b1bd-6327126451f3",
 							"host": [
@@ -6135,7 +6090,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/c965f6a50a",
 							"host": [
@@ -6153,11 +6107,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "DeleteAction (Permanently)",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialValidation",
@@ -6195,7 +6149,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/9012b349-e8ce-446f-86df-50b4f82a82ff",
 							"host": [
@@ -6262,7 +6215,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/62078964-3ed4-4729-91d3-75e841736905",
 							"host": [
@@ -6329,7 +6281,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/4e1efa41-789e-4f63-8e7f-30f5697e53e3",
 							"host": [
@@ -6396,7 +6347,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/4e1efa41-789e-4f63-8e7f-30f5697e53e3",
 							"host": [
@@ -6463,7 +6413,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/a4e1efa41-789e-4f63-8e7f-30f5697e53e3",
 							"host": [
@@ -6530,7 +6479,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/actions/f2bb86bcf5",
 							"host": [
@@ -6548,11 +6496,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "DeleteAction (from step)",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialValidation",
@@ -6590,7 +6538,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/0c5018fc-4773-4524-9ba8-328ca4c3d0b2/actions/658278d3-aa3b-4ce4-a028-c9e1656e4f9e",
 							"host": [
@@ -6659,7 +6606,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/d6b095b6-b65f-4bdb-bbfd-701d663dfee2/actions/777f1c6b-c877-4a37-ba4b-10627316c2cc",
 							"host": [
@@ -6728,7 +6674,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/d6b095b6-b65f-4bdb-bbfd-701d663dfee2/actions/777f1c6b-c877-4a37-ba4b-10627316c2cc",
 							"host": [
@@ -6797,7 +6742,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/d6b095b6-b65f-4bdb-bbfd-701d663dfee2/actions/c92f9aa1-9503-4567-ac30-d3242b54d02d",
 							"host": [
@@ -6866,7 +6810,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/ad6b095b6-b65f-4bdb-bbfd-701d663dfee2/actions/c92f9aa1-9503-4567-ac30-d3242b54d02d",
 							"host": [
@@ -6935,7 +6878,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/d6b095b6-b65f-4bdb-bbfd-701d663dfee2/actions/ac92f9aa1-9503-4567-ac30-d3242b54d02d",
 							"host": [
@@ -7004,7 +6946,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/steps/dc3c9cd084/actions/ceca71a0de",
 							"host": [
@@ -7024,11 +6965,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "ReorderStep",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialValidation",
@@ -7066,7 +7007,6 @@
 						},
 						"method": "PUT",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/reorder/step/94178d17-96a0-4e08-b9aa-94214a7fb31e/order/0",
 							"host": [
@@ -7136,7 +7076,6 @@
 						},
 						"method": "PUT",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/reorder/step/dc3c9cd0-8467-404b-bf95-cb7df3fbc293/order/0",
 							"host": [
@@ -7206,7 +7145,6 @@
 						},
 						"method": "PUT",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/reorder/step/dc3c9cd0-8467-404b-bf95-cb7df3fbc293/order/0",
 							"host": [
@@ -7276,7 +7214,6 @@
 						},
 						"method": "PUT",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/reorder/step/dc3c9cd0-8467-404b-bf95-cb7df3fbc293/order/0",
 							"host": [
@@ -7346,7 +7283,6 @@
 						},
 						"method": "PUT",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/reorder/step/adc3c9cd0-8467-404b-bf95-cb7df3fbc293/order/0",
 							"host": [
@@ -7416,7 +7352,6 @@
 						},
 						"method": "PUT",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/reorder/step/dc3c9cd084/order/0",
 							"host": [
@@ -7437,11 +7372,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "UpdateStep",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -7952,11 +7887,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "AddStep",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialValidation",
@@ -8460,11 +8395,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "SaveScheme",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -8894,11 +8829,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "UpdateScheme",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -9409,11 +9344,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "CopyScheme",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -9451,7 +9386,6 @@
 						},
 						"method": "POST",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a4/copy",
 							"host": [
@@ -10055,11 +9989,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "FireAction",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -10734,11 +10668,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "ReorderAction",
-			"description": "",
 			"item": [
 				{
 					"name": "UserCredentialValidation",
@@ -11348,11 +11282,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "ExportScheme",
-			"description": null,
 			"item": [
 				{
 					"name": "User Credentials Validation",
@@ -11380,7 +11314,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a4/export",
 							"host": [
@@ -11449,7 +11382,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a4/export",
 							"host": [
@@ -11517,7 +11449,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a4/export",
 							"host": [
@@ -11583,7 +11514,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1-a49c-46f2-a929-db2b4bfa88b2/export",
 							"host": [
@@ -11649,7 +11579,6 @@
 						},
 						"method": "GET",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a4/export",
 							"host": [
@@ -11668,11 +11597,11 @@
 					},
 					"response": []
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
 		},
 		{
 			"name": "DeleteScheme",
-			"description": "Deletes an existing scheme (the response is async)\n\n@Path(\"/schemes/{schemeId}\")",
 			"item": [
 				{
 					"name": "UserCredentialsValidation",
@@ -11700,7 +11629,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/85c1515c-c4f3-463c-bac2-860b8fcacc34",
 							"host": [
@@ -11767,7 +11695,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/42771904-b7d9-42b7-b038-8e077fabcf3f",
 							"host": [
@@ -11838,7 +11765,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/42771904-b7d9-42b7-b038-8e077fabcf3f",
 							"host": [
@@ -11905,7 +11831,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/a60d40a6b-a677-45d6-8f5b-e16431b1eb1c",
 							"host": [
@@ -11972,7 +11897,6 @@
 						},
 						"method": "DELETE",
 						"header": [],
-						"body": {},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a4",
 							"host": [
@@ -11991,6 +11915,7 @@
 					"response": []
 				}
 			],
+			"description": "Deletes an existing scheme (the response is async)\n\n@Path(\"/schemes/{schemeId}\")",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -12012,7 +11937,486 @@
 						]
 					}
 				}
-			]
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "systemActions",
+			"item": [
+				{
+					"name": "Creates a Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "67fd43b8-2324-40fa-a827-22f812916984",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"defaultType\":false,\n   \"fixed\":false,\n   \"system\":false,\n   \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n   \"description\":\"\",\n   \"host\":\"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n   \"folder\":\"SYSTEM_FOLDER\",\n   \"name\":\"TestContentTypeSystemActions\",\n   \"systemActionMappings\":{\n      \"NEW\":\"ceca71a0-deee-4999-bd47-b01baa1bcfc8\"\n   },\n   \"workflow\":[\n      \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n   ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								""
+							]
+						},
+						"description": "Creates a content type to associate a system workflow"
+					},
+					"response": []
+				},
+				{
+					"name": "Create System Workflow Action for New Content Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "954ed64e-ef7d-4c8c-9f88-d8855f854122",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"actionId\":\"b9d89c80-3d88-4311-8365-187323c96436\",\n\t\"systemAction\":\"EDIT\",\n\t\"contentTypeVariable\":\"TestContentTypeSystemActions\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/system/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"system",
+								"actions"
+							]
+						},
+						"description": "Create for the new content type a new mapping for EDIT"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Content Type System Actions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e636cb9b-9ca3-478f-b7e8-225f52a0f576",
+								"exec": [
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Return 2 items\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.length).to.eql(2);",
+									"});",
+									"",
+									"pm.test(\"Has New System Action\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity[0].systemAction).to.eql(\"NEW\");",
+									"});",
+									"",
+									"pm.test(\"New  has a Save Action\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity[0].workflowAction.id).to.eql(\"ceca71a0-deee-4999-bd47-b01baa1bcfc8\");",
+									"});",
+									"",
+									"pm.test(\"Has Edit System Action\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity[1].systemAction).to.eql(\"EDIT\");",
+									"});",
+									"",
+									"pm.test(\"New  has a Save/Publish Action\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity[1].workflowAction.id).to.eql(\"b9d89c80-3d88-4311-8365-187323c96436\");",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/contenttypes/TestContentTypeSystemActions/system/actions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"contenttypes",
+								"TestContentTypeSystemActions",
+								"system",
+								"actions"
+							]
+						},
+						"description": "Get the two content types"
+					},
+					"response": []
+				},
+				{
+					"name": "Fires a default New Action",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e2660ce6-1fa9-44bb-81e6-26a26c6f0380",
+								"exec": [
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.baseType).to.eql(\"CONTENT\");",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"TestContentTypeSystemActions\");",
+									"});",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Adding New Content type\",\n\t\"contentlet\": {\n\t\t\"contentType\":\"TestContentTypeSystemActions\"\n\t\t\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fires a default EDIT Action",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e2660ce6-1fa9-44bb-81e6-26a26c6f0380",
+								"exec": [
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Saved Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.baseType).to.eql(\"CONTENT\");",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"TestContentTypeSystemActions\");",
+									"});",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Adding New Content type\",\n\t\"contentlet\": {\n\t\t\"contentType\":\"TestContentTypeSystemActions\"\n\t\t\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/EDIT",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"EDIT"
+							]
+						},
+						"description": "Fires an EDIT default action"
+					},
+					"response": []
+				},
+				{
+					"name": "Fires a default PUBLISH Action ",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e2660ce6-1fa9-44bb-81e6-26a26c6f0380",
+								"exec": [
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Information Publish Correctly\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.baseType).to.eql(\"CONTENT\");",
+									"    pm.expect(jsonData.entity.contentType).to.eql(\"TestContentTypeSystemActions\");",
+									"     pm.expect(jsonData.entity.live).to.eql(true);",
+									"});",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"comments\":\"Adding New Content type\",\n\t\"contentlet\": {\n\t\t\"contentType\":\"TestContentTypeSystemActions\"\n\t\t\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Fires an PUBLISH default action"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"event": [
@@ -12042,8 +12446,8 @@
 			"id": "f9c57f78-2c8a-4cea-a12f-ba1a379a4efb",
 			"key": "serverURL",
 			"value": "http://localhost:8080",
-			"type": "string",
-			"description": ""
+			"type": "string"
 		}
-	]
+	],
+	"protocolProfileBehavior": {}
 }

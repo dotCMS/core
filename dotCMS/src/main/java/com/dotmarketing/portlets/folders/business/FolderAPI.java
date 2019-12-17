@@ -555,6 +555,6 @@ import java.util.function.Predicate;
 	 * @param folderName
 	 * @throws DotDataException
 	 */
-	void validateFolderName(final String folderName) throws DotDataException;
+	void validateFolderName(final String folderName);
 
 }

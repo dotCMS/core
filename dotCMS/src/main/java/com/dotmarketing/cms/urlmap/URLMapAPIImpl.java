@@ -46,14 +46,20 @@ import org.jetbrains.annotations.NotNull;
 public class URLMapAPIImpl implements URLMapAPI {
 
     private volatile Collection<ContentTypeURLPattern> patternsCache;
-
     private final UserWebAPI wuserAPI = WebAPILocator.getUserWebAPI();
     private final HostWebAPI whostAPI = WebAPILocator.getHostWebAPI();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();;
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
-
+    /**
+     * Return true if any {@link com.dotcms.contenttype.model.type.UrlMapable} matches with
+     * {@link UrlMapContext#getUri()}, otherwise return false
+     *
+     * @param urlMapContext
+     * @return
+     * @throws DotDataException
+     */
     public boolean isUrlPattern(final UrlMapContext urlMapContext) throws DotDataException {
         return matchingUrlPattern(urlMapContext.getUri()) && getContentlet(urlMapContext) != null;
     }
@@ -83,6 +89,14 @@ public class URLMapAPIImpl implements URLMapAPI {
         }
     }
 
+    /**
+     * Return the {@link Contentlet} the match the {@link UrlMapContext#getUri()} value,
+     * if not exists any {@link com.dotcms.contenttype.model.type.UrlMapable} matching with the URI
+     * then a {@link DotRuntimeException} is thrown
+     *
+     * @param urlMapContext
+     * @return
+     */
     private Contentlet getContentlet(final UrlMapContext urlMapContext){
         final Matches matches = this.findPatternChange(urlMapContext.getUri());
         final Structure structure = CacheLocator.getContentTypeCache()
@@ -128,11 +142,21 @@ public class URLMapAPIImpl implements URLMapAPI {
     }
 
     private boolean containsRegEx(final String uri) {
+        final String mastRegEx = this.getURLMasterPattern().orElse(null);
+
+        if (mastRegEx == null) {
+            return false;
+        }
+
+        final String url = !uri.endsWith(StringPool.FORWARD_SLASH) ? uri + StringPool.FORWARD_SLASH : uri;
+        return RegEX.contains(url, mastRegEx);
+    }
+
+    private static Optional<String> getURLMasterPattern() {
         try {
             final String mastRegEx = CacheLocator.getContentTypeCache().getURLMasterPattern();
 
-            final String url = !uri.endsWith(StringPool.FORWARD_SLASH) ? uri + StringPool.FORWARD_SLASH : uri;
-            return RegEX.contains(url, mastRegEx);
+            return Optional.ofNullable(mastRegEx);
         } catch (DotCacheException e) {
             throw new DotRuntimeException(e);
         }
@@ -149,7 +173,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             }
         }
 
-        return null;
+        throw new DotRuntimeException("Not pattern match found");
     }
 
     private Field findHostField(final Structure structure) {
@@ -294,30 +318,35 @@ public class URLMapAPIImpl implements URLMapAPI {
         patternsCache = new ArrayList<>();
 
         final List<SimpleStructureURLMap> urlMaps = StructureFactory.findStructureURLMapPatterns();
-        final StringBuilder masterRegEx = new StringBuilder("^(");
-        final int startLength = masterRegEx.length();
 
-        for (final SimpleStructureURLMap urlMap : urlMaps) {
-            final String regEx = StructureUtil.generateRegExForURLMap(urlMap.getURLMapPattern());
+        if (urlMaps != null && !urlMaps.isEmpty()) {
+            final StringBuilder masterRegEx = new StringBuilder("^(");
 
-            if (!UtilMethods.isSet(regEx) || regEx.trim().length() < 3) {
-                continue;
+            final int startLength = masterRegEx.length();
+
+            for (final SimpleStructureURLMap urlMap : urlMaps) {
+                final String regEx = StructureUtil.generateRegExForURLMap(urlMap.getURLMapPattern());
+
+                if (!UtilMethods.isSet(regEx) || regEx.trim().length() < 3) {
+                    continue;
+                }
+
+                patternsCache.add(new ContentTypeURLPattern(
+                        regEx, urlMap.getInode(),
+                        urlMap.getURLMapPattern(), getFieldMathed(urlMap)
+                ));
+
+                if (masterRegEx.length() > startLength) {
+                    masterRegEx.append('|');
+                }
+
+                masterRegEx.append(regEx);
             }
 
-            patternsCache.add(new ContentTypeURLPattern(
-                    regEx, urlMap.getInode(),
-                    urlMap.getURLMapPattern(), getFieldMathed(urlMap)
-            ));
+            masterRegEx.append(")");
 
-            if (masterRegEx.length() > startLength) {
-                masterRegEx.append('|');
-            }
-
-            masterRegEx.append(regEx);
+            CacheLocator.getContentTypeCache().addURLMasterPattern(masterRegEx.toString());
         }
-
-        masterRegEx.append(")");
-        CacheLocator.getContentTypeCache().addURLMasterPattern(masterRegEx.toString());
     }
 
     @NotNull
