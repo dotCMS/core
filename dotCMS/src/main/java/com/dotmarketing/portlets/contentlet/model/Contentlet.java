@@ -30,6 +30,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.Categorizable;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
@@ -1257,6 +1258,17 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public boolean isFileAsset() {
 		return getContentType().baseType() == BaseContentType.FILEASSET;
 	}
+
+
+	/**
+	 * It'll tell you if you're dealing with content of type FileAsset that is used as container
+	 * see Containers as files
+	 * @return
+	 */
+	@JsonIgnore
+	public boolean isFileAssetContainer(){
+       return FileAssetContainerUtil.getInstance().isFileAssetContainer(this);
+    }
 
 	/**
 	 * It'll tell you if you're dealing with content of type Host

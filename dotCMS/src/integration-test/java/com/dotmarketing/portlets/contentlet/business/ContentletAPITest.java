@@ -31,18 +31,7 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.PersonaDataGen;
-import com.dotcms.datagen.StructureDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestWorkflowUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
@@ -137,15 +126,7 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -2644,6 +2625,117 @@ public class ContentletAPITest extends ContentletBaseTest {
         } finally {
             APILocator.getStructureAPI().delete(testStructure, user);
         }
+    }
+
+    /**
+     * Creates a content on english and spanish.
+     * Locked the english content by admin
+     * Tries to destroy spanish content
+     * Throws an exception
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test(expected = DotLockException.class)
+    public void no_destroy_limited_content_locked_by_admin_by_limited_user () throws DotSecurityException, DotDataException {
+
+        final User     chrisPublisher  = TestUserUtils.getChrisPublisherUser();
+        final User     adminUser       = TestUserUtils.getAdminUser();
+        final LanguageCodeDataGen languageCodeDataGen = new LanguageCodeDataGen();
+        final String   languageCode1   = languageCodeDataGen.next();
+        final Language language1       = new LanguageDataGen().languageCode(languageCode1).countryCode("IT").nextPersisted();
+        final String   languageCode2   = languageCodeDataGen.next();
+        final Language language2       = new LanguageDataGen().languageCode(languageCode2).countryCode("IT").nextPersisted();
+        final Structure testStructure  = createStructure("JUnit Test Destroy Structure_" + new Date().getTime(),
+                "junit_test_destroy_structure_" + new Date().getTime());
+        Contentlet newContentlet1      = createContentlet(testStructure, language1, false);
+
+        Contentlet anotherLanguage = contentletAPI.checkout(newContentlet1.getInode(), user, false);
+        anotherLanguage.setLanguageId(language2.getId());
+        anotherLanguage = contentletAPI.checkin(anotherLanguage, user, false);
+
+        final Permission permission = new Permission(
+                newContentlet1.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(chrisPublisher).getId(),
+                (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
+                        | PermissionAPI.PERMISSION_WRITE
+                        | PermissionAPI.PERMISSION_PUBLISH),
+                true);
+
+        APILocator.getPermissionAPI().save(permission, newContentlet1, user, false);
+
+        // new inode to create a new version
+        final String newInode = UUIDGenerator.generateUuid();
+        newContentlet1.setInode(newInode);
+        newContentlet1 = contentletAPI.checkin(newContentlet1, adminUser, false);
+
+        //Now we need archive and lock by admin
+        contentletAPI.archive(newContentlet1, adminUser, false);
+        contentletAPI.lock(newContentlet1, adminUser, false);
+
+        //  Tries to destroy by limited user
+        contentletAPI.destroy( anotherLanguage, chrisPublisher, false);
+    }
+
+    /**
+     * Creates a content on english and spanish.
+     * Locked the english content by admin
+     * Tries to destroy spanish content by admin
+     * Everything successfully destroyed
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test()
+    public void destroy_content_locked_by_admin_by_other_admin_user () throws DotSecurityException, DotDataException {
+
+        final User     adminUser2      = TestUserUtils.getAdminUser();
+        final User     adminUser       = TestUserUtils.getAdminUser();
+        final LanguageCodeDataGen languageCodeDataGen = new LanguageCodeDataGen();
+        final String   languageCode1   = languageCodeDataGen.next();
+        final Language language1       = new LanguageDataGen().languageCode(languageCode1).countryCode("IT").nextPersisted();
+        final String   languageCode2   = languageCodeDataGen.next();
+        final Language language2       = new LanguageDataGen().languageCode(languageCode2).countryCode("IT").nextPersisted();
+        final Structure testStructure  = createStructure("JUnit Test Destroy Structure_" + new Date().getTime(),
+                "junit_test_destroy_structure_" + new Date().getTime());
+
+        Contentlet newContentlet1      = createContentlet(testStructure, language1, false);
+
+        Contentlet anotherLanguage = contentletAPI.checkout(newContentlet1.getInode(), user, false);
+        anotherLanguage.setLanguageId(language2.getId());
+        anotherLanguage = contentletAPI.checkin(anotherLanguage, user, false);
+
+        final Permission permission = new Permission(
+                newContentlet1.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(adminUser2).getId(),
+                (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
+                        | PermissionAPI.PERMISSION_WRITE
+                        | PermissionAPI.PERMISSION_PUBLISH),
+                true);
+
+        APILocator.getPermissionAPI().save(permission, newContentlet1, user, false);
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(newContentlet1.getIdentifier());
+        // new inode to create a new version
+        final String newInode = UUIDGenerator.generateUuid();
+        newContentlet1.setInode(newInode);
+        newContentlet1 = contentletAPI.checkin(newContentlet1, adminUser, false);
+
+        //Now we need archive and lock by admin
+        contentletAPI.archive(newContentlet1, adminUser, false);
+        contentletAPI.lock(newContentlet1, adminUser, false);
+
+        //  Tries to destroy by limited user
+        contentletAPI.destroy( anotherLanguage, adminUser2, false);
+
+        final List<Contentlet> contentlets =
+                contentletAPI.findAllVersions(identifier, true, user , false);
+
+        assertFalse(UtilMethods.isSet(contentlets));
     }
 
     /**

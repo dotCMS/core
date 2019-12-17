@@ -124,4 +124,18 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 		
 	}
 
+	@WrapInTransaction
+	@Override
+	public void deletePushedAssetsByBundleId(final String bundleId) throws DotDataException {
+		pushedAssetsFactory.deletePushedAssetsByBundle(bundleId);
+
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public List<PushedAsset> getPushedAssetsByBundleIdAndEnvironmentId(final String bundleId,
+			final String environmentId) throws DotDataException {
+		return pushedAssetsFactory.getPushedAssets(bundleId,environmentId);
+	}
+
 }

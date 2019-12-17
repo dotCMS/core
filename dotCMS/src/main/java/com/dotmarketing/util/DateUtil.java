@@ -8,16 +8,20 @@ import com.liferay.util.StringPool;
 import org.apache.commons.lang.StringUtils;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalField;
 import java.util.Calendar;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.dotcms.util.DotPreconditions.checkNotNull;
+import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 
 /**
  * Provides utility methods to interact with {@link Date} objects, date formats,
@@ -39,6 +43,11 @@ public class DateUtil {
 	public static final long THREE_SECOND_MILLIS = 3 * SECOND_MILLIS;
 	public static final long FOUR_SECOND_MILLIS  = 4 * SECOND_MILLIS;
 	public static final long FIVE_SECOND_MILLIS  = 5 * SECOND_MILLIS;
+	public static final long SIX_SECOND_MILLIS   = 6 * SECOND_MILLIS;
+	public static final long SEVEN_SECOND_MILLIS = 7 * SECOND_MILLIS;
+	public static final long EIGHT_SECOND_MILLIS = 8 * SECOND_MILLIS;
+	public static final long NINE_SECOND_MILLIS  = 9 * SECOND_MILLIS;
+	public static final long TEN_SECOND_MILLIS   = 10 * SECOND_MILLIS;
 
 
 	public static final String DIFF_YEARS = "diffYears";
@@ -615,5 +624,32 @@ public class DateUtil {
 	public static void sleep (final long millis) {
 
 		ThreadUtils.sleep(millis);
+	}
+
+	/**
+	 * Parse the iso string date as a {@link Date}
+	 * @param stringDate {@link String}
+	 * @return Date
+	 */
+	public static Date parseISO(final String stringDate) throws ParseException {
+
+		if (!UtilMethods.isSet(stringDate)) {
+
+			return null;
+		}
+		return  stringDate.length() <= 10? // yyyy-MM-dd
+				new SimpleDateFormat("yyyy-MM-dd").parse(stringDate):
+				toDate(OffsetDateTime.parse(stringDate).toInstant());
+
+	}
+
+	/**
+	 * Convert {@link Instant} to {@link Date}
+	 * @param instant the instant
+	 * @return the equivalent date
+	 */
+	public static Date toDate (final Instant instant) {
+
+		return new Date(instant.toEpochMilli());
 	}
 }

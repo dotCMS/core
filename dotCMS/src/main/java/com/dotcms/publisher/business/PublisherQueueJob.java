@@ -99,72 +99,63 @@ public class PublisherQueueJob implements StatefulJob {
 	 *             An exception occurred while executing the job.
 	 */
 	@CloseDBIfOpened
-	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
+	public void execute(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
 		try {
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - check for publish dates");
 			PublishDateUpdater.updatePublishExpireDates(jobExecutionContext.getFireTime());
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - check for publish/expire dates");
-
+			List<Map<String, Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
+			if (null == bundles) {
+				bundles = new ArrayList<>();
+			}
 			Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job - Audit update");
-			updateAuditStatus();
+			updateAuditStatus(bundles);
 			Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job - Audit update");
-
-			//Verify if we have endpoints where to send the bundles
-			List<PublishingEndPoint> endpoints = endpointAPI.getEnabledReceivingEndPoints();
-			if ( endpoints != null && endpoints.size() > 0 ) {
+			// Verify if we have endpoints where to send the bundles
+			final List<PublishingEndPoint> endpoints = endpointAPI.getEnabledReceivingEndPoints();
+			if (UtilMethods.isSet(endpoints)) {
 				Logger.debug(PublisherQueueJob.class, "Started PublishQueue Job");
-
-				List<Map<String, Object>> bundles = pubAPI.getQueueBundleIdsToProcess();
-				List<PublishQueueElement> tempBundleContents;
-				PublishAuditStatus status;
-				PublishAuditHistory historyPojo;
-				String tempBundleId;
-				if (bundles.size() > 0) {
+				if (UtilMethods.isSet(bundles)) {
 					Logger.info(this, "");
 					Logger.info(this, "Found " + bundles.size() + " bundle(s) to process.");
 					Logger.info(this, "");
 				}
-				for ( Map<String, Object> bundle : bundles ) {
-
-					Date publishDate = (Date) bundle.get("publish_date");
-
+				for (final Map<String, Object> bundle : bundles) {
+					final Date publishDate = (Date) bundle.get("publish_date");
 					Logger.info(this, "Processing bundle: ID: " + bundle.get("bundle_id") + ". Status: "
 						+ (UtilMethods.isSet(bundle.get("status")) ? bundle.get("status") : "Starting")
 						+ ". Publish Date: " + publishDate);
-
-					tempBundleId = (String) bundle.get("bundle_id");
+					final String tempBundleId = (String) bundle.get("bundle_id");
 					ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + tempBundleId);
 
 					try {
 						PushPublishLogger.log(this.getClass(), "Pre-publish work started.");
-						tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
+						final List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId(tempBundleId);
 
-						//Setting Audit objects History
-						historyPojo = new PublishAuditHistory();
-						//Retrieving assets
-						Map<String, String> assets = new HashMap<String, String>();
-						List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
-
-						for ( PublishQueueElement c : tempBundleContents ) {
+						// Retrieving assets
+						final Map<String, String> assets = new HashMap<>();
+						final List<PublishQueueElement> assetsToPublish = new ArrayList<>();
+						for (final PublishQueueElement c : tempBundleContents) {
 							assets.put(c.getAsset(), c.getType());
 							assetsToPublish.add(c);
 						}
+						// Setting Audit objects History
+						final PublishAuditHistory historyPojo = new PublishAuditHistory();
 						historyPojo.setAssets(assets);
-
 						final Map<String, Object> jobDataMap = jobExecutionContext.getMergedJobDataMap();
-						DeliveryStrategy deliveryStrategy = DeliveryStrategy.class
+						final DeliveryStrategy deliveryStrategy = DeliveryStrategy.class
 								.cast(jobDataMap.get("deliveryStrategy"));
 
 						PublisherConfig pconf = new PushPublisherConfig();
 						pconf.setAssets(assetsToPublish);
 
-						//Status
-						status = new PublishAuditStatus(tempBundleId);
+						// Status
+						final PublishAuditStatus status = new PublishAuditStatus(tempBundleId);
 						status.setStatusPojo(historyPojo);
-						//Insert in Audit table
+						// Insert in Audit table
 						pubAuditAPI.insertPublishAuditStatus(status);
 
-						//Queries creation
+						// Queries creation
 						pconf.setLuceneQueries(PublisherUtil.prepareQueries(tempBundleContents));
 						pconf.setId(tempBundleId);
 						pconf.setUser(APILocator.getUserAPI().getSystemUser());
@@ -177,19 +168,18 @@ public class PublisherQueueJob implements StatefulJob {
 						} else {
 							pconf.setOperation(PushPublisherConfig.Operation.UNPUBLISH);
 						}
-
 						pconf = setUpConfigForPublisher(pconf);
 						PushPublishLogger.log(this.getClass(), "Pre-publish work complete.");
 
 						try {
 							APILocator.getPublisherAPI().publish(pconf);
-						} catch (DotPublishingException e) {
+						} catch (final DotPublishingException e) {
 							/*
 							If we are getting errors creating the bundle we should stop trying to publish it, this is not just a connection error,
 							there is something wrong with a bundler or creating the bundle.
 							 */
 							Logger.error(PublisherQueueJob.class, "Unable to publish Bundle '" + pconf.getId() + "': " + e.getMessage(), e);
-							PushPublishLogger.log(this.getClass(), "Status Update: Failed to bundle");
+							PushPublishLogger.log(this.getClass(), "Status Update: Failed to bundle '" + pconf.getId() + "'");
 							pubAuditAPI.updatePublishAuditStatus(pconf.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo);
 							pubAPI.deleteElementsFromPublishQueueTable(pconf.getId());
 						}
@@ -199,43 +189,37 @@ public class PublisherQueueJob implements StatefulJob {
 				}
 				Logger.debug(PublisherQueueJob.class, "Finished PublishQueue Job");
 			}
-		} catch (Exception e) {
-			Logger.error(PublisherQueueJob.class, e.getMessage(), e);
+		} catch (final Exception e) {
+			Logger.error(PublisherQueueJob.class, "An error occurred when trying to publish bundles: " + e.getMessage
+					(), e);
 		}
 	}
 
 	/**
-	 * Updates the status of a Bundle in the job queue. This method also
-	 * verifies and limits the number of times a Bundle is allowed to attempt to
-	 * be published in case of errors.
+	 * Updates the status of a Bundle in the job queue. This method also verifies and limits the number of times a
+	 * Bundle is allowed to attempt to be published in case of errors.
 	 *
-	 * @throws DotPublisherException
-	 *             An error occurred when modifying the Publishing status,
-	 *             retrieving status information or removing the current bundle
-	 *             from the Publish queue table.
-	 * @throws DotDataException
-	 *             An error occurred when retrieving the end-points from the
-	 *             database.
+	 * @param bundlesInQueue The list of bundles that are currently in the publishing queue.
+	 *
+	 * @throws DotPublisherException An error occurred when modifying the Publishing status, retrieving status
+	 *                               information or removing the current bundle from the Publish queue table.
+	 * @throws DotDataException      An error occurred when retrieving the end-points from the database.
 	 */
-	private void updateAuditStatus() throws DotPublisherException, DotDataException {
-		List<PublishAuditStatus> pendingBundleAudits = pubAuditAPI.getPendingPublishAuditStatus();
+	private void updateAuditStatus(final List<Map<String, Object>> bundlesInQueue) throws DotPublisherException, DotDataException {
+		final List<PublishAuditStatus> pendingBundleAudits = pubAuditAPI.getPendingPublishAuditStatus();
 		// For each bundle audit
- 		for ( PublishAuditStatus bundleAudit : pendingBundleAudits ) {
+ 		for (final PublishAuditStatus bundleAudit : pendingBundleAudits) {
 			ThreadContext.put(BUNDLE_ID, BUNDLE_ID + "=" + bundleAudit.getBundleId());
-
 			try {
-				PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
-				//There is no need to keep checking after MAX_NUM_TRIES.
+				final PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
+				// There is no need to keep checking after MAX_NUM_TRIES.
 				if ( localHistory.getNumTries() <= (MAX_NUM_TRIES + 1) ) {
-
 					final Map<String, Map<String, EndpointDetail>> endpointTrackingMap =
 							collectEndpointInfoFromRemote(bundleAudit);
-
 					final GroupPushStats groupPushStats = getGroupStats(endpointTrackingMap);
-
-					updateBundleStatus(bundleAudit, endpointTrackingMap, groupPushStats);
+					updateBundleStatus(bundleAudit, endpointTrackingMap, groupPushStats, bundlesInQueue);
 				} else {
-					//We delete the Publish Queue.
+					// We delete the Publish Queue.
 					pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
 				}
 			} finally {
@@ -308,59 +292,105 @@ public class PublisherQueueJob implements StatefulJob {
 	@NotNull
 	private void updateBundleStatus(final PublishAuditStatus bundleAudit,
 									final Map<String, Map<String, EndpointDetail>> endpointTrackingMap,
-									final GroupPushStats groupPushStats) throws DotDataException, DotPublisherException {
+									final GroupPushStats groupPushStats, final List<Map<String, Object>> bundlesInQueue) throws DotDataException, DotPublisherException {
 		Status bundleStatus;
-		PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
-
+		final PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
+		final String auditedBundleId = bundleAudit.getBundleId();
 		if ( localHistory.getNumTries() >= MAX_NUM_TRIES && (groupPushStats.getCountGroupFailed() > 0
                 || groupPushStats.getCountGroupPublishing() > 0) ) {
             // If bundle cannot be installed after [MAX_NUM_TRIES] tries
             // and some groups could not be published
-            List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(bundleAudit.getBundleId());
+            List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(auditedBundleId);
             for ( Environment environment : environments ) {
-                APILocator.getPushedAssetsAPI().deletePushedAssets(bundleAudit.getBundleId(), environment.getId());
+                APILocator.getPushedAssetsAPI().deletePushedAssets(auditedBundleId, environment.getId());
             }
             PushPublishLogger.log(this.getClass(), "Status Update: Failed to publish");
             bundleStatus = Status.FAILED_TO_PUBLISH;
-            pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-            pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
+            pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
+            pubAPI.deleteElementsFromPublishQueueTable(auditedBundleId);
         } else if (groupPushStats.getCountGroupFailed() > 0 && groupPushStats.getCountGroupFailed() == endpointTrackingMap.size()) {
             // If bundle cannot be installed in all groups
             bundleStatus = Status.FAILED_TO_SEND_TO_ALL_GROUPS;
-            pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+            pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
         } else if (groupPushStats.getCountGroupFailed() > 0
 				&& (groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupFailed()) == endpointTrackingMap.size()) {
 			// If bundle was installed in some groups only
 			bundleStatus = Status.FAILED_TO_SEND_TO_SOME_GROUPS;
-			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
 		} else if (groupPushStats.getCountGroupOk() > 0 && groupPushStats.getCountGroupOk() == endpointTrackingMap.size()) {
             // If bundle was installed in all groups
             PushPublishLogger.log(this.getClass(), "Status Update: Success");
             bundleStatus = Status.SUCCESS;
-            pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-            pubAPI.deleteElementsFromPublishQueueTable(bundleAudit.getBundleId());
+            pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
+            pubAPI.deleteElementsFromPublishQueueTable(auditedBundleId);
         } else if ( groupPushStats.getCountGroupPublishing() == endpointTrackingMap.size() ) {
             // If bundle is still publishing in all groups
             bundleStatus = Status.PUBLISHING_BUNDLE;
-            pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+            pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
         } else if (groupPushStats.getCountGroupSaved() > 0){
 			// If the static bundle was saved but has not been sent
 			bundleStatus = Status.BUNDLE_SAVED_SUCCESSFULLY;
-			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
-		}else{
+			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
+		} else {
 			// Otherwise, just keep trying to publish the bundle
 			bundleStatus = Status.WAITING_FOR_PUBLISHING;
-			pubAuditAPI.updatePublishAuditStatus(bundleAudit.getBundleId(), bundleStatus, localHistory);
+			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
         }
-
 		Logger.info(this, "===========================================================");
-		Logger.info(this, String.format("For bundle '%s':", bundleAudit.getBundleId()));
-		if (!bundleStatus.equals(PublishAuditStatus.Status.PUBLISHING_BUNDLE)
-				&& !bundleStatus.equals(PublishAuditStatus.Status.WAITING_FOR_PUBLISHING)) {
-			Logger.info(this, String.format("-> Re-try attempts: %d", localHistory.getNumTries()));
+		Logger.info(this, String.format("For bundle '%s':", auditedBundleId));
+		Logger.info(this, String.format("-> Status             : %s [%d]", bundleStatus.toString(), bundleStatus.getCode()));
+		if (!bundleStatus.equals(PublishAuditStatus.Status.PUBLISHING_BUNDLE) && !bundleStatus.equals
+				(PublishAuditStatus.Status.WAITING_FOR_PUBLISHING) && !bundleStatus.equals(Status.SUCCESS)) {
+			final int totalAttemptsFromHistory = localHistory.getNumTries();
+			Logger.info(this, String.format("-> Re-publish attempts: %d out of %d", totalAttemptsFromHistory,
+					MAX_NUM_TRIES));
+			if (!isBundleInQueue(auditedBundleId, bundlesInQueue) && isInvalidBundleStatus(totalAttemptsFromHistory,
+					bundleStatus)) {
+				// When a bundle has been marked as "failed" but its re-publish attempts have NOT reached
+				// MAX_NUM_TRIES, it might indicate a data consistency problem as a failed bundle MUST have
+				// met such a condition.
+				Logger.info(this, String.format("-> NOTE               : This bundle is stalled and its Audit History " +
+						"will NOT be updated properly. You can safely ignore this status, or you can delete its Audit " +
+						"History directly from the database."));
+			}
 		}
-		Logger.info(this, String.format("-> Status:          %s", bundleStatus.toString()));
 		Logger.info(this, "===========================================================");
+	}
+
+	/**
+	 * Utility method to check if a bundle whose audit history is being analyzed is still present in the bundle queue.
+	 *
+	 * @param bundleId       The ID of the bundle whose audit history is being analyzed/updated.
+	 * @param bundlesInQueue The complete list of bundles that are currently in the publishing queue.
+	 *
+	 * @return If the bundle is still in the queue, returns {@code true}. Otherwise, returns {@code false}.
+	 */
+	private boolean isBundleInQueue(final String bundleId, final List<Map<String, Object>> bundlesInQueue) {
+		if (!UtilMethods.isSet(bundlesInQueue) || !UtilMethods.isSet(bundleId)) {
+			return Boolean.FALSE;
+		}
+		final Map<String, Object> bundleFound = bundlesInQueue.stream().filter(bundle -> bundleId.equalsIgnoreCase(bundle
+				.get("bundle_id").toString())).findFirst().orElse(null);
+		return (UtilMethods.isSet(bundleFound) ? Boolean.TRUE : Boolean.FALSE);
+	}
+
+	/**
+	 * Utility method to check if the publishing status of a bundle is invalid, based on its number of re-attempts and
+	 * its current push status. This is used in combination with the {@link #isBundleInQueue(String, List)} method.
+	 * So, if such a method returns {@code true} and this method returns {@code true} as well, the bundle will be
+	 * considered to be in an invalid state.
+	 *
+	 * @param totalAttemptsFromHistory The number of publishing attempts on the bundle.
+	 * @param bundleStatus             The current publishing status assigned to the bundle.
+	 *
+	 * @return If the bundle status is valid, returns {@code true}. Otherwise, returns {@code false}.
+	 */
+	private boolean isInvalidBundleStatus(final int totalAttemptsFromHistory, final Status bundleStatus) {
+		if (totalAttemptsFromHistory < MAX_NUM_TRIES && (bundleStatus == Status.FAILED_TO_PUBLISH || bundleStatus ==
+				Status.FAILED_TO_SEND_TO_ALL_GROUPS || bundleStatus == Status.FAILED_TO_SEND_TO_SOME_GROUPS)) {
+			return Boolean.TRUE;
+		}
+		return Boolean.FALSE;
 	}
 
 	private GroupPushStats getGroupStats(final Map<String, Map<String, EndpointDetail>> endpointTrackingMap) {
