@@ -402,8 +402,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             Logger.info(this, "Reindex took        : " + duration.get() );
         }
         Logger.info(this, "Switching Server Id : " + ConfigUtils.getServerId() );
-        Logger.info(this, "Old indicies        : [" + oldInfo.getWorking() + "," + oldInfo.getLive() + "]");
-        Logger.info(this, "New indicies        : [" + oldInfo.getReindexWorking() + "," + oldInfo.getReindexLive() + "]");
+        Logger.info(this, "Old indicies        : [" + esIndexApi
+                .removeClusterIdFromIndexName(oldInfo.getWorking()) + "," + esIndexApi
+                .removeClusterIdFromIndexName(oldInfo.getLive()) + "]");
+        Logger.info(this, "New indicies        : [" + esIndexApi
+                .removeClusterIdFromIndexName(oldInfo.getReindexWorking()) + "," + esIndexApi
+                .removeClusterIdFromIndexName(oldInfo.getReindexLive()) + "]");
         Logger.info(this, "-------------------------------");
 
     }
@@ -1049,7 +1053,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @SuppressWarnings("unchecked")
     public List<String> listDotCMSIndices() {
 
-        return esIndexApi.getIndices(true, true);
+        return esIndexApi.getIndices(true, false);
     }
 
 

@@ -119,14 +119,16 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 */
 	public  boolean putMapping(String indexName, String mapping) throws ElasticsearchException, IOException{
 
-		final PutMappingRequest request = new PutMappingRequest(indexName);
-		request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-		request.source(mapping, XContentType.JSON);
+        final PutMappingRequest request = new PutMappingRequest(
+                APILocator.getESIndexAPI().getIndexNameWithClusterIDPrefix(indexName));
+        request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        request.source(mapping, XContentType.JSON);
 
-		AcknowledgedResponse putMappingResponse = RestHighLevelClientProvider.getInstance().getClient().indices()
-				.putMapping(request, RequestOptions.DEFAULT);
+        final AcknowledgedResponse putMappingResponse = RestHighLevelClientProvider.getInstance()
+                .getClient().indices()
+                .putMapping(request, RequestOptions.DEFAULT);
 
-		return putMappingResponse.isAcknowledged();
+        return putMappingResponse.isAcknowledged();
 	}
 
 
