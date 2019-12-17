@@ -146,6 +146,16 @@ public class ESIndexResource {
         }
     }
 
+    /**
+     * @deprecated Generating a manual index backup is not recommended. Snapshot and restore operations
+     * via Elastic Search High Level Rest API should be used instead.
+     * For further details: https://www.elastic.co/guide/en/elasticsearch/reference/7.x/modules-snapshots.html
+     * @param indexName
+     * @return
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Deprecated
     public static File downloadIndex(String indexName) throws DotDataException, IOException {
 
         if(indexName.equalsIgnoreCase("live") || indexName.equalsIgnoreCase("working")){
@@ -252,7 +262,7 @@ public class ESIndexResource {
                     ByteStreams.copy(in, os);
                 } finally {
                     // clean up
-                    indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY);
+                    indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY, false);
                     snapshotFile.delete();
                 }
             };
