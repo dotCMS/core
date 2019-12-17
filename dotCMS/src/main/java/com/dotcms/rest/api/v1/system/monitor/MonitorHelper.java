@@ -144,6 +144,7 @@ class MonitorHelper {
                         searchSourceBuilder.fetchSource(new String[] {"inode"}, null);
                         SearchRequest searchRequest = new SearchRequest();
                         searchRequest.source(searchSourceBuilder);
+                        searchRequest.indices(index);
 
                         final SearchResponse response = Sneaky.sneak(()->
                                 RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,
