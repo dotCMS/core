@@ -17,6 +17,7 @@ import io.vavr.Tuple2;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -89,17 +90,14 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
 
     @Override
     public Map<String, List<String>> serviceKeysByHost() {
-
-        Map<String, List<String>> m = secretsStore.listKeys().stream()
+        return secretsStore.listKeys().stream()
                 .map(s -> s.split(HOST_SECRET_KEY_SEPARATOR))
                 .collect(Collectors.groupingBy(strings -> strings[0],
                         Collectors.mapping(strings -> strings[1], Collectors.toList())));
-
-        return m;
     }
 
     @Override
-    public Optional<ServiceSecrets> getSecretForService(final String serviceKey,
+    public Optional<ServiceSecrets> getSecretsForService(final String serviceKey,
             final Host host, final User user) throws DotDataException {
         if (userAPI.isCMSAdmin(user) || layoutAPI
                 .doesUserHaveAccessToPortlet(INTEGRATIONS_PORTLET_ID, user)) {
@@ -122,34 +120,66 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @Override
-    public void deleteSecret(final String serviceKey, final String propOrSecretName, final Host host, final User user) {
-
-    }
-
-    @Override
-    public void saveSecret(final String serviceKey, final Tuple2<String, Secret> keyAndSecret, final Host host, final User user) {
-
-    }
-
-    @Override
-    public void saveServiceSecrets(final ServiceSecrets bean, final User user)
+    public void deleteSecret(final String serviceKey, final String propOrSecretName, final Host host, final User user)
             throws DotDataException, DotSecurityException {
-        saveServiceSecrets(bean, APILocator.systemHost(), user);
-    }
-
-    @Override
-    public void saveServiceSecrets(final ServiceSecrets bean, Host host, final User user)
-            throws DotDataException, DotSecurityException {
-        if(userAPI.isCMSAdmin(user) || layoutAPI.doesUserHaveAccessToPortlet(INTEGRATIONS_PORTLET_ID, user) ){
-            final String internalKey = internalKey(bean.getServiceKey(), host);
-            secretsStore.saveValue(internalKey, toJsonString(bean).toCharArray());
+        final Optional<ServiceSecrets> secretsForService = getSecretsForService(serviceKey, host, user);
+        if (secretsForService.isPresent()) {
+            final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
+            final ServiceSecrets serviceSecrets = secretsForService.get();
+            final Map<String, Secret> secrets = serviceSecrets.getSecrets();
+            secrets.remove(propOrSecretName); //we simply remove the secret by name and then persist the remaining.
+            for (final Entry<String, Secret> entry : secrets.entrySet()) {
+                builder.withSecret(entry.getKey(), entry.getValue());
+            }
+            saveSecrets(builder.withServiceKey(serviceKey).build(), host, user);
         } else {
-            throw new DotSecurityException(String.format("Invalid service registration attempt `%s` by user with id `%s` and host `%s` ", bean.getServiceKey(), user.getUserId(), host.getIdentifier()));
+           throw new DotDataException(String.format("Unable to find secret-property named `%s` for service `%s` .",propOrSecretName, serviceKey));
         }
     }
 
     @Override
-    public void deleteServiceSecrets(final String serviceKey, Host host, final User user)
+    public void saveSecret(final String serviceKey, final Tuple2<String, Secret> keyAndSecret,
+            final Host host, final User user)
+            throws DotDataException, DotSecurityException {
+        final Optional<ServiceSecrets> secretsForService = getSecretsForService(serviceKey, host, user);
+        if (secretsForService.isPresent()) {
+        //The secret already exists and wee need to update one specific entry they rest should be copy as they are
+            final ServiceSecrets serviceSecrets = secretsForService.get();
+            final Map<String, Secret> secrets = serviceSecrets.getSecrets();
+            final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
+
+            for (final Entry<String, Secret> entry : secrets.entrySet()) {
+                //Replace all existing secret/property that must be copied as it is.
+                builder.withSecret(entry.getKey(), entry.getValue());
+            }
+            //finally override or add the new value.
+            builder.withSecret(keyAndSecret._1, keyAndSecret._2);
+
+            saveSecrets(builder.withServiceKey(serviceKey).build(), host, user);
+        } else {
+        //The secret is brand new . We need to create a whole new one.
+            final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
+            builder.withSecret(keyAndSecret._1, keyAndSecret._2);
+            saveSecrets(builder.withServiceKey(serviceKey).build(), host, user);
+        }
+    }
+
+    @Override
+    public void saveSecrets(final ServiceSecrets secrets, final Host host, final User user)
+            throws DotDataException, DotSecurityException {
+        if (userAPI.isCMSAdmin(user) || layoutAPI
+                .doesUserHaveAccessToPortlet(INTEGRATIONS_PORTLET_ID, user)) {
+            final String internalKey = internalKey(secrets.getServiceKey(), host);
+            secretsStore.saveValue(internalKey, toJsonString(secrets).toCharArray());
+        } else {
+            throw new DotSecurityException(String.format(
+                    "Invalid service registration attempt `%s` by user with id `%s` and host `%s` ",
+                    secrets.getServiceKey(), user.getUserId(), host.getIdentifier()));
+        }
+    }
+
+    @Override
+    public void deleteSecrets(final String serviceKey, final Host host, final User user)
             throws DotDataException, DotSecurityException {
         if(userAPI.isCMSAdmin(user) || layoutAPI.doesUserHaveAccessToPortlet(INTEGRATIONS_PORTLET_ID, user) ) {
             secretsStore.deleteValue(internalKey(serviceKey, host));
@@ -159,7 +189,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @Override
-    public List<?> getAvailableServiceDescriptors(Host host, final User user) {
+    public List<?> getAvailableServiceDescriptors(final Host host, final User user) {
         throw new UnsupportedOperationException("Will read yml file for service definitions.");
     }
 }

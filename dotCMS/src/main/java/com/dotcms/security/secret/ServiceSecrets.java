@@ -9,12 +9,13 @@ import java.util.Map;
 
 public class ServiceSecrets implements Serializable {
 
-    private String serviceKey;
+    private final String serviceKey;
 
-    private Map<String,Secret> secrets;
+    private final Map<String,Secret> secrets;
 
     @JsonCreator
-    public ServiceSecrets( @JsonProperty("serviceKey")  final String serviceKey, @JsonProperty("secrets") final Map<String, Secret> secrets) {
+    private ServiceSecrets(@JsonProperty("serviceKey") final String serviceKey,
+            @JsonProperty("secrets") final Map<String, Secret> secrets) {
         this.serviceKey = serviceKey;
         this.secrets = secrets;
     }
@@ -66,6 +67,11 @@ public class ServiceSecrets implements Serializable {
             secretMap.put(
                     name, Secret.newSecret(String.valueOf(value).toCharArray(), SecretType.STRING, false)
             );
+            return this;
+        }
+
+        Builder withSecret(final String name, final Secret secret){
+            secretMap.put(name, secret);
             return this;
         }
 

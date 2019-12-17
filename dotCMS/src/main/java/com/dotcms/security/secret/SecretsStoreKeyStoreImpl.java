@@ -136,7 +136,6 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         try (OutputStream fos = Files.newOutputStream(secretStoreFileTmp.toPath())) {
             keyStore.store(fos, loadStorePassword());
             FileUtil.copyFile(secretStoreFileTmp, secretStoreFile);
-            flushCache();
             secretStoreFileTmp.delete();
         } catch (Exception e) {
             Logger.warn(this.getClass(), "unable to save secrets store " + secretStoreFileTmp + ": " + e);
@@ -228,6 +227,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
             final PasswordProtection keyStorePP = new PasswordProtection(loadStorePassword());
             keyStore.setEntry(variableKey, new KeyStore.SecretKeyEntry(generatedSecret), keyStorePP);
             saveSecretsStore(keyStore);
+            flushCache(variableKey);
         } catch (Exception e) {
             Logger.warn(this.getClass(), "Unable to save secret from " + SECRETS_STORE_FILE + ": " + e);
             throw new DotRuntimeException(e);
@@ -244,7 +244,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
             final KeyStore ks = getSecretsStore();
             ks.deleteEntry(secretKey);
             saveSecretsStore(ks);
-            flushCache();
+            flushCache(secretKey);
         } catch (KeyStoreException e) {
             Logger.warn(this.getClass(), "Unable to delete secret from  " + SECRETS_STORE_FILE + ": " + e);
             throw new DotRuntimeException(e);
@@ -297,6 +297,10 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
 
     private void flushCache() {
         CacheLocator.getCacheAdministrator().flushGroup(SECRETS_CACHE_GROUP);
+    }
+
+    private void flushCache(final String key) {
+        CacheLocator.getCacheAdministrator().remove(key, SECRETS_CACHE_GROUP);
     }
 
 }

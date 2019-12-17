@@ -223,7 +223,9 @@ import org.junit.runners.Suite.SuiteClasses;
         ESContentletAPIImplTest.class,
         TestConfig.class,
         PublishAuditAPITest.class,
-        BundleFactoryTest.class
+        BundleFactoryTest.class,
+        com.dotcms.security.secret.SecretsStoreKeyStoreImplTest.class,
+        com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class
 })
 public class MainSuite {
 

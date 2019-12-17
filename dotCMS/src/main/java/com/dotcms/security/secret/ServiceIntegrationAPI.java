@@ -14,14 +14,14 @@ import java.util.Optional;
 public interface ServiceIntegrationAPI {
 
     /**
-     *
+     * Given an individual host a list with the associated services is returned.
      * @param host
      * @return
      */
     List<String> listServiceKeys(Host host);
 
     /**
-     *
+     * Conforms a map where the Elements are lists of service unique names, organized by host as key.
      * @return
      */
     Map<String, List<String>> serviceKeysByHost();
@@ -32,50 +32,44 @@ public interface ServiceIntegrationAPI {
      * @param host
      * @return
      */
-     Optional<ServiceSecrets> getSecretForService(String serviceKey,
+     Optional<ServiceSecrets> getSecretsForService(String serviceKey,
              Host host, User user) throws DotDataException;
 
     /**
-     *
-     * @param serviceKey
-     * @param propSecretName
-     * @param host
-     * @param user
+     * Lookup for an individual secret/property then updates the single entry.
+     * @param serviceKey Service unique id.
+     * @param keyAndSecret Tuple value Pair with the definition of the secret and name.
+     * @param host The host owning the secret.
+     * @param user logged-in user
      */
-     void deleteSecret(String serviceKey, String propSecretName, Host host, User user);
+     void saveSecret(String serviceKey, Tuple2<String,Secret> keyAndSecret, Host host, User user)
+             throws DotDataException, DotSecurityException;
 
     /**
-     *
-     * @param serviceKey
-     * @param keyAndSecret
-     * @param host
-     * @param user
+     * Creates or replaces an existing service set of secrets.
+     * When calling this the Whole secret gets replaced.
+     * @param secrets Secrets info bean.
+     * @param host The host owning the secret.
      */
-     void saveSecret(String serviceKey, Tuple2<String,Secret> keyAndSecret, Host host, User user);
-
-    /**
-     *
-     * @param bean
-     * @param user
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    void saveServiceSecrets(ServiceSecrets bean, User user)
+    void saveSecrets(ServiceSecrets secrets, Host host, User user)
             throws DotDataException, DotSecurityException;
 
     /**
-     *
-     * @param bean
-     * @param host
+     * Lookup for an individual secret/property then removes the single entry.
+     * @param serviceKey Service unique id.
+     * @param propSecretName Individual secret or property name.
+     * @param host The host owning the secret.
+     * @param user logged-in user
      */
-    void saveServiceSecrets(ServiceSecrets bean, Host host, User user)
-            throws DotDataException, DotSecurityException;
+    void deleteSecret(String serviceKey, String propSecretName, Host host, User user)
+    throws DotDataException, DotSecurityException;
 
     /**
-     * @param serviceKey
-     * @param host
+     * Deletes all secretes associated with the serviceKey and Host.
+     * @param serviceKey service unique id.
+     * @param host The host owning the secret.
      */
-    void deleteServiceSecrets(String serviceKey, Host host, User user)
+    void deleteSecrets(String serviceKey, Host host, User user)
             throws DotDataException, DotSecurityException;
 
     /**

@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+import io.vavr.Tuple2;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,9 +43,9 @@ public class ServiceIntegrationAPIImplTest {
 
         final Host host = new SiteDataGen().nextPersisted();
         final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
-        api.saveServiceSecrets(bean, host, admin);
+        api.saveSecrets(bean, host, admin);
         final Optional<ServiceSecrets> optionalBean = api
-                .getSecretForService(serviceKey, host, admin);
+                .getSecretsForService(serviceKey, host, admin);
 
         assertTrue(optionalBean.isPresent());
 
@@ -114,10 +115,10 @@ public class ServiceIntegrationAPIImplTest {
 
         final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
 
-        api.saveServiceSecrets(bean1Host1, host1, admin);
-        api.saveServiceSecrets(bean2Host1, host1, admin);
-        api.saveServiceSecrets(bean3Host1, host1, admin);
-        api.saveServiceSecrets(bean1Host2, host2, admin);
+        api.saveSecrets(bean1Host1, host1, admin);
+        api.saveSecrets(bean2Host1, host1, admin);
+        api.saveSecrets(bean3Host1, host1, admin);
+        api.saveSecrets(bean1Host2, host2, admin);
 
         final Map<String,List<String>> serviceKeysByHost = api.serviceKeysByHost();
         assertNotNull(serviceKeysByHost.get(host1.getIdentifier()));
@@ -150,9 +151,9 @@ public class ServiceIntegrationAPIImplTest {
                 .withSecret("fallback:test", true)
                 .build();
 
-        api.saveServiceSecrets(beanSystemHost1, systemHost, admin);
+        api.saveSecrets(beanSystemHost1, systemHost, admin);
 
-        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecretForService("serviceKey-1-Any-Host", host1, admin);
+        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecretsForService("serviceKey-1-Any-Host", host1, admin);
         assertTrue(serviceSecretsOptional.isPresent());
         final ServiceSecrets recoveredBean = serviceSecretsOptional.get();
         assertEquals("serviceKey-1-Any-Host", recoveredBean.getServiceKey());
@@ -160,12 +161,140 @@ public class ServiceIntegrationAPIImplTest {
         assertTrue(recoveredBean.getSecrets().containsKey("fallback:test:secret1"));
     }
 
+    @Test
+    public void Test_Save_Secrets_Then_Replace_Secret() throws DotDataException, DotSecurityException {
+        final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
+        final User admin = TestUserUtils.getAdminUser();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ServiceSecrets.Builder builder1 = new ServiceSecrets.Builder();
+        final ServiceSecrets secrets1 = builder1.withServiceKey("serviceKey-1-Host-1")
+                .withHiddenSecret("test:secret1", "sec1")
+                .withHiddenSecret("test:secret2", "sec2")
+                .build();
+        api.saveSecrets(secrets1, host, admin);
+
+        final ServiceSecrets.Builder builder2 = new ServiceSecrets.Builder();
+        final ServiceSecrets secrets2 = builder2.withServiceKey("serviceKey-1-Host-1")
+                .withHiddenSecret("test:secret1", "secret1")
+                .build();
+        api.saveSecrets(secrets2, host, admin);
+        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecretsForService("serviceKey-1-Host-1", host, admin);
+        assertTrue(serviceSecretsOptional.isPresent());
+        final ServiceSecrets recoveredBean = serviceSecretsOptional.get();
+        assertEquals("serviceKey-1-Host-1", recoveredBean.getServiceKey());
+        assertTrue(recoveredBean.getSecrets().containsKey("test:secret1"));
+        assertFalse(recoveredBean.getSecrets().containsKey("test:secret2"));
+        assertEquals("secret1", recoveredBean.getSecrets().get("test:secret1").getString());
+    }
+
+    @Test
+    public void Test_Save_Secrets_Then_Update_Single_Secret_Verify_Updated_Value() throws DotDataException, DotSecurityException {
+        final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
+        final User admin = TestUserUtils.getAdminUser();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        //Let's create a set of secrets for a service
+        final ServiceSecrets.Builder builder1 = new ServiceSecrets.Builder();
+        final ServiceSecrets secrets1 = builder1.withServiceKey("serviceKey-1-Host-1")
+                .withHiddenSecret("test:secret1", "secret-1")
+                .withHiddenSecret("test:secret2", "secret-2")
+                .withHiddenSecret("test:secret3", "secret3")
+                .withHiddenSecret("test:secret4", "secret-4")
+                .build();
+        //Save it
+        api.saveSecrets(secrets1, host, admin);
+
+        //Now we want to update one of the values within the secret.
+        //We want to change the value from `secret3` to `secret-3` for the secret named "test:secret3"
+        final Secret secret = Secret.newSecret("secret-3".toCharArray(), SecretType.STRING, false);
+        //Update the individual secret
+        api.saveSecret("serviceKey-1-Host-1", new Tuple2<>("test:secret3",secret), host, admin);
+        //The other properties of the object should remind the same so lets verify so.
+        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecretsForService("serviceKey-1-Host-1", host, admin);
+        assertTrue(serviceSecretsOptional.isPresent());
+        final ServiceSecrets recoveredBean = serviceSecretsOptional.get();
+        assertEquals("serviceKey-1-Host-1", recoveredBean.getServiceKey());
+
+        //We didn't modify the keys just the value associated with `test:secret3`
+        assertTrue(recoveredBean.getSecrets().containsKey("test:secret1"));
+        assertTrue(recoveredBean.getSecrets().containsKey("test:secret2"));
+        assertTrue(recoveredBean.getSecrets().containsKey("test:secret3"));
+        assertTrue(recoveredBean.getSecrets().containsKey("test:secret4"));
+
+        //now lets verify the values returned
+        assertEquals("secret-1", recoveredBean.getSecrets().get("test:secret1").getString());
+        assertEquals("secret-2", recoveredBean.getSecrets().get("test:secret2").getString());
+        assertEquals("secret-3", recoveredBean.getSecrets().get("test:secret3").getString());
+        assertEquals("secret-4", recoveredBean.getSecrets().get("test:secret4").getString());
+
+    }
+
+    @Test
+    public void Test_Save_Secrets_Then_Delete_Single_Secret_Entry_Then_Add_It_Again_With_New_Value_Then_Verify() throws DotDataException, DotSecurityException {
+        final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
+        final User admin = TestUserUtils.getAdminUser();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        //Let's create a set of secrets for a service
+        final ServiceSecrets.Builder builder1 = new ServiceSecrets.Builder();
+        final ServiceSecrets secrets1 = builder1.withServiceKey("serviceKeyHost-1")
+                .withHiddenSecret("test:secret1", "secret-1")
+                .withHiddenSecret("test:secret2", "secret-2")
+                .withHiddenSecret("test:secret3", "secret-3")
+                .withHiddenSecret("test:secret4", "secret-4")
+                .build();
+        //Save it
+        api.saveSecrets(secrets1, host, admin);
+
+        api.deleteSecret("serviceKeyHost-1","test:secret3", host, admin);
+
+        //The other properties of the object should remind the same so lets verify so.
+        final Optional<ServiceSecrets> serviceSecretsOptional1 = api.getSecretsForService("serviceKeyHost-1", host, admin);
+        assertTrue(serviceSecretsOptional1.isPresent());
+        final ServiceSecrets recoveredBean1 = serviceSecretsOptional1.get();
+        assertEquals("serviceKeyHost-1", recoveredBean1.getServiceKey());
+
+        assertTrue(recoveredBean1.getSecrets().containsKey("test:secret1"));
+        assertTrue(recoveredBean1.getSecrets().containsKey("test:secret2"));
+        assertFalse(recoveredBean1.getSecrets().containsKey("test:secret3"));
+        assertTrue(recoveredBean1.getSecrets().containsKey("test:secret4"));
+
+        //now lets verify the values returned
+        assertEquals("secret-1", recoveredBean1.getSecrets().get("test:secret1").getString());
+        assertEquals("secret-2", recoveredBean1.getSecrets().get("test:secret2").getString());
+        assertEquals("secret-4", recoveredBean1.getSecrets().get("test:secret4").getString());
+
+        //Now lets re-introduce again the property we just deleted
+        final Secret secret = Secret.newSecret("lol".toCharArray(), SecretType.STRING, false);
+
+        //This should create again the entry we just removed.
+        api.saveSecret("serviceKeyHost-1", new Tuple2<>("test:secret3",secret), host, admin);
+
+        final Optional<ServiceSecrets> serviceSecretsOptional2 = api.getSecretsForService("serviceKeyHost-1", host, admin);
+        assertTrue(serviceSecretsOptional2.isPresent());
+        final ServiceSecrets recoveredBean2 = serviceSecretsOptional2.get();
+        assertEquals("serviceKeyHost-1", recoveredBean2.getServiceKey());
+
+        assertTrue(recoveredBean2.getSecrets().containsKey("test:secret1"));
+        assertTrue(recoveredBean2.getSecrets().containsKey("test:secret2"));
+        assertTrue(recoveredBean2.getSecrets().containsKey("test:secret3"));
+        assertTrue(recoveredBean2.getSecrets().containsKey("test:secret4"));
+
+        //now lets verify the values returned
+        assertEquals("secret-1", recoveredBean2.getSecrets().get("test:secret1").getString());
+        assertEquals("secret-2", recoveredBean2.getSecrets().get("test:secret2").getString());
+        assertEquals("lol", recoveredBean2.getSecrets().get("test:secret3").getString()); //<-- Here the updated value.
+        assertEquals("secret-4", recoveredBean2.getSecrets().get("test:secret4").getString());
+    }
+
+
     @Test(expected = DotSecurityException.class)
     public void Test_Non_Admin_User_Read_Attempt() throws DotDataException, DotSecurityException {
         final User nonAdmin = TestUserUtils.getChrisPublisherUser();
         final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
-        ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
-        api.saveServiceSecrets(builder.build(), APILocator.systemHost() , nonAdmin);
+        final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
+        api.saveSecrets(builder.build(), APILocator.systemHost() , nonAdmin);
     }
 
 
