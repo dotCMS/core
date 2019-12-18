@@ -4,6 +4,9 @@ import static com.dotcms.content.elasticsearch.business.IndiciesInfo.CLUSTER_PRE
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
 
+/**
+ * Define the Index types
+ */
 public enum IndexType {
     WORKING(IndexType.ES_WORKING_INDEX_NAME_PREFIX, "working"),
     LIVE(IndexType.ES_LIVE_INDEX_NAME_PREFIX, "live"),
@@ -23,6 +26,10 @@ public enum IndexType {
         this.propertyName = propertyName;
     }
 
+    /**
+     * Return the prefix that has to have the Index Name according to its type.
+     * @return
+     */
     public String getPrefix() {
         return prefix;
     }
@@ -31,6 +38,11 @@ public enum IndexType {
         return propertyName;
     }
 
+    /**
+     * Returns true if indexName is a name for an index of this type
+     * @param indexName
+     * @return
+     */
     public boolean is(final String indexName) {
         return indexName != null && indexName.startsWith(this.getPrefix());
     }

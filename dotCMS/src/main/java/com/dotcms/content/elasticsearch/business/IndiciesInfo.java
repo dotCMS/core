@@ -11,8 +11,23 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Handle the current Index name into the cluster.
+ * Also provide some util method for index name, the index name has to have the follow sintax:
+ *
+ * <b>cluster_<CLUSTER_ID>.<INDEX_TYPE_PREFIX>_<TIME_STAMP></b>
+ *
+ * where:
+ *
+ * - CLUSTER_ID: it is the cluster identifier who created the index.
+ * - INDEX_TYPE_PREFIX: Prefix define for the Index's typs, also see {@link IndexType}
+ * - TIME_STAMP: current time stamop when the index was created
+ */
 public class IndiciesInfo implements Serializable {
 
+    /**
+     * Build a new {@link IndiciesInfo} instance
+     */
     public static class Builder {
         private String live, working, reindexLive, reindexWorking, siteSearch;
 
@@ -70,26 +85,52 @@ public class IndiciesInfo implements Serializable {
         this.indiciesNames.put(IndexType.SITE_SEARCH, builder.siteSearch);
     }
 
+    /**
+     * Return the current LIVE index name
+     * @return
+     */
     public String getLive() {
         return this.indiciesNames.get(IndexType.LIVE);
     }
 
+    /**
+     * Return the current WORKING index name
+     * @return
+     */
     public String getWorking() {
         return this.indiciesNames.get(IndexType.WORKING);
     }
 
+    /**
+     * Return the current REINDEX LIVE index name
+     * @return
+     */
     public String getReindexLive() {
         return this.indiciesNames.get(IndexType.REINDEX_LIVE);
     }
 
+    /**
+     * Return the current REINDEX WORKING index name
+     * @return
+     */
     public String getReindexWorking() {
         return this.indiciesNames.get(IndexType.REINDEX_WORKING);
     }
 
+    /**
+     * Return the current SITE SEARCH index name
+     * @return
+     */
     public String getSiteSearch() {
         return this.indiciesNames.get(IndexType.SITE_SEARCH);
     }
 
+    /**
+     * Return the timestamp from a index name, a index name has the follow sintax:
+     *
+     * <b>cluster_<CLUSTER_ID>.<INDEX_NAME_PREFIX>_<TIME_STAMP></b>
+     * @return
+     */
     public long getIndexTimeStamp(final IndexType indexType) {
         Date startTime;
         try {
@@ -103,6 +144,14 @@ public class IndiciesInfo implements Serializable {
         }
     }
 
+    /**
+     * Create a new indicies name for the type pass in indiciesType
+     *
+     * @param indiciesType types for what you want to create a new name
+     * @return timestamp for the newly indicies, to get the newly indices name use one of the follow methods:
+     * {@link IndiciesInfo#getLive()}, {@link IndiciesInfo#getWorking()}, {@link IndiciesInfo#getReindexLive()},
+     * {@link IndiciesInfo#getReindexWorking()} {@link IndiciesInfo#getSiteSearch()}
+     */
     public String createNewIndiciesName(final IndexType... indiciesType) {
         final String timeStamp = timestampFormatter.format(new Date());
 
