@@ -49,7 +49,6 @@ class MockSiteSelectorComponent {
     system = true;
 }
 
-
 @Component({
     selector: 'dot-toolbar-notifications',
     template: ''
@@ -163,6 +162,6 @@ describe('DotToolbarComponent', () => {
 
         expect(dotNavigationService.toggle).toHaveBeenCalledTimes(1);
         expect(stopPro).toHaveBeenCalledTimes(1);
-        expect(button.componentInstance.icon).toEqual('menu');
+        expect(button.componentInstance.icon).toEqual('arrow_back');
     });
 });

@@ -1,9 +1,9 @@
 <p-toolbar>
     <div class="ui-toolbar-group-left">
         <div class="toolbar__button-wrapper">
-            <dot-icon-button big [icon]="dotNavigationService.collapsed ? 'menu' : 'arrow_back'" inverted (click)="handleMainButtonClick($event)"></dot-icon-button>
+            <dot-icon-button big [icon]="(dotNavigationService.collapsed$ | async) ? 'menu' : 'arrow_back'" inverted (click)="handleMainButtonClick($event)"></dot-icon-button>
         </div>
-        <div class="toolbar__logo-wrapper" [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed">
+        <div class="toolbar__logo-wrapper" [class.toolbar__logo-wrapper--collapsed]="dotNavigationService.collapsed$ | async">
             <span class="toolbar__logo"></span>
             <span class="toolbar__logo-bg"></span>
         </div>

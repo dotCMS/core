@@ -22,7 +22,7 @@ import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spe
 import { TooltipModule } from 'primeng/primeng';
 
 class FakeNavigationService {
-    _collapsed = false;
+    private _collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
     _routeEvents: BehaviorSubject<NavigationEnd> = new BehaviorSubject(
         new NavigationEnd(0, '', '')
@@ -33,8 +33,8 @@ class FakeNavigationService {
         return this._items$.asObservable();
     }
 
-    get collapsed(): boolean {
-        return this._collapsed;
+    get collapsed$(): BehaviorSubject<boolean> {
+        return this._collapsed$;
     }
 
     onNavigationEnd(): Observable<NavigationEnd> {
@@ -176,7 +176,10 @@ describe('DotNavigationComponent', () => {
     describe('menuClick event ', () => {
         describe('collapsed', () => {
             beforeEach(() => {
-                spyOnProperty(dotNavigationService, 'collapsed', 'get').and.returnValue(true);
+                const collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(true);
+                spyOnProperty(dotNavigationService, 'collapsed$', 'get').and.returnValue(
+                    collapsed$
+                );
                 navItem.triggerEventHandler('menuClick', {
                     originalEvent: {},
                     data: dotMenuMock()
@@ -198,7 +201,10 @@ describe('DotNavigationComponent', () => {
 
         describe('expanded', () => {
             beforeEach(() => {
-                spyOnProperty(dotNavigationService, 'collapsed', 'get').and.returnValue(false);
+                const collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(false);
+                spyOnProperty(dotNavigationService, 'collapsed$', 'get').and.returnValue(
+                    collapsed$
+                );
                 navItem.triggerEventHandler('menuClick', {
                     originalEvent: {},
                     data: dotMenuMock()

@@ -174,6 +174,7 @@ describe('DotNavigationService', () => {
 
         spyOn(dotEventService, 'notify');
         spyOn(dotMenuService, 'reloadMenu').and.callThrough();
+        localStorage.clear();
     }));
 
     describe('goToFirstPortlet', () => {
@@ -197,7 +198,7 @@ describe('DotNavigationService', () => {
 
     describe('collapseMenu', () => {
         it('should close all the menu sections', () => {
-            expect(service.collapsed).toBe(false);
+            expect(service.collapsed$.getValue()).toBe(true);
             let counter = 0;
 
             service.items$.subscribe((menus: DotMenu[]) => {
@@ -210,19 +211,18 @@ describe('DotNavigationService', () => {
             });
 
             service.collapseMenu();
-            expect(service.collapsed).toBe(true);
+            expect(service.collapsed$.getValue()).toBe(true);
         });
     });
 
     describe('expandMenu', () => {
         it('should expand active menu section', () => {
-            service.toggle();
-            expect(service.collapsed).toBe(true);
+            expect(service.collapsed$.getValue()).toBe(true);
 
             let counter = 0;
             service.items$.subscribe((menus: DotMenu[]) => {
                 if (counter === 0) {
-                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, false]);
+                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([true, false]);
                 } else {
                     expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, true]);
                 }
@@ -231,19 +231,18 @@ describe('DotNavigationService', () => {
             });
 
             service.expandMenu();
-            expect(service.collapsed).toBe(false);
+            expect(service.collapsed$.getValue()).toBe(false);
         });
     });
 
     describe('setOpen', () => {
         it('should expand expecific menu section', () => {
-            service.toggle();
-            expect(service.collapsed).toBe(true);
+            expect(service.collapsed$.getValue()).toBe(true);
 
             let counter = 0;
             service.items$.subscribe((menus: DotMenu[]) => {
                 if (counter === 0) {
-                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, false]);
+                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([true, false]);
                 } else {
                     expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, true]);
                 }
@@ -253,7 +252,7 @@ describe('DotNavigationService', () => {
 
             service.setOpen('456');
 
-            expect(service.collapsed).toBe(false);
+            expect(service.collapsed$.getValue()).toBe(false);
         });
     });
 
@@ -262,18 +261,18 @@ describe('DotNavigationService', () => {
             let counter = 0;
             service.items$.pipe(skip(1)).subscribe((menus: DotMenu[]) => {
                 if (counter === 0) {
-                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, false]);
-                } else {
                     expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, true]);
+                } else {
+                    expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([false, false]);
                 }
                 counter++;
             });
 
             service.toggle();
-            expect(service.collapsed).toBe(true);
+            expect(service.collapsed$.getValue()).toBe(false);
 
             service.toggle();
-            expect(service.collapsed).toBe(false);
+            expect(service.collapsed$.getValue()).toBe(true);
 
             expect(dotEventService.notify).toHaveBeenCalledTimes(2);
         });
@@ -301,7 +300,7 @@ describe('DotNavigationService', () => {
                 expect(menus[1].isOpen).toBe(false);
                 expect(menus[1].menuItems[0].active).toBe(true);
             } else {
-                expect(menus[1].isOpen).toBe(true);
+                expect(menus[1].isOpen).toBe(false);
                 expect(menus[1].menuItems[0].active).toBe(true);
             }
             counter++;
