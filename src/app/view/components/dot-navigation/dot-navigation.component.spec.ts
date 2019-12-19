@@ -182,25 +182,6 @@ describe('DotNavigationComponent', () => {
                 fixture.detectChanges();
             });
 
-            it('should open menu', () => {
-                expect(dotNavigationService.setOpen).toHaveBeenCalledWith('123');
-                const firstItem: DebugElement = de.query(By.css('.dot-nav__list-item'));
-                expect(
-                    firstItem.nativeElement.classList.contains('dot-nav__list-item--active')
-                ).toBe(true);
-            });
-
-            it('should expand menu', () => {
-                const firstItem: DebugElement = de.query(By.css('.dot-nav__list-item'));
-                expect(
-                    firstItem.nativeElement.classList.contains('dot-nav__list-item--active')
-                ).toBe(true);
-                const firstMenuLink: DebugElement = firstItem.query(By.css('.dot-nav-sub__link'));
-                expect(
-                    firstMenuLink.nativeElement.classList.contains('dot-nav-sub__link--actuve')
-                ).toBe(false);
-            });
-
             it('should navigate to portlet when menu is collapsed', () => {
                 expect(dotNavigationService.goTo).toHaveBeenCalledWith('url/link1');
             });
@@ -214,6 +195,17 @@ describe('DotNavigationComponent', () => {
                     data: dotMenuMock()
                 });
                 fixture.detectChanges();
+            });
+
+            it('should expand menu', () => {
+                const firstItem: DebugElement = de.query(By.css('.dot-nav__list-item'));
+                expect(
+                    firstItem.nativeElement.classList.contains('dot-nav__list-item--active')
+                ).toBe(true);
+                const firstMenuLink: DebugElement = firstItem.query(By.css('.dot-nav-sub__link'));
+                expect(
+                    firstMenuLink.nativeElement.classList.contains('dot-nav-sub__link--active')
+                ).toBe(false);
             });
 
             it('should NOT navigate to porlet', () => {

@@ -12,6 +12,10 @@
             opacity: 0;
         }
 
+        .dot-nav__item {
+            max-height: $navigation-item-height;
+        }
+
         .dot-nav__item--active {
             background-color: $brand-primary;
         }
