@@ -5,7 +5,10 @@
                 [data]="item"
                 [class.collapsed]="dotNavigationService.collapsed"
                 (menuClick)="onMenuClick($event)"
-                (itemClick)="onItemClick($event)">
+                (itemClick)="onItemClick($event)"
+                [pTooltip]="item.tabName"
+                [tooltipDisabled]="!dotNavigationService.collapsed"
+                tooltipStyleClass="dot-nav__tooltip" >
             </dot-nav-item>
         </li>
     </ul>

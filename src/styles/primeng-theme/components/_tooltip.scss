@@ -1,0 +1,7 @@
+@import "variables";
+
+.ui-tooltip {
+    .ui-tooltip-text {
+        padding: $basic-padding $basic-padding * 2;
+    }
+}

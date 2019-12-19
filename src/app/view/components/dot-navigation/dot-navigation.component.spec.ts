@@ -19,6 +19,7 @@ import { DotMenu } from '@models/navigation';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { skip } from 'rxjs/operators';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
+import { TooltipModule } from 'primeng/primeng';
 
 class FakeNavigationService {
     _collapsed = false;
@@ -92,7 +93,8 @@ describe('DotNavigationComponent', () => {
                 DotNavIconModule,
                 DotIconModule,
                 RouterTestingModule,
-                BrowserAnimationsModule
+                BrowserAnimationsModule,
+                TooltipModule
             ],
             providers: [
                 DotMenuService,
@@ -182,6 +184,13 @@ describe('DotNavigationComponent', () => {
                 fixture.detectChanges();
             });
 
+            it('should set tooltip properties', () => {
+                fixture.detectChanges();
+                expect(navItem.attributes['ng-reflect-disabled']).toBe('false');
+                expect(navItem.attributes['ng-reflect-text']).toBe(dotMenuMock().tabName);
+                expect(navItem.attributes['tooltipStyleClass']).toBe('dot-nav__tooltip');
+            });
+
             it('should navigate to portlet when menu is collapsed', () => {
                 expect(dotNavigationService.goTo).toHaveBeenCalledWith('url/link1');
             });
@@ -210,6 +219,10 @@ describe('DotNavigationComponent', () => {
 
             it('should NOT navigate to porlet', () => {
                 expect(dotNavigationService.goTo).not.toHaveBeenCalled();
+            });
+
+            it('should disable tooltip', () => {
+                expect(navItem.attributes['ng-reflect-disabled']).toBe('true');
             });
         });
     });
