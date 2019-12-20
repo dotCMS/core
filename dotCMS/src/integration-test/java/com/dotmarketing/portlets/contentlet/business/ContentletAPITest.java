@@ -6863,6 +6863,8 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals("Content copied from content id: " + contentlet.getIdentifier(),
                     comments.get(0).getComment());
 
+            assertEquals(systemUser.getUserId(), comments.get(0).getPostedBy());
+
             assertFalse(UtilMethods.isSet(workflowAPI.findWorkflowHistory(newWorkflowTask)));
 
             assertFalse(UtilMethods
