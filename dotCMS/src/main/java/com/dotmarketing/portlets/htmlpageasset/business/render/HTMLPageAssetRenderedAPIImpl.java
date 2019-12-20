@@ -367,21 +367,44 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         final User user = context.getUser();
         final PageMode mode = context.getPageMode();
-        
+
+        Host site = this.getHostFromRequest(request, user, mode);
+
+        if (site == null) {
+            site = this.getHostFromSession(request, user, mode);
+        }
+
+        return site != null ? site : this.hostAPI.findDefaultHost(user, mode.respectAnonPerms) ;
+
+    }
+
+    private Host getHostFromSession(final HttpServletRequest request, final User user, final PageMode mode)
+            throws DotSecurityException, DotDataException {
+        final Object hostId = request.getSession().getAttribute(WebKeys.CMS_SELECTED_HOST_ID);
+
+        if(mode.isAdmin && hostId !=null) {
+            return this.hostAPI.find(hostId.toString(), user, mode.respectAnonPerms);
+        } else {
+            return null;
+        }
+    }
+
+    private Host getHostFromRequest(final HttpServletRequest request, final User user, final PageMode mode)
+            throws DotSecurityException, DotDataException {
+
         final String hostId = request.getParameter("host_id");
+
         if (null != hostId) {
             return this.hostAPI.find(hostId, user, mode.respectAnonPerms);
         }
-        
-        final String siteName = (null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME)) ?
-                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
-        Host site = this.hostWebAPI.resolveHostName(siteName, user, mode.respectAnonPerms);
 
-        if(mode.isAdmin && request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )!=null) {
-            site = this.hostAPI.find(request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID ).toString(), user, mode.respectAnonPerms);
+        final String hostName = request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
+
+        if (null != hostName) {
+            return this.hostWebAPI.resolveHostNameWithoutDefault(hostName, user, mode.respectAnonPerms);
         }
-        return site;
 
+        return null;
     }
 
     public class HTMLPageUrl {

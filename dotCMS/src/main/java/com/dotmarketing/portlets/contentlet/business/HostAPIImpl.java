@@ -84,8 +84,10 @@ public class HostAPIImpl implements HostAPI {
 
             APILocator.getPermissionAPI().checkPermission(host, PermissionLevel.READ, user);
             return host;
-        } catch (Exception e) {
 
+        } catch (DotSecurityException | DotDataException e) {
+            throw e;
+        } catch (Exception e) {
             throw new DotRuntimeException(e.getMessage(), e);
         }
         
@@ -112,13 +114,9 @@ public class HostAPIImpl implements HostAPI {
 
         if(host == null){
             try {
-                host = findByNameNotDefault(serverName, systemUser, respectFrontendRoles);
+                host = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
             } catch (Exception e) {
                 return findDefaultHost(systemUser, respectFrontendRoles);
-            }
-            
-            if(host == null){
-                host = findByAlias(serverName, systemUser, respectFrontendRoles);
             }
             
             //If no host matches then we set the default host.
@@ -130,13 +128,46 @@ public class HostAPIImpl implements HostAPI {
                 hostCache.addHostAlias(serverName, host);
             }
         }
-        
-        if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
-            return host;
-        } else {
+
+        checkHostPermission(user, respectFrontendRoles, host);
+        return host;
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public Host resolveHostNameWithoutDefault(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        Host host = hostCache.getHostByAlias(serverName);
+        User systemUser = APILocator.systemUser();
+
+        if(host == null){
+            try {
+                host = findByNameNotDefault(serverName, systemUser, respectFrontendRoles);
+            } catch (Exception e) {
+                return findDefaultHost(systemUser, respectFrontendRoles);
+            }
+
+            if(host == null){
+                host = findByAlias(serverName, systemUser, respectFrontendRoles);
+            }
+
+            if(host != null){
+                hostCache.addHostAlias(serverName, host);
+            }
+        }
+
+        if (host != null) {
+            checkHostPermission(user, respectFrontendRoles, host);
+        }
+
+        return host;
+    }
+
+    private void checkHostPermission(User user, boolean respectFrontendRoles, Host host) throws DotDataException, DotSecurityException {
+        if (!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
             String u = (user != null) ? user.getUserId() : null;
             String h = (host != null) ? host.getHostname() : null;
-            throw new DotSecurityException("User: " +  u + " does not have read permissions to " + h );
+            throw new DotSecurityException("User: " + u + " does not have read permissions to " + h);
         }
     }
 
@@ -280,7 +311,10 @@ public class HostAPIImpl implements HostAPI {
             host = DBSearch(id,user,respectFrontendRoles);
         }
 
+        System.out.println("host = " + host);
         if(host != null){
+            System.out.println("respectFrontendRoles = " + respectFrontendRoles);
+            System.out.println("APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles) = " + APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles));
             if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
                 String u = (user != null) ? user.getUserId() : null;
 
