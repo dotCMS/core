@@ -6626,27 +6626,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             newTask.setLanguageId(copyContentlet.getLanguageId());
             APILocator.getWorkflowAPI().saveWorkflowTask(newTask);
 
-            for (final WorkflowComment comment : APILocator.getWorkflowAPI().findWorkFlowComments(task)) {
-                final WorkflowComment newComment = new WorkflowComment();
-                BeanUtils.copyProperties(comment, newComment);
-                newComment.setId(null);
-                newComment.setWorkflowtaskId(newTask.getId());
-                APILocator.getWorkflowAPI().saveComment(newComment);
-            }
 
-            for (final WorkflowHistory history : APILocator.getWorkflowAPI().findWorkflowHistory(task)) {
-                final WorkflowHistory newHistory = new WorkflowHistory();
-                BeanUtils.copyProperties(history, newHistory);
-                newHistory.setId(null);
-                newHistory.setWorkflowtaskId(newTask.getId());
-                APILocator.getWorkflowAPI().saveWorkflowHistory(newHistory);
-            }
+            final WorkflowComment newComment = new WorkflowComment();
+            newComment.setPostedBy(user.getUserId());
+            newComment.setComment("Content copied from content id: " + sourceContentlet.getIdentifier());
+            newComment.setCreationDate(new Date());
+            newComment.setWorkflowtaskId(newTask.getId());
+            APILocator.getWorkflowAPI().saveComment(newComment);
+            
 
-            final List<IFileAsset> files = APILocator.getWorkflowAPI()
-                    .findWorkflowTaskFilesAsContent(task, APILocator.getUserAPI().getSystemUser());
-            for (final IFileAsset f : files) {
-                APILocator.getWorkflowAPI().attachFileToTask(newTask, f.getInode());
-            }
         }
 
         this.sendCopyEvent(copyContentlet);

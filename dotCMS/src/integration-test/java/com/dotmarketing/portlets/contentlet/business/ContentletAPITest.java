@@ -102,8 +102,11 @@ import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
@@ -6735,5 +6738,82 @@ public class ContentletAPITest extends ContentletBaseTest {
                 contentTypeAPI.delete(parentContentType);
             }
         }
+    }
+
+    @Test
+    public void testCopyContentletDoesNotCopyWorkflowHistory()
+            throws DotDataException, DotSecurityException {
+        final User systemUser = APILocator.systemUser();
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+
+        Contentlet contentlet    = null;
+        Contentlet newContentlet = null;
+
+        try {
+            contentlet = TestDataUtils.getPageContent(true, language.getId());
+
+            //save workflow task
+            final WorkflowStep workflowStep = workflowAPI.findStep(
+                    SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
+            workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, systemUser);
+            final WorkflowTask workflowTask = workflowAPI
+                    .createWorkflowTask(contentlet, systemUser, workflowStep, "test", "test");
+            workflowAPI.saveWorkflowTask(workflowTask);
+
+            //save workflow comment
+            final WorkflowComment comment = new WorkflowComment();
+            comment.setComment(workflowTask.getDescription());
+            comment.setCreationDate(new Date());
+            comment.setPostedBy(systemUser.getUserId());
+            comment.setWorkflowtaskId(workflowTask.getId());
+            workflowAPI.saveComment(comment);
+
+            //save workflow history
+            final WorkflowHistory hist = new WorkflowHistory();
+            hist.setChangeDescription("workflow history description");
+            hist.setCreationDate(new Date());
+            hist.setMadeBy(systemUser.getUserId());
+            hist.setWorkflowtaskId(workflowTask.getId());
+            workflowAPI.saveWorkflowHistory(hist);
+
+            //save workflow task file
+            final Contentlet fileAsset = TestDataUtils.getFileAssetContent(true, language.getId());
+            workflowAPI.attachFileToTask(workflowTask, fileAsset.getInode());
+
+            newContentlet = contentletAPI
+                    .copyContentlet(contentlet, systemUser, false);
+
+            assertEquals(contentlet.getTitle(), newContentlet.getTitle());
+
+            //verify workflow task and comments were copied (ignoring workflow history and files)
+            final WorkflowTask newWorkflowTask = workflowAPI.findTaskByContentlet(newContentlet);
+
+            assertNotNull(newWorkflowTask.getId());
+
+            final List<WorkflowComment> comments = workflowAPI
+                    .findWorkFlowComments(newWorkflowTask);
+            assertTrue(UtilMethods.isSet(comments) && comments.size() == 1);
+            assertEquals("Content copied from content id: " + contentlet.getIdentifier(),
+                    comments.get(0).getComment());
+
+            assertEquals(systemUser.getUserId(), comments.get(0).getPostedBy());
+
+            assertFalse(UtilMethods.isSet(workflowAPI.findWorkflowHistory(newWorkflowTask)));
+
+            assertFalse(UtilMethods
+                    .isSet(workflowAPI
+                            .findWorkflowTaskFilesAsContent(newWorkflowTask, systemUser)));
+
+        }finally{
+            if (contentlet != null && contentlet.getInode() != null){
+                ContentletDataGen.destroy(contentlet);
+            }
+
+            if (newContentlet != null && newContentlet.getInode() != null){
+                ContentletDataGen.destroy(newContentlet);
+            }
+        }
+
     }
 }
