@@ -275,6 +275,36 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
         assertEquals(pageRendered.getPageInfo().getPage(), htmlPageAsset);
+        assertEquals(pageRendered.getSite(), defaultHost);
+    }
+
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
+     * When Host is not set into request neither session
+     * it should take the request's server name before then the default host
+     * Should return a right {@link PageView}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws InterruptedException
+     */
+    @Test
+    public void shouldUseRequestServerNameHostWhenHostIsNotSet()
+            throws DotDataException, DotSecurityException {
+        init(host);
+
+        when(request.getServerName()).thenReturn(host.getHostname());
+        final PageMode pageMode = PageMode.ADMIN_MODE;
+        addPermission(role, host);
+
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
+        final HTMLPageAssetRenderedAPIImpl htmlPageAssetRenderedAPIImpl = new HTMLPageAssetRenderedAPIImpl();
+
+        final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
+                request, response, user, htmlPageAsset.getURI(), pageMode);
+
+        assertEquals(pageRendered.getPageInfo().getPage(), htmlPageAsset);
         assertEquals(pageRendered.getSite(), this.host);
     }
 
@@ -359,5 +389,30 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         final HTMLPageAssetRenderedAPIImpl htmlPageAssetRenderedAPIImpl = new HTMLPageAssetRenderedAPIImpl();
 
         htmlPageAssetRenderedAPIImpl.getPageRendered(request, response, user, htmlPageAsset.getURI(), pageMode);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
+     * When Host is not set into request neither session
+     * it should take the request's server name before then the default host
+     * Should return a right {@link PageView}
+     * @throws DotDataException
+     * @throws DotSecurityException
+     * @throws InterruptedException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void shouldUseRequestServerNameAndThrowDotSecurityException()
+            throws DotDataException, DotSecurityException {
+        init(host);
+
+        when(request.getServerName()).thenReturn(host.getHostname());
+        final PageMode pageMode = PageMode.WORKING;
+
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+
+        final HTMLPageAssetRenderedAPIImpl htmlPageAssetRenderedAPIImpl = new HTMLPageAssetRenderedAPIImpl();
+
+        htmlPageAssetRenderedAPIImpl.getPageRendered(request, response, user, htmlPageAsset.getURI(), pageMode);
+
     }
 }

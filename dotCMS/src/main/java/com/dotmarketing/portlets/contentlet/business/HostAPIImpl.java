@@ -311,10 +311,7 @@ public class HostAPIImpl implements HostAPI {
             host = DBSearch(id,user,respectFrontendRoles);
         }
 
-        System.out.println("host = " + host);
         if(host != null){
-            System.out.println("respectFrontendRoles = " + respectFrontendRoles);
-            System.out.println("APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles) = " + APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles));
             if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
                 String u = (user != null) ? user.getUserId() : null;
 

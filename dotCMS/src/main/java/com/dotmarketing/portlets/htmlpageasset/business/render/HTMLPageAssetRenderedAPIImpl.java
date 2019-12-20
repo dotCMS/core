@@ -373,8 +373,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         if (site == null) {
             site = this.getHostFromSession(request, user, mode);
         }
-
-        return site != null ? site : this.hostAPI.findDefaultHost(user, mode.respectAnonPerms) ;
+        System.out.println("site = " + site);
+        System.out.println("request = " + request.getServerName());
+        return site != null ? site : this.hostAPI.resolveHostName(request.getServerName(), user, mode.respectAnonPerms) ;
 
     }
 
