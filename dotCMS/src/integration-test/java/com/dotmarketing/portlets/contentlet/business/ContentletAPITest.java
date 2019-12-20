@@ -6860,6 +6860,8 @@ public class ContentletAPITest extends ContentletBaseTest {
             final List<WorkflowComment> comments = workflowAPI
                     .findWorkFlowComments(newWorkflowTask);
             assertTrue(UtilMethods.isSet(comments) && comments.size() == 1);
+            assertEquals("Content copied from content id: " + contentlet.getIdentifier(),
+                    comments.get(0).getComment());
 
             assertFalse(UtilMethods.isSet(workflowAPI.findWorkflowHistory(newWorkflowTask)));
 
