@@ -142,11 +142,7 @@ public class HostAPIImpl implements HostAPI {
         User systemUser = APILocator.systemUser();
 
         if(host == null){
-            try {
-                host = findByNameNotDefault(serverName, systemUser, respectFrontendRoles);
-            } catch (Exception e) {
-                return findDefaultHost(systemUser, respectFrontendRoles);
-            }
+            host = findByNameNotDefault(serverName, systemUser, respectFrontendRoles);
 
             if(host == null){
                 host = findByAlias(serverName, systemUser, respectFrontendRoles);
