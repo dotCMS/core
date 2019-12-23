@@ -86,6 +86,7 @@ public class HostAPIImpl implements HostAPI {
             return host;
 
         } catch (DotSecurityException | DotDataException e) {
+            Logger.warn(HostAPIImpl.class, "Error trying to het default host:" + e.getMessage());
             throw e;
         } catch (Exception e) {
             throw new DotRuntimeException(e.getMessage(), e);

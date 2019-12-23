@@ -11,17 +11,14 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -73,7 +70,9 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         htmlPageAsset = createPage(systemUser, role, template);
     }
 
-    private HTMLPageAsset createPage(User systemUser, Role role, Template template) throws DotDataException, DotSecurityException {
+    private HTMLPageAsset createPage(final User systemUser, final Role role, final Template template)
+            throws DotDataException, DotSecurityException {
+
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
         HTMLPageDataGen.publish(htmlPageAsset);
 
@@ -117,7 +116,7 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         addPermission(role, host);
 
         final Host anotherHost = new SiteDataGen().nextPersisted();
-        when(session.getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(anotherHost.getIdentifier());
+        when(session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(anotherHost.getIdentifier());
 
         when(request.getParameter("host_id")).thenReturn(this.host.getIdentifier());
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(this.host.getHostname());
@@ -130,8 +129,8 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(pageRendered.getPageInfo().getPage(), htmlPageAsset);
-        assertEquals(pageRendered.getSite(), host);
+        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(host, pageRendered.getSite());
     }
 
     /**
@@ -147,7 +146,7 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         init();
         final PageMode pageMode = PageMode.ADMIN_MODE;
         addPermission(role, host);
-        when(session.getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
+        when(session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
 
         when(request.getParameter("host_id")).thenReturn("not_exists_host_id");
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
@@ -158,8 +157,8 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(pageRendered.getPageInfo().getPage(), htmlPageAsset);
-        assertEquals(pageRendered.getSite(), this.host);
+        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(this.host, pageRendered.getSite());
     }
 
     /**
@@ -177,7 +176,7 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         final PageMode pageMode = PageMode.ADMIN_MODE;
         addPermission(role, host);
         final Host anotherHost = new SiteDataGen().nextPersisted();
-        when(session.getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(anotherHost.getIdentifier());
+        when(session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(anotherHost.getIdentifier());
 
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(this.host.getHostname());
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
@@ -188,8 +187,8 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(pageRendered.getPageInfo().getPage(), htmlPageAsset);
-        assertEquals(pageRendered.getSite(), this.host);
+        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(this.host, pageRendered.getSite());
     }
 
     /**
@@ -207,7 +206,7 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         init();
         final PageMode pageMode = PageMode.ADMIN_MODE;
         addPermission(role, host);
-        when(session.getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
+        when(session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
 
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn("not_exists_host_id");
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
@@ -218,8 +217,8 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(pageRendered.getPageInfo().getPage(), htmlPageAsset);
-        assertEquals(pageRendered.getSite(), this.host);
+        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(this.host, pageRendered.getSite());
     }
 
     /**
@@ -236,7 +235,7 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         init();
         final PageMode pageMode = PageMode.ADMIN_MODE;
         addPermission(role, host);
-        when(session.getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
+        when(session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
 
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(this.host);
@@ -246,8 +245,8 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(pageRendered.getPageInfo().getPage(), htmlPageAsset);
-        assertEquals(pageRendered.getSite(), this.host);
+        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(this.host, pageRendered.getSite());
     }
 
     /**
@@ -274,8 +273,8 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(pageRendered.getPageInfo().getPage(), htmlPageAsset);
-        assertEquals(pageRendered.getSite(), defaultHost);
+        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(defaultHost, pageRendered.getSite());
     }
 
 
@@ -304,8 +303,8 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
         final PageView pageRendered = htmlPageAssetRenderedAPIImpl.getPageRendered(
                 request, response, user, htmlPageAsset.getURI(), pageMode);
 
-        assertEquals(pageRendered.getPageInfo().getPage(), htmlPageAsset);
-        assertEquals(pageRendered.getSite(), this.host);
+        assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
+        assertEquals(this.host, pageRendered.getSite());
     }
 
     /**
@@ -341,7 +340,7 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
     public void shouldUseHostNameParameterAndThrowDotSecurityException() throws DotDataException, DotSecurityException {
         init();
         final PageMode pageMode = PageMode.WORKING;
-        when(session.getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
+        when(session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
 
@@ -362,7 +361,7 @@ public class HTMLPageAssetRenderedAPIImplIntegretionTest extends IntegrationTest
     public void shouldUseSessionHostAndThrowDotSecurityException() throws DotDataException, DotSecurityException {
         init();
         final PageMode pageMode = PageMode.WORKING;
-        when(session.getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
+        when(session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
 
