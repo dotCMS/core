@@ -358,8 +358,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     }
 
     private Language getCurrentLanguage(final HttpServletRequest request) {
-        final Language defaultLanguage = this.languageAPI.getDefaultLanguage();
-        return request != null ? this.languageWebAPI.getLanguage(request) : defaultLanguage;
+        return request != null ? this.languageWebAPI.getLanguage(request) : this.languageAPI.getDefaultLanguage();
     }
 
     private Host resolveSite(final PageContext context, final HttpServletRequest request)
@@ -403,7 +402,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final String hostName = request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
 
         if (null != hostName) {
-            return Optional.ofNullable(this.hostWebAPI.resolveHostNameWithoutDefault(hostName, user, mode.respectAnonPerms));
+            return this.hostWebAPI.resolveHostNameWithoutDefault(hostName, user, mode.respectAnonPerms);
         }
 
         return Optional.empty();

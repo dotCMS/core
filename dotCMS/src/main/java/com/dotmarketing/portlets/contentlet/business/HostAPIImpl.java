@@ -109,13 +109,12 @@ public class HostAPIImpl implements HostAPI {
     @Override
     @CloseDBIfOpened
     public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
         Host host = hostCache.getHostByAlias(serverName);
         User systemUser = APILocator.systemUser();
 
         if(host == null){
             try {
-                host = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
+                host = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles).get();
             } catch (Exception e) {
                 return findDefaultHost(systemUser, respectFrontendRoles);
             }
@@ -136,7 +135,7 @@ public class HostAPIImpl implements HostAPI {
 
     @Override
     @CloseDBIfOpened
-    public Host resolveHostNameWithoutDefault(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public Optional<Host> resolveHostNameWithoutDefault(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         Host host = hostCache.getHostByAlias(serverName);
         User systemUser = APILocator.systemUser();
@@ -157,7 +156,7 @@ public class HostAPIImpl implements HostAPI {
             checkHostPermission(user, respectFrontendRoles, host);
         }
 
-        return host;
+        return Optional.ofNullable(host);
     }
 
     private void checkHostPermission(User user, boolean respectFrontendRoles, Host host) throws DotDataException, DotSecurityException {

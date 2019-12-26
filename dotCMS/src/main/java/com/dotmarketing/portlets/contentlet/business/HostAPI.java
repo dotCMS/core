@@ -302,7 +302,7 @@ public interface HostAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public Host resolveHostNameWithoutDefault(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException ;
+	public Optional<Host> resolveHostNameWithoutDefault(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException ;
 
 
 	/**

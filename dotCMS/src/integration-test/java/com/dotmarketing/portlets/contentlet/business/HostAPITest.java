@@ -560,7 +560,7 @@ public class HostAPITest extends IntegrationTestBase  {
 
         this.addPermission(role, host);
 
-        final Host hostReturned = APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, false);
+        final Host hostReturned = APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, false).get();
         assertEquals(host, hostReturned);
     }
 
@@ -587,7 +587,7 @@ public class HostAPITest extends IntegrationTestBase  {
     public void shouldReturnNull() throws DotSecurityException, DotDataException {
 
         final Host hostReturned = APILocator.getHostAPI().resolveHostNameWithoutDefault(
-                "not_exists_host", APILocator.systemUser(), false);
+                "not_exists_host", APILocator.systemUser(), false).get();
         assertNull(hostReturned);
     }
 
@@ -602,7 +602,7 @@ public class HostAPITest extends IntegrationTestBase  {
         final Role role = new RoleDataGen().nextPersisted();
         final User user = new UserDataGen().roles(role).nextPersisted();
 
-        final Host hostReturned = APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, true);
+        final Host hostReturned = APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, true).get();
         assertEquals(host, hostReturned);
     }
 
