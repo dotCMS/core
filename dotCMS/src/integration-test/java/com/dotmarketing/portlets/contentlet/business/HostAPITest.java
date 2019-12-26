@@ -586,9 +586,9 @@ public class HostAPITest extends IntegrationTestBase  {
     @Test
     public void shouldReturnNull() throws DotSecurityException, DotDataException {
 
-        final Host hostReturned = APILocator.getHostAPI().resolveHostNameWithoutDefault(
-                "not_exists_host", APILocator.systemUser(), false).get();
-        assertNull(hostReturned);
+        final Optional<Host> optional = APILocator.getHostAPI().resolveHostNameWithoutDefault(
+                "not_exists_host", APILocator.systemUser(), false);
+        assertFalse(optional.isPresent());
     }
 
     /**
