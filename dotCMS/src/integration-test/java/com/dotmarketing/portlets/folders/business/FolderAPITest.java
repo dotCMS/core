@@ -1077,7 +1077,7 @@ public class FolderAPITest {//24 contentlets
 		}
 	}
 
-	@Test(expected = DotDataException.class)
+	@Test(expected = InvalidFolderNameException.class)
 	@UseDataProvider("reservedFolderNames")
 	public void testCopyToHost_BlacklistedName_ShouldFail(final String reservedName)
 			throws DotDataException, DotSecurityException, IOException {
@@ -1159,8 +1159,15 @@ public class FolderAPITest {//24 contentlets
 	@UseDataProvider("reservedFolderNames")
 	public void testCreateFolders_NotAtRootLevel_BlacklistedName_ShouldSucceed(final String reservedName)
 			throws DotDataException, DotSecurityException {
-		final String foldersString = "/testFolders/" + reservedName;
-		folderAPI.createFolders(foldersString,host,user,false);
+		Folder folder = null;
+		try {
+			final String foldersString = "/testFolders/" + reservedName;
+			folder = folderAPI.createFolders(foldersString, host, user, false);
+		} finally {
+			if(folder!=null) {
+				APILocator.getFolderAPI().delete(folder, APILocator.systemUser(), false);
+			}
+		}
 	}
 
 }
