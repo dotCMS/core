@@ -42,6 +42,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -782,7 +783,6 @@ public class BrowserAjax {
      * @return Confirmation message
      * @throws Exception
      */
-    @WrapInTransaction
     public String moveFolder (final String folderId, final String newFolder) throws Exception {
 
     	final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
@@ -800,7 +800,6 @@ public class BrowserAjax {
             	return errorString;
 			}
         } catch (Exception e) {
-
         	Logger.error(this, e.getMessage(), e);
             return e.getLocalizedMessage();
         }

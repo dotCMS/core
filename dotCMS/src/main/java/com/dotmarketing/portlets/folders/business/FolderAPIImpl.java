@@ -87,16 +87,6 @@ public class FolderAPIImpl implements FolderAPI  {
 	private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
 	private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
-	@VisibleForTesting
-	protected static final Set<String> reservedFolderNames =
-			Collections.unmodifiableSet(
-				CollectionsUtils.set(Config.getStringArrayProperty("RESERVEDFOLDERNAMES",
-					new String[]{"WEB-INF", "META-INF", "assets", "dotcms", "html", "portal",
-							"email_backups",
-							"DOTLESS", "DOTSASS", "dotAdmin", "custom_elements"})
-				).stream().map(String::toUpperCase).collect(Collectors.toSet())
-			);
-
 	/**
 	 * Will get a folder for you on a given path for a particular host
 	 *
@@ -145,8 +135,6 @@ public class FolderAPIImpl implements FolderAPI  {
 								final User user, final boolean respectFrontEndPermissions) throws DotDataException,
 			DotSecurityException {
 
-    	validateFolderName(newName);
-
 		boolean renamed = false;
 
 		if (!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
@@ -159,8 +147,10 @@ public class FolderAPIImpl implements FolderAPI  {
 			Identifier folderId = APILocator.getIdentifierAPI().find(folder);
 			CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
 			return renamed;
+		} catch (InvalidFolderNameException e) {
+			Logger.error(FolderAPIImpl.class, e.getMessage());
+			throw e;
 		} catch (Exception e) {
-
 			throw new DotDataException(e.getMessage(),e);
 		}
 	}
@@ -322,8 +312,6 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getPath());
 		}
 
-		validateFolderName(folderToCopy.getName());
-
 		folderFactory.copy(folderToCopy, newParentFolder);
 
 		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy, Visibility.EXCLUDE_OWNER,
@@ -342,8 +330,6 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!permissionAPI.doesUserHavePermission(newParentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Host " + newParentHost.getHostname());
 		}
-
-		validateFolderName(folderToCopy.getName());
 
 		folderFactory.copy(folderToCopy, newParentHost);
 
@@ -579,8 +565,6 @@ public class FolderAPIImpl implements FolderAPI  {
 	public void save(final Folder folder, final String existingId,
 					 final User user, final boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
-		validateFolderName(folder.getName());
-
 		Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 		if(id ==null || !UtilMethods.isSet(id.getId())){
 			throw new DotStateException("Folder must already have an identifier before saving");
@@ -613,13 +597,6 @@ public class FolderAPIImpl implements FolderAPI  {
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
-	public void validateFolderName(final String folderName) {
-		if (UtilMethods.isSet(folderName)
-				&& reservedFolderNames.contains(folderName.toUpperCase())) {
-			throw new InvalidFolderNameException("Folder can't be saved. You entered a reserved folder name");
-		}
-	}
-
 	public void save(Folder folder, User user, boolean respectFrontEndPermissions) throws DotDataException, DotStateException, DotSecurityException {
 
 		save( folder, null,  user,  respectFrontEndPermissions);
@@ -643,7 +620,6 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		while (st.hasMoreTokens()) {
 			final String name = st.nextToken();
-			validateFolderName(name);
 			sb.append(name + "/");
 			Folder f = findFolderByPath(sb.toString(), host, user, respectFrontEndPermissions);
 			if (f == null || !InodeUtils.isSet(f.getInode())) {

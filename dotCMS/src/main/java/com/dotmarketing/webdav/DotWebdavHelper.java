@@ -994,9 +994,6 @@ public class DotWebdavHelper {
 				throw new IOException(e.getMessage(),e);
 			}
 		} else {
-			if (host != null && InodeUtils.isSet(host.getInode())) {
-				folderAPI.validateFolderName(path.substring(1));
-			}
 			try {
 				hasPermission = perAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user, false);
 			} catch (DotDataException e) {
