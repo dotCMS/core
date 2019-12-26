@@ -1,9 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import static com.dotmarketing.portlets.templates.model.Template.ANONYMOUS_PREFIX;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -14,13 +12,15 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.StructureDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.enterprise.HostAssetsJobProxy;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -545,6 +545,78 @@ public class HostAPITest extends IntegrationTestBase  {
 
         host = APILocator.getHostAPI().findByName(name, user, false);
         Assert.assertNull(host);
+    }
+
+    /**
+     * Method to test: {@link HostAPI#resolveHostNameWithoutDefault(String, User, boolean)}
+     * When a host exist and the user have permission
+     * Should return it
+     */
+    @Test
+    public void shouldReturnExistingHost() throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+
+        this.addPermission(role, host);
+
+        final Host hostReturned = APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, false).get();
+        assertEquals(host, hostReturned);
+    }
+
+    /**
+     * Method to test: {@link HostAPI#resolveHostNameWithoutDefault(String, User, boolean)}
+     * When a host exist but the user does not have permission
+     * Should throw a {@link DotSecurityException}
+     */
+    @Test(expected = DotSecurityException.class)
+    public void shouldThrowDotSecurityExceptionWhenUserNotHavePermission() throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+
+        APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, false);
+    }
+
+    /**
+     * Method to test: {@link HostAPI#resolveHostNameWithoutDefault(String, User, boolean)}
+     * When the host does not exist
+     * Should return null
+     */
+    @Test
+    public void shouldReturnNull() throws DotSecurityException, DotDataException {
+
+        final Optional<Host> optional = APILocator.getHostAPI().resolveHostNameWithoutDefault(
+                "not_exists_host", APILocator.systemUser(), false);
+        assertFalse(optional.isPresent());
+    }
+
+    /**
+     * Method to test: {@link HostAPI#resolveHostNameWithoutDefault(String, User, boolean)}
+     * When a host exist but the user does not have permission and respectFrontendRoles is true
+     * Should return the host
+     */
+    @Test()
+    public void shouldReturnHostWhenRespectFrontendRolesIsTrue() throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+
+        final Host hostReturned = APILocator.getHostAPI().resolveHostNameWithoutDefault(host.getHostname(), user, true).get();
+        assertEquals(host, hostReturned);
+    }
+
+    private void addPermission(final Role role, final Host host)
+            throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.systemUser();
+
+        final Permission permission = new Permission();
+        permission.setInode(host.getPermissionId());
+        permission.setRoleId(role.getId());
+        permission.setPermission(PermissionAPI.PERMISSION_READ);
+
+        APILocator.getPermissionAPI().save(CollectionsUtils.list(permission), host, systemUser, false);
     }
 
 }
