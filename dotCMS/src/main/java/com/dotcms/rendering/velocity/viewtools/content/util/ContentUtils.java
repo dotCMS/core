@@ -163,20 +163,30 @@ public class ContentUtils {
 		public static List<Contentlet> pull(String query,int limit, String sort, User user, String tmDate){
 		    return pull(query,-1,limit,sort, user, tmDate);
 		}
-		
-		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate){
+
+		/**
+		 * Pull content using query if a Time Machine Date is set into session then it ios take account when the query is
+		 * ran.
+		 * 
+		 * @param query
+		 * @param offset
+		 * @param limit
+		 * @param sort
+		 * @param user
+		 * @param tmDate
+		 * @return
+		 */
+		public static PaginatedArrayList<Contentlet> pull(
+				final String query,
+				final int offset,
+				final int limit,
+				final String sort,
+				final User user,
+				final String tmDate){
 			return pull(query, offset, limit, sort, user, tmDate, PageMode.get().respectAnonPerms);
 		}
 
-		public static Optional<Contentlet> pull(String inode, final User user, final boolean respectFrontendRoles){
-			final String tmDate = getTimeMachine().orElse(null);
-
-			final PaginatedArrayList<Contentlet> contentSearch = pull("+inode:" + inode, 0, 1,
-					null, user, tmDate, respectFrontendRoles);
-			return contentSearch.size() > 0 ? Optional.of(contentSearch.get(0)) : Optional.empty();
-		}
-
-	public static PaginatedArrayList<Contentlet> pull(String query, final int offset, final int limit,
+		public static PaginatedArrayList<Contentlet> pull(String query, final int offset, final int limit,
 														  final String sort, final User user, final boolean respectFrontendRoles) {
 			final String tmDate = getTimeMachine().orElse(null);
 			return pull(query, offset, limit, sort, user, tmDate, respectFrontendRoles);
@@ -190,7 +200,7 @@ public class ContentUtils {
 
 	public static PaginatedArrayList<Contentlet> pull(String query, final int offset, final int limit, final String sort, final User user, final String tmDate, final boolean respectFrontendRoles){
 		    final PaginatedArrayList<Contentlet> ret = new PaginatedArrayList<>();
-		    
+
 			try {
 				//need to send the query with the defaults --- 
 			    List<Contentlet> contentlets=null;
