@@ -18,6 +18,9 @@ import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.EnterpriseType;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
@@ -31,6 +34,7 @@ import com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -64,6 +68,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.idl.SchemaPrinter;
+import java.util.stream.Collectors;
 
 import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
 import static graphql.Scalars.GraphQLFloat;
@@ -256,6 +261,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
         List<ContentType> allTypes = contentTypeAPI.findAll();
+        // exclude ee types when no license
+        if(!isStandardOrEnterprise()) {
+            allTypes = allTypes.stream().filter((type) ->!(type instanceof EnterpriseType))
+                    .collect(Collectors.toList());
+        }
 
         // create all types
         Map<String, GraphQLObjectType> concreteTypes = new HashMap<>();
@@ -339,6 +349,10 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             ? relationship.getChildStructureInode() : relationship.getParentStructureInode();
 
         return APILocator.getContentTypeAPI(user).find(relatedContentTypeId);
+    }
+
+    private static boolean isStandardOrEnterprise() {
+        return LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level;
     }
 
 }
