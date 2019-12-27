@@ -22,7 +22,6 @@ import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.model.EventSubscriber;
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -55,19 +54,16 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -135,7 +131,7 @@ public class FolderAPIImpl implements FolderAPI  {
 								final User user, final boolean respectFrontEndPermissions) throws DotDataException,
 			DotSecurityException {
 
-		boolean renamed = false;
+		boolean renamed;
 
 		if (!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId() : BLANK) + " does not have permission to edit folder" + folder.getPath());
@@ -148,9 +144,14 @@ public class FolderAPIImpl implements FolderAPI  {
 			CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
 			return renamed;
 		} catch (InvalidFolderNameException e) {
-			Logger.error(FolderAPIImpl.class, e.getMessage());
+			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
+					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
+					+ newName + ". Error: " + e.getMessage());
 			throw e;
 		} catch (Exception e) {
+			Logger.error(FolderAPIImpl.class, "Error renaming folder '"
+					+ folder.getPath() + "' with id: " + folder.getIdentifier() + " to name: "
+					+ newName + ". Error: " + e.getMessage());
 			throw new DotDataException(e.getMessage(),e);
 		}
 	}

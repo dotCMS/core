@@ -1257,7 +1257,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				&& folder.getParentPermissionable() instanceof Host
 				&& UtilMethods.isSet(folder.getName())
 				&& reservedFolderNames.contains(folder.getName().toUpperCase())) {
-			throw new InvalidFolderNameException("Folder can't be saved. You entered a reserved folder name");
+			throw new InvalidFolderNameException("Folder can't be saved. You entered a reserved folder name: " + folder.getName());
 		}
 	}
 }
