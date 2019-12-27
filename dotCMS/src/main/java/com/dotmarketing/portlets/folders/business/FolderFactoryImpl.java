@@ -6,6 +6,7 @@ import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_ID;
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
 
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
@@ -29,17 +30,21 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.AssetsComparator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.oro.text.regex.Pattern;
@@ -56,6 +61,16 @@ import java.util.*;
 public class FolderFactoryImpl extends FolderFactory {
 
 	private final FolderCache folderCache = CacheLocator.getFolderCache();
+
+	@VisibleForTesting
+	protected static final Set<String> reservedFolderNames =
+			Collections.unmodifiableSet(
+					CollectionsUtils.set(Config.getStringArrayProperty("RESERVEDFOLDERNAMES",
+							new String[]{"WEB-INF", "META-INF", "assets", "dotcms", "html", "portal",
+									"email_backups",
+									"DOTLESS", "DOTSASS", "dotAdmin", "custom_elements"})
+					).stream().map(String::toUpperCase).collect(Collectors.toSet())
+			);
 
 	@Override
 	protected boolean exists(String folderInode) throws DotDataException {
@@ -1208,12 +1223,16 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected void save(Folder folderInode) throws DotDataException {
+		validateFolderName(folderInode);
+
 		HibernateUtil.getSession().clear();
 		HibernateUtil.saveOrUpdate(folderInode);
 	}
 
 	@Override
 	protected void save(Folder folderInode, String existingId) throws DotDataException {
+		validateFolderName(folderInode);
+
 		if(existingId==null){
 			Folder folderToSave = folderInode;
 			if(UtilMethods.isSet(folderInode.getInode())) {
@@ -1230,6 +1249,15 @@ public class FolderFactoryImpl extends FolderFactory {
 		}else{
 			folderInode.setInode(existingId);
 			HibernateUtil.saveWithPrimaryKey(folderInode, existingId);
+		}
+	}
+
+	public void validateFolderName(final Folder folder) throws DotDataException {
+		if (UtilMethods.isSet(folder.getParentPermissionable())
+				&& folder.getParentPermissionable() instanceof Host
+				&& UtilMethods.isSet(folder.getName())
+				&& reservedFolderNames.contains(folder.getName().toUpperCase())) {
+			throw new InvalidFolderNameException("Folder can't be saved. You entered a reserved folder name: " + folder.getName());
 		}
 	}
 }
