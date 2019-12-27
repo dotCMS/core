@@ -1,4 +1,3 @@
-
 package com.dotcms.graphql.business;
 
 import static com.dotcms.graphql.InterfaceType.CONTENT_INTERFACE_NAME;
