@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStore.PasswordProtection;
@@ -50,7 +51,8 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     private static String getSecretStorePath() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
                 + File.separator + "server" + File.separator + SECRETS_STORE_FILE;
-        return Config.getStringProperty(SECRETS_KEYSTORE_FILE_PATH_KEY, supplier.get());
+        final String dirPath = Config.getStringProperty(SECRETS_KEYSTORE_FILE_PATH_KEY, supplier.get());
+        return Paths.get(dirPath).normalize().toString();
     }
 
     @VisibleForTesting

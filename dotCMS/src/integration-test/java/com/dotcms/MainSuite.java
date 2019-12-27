@@ -4,6 +4,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.rest.api.v1.secret.ServiceIntegrationResourceTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.util.TestConfig;
@@ -225,7 +226,8 @@ import org.junit.runners.Suite.SuiteClasses;
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
         com.dotcms.security.secret.SecretsStoreKeyStoreImplTest.class,
-        com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class
+        com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class,
+        ServiceIntegrationResourceTest.class
 })
 public class MainSuite {
 

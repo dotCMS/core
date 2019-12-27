@@ -124,8 +124,8 @@ public class ServiceIntegrationAPIImplTest {
         assertNotNull(serviceKeysByHost.get(host1.getIdentifier()));
         assertNotNull(serviceKeysByHost.get(host2.getIdentifier()));
 
-        assertEquals(3, api.listServiceKeys(host1).size());
-        assertEquals(1, api.listServiceKeys(host2).size());
+        assertEquals(3, api.listServiceKeys(host1, admin).size());
+        assertEquals(1, api.listServiceKeys(host2, admin).size());
 
         assertEquals(3, serviceKeysByHost.get(host1.getIdentifier()).size());
         assertEquals(1, serviceKeysByHost.get(host2.getIdentifier()).size());
@@ -207,7 +207,7 @@ public class ServiceIntegrationAPIImplTest {
 
         //Now we want to update one of the values within the secret.
         //We want to change the value from `secret3` to `secret-3` for the secret named "test:secret3"
-        final Secret secret = Secret.newSecret("secret-3".toCharArray(), SecretType.STRING, false);
+        final Secret secret = Secret.newSecret("secret-3".toCharArray(), Type.STRING, false);
         //Update the individual secret
         api.saveSecret("serviceKey-1-Host-1", new Tuple2<>("test:secret3",secret), host, admin);
         //The other properties of the object should remind the same so lets verify so.
@@ -266,7 +266,7 @@ public class ServiceIntegrationAPIImplTest {
         assertEquals("secret-4", recoveredBean1.getSecrets().get("test:secret4").getString());
 
         //Now lets re-introduce again the property we just deleted
-        final Secret secret = Secret.newSecret("lol".toCharArray(), SecretType.STRING, false);
+        final Secret secret = Secret.newSecret("lol".toCharArray(), Type.STRING, false);
 
         //This should create again the entry we just removed.
         api.saveSecret("serviceKeyHost-1", new Tuple2<>("test:secret3",secret), host, admin);

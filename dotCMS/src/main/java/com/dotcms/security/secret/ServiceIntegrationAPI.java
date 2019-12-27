@@ -7,6 +7,8 @@ import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,9 +18,10 @@ public interface ServiceIntegrationAPI {
     /**
      * Given an individual host a list with the associated services is returned.
      * @param host
+     * @param user
      * @return
      */
-    List<String> listServiceKeys(Host host);
+    List<String> listServiceKeys(Host host, User user) throws DotDataException, DotSecurityException;
 
     /**
      * Conforms a map where the Elements are lists of service unique names, organized by host as key.
@@ -33,7 +36,7 @@ public interface ServiceIntegrationAPI {
      * @return
      */
      Optional<ServiceSecrets> getSecretsForService(String serviceKey,
-             Host host, User user) throws DotDataException;
+             Host host, User user) throws DotDataException, DotSecurityException;
 
     /**
      * Lookup for an individual secret/property then updates the single entry.
@@ -76,8 +79,22 @@ public interface ServiceIntegrationAPI {
      * This method should read the yml file service definition
      * @return
      */
-    List<?> getAvailableServiceDescriptors(Host host, User user);
+    List<ServiceDescriptor> getAvailableServiceDescriptors(User user)
+            throws DotDataException, DotSecurityException;
 
+    /**
+     *
+     * @param serviceKey
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    Optional<ServiceDescriptor> getServiceDescriptor(final String serviceKey, final User user)
+            throws DotDataException, DotSecurityException;
+
+    void createServiceDescriptor(final String serviceKey, final FileInputStream inputStream,
+            User user) throws IOException, DotDataException, DotSecurityException;
 
     enum INSTANCE {
         INSTANCE;
