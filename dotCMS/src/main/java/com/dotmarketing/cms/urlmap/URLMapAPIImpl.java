@@ -1,5 +1,6 @@
 package com.dotmarketing.cms.urlmap;
 
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -29,6 +30,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -227,8 +229,8 @@ public class URLMapAPIImpl implements URLMapAPI {
         Contentlet contentlet = null;
 
         final String query = this.buildContentQuery(matches, structure, hostField, context);
-        final List<ContentletSearch> contentletSearches =
-                this.contentletAPI.searchIndex(query, 2, 0,
+        final List<Contentlet> contentletSearches =
+                ContentUtils.pull(query, 0, 2,
                         (hostField!=null && hostField.isRequired()) ? "conhost, modDate" : "modDate",
                         this.wuserAPI.getSystemUser(), true);
 
@@ -236,18 +238,13 @@ public class URLMapAPIImpl implements URLMapAPI {
             int idx = 0;
             if (contentletSearches.size() == 2) {
                 // prefer session setting
-                final Contentlet second = this.contentletAPI
-                        .find(contentletSearches.get(1).getInode(),
-                                this.wuserAPI.getSystemUser(), true);
+                final Contentlet second = contentletSearches.get(1);
                 if (second.getLanguageId() == context.getLanguageId()) {
                     idx = 1;
                 }
             }
 
-            final ContentletSearch contentletSearch = contentletSearches.get(idx);
-            contentlet = this.contentletAPI
-                    .find(contentletSearch.getInode(), this.wuserAPI.getSystemUser(), true);
-
+            contentlet = contentletSearches.get(idx);
             checkContentPermission(context, contentlet);
         }
 

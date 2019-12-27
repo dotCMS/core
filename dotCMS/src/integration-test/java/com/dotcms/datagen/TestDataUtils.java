@@ -937,7 +937,12 @@ public class TestDataUtils {
     }
 
     public static Contentlet getNewsContent(Boolean persist, long languageId,
-            String contentTypeId, Host site) {
+                                            String contentTypeId, Host site) {
+        return getNewsContent(persist, languageId, contentTypeId, site, new Date());
+    }
+
+    public static Contentlet getNewsContent(Boolean persist, long languageId,
+            String contentTypeId, Host site, Date sysPublishDate) {
 
         if (null == contentTypeId) {
             contentTypeId = getNewsLikeContentType().id();
@@ -953,7 +958,7 @@ public class TestDataUtils {
                     .setProperty("title", "newsContent Title" + millis)
                     .setProperty("urlTitle", "news-content-url-title" + millis)
                     .setProperty("byline", "byline")
-                    .setProperty("sysPublishDate", new Date())
+                    .setProperty("sysPublishDate", sysPublishDate)
                     .setProperty("story", "newsStory")
                     .setProperty("tags", "test");
 
