@@ -146,4 +146,11 @@ public abstract class FolderFactory {
     protected List<Treeable> getChildrenClass ( Host host, Class clazz ) throws DotStateException, DotDataException {
         return null;
     }
+
+	/**
+	 * Validates that the folder name is not a reserved word
+	 * @param folder folder whose name will be validated
+	 * @throws DotDataException
+	 */
+	abstract public void validateFolderName(final Folder folder) throws DotDataException;
 }
