@@ -6,7 +6,10 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
@@ -62,10 +65,18 @@ public class VelocityServlet extends HttpServlet {
                 return;
             }
 
-            request.setRequestUri(uri);
             final PageMode mode = PageMode.getWithNavigateMode(request);
             try {
-                VelocityModeHandler.modeHandler(mode, request, response).serve();
+                final String pageHtml = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                        PageContextBuilder.builder()
+                                .setPageUri(uri)
+                                .setPageMode(mode)
+                                .build(),
+                        request,
+                        response
+                );
+
+                response.getOutputStream().write(pageHtml.getBytes());
             } catch (ResourceNotFoundException rnfe) {
                 Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
