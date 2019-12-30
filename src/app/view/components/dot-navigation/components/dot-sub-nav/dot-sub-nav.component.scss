@@ -8,6 +8,30 @@
 
 ul {
     @include naked-list;
+
+    &.contextmenu {
+        opacity: 1;
+        position: absolute;
+        left: $navigation-width-collased;
+        width: auto;
+        margin-top: -$navigation-item-height;
+        z-index: 1001;
+        background: $white;
+        box-shadow: $md-shadow-1;
+        // component animation adds inline styles.
+        height: auto !important;
+        overflow: visible !important;
+
+        .dot-nav-sub__link {
+            color: $black;
+            padding: $basic-padding $basic-padding * 2;
+
+            &--active,
+            &:hover {
+                background-color: $gray-bg;
+            }
+        }
+    }
 }
 
 a {

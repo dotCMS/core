@@ -1,4 +1,7 @@
-<ul class="dot-nav-sub" [@expandAnimation]="data.isOpen ? 'expanded' : 'collapsed'">
+<ul class="dot-nav-sub"
+    [@expandAnimation]="data.isOpen ? 'expanded' : 'collapsed'"
+    [class.contextmenu]="contextmenu"
+>
     <li *ngFor="let subItem of data.menuItems" class="dot-nav-sub__item">
         <a
             class="dot-nav-sub__link"

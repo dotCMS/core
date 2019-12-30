@@ -146,22 +146,15 @@ describe('DotToolbarComponent', () => {
 
     it('should toggle menu and update icon on click', () => {
         spyOn(dotNavigationService, 'toggle').and.callThrough();
-        const stopPro = jasmine.createSpy('stopPro');
-
         fixture.detectChanges();
 
         const button: DebugElement = de.query(By.css('dot-icon-button'));
 
         expect(button.componentInstance.icon).toEqual('arrow_back');
-
-        button.triggerEventHandler('click', {
-            stopPropagation: stopPro
-        });
-
+        button.triggerEventHandler('click', {});
         fixture.detectChanges();
 
         expect(dotNavigationService.toggle).toHaveBeenCalledTimes(1);
-        expect(stopPro).toHaveBeenCalledTimes(1);
         expect(button.componentInstance.icon).toEqual('arrow_back');
     });
 });

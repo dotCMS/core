@@ -1,4 +1,11 @@
-<div class="dot-nav__item" (click)="clickHandler($event, data)" [class.dot-nav__item--active]="data.active">
+<div class="dot-nav__item"
+     (click)="clickHandler($event, data)"
+     [class.dot-nav__item--active]="data.active"
+     [pTooltip]="contextmenu ? null : data.tabName"
+     tooltipStyleClass="dot-nav__tooltip"
+     appendTo="target"
+     [tooltipDisabled]="contextmenu || !collapsed"
+>
     <dot-nav-icon [icon]="data.tabIcon" aria-hidden="true"></dot-nav-icon>
     <span class="dot-nav__item-label">{{data.tabName}}</span>
     <dot-icon
@@ -7,4 +14,7 @@
         aria-hidden="true">
     </dot-icon>
 </div>
-<dot-sub-nav [data]="data" (itemClick)="itemClick.emit($event)"></dot-sub-nav>
+<dot-sub-nav [data]="data"
+             [contextmenu]="contextmenu"
+             (itemClick)="handleItemClick($event)">
+</dot-sub-nav>

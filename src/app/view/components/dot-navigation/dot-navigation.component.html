@@ -3,12 +3,9 @@
         <li *ngFor="let item of menu$ | async" class="dot-nav__list-item" [class.dot-nav__list-item--active]="item.isOpen">
             <dot-nav-item
                 [data]="item"
-                [class.collapsed]="dotNavigationService.collapsed$ | async"
+                [collapsed]="dotNavigationService.collapsed$ | async"
                 (menuClick)="onMenuClick($event)"
-                (itemClick)="onItemClick($event)"
-                [pTooltip]="item.tabName"
-                [tooltipDisabled]="!(dotNavigationService.collapsed$ | async)"
-                tooltipStyleClass="dot-nav__tooltip" >
+                (itemClick)="onItemClick($event)">
             </dot-nav-item>
         </li>
     </ul>

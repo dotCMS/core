@@ -29,6 +29,8 @@ import { DotMenu, DotMenuItem } from '@models/navigation';
 export class DotSubNavComponent {
     @Input()
     data: DotMenu;
+    @Input()
+    contextmenu: boolean;
     @Output()
     itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
 

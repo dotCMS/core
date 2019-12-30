@@ -28,18 +28,3 @@ ul {
 .collapsed {
     width: $navigation-width-collased;
 }
-
-::ng-deep {
-    .ui-tooltip {
-        &.dot-nav__tooltip {
-            margin-left: $basic-padding;
-
-            .ui-tooltip-text {
-                overflow-wrap: break-word;
-                min-width: 100px;
-                max-width: 150px;
-                text-align: center;
-            }
-        }
-    }
-}
