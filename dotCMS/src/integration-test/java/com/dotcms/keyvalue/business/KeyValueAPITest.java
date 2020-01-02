@@ -333,6 +333,40 @@ public class KeyValueAPITest extends IntegrationTestBase {
         deleteContentlets(systemUser, contentlet);
     }
 
+    /*
+     * Creates a content version in english and in spanish with the same key (the key must contains a whitespace)
+     * Successfully creates both versions since its the same identifier
+     */
+    @Test
+    public void test_get_savesKeyWithWhitespaceInEnglishAndSpanish_success() throws DotContentletStateException,
+            IllegalArgumentException, DotDataException, DotSecurityException {
+
+        Contentlet contentletEnglish = null;
+        Contentlet contentletSpanish = null;
+
+        try {
+            final String key1 = "test key with whitespaces " + new Date().getTime();
+            final String valueEnglish = "Value English";
+            final String valueSpanish = "Value Spanish";
+
+            contentletEnglish = createTestKeyValueContent(key1, valueEnglish, englishLanguageId,
+                    keyValueContentType,
+                    systemUser);
+            //Create a Spanish version of the same Contentlet
+            contentletSpanish = createTestKeyValueContent(contentletEnglish.getIdentifier(), key1,
+                    valueSpanish, spanishLanguageId, keyValueContentType,
+                    systemUser);
+
+            Assert.assertTrue(UtilMethods.isSet(contentletEnglish.getIdentifier()));
+            Assert.assertTrue(UtilMethods.isSet(contentletSpanish.getIdentifier()));
+            Assert.assertEquals(valueEnglish,APILocator.getKeyValueAPI().get(key1,englishLanguageId,keyValueContentType,systemUser,false,false).getValue());
+            Assert.assertEquals(valueSpanish,APILocator.getKeyValueAPI().get(key1,spanishLanguageId,keyValueContentType,systemUser,false,false).getValue());
+
+        } finally {
+            deleteContentlets(systemUser, contentletEnglish, contentletSpanish);
+        }
+    }
+
     @AfterClass
     public static void cleanup() throws DotDataException, DotSecurityException {
         if (null != keyValueContentType && UtilMethods.isSet(keyValueContentType.id())) {

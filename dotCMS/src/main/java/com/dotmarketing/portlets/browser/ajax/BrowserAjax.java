@@ -42,6 +42,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -778,12 +779,11 @@ public class BrowserAjax {
      * Moves a given inode folder/host reference into another given folder
      *
      * @param folderId     folder identifier
-     * @param newFolder This could be the inode of a folder or a host
+     * @param newFolderId This could be the inode of a folder or a host
      * @return Confirmation message
      * @throws Exception
      */
-    @WrapInTransaction
-    public String moveFolder (final String folderId, final String newFolder) throws Exception {
+    public String moveFolder (final String folderId, final String newFolderId) throws Exception {
 
     	final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
         final Locale requestLocale       = request.getLocale();
@@ -795,13 +795,13 @@ public class BrowserAjax {
             final User user = getUser(request);
             final boolean respectFrontendRoles = !this.userAPI.isLoggedToBackend(request);
 
-            if (!this.folderAPI.move(folderId, newFolder, user, respectFrontendRoles)) {
+            if (!this.folderAPI.move(folderId, newFolderId, user, respectFrontendRoles)) {
 
             	return errorString;
 			}
         } catch (Exception e) {
-
-        	Logger.error(this, e.getMessage(), e);
+        	Logger.error(this, "Error moving folder with id:" + folderId + " into folder with id:"
+					+ newFolderId + ". Error: " + e.getMessage(), e);
             return e.getLocalizedMessage();
         }
 

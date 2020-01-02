@@ -109,7 +109,7 @@ public class LargeMessageActionlet extends MessageActionlet {
                                                 final Map<String, WorkflowActionClassParameter> params,
                                                 final HttpServletRequest request, final HttpServletResponse response) {
 
-        final String velocityMessage         = this.evalVelocilyMessage(processor, message, request, response);
+        final String velocityMessage         = this.evalVelocityMessage(processor, message, request, response);
         final LargeMessageMap messageMap     = new LargeMessageMap();
         final String title                   = getParameterValue(params.get(PARAM_CONTENT_TITLE));
         final String width                   = getParameterValue(params.get(PARAM_CONTENT_WIDTH));
