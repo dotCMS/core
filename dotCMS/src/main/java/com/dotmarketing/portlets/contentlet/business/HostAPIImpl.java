@@ -39,6 +39,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang.StringUtils;
 
@@ -57,6 +58,9 @@ public class HostAPIImpl implements HostAPI {
     private ContentletFactory contentletFactory = FactoryLocator.getContentletFactory();
     private HostCache hostCache = CacheLocator.getHostCache();
     private Host systemHost;
+    public final static String FOUR_OH_FOUR_HOSTNAME="__fourOhFourHost__";
+    protected final static Host FOUR_OH_FOUR_HOST = new Host(new Contentlet(ImmutableMap.of(Host.HOST_NAME_KEY, FOUR_OH_FOUR_HOSTNAME,Contentlet.IDENTIFIER_KEY, FOUR_OH_FOUR_HOSTNAME)));
+    
     private final SystemEventsAPI systemEventsAPI;
     private static final String CONTENT_TYPE_CONDITION = "+contentType";
     private final DotConcurrentFactory concurrentFactory = DotConcurrentFactory.getInstance();
@@ -112,17 +116,10 @@ public class HostAPIImpl implements HostAPI {
         Host host = hostCache.getHostByAlias(serverName);
         User systemUser = APILocator.systemUser();
 
-        if(host == null){
-            try {
-                host = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles).get();
-            } catch (Exception e) {
-                return findDefaultHost(systemUser, respectFrontendRoles);
-            }
+        if(host == null || FOUR_OH_FOUR_HOSTNAME.equals(host.getHostname())){
             
-            //If no host matches then we set the default host.
-            if(host == null){
-                host = findDefaultHost(systemUser, respectFrontendRoles);
-            }
+            Optional<Host> optHost = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
+            host = optHost.orElse(findDefaultHost(systemUser, respectFrontendRoles));
             
             if(host != null){
                 hostCache.addHostAlias(serverName, host);
@@ -146,10 +143,14 @@ public class HostAPIImpl implements HostAPI {
             if(host == null){
                 host = findByAlias(serverName, systemUser, respectFrontendRoles);
             }
-
-            if(host != null){
-                hostCache.addHostAlias(serverName, host);
+            if(host == null){
+                host = FOUR_OH_FOUR_HOST;
             }
+            hostCache.addHostAlias(serverName, host);
+            
+        }
+        if(FOUR_OH_FOUR_HOSTNAME.equals(host.getHostname())) {
+            return Optional.empty();
         }
 
         if (host != null) {

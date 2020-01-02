@@ -66,6 +66,9 @@ public class HostCacheImpl extends HostCache {
 	protected Host get(String key) {
     	Host host = null;
     	try{
+    	    if(HostAPIImpl.FOUR_OH_FOUR_HOSTNAME.equals(key)) {
+    	        return null;//HostAPIImpl.FOUR_OH_FOUR_HOST;
+    	    }
     		host = (Host) cache.get(key,PRIMARY_GROUP);
     	}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
