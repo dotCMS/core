@@ -164,7 +164,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
         final ResponseEntityView responseEntityView3 = (ResponseEntityView) detailedIntegrationResponse.getEntity();
         final ServiceIntegrationDetailedView serviceIntegrationDetailedView = (ServiceIntegrationDetailedView) responseEntityView3.getEntity();
-        System.out.println(serviceIntegrationDetailedView.getHost());
+        Assert.assertEquals(serviceIntegrationDetailedView.getHost().getHostId(),host.getIdentifier());
     }
 
 }
