@@ -126,8 +126,8 @@ public class ConfigUtils {
      */
     public static String getAbsoluteAssetsRootPath() {
         String realPath = Config.getStringProperty("ASSET_REAL_PATH", null);
-        if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator)) {
-            realPath = realPath + java.io.File.separator;
+        if (UtilMethods.isSet(realPath) && !realPath.endsWith(File.separator)) {
+            realPath = realPath + File.separator;
         }
         if (!UtilMethods.isSet(realPath)) {
             return FileUtil.getRealPath(getRelativeAssetsRootPath());
