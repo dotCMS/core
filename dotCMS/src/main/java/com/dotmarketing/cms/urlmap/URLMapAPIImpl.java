@@ -286,6 +286,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             query.append(this.getHostFilter(context.getHost()));
         }
 
+        query.append(" ");
         query.append(this.buildFields(structure, matches))
              .append(" +languageId:").append(context.getLanguageId());
 
