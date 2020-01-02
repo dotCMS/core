@@ -38,6 +38,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -596,7 +597,10 @@ public class FileAssetAPIImpl implements FileAssetAPI {
      * @return the relative folder of where assets are stored
 	 */
 	public String getRelativeAssetsRootPath() {
-        return ConfigUtils.getRelativeAssetsRootPath();
+        String path = "";
+        path = Try.of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
+                .getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
+        return path;
     }
 
     /**

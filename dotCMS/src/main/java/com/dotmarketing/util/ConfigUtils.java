@@ -130,21 +130,12 @@ public class ConfigUtils {
             realPath = realPath + File.separator;
         }
         if (!UtilMethods.isSet(realPath)) {
-            return FileUtil.getRealPath(getRelativeAssetsRootPath());
+            final String path = Try
+                    .of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
+                    .getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
+            return FileUtil.getRealPath(path);
         } else {
             return realPath;
         }
-    }
-
-    /**
-     * This method returns the relative path for assets
-     *
-     * @return the relative folder of where assets are stored
-     */
-    public static String getRelativeAssetsRootPath() {
-        String path = "";
-        path = Try.of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
-                .getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
-        return path;
     }
 }
