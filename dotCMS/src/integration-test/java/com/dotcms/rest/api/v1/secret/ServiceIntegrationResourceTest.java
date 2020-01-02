@@ -11,6 +11,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.secret.view.HostView;
+import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationDetailedView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationHostView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationView;
 import com.dotcms.security.secret.Param;
@@ -29,6 +30,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -36,9 +38,9 @@ import java.util.Map.Entry;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -101,9 +103,13 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
     }
 
     private FormDataMultiPart createFormDataMultiPart(final String fileName, final InputStream inputStream) {
-        final BodyPart filePart1 = new StreamDataBodyPart(fileName, inputStream);
-        final FormDataMultiPart formDataMultiPart = new FormDataMultiPart();
-        formDataMultiPart.bodyPart(filePart1);
+        final FormDataBodyPart filePart1 = mock(FormDataBodyPart.class);
+        when(filePart1.getEntityAs(any(Class.class))).thenReturn(inputStream);
+        final ContentDisposition contentDisposition = mock(ContentDisposition.class);
+        when(contentDisposition.getFileName()).thenReturn(fileName);
+        when(filePart1.getContentDisposition()).thenReturn(contentDisposition);
+        final FormDataMultiPart formDataMultiPart = mock(FormDataMultiPart.class);
+        when(formDataMultiPart.getFields("file")).thenReturn(Collections.singletonList(filePart1));
         return formDataMultiPart;
     }
 
@@ -120,8 +126,8 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final String serviceKey = String.format("lol_%d",System.currentTimeMillis());
         final String fileName = String.format("%s.yml",serviceKey);
         final InputStream inputStream = createServiceDescriptorFile(fileName, serviceKey, "lola",
-                "A bunch of string params to demos the mechanism.", paramMap);
-        final Response serviceIntegrationResponse = serviceIntegrationResource.saveCreateServiceIntegration(request, response, serviceKey, createFormDataMultiPart(fileName, inputStream));
+                "A bunch of string params to demo the mechanism.", paramMap);
+        final Response serviceIntegrationResponse = serviceIntegrationResource.createServiceIntegration(request, response, createFormDataMultiPart(fileName, inputStream));
         Assert.assertNotNull(serviceIntegrationResponse);
         Assert.assertEquals(HttpStatus.SC_OK, serviceIntegrationResponse.getStatus());
         final Response availableServicesResponse = serviceIntegrationResource.listAvailableServices(request, response);
@@ -134,14 +140,14 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
 
         final SecretForm secretForm = new SecretForm();
         secretForm.setServiceKey(serviceKey);
-        secretForm.setSiteId(host.getIdentifier());
+        secretForm.setHostId(host.getIdentifier());
         secretForm.setParams(paramMap);
         final Response createSecretResponse = serviceIntegrationResource.createSecret(request, response, secretForm);
         Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
 
-        final Response hostIntegrations = serviceIntegrationResource.getServiceIntegrationByKey(request, response, serviceKey, null);
-        Assert.assertEquals(HttpStatus.SC_OK, hostIntegrations.getStatus());
-        final ResponseEntityView responseEntityView2 = (ResponseEntityView) hostIntegrations.getEntity();
+        final Response hostIntegrationsResponse = serviceIntegrationResource.getServiceIntegrationByKey(request, response, serviceKey);
+        Assert.assertEquals(HttpStatus.SC_OK, hostIntegrationsResponse.getStatus());
+        final ResponseEntityView responseEntityView2 = (ResponseEntityView) hostIntegrationsResponse.getEntity();
         final ServiceIntegrationHostView serviceIntegrationHostView2 = (ServiceIntegrationHostView) responseEntityView2.getEntity();
         final ServiceIntegrationView serviceIntegrationView2 = serviceIntegrationHostView2.getService();
         Assert.assertEquals(1, serviceIntegrationView2.getConfigurationsCount());
@@ -153,6 +159,12 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         Assert.assertTrue(
                 hosts.stream().anyMatch(hostView -> host.getIdentifier().equals(hostView.getHostId()))
                 );
+
+        final Response detailedIntegrationResponse = serviceIntegrationResource.getDetailedServiceIntegration(request, response, serviceKey, host.getIdentifier());
+        Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
+        final ResponseEntityView responseEntityView3 = (ResponseEntityView) detailedIntegrationResponse.getEntity();
+        final ServiceIntegrationDetailedView serviceIntegrationDetailedView = (ServiceIntegrationDetailedView) responseEntityView3.getEntity();
+        System.out.println(serviceIntegrationDetailedView.getHost());
     }
 
 }

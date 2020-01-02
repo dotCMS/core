@@ -20,8 +20,8 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -129,9 +129,15 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                 .collect(Collectors.groupingBy(strings -> strings[0],
                         Collectors.mapping(strings -> strings[1], Collectors.toList())));
     }
+    @Override
+    public Optional<ServiceSecrets> getSecretsForService(final String serviceKey,
+            final Host host, final User user) throws DotDataException, DotSecurityException {
+            return getSecretsForService(serviceKey, false, host, user);
+    }
 
     @Override
     public Optional<ServiceSecrets> getSecretsForService(final String serviceKey,
+            final boolean fallbackOnSystemHost,
             final Host host, final User user) throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
@@ -146,10 +152,12 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
             return Optional.of(readJson(optionalChars.get()));
         } else {
             //fallback
-            optionalChars = secretsStore
-                    .getValue(internalKey(serviceKey, APILocator.systemHost()));
-            if (optionalChars.isPresent()) {
-                return Optional.of(readJson(optionalChars.get()));
+            if (fallbackOnSystemHost) {
+                optionalChars = secretsStore
+                        .getValue(internalKey(serviceKey, APILocator.systemHost()));
+                if (optionalChars.isPresent()) {
+                    return Optional.of(readJson(optionalChars.get()));
+                }
             }
         }
         return Optional.empty();
@@ -216,6 +224,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         } else {
             final String internalKey = internalKey(secrets.getServiceKey(), host);
             secretsStore.saveValue(internalKey, toJsonString(secrets).toCharArray());
+            invalidateCache();
         }
     }
 
@@ -228,6 +237,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                     serviceKey, host.getIdentifier(), user.getUserId()));
         } else {
             secretsStore.deleteValue(internalKey(serviceKey, host));
+            invalidateCache();
         }
     }
 
@@ -291,18 +301,12 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @Override
-    public void createServiceDescriptor(final String serviceKey, final FileInputStream inputStream,
+    public void createServiceDescriptor(final InputStream inputStream,
             final User user) throws IOException, DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid attempt to create a service descriptors performed by user with id `%s`.",
                     user.getUserId()));
-        }
-
-        if (getServiceDescriptorMap(user).containsKey(serviceKey)) {
-            throw new DotDataException(
-                    String.format("There's a service already registered under key '%s'.",
-                            serviceKey));
         }
 
         final String ymlFilesPath = getServiceDescriptorDirectory();
@@ -312,19 +316,34 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         }
         Logger.debug(ServiceIntegrationAPIImpl.class,
                 () -> " ymlFiles are set under:  " + ymlFilesPath);
+
+        // Now validate the incoming file.. see if we're rewriting an existing file or attempting to re-use an already in use service-key.
         final ServiceDescriptor serviceDescriptor = ymlMapper
                 .readValue(inputStream, ServiceDescriptor.class);
-        ymlMapper.writeValue(new File(basePath, String.format("%s.yml", serviceKey)),
-                serviceDescriptor);
 
+        if (validateServiceDescriptor(serviceDescriptor, user)) {
+
+            final String serviceKey = serviceDescriptor.getServiceKey();
+            final File incomingFile = new File(basePath, String.format("%s.yml", serviceKey));
+            if (incomingFile.exists()) {
+                throw new DotDataException(
+                        String.format("Invalid attempt to override an existing file named '%s'.",
+                                incomingFile.getName()));
+            }
+
+            ymlMapper.writeValue(incomingFile, serviceDescriptor);
+
+            invalidateCache();
+        }
+    }
+
+    private void invalidateCache(){
         CacheLocator
                 .getCacheAdministrator()
                 .remove(DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
         CacheLocator.getCacheAdministrator()
                 .remove(DESCRIPTORS_MAPPED_BY_SERVICE_KEY, DESCRIPTORS_CACHE_GROUP);
-
     }
-
 
     private static String getServiceDescriptorDirectory() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
@@ -385,12 +404,44 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         return builder.build();
     }
 
+   private boolean validateServiceDescriptor(final ServiceDescriptor serviceDescriptor, final User user)
+           throws DotDataException, DotSecurityException {
+       if(UtilMethods.isNotSet(serviceDescriptor.getServiceKey())){
+          throw new DotDataException("The required field `serviceKey` isn't set on the incoming file.");
+       }
+
+       if (getServiceDescriptorMap(user).containsKey(serviceDescriptor.getServiceKey())) {
+           throw new DotDataException(
+                   String.format("There's a service already registered under key `%s`.",
+                           serviceDescriptor.getServiceKey()));
+       }
+
+       if(UtilMethods.isNotSet(serviceDescriptor.getName())){
+           throw new DotDataException("The required field `name` isn't set on the incoming file.");
+       }
+
+       if(UtilMethods.isNotSet(serviceDescriptor.getDescription())){
+           throw new DotDataException("The required field `description` isn't set on the incoming file.");
+       }
+
+       if(UtilMethods.isNotSet(serviceDescriptor.getIconUrl())){
+           throw new DotDataException("The required field `iconUrl` isn't set on the incoming file.");
+       }
+
+       if(!UtilMethods.isSet(serviceDescriptor.getParams())){
+           throw new DotDataException("The required field `params` isn't set on the incoming file.");
+       }
+
+       return true;
+
+   }
+
     private ServiceDescriptor emptyDescriptor() {
         final ServiceDescriptor serviceDescriptor = new ServiceDescriptor("sampleDescriptor",
                 "Sample Descriptor.",
                 "This is an empty descriptor created by the system to show you the expected structure.",
                 "/black_18dp.png");
-        serviceDescriptor.addParam("stringParam", "lol", false, Type.STRING, "This is string param",
+        serviceDescriptor.addParam("stringParam", "This is a string.", false, Type.STRING, "This is string param",
                 "Test string.");
         serviceDescriptor.addParam("boolParam", "true", false, Type.BOOL, "This is a Bool Param",
                 "Test Bool.");

@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.secret;
 
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.secret.view.HostView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationDetailedView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationHostView;
@@ -21,6 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
@@ -29,7 +30,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 class ServiceIntegrationHelper {
@@ -48,6 +48,13 @@ class ServiceIntegrationHelper {
         this(APILocator.getServiceIntegrationAPI(), APILocator.getHostAPI());
     }
 
+    /**
+     * This will give you the whole list of service descriptors.
+     * @param user Logged in user
+     * @return a list of views.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     List<ServiceIntegrationView> getAvailableDescriptorViews(final User user)
             throws DotSecurityException, DotDataException {
         final ImmutableList.Builder<ServiceIntegrationView> viewsBuilder = new ImmutableList.Builder<>();
@@ -62,6 +69,14 @@ class ServiceIntegrationHelper {
         return viewsBuilder.build();
     }
 
+    /**
+     * This gets you a view composed of the service-key and all the hosts that have configurations
+     * @param serviceKey unique service id for the given host.
+     * @param user Logged in user
+     * @return view
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     Optional<ServiceIntegrationHostView> getServiceIntegrationHostView(final String serviceKey,
             final User user)
             throws DotSecurityException, DotDataException {
@@ -87,6 +102,15 @@ class ServiceIntegrationHelper {
         return Optional.empty();
     }
 
+    /**
+     * This gives you a detailed view with all the configuration secrets for a given service-key host pair.
+     * @param serviceKey unique service id for the given host.
+     * @param hostId Host Id
+     * @param user Logged in user
+     * @return view
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     Optional<ServiceIntegrationDetailedView> getServiceIntegrationHostDetailedView(
             final String serviceKey, final String hostId,
             final User user)
@@ -111,10 +135,42 @@ class ServiceIntegrationHelper {
         return Optional.empty();
     }
 
+    /**
+     * This will remove all the secrets under a service-integration for a given host.
+     * @param serviceKey unique service id for the given host.
+     * @param hostId Host Id
+     * @param user Logged in user
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    void deleteServiceIntegrationSecrets(
+            final String serviceKey, final String hostId,
+            final User user)
+            throws DotSecurityException, DotDataException {
+        final Optional<ServiceDescriptor> serviceDescriptorOptional = serviceIntegrationAPI.getServiceDescriptor(serviceKey, user);
+        if (serviceDescriptorOptional.isPresent()) {
+            final Host host = hostAPI.find(hostId, user, false);
+            if(null == host) {
+                throw new DotDataException(String.format(" Couldn't find any host with identifier `%s` ",hostId));
+            }
+            serviceIntegrationAPI.deleteSecrets(serviceKey, host, user);
+        }
+        throw new DotDataException(String.format(" Couldn't find a descriptor under key `%s` for host `%s` ",serviceKey, hostId));
+    }
+
+    /**
+     * This will tell you all the different integrations for a given serviceKey.
+     * If the service key is used in a given host the host will come back in the resulting list.
+     * Otherwise it means no configurations exist for the given host.
+     * @param serviceKey unique service id for the given host.
+     * @param hosts a list of host
+     * @param user Logged in user
+     * @return a list where the service-key is present (a Configuration exist for the given host)
+     */
     private List<Host> computeHostsWithConfigurations(final String serviceKey, final List<Host> hosts, final User user){
         return hosts.stream().filter(host -> {
             try {
-                return serviceIntegrationAPI.getSecretsForService(serviceKey, host, user)
+                return serviceIntegrationAPI.getSecretsForService(serviceKey, false, host, user)
                         .isPresent();
             } catch (DotDataException | DotSecurityException e) {
                 Logger.error(ServiceIntegrationHelper.class,
@@ -124,6 +180,13 @@ class ServiceIntegrationHelper {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * Save/Create a secret for the given info on the from
+     * @param form Secret specific-form
+     * @param user Logged in user.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     void saveUpdateSecret(final SecretForm form, final User user)
             throws DotSecurityException, DotDataException {
 
@@ -131,7 +194,7 @@ class ServiceIntegrationHelper {
         if (!UtilMethods.isSet(serviceKey)) {
             throw new DotDataException("Required param serviceKey isn't set.");
         }
-        final String hostId = form.getSiteId();
+        final String hostId = form.getHostId();
         if (!UtilMethods.isSet(hostId)) {
             throw new DotDataException("Required Param siteId isn't set.");
         }
@@ -175,11 +238,17 @@ class ServiceIntegrationHelper {
         }
     }
 
+    /**
+     * Validate the incoming params match the params described by a serviceDescriptor yml.
+     * @param paramNames a set of paramNames
+     * @param serviceDescriptor the service template
+     * @throws DotDataException This will give bac an exception if you send an invalid param.
+     */
     private void validateIncomingParamNames(final Set<String> paramNames, final ServiceDescriptor serviceDescriptor)
             throws DotDataException {
         final Map<String, Param> serviceDescriptorParams = serviceDescriptor.getParams();
         if(serviceDescriptorParams.containsKey("*")){
-            //If an aster has been specified we can have whatever param name we want added.
+            //If a star has been specified we can have whatever param name we want added.
            return;
         }
         for (final String paramName : paramNames) {
@@ -189,14 +258,24 @@ class ServiceIntegrationHelper {
         }
     }
 
-    void createServiceIntegration(String serviceKey, final FormDataMultiPart multipart,
-            final User user)
-            throws IOException, DotSecurityException, DotDataException, JSONException {
 
-        for (final BodyPart bodyPart : multipart.getBodyParts()) {
-            final FileInputStream fileInputStream = (FileInputStream)bodyPart.getEntity();
-            serviceIntegrationAPI.createServiceDescriptor(serviceKey, fileInputStream, user);
-            break;
+    /**
+     * This is used to manipulate a FormDataMultiPart and extract all the files it might contain
+     * Internally the file os analyzed and then processed to create new file integrations
+     * @param multipart The multi-part form
+     * @param user Logged in dude.
+     * @throws IOException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    void createServiceIntegration(final FormDataMultiPart multipart, final User user)
+            throws IOException, DotSecurityException, DotDataException {
+        final List<File> files = new MultiPartUtils().getBinariesFromMultipart(multipart);
+        if(!UtilMethods.isSet(files)){
+            throw new DotDataException("Unable to extract any files from multi-part request.");
+        }
+        for (final File file : files) {
+            serviceIntegrationAPI.createServiceDescriptor(new FileInputStream(file), user);
         }
     }
 

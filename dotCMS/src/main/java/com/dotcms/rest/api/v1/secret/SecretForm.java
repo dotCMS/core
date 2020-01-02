@@ -10,7 +10,8 @@ public class SecretForm extends Validated {
     @NotNull
     private String serviceKey;
 
-    private String siteId;
+    @NotNull
+    private String hostId;
 
     @NotNull
     private Map<String, Param> params;
@@ -23,12 +24,12 @@ public class SecretForm extends Validated {
         this.serviceKey = serviceKey;
     }
 
-    public String getSiteId() {
-        return siteId;
+    public String getHostId() {
+        return hostId;
     }
 
-    public void setSiteId(String siteId) {
-        this.siteId = siteId;
+    public void setHostId(String hostId) {
+        this.hostId = hostId;
     }
 
     public Map<String, Param> getParams() {

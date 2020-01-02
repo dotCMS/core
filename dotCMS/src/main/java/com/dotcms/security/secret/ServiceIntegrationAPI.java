@@ -7,8 +7,8 @@ import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,13 +30,30 @@ public interface ServiceIntegrationAPI {
     Map<String, List<String>> serviceKeysByHost();
 
     /**
-     * This returns json object read from the secret store that contains the service integration configuration and secret
-     * @param serviceKey
-     * @param host
+     * This returns a json object read from the secret store that contains the service integration configuration and secret.
+     * @param serviceKey the unique service identifier
+     * @param host the host for the respective service key
+     * @param user logged in user
      * @return
      */
      Optional<ServiceSecrets> getSecretsForService(String serviceKey,
              Host host, User user) throws DotDataException, DotSecurityException;
+
+    /**
+     * This returns a json object read from the secret store that contains the service integration configuration and secret
+     * This method allows an additional hit against systemHost in case the secret isn't found under the given host
+     * The key is a combination of service + host.
+     * @param serviceKey the unique service identifier
+     * @param fallbackOnSystemHost this param allows  an additional try against system host
+     * @param host the host for the respective service key
+     * @param user logged in user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    Optional<ServiceSecrets> getSecretsForService(String serviceKey,
+            boolean fallbackOnSystemHost,
+            Host host, User user) throws DotDataException, DotSecurityException;
 
     /**
      * Lookup for an individual secret/property then updates the single entry.
@@ -93,7 +110,7 @@ public interface ServiceIntegrationAPI {
     Optional<ServiceDescriptor> getServiceDescriptor(final String serviceKey, final User user)
             throws DotDataException, DotSecurityException;
 
-    void createServiceDescriptor(final String serviceKey, final FileInputStream inputStream,
+    void createServiceDescriptor(final InputStream inputStream,
             User user) throws IOException, DotDataException, DotSecurityException;
 
     enum INSTANCE {
