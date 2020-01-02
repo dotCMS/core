@@ -2,8 +2,8 @@ package com.dotmarketing.util;
 
 import com.dotmarketing.business.APILocator;
 import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
 import java.io.File;
-import java.util.UUID;
 
 /**
  * Generic class to get return configuration parameters, and any logic required
@@ -20,6 +20,8 @@ public class ConfigUtils {
      * This property determine if the app is running on dev mode.
      */
     public static final String DEV_MODE_KEY = "dotcms.dev.mode";
+
+    private final static String DEFAULT_RELATIVE_ASSET_PATH = "/assets";
 
 	/**
 	 * Returns true if app is running on dev mode.
@@ -117,4 +119,32 @@ public class ConfigUtils {
 	}
 
 
+    /**
+     * This method returns the absolute root path for assets
+     *
+     * @return the root folder of where assets are stored
+     */
+    public static String getAbsoluteAssetsRootPath() {
+        String realPath = Config.getStringProperty("ASSET_REAL_PATH", null);
+        if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator)) {
+            realPath = realPath + java.io.File.separator;
+        }
+        if (!UtilMethods.isSet(realPath)) {
+            return FileUtil.getRealPath(getRelativeAssetsRootPath());
+        } else {
+            return realPath;
+        }
+    }
+
+    /**
+     * This method returns the relative path for assets
+     *
+     * @return the relative folder of where assets are stored
+     */
+    public static String getRelativeAssetsRootPath() {
+        String path = "";
+        path = Try.of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
+                .getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
+        return path;
+    }
 }

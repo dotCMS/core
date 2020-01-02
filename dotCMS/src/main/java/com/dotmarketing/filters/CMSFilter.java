@@ -28,7 +28,7 @@ public class CMSFilter implements Filter {
     private final HttpServletResponseThreadLocal responseThreadLocal = HttpServletResponseThreadLocal.INSTANCE;
     private CMSUrlUtil urlUtil = CMSUrlUtil.getInstance();
     private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
-    private final String RELATIVE_ASSET_PATH = APILocator.getFileAssetAPI().getRelativeAssetsRootPath();
+    private final String RELATIVE_ASSET_PATH = ConfigUtils.getRelativeAssetsRootPath();
     public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index");
 
     public enum IAm {
