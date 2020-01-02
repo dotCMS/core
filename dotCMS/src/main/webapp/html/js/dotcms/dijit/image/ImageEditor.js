@@ -34,7 +34,8 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
     compression:'none',
     compressionValue:65,
     fileSize:0,
-    
+    focalPoint:"0.0,0.0",
+
 
 
 
@@ -272,14 +273,159 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
                 ctx.iframe.dojo.byId("displayImageHeight").value = sic.h;
                 ctx.baseAndShowLoaded();
             };
+            
+            showImage.onclick= function (e){
+                this.modFocalPointEvent(e);
+            }.bind(this);
+            
+            var isScrolling;
+            viewPort.onscroll= function(){
+                this.modFocalPointStr(this.focalPoint)
+                
+            
+            
+            }.bind(this);
+            
         }
         dojo.attr(this.iframe.dojo.byId("imageViewPort"), "class", "");
         console.log("imageViewPort.class:" + dojo.attr(this.iframe.dojo.byId("imageViewPort"), "class"));
         console.log("imageViewPort.display:" + dojo.style(this.iframe.dojo.byId("imageViewPort"), "display"));
     },
+    
+    modFocalPointEvent: function(e){
+        console.log("modFocalPointEvent:", e);
+        let coord = dojo.coords(this.iframe.dojo.byId("me"));
+        
+        let x = e.offsetX / coord.w;
+        let y = e.offsetY/ coord.h;
+        this.modFocalPoint(x,y)
+
+    },
+    
+    
+    
+    modFocalPointStr: function(xy){
+        console.log("modFocalPointStr:" + xy)
+
+        let fp = xy.split(",");
+        x=parseFloat(fp[0]);
+        y=parseFloat(fp[1]);
+        this.modFocalPoint(x,y);
+    
+    },
+    
+    modFocalPoint: function(x,y){
+        console.log("modFocalPoint:" + x + "," + y);
+        if(!Number(x) && x!=0){
+            console.log("modFocalPoint: X is not a number", x);
+            return;
+        }
+        if(!Number(y) && y!=0){
+            console.log("modFocalPoint: Y is not a number", y);
+            return;
+        }
+        
 
 
-    baseAndShowLoaded : function(){
+        if(x<0 || x>1 || y<0 || y>1){
+            console.log("modFocalPoint: X need to be a float", x);
+            console.log("modFocalPoint: Y need to be a float", y);
+            return ;
+        }
+        
+        let newFocalPoint = x + "," + y;
+        console.log("modFocalPoint old:" + this.focalPoint);
+        console.log("modFocalPoint new:" + newFocalPoint);
+        
+        if(this.focalPoint != newFocalPoint){
+            this.focalPoint = newFocalPoint
+            let img = new Image();
+            img.src=this.baseFilterUrl + "/filter/FocalPoint/fp/" + x + "," + y + "/?overwrite=" +  _rand();
+            console.log("img", img)
+        }
+
+        let ifrm =  window.frames['imageToolIframe']
+        if(ifrm==undefined){
+            return;
+        }
+        let coord = dojo.coords(ifrm.contentDocument.getElementById("me"));
+        ifrm.contentDocument.getElementById("focalPointValueSpan").innerHTML=this.round(x,3) + " , " + this.round(y,3);
+        this._drawFocalPoint(x*coord.w,y*coord.h)
+    },
+    round : function(value, decimals){
+        return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+    },
+    
+    isFloat:function(n){
+        return n !=undefined && Number(n) === n && n % 1 !== 0;
+    },
+    
+    _drawFocalPoint: function(x,y){
+
+        if(x==0 && y==0){
+            this._removeFocalPoint;
+            return;
+        }
+        
+        
+        
+        let ifrm =  window.frames['imageToolIframe']
+        console.log("_drawFocalPoint:" + x + "," + y)
+        let coord = dojo.coords(ifrm.contentDocument.getElementById("me"));
+        console.log("_drawFocalPoint:coord:",coord)
+
+        let newDiv = ifrm.contentDocument.getElementById("focalPointDot");
+        if(newDiv != undefined){
+            newDiv.style.top = (y-7) + coord.y  + 'px';
+            newDiv.style.left = (x-7) + coord.x + 'px';
+            return;
+        } 
+
+        
+        
+        newDiv = document.createElement("div");
+
+        newDiv.id="focalPointDot";
+        newDiv.style.position='fixed';
+        newDiv.style.border = "2px red solid";
+        newDiv.style.background="rgba(255,255,255,0.2)";
+        newDiv.style.margin = "0px";
+        newDiv.style.padding = "0px";
+        newDiv.style.borderRadius="50%";
+        newDiv.style.top = (y-7) + coord.y  + 'px';
+        newDiv.style.left = (x-7) + coord.x + 'px';
+        newDiv.style.width = "10px";
+        newDiv.style.height = "10px";
+        newDiv.style.color = "red";
+        newDiv.style.zIndex = "654321";
+
+        newDiv.onclick=this._removeFocalPoint;
+        
+
+
+        ifrm.contentDocument.getElementsByTagName("body")[0].appendChild(newDiv);
+        
+    },
+    
+    _removeFocalPoint: function(){
+        console.log("_removeFocalPoint:")
+        let img = new Image();
+        img.src=this.baseFilterUrl + "/filter/FocalPoint/fp/." + 0 + ",." + 0 + "/overwrite/" +  _rand();
+        let ifrm =  window.frames['imageToolIframe']
+        ifrm.contentDocument.getElementById("focalPointValueSpan").innerHTML="0 , 0";
+        let newDiv = ifrm.contentDocument.getElementById("focalPointDot");
+        if(newDiv != undefined){
+            newDiv.parentNode.removeChild(newDiv);
+        } 
+        
+        
+    },
+    
+    
+    
+
+
+    baseAndShowLoaded: function(){
         console.log("baseAndShowLoaded")
         var showImage = this.iframe.dojo.byId("me");
         var baseImage = this.iframe.dojo.byId("baseImage");
@@ -303,6 +449,10 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             x.attr("value", this.zoomValue);
             this._updateZoomFactor();
             console.log("showScaleSlider:" + x.getValue());
+            
+            this.modFocalPointStr(this.focalPoint);
+            
+            
         }
 
     },
@@ -553,6 +703,8 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         dojo.attr(this.iframe.dojo.byId("cropWidth"),"value", Math.floor(width * (ch/height) ));
     },
 
+    
+    
 
 
 
@@ -1096,6 +1248,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     _redrawImage: function (useUrl){
         console.log("_redrawImage")
+        
         var x = 0;
         while(window.top._dotImageEditor.painting){
 
@@ -1130,7 +1283,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             args+= this.filters[i][1];
         }
 
-        var img = new Image();
+        let img = new Image();
         // set our onload before loading...
         img.onload = function(){
             var ctx = window.top._dotImageEditor ;
@@ -1181,17 +1334,13 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         this.currentUrl = url;
         this.iframe.dijit.byId("viewingUrl").set("value", (url.includes("://") ? url : location.protocol +"//"+  location.host + url), false);
         this.iframe.dojo.byId("showLink").href =  url.includes("://") ? url : location.protocol +"//"+  location.host + url;
+        
+        
         return;
             
 
-        img.src = url +"?test=" + new Date().getTime()
-        this.currentUrl = url;
-        this.iframe.dijit.byId("viewingUrl").set("value",  url, false);
-        this.iframe.dojo.byId("showLink").href =  url;
-
 
     },
-
 
 
 

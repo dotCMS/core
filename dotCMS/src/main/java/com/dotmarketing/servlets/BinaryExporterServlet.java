@@ -51,6 +51,8 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.focalpoint.FocalPoint;
+import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -170,7 +172,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		String exporterPath = uriPieces[1];
 		String uuid = uriPieces[2];
 
-		Map<String, String[]> params = new HashMap<>();
+		Map<String, String[]> params = new LinkedHashMap<>();
 		params.putAll(req.getParameterMap());
 		// only set uri params if they are not set in the query string - meaning
 		// the query string will override the uri params.
@@ -180,7 +182,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				params.put(x, uriParams.get(x));
 			}
 		}
-		params = sortByKey(params);
+
 		boolean byInode = params.containsKey("byInode");
 
 		ServletOutputStream out = null;
@@ -325,7 +327,7 @@ public class BinaryExporterServlet extends HttpServlet {
                 // If the user is NOT logged in the backend then we cannot show content that is NOT live.
                 // Temporal files should be allowed any time
                 if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
-                    if (!APILocator.getVersionableAPI().hasLiveVersion(content) && mode.respectAnonPerms) {
+                    if (content==null || !APILocator.getVersionableAPI().hasLiveVersion(content) && mode.respectAnonPerms) {
 						Logger.debug(this, "Content '" + fieldVarName + "' with inode: " + content.getInode() + " is not published");
 						resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                         return;
@@ -401,6 +403,10 @@ public class BinaryExporterServlet extends HttpServlet {
       // this creates a temp resource using the altered file
       if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null && user!=null && !user.equals(APILocator.getUserAPI().getAnonymousUser())) {
         final DotTempFile temp = APILocator.getTempFileAPI().createEmptyTempFile(inputFile.getName(), req);
+        Optional<FocalPoint> fp = new FocalPointAPIImpl().readFocalPoint(uuid, fieldVarName);
+        if(fp.isPresent()) {
+            new FocalPointAPIImpl().writeFocalPoint(temp.id, fieldVarName, fp.get());
+        }
         FileUtil.copyFile(data.getDataFile(), temp.file);
         resp.getWriter().println(DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(temp));
         resp.getWriter().close();
@@ -610,66 +616,42 @@ public class BinaryExporterServlet extends HttpServlet {
 	            }
 	            
 			}
-            
-		} catch (DotRuntimeException e) {
-			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-            if(!resp.isCommitted()){
-              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            }
-		} catch (PortalException e) {
-			Logger.error(BinaryExporterServlet.class, "[PortalException] An error occurred when accessing '" + uri + "': " + e.getMessage());
-			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-            if(!resp.isCommitted()){
-              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            }
-		} catch (SystemException e) {
-			Logger.error(BinaryExporterServlet.class, "[SystemException] An error occurred when accessing '" + uri + "': " + e.getMessage());
-			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-            if(!resp.isCommitted()){
-              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            }
-		} catch (DotDataException e) {
-			Logger.error(BinaryExporterServlet.class, "[DotDataException] An error occurred when accessing '" + uri + "': " + e.getMessage());
-			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-	         if(!resp.isCommitted()){
-	           resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-	         }
-		} catch (DotSecurityException e) {
-			try {
-			  if(req.getSession()!=null){
-				if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
-				    req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN);
-					resp.sendError(HttpServletResponse.SC_FORBIDDEN);
-				}else{
-				    req.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, req.getAttribute("javax.servlet.forward.request_uri"));
-					resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-				}
-			  }
-			} catch (Exception e1) {
-				Logger.error(BinaryExporterServlet.class, "An error occurred when accessing '" + uri + "': " + e1.getMessage(), e1);
-	            if(!resp.isCommitted()){
-	              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-	            }
-			}
-		} catch (BinaryContentExporterException e) {
-			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-			Logger.error(BinaryExporterServlet.class, "[BinaryContentExporterException] An error occurred when accessing '" + uri + "': " + e.getMessage());
-			if(!resp.isCommitted()){
-			  resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-			}
-		}catch (Exception e) {
-			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
-			Logger.error(BinaryExporterServlet.class, "[Exception] An error occurred when accessing '" + uri + "': " + e.getMessage());
-            if(!resp.isCommitted()){
-              resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-            }
-		}
-		// close our resources no matter what
-		finally{
-			
-		  CloseUtils.closeQuietly(input, is, out);
 
-		}
+        } catch (DotSecurityException e) {
+            try {
+                if (req.getSession() != null) {
+                    if (WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
+                        req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN);
+                        resp.sendError(HttpServletResponse.SC_FORBIDDEN);
+                    } else {
+                        req.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN,
+                                        req.getAttribute("javax.servlet.forward.request_uri"));
+                        resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    }
+                }
+            } catch (Exception e1) {
+                Logger.error(BinaryExporterServlet.class, "An error occurred when accessing '" + uri + "': " + e1.getMessage(),
+                                e1);
+                if (!resp.isCommitted()) {
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                }
+            }
+
+
+        } catch (Exception e) {
+            Logger.warn(BinaryExporterServlet.class, e.getMessage(), e);
+            Logger.warnAndDebug(BinaryExporterServlet.class,
+                            "[Exception] An error occurred when accessing '" + uri + "': " + e.getMessage(), e);
+            if (!resp.isCommitted()) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
+        }
+        // close our resources no matter what
+        finally {
+
+            CloseUtils.closeQuietly(input, is, out);
+
+        }
 		
 	}
 
@@ -682,28 +664,12 @@ public class BinaryExporterServlet extends HttpServlet {
 		return content;
 	}
 
-	@SuppressWarnings("unchecked")
-	private Map sortByKey(Map map) {
-		List list = new LinkedList(map.entrySet());
-		Collections.sort(list, new Comparator() {
-			public int compare(Object o1, Object o2) {
-				return ((Comparable) ((Map.Entry) (o1)).getKey()).compareTo(((Map.Entry) (o2)).getKey());
-			}
-		});
-		// logger.info(list);
-		Map result = new LinkedHashMap();
-		for (Iterator it = list.iterator(); it.hasNext();) {
-			Map.Entry entry = (Map.Entry) it.next();
-			result.put(entry.getKey(), entry.getValue());
-		}
-		return result;
-	}
 
 	private Map<String,String[]> getURIParams(HttpServletRequest request){
 		String url = request.getRequestURI().toString();
 		url = (url.startsWith("/")) ? url.substring(1, url.length()) : url;
 		String p[] = url.split("/");
-		Map<String, String[]> map = new HashMap<>();
+		Map<String, String[]> map = new LinkedHashMap<>();
 
 		String key =null;
 		for(String x : p){

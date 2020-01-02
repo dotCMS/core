@@ -42,8 +42,8 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 }
 
 .imageToolContainer{
-	display: flex;
-	padding-top: 60px;
+
+
 }
 
 .imageToolButtonBar {
@@ -52,11 +52,11 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
     left:0px;
     right:0px;
 	background:#eeeeee;
-    height:48px;
+    height:50px;
 	border-bottom:1px solid silver;
     margin:0px;
-	margin-width:0px 0px;
-	padding:10px 15px 2px 15px;
+    padding:0px;
+
 	vertical-align: middle;
 	z-index: 99999;
 
@@ -64,19 +64,30 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 
 
 #imageViewPort{
+    position: fixed;
+    top:51px;
+    left:0px;
+    right:320px;
 	overflow: auto;
+	bottom:0px;
+
 	margin: 0px;
 	padding: 0px;
-	border:0px;
+
 	background:#f3f3f3;
 }
 
 #toolBar{
+    position: fixed;
+    top:48px;
+    right:0px;
+    width:300px;
+    bottom:0px;
 	background:#fff;
-	margin-left: auto;
-	min-width:300px;
 	padding:20px 10px;
 	border-left:1px solid silver;
+	z-index:765432
+
 }
 
 #exif { clear:both; height:2em; }

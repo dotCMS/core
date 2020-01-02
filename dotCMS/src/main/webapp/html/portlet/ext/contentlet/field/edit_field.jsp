@@ -1,4 +1,7 @@
 
+<%@page import="com.dotmarketing.image.focalpoint.FocalPoint"%>
+<%@page import="java.util.Optional"%>
+<%@page import="com.dotmarketing.image.focalpoint.FocalPointAPIImpl"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -36,42 +39,53 @@
     String hint = UtilMethods.isSet(field.getHint()) ? field.getHint() : null;
     boolean isReadOnly = field.isReadOnly();
     String defaultValue = field.getDefaultValue() != null ? field
-            .getDefaultValue().trim() : "";
+    .getDefaultValue().trim() : "";
     String fieldValues = field.getValues() == null ? "" : field
-            .getValues().trim();
+    .getValues().trim();
     Object inodeObj =(Object) request.getAttribute("inode");
     String inode = inodeObj != null ? inodeObj.toString() : "";
 
     String counter = (String) request.getAttribute("counter");
-
 %>
 <div class="fieldWrapper">
 
     <div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
-        <% if (hint != null) {%>
+        <%
+            if (hint != null) {
+        %>
         <a href="#" id="tip-<%=field.getVelocityVarName()%>"><span class="hintIcon"></span></a>
         <span dojoType="dijit.Tooltip" connectId="tip-<%=field.getVelocityVarName()%>" position="above" style="width:100px;">
 				<span class="contentHint"><%=hint%></span>
 			</span>
-        <%}%>
-
-        <% if(field.isRequired()) {%>
-        <span class="required2">
-		<%} else {%>
-			<span>
-		<% } %>
-		<%
-            if(!field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())&&
-                    !field.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString()) &&
-                    !field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString()) &&
-                    !field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString()) &&
-                    !field.getFieldType().equals(Field.FieldType.HIDDEN.toString()) &&
-                    ! "constant".equals(field.getFieldType())
-
-                    ) {
+        <%
+            }
         %>
+
+        <%
+            if(field.isRequired()) {
+        %>
+        <span class="required2">
+		<%
+		    } else {
+		%>
+			<span>
+		<%
+		    }
+		%>
+		<%
+		    if(!field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())&&
+				            !field.getFieldType().equals(Field.FieldType.PERMISSIONS_TAB.toString()) &&
+				            !field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString()) &&
+				            !field.getFieldType().equals(Field.FieldType.RELATIONSHIPS_TAB.toString()) &&
+				            !field.getFieldType().equals(Field.FieldType.HIDDEN.toString()) &&
+				            ! "constant".equals(field.getFieldType())
+
+				            ) {
+		%>
      		<%=field.getFieldName()%>:</span>
-		<% } %>
+		<%
+		    }
+		%>
     </div>
 
     <div class="fieldValue field__<%=field.getFieldType()%>" id="<%=field.getVelocityVarName()%>_field">
@@ -91,14 +105,14 @@
         %>
         <%---  Renders the field it self --%>
         <input type="text" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
-                <%=(isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'\\\\d*\\.?\\\\d*', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'" %>
-               value="<%= UtilMethods.htmlifyString(textValue) %>" <%= isReadOnly?"readonly=\"readonly\"":"" %> />
+                <%=(isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'\\\\d*\\.?\\\\d*', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'"%>
+               value="<%=UtilMethods.htmlifyString(textValue)%>" <%=isReadOnly?"readonly=\"readonly\"":""%> />
         <%
-        }
-        //END of TEXT field
+            }
+                //END of TEXT field
 
-        //TEXTAREA kind of field rendering
-        else if (field.getFieldType().equals(
+                //TEXTAREA kind of field rendering
+                else if (field.getFieldType().equals(
                 Field.FieldType.TEXT_AREA.toString())) {
             String textValue = UtilMethods.isSet(value) ? (String) value : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
             String keyValue = com.dotmarketing.util.WebKeys.VELOCITY;
@@ -144,47 +158,53 @@
         %>
         <script type="text/javascript">
             dojo.addOnLoad(function () {
-                <%if(toggleOn){ %>
+                <%if(toggleOn){%>
                 aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');
-                <%} %>
+                <%}%>
             });
         </script>
         <div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
-        <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;min-height:100px;max-height: 600px\""%>
+        <textarea <%=isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":""%> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;min-height:100px;max-height: 600px\""%>
                                                                                                    name="<%=field.getFieldContentlet()%>"
-                                                                                                   id="<%=field.getVelocityVarName()%>" class="editTextAreaField" onchange="emmitFieldDataChange(true)"><%= UtilMethods.htmlifyString(textValue) %></textarea>
+                                                                                                   id="<%=field.getVelocityVarName()%>" class="editTextAreaField" onchange="emmitFieldDataChange(true)"><%=UtilMethods.htmlifyString(textValue)%></textarea>
         <%
             if (!isReadOnly) {
         %>
         <div class="editor-toolbar">
             <div class="toggleEditorField checkbox">
-                <%if(toggleOn){ %>
+                <%
+                    if(toggleOn){
+                %>
                 <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="true" checked="true"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
-                <%}else{ %>
+                <%
+                    }else{
+                %>
                 <input type="checkbox" dojoType="dijit.form.CheckBox" name="toggleEditor_<%=field.getVelocityVarName()%>" value="false"  id="toggleEditor_<%=field.getVelocityVarName()%>"  onclick="aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');" />
-                <%} %>
-                <label for="toggleEditor_<%=field.getVelocityVarName()%>"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
+                <%
+                    }
+                %>
+                <label for="toggleEditor_<%=field.getVelocityVarName()%>"><%=LanguageUtil.get(pageContext, "Toggle-Editor")%></label>
             </div>
             <div class="langVariablesField inline-form">
-                <label for="glossary_term_<%= field.getVelocityVarName() %>">
-                    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>:
+                <label for="glossary_term_<%=field.getVelocityVarName()%>">
+                    <%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language-Variables"))%>:
                 </label>
                 <input type="text"
                        dojoType="dijit.form.TextBox"
-                       id="glossary_term_<%= field.getVelocityVarName() %>"
-                       name="glossary_term_<%= field.getVelocityVarName() %>"
+                       id="glossary_term_<%=field.getVelocityVarName()%>"
+                       name="glossary_term_<%=field.getVelocityVarName()%>"
                        style="margin-right: 0"
-                       onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
-                <div class="glossaryTermPopup" style="display:none;" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
-                    <div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
+                       onkeyup="lookupGlossaryTerm('<%=field.getVelocityVarName()%>','<%=contentLanguage%>');" />
+                <div class="glossaryTermPopup" style="display:none;" id="glossary_term_popup_<%=field.getVelocityVarName()%>">
+                    <div id="glossary_term_table_<%=field.getVelocityVarName()%>"></div>
                 </div>
                 <script type="text/javascript">
-                    dojo.connect(dojo.byId('glossary_term_<%= field.getVelocityVarName() %>'), 'blur', '<%= field.getVelocityVarName() %>', clearGlossaryTermsDelayed);
+                    dojo.connect(dojo.byId('glossary_term_<%=field.getVelocityVarName()%>'), 'blur', '<%=field.getVelocityVarName()%>', clearGlossaryTermsDelayed);
                 </script>
             </div>
         </div>
         <%
-                }
+            }
             }
             //END of TEXTAREA Field
 
@@ -197,18 +217,18 @@
 
 
         <div id="HostSelector" dojoType="dotcms.dijit.form.HostFolderFilteringSelect" onChange="updateHostFolderValues('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)"
-             value="<%= selectorValue %>"></div>
+             value="<%=selectorValue%>"></div>
         <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
-               value="<%= selectorValue %>"/>
+               value="<%=selectorValue%>"/>
         <input type="hidden" name="hostId" id="hostId" value="<%=host%>"/>
         <input type="hidden" name="folderInode" id="folderInode" value="<%=folder%>"/>
         <%
-        }
-        //END of Host or Folder field
-        // http://jira.dotmarketing.net/browse/DOTCMS-2274
+            }
+                //END of Host or Folder field
+                // http://jira.dotmarketing.net/browse/DOTCMS-2274
 
-        //WYSIWYG kind of field rendering
-        else if (field.getFieldType().equals(
+                //WYSIWYG kind of field rendering
+                else if (field.getFieldType().equals(
                 Field.FieldType.WYSIWYG.toString())) {
             String textValue = UtilMethods.isSet(value) ? (String) value : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
             textValue = textValue.replaceAll("&", "&amp;");
@@ -232,7 +252,7 @@
         %>
         <div class="wysiwyg-wrapper">
             <div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce aceTall" style="display: none"></div>
-            <textarea <%= isReadOnly?"readonly=\"readonly\"":"" %>
+            <textarea <%=isReadOnly?"readonly=\"readonly\"":""%>
                     class="editWYSIWYGField aceText aceTall" 
                     name="<%=field.getFieldContentlet()%>"
                     id="<%=field.getVelocityVarName()%>"><%=UtilMethods.htmlifyString(textValue)%></textarea>
@@ -240,25 +260,25 @@
             <div class="wysiwyg-tools">
                 <select  autocomplete="false" dojoType="dijit.form.Select" id="<%=field.getVelocityVarName()%>_toggler" onChange="enableDisableWysiwygCodeOrPlain('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)">
                     <option value="WYSIWYG">WYSIWYG</option>
-                    <option value="CODE" <%= !wysiwygPlain&&wysiwygDisabled?"selected='true'":"" %>>CODE</option>
-                    <option value="PLAIN" <%= wysiwygPlain?"selected='true'":"" %>>PLAIN</option>
+                    <option value="CODE" <%=!wysiwygPlain&&wysiwygDisabled?"selected='true'":""%>>CODE</option>
+                    <option value="PLAIN" <%=wysiwygPlain?"selected='true'":""%>>PLAIN</option>
                 </select>
 
                 <div class="langVariablesField inline-form">
-                    <label for="glossary_term_<%= field.getVelocityVarName() %>">
-                        <%= LanguageUtil.get(pageContext, "Language-Variables") %>:
+                    <label for="glossary_term_<%=field.getVelocityVarName()%>">
+                        <%=LanguageUtil.get(pageContext, "Language-Variables")%>:
                     </label>
                     <input type="text" dojoType="dijit.form.TextBox"
-                           id="glossary_term_<%= field.getVelocityVarName() %>"
-                           name="glossary_term_<%= field.getVelocityVarName() %>"
+                           id="glossary_term_<%=field.getVelocityVarName()%>"
+                           name="glossary_term_<%=field.getVelocityVarName()%>"
                            style="margin: 0"
-                           onkeyup="lookupGlossaryTerm('<%= field.getVelocityVarName() %>','<%= contentLanguage %>');" />
+                           onkeyup="lookupGlossaryTerm('<%=field.getVelocityVarName()%>','<%=contentLanguage%>');" />
 
-                    <div style="display:none" class="glossaryTermPopup" id="glossary_term_popup_<%= field.getVelocityVarName() %>">
-                        <div id="glossary_term_table_<%= field.getVelocityVarName() %>"></div>
+                    <div style="display:none" class="glossaryTermPopup" id="glossary_term_popup_<%=field.getVelocityVarName()%>">
+                        <div id="glossary_term_table_<%=field.getVelocityVarName()%>"></div>
                     </div>
                     <script type="text/javascript">
-                        dojo.connect(dojo.byId('glossary_term_<%= field.getVelocityVarName() %>'), 'blur', '<%= field.getVelocityVarName() %>', clearGlossaryTermsDelayed);
+                        dojo.connect(dojo.byId('glossary_term_<%=field.getVelocityVarName()%>'), 'blur', '<%=field.getVelocityVarName()%>', clearGlossaryTermsDelayed);
                     </script>
                 </div>
             </div>
@@ -269,20 +289,21 @@
         </div>
         <script type="text/javascript">
             dojo.addOnLoad(function () {
-                <% if (!wysiwygDisabled) { %>
+                <%if (!wysiwygDisabled) {%>
                     enableWYSIWYG('<%=field.getVelocityVarName()%>', false);
-                <% } else if (wysiwygPlain) { %>
+                <%} else if (wysiwygPlain) {%>
                     toPlainView('<%=field.getVelocityVarName()%>');
-                <% } else {%>
+                <%} else {%>
                     toCodeArea('<%=field.getVelocityVarName()%>');
-                <% }%>
+                <%}%>
             });
         </script>
 
-        <%}//END of WYSIWYG
+        <%
+            }//END of WYSIWYG
 
-        //DATE/DATETIME/TIME kind of field rendering
-        else if (field.getFieldType().equals(
+                //DATE/DATETIME/TIME kind of field rendering
+                else if (field.getFieldType().equals(
                 Field.FieldType.DATE.toString())
                 || field.getFieldType().equals(
                 Field.FieldType.TIME.toString())
@@ -309,37 +330,45 @@
                 dayOfMonth = cal.get(GregorianCalendar.DAY_OF_MONTH);
                 month = cal.get(GregorianCalendar.MONTH) + 1;
                 year = cal.get(GregorianCalendar.YEAR) ;
-            }%>
+            }
+        %>
 
 
         <input type="hidden" id="<%=field.getVelocityVarName()%>"
                name="<%=field.getFieldContentlet()%>"
-               value="<%= dateValue!=null ? df.format(dateValue) : "" %>" />
+               value="<%=dateValue!=null ? df.format(dateValue) : ""%>" />
 
-        <%if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+        <%
+            if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
+        %>
 
-        <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+        <%
+            if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
+        %>
         <div class="inline-form">
-            <% }%>
+            <%
+                }
+            %>
 
             <input type="text"
-                   value="<%= dateValue!=null ? df2.format(dateValue) : "" %>"
+                   value="<%=dateValue!=null ? df2.format(dateValue) : ""%>"
                    onChange="updateDate('<%=field.getVelocityVarName()%>');emmitFieldDataChange(true)"
                    dojoType="dijit.form.DateTextBox"
                    name="<%=field.getFieldContentlet()%>Date"
                    id="<%=field.getVelocityVarName()%>Date">
 
-            <% }
+            <%
+                }
 
-                if (field.getFieldType().equals(Field.FieldType.TIME.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
+                        if (field.getFieldType().equals(Field.FieldType.TIME.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
 
-                    String hour=null;
-                    String min=null;
+                            String hour=null;
+                            String min=null;
 
-                    if(cal!=null) {
-                        hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
-                        min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
-                    }
+                            if(cal!=null) {
+                                hour = (cal.get(GregorianCalendar.HOUR_OF_DAY) < 10) ? "0"+cal.get(GregorianCalendar.HOUR_OF_DAY) : ""+cal.get(GregorianCalendar.HOUR_OF_DAY);
+                                min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCalendar.MINUTE) : ""+cal.get(GregorianCalendar.MINUTE);
+                            }
             %>
             <input type="text" id="<%=field.getVelocityVarName()%>Time"
                    name="<%=field.getFieldContentlet()%>Time"
@@ -348,27 +377,37 @@
                    dojoType="dijit.form.TimeTextBox"
                     <%=field.isReadOnly()?"disabled=\"disabled\"":""%>/>
 
-            <%if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {%>
+            <%
+                if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
+            %>
         </div>
-        <% }%>
-        <% }
+        <%
+            }
+        %>
+        <%
+            }
 
             if (field.getFieldType().equals(Field.FieldType.DATE.toString()) || field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
                 ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
                 if(contentletForm != null){
                     String expireDateVar = contentletForm.getStructure().getExpireDateVar();
                     if (field.getVelocityVarName().equals(expireDateVar)) {
-                        if (UtilMethods.isSet( value )) {%>
+                        if (UtilMethods.isSet( value )) {
+        %>
         <div class="checkbox">
             <input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  name="fieldNeverExpire" id="fieldNeverExpire">
-            <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
+            <label for="fieldNeverExpire"><%=LanguageUtil.get(pageContext, "never")%></label>
         </div>
-        <%} else {%>
+        <%
+            } else {
+        %>
         <div class="checkbox">
             <input type="checkbox" onclick="toggleExpire('<%=field.getVelocityVarName()%>')" dojoType="dijit.form.CheckBox"  checked ="true" name="fieldNeverExpire"  id="fieldNeverExpire" >
-            <label for="fieldNeverExpire"><%= LanguageUtil.get(pageContext, "never") %></label>
+            <label for="fieldNeverExpire"><%=LanguageUtil.get(pageContext, "never")%></label>
         </div>
-        <%}%>
+        <%
+            }
+        %>
         <script type="text/javascript">
             function toggleExpire(velocityVarName) {
             	emmitFieldDataChange(true);
@@ -393,25 +432,27 @@
             });
 
         </script>
-        <%}
-        }
-        }
-        } //END DATIME/DATE/TIME Field
+        <%
+            }
+                }
+                }
+                } //END DATIME/DATE/TIME Field
 
-        //IMAGE kind of field rendering
-        else if (field.getFieldType().equals(
-                Field.FieldType.IMAGE.toString())) {%>
+                //IMAGE kind of field rendering
+                else if (field.getFieldType().equals(
+                Field.FieldType.IMAGE.toString())) {
+        %>
         <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="thumbnails" contentLanguage="<%=contentLanguage%>"
-               value="<%= UtilMethods.isSet(value)?value:"" %>" mimeTypes="image" onlyFiles="true" showThumbnail="true" id="<%=field.getVelocityVarName()%>" onChange="emmitFieldDataChange(true)"/>
+               value="<%=UtilMethods.isSet(value)?value:""%>" mimeTypes="image" onlyFiles="true" showThumbnail="true" id="<%=field.getVelocityVarName()%>" onChange="emmitFieldDataChange(true)"/>
 
         <%
             //END IMAGE Field
 
             //FILE kind of field rendering
-        } else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
+                } else if (field.getFieldType().equals(Field.FieldType.FILE.toString())) {
         %>
         <input type="text" name="<%=field.getFieldContentlet()%>" dojoType="dotcms.dijit.form.FileSelector" fileBrowserView="details" contentLanguage="<%=contentLanguage%>"
-               value="<%= value %>" onlyFiles="true" showThumbnail="false" id="<%=field.getVelocityVarName()%>"  onChange="emmitFieldDataChange(true)"/>
+               value="<%=value%>" onlyFiles="true" showThumbnail="false" id="<%=field.getVelocityVarName()%>"  onChange="emmitFieldDataChange(true)"/>
 
         <%
             //END FILE Field
@@ -420,7 +461,7 @@
             
             
             //BINARY kind of field rendering  http://jira.dotmarketing.net/browse/DOTCMS-1073
-        } else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
+                } else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
             String fileName = "";
             String sib= request.getParameter("sibbling");
             String binInode=inode;
@@ -433,11 +474,11 @@
             if(structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
                 resourceLink = new ResourceLinkBuilder().build(request, user, contentlet);
             }
-
         %>
 
         <!--  display -->
-        <% if(UtilMethods.isSet(value)){
+        <%
+            if(UtilMethods.isSet(value)){
             try{
                 java.io.File fileValue = (java.io.File)value;
                 fileName = fileValue.getName();
@@ -456,15 +497,22 @@
         %>
 
 
-        <%if(UtilMethods.isImage(fileName)){%>
-        <%int showDim=300; %>
-        <%int imageEditors=0; %>
+        <%
+            if(UtilMethods.isImage(fileName)){
+        %>
+        <%
+            int showDim=300;
+        %>
+        <%
+            int imageEditors=0;
+        %>
         <!--  If you are not enterprise -->
-        <%if(LicenseUtil.getLevel() <= LicenseLevel.STANDARD.level ){ %>
+        <%
+            if(LicenseUtil.getLevel() <= LicenseLevel.STANDARD.level ){
+        %>
            <div id="thumbnailParent<%=field.getVelocityVarName()%>">
                <%
                    String src = String.format("/contentAsset/image/%s/%s/?filter=Thumbnail&thumbnail_w=%d&thumbnail_h=%d&language_id=%s&r=%d", contentlet.getIdentifier(), field.getVelocityVarName(), showDim, showDim, contentlet.getLanguageId(), System.currentTimeMillis());
-   
                %>
                <img src="<%=src%>"
                     class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
@@ -473,19 +521,24 @@
                     onclick="dijit.byId('fileDia<%=field.getVelocityVarName()%>').show()">
            </div>
    
-           <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:90%;height:80%;display:none;"">
+           <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image")%>"  style="width:90%;height:80%;display:none;"">
            <div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">
-               <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/" />
+               <img src="/contentAsset/image/<%=binInode%>/<%=field.getVelocityVarName()%>/" />
            </div>
            <div class="callOutBox">
-               <%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>
+               <%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool")%>
            </div>
        </div>
 
 
 
 
-    <%}else{ %>
+    <% }else{ %>
+        <% Optional<FocalPoint> focalPoint =new FocalPointAPIImpl().readFocalPoint(binInode, field.getVelocityVarName()); %>
+        <% String fpStr = focalPoint.isPresent() ? focalPoint.get().x + "," + focalPoint.get().y :".0,.0"; %>
+    
+    
+    
        <div id="thumbnailParent<%=field.getVelocityVarName()%>">
            <div dojoType="dotcms.dijit.image.ImageEditor"
                 editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>"
@@ -493,6 +546,7 @@
                 fieldName="<%=field.getVelocityVarName()%>"
                 binaryFieldId="<%=field.getFieldContentlet()%>"
                 fieldContentletId="<%=field.getFieldContentlet()%>"
+                focalPoint="<%=fpStr %>" 
                 saveAsFileName="<%=fileName %>"
                 class="thumbnailDiv<%=field.getVelocityVarName()%>"
            >

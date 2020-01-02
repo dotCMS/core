@@ -83,6 +83,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.MultiTreeAPIImpl;
+import com.dotmarketing.image.focalpoint.FocalPointAPI;
+import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
 import com.dotmarketing.portlets.calendar.business.CalendarReminderAPI;
@@ -336,6 +338,16 @@ public class APILocator extends Locator<APIIndex>{
 	public static ContentletAPI getContentletAPI() {
 		return (ContentletAPI)getInstance(APIIndex.CONTENTLET_API_INTERCEPTER);
 	}
+	
+    /**
+     * This is the contentletAPI which an application should use to do ALL
+     * normal {@link ContentletAPI} logic.
+     *
+     * @return The {@link ContentletAPI} class.
+     */
+    public static FocalPointAPI getFocalPointAPI() {
+        return (FocalPointAPI)getInstance(APIIndex.FOCAL_POINT_API);
+    }
 
 	/**
 	 * Creates a single instance of the {@link IdentifierAPI} class.
@@ -1098,7 +1110,8 @@ enum APIIndex
 	GRAPHQL_API,
 	URLMAP_API,
 	CONTENT_TYPE_FIELD_LAYOUT_API,
-	PUBLISH_AUDIT_API;
+	PUBLISH_AUDIT_API,
+	FOCAL_POINT_API;
 
 
 
@@ -1178,6 +1191,7 @@ enum APIIndex
 			case URLMAP_API: return new URLMapAPIImpl();
 			case CONTENT_TYPE_FIELD_LAYOUT_API: return new ContentTypeFieldLayoutAPIImpl();
 			case PUBLISH_AUDIT_API: return PublishAuditAPIImpl.getInstance();
+			case FOCAL_POINT_API: return new FocalPointAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

@@ -1,3 +1,7 @@
+<%@page import="com.dotmarketing.image.focalpoint.FocalPoint"%>
+<%@page import="com.dotmarketing.image.focalpoint.FocalPointAPIImpl"%>
+
+<%@page import="java.util.Optional"%>
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
@@ -9,8 +13,8 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.util.WebKeys"%>
 <%@page import="java.util.Enumeration"%>
-<%	
-	String dojoPath = Config.getStringProperty("path.to.dojo");
+<%
+    String dojoPath = Config.getStringProperty("path.to.dojo");
 
 	String id = request.getParameter("id");
 	
@@ -18,8 +22,10 @@
 
 	String baseImage =  "/contentAsset/image/" + id + "/" + fieldName + "/" ;
 
-
-
+    
+    Optional<FocalPoint> focalPoint =APILocator.getFocalPointAPI().readFocalPoint(id, fieldName);
+    String fpStr = focalPoint.isPresent() ? focalPoint.toString() :".0,.0"; 
+    
 	String hostId = null;
 	if (request.getParameter("host_id") != null) {
 		hostId = request.getParameter("host_id");
@@ -97,8 +103,10 @@
 		
 		dojo.ready(
 			function(){
-			  
+	
+			    imageEditor.modFocalPointStr("<%=fpStr%>");
 				imageEditor.initIframe();
+				
 			}
 		);
 
@@ -113,70 +121,70 @@
 <body class="dmundra"  >
 <!--  top button bar -->
 	<div class="imageToolContainer">
-<div class="imageToolButtonBar">
-	<table style="width:100%;margin:0px">
-		<tr>
-			<td width="100%;" style="white-space: nowrap;">
-				<table>
-					<tr>
-						<td style="white-space: nowrap;">
-							<%= LanguageUtil.get(pageContext, "Address") %>: 
-						</td>
-						<td width="100%;" style="white-space: nowrap;padding-right:25px;">
-							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;" onkeypress="if (event.which == 13 || event.keyCode == 13) {imageEditor.changeViewingUrl()}" onchange="imageEditor.changeViewingUrl()">
-						</td>
-					</tr>
-				</table>
-			</td>
-			<td style="white-space: nowrap;">
-                <span style="display:inline-block;margin-left:0px;margin-right:10px;">
-                    <a href="#" id="showLink" target="showDotImages">show</a>
-                </span>
+      <div class="imageToolButtonBar">
+      	<table style="width:98%;margin:5px">
+      		<tr>
+      			<td width="100%" style="white-space: nowrap;">
+      				<table>
+      					<tr>
+      						<td style="white-space: nowrap;">
+      							<%= LanguageUtil.get(pageContext, "Address") %>: 
+      						</td>
+      						<td width="100%;" style="white-space: nowrap;padding-right:25px;">
+      							<input type="text" id="viewingUrl" dojoType="dijit.form.TextBox" value="<%=baseImage %>" style="width:100%;" onkeypress="if (event.which == 13 || event.keyCode == 13) {imageEditor.changeViewingUrl()}" onchange="imageEditor.changeViewingUrl()">
+      						</td>
+      					</tr>
+      				</table>
+      			</td>
+      			<td style="white-space: nowrap;">
+                      <span style="display:inline-block;margin-left:0px;margin-right:10px;">
+                          <a href="#" id="showLink" target="showDotImages">show</a>
+                      </span>
+      
+      
+      				<button dojoType="dijit.form.Button" onclick="imageEditor.doDownload()" >
+      					<%= LanguageUtil.get(pageContext, "download") %>
+      				</button>
+      				&nbsp; &nbsp;
+      				<button dojoType="dijit.form.Button" id="clipBoard"  <% if(id == null || id.startsWith("temp_")) { %>disabled<% } %> onclick="imageEditor.addToClipboard()">
+      					<%= LanguageUtil.get(pageContext, "Clip") %>
+      				</button>
+      				
+      				<%-- this span is hidden for binary images --%>
+      				<span id="saveAsSpan" style="display:none;">
+      					<button dojoType="dijit.form.ComboButton"  title="save-as">
+      						<span><%= LanguageUtil.get(pageContext, "save-as") %></span>
+      						<div dojoType="dijit.Menu" id="createMenu" style="display: none;">
+      							<div dojoType="dijit.MenuItem"   onClick="imageEditor.showSaveAsDialog('jpg')">
+      								<%= LanguageUtil.get(pageContext, "jpeg") %>
+      							</div>
+      							<div dojoType="dijit.MenuItem"   onClick="imageEditor.showSaveAsDialog('png');">
+      								<%= LanguageUtil.get(pageContext, "png") %>
+      							</div>
+      							<div dojoType="dijit.MenuItem"  onClick="imageEditor.showSaveAsDialog('gif');">
+      								<%= LanguageUtil.get(pageContext, "gif") %>
+      							</div>
+      						</div>
+      					</button>
+      					&nbsp;
+      				</span>
+                      &nbsp;
+      				<button dojoType="dijit.form.Button" onclick="imageEditor.saveImage()" >
+      					<%= LanguageUtil.get(pageContext, "Save") %>
+      				</button>
+      				&nbsp;
+      				<button dojoType="dijit.form.Button" onClick="imageEditor.closeImageWindow()" >
+      					<%= LanguageUtil.get(pageContext, "Close") %>
+      				</button>
+      			</td>
+      		</tr>
+      	 </table>
+      </div>
+      <!--  /top button bar -->
+    </div>
 
 
-				<button dojoType="dijit.form.Button" onclick="imageEditor.doDownload()" >
-					<%= LanguageUtil.get(pageContext, "download") %>
-				</button>
-				&nbsp; &nbsp;
-				<button dojoType="dijit.form.Button" id="clipBoard"  <% if(id == null || id.startsWith("temp_")) { %>disabled<% } %> onclick="imageEditor.addToClipboard()">
-					<%= LanguageUtil.get(pageContext, "Clip") %>
-				</button>
-				
-				<%-- this span is hidden for binary images --%>
-				<span id="saveAsSpan" style="display:none;">
-					<button dojoType="dijit.form.ComboButton"  title="save-as">
-						<span><%= LanguageUtil.get(pageContext, "save-as") %></span>
-						<div dojoType="dijit.Menu" id="createMenu" style="display: none;">
-							<div dojoType="dijit.MenuItem"   onClick="imageEditor.showSaveAsDialog('jpg')">
-								<%= LanguageUtil.get(pageContext, "jpeg") %>
-							</div>
-							<div dojoType="dijit.MenuItem"   onClick="imageEditor.showSaveAsDialog('png');">
-								<%= LanguageUtil.get(pageContext, "png") %>
-							</div>
-							<div dojoType="dijit.MenuItem"  onClick="imageEditor.showSaveAsDialog('gif');">
-								<%= LanguageUtil.get(pageContext, "gif") %>
-							</div>
-						</div>
-					</button>
-					&nbsp;
-				</span>
-                &nbsp;
-				<button dojoType="dijit.form.Button" onclick="imageEditor.saveImage()" >
-					<%= LanguageUtil.get(pageContext, "Save") %>
-				</button>
-				&nbsp;
-				<button dojoType="dijit.form.Button" onClick="imageEditor.closeImageWindow()" >
-					<%= LanguageUtil.get(pageContext, "Close") %>
-				</button>
-			</td>
-		</tr>
-
-	</table>
-		
-</div>
-<!--  /top button bar -->
-
-
+<div class="imageToolContainer">
 
 
 <!--  image viewport -->
@@ -235,7 +243,10 @@
 
             </td>
          </tr>
-
+         <tr>
+            <td class="leftCol"><%=LanguageUtil.get(pageContext, "image.editor.focal.point")%> :</td>
+            <td class="rightCol"><span id="focalPointValueSpan"></span></td>
+         </tr>
 
         
         <tr><td colspan=2><hr style="height:1px; border:none;  background-color:silver; "></td></tr>
