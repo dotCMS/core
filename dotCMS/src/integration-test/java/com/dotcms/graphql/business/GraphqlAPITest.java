@@ -637,7 +637,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
 
         // filter only Enterprise content types
-        List<ContentType> eeTypes = APILocator
+        final List<ContentType> eeTypes = APILocator
                 .getContentTypeAPI(APILocator.systemUser()).findAll().stream()
                 .filter((type)->type instanceof EnterpriseType).collect(Collectors.toList());
 
@@ -678,7 +678,6 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 .collect(Collectors.toList());
     }
 
-    @Test
     @UseDataProvider("dataProviderEEBaseTypes")
     public void testGetSchema_GivenNoEELicense_EnterpriseBaseTypeCollectionsShouldNOTBeAvailableInSchema(
             final BaseContentType baseType)

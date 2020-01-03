@@ -1,5 +1,14 @@
 package com.dotcms.graphql.business;
 
+import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
+import static graphql.Scalars.GraphQLFloat;
+import static graphql.Scalars.GraphQLInt;
+import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
+import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLNonNull.nonNull;
+import static graphql.schema.GraphQLObjectType.newObject;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -34,7 +43,6 @@ import com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteOrFolderFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.LogTime;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -46,17 +54,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
@@ -68,16 +65,16 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.idl.SchemaPrinter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
-import static graphql.Scalars.GraphQLFloat;
-import static graphql.Scalars.GraphQLInt;
-import static graphql.Scalars.GraphQLString;
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
-import static graphql.schema.GraphQLList.list;
-import static graphql.schema.GraphQLNonNull.nonNull;
-import static graphql.schema.GraphQLObjectType.newObject;
 
 public class GraphqlAPIImpl implements GraphqlAPI {
 

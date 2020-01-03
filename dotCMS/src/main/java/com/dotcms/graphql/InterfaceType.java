@@ -41,7 +41,6 @@ import com.dotcms.graphql.datafetcher.SiteFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TitleImageFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
 import com.dotcms.graphql.resolver.ContentResolver;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.Logger;
 import graphql.schema.GraphQLInterfaceType;
 import java.util.HashMap;
@@ -133,7 +132,7 @@ public enum InterfaceType {
 
         for(final InterfaceType type : InterfaceType.values()) {
             if(type.getType()!=null) {
-                if((!EnterpriseType.class.isAssignableFrom(type.baseContentType) || isStandardOrEnterprise())) {
+                if(!EnterpriseType.class.isAssignableFrom(type.baseContentType) || isStandardOrEnterprise()) {
                     types.add(type.getType());
                 }
             }

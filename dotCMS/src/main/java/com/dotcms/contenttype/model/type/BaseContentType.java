@@ -130,8 +130,8 @@ public enum BaseContentType {
 	}
 
 	public static List<BaseContentType> getEnterpriseBaseTypes() {
-		return Arrays.stream(BaseContentType.values()).filter((baseType ->
-				EnterpriseType.class.isAssignableFrom(baseType.immutableClass())))
+		return Arrays.stream(BaseContentType.values()).filter(baseType ->
+				EnterpriseType.class.isAssignableFrom(baseType.immutableClass()))
 				.collect(Collectors.toList());
 	}
 
