@@ -65,11 +65,13 @@ public class FolderFactoryImpl extends FolderFactory {
 	@VisibleForTesting
 	protected static final Set<String> reservedFolderNames =
 			Collections.unmodifiableSet(
-					CollectionsUtils.set(Config.getStringArrayProperty("RESERVEDFOLDERNAMES",
-							new String[]{"WEB-INF", "META-INF", "assets", "dotcms", "html", "portal",
-									"email_backups",
-									"DOTLESS", "DOTSASS", "dotAdmin", "custom_elements"})
-					).stream().map(String::toUpperCase).collect(Collectors.toSet())
+					new HashSet<>(CollectionsUtils
+							.set(Config.getStringArrayProperty("RESERVEDFOLDERNAMES",
+									new String[]{"WEB-INF", "META-INF", "assets", "dotcms", "html",
+											"portal",
+											"email_backups",
+											"DOTLESS", "DOTSASS", "dotAdmin", "custom_elements"})
+							))
 			);
 
 	@Override
@@ -1256,7 +1258,8 @@ public class FolderFactoryImpl extends FolderFactory {
 		if (UtilMethods.isSet(folder.getParentPermissionable())
 				&& folder.getParentPermissionable() instanceof Host
 				&& UtilMethods.isSet(folder.getName())
-				&& reservedFolderNames.contains(folder.getName().toUpperCase())) {
+				&& reservedFolderNames.stream()
+				.anyMatch((name)->name.equalsIgnoreCase(folder.getName()))) {
 			throw new InvalidFolderNameException("Folder can't be saved. You entered a reserved folder name: " + folder.getName());
 		}
 	}
