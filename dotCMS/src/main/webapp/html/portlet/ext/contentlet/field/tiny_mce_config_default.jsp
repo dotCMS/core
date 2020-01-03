@@ -26,12 +26,12 @@ var tinyMCEProps = {
 			theme: "modern",
 			selector: "textarea",
     		menubar: 'false',
-    		statusbar: true,
+    		statusbar: false,
     		resize: "true",
     		plugins: [
         		"advlist anchor autolink lists link image charmap print  hr anchor ",
         		"searchreplace wordcount visualchars fullscreen ",
-        		"emoticons  paste textcolor colorpicker textpattern validation dotimageclipboard compat3x"
+        		"emoticons  paste textcolor colorpicker textpattern validation dotimageclipboard"
     		],
             block_formats: 'Paragraph=p;Header 1=h1;Header 2=h2;Header 3=h3;Header 4=h4;Header 5=h5;Pre=pre;Code=code;Remove Format=removeformat',
          

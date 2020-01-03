@@ -359,12 +359,15 @@ var cmsfile=null;
 				     <%}%>
 				<%}%>
 			<%}%>
-			console.log(textAreaId + "tinyPropOverride", eval(textAreaId + "tinyPropOverride"));
-			
 
+			let tinyConf = eval(textAreaId + "tinyPropOverride");
+			if(tinyConf.plugins != undefined && tinyConf.plugins[2] != undefined){
+			    tinyConf.plugins[2]=tinyConf.plugins[2].replace("compat3x","");
+			}
+            console.log(textAreaId, tinyConf );
 			//Enabling the wysiwyg
 			try {
-                var wellTinyMCE = new tinymce.Editor(textAreaId, eval(textAreaId + "tinyPropOverride"), tinymce.EditorManager);
+                var wellTinyMCE = new tinymce.Editor(textAreaId, tinyConf, tinymce.EditorManager);
 				wellTinyMCE.render();
                 wellTinyMCE.on('change', emmitFieldDataChange);
 			}
