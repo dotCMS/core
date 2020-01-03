@@ -15,6 +15,7 @@ import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationDetailedView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationHostView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationView;
 import com.dotcms.security.secret.Param;
+import com.dotcms.security.secret.Secret;
 import com.dotcms.security.secret.ServiceDescriptor;
 import com.dotcms.security.secret.Type;
 import com.dotcms.util.IntegrationTestInitService;
@@ -77,15 +78,13 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
 
         when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(dataObject);
 
-        //ServiceIntegrationAPI serviceIntegrationAPI = new ServiceIntegrationAPIImpl();
-
         ServiceIntegrationHelper serviceIntegrationHelper = new ServiceIntegrationHelper();
 
         serviceIntegrationResource = new ServiceIntegrationResource(webResource, serviceIntegrationHelper);
     }
 
     private InputStream createServiceDescriptorFile(final String fileName, final String serviceKey,
-            String serviceName, final String description,
+            final String serviceName, final String description,
             final Map<String, Param> paramMap) throws IOException {
         final ServiceDescriptor serviceDescriptor = new ServiceDescriptor(serviceKey, serviceName, description, "/black.png");
 
@@ -98,7 +97,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         basePath = Paths.get(basePath).normalize().toString();
         final File file = new File(basePath,fileName);
         ymlMapper.writeValue(file, serviceDescriptor);
-        System.out.println(file);
+        //System.out.println(file);
         return new FileInputStream(file);
     }
 
@@ -114,7 +113,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
     }
 
     @Test
-    public void  Test_Create_service_descriptor_Then_Create_Service_Integration() throws IOException {
+    public void  Test_Create_service_descriptor_Then_Create_Service_Integration_Then_Delete_The_Whole_Integration() throws IOException {
         final Map<String, Param> paramMap = ImmutableMap.of(
                 "p1", Param.newParam("v1", false, Type.STRING, "label", "hint"),
                 "p2", Param.newParam("v2", false, Type.STRING, "label", "hint"),
@@ -142,7 +141,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         secretForm.setServiceKey(serviceKey);
         secretForm.setHostId(host.getIdentifier());
         secretForm.setParams(paramMap);
-        final Response createSecretResponse = serviceIntegrationResource.createSecret(request, response, secretForm);
+        final Response createSecretResponse = serviceIntegrationResource.createServiceIntegrationSecrets(request, response, secretForm);
         Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
 
         final Response hostIntegrationsResponse = serviceIntegrationResource.getServiceIntegrationByKey(request, response, serviceKey);
@@ -165,6 +164,90 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final ResponseEntityView responseEntityView3 = (ResponseEntityView) detailedIntegrationResponse.getEntity();
         final ServiceIntegrationDetailedView serviceIntegrationDetailedView = (ServiceIntegrationDetailedView) responseEntityView3.getEntity();
         Assert.assertEquals(serviceIntegrationDetailedView.getHost().getHostId(),host.getIdentifier());
+
+        final Response deleteIntegrationsResponse = serviceIntegrationResource.deleteAllServiceIntegrationSecrets(request, response, serviceKey, host.getIdentifier());
+        Assert.assertEquals(HttpStatus.SC_OK, deleteIntegrationsResponse.getStatus());
+
+        final Response detailedIntegrationResponseAfterDelete = serviceIntegrationResource.getDetailedServiceIntegration(request, response, serviceKey, host.getIdentifier());
+        Assert.assertEquals(HttpStatus.SC_NOT_FOUND, detailedIntegrationResponseAfterDelete.getStatus());
+
+    }
+
+    @Test
+    public void  Test_Create_service_descriptor_Then_Create_Service_Integration_Then_Delete_One_Single_Secret() throws IOException {
+        final Map<String, Param> paramMap = ImmutableMap.of(
+                "param1", Param.newParam("val-1", false, Type.STRING, "label", "hint"),
+                "param2", Param.newParam("val-2", false, Type.STRING, "label", "hint"),
+                "param3", Param.newParam("val-3", false, Type.STRING, "label", "hint")
+        );
+        final Host host = new SiteDataGen().nextPersisted();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final String serviceKey = String.format("lol_%d",System.currentTimeMillis());
+        final String fileName = String.format("%s.yml",serviceKey);
+        final InputStream inputStream = createServiceDescriptorFile(fileName, serviceKey, "lola",
+                "A bunch of string params to demo the mechanism.", paramMap);
+        final Response serviceIntegrationResponse = serviceIntegrationResource.createServiceIntegration(request, response, createFormDataMultiPart(fileName, inputStream));
+        Assert.assertNotNull(serviceIntegrationResponse);
+        Assert.assertEquals(HttpStatus.SC_OK, serviceIntegrationResponse.getStatus());
+        final Response availableServicesResponse = serviceIntegrationResource.listAvailableServices(request, response);
+        Assert.assertEquals(HttpStatus.SC_OK, availableServicesResponse.getStatus());
+        final ResponseEntityView responseEntityView1 = (ResponseEntityView)availableServicesResponse.getEntity();
+        final List<ServiceIntegrationView> integrationViewList = (List<ServiceIntegrationView>)responseEntityView1.getEntity();
+        Assert.assertFalse(integrationViewList.isEmpty());
+        Assert.assertTrue(
+                integrationViewList.stream().anyMatch(serviceIntegrationView ->  "lola".equals(serviceIntegrationView.getName())));
+
+        final SecretForm secretForm = new SecretForm();
+        secretForm.setServiceKey(serviceKey);
+        secretForm.setHostId(host.getIdentifier());
+        secretForm.setParams(paramMap);
+        final Response createSecretResponse = serviceIntegrationResource.createServiceIntegrationSecrets(request, response, secretForm);
+        Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
+
+        final Response hostIntegrationsResponse = serviceIntegrationResource.getServiceIntegrationByKey(request, response, serviceKey);
+        Assert.assertEquals(HttpStatus.SC_OK, hostIntegrationsResponse.getStatus());
+        final ResponseEntityView responseEntityView2 = (ResponseEntityView) hostIntegrationsResponse.getEntity();
+        final ServiceIntegrationHostView serviceIntegrationHostView2 = (ServiceIntegrationHostView) responseEntityView2.getEntity();
+        final ServiceIntegrationView serviceIntegrationView2 = serviceIntegrationHostView2.getService();
+        Assert.assertEquals(1, serviceIntegrationView2.getConfigurationsCount());
+        Assert.assertEquals("lola", serviceIntegrationView2.getName());
+        final List<HostView> hosts = serviceIntegrationHostView2.getHosts();
+        Assert.assertNotNull(hosts);
+        Assert.assertFalse(hosts.isEmpty());
+        Assert.assertEquals(hosts.get(0).getHostId(),host.getIdentifier());
+        Assert.assertTrue(
+                hosts.stream().anyMatch(hostView -> host.getIdentifier().equals(hostView.getHostId()))
+        );
+
+        final Response detailedIntegrationResponse = serviceIntegrationResource.getDetailedServiceIntegration(request, response, serviceKey, host.getIdentifier());
+        Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
+        final ResponseEntityView responseEntityView3 = (ResponseEntityView) detailedIntegrationResponse.getEntity();
+        final ServiceIntegrationDetailedView serviceIntegrationDetailedView1 = (ServiceIntegrationDetailedView) responseEntityView3.getEntity();
+        Assert.assertEquals(serviceIntegrationDetailedView1.getHost().getHostId(),host.getIdentifier());
+
+        final Map<String, Param> paramsToDeleteMap = ImmutableMap.of(
+                "param1", Param.newParam("", false, Type.STRING, "", ""),
+                "param3", Param.newParam("", false, Type.STRING, "", "")
+        );
+
+        final SecretForm secretForm1 = new SecretForm();
+        secretForm1.setServiceKey(serviceKey);
+        secretForm1.setHostId(host.getIdentifier());
+        secretForm1.setParams(paramsToDeleteMap);
+        final Response deleteIndividualSecretResponse = serviceIntegrationResource.deleteIndividualServiceIntegrationSecret(request, response, secretForm1);
+        Assert.assertEquals(HttpStatus.SC_OK, deleteIndividualSecretResponse.getStatus());
+
+        final Response detailedIntegrationResponseAfterDelete = serviceIntegrationResource.getDetailedServiceIntegration(request, response, serviceKey, host.getIdentifier());
+        Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponseAfterDelete.getStatus());
+
+        final ResponseEntityView responseEntityView4 = (ResponseEntityView) detailedIntegrationResponseAfterDelete.getEntity();
+        final ServiceIntegrationDetailedView serviceIntegrationDetailedView2 = (ServiceIntegrationDetailedView) responseEntityView4.getEntity();
+        final Map<String, Secret> secretsAfterDelete = serviceIntegrationDetailedView2.getSecrets();
+        Assert.assertTrue(secretsAfterDelete.containsKey("param2"));
+        Assert.assertFalse(secretsAfterDelete.containsKey("param1"));
+        Assert.assertFalse(secretsAfterDelete.containsKey("param3"));
+        
     }
 
 }

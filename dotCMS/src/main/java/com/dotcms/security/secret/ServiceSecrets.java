@@ -30,7 +30,7 @@ public class ServiceSecrets implements Serializable {
 
     public static class Builder {
 
-        private Map<String,Secret> secretMap = new HashMap<>();
+        private final Map<String,Secret> secretMap = new HashMap<>();
         private String serviceKey;
 
         public ServiceSecrets build(){

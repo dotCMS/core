@@ -154,7 +154,7 @@ public class ServiceIntegrationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteServiceIntegrationSecrets(
+    public final Response deleteAllServiceIntegrationSecrets(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("serviceKey") final String serviceKey,
@@ -169,7 +169,7 @@ public class ServiceIntegrationResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            //this will remove a specific configuration for the key and host combination. All the secrets at once will be lost
+            //this will remove a specific configuration for the key and host combination. All the secrets at once will be lost.
             helper.deleteServiceIntegrationSecrets(serviceKey, hostId, user);
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (Exception e) {
@@ -213,7 +213,7 @@ public class ServiceIntegrationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response createSecret(
+    public final Response createServiceIntegrationSecrets(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final SecretForm secretForm
@@ -241,7 +241,7 @@ public class ServiceIntegrationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response updateSecret(
+    public final Response updateServiceIntegrationIndividualSecret(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final SecretForm secretForm
@@ -260,6 +260,34 @@ public class ServiceIntegrationResource {
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),"Exception saving/updating secret with message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    @DELETE
+    @Path("/")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response deleteIndividualServiceIntegrationSecret(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            final SecretForm secretForm
+    ) {
+        try {
+            secretForm.checkValid();
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            helper.deleteSecret(secretForm, user);
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception creating secret with message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }

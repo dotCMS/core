@@ -12,6 +12,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
 import java.util.List;
@@ -247,7 +248,7 @@ public class ServiceIntegrationAPIImplTest {
         //Save it
         api.saveSecrets(secrets1, host, admin);
 
-        api.deleteSecret("serviceKeyHost-1","test:secret3", host, admin);
+        api.deleteSecret("serviceKeyHost-1",new ImmutableSet.Builder<String>().add("test:secret3").build(), host, admin);
 
         //The other properties of the object should remind the same so lets verify so.
         final Optional<ServiceSecrets> serviceSecretsOptional1 = api.getSecretsForService("serviceKeyHost-1", host, admin);

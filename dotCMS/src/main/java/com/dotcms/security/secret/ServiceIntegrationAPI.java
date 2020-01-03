@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public interface ServiceIntegrationAPI {
 
@@ -77,11 +78,11 @@ public interface ServiceIntegrationAPI {
     /**
      * Lookup for an individual secret/property then removes the single entry.
      * @param serviceKey Service unique id.
-     * @param propSecretName Individual secret or property name.
+     * @param propSecretNames Individual secret or property name.
      * @param host The host owning the secret.
      * @param user logged-in user
      */
-    void deleteSecret(String serviceKey, String propSecretName, Host host, User user)
+    void deleteSecret(String serviceKey, Set<String> propSecretNames, Host host, User user)
     throws DotDataException, DotSecurityException;
 
     /**

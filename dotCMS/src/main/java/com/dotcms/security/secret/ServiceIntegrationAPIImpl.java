@@ -164,7 +164,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @Override
-    public void deleteSecret(final String serviceKey, final String propOrSecretName,
+    public void deleteSecret(final String serviceKey, final Set<String> propOrSecretName,
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
         final Optional<ServiceSecrets> secretsForService = getSecretsForService(serviceKey, host,
@@ -173,8 +173,9 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
             final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
             final ServiceSecrets serviceSecrets = secretsForService.get();
             final Map<String, Secret> secrets = serviceSecrets.getSecrets();
-            secrets.remove(
-                    propOrSecretName); //we simply remove the secret by name and then persist the remaining.
+
+            secrets.keySet().removeAll(propOrSecretName); //we simply remove the secret by name and then persist the remaining.
+
             for (final Entry<String, Secret> entry : secrets.entrySet()) {
                 builder.withSecret(entry.getKey(), entry.getValue());
             }

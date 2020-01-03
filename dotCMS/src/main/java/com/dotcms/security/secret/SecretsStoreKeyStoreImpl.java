@@ -174,12 +174,12 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
      */
     private char[] loadValueFromStore(final String variableKey) {
         try {
-           final KeyStore ks = getSecretsStore();
-            if (ks.containsAlias(variableKey)) {
+           final KeyStore keyStore = getSecretsStore();
+            if (keyStore.containsAlias(variableKey)) {
                 final PasswordProtection keyStorePP = new PasswordProtection(loadStorePassword());
                 final SecretKeyFactory factory = SecretKeyFactory.getInstance(
                         SECRETS_STORE_SECRET_KEY_FACTORY_TYPE);
-                final SecretKeyEntry secretKeyEntry = (SecretKeyEntry) ks.getEntry(variableKey, keyStorePP);
+                final SecretKeyEntry secretKeyEntry = (SecretKeyEntry) keyStore.getEntry(variableKey, keyStorePP);
                 return ((PBEKeySpec) factory.getKeySpec(secretKeyEntry.getSecretKey(), PBEKeySpec.class)).getPassword();
             } else {
                 return CACHE_404;

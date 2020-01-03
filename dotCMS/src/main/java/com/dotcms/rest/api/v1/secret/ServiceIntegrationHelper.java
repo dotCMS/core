@@ -147,15 +147,19 @@ class ServiceIntegrationHelper {
             final String serviceKey, final String hostId,
             final User user)
             throws DotSecurityException, DotDataException {
-        final Optional<ServiceDescriptor> serviceDescriptorOptional = serviceIntegrationAPI.getServiceDescriptor(serviceKey, user);
-        if (serviceDescriptorOptional.isPresent()) {
-            final Host host = hostAPI.find(hostId, user, false);
-            if(null == host) {
-                throw new DotDataException(String.format(" Couldn't find any host with identifier `%s` ",hostId));
-            }
-            serviceIntegrationAPI.deleteSecrets(serviceKey, host, user);
+        final Optional<ServiceDescriptor> serviceDescriptorOptional = serviceIntegrationAPI
+                .getServiceDescriptor(serviceKey, user);
+        if (!serviceDescriptorOptional.isPresent()) {
+            throw new DotDataException(
+                    String.format(" Couldn't find a descriptor under key `%s` for host `%s` ",
+                            serviceKey, hostId));
         }
-        throw new DotDataException(String.format(" Couldn't find a descriptor under key `%s` for host `%s` ",serviceKey, hostId));
+        final Host host = hostAPI.find(hostId, user, false);
+        if (null == host) {
+            throw new DotDataException(
+                    String.format(" Couldn't find any host with identifier `%s` ", hostId));
+        }
+        serviceIntegrationAPI.deleteSecrets(serviceKey, host, user);
     }
 
     /**
@@ -239,6 +243,49 @@ class ServiceIntegrationHelper {
     }
 
     /**
+     * This method allows deleting a single secret/property from a stored integration.
+     * @param form Secret specific-form
+     * @param user Logged in user.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    void deleteSecret(final SecretForm form, final User user)
+            throws DotSecurityException, DotDataException {
+
+        final String serviceKey = form.getServiceKey();
+        if (!UtilMethods.isSet(serviceKey)) {
+            throw new DotDataException("Required param serviceKey isn't set.");
+        }
+        final String hostId = form.getHostId();
+        if (!UtilMethods.isSet(hostId)) {
+            throw new DotDataException("Required Param siteId isn't set.");
+        }
+        final Host host = hostAPI.find(hostId, user, false);
+        if(null == host) {
+            throw new DotDataException(String.format(" Couldn't find any host with identifier `%s` ",hostId));
+        }
+        final Optional<ServiceDescriptor> optionalServiceDescriptor = serviceIntegrationAPI
+                .getServiceDescriptor(serviceKey, user);
+        if (!optionalServiceDescriptor.isPresent()) {
+            throw new DotDataException(String.format("Unable to find a service descriptor bound to the  serviceKey `%s`. You must upload a yml descriptor.",serviceKey));
+        }
+        final Map<String, Param> params = form.getParams();
+        if(!UtilMethods.isSet(params)){
+            throw new DotDataException("Required Params aren't set.");
+        }
+        final ServiceDescriptor serviceDescriptor = optionalServiceDescriptor.get();
+        validateIncomingParamNames(params.keySet(),serviceDescriptor);
+
+        final Optional<ServiceSecrets> serviceSecretsOptional = serviceIntegrationAPI
+                .getSecretsForService(serviceKey, host, user);
+        if (!serviceSecretsOptional.isPresent()) {
+            throw new DotDataException(String.format("Unable to find a secret for serviceKey `%s`.",serviceKey));
+        } else {
+            serviceIntegrationAPI.deleteSecret(serviceKey, params.keySet(), host, user);
+        }
+    }
+
+    /**
      * Validate the incoming params match the params described by a serviceDescriptor yml.
      * @param paramNames a set of paramNames
      * @param serviceDescriptor the service template
@@ -257,7 +304,6 @@ class ServiceIntegrationHelper {
             }
         }
     }
-
 
     /**
      * This is used to manipulate a FormDataMultiPart and extract all the files it might contain
