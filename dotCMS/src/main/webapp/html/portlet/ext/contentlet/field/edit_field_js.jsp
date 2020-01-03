@@ -361,10 +361,10 @@ var cmsfile=null;
 			<%}%>
 
 			let tinyConf = eval(textAreaId + "tinyPropOverride");
-            console.log(textAreaId + "tinyPropOverride",tinyConf );
-            console.log(textAreaId, tinyConf.plugins[2] );
-            tinyConf.plugins[2]  =tinyConf.plugins[2].replace("compat3x","");
-            console.log(textAreaId, tinyConf.plugins[2] );
+			if(tinyConf.plugins != undefined && tinyConf.plugins[2] != undefined){
+			    tinyConf.plugins[2]=tinyConf.plugins[2].replace("compat3x","");
+			}
+            console.log(textAreaId, tinyConf );
 			//Enabling the wysiwyg
 			try {
                 var wellTinyMCE = new tinymce.Editor(textAreaId, tinyConf, tinymce.EditorManager);
