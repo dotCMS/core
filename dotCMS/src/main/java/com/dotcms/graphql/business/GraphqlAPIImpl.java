@@ -259,7 +259,7 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
         List<ContentType> allTypes = contentTypeAPI.findAll();
         // exclude ee types when no license
-        if(!isStandardOrEnterprise()) {
+        if(LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level) {
             allTypes = allTypes.stream().filter((type) ->!(type instanceof EnterpriseType))
                     .collect(Collectors.toList());
         }
@@ -347,9 +347,4 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
         return APILocator.getContentTypeAPI(user).find(relatedContentTypeId);
     }
-
-    private static boolean isStandardOrEnterprise() {
-        return LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level;
-    }
-
 }

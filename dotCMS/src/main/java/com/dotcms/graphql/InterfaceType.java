@@ -132,7 +132,8 @@ public enum InterfaceType {
 
         for(final InterfaceType type : InterfaceType.values()) {
             if(type.getType()!=null) {
-                if(!EnterpriseType.class.isAssignableFrom(type.baseContentType) || isStandardOrEnterprise()) {
+                if(!EnterpriseType.class.isAssignableFrom(type.baseContentType)
+                        || LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level) {
                     types.add(type.getType());
                 }
             }
@@ -151,9 +152,4 @@ public enum InterfaceType {
 
         return type;
     }
-
-    private static boolean isStandardOrEnterprise() {
-        return LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level;
-    }
-
 }
