@@ -361,8 +361,12 @@ var cmsfile=null;
 			<%}%>
 
 			let tinyConf = eval(textAreaId + "tinyPropOverride");
-			if(tinyConf.plugins != undefined && tinyConf.plugins[2] != undefined){
-			    tinyConf.plugins[2]=tinyConf.plugins[2].replace("compat3x","");
+			if(tinyConf.plugins != undefined && Array.isArray(tinyConf.plugins)){
+			    for(i=0;i<tinyConf.plugins.length;i++){
+			        tinyConf.plugins[i]=tinyConf.plugins[i].replace("compat3x","");
+			    }
+			}else if(tinyConf.plugins != undefined ){
+			    tinyConf.plugins=tinyConf.plugins.replace("compat3x","");
 			}
             console.log(textAreaId, tinyConf );
 			//Enabling the wysiwyg
