@@ -10,7 +10,7 @@ import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.dotcms.util.ConfigTestHelper;
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImpl;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableMap;
@@ -28,7 +28,7 @@ public class FocalPointAPITest {
 
     @BeforeClass
     public static void setup() throws Exception {
-        ConfigTestHelper._setupFakeTestingContext();
+        IntegrationTestInitService.getInstance().init();
         fpAPI = new FocalPointAPIImpl(new FileAssetAPIImpl(null, null, null, null), null);
     }
 
