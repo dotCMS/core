@@ -9,11 +9,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
+import java.util.Optional;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
+import com.dotmarketing.image.focalpoint.FocalPoint;
+import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.WebKeys;
@@ -35,6 +36,8 @@ public abstract class ImageFilter implements ImageFilterIf {
 	 */
 	private String getUniqueFileName(File file, Map<String, String[]> parameters, String inode) {
 		try {
+
+
 			StringBuilder sb = new StringBuilder();
 			Iterator<Entry<String, String[]>> it = parameters.entrySet().iterator();
 			List<String> acceptFilter = new ArrayList<String>();
@@ -55,12 +58,12 @@ public abstract class ImageFilter implements ImageFilterIf {
 			}
 
 			while (it.hasNext()) {
-				Map.Entry pairs = (Map.Entry) it.next();
-				String key = (String) pairs.getKey();
-				String val = ((String[]) pairs.getValue())[0];
+				Map.Entry<String, String[]> pairs = it.next();
+				String key = pairs.getKey();
+				String val = pairs.getValue()[0];
 
-				for (String x : acceptFilter) {
-					if (key.startsWith(x)) {
+				for (String filterName : acceptFilter) {
+					if (key.startsWith(filterName)) {
 						sb.append(key + ":" + val);
 					}
 					if (key.equalsIgnoreCase("fieldVarName")) {//DOTMCS-5674
@@ -68,6 +71,19 @@ public abstract class ImageFilter implements ImageFilterIf {
 					}
 				}
 			}
+			
+            if ("crop".equals(thisFilter)) {
+                Optional<FocalPoint> optPoint =new FocalPointAPIImpl().parseFocalPointFromParams(parameters);
+                if(!optPoint.isPresent()) {
+                    String fieldVar = parameters.get("fieldVarName")[0];
+                    optPoint =new FocalPointAPIImpl().readFocalPoint(inode, fieldVar);
+                }
+                if(optPoint.isPresent()) {
+                    sb.append("fp:" + optPoint.get());
+                }
+            }
+			
+			
 
 
 			MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
@@ -177,7 +193,9 @@ public abstract class ImageFilter implements ImageFilterIf {
 				}
 				String realAssetPath = APILocator.getFileAssetAPI().getRealAssetsRootPath();
 				File dirs = new File(realAssetPath + File.separator + "dotGenerated" + File.separator + inode.charAt(0) + File.separator + inode.charAt(1));
-				dirs.mkdirs();
+				if(!dirs.exists()){
+				    dirs.mkdirs();
+				}
 				String fileNameNoExt = this.getUniqueFileName(file, parameters, inode);
 				String resultFilePath = dirs.getCanonicalPath() + File.separator + fileNameNoExt + "." + fileExt;
 				return  new File(resultFilePath);
@@ -190,5 +208,8 @@ public abstract class ImageFilter implements ImageFilterIf {
 			throw new DotRuntimeException("Cannot find the inode of the file : " + e.getMessage(),e);
 		}
 	}
+	
+
+	
 
 }

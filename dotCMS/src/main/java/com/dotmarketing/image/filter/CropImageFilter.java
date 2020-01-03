@@ -71,11 +71,8 @@ public class CropImageFilter extends ImageFilter {
 	        }
 	        
 			
-	        if(x > current.getWidth() ){
-	           x=current.width;
-	        }
-	        if(y>current.getHeight()) {
-	            y=current.height;
+	        if(x > current.getWidth() || y > current.getHeight()){
+	            return file;   
 	        }
 	        
 		    Optional<Point> centerOpt = (x==0 && y==0) ? calcFocalPoint(src, parameters)  : Optional.empty();
