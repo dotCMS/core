@@ -114,39 +114,22 @@ public class CropImageFilter extends ImageFilter {
 
     protected Optional<Point> calcFocalPoint(BufferedImage src, Map<String, String[]> parameters) {
         Dimension current = new Dimension(src.getWidth(), src.getHeight());
-    
         
-        String[] param = parameters.get("fp");
-        if (param == null || param.length == 0) {
-            String inode = parameters.get("assetInodeOrIdentifier")[0];
-            String fieldVar = parameters.get("fieldVarName")[0];
+        Optional<FocalPoint> optPoint = new FocalPointAPIImpl().parseFocalPointFromParams(parameters);
+        
+        if (!optPoint.isPresent()) {
+            final String inode = parameters.get("assetInodeOrIdentifier")[0];
+            final String fieldVar = parameters.get("fieldVarName")[0];
+            optPoint = new FocalPointAPIImpl().readFocalPoint(inode, fieldVar);
+        }
 
-            Optional<FocalPoint> optPoint =new FocalPointAPIImpl().readFocalPoint(inode, fieldVar);
-            if(optPoint.isPresent()) {
-                return Optional.of(new Point(Math.round(current.width * optPoint.get().x), Math.round(current.height * optPoint.get().y)));
-            }
-            return Optional.empty();
-            //return Optional.of(new Point(current.width/2, current.height/2));
+        if (optPoint.isPresent()) {
+            return Optional.of(new Point(Math.round(current.width * optPoint.get().x),
+                            Math.round(current.height * optPoint.get().y)));
+
         }
-        
-        
-        String[] p = param[0].split(":|,");
-        if (p.length > 1 && p[0].contains(".") || p[1].contains(".")) {
-            try {
-                return Optional.of(new Point(Math.round(current.width * Float.parseFloat(p[0])), Math.round(current.height * Float.parseFloat(p[1]))));
-            } catch (Exception e) {
-                Logger.warnAndDebug(this.getClass(), e);
-            }
-            
-        }
-        else {
-            try {
-     
-                return Optional.of(new Point(Integer.parseInt(p[0]), Integer.parseInt(p[1])));
-            } catch (Exception e) {
-                Logger.warnAndDebug(this.getClass(), e);
-            }
-        }
+
+
         return Optional.empty();
 
     }
