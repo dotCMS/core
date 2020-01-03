@@ -29,8 +29,8 @@ public class CropImageFilter extends ImageFilter {
 	public File runFilter(File file,  Map<String, String[]> parameters) {
 		int x = parameters.get(getPrefix() + "x") != null ? Integer.parseInt(parameters.get(getPrefix() + "x")[0]) : 0;
 		int y = parameters.get(getPrefix() + "y") != null ? Integer.parseInt(parameters.get(getPrefix() + "y")[0]) : 0;
-		float wIn = parameters.get(getPrefix() + "w") != null ? Float.parseFloat(parameters.get(getPrefix() + "w")[0]) : 0f;
-		float hIn = parameters.get(getPrefix() + "h") != null ? Float.parseFloat(parameters.get(getPrefix() + "h")[0]) : 0f;
+		final float wIn = parameters.get(getPrefix() + "w") != null ? Float.parseFloat(parameters.get(getPrefix() + "w")[0]) : 0f;
+		final float hIn = parameters.get(getPrefix() + "h") != null ? Float.parseFloat(parameters.get(getPrefix() + "h")[0]) : 0f;
 		int w=0,h=0;
 
 
@@ -40,7 +40,7 @@ public class CropImageFilter extends ImageFilter {
 		
 		
 		
-		File resultFile = getResultsFile(file, parameters);
+		final File resultFile = getResultsFile(file, parameters);
 		
 		if (!overwrite(resultFile, parameters)) {
 			return resultFile;
@@ -102,6 +102,7 @@ public class CropImageFilter extends ImageFilter {
 			
 			BufferedImage out = src.getSubimage(x, y, w, h);
 			ImageIO.write(out, FILE_EXT, resultFile);
+			out.flush();
 			
 		} catch (IOException e) {
 			Logger.error(this.getClass(), e.getMessage());
