@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.system.monitor;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -86,7 +87,7 @@ class MonitorHelper {
     MonitorStats getMonitorStats() throws Throwable{
         final MonitorStats monitorStats = new MonitorStats();
 
-        final IndiciesAPI.IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+        final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
 
         final long localFSTimeout = Config.getLongProperty(SYSTEM_STATUS_API_LOCAL_FS_TIMEOUT, DEFAULT_LOCAL_FS_TIMEOUT);
         final long cacheTimeout  = Config.getLongProperty(SYSTEM_STATUS_API_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT);
@@ -95,8 +96,8 @@ class MonitorHelper {
         final long dbTimeout = Config.getLongProperty(SYSTEM_STATUS_API_DB_TIMEOUT, DEFAULT_DB_TIMEOUT);
 
         monitorStats.subSystemStats.isDBHealthy = isDBHealthy(dbTimeout);
-        monitorStats.subSystemStats.isLiveIndexHealthy = isIndexHealthy(indiciesInfo.live, indexTimeout);
-        monitorStats.subSystemStats.isWorkingIndexHealthy = isIndexHealthy(indiciesInfo.working, indexTimeout);
+        monitorStats.subSystemStats.isLiveIndexHealthy = isIndexHealthy(indiciesInfo.getLive(), indexTimeout);
+        monitorStats.subSystemStats.isWorkingIndexHealthy = isIndexHealthy(indiciesInfo.getWorking(), indexTimeout);
         monitorStats.subSystemStats.isCacheHealthy = isCacheHealthy(cacheTimeout);
         monitorStats.subSystemStats.isLocalFileSystemHealthy = isLocalFileSystemHealthy(localFSTimeout);
         monitorStats.subSystemStats.isAssetFileSystemHealthy = isAssetFileSystemHealthy(assetTimeout);
@@ -143,6 +144,7 @@ class MonitorHelper {
                         searchSourceBuilder.fetchSource(new String[] {"inode"}, null);
                         SearchRequest searchRequest = new SearchRequest();
                         searchRequest.source(searchSourceBuilder);
+                        searchRequest.indices(index);
 
                         final SearchResponse response = Sneaky.sneak(()->
                                 RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,

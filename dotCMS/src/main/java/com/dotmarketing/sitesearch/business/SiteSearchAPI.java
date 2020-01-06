@@ -18,8 +18,8 @@ import com.dotmarketing.quartz.ScheduledTask;
 
 
 public interface SiteSearchAPI {
-    public static final String ES_SITE_SEARCH_NAME = "sitesearch";
-    public static final String ES_SITE_SEARCH_MAPPING = "_doc";
+	public static final String ES_SITE_SEARCH_NAME = "sitesearch";
+	public static final String ES_SITE_SEARCH_MAPPING = "_doc";
     public static final String ES_SITE_SEARCH_EXECUTE_JOB_NAME = "runningOnce";
 
 	List<String> listIndices();

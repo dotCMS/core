@@ -1,6 +1,6 @@
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
-<%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
+<%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
@@ -110,7 +110,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<%ClusterIndexHealth health = map.get(x); %>
 		<%IndexStats status = indexInfo.get(x); %>
 
-		<%boolean active =x.equals(info.site_search);%>
+		<%boolean active =x.equals(info.getSiteSearch());%>
 		<%	Date d = null;
 			String myDate = null;
 			try{
@@ -179,7 +179,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 <%--   RIGHT CLICK MENUS --%>
 
 		<%for(String x : indices){%>
-			<%boolean active =x.equals(info.site_search);%>
+			<%boolean active =x.equals(info.getSiteSearch());%>
 
 			<%ClusterIndexHealth health = map.get(x); %>
 			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 
