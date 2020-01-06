@@ -17,6 +17,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.LANGUAGE_TYPE_FILTER;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.PUBLISH_TYPE_FILTER;
@@ -57,6 +58,7 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class ContentUtilsTest {
 
+    public static final String QUERY_BY_STRUCTURE_NAME = "+structureName:%s";
     private static User user;
     private static LanguageAPI languageAPI;
 
@@ -815,7 +817,7 @@ public class ContentUtilsTest {
                 .nextPersisted();
 
         ContentletDataGen.publish(contentlet);
-        final String query = "+structureName:" + contentType.name();
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
 
         final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(), timeMachine);
 
@@ -843,7 +845,7 @@ public class ContentUtilsTest {
         final String timeMachine = String.valueOf(afterTomorrow.getTime());
 
         ContentletDataGen.publish(contentlet);
-        final String query = "+structureName:" + contentType.name();
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
 
         final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(), timeMachine);
 
@@ -873,7 +875,7 @@ public class ContentUtilsTest {
         final String timeMachine = String.valueOf(afterTomorrow.getTime());
 
         ContentletDataGen.publish(contentlet);
-        final String query = "+structureName:" + contentType.name();
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
 
         final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(), timeMachine);
 
@@ -902,7 +904,7 @@ public class ContentUtilsTest {
         final String timeMachine = String.valueOf(tomorrow.getTime());
 
         ContentletDataGen.publish(contentlet);
-        final String query = "+structureName:" + contentType.name();
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
 
         final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(), timeMachine);
 
