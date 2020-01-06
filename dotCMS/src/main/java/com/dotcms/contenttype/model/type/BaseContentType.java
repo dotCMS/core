@@ -2,6 +2,9 @@ package com.dotcms.contenttype.model.type;
 
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Provides the different Content Types that can be used inside dotCMS. A
@@ -124,6 +127,12 @@ public enum BaseContentType {
 			}
 		}
 		return ANY.immutableClass;
+	}
+
+	public static List<BaseContentType> getEnterpriseBaseTypes() {
+		return Arrays.stream(BaseContentType.values()).filter(baseType ->
+				EnterpriseType.class.isAssignableFrom(baseType.immutableClass()))
+				.collect(Collectors.toList());
 	}
 
 }

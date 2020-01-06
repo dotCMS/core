@@ -17,6 +17,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -43,6 +44,7 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.EnterpriseType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -62,18 +64,21 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
+import io.vavr.Tuple2;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
-public class GraphqlAPITest {
+public class GraphqlAPITest extends IntegrationTestBase {
 
     private static CustomRandom random = new CustomRandom();
 
@@ -624,6 +629,76 @@ public class GraphqlAPITest {
             }
         }
 
+    }
+
+    @DataProvider
+    public static List<Object> dataProviderEEContentTypes() throws Exception {
+        // data provider needs stuff to get initialized because of API access
+        IntegrationTestInitService.getInstance().init();
+
+        // filter only Enterprise content types
+        final List<ContentType> eeTypes = APILocator
+                .getContentTypeAPI(APILocator.systemUser()).findAll().stream()
+                .filter((type)->type instanceof EnterpriseType).collect(Collectors.toList());
+
+        // returns a List of Tuple (typeName, baseType)
+        return eeTypes.stream().map((type)->
+                new Tuple2<>("my"+type.variable(), type.baseType())
+        ).collect(Collectors.toList());
+    }
+
+    @Test
+    @UseDataProvider("dataProviderEEContentTypes")
+    public void testGetSchema_GivenNoEELicense_EnterpriseTypesShouldNotBeAvailableInSchema(
+            final Tuple2<String, BaseContentType> testCase) throws Exception{
+        ContentType customType = null;
+
+        try {
+            // create custom persona type. 1=typeName, 2=BaseType
+            customType = createType(testCase._1,
+                    testCase._2);
+
+            runNoLicense(() -> {
+                final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+                assertNull(schema.getType(testCase._1));
+            });
+        } finally {
+            if(customType!=null) {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(customType);
+            }
+        }
+    }
+
+    @DataProvider
+    public static List<Object> dataProviderEEBaseTypes() throws Exception {
+        // data provider needs stuff to get initialized because of API access
+        IntegrationTestInitService.getInstance().init();
+        // data provider needs to return List<Object>
+        return BaseContentType.getEnterpriseBaseTypes().stream().map(baseType->(Object)baseType)
+                .collect(Collectors.toList());
+    }
+
+    @UseDataProvider("dataProviderEEBaseTypes")
+    public void testGetSchema_GivenNoEELicense_EnterpriseBaseTypeCollectionsShouldNOTBeAvailableInSchema(
+            final BaseContentType baseType)
+            throws Exception{
+        APILocator.getGraphqlAPI().invalidateSchema();
+        runNoLicense(() -> {
+            final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+            assertNull(schema.getQueryType().getFieldDefinition(baseType.name().toLowerCase()
+                    + "BaseTypeCollection"));
+        });
+    }
+
+    @Test
+    @UseDataProvider("dataProviderEEBaseTypes")
+    public void testGetSchema_GivenEELicense_EnterpriseBaseTypeCollectionsShouldBeAvailableInSchema(
+        final BaseContentType baseType)
+            throws Exception{
+        APILocator.getGraphqlAPI().invalidateSchema();
+        final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+        assertNotNull(schema.getQueryType().getFieldDefinition(baseType.name().toLowerCase()
+                +"BaseTypeCollection"));
     }
 
     private ContentType createAndSaveSimpleContentType(final String name) throws DotSecurityException, DotDataException {

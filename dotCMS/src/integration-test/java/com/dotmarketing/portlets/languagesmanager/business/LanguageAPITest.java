@@ -5,11 +5,13 @@ import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentl
 import static org.junit.Assert.assertEquals;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UUIDGenerator;
@@ -18,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -229,6 +232,35 @@ public class LanguageAPITest {
 	@UseDataProvider("dataProviderSaveLanguage")
 	public void test_saveLanguage_InvalidLanguage_ShouldThrowException(final Language language) {
   		APILocator.getLanguageAPI().saveLanguage(language);
+	}
+
+	@Test(expected = DotStateException.class)
+	public void test_deleteLanguage_WithExistingContent_ShouldFail() {
+		Language newLanguage = null;
+  		ContentType testType = null;
+  		try {
+			newLanguage = new LanguageDataGen().nextPersisted();
+			testType = new ContentTypeDataGen().nextPersisted();
+			// We don't care about the reference to the content since deleting the type will take care of it
+			new ContentletDataGen(testType.id())
+					.languageId(newLanguage.getId())
+					.nextPersisted();
+
+			APILocator.getLanguageAPI().deleteLanguage(newLanguage);
+		} finally {
+			// clean up
+			// new final var to be able to use Sneaky
+			final ContentType typeToDelete = testType;
+			if(testType!=null) {
+				Sneaky.sneaked(()->
+					APILocator.getContentTypeAPI(systemUser).delete(typeToDelete)
+				);
+			}
+
+			if(language!=null) {
+				APILocator.getLanguageAPI().deleteLanguage(newLanguage);
+			}
+		}
 	}
 
 }
