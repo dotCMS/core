@@ -25,7 +25,7 @@ public class CMSUrlUtilTest {
     public void testGetURIFromRequestWhenFilterIsNotSet() {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("dotcms+test.txt");
-        String result = CMSUrlUtil.getInstance().getURIFromRequest(request);
+        final String result = CMSUrlUtil.getInstance().getURIFromRequest(request);
         assertEquals("dotcms+test.txt", result);
     }
 
@@ -40,7 +40,7 @@ public class CMSUrlUtilTest {
     public void testGetURIFromRequestWhenFilterIsSet() {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(CMS_FILTER_URI_OVERRIDE)).thenReturn("dotcms+test.txt");
-        String result = CMSUrlUtil.getInstance().getURIFromRequest(request);
+        final String result = CMSUrlUtil.getInstance().getURIFromRequest(request);
         assertEquals("dotcms+test.txt", result);
     }
 

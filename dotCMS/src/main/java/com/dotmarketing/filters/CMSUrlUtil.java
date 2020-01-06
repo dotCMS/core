@@ -412,7 +412,7 @@ public class CMSUrlUtil {
 	 * Search for an overridden URI by a filter and if nothing is found the URI will be read from
 	 * the request.
 	 */
-	public String getURIFromRequest(HttpServletRequest request) {
+	public String getURIFromRequest(final HttpServletRequest request) {
         return (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request
 				.getAttribute(CMS_FILTER_URI_OVERRIDE)
 				: getRequestPath(request);
