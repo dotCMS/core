@@ -990,13 +990,10 @@ public class DotWebdavHelper {
 				parentFolder = folderAPI.findFolderByPath(parentPath,host,user,false);
 				hasPermission = perAPI.doesUserHavePermission(parentFolder,	PERMISSION_CAN_ADD_CHILDREN, user, false);
 			} catch (Exception e) {
-				Logger.error(DotWebdavHelper.class,e.getMessage(),e);
+				Logger.error(DotWebdavHelper.class,"Error creating folder with URI: " + folderUri + ". Error: " + e.getMessage(),e);
 				throw new IOException(e.getMessage(),e);
 			}
 		} else {
-			if (host != null && InodeUtils.isSet(host.getInode())) {
-				folderAPI.validateFolderName(path.substring(1));
-			}
 			try {
 				hasPermission = perAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user, false);
 			} catch (DotDataException e) {
