@@ -550,11 +550,4 @@ import java.util.function.Predicate;
 	 */
 	void subscribeFolderListener (final Folder folder, final FolderListener folderListener, final Predicate<String> childNameFilter);
 
-	/**
-	 * Validates that the folder name is not a reserved word
-	 * @param folderName
-	 * @throws DotDataException
-	 */
-	void validateFolderName(final String folderName);
-
 }
