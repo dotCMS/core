@@ -12,7 +12,6 @@ import com.dotmarketing.portlets.calendar.business.EventAPI;
 import com.dotmarketing.portlets.calendar.business.RecurrenceUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
