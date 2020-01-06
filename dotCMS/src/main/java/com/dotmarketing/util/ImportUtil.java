@@ -159,7 +159,7 @@ public class ImportUtil {
 	 *             An error occurred when analyzing the CSV file.
 	 */
     public static HashMap<String, List<String>> importFile(Long importId, String currentSiteId, String contentTypeInode, String[] keyfields, boolean preview, boolean isMultilingual, User user, long language, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader, String wfActionId, final HttpServletRequest request)
-            throws DotRuntimeException, DotDataException {//TODO: REVIEW IMPORTUTILTEST SINCE ONE PARAMETER WAS ADDED
+            throws DotRuntimeException, DotDataException {
 
         HashMap<String, List<String>> results = new HashMap<String, List<String>>();
         results.put("warnings", new ArrayList<String>());
@@ -673,7 +673,7 @@ public class ImportUtil {
     private static void importLine ( String[] line, String currentHostId, Structure contentType, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, int lineNumber, long language,
             HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, StringBuffer choosenKeyField, Counters counters,
             HashSet<String> keyContentUpdated, List<Permission> contentTypePermissions, List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships, HashMap<Integer, Boolean> onlyChild, HashMap<Integer, Boolean> onlyParent,
-            boolean sameKeyBatchInsert, String wfActionId, final HttpServletRequest request ) throws DotRuntimeException {//TODO: REVIEW IMPORTUTILTEST SINCE THERE IS ONE MORE PARAMETER
+            boolean sameKeyBatchInsert, String wfActionId, final HttpServletRequest request ) throws DotRuntimeException {
 
         try {
             //Building a values HashMap based on the headers/columns position
