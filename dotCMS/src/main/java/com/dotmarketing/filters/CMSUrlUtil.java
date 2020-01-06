@@ -412,9 +412,18 @@ public class CMSUrlUtil {
 	 * Search for an overridden URI by a filter and if nothing is found the URI will be read from
 	 * the request.
 	 */
-	public String getURIFromRequest(HttpServletRequest request)
-			throws UnsupportedEncodingException {
+	public String getURIFromRequest(HttpServletRequest request) {
+        return (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request
+				.getAttribute(CMS_FILTER_URI_OVERRIDE)
+				: getRequestPath(request);
+	}
 
+    /**
+     * Returns path from request URI
+     * @param request - HttpServletRequest
+     * @return String containing the path from the request URI
+     */
+	private String getRequestPath(final HttpServletRequest request){
         String requestPath = request.getRequestURI();
         try {
             URI requestURI = new URI(requestPath);
@@ -422,12 +431,8 @@ public class CMSUrlUtil {
         } catch (URISyntaxException e) {
             Logger.error(this, "Couldn't get URL from request " + requestPath, e);
         }
-
-
-        return (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request
-				.getAttribute(CMS_FILTER_URI_OVERRIDE)
-				: requestPath;
-	}
+        return requestPath;
+    }
 
 	/**
 	 * Verifies if the URI was overridden by a filter
