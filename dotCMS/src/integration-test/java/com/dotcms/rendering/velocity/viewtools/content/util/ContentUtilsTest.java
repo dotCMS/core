@@ -15,6 +15,7 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.LANGUAGE_TYPE_FILTER;
@@ -42,6 +43,8 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import org.junit.BeforeClass;
@@ -794,4 +797,116 @@ public class ContentUtilsTest {
         }
     }
 
+    /**
+     * Method to test: {@link ContentUtils#pull(String, int, String, User, String)}
+     * When: there is a content with a publish date in the future and the time machine parameter in null
+     * Should: Not return the content
+     */
+    @Test
+    public void whenTheTimeMachineDateIsNullAndPublishDateInFutureShouldNotReturnAnything() {
+        final String timeMachine = null;
+        final Calendar contentPublishDate = Calendar.getInstance();
+        contentPublishDate.add(Calendar.DATE, 1);
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setPolicy(IndexPolicy.FORCE)
+                .setProperty("sysPublishDate", contentPublishDate.getTime())
+                .nextPersisted();
+
+        ContentletDataGen.publish(contentlet);
+        final String query = "+structureName:" + contentType.name();
+
+        final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(), timeMachine);
+
+        assertEquals(0, contentlets.size());
+    }
+
+    /**
+     * Method to test: {@link ContentUtils#pull(String, int, String, User, String)}
+     * When: there is a content with a publish date set to tomorrow and the time machine date is the date after tomorrow
+     * Should: return one content
+     */
+    @Test
+    public void whenTheTimeMachineDateAndPublishDateAreTomorrowShouldReturnOneContent() {
+        final Calendar publishDate = Calendar.getInstance();
+        publishDate.add(Calendar.DATE, 1);
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setPolicy(IndexPolicy.FORCE)
+                .setProperty("sysPublishDate", publishDate.getTime())
+                .nextPersisted();
+
+        final Calendar afterTomorrow = Calendar.getInstance();
+        afterTomorrow.add(Calendar.DATE, 2);
+        final String timeMachine = String.valueOf(afterTomorrow.getTime());
+
+        ContentletDataGen.publish(contentlet);
+        final String query = "+structureName:" + contentType.name();
+
+        final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(), timeMachine);
+
+        assertEquals(1, contentlets.size());
+        assertEquals(contentlet.getIdentifier(), contentlets.get(0).getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link ContentUtils#pull(String, int, String, User, String)}
+     * When: there is a content with a expire  date set to tomorrow and the time machine date is the date after tomorrow
+     * Should: return one content
+     */
+    @Test
+    public void whenTheTimeMachineDateIsAfterTomorrowAndExpireDateIsTomorrowShouldNotReturnContent() {
+        final Calendar expireDate = Calendar.getInstance();
+        expireDate.add(Calendar.DATE, 1);
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setPolicy(IndexPolicy.FORCE)
+                .setProperty("sysPublishDate", new Date())
+                .setProperty("sysExpireDate", expireDate.getTime())
+                .nextPersisted();
+
+        final Calendar afterTomorrow = Calendar.getInstance();
+        afterTomorrow.add(Calendar.DATE, 2);
+        final String timeMachine = String.valueOf(afterTomorrow.getTime());
+
+        ContentletDataGen.publish(contentlet);
+        final String query = "+structureName:" + contentType.name();
+
+        final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(), timeMachine);
+
+        assertEquals(0, contentlets.size());
+    }
+
+    /**
+     * Method to test: {@link ContentUtils#pull(String, int, String, User, String)}
+     * When: there is a content with a expire date set to after tomorrow and the time machine date is the date tomorrow
+     * Should: return one content
+     */
+    @Test
+    public void whenTheTimeMachineDateIsTomorrowAndExpireDateIsAfterTomorrowShouldReturnContent() {
+        final Calendar expireDate = Calendar.getInstance();
+        expireDate.add(Calendar.DATE, 2);
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setPolicy(IndexPolicy.FORCE)
+                .setProperty("sysPublishDate", new Date())
+                .setProperty("sysExpireDate", expireDate.getTime())
+                .nextPersisted();
+
+        final Calendar tomorrow = Calendar.getInstance();
+        tomorrow.add(Calendar.DATE, 1);
+        final String timeMachine = String.valueOf(tomorrow.getTime());
+
+        ContentletDataGen.publish(contentlet);
+        final String query = "+structureName:" + contentType.name();
+
+        final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(), timeMachine);
+
+        assertEquals(1, contentlets.size());
+        assertEquals(contentlet.getIdentifier(), contentlets.get(0).getIdentifier());
+    }
 }
