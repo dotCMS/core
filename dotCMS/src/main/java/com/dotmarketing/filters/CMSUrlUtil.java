@@ -426,7 +426,7 @@ public class CMSUrlUtil {
 	private String getRequestPath(final HttpServletRequest request){
         String requestPath = request.getRequestURI();
         try {
-            URI requestURI = new URI(requestPath);
+            final URI requestURI = new URI(requestPath);
             requestPath = requestURI.getPath();
         } catch (URISyntaxException e) {
             Logger.error(this, "Couldn't get URL from request " + requestPath, e);
