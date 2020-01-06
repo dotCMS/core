@@ -4,6 +4,8 @@ import com.dotcms.UnitTestBase;
 import org.junit.Assert;
 import org.junit.Test;
 
+import javax.activation.MimeType;
+import javax.activation.MimeTypeParseException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -12,6 +14,40 @@ import java.math.BigInteger;
  * @author jsanca
  */
 public class ConversionUtilsTest extends UnitTestBase {
+
+    @Test
+    public void toLongFromByteCountHumanDisplaySizeTest () {
+
+        long value = ConversionUtils.toLongFromByteCountHumanDisplaySize("0", -1l);
+        Assert.assertEquals(0l, value);
+
+        value = ConversionUtils.toLongFromByteCountHumanDisplaySize("10", -1l);
+        Assert.assertEquals(10l, value);
+
+        value = ConversionUtils.toLongFromByteCountHumanDisplaySize("900", -1l);
+        Assert.assertEquals(900l, value);
+
+        value = ConversionUtils.toLongFromByteCountHumanDisplaySize("9000", -1l);
+        Assert.assertEquals(9000l, value);
+
+        value = ConversionUtils.toLongFromByteCountHumanDisplaySize("1kb", -1l);
+        Assert.assertEquals(1024l, value);
+
+        value = ConversionUtils.toLongFromByteCountHumanDisplaySize("112kb", -1l);
+        Assert.assertEquals(112l * 1024l, value);
+
+        value = ConversionUtils.toLongFromByteCountHumanDisplaySize("3kb", -1l);
+        Assert.assertEquals( (3l * 1024l), value);
+
+        value = ConversionUtils.toLongFromByteCountHumanDisplaySize("2mb", -1l);
+        Assert.assertEquals( (2l * 1024l * 1024l), value);
+
+        value = ConversionUtils.toLongFromByteCountHumanDisplaySize("4gb", -1l);
+        Assert.assertEquals( (4l * 1024l * 1024l * 1024l), value);
+
+        value = ConversionUtils.toLongFromByteCountHumanDisplaySize("4xxx", -1l);
+        Assert.assertEquals( -1l, value);
+    }
 
 
     /**

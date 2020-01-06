@@ -138,6 +138,38 @@ public class ConversionUtils implements Serializable {
 	}
 
 	/**
+	 * Converts 1kb to 1024
+	 * Converts 1mb to 1024 * 1024
+	 * Converts 1gb to 1024 * 1024 * 1024
+	 * @param humanDisplaySize
+	 * @param defaultLong
+	 * @return long
+	 */
+	public static long toLongFromByteCountHumanDisplaySize (final String humanDisplaySize, final Long defaultLong) {
+
+		if (humanDisplaySize.length() > 2) {
+
+			final String postfix     = humanDisplaySize.substring(humanDisplaySize.length()-2);
+			final String stringValue = humanDisplaySize.substring(0, humanDisplaySize.length()-2);
+			long  value              = toLong(stringValue, defaultLong);
+			switch (postfix.toLowerCase()) {
+
+				case "kb":
+					return value != defaultLong?  value * 1024: defaultLong;
+
+				case "mb":
+					return value != defaultLong?  value * 1024 * 1024: defaultLong;
+
+				case "gb":
+					return value != defaultLong?  value * 1024 * 1024 * 1024: defaultLong;
+
+			}
+		}
+
+		return toLong(humanDisplaySize, defaultLong);
+	}
+
+	/**
 	 * Converts the specified input value into an {@code long}. The input value
 	 * can be a String or an instance of {@link Number}.
 	 * @param input
