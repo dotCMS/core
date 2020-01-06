@@ -10,6 +10,7 @@ import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -20,6 +21,10 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -59,6 +64,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -76,6 +82,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import org.glassfish.jersey.internal.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -91,6 +99,7 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
+    private static final String BINARY_FIELD_NAME = "binaryField";
     private static User user;
     private static Host defaultSite;
     private static Language defaultLanguage;
@@ -314,7 +323,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     /**
      * Testing the {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean,
      * com.liferay.portal.model.User, long, String[], com.dotcms.repackage.com.csvreader.CsvReader,
-     * int, int, java.io.Reader, String)} method
+     * int, int, java.io.Reader, String, HttpServletRequest)} method
      */
     @Test
     @Ignore("Temporarily disabled")
@@ -363,7 +372,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             HashMap<String, List<String>> results = ImportUtil
                     .importFile(0L, defaultSite.getInode(), contentType.getInode(), new String[]{},
                             true, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                            -1, reader, schemeStepActionResult1.getAction().getId());
+                            -1, reader, schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, true, false, true);
 
@@ -390,7 +399,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             results = ImportUtil
                     .importFile(0L, defaultSite.getInode(), contentType.getInode(), new String[]{},
                             false, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                            -1, reader, schemeStepActionResult1.getAction().getId());
+                            -1, reader, schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, false, false, true);
 
@@ -424,7 +433,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             results = ImportUtil
                     .importFile(0L, defaultSite.getInode(), contentType.getInode(), new String[]{},
                             true, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                            -1, reader, schemeStepActionResult1.getAction().getId());
+                            -1, reader, schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, true, true, true);
 
@@ -464,7 +473,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             results = ImportUtil.importFile(0L, defaultSite.getInode(), contentType.getInode(),
                     new String[]{textField.getInode()}, false, false, user, defaultLanguage.getId(),
                     csvHeaders, csvreader, -1, -1, reader,
-                    schemeStepActionResult1.getAction().getId());
+                    schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, false, false,
                     true);//We should expect warnings: Line #X. The key fields chosen match 1 existing content(s) - more than one match suggests key(s) are not properly unique
@@ -501,7 +510,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             results = ImportUtil
                     .importFile(0L, defaultSite.getInode(), contentType.getInode(), new String[]{},
                             false, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                            -1, reader, schemeStepActionResult1.getAction().getId());
+                            -1, reader, schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, false, false, true);
 
@@ -529,7 +538,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             results = ImportUtil.importFile(0L, defaultSite.getInode(), contentType.getInode(),
                     new String[]{textField.getInode()}, false, true, user, -1, csvHeaders,
                     csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader,
-                    schemeStepActionResult1.getAction().getId());
+                    schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, false, false, false);
 
@@ -660,7 +669,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                 new String[]{titleField.id()}, true, true,
                                 user, -1, csvHeaders, csvreader, languageCodeHeaderColumn,
                                 countryCodeHeaderColumn, reader,
-                                schemeStepActionResult1.getAction().getId());
+                                schemeStepActionResult1.getAction().getId(),getHttpRequest());
         //Validations
         validate(results, true, false, true);
 
@@ -714,7 +723,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, true, true,
                                     user, -1, csvHeaders, csvreader, languageCodeHeaderColumn,
                                     countryCodeHeaderColumn, reader,
-                                    schemeStepActionResult1.getAction().getId());
+                                    schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, true, false, true);
 
@@ -779,7 +788,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     joeContributor, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    saveAsDraftAction.getId());
+                                    saveAsDraftAction.getId(),getHttpRequest());
             //Validations
             validate(results, false, false, true);
             /*
@@ -861,7 +870,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     janeReviewer, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    saveAsDraftAction.getId());
+                                    saveAsDraftAction.getId(),getHttpRequest());
             //Validations
             validate(results, false, false, true);
             /*
@@ -948,7 +957,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     janeReviewer, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    null);
+                                    null,getHttpRequest());
             //Validations
             validate(results, false, false, true);
             /*
@@ -1038,7 +1047,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     chrisPublisher, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    null);
+                                    null,getHttpRequest());
             //Validations
             validate(results, false, false, false);
             assertEquals(results.get("warnings").size(), 0);
@@ -1127,7 +1136,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     chrisPublisher, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    null);
+                                    null,getHttpRequest());
             //Validations
             validate(results, false, false, false);
             assertEquals(results.get("warnings").size(), 0);
@@ -1246,7 +1255,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                             chrisPublisher, defaultLanguage.getId(),
                             csvreader.getHeaders(), csvreader,
                             -1, -1, reader,
-                            null);
+                            null,getHttpRequest());
         }catch (Exception e) {
 
             return new HashMap<>();
@@ -1798,7 +1807,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 .importFile(0L, defaultSite.getInode(), type.inode(),
                         keyFields, false, false,
                         user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1,
-                        reader, null);
+                        reader, null,getHttpRequest());
     }
 
     /**
@@ -1837,6 +1846,14 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         .fixed(true)
                         .searchable(true)
                         .values("")
+                        .build());
+
+        fields.add(
+                ImmutableBinaryField.builder()
+                        .name(BINARY_FIELD_NAME)
+                        .variable(BINARY_FIELD_NAME)
+                        .sortOrder(1)
+                        .required(false)
                         .build());
 
         ContentType contentType = new ContentTypeDataGen()
@@ -1886,4 +1903,161 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertTrue(warning.contains("User doesn't have permissions to execute"));
     }
 
+    private HttpServletRequest getHttpRequest() {
+        MockHeaderRequest request = new MockHeaderRequest(
+                new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                        .request());
+
+        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Origin", "localhost");
+        request.setAttribute(WebKeys.USER,user);
+        request.setAttribute(WebKeys.USER_ID,user.getUserId());
+
+        return request;
+    }
+
+    /***
+     * Creates a ContentType with a Title, Body and Binary Field
+     * Creates a CSV with an URL on the Binary Field
+     * Import the CSV and the Content should be created successfully and File downloaded
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void importFile_importBinaryFieldUsingURL_success()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        CsvReader csvreader;
+        long time;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            time = System.currentTimeMillis();
+            final String contentTypeName = "ContentTypeBinaryField" + time;
+            final String contentTypeVarName = "contentTypeBinaryField" + time;
+
+            //create content type
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            //Creating csv
+            reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + BINARY_FIELD_NAME + "\r\n" +
+                    "test1" + time + ", " +
+                    "test1" + time + ", " +
+                    "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            results =
+                    ImportUtil
+                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
+                                    new String[]{titleField.id()}, false, false,
+                                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                                    -1, reader,
+                                    saveAsDraftAction.getId(), getHttpRequest());
+
+            //Validations
+            validate(results, false, false, false);
+
+            assertEquals(results.get("warnings").size(), 0);
+            assertEquals(results.get("errors").size(), 0);
+
+            final List<Contentlet> savedData = contentletAPI
+                    .findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertTrue(savedData.size() == 1);
+            assertNotNull(savedData.get(0).getBinary(BINARY_FIELD_NAME));
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    /***
+     * Creates a ContentType with a Title, Body and Binary Field
+     * Creates a CSV with 3 Lines, each one returns a diff error 400, 404, and false (since URL does not starts with http or https)
+     * Import the CSV and the importer should return with errors, so no content can be created and no file is downloaded.
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void importFile_importBinaryFieldUsingURL_failed_URLsareNotValid()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        CsvReader csvreader;
+        long time;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            time = System.currentTimeMillis();
+            final String contentTypeName = "ContentTypeBinaryField" + time;
+            final String contentTypeVarName = "contentTypeBinaryField" + time;
+
+            //create content type
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            //Creating csv
+            reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + BINARY_FIELD_NAME + "\r\n" +
+                    "test400" + time + ", " +
+                    "test400" + time + ", " +
+                    "https://raw.githubusercontent.com/url/throws/400.jpg" + "\r\n" +
+                    "test404" + time + ", " +
+                    "test404" + time + ", " +
+                    "https://raw.githubusercontent.com/dotCMS/core/throws/dotCMS/404.jpg" + "\r\n" +
+                    "testDoesNotStartWithHTTPorHTTPS" + time + ", " +
+                    "testDoesNotStartWithHTTPorHTTPS" + time + ", " +
+                    "test://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            results =
+                    ImportUtil
+                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
+                                    new String[]{titleField.id()}, false, false,
+                                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                                    -1, reader,
+                                    saveAsDraftAction.getId(), getHttpRequest());
+
+            //Validations
+            validate(results, true, true, false);
+
+            assertEquals(4,results.get("errors").size());//one for each line, and the fourth one is the summary
+
+            final List<Contentlet> savedData = contentletAPI
+                    .findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertTrue(savedData.isEmpty());
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
