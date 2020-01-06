@@ -1225,7 +1225,6 @@ public class ImportUtil {
                     try{
                         if (new LegacyFieldTransformer(field).from().typeName().equals(BinaryField.class.getName()) && !preview){
                             if(UtilMethods.isSet(value)){
-                                Logger.info(ImportUtil.class,"VALUE: " + value);
                                 final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFileFromUrl(null,request,new URL(value.toString()),-1,-1);
                                 cont.setBinary(field.getVelocityVarName(), tempFile.file);
                             }
