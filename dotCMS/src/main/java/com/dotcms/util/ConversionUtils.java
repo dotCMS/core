@@ -151,7 +151,7 @@ public class ConversionUtils implements Serializable {
 
 			final String postfix     = humanDisplaySize.substring(humanDisplaySize.length()-2);
 			final String stringValue = humanDisplaySize.substring(0, humanDisplaySize.length()-2);
-			long  value              = toLong(stringValue, defaultLong);
+			final long  value        = toLong(stringValue, defaultLong);
 			switch (postfix.toLowerCase()) {
 
 				case "kb":
@@ -162,7 +162,8 @@ public class ConversionUtils implements Serializable {
 
 				case "gb":
 					return value != defaultLong?  value * 1024 * 1024 * 1024: defaultLong;
-
+				default:
+					return toLong(humanDisplaySize, defaultLong);
 			}
 		}
 
