@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.HostFolderField;
@@ -1848,14 +1849,6 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         .values("")
                         .build());
 
-        fields.add(
-                ImmutableBinaryField.builder()
-                        .name(BINARY_FIELD_NAME)
-                        .variable(BINARY_FIELD_NAME)
-                        .sortOrder(1)
-                        .required(false)
-                        .build());
-
         ContentType contentType = new ContentTypeDataGen()
                 .name(contentTypeName)
                 .velocityVarName(contentTypeVarName)
@@ -1946,6 +1939,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             contentType = createTestContentType(contentTypeName, contentTypeVarName);
             titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
 
+            final com.dotcms.contenttype.model.field.Field binaryField = FieldBuilder.builder(BinaryField.class).name(BINARY_FIELD_NAME)
+                    .contentTypeId(contentType.id()).variable(BINARY_FIELD_NAME).sortOrder(1).required(false)
+                    .build();
+            fieldAPI.save(binaryField,user);
+
             //Creating csv
             reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + BINARY_FIELD_NAME + "\r\n" +
                     "test1" + time + ", " +
@@ -2016,6 +2014,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //create content type
             contentType = createTestContentType(contentTypeName, contentTypeVarName);
             titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            final com.dotcms.contenttype.model.field.Field binaryField = FieldBuilder.builder(BinaryField.class).name(BINARY_FIELD_NAME)
+                    .contentTypeId(contentType.id()).variable(BINARY_FIELD_NAME).sortOrder(1).required(false)
+                    .build();
+            fieldAPI.save(binaryField,user);
 
             //Creating csv
             reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + BINARY_FIELD_NAME + "\r\n" +
