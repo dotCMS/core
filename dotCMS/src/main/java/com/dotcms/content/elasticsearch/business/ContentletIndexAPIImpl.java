@@ -105,7 +105,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private static ReindexQueueAPI queueApi = null;
     private static final ESIndexAPI esIndexApi = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
-    public static final IndiciesAPI indicesAPI = APILocator.getIndiciesAPI();
+    private static final IndiciesAPI indicesAPI = APILocator.getIndiciesAPI();
 
 
     public ContentletIndexAPIImpl() {
