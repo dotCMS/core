@@ -6271,7 +6271,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final Map<String, com.dotcms.contenttype.model.field.Field> fieldMap = contentType.fieldMap();
 
-        if (fieldMap.containsKey(fieldName)) {
+        if (fieldMap.containsKey(fieldName) && null != binary) {
 
             final List<FieldVariable> fieldVariables = fieldMap.get(fieldName).fieldVariables();
 
@@ -6299,7 +6299,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             // if the extension of the file is not supported
                             if (!allowed) {
 
-                                final DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.binary.type.notallowed");
+                                final DotContentletValidationException cve = new DotContentletValidationException("message.contentlet.binary.type.notallowed");
                                 Logger.warn(this, "Name of Binary field [" + fieldName + "] has an not allowed type: " + binaryMimeType);
                                 cve.addBadTypeField(legacyField);
                                 throw cve;
@@ -6316,7 +6316,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         if (-1 != maxLength && // if the user sets a valid value
                                 fileLength > maxLength) {
 
-                            final DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.binary.invalidlength");
+                            final DotContentletValidationException cve = new DotContentletValidationException("message.contentlet.binary.invalidlength");
                             Logger.warn(this, "Name of Binary field [" + fieldName + "] has a length: " + fileLength
                                     + " but the max length is: " + maxLength);
                             cve.addBadTypeField(legacyField);
