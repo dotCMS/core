@@ -145,9 +145,9 @@ public class ConversionUtils implements Serializable {
 	 * @param defaultLong
 	 * @return long
 	 */
-	public static long toLongFromByteCountHumanDisplaySize (final String humanDisplaySize, final Long defaultLong) {
+	public static long toLongFromByteCountHumanDisplaySize (final String humanDisplaySize, final long defaultLong) {
 
-		if (humanDisplaySize.length() > 2) {
+		if (UtilMethods.isSet(humanDisplaySize) && humanDisplaySize.length() > 2) {
 
 			final String postfix     = humanDisplaySize.substring(humanDisplaySize.length()-2);
 			final String stringValue = humanDisplaySize.substring(0, humanDisplaySize.length()-2);
