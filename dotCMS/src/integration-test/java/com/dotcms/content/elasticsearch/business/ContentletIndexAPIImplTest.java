@@ -278,8 +278,8 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
-        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
+        String liveIndex = IndexType.LIVE.getPrefix() + "_" + timeStamp;
 
         //Get all the indices
         List<String> indices = indexAPI.listDotCMSIndices();
@@ -370,11 +370,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
-        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
+        String liveIndex = IndexType.LIVE.getPrefix() + "_" + timeStamp;
 
-        String oldActiveLive = indexAPI.getActiveIndexName(ContentletIndexAPI.ES_LIVE_INDEX_NAME);
-        String oldActiveWorking = indexAPI.getActiveIndexName(ContentletIndexAPI.ES_WORKING_INDEX_NAME);
+        String oldActiveLive = indexAPI.getActiveIndexName(IndexType.LIVE.getPrefix());
+        String oldActiveWorking = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
 
         //Creates the working index
         Boolean result = indexAPI.createContentIndex( workingIndex );
@@ -390,7 +390,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //***************************************************
         //Get the current indices
-        String liveActiveIndex = indexAPI.getActiveIndexName( ContentletIndexAPI.ES_LIVE_INDEX_NAME );
+        String liveActiveIndex = indexAPI.getActiveIndexName( IndexType.LIVE.getPrefix() );
 
         //Validate
         assertNotNull( liveActiveIndex );
@@ -420,7 +420,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
 
         //Verify with a proper name
         boolean isIndexName = indexAPI.isDotCMSIndexName( workingIndex );
@@ -444,8 +444,8 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
-        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
+        String liveIndex = IndexType.LIVE.getPrefix() + "_" + timeStamp;
 
         //Creates the working index
         Boolean result = indexAPI.createContentIndex( workingIndex );
@@ -592,8 +592,8 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //*****************************************************************
         //Verify if we already have and site search index, if not lets create one...
-        IndiciesAPI.IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
-        String currentSiteSearchIndex = indiciesInfo.site_search;
+        IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+        String currentSiteSearchIndex = indiciesInfo.getSiteSearch();
         String indexName = currentSiteSearchIndex;
         if ( currentSiteSearchIndex == null ) {
             indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ContentletIndexAPIImpl.timestampFormatter.format( new Date() );
@@ -1010,14 +1010,14 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         // we check the query to figure out wich indexes to hit
         String indexToHit;
-        IndiciesAPI.IndiciesInfo info;
+        IndiciesInfo info;
         try {
             info = APILocator.getIndiciesAPI().loadIndicies();
         } catch ( DotDataException ee ) {
             Logger.fatal( this, "Can't get indicies information", ee );
             return null;
         }
-        indexToHit = info.site_search;
+        indexToHit = info.getSiteSearch();
         String indexName = indexToHit;
         if ( indexName == null ) {
             indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ContentletIndexAPIImpl.timestampFormatter.format( new Date() );
@@ -1231,7 +1231,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
             //Build the index name
             String timestamp = String.valueOf(new Date().getTime());
-            workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timestamp;
+            workingIndex = new ESIndexAPI().getIndexNameWithClusterIDPrefix(IndexType.WORKING.getPrefix() + "_" + timestamp);
 
             //Create a working index
             boolean result = indexAPI.createContentIndex(workingIndex);

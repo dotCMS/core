@@ -31,7 +31,7 @@ public class ESIndexHelper implements Serializable{
 	private final static String FILE_PATTERN = ".*" + EXTENSION_PATTERN;
 	private final static String INDEX = "index";
 	private final static String ALIAS = "alias";
-	private final static String SNAPSHOT_PREFIX = "snapshot-";
+	public final static String SNAPSHOT_PREFIX = "snapshot-";
 	private final static String SNAPSHOT_PREFIX_SHORT = "snap-";
 
 	private ESIndexHelper() {

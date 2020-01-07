@@ -3,12 +3,7 @@ package com.dotcms.rest.api.v1.index;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
-import com.dotcms.content.elasticsearch.business.DotIndexException;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexHelper;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -128,7 +123,7 @@ public class ESIndexResource {
                     index=indexName;
             }
             else if(!UtilMethods.isSet(index)) {
-                index=APILocator.getIndiciesAPI().loadIndicies().site_search;
+                index=APILocator.getIndiciesAPI().loadIndicies().getSiteSearch();
             }
         }
 
@@ -151,15 +146,25 @@ public class ESIndexResource {
         }
     }
 
+    /**
+     * @deprecated Generating a manual index backup is not recommended. Snapshot and restore operations
+     * via Elastic Search High Level Rest API should be used instead.
+     * For further details: https://www.elastic.co/guide/en/elasticsearch/reference/7.x/modules-snapshots.html
+     * @param indexName
+     * @return
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Deprecated
     public static File downloadIndex(String indexName) throws DotDataException, IOException {
 
         if(indexName.equalsIgnoreCase("live") || indexName.equalsIgnoreCase("working")){
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
             if(indexName.equalsIgnoreCase("live")){
-                indexName = info.live;
+                indexName = info.getLive();
             }
             if(indexName.equalsIgnoreCase("working")){
-                indexName = info.working;
+                indexName = info.getWorking();
             }
         }
 
@@ -243,10 +248,10 @@ public class ESIndexResource {
             if("live".equalsIgnoreCase(indexName) || "working".equalsIgnoreCase(indexName)){
                 IndiciesInfo info = this.indiciesAPI.loadIndicies();
                 if("live".equalsIgnoreCase(indexName)){
-                    indexName = info.live;
+                    indexName = info.getLive();
                 }
                 if("working".equalsIgnoreCase(indexName)){
-                    indexName = info.working;
+                    indexName = info.getWorking();
                 }
             }
 
@@ -257,7 +262,7 @@ public class ESIndexResource {
                     ByteStreams.copy(in, os);
                 } finally {
                     // clean up
-                    indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY);
+                    indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY, false);
                     snapshotFile.delete();
                 }
             };

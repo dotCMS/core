@@ -19,8 +19,6 @@ import org.elasticsearch.action.bulk.BulkResponse;
 
 public interface ContentletIndexAPI {
     public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
-    public static final String ES_WORKING_INDEX_NAME = "working";
-    public static final String ES_LIVE_INDEX_NAME = "live";
 
     public void getRidOfOldIndex() throws DotDataException;
 
