@@ -105,11 +105,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private static ReindexQueueAPI queueApi = null;
     private static final ESIndexAPI esIndexApi = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
-    private static final IndiciesAPI indicesAPI = APILocator.getIndiciesAPI();
+    private static IndiciesAPI indicesAPI = null;
 
 
     public ContentletIndexAPIImpl() {
         queueApi = APILocator.getReindexQueueAPI();
+        indicesAPI = APILocator.getIndiciesAPI();
     }
 
     public synchronized void getRidOfOldIndex() throws DotDataException {
