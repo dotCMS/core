@@ -4,8 +4,6 @@ import com.dotcms.UnitTestBase;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
