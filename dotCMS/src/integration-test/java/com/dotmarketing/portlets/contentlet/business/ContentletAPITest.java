@@ -31,18 +31,7 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.PersonaDataGen;
-import com.dotcms.datagen.StructureDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestWorkflowUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
@@ -104,8 +93,11 @@ import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
@@ -137,15 +129,7 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -2644,6 +2628,117 @@ public class ContentletAPITest extends ContentletBaseTest {
         } finally {
             APILocator.getStructureAPI().delete(testStructure, user);
         }
+    }
+
+    /**
+     * Creates a content on english and spanish.
+     * Locked the english content by admin
+     * Tries to destroy spanish content
+     * Throws an exception
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test(expected = DotLockException.class)
+    public void no_destroy_limited_content_locked_by_admin_by_limited_user () throws DotSecurityException, DotDataException {
+
+        final User     chrisPublisher  = TestUserUtils.getChrisPublisherUser();
+        final User     adminUser       = TestUserUtils.getAdminUser();
+        final LanguageCodeDataGen languageCodeDataGen = new LanguageCodeDataGen();
+        final String   languageCode1   = languageCodeDataGen.next();
+        final Language language1       = new LanguageDataGen().languageCode(languageCode1).countryCode("IT").nextPersisted();
+        final String   languageCode2   = languageCodeDataGen.next();
+        final Language language2       = new LanguageDataGen().languageCode(languageCode2).countryCode("IT").nextPersisted();
+        final Structure testStructure  = createStructure("JUnit Test Destroy Structure_" + new Date().getTime(),
+                "junit_test_destroy_structure_" + new Date().getTime());
+        Contentlet newContentlet1      = createContentlet(testStructure, language1, false);
+
+        Contentlet anotherLanguage = contentletAPI.checkout(newContentlet1.getInode(), user, false);
+        anotherLanguage.setLanguageId(language2.getId());
+        anotherLanguage = contentletAPI.checkin(anotherLanguage, user, false);
+
+        final Permission permission = new Permission(
+                newContentlet1.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(chrisPublisher).getId(),
+                (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
+                        | PermissionAPI.PERMISSION_WRITE
+                        | PermissionAPI.PERMISSION_PUBLISH),
+                true);
+
+        APILocator.getPermissionAPI().save(permission, newContentlet1, user, false);
+
+        // new inode to create a new version
+        final String newInode = UUIDGenerator.generateUuid();
+        newContentlet1.setInode(newInode);
+        newContentlet1 = contentletAPI.checkin(newContentlet1, adminUser, false);
+
+        //Now we need archive and lock by admin
+        contentletAPI.archive(newContentlet1, adminUser, false);
+        contentletAPI.lock(newContentlet1, adminUser, false);
+
+        //  Tries to destroy by limited user
+        contentletAPI.destroy( anotherLanguage, chrisPublisher, false);
+    }
+
+    /**
+     * Creates a content on english and spanish.
+     * Locked the english content by admin
+     * Tries to destroy spanish content by admin
+     * Everything successfully destroyed
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @see ContentletAPI
+     * @see Contentlet
+     */
+    @Test()
+    public void destroy_content_locked_by_admin_by_other_admin_user () throws DotSecurityException, DotDataException {
+
+        final User     adminUser2      = TestUserUtils.getAdminUser();
+        final User     adminUser       = TestUserUtils.getAdminUser();
+        final LanguageCodeDataGen languageCodeDataGen = new LanguageCodeDataGen();
+        final String   languageCode1   = languageCodeDataGen.next();
+        final Language language1       = new LanguageDataGen().languageCode(languageCode1).countryCode("IT").nextPersisted();
+        final String   languageCode2   = languageCodeDataGen.next();
+        final Language language2       = new LanguageDataGen().languageCode(languageCode2).countryCode("IT").nextPersisted();
+        final Structure testStructure  = createStructure("JUnit Test Destroy Structure_" + new Date().getTime(),
+                "junit_test_destroy_structure_" + new Date().getTime());
+
+        Contentlet newContentlet1      = createContentlet(testStructure, language1, false);
+
+        Contentlet anotherLanguage = contentletAPI.checkout(newContentlet1.getInode(), user, false);
+        anotherLanguage.setLanguageId(language2.getId());
+        anotherLanguage = contentletAPI.checkin(anotherLanguage, user, false);
+
+        final Permission permission = new Permission(
+                newContentlet1.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(adminUser2).getId(),
+                (PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
+                        | PermissionAPI.PERMISSION_WRITE
+                        | PermissionAPI.PERMISSION_PUBLISH),
+                true);
+
+        APILocator.getPermissionAPI().save(permission, newContentlet1, user, false);
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(newContentlet1.getIdentifier());
+        // new inode to create a new version
+        final String newInode = UUIDGenerator.generateUuid();
+        newContentlet1.setInode(newInode);
+        newContentlet1 = contentletAPI.checkin(newContentlet1, adminUser, false);
+
+        //Now we need archive and lock by admin
+        contentletAPI.archive(newContentlet1, adminUser, false);
+        contentletAPI.lock(newContentlet1, adminUser, false);
+
+        //  Tries to destroy by limited user
+        contentletAPI.destroy( anotherLanguage, adminUser2, false);
+
+        final List<Contentlet> contentlets =
+                contentletAPI.findAllVersions(identifier, true, user , false);
+
+        assertFalse(UtilMethods.isSet(contentlets));
     }
 
     /**
@@ -6749,5 +6844,82 @@ public class ContentletAPITest extends ContentletBaseTest {
                 contentTypeAPI.delete(parentContentType);
             }
         }
+    }
+
+    @Test
+    public void testCopyContentletDoesNotCopyWorkflowHistory()
+            throws DotDataException, DotSecurityException {
+        final User systemUser = APILocator.systemUser();
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+
+        Contentlet contentlet    = null;
+        Contentlet newContentlet = null;
+
+        try {
+            contentlet = TestDataUtils.getPageContent(true, language.getId());
+
+            //save workflow task
+            final WorkflowStep workflowStep = workflowAPI.findStep(
+                    SystemWorkflowConstants.WORKFLOW_NEW_STEP_ID);
+            workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, systemUser);
+            final WorkflowTask workflowTask = workflowAPI
+                    .createWorkflowTask(contentlet, systemUser, workflowStep, "test", "test");
+            workflowAPI.saveWorkflowTask(workflowTask);
+
+            //save workflow comment
+            final WorkflowComment comment = new WorkflowComment();
+            comment.setComment(workflowTask.getDescription());
+            comment.setCreationDate(new Date());
+            comment.setPostedBy(systemUser.getUserId());
+            comment.setWorkflowtaskId(workflowTask.getId());
+            workflowAPI.saveComment(comment);
+
+            //save workflow history
+            final WorkflowHistory hist = new WorkflowHistory();
+            hist.setChangeDescription("workflow history description");
+            hist.setCreationDate(new Date());
+            hist.setMadeBy(systemUser.getUserId());
+            hist.setWorkflowtaskId(workflowTask.getId());
+            workflowAPI.saveWorkflowHistory(hist);
+
+            //save workflow task file
+            final Contentlet fileAsset = TestDataUtils.getFileAssetContent(true, language.getId());
+            workflowAPI.attachFileToTask(workflowTask, fileAsset.getInode());
+
+            newContentlet = contentletAPI
+                    .copyContentlet(contentlet, systemUser, false);
+
+            assertEquals(contentlet.getTitle(), newContentlet.getTitle());
+
+            //verify workflow task and comments were copied (ignoring workflow history and files)
+            final WorkflowTask newWorkflowTask = workflowAPI.findTaskByContentlet(newContentlet);
+
+            assertNotNull(newWorkflowTask.getId());
+
+            final List<WorkflowComment> comments = workflowAPI
+                    .findWorkFlowComments(newWorkflowTask);
+            assertTrue(UtilMethods.isSet(comments) && comments.size() == 1);
+            assertEquals("Content copied from content id: " + contentlet.getIdentifier(),
+                    comments.get(0).getComment());
+
+            assertEquals(systemUser.getUserId(), comments.get(0).getPostedBy());
+
+            assertFalse(UtilMethods.isSet(workflowAPI.findWorkflowHistory(newWorkflowTask)));
+
+            assertFalse(UtilMethods
+                    .isSet(workflowAPI
+                            .findWorkflowTaskFilesAsContent(newWorkflowTask, systemUser)));
+
+        }finally{
+            if (contentlet != null && contentlet.getInode() != null){
+                ContentletDataGen.destroy(contentlet);
+            }
+
+            if (newContentlet != null && newContentlet.getInode() != null){
+                ContentletDataGen.destroy(newContentlet);
+            }
+        }
+
     }
 }

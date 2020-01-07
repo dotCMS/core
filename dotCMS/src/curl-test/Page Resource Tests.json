@@ -1,0 +1,174 @@
+{
+	"info": {
+		"_postman_id": "3bac6916-8575-446a-8229-7afdb0369591",
+		"name": "Page Resource",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Url Content Map",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "da875510-87f2-4848-b004-710215a08d80",
+						"exec": [
+							"pm.test(\"No errors\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors.length).to.eql(0);",
+							"});",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"}); ",
+							"",
+							"pm.test(\"Has Rows and Columns\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    ",
+							"    pm.expect(jsonData.entity.layout.body.rows.length).to.equal(1);",
+							"    pm.expect(jsonData.entity.layout.body.rows[0].columns.length).to.equal(2);",
+							"     ",
+							"});",
+							"",
+							"pm.test(\"Number of Contents\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    ",
+							"    pm.expect(jsonData.entity.numberContents).to.equal(3);",
+							"    ",
+							"     ",
+							"});",
+							"",
+							"pm.test(\"Page checks\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    ",
+							"    pm.expect(jsonData.entity.page.pageURI).to.equal('blogs/bullish-on-america-get-on-board-with-southwest-air');",
+							"    pm.expect(jsonData.entity.page.title).to.equal('Blog Detail');",
+							"    pm.expect(jsonData.entity.page.type).to.equal('htmlpage');",
+							"     ",
+							"});",
+							"",
+							"pm.test(\"Site checks\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    ",
+							"    pm.expect(jsonData.entity.site.name).to.equal('demo.dotcms.com');",
+							"    pm.expect(jsonData.entity.site.hostname).to.equal('demo.dotcms.com');",
+							"    pm.expect(jsonData.entity.site.type).to.equal('contentlet');",
+							"     ",
+							"});",
+							"",
+							"pm.test(\"Template checks\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    ",
+							"    pm.expect(jsonData.entity.template.title).to.equal('Quest - 2 Column (Right Bar)');",
+							"    pm.expect(jsonData.entity.template.type).to.equal('template');",
+							"     ",
+							"});",
+							"",
+							"pm.test(\"Url Contente Map checks\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    ",
+							"    pm.expect(jsonData.entity.urlContentMap.hostName).to.equal('demo.dotcms.com');",
+							"    pm.expect(jsonData.entity.urlContentMap.baseType).to.equal('CONTENT');",
+							"    pm.expect(jsonData.entity.urlContentMap.contentType).to.equal('Blog');",
+							"    pm.expect(jsonData.entity.urlContentMap.urlTitle).to.equal('bullish-on-america-get-on-board-with-southwest-air');",
+							"    pm.expect(jsonData.entity.urlContentMap['URL_MAP_FOR_CONTENT']).to.equal('/blogs/bullish-on-america-get-on-board-with-southwest-air');",
+							"    pm.expect(jsonData.entity.urlContentMap['urlMap']).to.equal('/blogs/bullish-on-america-get-on-board-with-southwest-air');",
+							"});",
+							"",
+							"",
+							"",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/page/render/blogs/bullish-on-america-get-on-board-with-southwest-air?mode=EDIT_MODE",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"page",
+						"render",
+						"blogs",
+						"bullish-on-america-get-on-board-with-southwest-air"
+					],
+					"query": [
+						{
+							"key": "mode",
+							"value": "EDIT_MODE"
+						}
+					]
+				},
+				"description": "Gets an Url content map"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Page Resource Anon User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "6f0178b1-d271-45b2-b95b-d7d05982234a",
+						"exec": [
+							"pm.test(\"Status code is 401\", function () {",
+							"    pm.response.to.have.status(401);",
+							"}); "
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/page/render/index",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"page",
+						"render",
+						"index"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

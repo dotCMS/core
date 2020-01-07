@@ -11,6 +11,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
+import com.dotcms.publisher.bundle.business.BundleDeleteResult;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.rest.param.ISODateParam;
 import com.dotmarketing.business.APILocator;
@@ -25,6 +26,8 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.util.LocaleUtil;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringEscapeUtils;
 
@@ -36,10 +39,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.*;
 
@@ -272,8 +272,14 @@ public class BundleResource {
 
             try {
 
-                this.deleteBundleByIdentifier(deleteBundlesByIdentifierForm, initData);
-                this.sendSuccessDeleteBundleMessage(deleteBundlesByIdentifierForm.getIdentifiers().size(), initData, locale);
+                final Tuple2<Integer, Set<String>> result = this.deleteBundleByIdentifier(deleteBundlesByIdentifierForm, initData);
+                if (!UtilMethods.isSet(result._2)) { // no errors
+
+                    this.sendSuccessDeleteBundleMessage(result._1, initData, locale);
+                } else {
+
+                    this.sendWarningDeleteBundleMessage(result._1, result._2, initData, locale);
+                }
             } catch (DotDataException e) {
 
                 Logger.error(this.getClass(),
@@ -303,6 +309,33 @@ public class BundleResource {
                 .setSeverity(MessageSeverity.ERROR).create(), Collections.singletonList(initData.getUser().getUserId()));
     }
 
+    private void sendWarningDeleteBundleMessage(final int bundleDeletesSize,
+                                                final Set<String> failBundleSet,
+                                                final InitDataObject initData,
+                                                final Locale locale) throws DotDataException {
+
+        final String userId  = initData.getUser().getUserId();
+        final String message = Try.of(()->LanguageUtil.get(locale, "bundle.deleted.warning.msg", bundleDeletesSize, failBundleSet.size()))
+                .onFailure(e -> Logger.error(this, e.getMessage()))
+                .getOrElse(bundleDeletesSize + " Bundles Deleted Successfully, failed " + failBundleSet.size());
+
+        Logger.error(this, " Bundles Deleted Successfully, failed " + failBundleSet.size());
+        Logger.error(this, " Bundles Failed " + failBundleSet);
+
+        this.systemMessageEventUtil.pushMessage(new SystemMessageBuilder()
+                .setMessage(message)
+                .setLife(DateUtil.SEVEN_SECOND_MILLIS)
+                .setSeverity(MessageSeverity.WARNING).create(), Collections.singletonList(userId));
+
+        APILocator.getSystemEventsAPI().push(SystemEventType.DELETE_BUNDLE,
+                new Payload(
+                        message,
+                        Visibility.USER,
+                        userId
+                )
+        );
+    }
+
     private void sendSuccessDeleteBundleMessage(final int bundleDeletesSize,
                                                 final InitDataObject initData,
                                                 final Locale locale) throws DotDataException {
@@ -327,12 +360,23 @@ public class BundleResource {
     }
 
     // one transaction for each bundle
-    private void deleteBundleByIdentifier(final DeleteBundlesByIdentifierForm deleteBundlesByIdentifierForm, final InitDataObject initData) throws DotDataException {
+    private Tuple2<Integer, Set<String>> deleteBundleByIdentifier(final DeleteBundlesByIdentifierForm deleteBundlesByIdentifierForm, final InitDataObject initData) throws DotDataException {
 
+	    int successCount        = 0;
+	    final Set<String> fails = new LinkedHashSet<>();
         for (final String bundleId : deleteBundlesByIdentifierForm.getIdentifiers()) {
 
-            this.bundleAPI.deleteBundleAndDependencies(bundleId, initData.getUser());
+            try {
+
+                this.bundleAPI.deleteBundleAndDependencies(bundleId, initData.getUser());
+                successCount++;
+            } catch (Exception e) {
+                Logger.debug(this,"Exception on deleting bundle with id: " + bundleId,e);
+                fails.add(bundleId);
+            }
         }
+
+        return Tuple.of(successCount, fails);
     }
 
     /**
@@ -372,10 +416,10 @@ public class BundleResource {
 
             try {
 
-                final int bundleDeletedSize =
-                        this.bundleAPI.deleteBundleAndDependenciesOlderThan(olderThan, initData.getUser()).size();
+                final BundleDeleteResult bundleDeleteResult =
+                        this.bundleAPI.deleteBundleAndDependenciesOlderThan(olderThan, initData.getUser());
 
-                this.sendSuccessDeleteBundleMessage(bundleDeletedSize, initData, locale);
+                sendDeleteResultsMessage(initData, locale, bundleDeleteResult);
             } catch (Exception e) {
 
                 Logger.error(this.getClass(),
@@ -424,8 +468,8 @@ public class BundleResource {
                         ()-> new PublishAuditStatus.Status[] {FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,
                                 FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH, SUCCESS});
 
-                final int bundleDeletedSize = this.bundleAPI.deleteAllBundles(initData.getUser(), statuses).size();
-                this.sendSuccessDeleteBundleMessage(bundleDeletedSize, initData, locale);
+                final BundleDeleteResult bundleDeleteResult = this.bundleAPI.deleteAllBundles(initData.getUser(), statuses);
+                sendDeleteResultsMessage(initData, locale, bundleDeleteResult);
             } catch (DotDataException e) {
 
                 Logger.error(this.getClass(),
@@ -471,8 +515,8 @@ public class BundleResource {
                         PublishAuditStatus.Status::valueOf, PublishAuditStatus.Status.class,
                         ()-> new PublishAuditStatus.Status[] {FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,
                                 FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_PUBLISH});
-                final int bundleDeletedSize = this.bundleAPI.deleteAllBundles(initData.getUser(), statuses).size();
-                this.sendSuccessDeleteBundleMessage(bundleDeletedSize, initData, locale);
+                final BundleDeleteResult bundleDeleteResult = this.bundleAPI.deleteAllBundles(initData.getUser(), statuses);
+                sendDeleteResultsMessage(initData, locale, bundleDeleteResult);
             } catch (DotDataException e) {
 
                 Logger.error(this.getClass(),
@@ -484,6 +528,19 @@ public class BundleResource {
         return Response.ok(new ResponseEntityView(
                 "Removing bundles in a separated process, the result of the operation will be notified")).build();
     } // deleteAllFail.
+
+    private void sendDeleteResultsMessage(InitDataObject initData, Locale locale,
+            BundleDeleteResult bundleDeleteResult) throws DotDataException {
+        if (UtilMethods.isSet(bundleDeleteResult.getFailedBundleSet())) {
+
+            this.sendWarningDeleteBundleMessage(bundleDeleteResult.getDeleteBundleSet().size(),
+                    bundleDeleteResult.getFailedBundleSet(), initData, locale);
+        } else {
+
+            this.sendSuccessDeleteBundleMessage(bundleDeleteResult.getDeleteBundleSet().size(),
+                    initData, locale);
+        }
+    }
 
     /**
      * Deletes all success bundles
@@ -517,8 +574,8 @@ public class BundleResource {
                 final PublishAuditStatus.Status [] statuses = Config.getCustomArrayProperty("bundle.delete.success.statuses",
                         PublishAuditStatus.Status::valueOf, PublishAuditStatus.Status.class,
                         ()-> new PublishAuditStatus.Status[] {SUCCESS});
-                final int bundleDeletedSize = this.bundleAPI.deleteAllBundles(initData.getUser(), statuses).size();
-                this.sendSuccessDeleteBundleMessage(bundleDeletedSize, initData, locale);
+                final BundleDeleteResult bundleDeleteResult = this.bundleAPI.deleteAllBundles(initData.getUser(), statuses);
+                sendDeleteResultsMessage(initData, locale, bundleDeleteResult);
             } catch (DotDataException e) {
 
                 Logger.error(this.getClass(),

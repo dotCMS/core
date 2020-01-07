@@ -1,5 +1,14 @@
 package com.dotcms.graphql.business;
 
+import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
+import static graphql.Scalars.GraphQLFloat;
+import static graphql.Scalars.GraphQLInt;
+import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
+import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLNonNull.nonNull;
+import static graphql.schema.GraphQLObjectType.newObject;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -18,6 +27,9 @@ import com.dotcms.contenttype.model.field.RowField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.EnterpriseType;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
@@ -42,17 +54,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
@@ -64,15 +65,16 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.idl.SchemaPrinter;
-
-import static com.dotcms.graphql.util.TypeUtil.BASE_TYPE_SUFFIX;
-import static graphql.Scalars.GraphQLFloat;
-import static graphql.Scalars.GraphQLInt;
-import static graphql.Scalars.GraphQLString;
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
-import static graphql.schema.GraphQLList.list;
-import static graphql.schema.GraphQLNonNull.nonNull;
-import static graphql.schema.GraphQLObjectType.newObject;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class GraphqlAPIImpl implements GraphqlAPI {
 
@@ -161,13 +163,10 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         // add CONTENT interface fields
         builder.fields(InterfaceType.CONTENTLET.getType().getFieldDefinitions());
 
-        // TODO commented while pending for researching. Do not remove 
-        /*
         if(InterfaceType.getInterfaceForBaseType(contentType.baseType())!=null) {
             builder.withInterface(InterfaceType.getInterfaceForBaseType(contentType.baseType()));
         }
-        */
-        
+
         final List<Field> fields = contentType.fields();
 
         fields.forEach((field)->{
@@ -259,6 +258,11 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
         List<ContentType> allTypes = contentTypeAPI.findAll();
+        // exclude ee types when no license
+        if(LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level) {
+            allTypes = allTypes.stream().filter((type) ->!(type instanceof EnterpriseType))
+                    .collect(Collectors.toList());
+        }
 
         // create all types
         Map<String, GraphQLObjectType> concreteTypes = new HashMap<>();
@@ -343,5 +347,4 @@ public class GraphqlAPIImpl implements GraphqlAPI {
 
         return APILocator.getContentTypeAPI(user).find(relatedContentTypeId);
     }
-
 }

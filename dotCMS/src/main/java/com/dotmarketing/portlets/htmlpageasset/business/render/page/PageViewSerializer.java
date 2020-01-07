@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.google.common.collect.ImmutableMap;
 import java.io.CharArrayReader;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
@@ -48,6 +50,14 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         if (pageView.getLayout() != null) {
             pageViewMap.put("layout", pageView.getLayout());
         }
+
+        if (null != pageView.getUrlContent()) {
+
+            final ContentletToMapTransformer transformer = new ContentletToMapTransformer(pageView.getUrlContent());
+            final Map<String, Object>   urlContentletMap = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
+            pageViewMap.put("urlContentMap", urlContentletMap);
+        }
+
         return pageViewMap;
     }
 

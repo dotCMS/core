@@ -26,11 +26,15 @@ public interface FieldFactory {
     Field save(Field field) throws DotDataException;
 
 
+    /**
+     * Searches for all field variables whose key match the parameter
+     * @param key
+     * @return
+     * @throws DotDataException
+     */
+    List<FieldVariable> byFieldVariableKey(String key) throws DotDataException;
+
     void delete(Field field) throws DotDataException;
-
-
-
-
 
     List<Field> byContentTypeId(String id) throws DotDataException;
 

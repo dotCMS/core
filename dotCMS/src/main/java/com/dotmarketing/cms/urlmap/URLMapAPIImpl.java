@@ -142,25 +142,21 @@ public class URLMapAPIImpl implements URLMapAPI {
     }
 
     private boolean containsRegEx(final String uri) {
-        try {
-            final String mastRegEx = this.getURLMasterPattern();
+        final String mastRegEx = this.getURLMasterPattern().orElse(null);
 
-            final String url = !uri.endsWith(StringPool.FORWARD_SLASH) ? uri + StringPool.FORWARD_SLASH : uri;
-            return mastRegEx != null && RegEX.contains(url, mastRegEx);
-        } catch (NotFoundURLPatternException e) {
+        if (mastRegEx == null) {
             return false;
         }
+
+        final String url = !uri.endsWith(StringPool.FORWARD_SLASH) ? uri + StringPool.FORWARD_SLASH : uri;
+        return RegEX.contains(url, mastRegEx);
     }
 
-    private static String getURLMasterPattern() {
+    private static Optional<String> getURLMasterPattern() {
         try {
             final String mastRegEx = CacheLocator.getContentTypeCache().getURLMasterPattern();
 
-            if (mastRegEx == null) {
-                throw new NotFoundURLPatternException();
-            }
-
-            return mastRegEx;
+            return Optional.ofNullable(mastRegEx);
         } catch (DotCacheException e) {
             throw new DotRuntimeException(e);
         }
@@ -380,6 +376,4 @@ public class URLMapAPIImpl implements URLMapAPI {
             return matches;
         }
     }
-
-    private static class NotFoundURLPatternException extends RuntimeException {}
 }

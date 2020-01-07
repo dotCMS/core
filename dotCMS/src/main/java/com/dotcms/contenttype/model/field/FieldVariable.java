@@ -21,6 +21,9 @@ import org.immutables.value.Value;
 @Value.Immutable
 public interface FieldVariable extends Serializable, IFieldVar {
 
+    //Key name of the variable used to define a custom mapping for a field in ES
+    String ES_CUSTOM_MAPPING_KEY = "esCustomMapping";
+
 	@Nullable
 	abstract String id();
 

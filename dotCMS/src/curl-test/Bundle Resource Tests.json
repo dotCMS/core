@@ -1,12 +1,12 @@
 {
 	"info": {
-		"_postman_id": "b4e08301-39ba-4f59-9eb0-a32312c5a907",
+		"_postman_id": "8829f9af-9738-4883-86d4-10c5becbd2c9",
 		"name": "Bundle Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Delete",
+			"name": "deleteBundlesByIdentifiers",
 			"item": [
 				{
 					"name": "Delete Bundle By Id Non User",
@@ -132,7 +132,36 @@
 						}
 					},
 					"response": []
+				}
+			],
+			"description": "Path: /api/bundle/ids",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "9474c0c7-34dd-49f7-899a-48d581891d6b",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "12afbce4-4abd-412d-9383-a2c4d77d225d",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "deleteBundlesOlderThan",
+			"item": [
 				{
 					"name": "Delete Bundle by Future Date",
 					"event": [
@@ -280,7 +309,36 @@
 						"description": "Tries to delete a bundle by date"
 					},
 					"response": []
+				}
+			],
+			"description": "Path: api/bundle/olderthan/{olderThan}",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "8b645bb9-43d2-4a20-8ef2-35b3208f1aa8",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "478ef701-1cc1-4424-94d7-7b716661a4f2",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "deleteAllFail",
+			"item": [
 				{
 					"name": "Delete Bundle by Fail Non User",
 					"event": [
@@ -373,7 +431,36 @@
 						"description": "Tries to delete a bundle failed"
 					},
 					"response": []
+				}
+			],
+			"description": "Path: api/bundle/all/fail",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "8e705824-9119-4da0-aa6d-ff791a8cdcbd",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "d5da23ca-ee34-4bfc-8ccc-4fffe73f6af0",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "deleteAllSuccess",
+			"item": [
 				{
 					"name": "Delete Bundle by Success Non User",
 					"event": [
@@ -467,7 +554,14 @@
 						"description": "Tries to delete a bundle failed"
 					},
 					"response": []
-				},
+				}
+			],
+			"description": "Path: /api/budle/all/success",
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "deleteAll",
+			"item": [
 				{
 					"name": "Delete Bundle by All Non User ",
 					"event": [
@@ -561,6 +655,7 @@
 					"response": []
 				}
 			],
+			"description": "Path: /api/bundle/all",
 			"protocolProfileBehavior": {}
 		}
 	],
