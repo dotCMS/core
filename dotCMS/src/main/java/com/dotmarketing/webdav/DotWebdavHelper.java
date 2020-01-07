@@ -1,12 +1,30 @@
 package com.dotmarketing.webdav;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
 import com.dotcms.rendering.velocity.services.DotResourceCache;
-import com.dotcms.repackage.com.bradmcevoy.http.*;
+import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
+import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
+import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
+import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
+import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
+import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
+import com.dotcms.repackage.com.bradmcevoy.http.Request;
+import com.dotcms.repackage.com.bradmcevoy.http.Request.Method;
+import com.dotcms.repackage.com.bradmcevoy.http.Resource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -17,7 +35,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -27,7 +44,11 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
@@ -35,27 +56,29 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
-import org.apache.commons.lang.StringUtils;
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.*;
-import org.jetbrains.annotations.NotNull;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Optional;
+import java.util.Timer;
+import org.apache.commons.lang.StringUtils;
+import org.apache.oro.text.regex.MalformedPatternException;
+import org.apache.oro.text.regex.Perl5Compiler;
+import org.apache.oro.text.regex.Perl5Matcher;
+import org.apache.velocity.runtime.resource.ResourceManager;
 
 public class DotWebdavHelper {
 
@@ -1021,7 +1044,6 @@ public class DotWebdavHelper {
 		final String fromPathStripped = stripMapping(fromPath);
 		toPath = stripMapping(toPath);
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
-
 		String hostName = getHostname(fromPathStripped);
 		String toParentPath = getFolderName(getPath(toPath));
 
@@ -1109,32 +1131,44 @@ public class DotWebdavHelper {
 					Logger.error(DotWebdavHelper.class,e1.getMessage(),e1);
 					throw new IOException(e1.getMessage());
 				}
+				final boolean sourceAndDestinationAreTheSame = isSameResourceURL(fromPathStripped,toPath);
 				if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
-					Logger.debug(this, "Calling Folderfactory to rename " + fromPathStripped + " to " + toPath);
-					try{
-						// Folder must end with "/", otherwise we get the parent folder
-						String folderToPath = getPath(toPath);
-						if(!folderToPath.endsWith("/")) { folderToPath = folderToPath + "/"; }
+					Logger.debug(this, "Calling FolderFactory to rename " + fromPathStripped + " to " + toPath);
 
-						Folder folder = folderAPI.findFolderByPath(folderToPath, host, user, false);
-						removeObject(toPath, user);
-						fc.removeFolder(folder, idapi.find(folder));
-					}catch (Exception e) {
-						Logger.debug(this, "Unable to delete toPath " + toPath);
+					//need to verify the source and destination are not the same because we could be renaming the folder to be the same but with different casing.
+					if (!sourceAndDestinationAreTheSame) {
+						try {
+							// Folder must end with "/", otherwise we get the parent folder
+							String folderToPath = getPath(toPath);
+							if (!folderToPath.endsWith("/")) {
+								folderToPath = folderToPath + "/";
+							}
+
+							final Folder folder = folderAPI
+									.findFolderByPath(folderToPath, host, user, false);
+							removeObject(toPath, user);
+							fc.removeFolder(folder, idapi.find(folder));
+
+						} catch (Exception e) {
+							Logger.debug(this, "Unable to delete toPath " + toPath);
+						}
 					}
-					boolean renamed = false;
+
+					final boolean renamed;
 					try{
-						Folder folder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
+						final Folder folder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
 						renamed = folderAPI.renameFolder(folder, getFileName(toPath),user,false);
-						fc.removeFolder(folder,idapi.find(folder));
-						//folderAPI.updateMovedFolderAssets(folder);
+						if (!sourceAndDestinationAreTheSame) {
+						    fc.removeFolder(folder,idapi.find(folder));
+						}
 					}catch (Exception e) {
 						throw new DotDataException(e.getMessage(), e);
 					}
 					if(!renamed){
-						Logger.error(this, "Unable to remame folder");
+						Logger.error(this, "Unable to rename folder");
 						throw new IOException("Unable to rename folder");
 					}
+
 				} else {
 					Logger.debug(this, "Calling folder factory to move from " + fromPathStripped + " to " + toParentPath);
 					Folder fromFolder;
@@ -1170,14 +1204,14 @@ public class DotWebdavHelper {
 					throw new IOException(e.getMessage(),e);
 				}
 				if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
-					final Folder fromfolder = Try.of(()->folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false)).get();
+					final Folder fromFolder = Try.of(()->folderAPI.findFolderByPath(getPath(fromPathStripped), host, user,false)).get();
 					try{
-						folderAPI.renameFolder(fromfolder, getFileName(toPath),user,false);
-						fc.removeFolder(fromfolder,idapi.find(fromfolder));
+						folderAPI.renameFolder(fromFolder, getFileName(toPath),user,false);
+						fc.removeFolder(fromFolder,idapi.find(fromFolder));
 					}catch (Exception e) {
-						if(fromfolder.getName().contains("untitled folder")){
+						if( UtilMethods.isSet(fromFolder.getName()) && fromFolder.getName().toLowerCase().contains("untitled folder")){
 							try {
-								folderAPI.delete(fromfolder,user,false);
+								folderAPI.delete(fromFolder,user,false);
 							} catch (DotSecurityException ex) {
 								throw new DotDataException(ex.getMessage(), ex);
 							}
@@ -1185,7 +1219,7 @@ public class DotWebdavHelper {
 						throw new DotDataException(e.getMessage(), e);
 					}
 				} else {
-					Folder fromFolder;
+					final Folder fromFolder;
 					try {
 						fromFolder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
 						folderAPI.move(fromFolder, host,user,false);
@@ -1277,7 +1311,74 @@ public class DotWebdavHelper {
 
 		}
 
+	}
 
+	/**
+	 * This will validate that the operation triggered is a Method `MOVE` call
+	 * And extracts the source and target to compare if the source and destination
+	 * @param resourceValidationName
+	 * @return
+	 */
+	boolean isSameTargetAndDestinationResourceOnMove(final String resourceValidationName) {
+		final Request request = HttpManager.request();
+		if (null != request) {
+			final Request.Method method = request.getMethod();
+			if (Method.MOVE.equals(method)) {
+				if (UtilMethods.isSet(request.getAbsoluteUrl()) && UtilMethods
+						.isSet(request.getDestinationHeader())) {
+					final boolean sameResource = isSameResourceURL(request.getAbsoluteUrl(),request.getDestinationHeader(), resourceValidationName);
+					if (sameResource) {
+						Logger.warn(DotWebdavHelper.class,
+								() -> " Attempt to perform a `MOVE` operation over the same source and target resource.");
+					}
+					return sameResource;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * This takes care of situations like case sensitivity and and backslash at the end etc.
+	 * Example  http:/demo.dotcms.com/blah/products vs http:/demo.dotcms.com/blah/Products/
+	 * @param sourceUrl basically url#1
+	 * @param targetUrl basically url#2
+	 * @return same resource returns true otherwise false.
+	 */
+	boolean  isSameResourceURL(final String sourceUrl, final String targetUrl) {
+	    return isSameResourceURL(sourceUrl, targetUrl, null);
+	}
+
+	/**
+ 	 * This takes care of situations like case sensitivity and and backslash at the end etc.
+	 * Example  http:/demo.dotcms.com/blah/products vs http:/demo.dotcms.com/blah/Products/
+	 * @param sourceUrl basically url#1
+	 * @param targetUrl basically url#2
+	 * @param resourceName this ia an extra param to perform an additional validation on the resourceName
+	 * @return same resource returns true otherwise false.
+	 */
+	boolean  isSameResourceURL(final String sourceUrl, final String targetUrl, final String resourceName) {
+	   try {
+		   final URL sourceURL = new URL(sourceUrl);
+		   final URL targetURL = new URL(targetUrl);
+		   final Resource source = ResourceFactorytImpl
+				   .getResource(sourceURL.getHost(), sourceURL.getPath(), this, hostAPI);
+		   final Resource target = ResourceFactorytImpl
+				   .getResource(targetURL.getHost(), targetURL.getPath(), this, hostAPI);
+		   if (source != null && target != null) {
+		      if(UtilMethods.isSet(resourceName)) {
+				  return source.getUniqueId().equals(target.getUniqueId()) && UtilMethods
+						  .isSet(source.getName()) && source.getName()
+						  .equalsIgnoreCase(resourceName);
+			  }else {
+				  return source.getUniqueId().equals(target.getUniqueId()) && UtilMethods
+						  .isSet(source.getName());
+			  }
+		   }
+	   }catch (MalformedURLException mue){
+		   Logger.error(DotWebdavHelper.class, mue);
+	   }
+	   return false;
 	}
 
 //  Previously this was was used to store a reference to the Lock token.
