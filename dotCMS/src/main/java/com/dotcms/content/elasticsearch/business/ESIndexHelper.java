@@ -23,7 +23,6 @@ import org.apache.commons.lang.StringUtils;
  */
 public class ESIndexHelper implements Serializable{
 
-	public final static ESIndexHelper INSTANCE = new ESIndexHelper();
 	private final SiteSearchAPI siteSearchAPI;
 	private final LicenseService licenseService;
 
@@ -44,6 +43,14 @@ public class ESIndexHelper implements Serializable{
 		this.siteSearchAPI = searchAPI;
 		this.licenseService = licenseService;
 	}
+
+	private static class ESIndexSingletonHelper {
+	    private static final ESIndexHelper INSTANCE = new ESIndexHelper();
+    }
+
+    public static ESIndexHelper getInstance(){
+	    return ESIndexSingletonHelper.INSTANCE;
+    }
 
 	/**
 	 * Obtains the index or alias reference from a map, using the index key name

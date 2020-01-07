@@ -262,7 +262,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
     public void getIndexStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
 	    try {
     	    Map<String, String> map = getURIParams();
-    	    String indexName = ESIndexHelper.INSTANCE.getIndexNameOrAlias(map,"indexName",
+    	    String indexName = ESIndexHelper.getInstance().getIndexNameOrAlias(map,"indexName",
 					"indexAlias", APILocator.getESIndexAPI());
     	    response.setContentType("text/plain");
             response.getWriter().println(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch().equals(indexName) ? "default" : "inactive");
