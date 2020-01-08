@@ -3,7 +3,7 @@ package com.dotcms.cluster.bean;
 public enum ServerPort {
 	CACHE_PORT("cache_port", "CACHE_BINDPORT", "5701"),
 	ES_TRANSPORT_TCP_PORT("es_transport_tcp_port", "transport.tcp.port", "9300"),
-	ES_HTTP_PORT("es_http_port", "http.port", "9200");
+	ES_HTTP_PORT("es_http_port", "http.port", "19200");
 
 	private String tableName;
 	private String propertyName;
