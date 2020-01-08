@@ -6,8 +6,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.DateField;
@@ -17,9 +15,7 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
-import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.LANGUAGE_TYPE_FILTER;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.TestCase.PUBLISH_TYPE_FILTER;
@@ -47,17 +43,11 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import io.swagger.annotations.Api;
-import org.apache.commons.lang.time.FastDateFormat;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,6 +59,8 @@ import org.junit.runner.RunWith;
 public class ContentUtilsTest {
 
     public static final String QUERY_BY_STRUCTURE_NAME = "+live:true +structureName:%s";
+    public static final String SYS_PUBLISH_DATE = "sysPublishDate";
+    public static final String SYS_EXPIRE_DATE = "sysExpireDate";
     private static User user;
     private static LanguageAPI languageAPI;
 
@@ -823,7 +815,7 @@ public class ContentUtilsTest {
         final ContentType contentType = TestDataUtils.getNewsLikeContentType();
         new ContentletDataGen(contentType.id())
                 .setPolicy(IndexPolicy.FORCE)
-                .setProperty("sysPublishDate", contentPublishDate.getTime())
+                .setProperty(SYS_PUBLISH_DATE, contentPublishDate.getTime())
                 .nextPersisted();
 
         final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
@@ -851,8 +843,8 @@ public class ContentUtilsTest {
         timeMachine.add(Calendar.DATE, 2);
 
         final ContentType contentType = TestDataUtils.getNewsLikeContentType();
-        Contentlet contentlet = new ContentletDataGen(contentType.id())
-                .setProperty("sysPublishDate", publishDate.getTime())
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty(SYS_PUBLISH_DATE, publishDate.getTime())
                 .nextPersisted();
 
         final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
@@ -879,7 +871,7 @@ public class ContentUtilsTest {
         final ContentType contentType = TestDataUtils.getNewsLikeContentType();
         new ContentletDataGen(contentType.id())
                 .setPolicy(IndexPolicy.FORCE)
-                .setProperty("sysExpireDate", expireDate.getTime())
+                .setProperty(SYS_EXPIRE_DATE, expireDate.getTime())
                 .nextPersisted();
 
         final Calendar afterTomorrow = Calendar.getInstance();
@@ -914,8 +906,8 @@ public class ContentUtilsTest {
         final ContentType contentType = TestDataUtils.getNewsLikeContentType();
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
                 .setPolicy(IndexPolicy.FORCE)
-                .setProperty("sysPublishDate", publishDate.getTime())
-                .setProperty("sysExpireDate", expireDate.getTime())
+                .setProperty(SYS_PUBLISH_DATE, publishDate.getTime())
+                .setProperty(SYS_EXPIRE_DATE, expireDate.getTime())
                 .nextPersisted();
 
         final Calendar timeMachine = Calendar.getInstance();
@@ -950,8 +942,8 @@ public class ContentUtilsTest {
         final ContentType contentType = TestDataUtils.getNewsLikeContentType();
         new ContentletDataGen(contentType.id())
                 .setPolicy(IndexPolicy.FORCE)
-                .setProperty("sysPublishDate", publishDate.getTime())
-                .setProperty("sysExpireDate", expireDate.getTime())
+                .setProperty(SYS_PUBLISH_DATE, publishDate.getTime())
+                .setProperty(SYS_EXPIRE_DATE, expireDate.getTime())
                 .nextPersisted();
 
         final Calendar timeMachine = Calendar.getInstance();
