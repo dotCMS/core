@@ -372,6 +372,9 @@ public class TestDataUtils {
             final Set<String> workflowIds,
             String parentCategoryInode) {
 
+        final String publishDateFieldName = "sysPublishDate";
+        final String expireDateFieldName = "sysExpireDate";
+
         ContentType newsType = null;
         try {
             try {
@@ -413,8 +416,16 @@ public class TestDataUtils {
                 );
                 fields.add(
                         new FieldDataGen()
-                                .name("Publish")
+                                .name(publishDateFieldName)
                                 .velocityVarName("sysPublishDate")
+                                .defaultValue(null)
+                                .type(DateField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name(expireDateFieldName)
+                                .velocityVarName("sysExpireDate")
                                 .defaultValue(null)
                                 .type(DateField.class)
                                 .next()
@@ -459,6 +470,8 @@ public class TestDataUtils {
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
                         .workflowId(workflowIds)
+                        .expireDateFieldVarName(expireDateFieldName)
+                        .publishDateFieldVarName(publishDateFieldName)
                         .fields(fields);
 
                 if (null != site) {
