@@ -47,6 +47,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.URLUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.AuthException;
@@ -59,8 +60,6 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -1099,7 +1098,7 @@ public class DotWebdavHelper {
 						Contentlet newversion = conAPI.checkout(toContentlet.getInode(), user, false);
 
 						// get a copy in a tmp folder to avoid filename change
-						File tmpDir=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+						File tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 								+File.separator+UUIDGenerator.generateUuid());
 						File tmp=new File(tmpDir, toContentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName());
 						FileUtil.copyFile(origin.getBinary(FileAssetAPI.BINARY_FIELD), tmp);
@@ -1112,9 +1111,9 @@ public class DotWebdavHelper {
 						}
 
 						conAPI.unlock(newversion, user, false);
-
+						conAPI.archive(origin, APILocator.getUserAPI().getSystemUser(), false);
 						conAPI.delete(origin, APILocator.getUserAPI().getSystemUser(), false);
-						while(conAPI.isInodeIndexed(origin.getInode(),1)); // this seems to be ok, since need to known when the origin is deleted.
+						//while(conAPI.isInodeIndexed(origin.getInode(),1)); // this seems to be ok, since need to known when the origin is deleted.
 					}
 				}
 
@@ -1131,8 +1130,8 @@ public class DotWebdavHelper {
 					Logger.error(DotWebdavHelper.class,e1.getMessage(),e1);
 					throw new IOException(e1.getMessage());
 				}
-				final boolean sourceAndDestinationAreTheSame = isSameResourceURL(fromPathStripped,toPath);
-				if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
+				final boolean sourceAndDestinationAreTheSame = isSameResourcePath(fromPathStripped, toPath, user);
+				if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) { //This line verifies the parent folder is the same.
 					Logger.debug(this, "Calling FolderFactory to rename " + fromPathStripped + " to " + toPath);
 
 					//need to verify the source and destination are not the same because we could be renaming the folder to be the same but with different casing.
@@ -1339,14 +1338,33 @@ public class DotWebdavHelper {
 	}
 
 	/**
-	 * This takes care of situations like case sensitivity and and backslash at the end etc.
-	 * Example  http:/demo.dotcms.com/blah/products vs http:/demo.dotcms.com/blah/Products/
-	 * @param sourceUrl basically url#1
-	 * @param targetUrl basically url#2
-	 * @return same resource returns true otherwise false.
+	 *
+	 * @param sourcePath
+	 * @param targetPath
+	 * @return
 	 */
-	boolean  isSameResourceURL(final String sourceUrl, final String targetUrl) {
-	    return isSameResourceURL(sourceUrl, targetUrl, null);
+	boolean isSameResourcePath(final String sourcePath, final String targetPath, final User user) {
+		try {
+			final Folder sourceFolder = getFolder(sourcePath, user);
+			final Folder targetFolder = getFolder(targetPath, user);
+			if (null != sourceFolder && UtilMethods.isSet(sourceFolder.getIdentifier())
+					&& null != targetFolder && UtilMethods.isSet(targetFolder.getIdentifier())) {
+				return sourceFolder.getIdentifier().equals(targetFolder.getIdentifier());
+			}
+		} catch (DotDataException | DotSecurityException e) {
+			Logger.error(DotWebdavHelper.class,
+					String.format("Error trying to determine if these 2 uris (`%s`,`%s`) are the same folder.", sourcePath, targetPath),
+					e);
+		}
+		return false;
+	}
+
+	private Folder getFolder(final String uri, final User user)
+			throws DotSecurityException, DotDataException {
+	   final String hostName = getHostName(uri);
+	   final String path = getPath(uri);
+	   final Host host = hostAPI.findByName(hostName, user, false);
+	   return folderAPI.findFolderByPath(path, host, user, false);
 	}
 
 	/**
@@ -1357,28 +1375,58 @@ public class DotWebdavHelper {
 	 * @param resourceName this ia an extra param to perform an additional validation on the resourceName
 	 * @return same resource returns true otherwise false.
 	 */
-	boolean  isSameResourceURL(final String sourceUrl, final String targetUrl, final String resourceName) {
-	   try {
-		   final URL sourceURL = new URL(sourceUrl);
-		   final URL targetURL = new URL(targetUrl);
-		   final Resource source = ResourceFactorytImpl
-				   .getResource(sourceURL.getHost(), sourceURL.getPath(), this, hostAPI);
-		   final Resource target = ResourceFactorytImpl
-				   .getResource(targetURL.getHost(), targetURL.getPath(), this, hostAPI);
-		   if (source != null && target != null) {
-		      if(UtilMethods.isSet(resourceName)) {
-				  return source.getUniqueId().equals(target.getUniqueId()) && UtilMethods
-						  .isSet(source.getName()) && source.getName()
-						  .equalsIgnoreCase(resourceName);
-			  }else {
-				  return source.getUniqueId().equals(target.getUniqueId()) && UtilMethods
-						  .isSet(source.getName());
-			  }
-		   }
-	   }catch (MalformedURLException mue){
-		   Logger.error(DotWebdavHelper.class, mue);
-	   }
-	   return false;
+	boolean isSameResourceURL(String sourceUrl, String targetUrl, final String resourceName) {
+
+		try {
+			final Resource source = getResourceFromURL(sourceUrl);
+			final Resource target = getResourceFromURL(targetUrl);
+
+			if (source != null && target != null) {
+					return source.getUniqueId().equals(target.getUniqueId()) && UtilMethods
+							.isSet(source.getName()) && source.getName()
+							.equalsIgnoreCase(resourceName);
+			}
+		} catch (Exception e) {
+			Logger.error(DotWebdavHelper.class,
+					String.format("Error trying to determine if these 2 urls (`%s`,`%s`) are the same resource.", sourceUrl, targetUrl),
+			  e);
+		}
+		return false;
+	}
+
+	private Resource getResourceFromURL(String url) {
+		String host = null;
+		String path = null;
+		final URLUtils.ParsedURL sourceParts = URLUtils.parseURL(url);
+		if (null != sourceParts) {
+			if (UtilMethods.isSet(sourceParts.getHost())) {
+				host = sourceParts.getHost();
+			}
+
+			if (UtilMethods.isSet(sourceParts.getPath())) {
+				path = sourceParts.getPath();
+			}
+
+			if (UtilMethods.isSet(sourceParts.getResource())) {
+				if (UtilMethods.isSet(path)) {
+					if (!path.endsWith("/")) {
+						path = path + "/" + sourceParts.getResource();
+					} else {
+						path = path + sourceParts.getResource();
+					}
+				}
+			}
+		}
+		//This a fallback..
+		if (host == null) {
+			host = getHostName(url);
+		}
+		if (path == null) {
+			path = getPath(url);
+		}
+
+		return ResourceFactorytImpl
+				.getResource(host, path, this, hostAPI);
 	}
 
 //  Previously this was was used to store a reference to the Lock token.

@@ -27,10 +27,10 @@ import com.liferay.util.FileUtil;
 public class ResourceFactorytImpl implements ResourceFactory, Initable {
 
 	private DotWebdavHelper dotDavHelper;
-	private static final String AUTOPUB_PATH = "/webdav/autopub";
-	private static final String NONPUB_PATH = "/webdav/nonpub";
-	private static final String LIVE_PATH = "/webdav/live";
-	private static final String WORKING_PATH = "/webdav/working";
+	static final String AUTOPUB_PATH = "/webdav/autopub";
+	static final String NONPUB_PATH = "/webdav/nonpub";
+	static final String LIVE_PATH = "/webdav/live";
+	static final String WORKING_PATH = "/webdav/working";
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	
 	public ResourceFactorytImpl() {
