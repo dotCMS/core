@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.containers.business;
 
+import static com.dotmarketing.util.Constants.CONTAINER_FOLDER_PATH;
 import static com.dotmarketing.util.StringUtils.builder;
 import static com.liferay.util.StringPool.FORWARD_SLASH;
 
@@ -15,10 +16,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
@@ -31,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
@@ -106,24 +111,42 @@ public class FileAssetContainerUtil {
     }
 
     public Host getHost (final String path) throws DotSecurityException, DotDataException {
-
         return this.getHostFromHostname(this.getHostName(path));
     }
 
     public Host getHostFromHostname (final String hostname) throws DotSecurityException, DotDataException {
-
         return null == hostname?
-                APILocator.getHostAPI().resolveHostName(hostname, APILocator.systemUser(), false):
-                APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+                APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false) :
+                APILocator.getHostAPI().resolveHostName(hostname, APILocator.systemUser(), false);
     }
 
     //demo.dotcms.com/application/containers/test/
-    public String getHostName (final String path) {
+    public String getHostName(final String path) {
+        try {
+            String tmp = path;
+            final List<String> pageModePrefixList = Stream.of(PageMode.values())
+                    .map(pageMode -> String.format("/%s/", pageMode.name()))
+                    .collect(Collectors.toList());
+            for (final String prefix : pageModePrefixList) {
+                if (tmp.startsWith(prefix)) {
+                    tmp = tmp.substring(prefix.length());
+                    break;
+                }
+            }
 
-        final int startsHost = null != path?     path.indexOf(HOST_INDICATOR): -1;
-        final int endsHost   = -1 != startsHost? path.indexOf(FORWARD_SLASH, startsHost+HOST_INDICATOR.length()): -1;
-        return startsHost != -1 && endsHost != -1?
-                path.substring(startsHost+HOST_INDICATOR.length(), endsHost): null;
+            tmp = tmp.replaceAll(HOST_INDICATOR, "");
+            tmp = tmp.substring(0, tmp.indexOf(CONTAINER_FOLDER_PATH));
+            final String finalString = tmp;
+            Logger.warn(FileAssetContainerUtil.class,
+                    () -> String.format(" extracted hostName `%s`", finalString));
+
+            return (UtilMethods.isSet(tmp) ? tmp : null);
+        } catch (Exception e) {
+            Logger.error(FileAssetContainer.class, String.format(
+                    "An error occurred while extracting host name from path `%s` defaulting to systemHost ",
+                    path), e);
+            return null;
+        }
     }
 
     public String getContainerIdFromPath(final String fullPath) throws DotDataException {
@@ -169,7 +192,7 @@ public class FileAssetContainerUtil {
 
     public boolean isFolderAssetContainerId(final String containerPath) {
 
-        return UtilMethods.isSet(containerPath) && containerPath.contains(Constants.CONTAINER_FOLDER_PATH);
+        return UtilMethods.isSet(containerPath) && containerPath.contains(CONTAINER_FOLDER_PATH);
     }
 
     /**
@@ -235,8 +258,8 @@ public class FileAssetContainerUtil {
         if (null == metaInfoFileAsset) {
 
             throw new NotFoundInDbException("On getting the container by folder, the folder: " + containerFolder.getPath() +
-                    " is not valid, it must be under: " + Constants.CONTAINER_FOLDER_PATH + " and must have a child file asset called: " +
-                    Constants.CONTAINER_META_INFO_FILE_NAME);
+                    " is not valid, it must be under: " + CONTAINER_FOLDER_PATH + " and must have a child file asset called: " +
+                    Constants.CONTAINER_META_INFO_FILE_NAME + " and one or more vtl assets to backup the supported contents." );
         }
 
         this.setContainerData(host, containerFolder, metaInfoFileAsset, containerStructures.build(), container,
@@ -415,5 +438,23 @@ public class FileAssetContainerUtil {
                                 .build();
     }
 
+
+    public boolean isFileAssetContainer(final Contentlet contentlet) {
+        if (null == contentlet || !contentlet.isFileAsset()) {
+            return false;
+        }
+        try {
+            final FileAsset asset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+            final Folder parentFolder = APILocator.getFolderAPI()
+                    .find(asset.getFolder(), APILocator.systemUser(), false);
+
+            return (CONTAINER_META_INFO.equals(asset.getFileName()) && UtilMethods
+                    .isSet(parentFolder.getPath()) && parentFolder.getPath()
+                    .startsWith(CONTAINER_FOLDER_PATH));
+        } catch (Exception e) {
+            Logger.error(FileAssetContainerUtil.class, "Unable to determine if contentlet is a fileAssetContainer ", e);
+        }
+        return false;
+    }
 
 }

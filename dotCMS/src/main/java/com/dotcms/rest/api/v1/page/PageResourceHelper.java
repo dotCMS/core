@@ -2,6 +2,10 @@ package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.mock.request.CachedParameterDecorator;
+import com.dotcms.mock.request.HttpServletRequestParameterDecoratorWrapper;
+import com.dotcms.mock.request.LanguageIdParameterDecorator;
+import com.dotcms.mock.request.ParameterDecorator;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
@@ -36,9 +40,11 @@ import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.Table;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.io.Serializable;
@@ -77,6 +83,18 @@ public class PageResourceHelper implements Serializable {
     private PageResourceHelper() {
 
     }
+
+    private final static ParameterDecorator LANGUAGE_PARAMETER_DECORATOR = new LanguageIdParameterDecorator();
+
+
+    public HttpServletRequest decorateRequest(final HttpServletRequest request) {
+
+        final HttpServletRequest wrapRequest = new HttpServletRequestParameterDecoratorWrapper(request,
+                new CachedParameterDecorator(LANGUAGE_PARAMETER_DECORATOR));
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(wrapRequest);
+        return wrapRequest;
+    }
+
 
     @WrapInTransaction
     public void saveContent(final String pageId, final List<PageContainerForm.ContainerEntry> containerEntries) throws DotDataException {

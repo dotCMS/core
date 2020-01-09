@@ -311,7 +311,7 @@ public class ImportUtil {
                 }
             }
         } catch (Exception e) {
-            Logger.error(ImportContentletsAction.class,e.getMessage());
+            Logger.error(ImportContentletsAction.class, e.getMessage(), e);
 
         } finally {
             if (reader != null) {

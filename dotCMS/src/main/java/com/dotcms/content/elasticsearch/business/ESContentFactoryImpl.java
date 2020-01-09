@@ -1,7 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.datetimeFormat;
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
 
 import com.dotcms.business.WrapInTransaction;
@@ -50,7 +49,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
@@ -66,6 +64,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -900,13 +899,34 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @Override
     protected List<Contentlet> findByStructure(String structureInode, Date maxDate, int limit,
             int offset) throws DotDataException, DotStateException, DotSecurityException {
-        HibernateUtil hu = new HibernateUtil();
-        hu.setQuery("select inode from inode in class "
-                + com.dotmarketing.portlets.contentlet.business.Contentlet.class.getName() +
-                ", contentletvi in class " + ContentletVersionInfo.class.getName() +
-                " where type = 'contentlet' and structure_inode = '" + structureInode + "' " +
-                (maxDate!= null?" and mod_date <= '" + maxDate + "' ":"") +
-                " and contentletvi.identifier=inode.identifier and contentletvi.workingInode=inode.inode ");
+        final HibernateUtil hu = new HibernateUtil();
+        final StringBuilder select = new StringBuilder();
+        select.append("select inode from inode in class ")
+                .append(com.dotmarketing.portlets.contentlet.business.Contentlet.class.getName())
+                .append(", contentletvi in class ").append(ContentletVersionInfo.class.getName())
+                .append(" where type = 'contentlet' and structure_inode = '")
+                .append(structureInode).append("' " );
+
+        if (maxDate != null){
+            final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            if (DbConnectionFactory.isOracle()) {
+                select.append(" AND mod_date<=to_date('");
+                select.append(format.format(maxDate));
+                select.append("', 'YYYY-MM-DD HH24:MI:SS')");
+            } else if (DbConnectionFactory.isMsSql()){
+                    select.append(" AND mod_date <= CAST('");
+                    select.append(format.format(maxDate));
+                    select.append("' AS DATETIME)");
+            } else {
+                select.append(" AND mod_date<='");
+                select.append(format.format(maxDate));
+                select.append("'");
+            }
+        }
+
+        select.append(" and contentletvi.identifier=inode.identifier and contentletvi.workingInode=inode.inode ");
+        hu.setQuery(select.toString());
+
         if (offset > 0) {
             hu.setFirstResult(offset);
         }
@@ -1309,7 +1329,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected long indexCount(final String query) {
-	    final String qq = findAndReplaceQueryDates(translateQuery(query, null).getQuery());
+	    final String qq = LuceneQueryDateTimeFormatter
+                .findAndReplaceQueryDates(translateQuery(query, null).getQuery());
 
 	    // we check the query to figure out wich indexes to hit
         String indexToHit;
@@ -1339,7 +1360,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                         final long timeoutMillis) {
 
         final String queryStringQuery =
-                findAndReplaceQueryDates(translateQuery(query, null).getQuery());
+                LuceneQueryDateTimeFormatter.findAndReplaceQueryDates(translateQuery(query, null).getQuery());
 
         // we check the query to figure out wich indexes to hit
         IndiciesInfo info;
@@ -1373,7 +1394,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                               final Consumer<Exception> indexCountFailure) {
 
         final String queryStringQuery =
-                findAndReplaceQueryDates(translateQuery(query, null).getQuery());
+                LuceneQueryDateTimeFormatter.findAndReplaceQueryDates(translateQuery(query, null).getQuery());
 
         // we check the query to figure out wich indexes to hit
         IndiciesInfo info;
@@ -1463,7 +1484,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	protected SearchHits indexSearch(String query, int limit, int offset, String sortBy) {
 
-	    String qq=findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
+	    final String qq = LuceneQueryDateTimeFormatter
+                .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
 	    // we check the query to figure out wich indexes to hit
 	    String indexToHit;
@@ -2055,234 +2077,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        return sortBy;
 	    }
 
-	    /**
-	     *
-	     * @param query
-	     * @return
-	     */
-        private static String findAndReplaceQueryDates(String query) {
-            query = RegEX.replaceAll(query, " ", "\\s{2,}");
-
-            List<RegExMatch> matches = RegEX.find(query, "[\\+\\-\\!\\(]?" + "structureName" + ":(\\S+)\\)?");
-            String structureVarName = null;
-            if ((matches != null) && (0 < matches.size()))
-                structureVarName = matches.get(0).getGroups().get(0).getMatch();
-
-            if (!UtilMethods.isSet(structureVarName)) {
-                matches = RegEX.find(query, "[\\+\\-\\!\\(]?" + "structureName".toLowerCase() + ":(\\S+)\\)?");
-                if ((matches != null) && (0 < matches.size()))
-                    structureVarName = matches.get(0).getGroups().get(0).getMatch();
-            }
-
-            if (!UtilMethods.isSet(structureVarName)) {
-                Logger.debug(ESContentFactoryImpl.class, "Structure Variable Name not found");
-            }
-            if(structureVarName!=null){
-	            Structure selectedStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureVarName);
-	            if ((selectedStructure == null) || !InodeUtils.isSet(selectedStructure.getInode())) {
-	                Logger.debug(ESContentFactoryImpl.class, "Structure not found");
-	            }
-            }
-
-            //delete additional blank spaces on date range
-            if(UtilMethods.contains(query, "[ ")) {
-                query = query.replace("[ ", "[");
-            }
-
-            if(UtilMethods.contains(query, " ]")) {
-                query = query.replace(" ]", "]");
-            }
-
-            String clausesStr = RegEX.replaceAll(query, "", "[\\+\\-\\(\\)]*");
-            String[] tokens = clausesStr.split(" ");
-            String token;
-            List<String> clauses = new ArrayList<String>();
-            for (int pos = 0; pos < tokens.length; ++pos) {
-                token = tokens[pos];
-                if (token.matches("\\S+\\.\\S+:\\S*")) {
-                    clauses.add(token);
-                } else if (token.matches("\\d+:\\S*")) {
-                    clauses.set(clauses.size() - 1, clauses.get(clauses.size() - 1) + " " + token);
-                } else if (token.matches("\\[\\S*")) {
-                    clauses.set(clauses.size() - 1, clauses.get(clauses.size() - 1) + token);
-                } else if (token.matches("to")) {
-                    clauses.set(clauses.size() - 1, clauses.get(clauses.size() - 1) + " " + token);
-                } else if (token.matches("\\S*\\]")) {
-                    clauses.set(clauses.size() - 1, clauses.get(clauses.size() - 1) + " " + token);
-                } else if (token.matches("\\d{1,2}/\\d{1,2}/\\d{4}")) {
-                    clauses.set(clauses.size() - 1, clauses.get(clauses.size() - 1) + " " + token);
-                } else {
-                    clauses.add(token);
-                }
-            }
-
-            //DOTCMS - 4127
-            List<Field> dateFields = new ArrayList<Field>();
-            String tempStructureVarName;
-            Structure tempStructure;
-
-            for (String clause: clauses) {
-
-                // getting structure names from query
-                if(clause.indexOf('.') >= 0 && (clause.indexOf('.') < clause.indexOf(':'))){
-
-                    tempStructureVarName = clause.substring(0, clause.indexOf('.'));
-                    tempStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(tempStructureVarName);
-
-                    if (UtilMethods.isSet(tempStructure) && UtilMethods.isSet(tempStructure.getVelocityVarName())) {
-                        List<Field> tempStructureFields = new ArrayList<>(FieldsCache
-                                .getFieldsByStructureVariableName(
-                                        tempStructure.getVelocityVarName()));
-
-                        for (int pos = 0; pos < tempStructureFields.size(); ) {
-
-                            if (tempStructureFields.get(pos).getFieldType()
-                                    .equals(Field.FieldType.DATE_TIME.toString()) ||
-                                    tempStructureFields.get(pos).getFieldType()
-                                            .equals(Field.FieldType.DATE.toString()) ||
-                                    tempStructureFields.get(pos).getFieldType()
-                                            .equals(Field.FieldType.TIME.toString())) {
-                                ++pos;
-                            } else {
-                                tempStructureFields.remove(pos);
-                            }
-
-                        }
-
-                        dateFields.addAll(tempStructureFields);
-                    }
-                }
-            }
-
-            String replace;
-            for (String clause: clauses) {
-                for (Field field: dateFields) {
-
-                    structureVarName = CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode()).getVelocityVarName().toLowerCase();
-
-                    if (clause.startsWith(structureVarName + "." + field.getVelocityVarName().toLowerCase() + ":") || clause.startsWith("moddate:")) {
-                        replace = new String(clause);
-                        if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString()) || clause.startsWith("moddate:")) {
-                            matches = RegEX.find(replace, "\\[(\\d{1,2}/\\d{1,2}/\\d{4}) to ");
-                            for (RegExMatch regExMatch : matches) {
-                                replace = replace.replace("[" + regExMatch.getGroups().get(0).getMatch() + " to ", "["
-                                        + regExMatch.getGroups().get(0).getMatch() + " 00:00:00 to ");
-                            }
-
-                            matches = RegEX.find(replace, " to (\\d{1,2}/\\d{1,2}/\\d{4})\\]");
-                            for (RegExMatch regExMatch : matches) {
-                                replace = replace.replace(" to " + regExMatch.getGroups().get(0).getMatch() + "]", " to "
-                                        + regExMatch.getGroups().get(0).getMatch() + " 23:59:59]");
-                            }
-                        }
-                        replace = replaceDateTimeFormatInClause(replace);
-
-                        query = query.replace(clause, replace);
-
-                        break;
-                    }
-                }
-            }
-
-            matches = RegEX.find(query, "\\[([0-9]*)(\\*+) to ");
-            for (RegExMatch regExMatch : matches) {
-                query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + regExMatch.getGroups().get(1).getMatch() + " to ", "["
-                        + regExMatch.getGroups().get(0).getMatch() + " to ");
-            }
-
-            matches = RegEX.find(query, " to ([0-9]*)(\\*+)\\]");
-            for (RegExMatch regExMatch : matches) {
-                query = query.replace(" to " + regExMatch.getGroups().get(0).getMatch() + regExMatch.getGroups().get(1).getMatch() + "]", " to "
-                        + regExMatch.getGroups().get(0).getMatch() + "]");
-            }
-
-            matches = RegEX.find(query, "\\[([0-9]*) (to) ([0-9]*)\\]");
-            if(matches.isEmpty()){
-            	matches = RegEX.find(query, "\\[([a-z0-9]*) (to) ([a-z0-9]*)\\]");
-            }
-            for (RegExMatch regExMatch : matches) {
-                query = query.replace("[" + regExMatch.getGroups().get(0).getMatch() + " to "
-                        + regExMatch.getGroups().get(2).getMatch() + "]", "["
-                        + replaceDateTimeFormatInClause(regExMatch.getGroups().get(0).getMatch())
-                        + " to " + replaceDateTimeFormatInClause(
-                        regExMatch.getGroups().get(2).getMatch())
-                        + "]");
-            }
-
-            //https://github.com/elasticsearch/elasticsearch/issues/2980
-            if (query.contains( "/" )) {
-                query = query.replaceAll( "/", "\\\\/" );
-            }
-
-            return query;
-        }
-
-    private static String replaceDateTimeFormatInClause(String replace) {
-        // Format MM/dd/yyyy hh:mm:ssa
-        replace = DateUtil.replaceDateTimeWithFormat(replace,
-                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?",
-                "MM/dd/yyyy hh:mm:ssa");
-
-        // Format MM/dd/yyyy hh:mm:ss a
-        replace = DateUtil.replaceDateTimeWithFormat(replace,
-                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?",
-                "MM/dd/yyyy hh:mm:ss a");
-
-        // Format MM/dd/yyyy hh:mm a
-        replace = DateUtil.replaceDateTimeWithFormat(replace,
-                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?",
-                "MM/dd/yyyy hh:mm a");
-
-        // Format MM/dd/yyyy hh:mma
-        replace = DateUtil.replaceDateTimeWithFormat(replace,
-                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?",
-                "MM/dd/yyyy hh:mma");
-
-        // Format MM/dd/yyyy HH:mm:ss
-        replace = DateUtil.replaceDateTimeWithFormat(replace,
-                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2}:\\d{1,2})\\\"?",
-                "MM/dd/yyyy HH:mm:ss");
-
-        // Format MM/dd/yyyy HH:mm
-        replace = DateUtil.replaceDateTimeWithFormat(replace,
-                "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{1,2})\\\"?", "MM/dd/yyyy HH:mm");
-
-        // Format yyyyMMddHHmmss
-        replace = DateUtil.replaceDateTimeWithFormat(replace,
-                "\\\"?(\\d{4}\\d{2}\\d{2}\\d{2}\\d{2}\\d{2})\\\"?",
-                datetimeFormat.getPattern());
-
-        // Format MM/dd/yyyy
-        replace = DateUtil.replaceDateWithFormat(replace, "\\\"?(\\d{1,2}/\\d{1,2}/\\d{4})\\\"?");
-
-        // Format hh:mm:ssa
-        replace = DateUtil.replaceTimeWithFormat(replace,
-                "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?", "hh:mm:ssa");
-
-        // Format hh:mm:ss a
-        replace = DateUtil.replaceTimeWithFormat(replace,
-                "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?", "hh:mm:ss a");
-
-        // Format HH:mm:ss
-        replace = DateUtil
-                .replaceTimeWithFormat(replace, "\\\"?(\\d{1,2}:\\d{1,2}:\\d{1,2})\\\"?",
-                        "HH:mm:ss");
-
-        // Format hh:mma
-        replace = DateUtil
-                .replaceTimeWithFormat(replace, "\\\"?(\\d{1,2}:\\d{1,2}(?:AM|PM|am|pm))\\\"?",
-                        "hh:mma");
-
-        // Format hh:mm a
-        replace = DateUtil
-                .replaceTimeWithFormat(replace, "\\\"?(\\d{1,2}:\\d{1,2}\\s+(?:AM|PM|am|pm))\\\"?",
-                        "hh:mm a");
-
-        // Format HH:mm
-        replace = DateUtil.replaceTimeWithFormat(replace, "\\\"?(\\d{1,2}:\\d{1,2})\\\"?", "HH:mm");
-        return replace;
-    }
-
     /**
          *
          */
@@ -2367,7 +2161,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             ps.setObject(1, structureInode);
             final int BATCH_SIZE = 200;
 
-            try(ResultSet rs = ps.executeQuery();)
+            try(ResultSet rs = ps.executeQuery())
             {
             	PreparedStatement ps2 = conn.prepareStatement(queries.getUpdate());
                 for (int i = 1; rs.next(); i++) {
@@ -2382,6 +2176,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 }
 
                 ps2.executeBatch(); // insert remaining records
+            } catch (SQLException e) {
+                Logger.error(this, String.format("Error clearing field '%s' for Content Type with ID: %s",
+                        field.getVelocityVarName(), structureInode), e);
+                throw new DotDataException(String.format("Error clearing field '%s' for Content Type with ID: %s",
+                        field.getVelocityVarName(), structureInode), e);
             }
 
         } catch (SQLException e) {
@@ -2446,7 +2245,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     whereField.append(field.getFieldContentlet()).append(" != ");
                 }
             } else {
-                whereField.append(field.getFieldContentlet()).append(" != ");
+                if (field.getFieldContentlet().contains("text") && DbConnectionFactory.isOracle()){
+                    whereField.append(" TRIM(").append(field.getFieldContentlet()).append(") IS NOT NULL ");
+                } else{
+                    whereField.append(field.getFieldContentlet()).append(" != ");
+                }
             }
         }
 
@@ -2481,14 +2284,29 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 whereField.append(" > 0");
             }else {
                 update.append("''");
-                whereField.append("''");
+                if (!(field.getFieldContentlet().contains("text") && DbConnectionFactory.isOracle())){
+                    whereField.append("''");
+                }
             }
         }
 
         select.append(" WHERE structure_inode = ?").append(" AND (").append(whereField).append(")");
 
-        if (maxDate != null){
-            select.append(" AND mod_date <= '").append(maxDate).append("'");
+        if (maxDate != null) {
+            final SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            if (DbConnectionFactory.isOracle()) {
+                select.append(" AND mod_date<=to_date('");
+                select.append(format.format(maxDate));
+                select.append("', 'YYYY-MM-DD HH24:MI:SS')");
+            } else if (DbConnectionFactory.isMsSql()){
+                select.append(" AND mod_date <= CAST('");
+                select.append(format.format(maxDate));
+                select.append("' AS DATETIME)");
+            } else {
+                select.append(" AND mod_date<='");
+                select.append(format.format(maxDate));
+                select.append("'");
+            }
         }
 
         update.append(" WHERE inode = ?");

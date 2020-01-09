@@ -53,7 +53,7 @@ public class VisitorSerializer extends JsonSerializer<Visitor> {
     }
     Geolocation geo = Try.of(()->visitor.getGeo()).getOrNull();
     if(geo!=null) {
-        visitorBuilder.put(geo, geo);
+        visitorBuilder.put("geo", geo);
     }
     visitorBuilder.put("personas", visitor.getWeightedPersonas());
     gen.writeObject(visitorBuilder.build());

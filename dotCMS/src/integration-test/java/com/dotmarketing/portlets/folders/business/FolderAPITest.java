@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.folders.business;
 
-import static com.dotmarketing.portlets.folders.business.FolderAPIImpl.reservedFolderNames;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -34,6 +32,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
@@ -1041,65 +1040,134 @@ public class FolderAPITest {//24 contentlets
 
 	@DataProvider
 	public static Object[] reservedFolderNames() {
-		return reservedFolderNames.toArray();
+		return FolderFactoryImpl.reservedFolderNames.toArray();
 	}
 
-	@Test(expected = DotDataException.class)
+	@Test(expected = InvalidFolderNameException.class)
 	@UseDataProvider("reservedFolderNames")
 	public void testSave_BlacklistedName_ShouldFail(final String reservedName)
 			throws DotDataException, DotSecurityException {
-		final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
-		final Identifier newIdentifier = identifierAPI.createNew(invalidFolder, host);
-		invalidFolder.setIdentifier(newIdentifier.getId());
-		folderAPI.save(invalidFolder, APILocator.systemUser(), false);
+		Identifier newIdentifier=null;
+		try {
+			final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
+			newIdentifier = identifierAPI.createNew(invalidFolder, host);
+			invalidFolder.setIdentifier(newIdentifier.getId());
+			folderAPI.save(invalidFolder, APILocator.systemUser(), false);
+		} finally {
+			identifierAPI.delete(newIdentifier);
+		}
 	}
 
-	@Test(expected = DotDataException.class)
 	@UseDataProvider("reservedFolderNames")
-	public void testCopyToFolder_BlacklistedName_ShouldFail(final String reservedName)
+	public void testCopyToFolder_BlacklistedName_ShouldSucceed(final String reservedName)
 			throws DotDataException, DotSecurityException, IOException {
 
-		final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
-		final Identifier newIdentifier = identifierAPI.createNew(invalidFolder, host);
-		invalidFolder.setIdentifier(newIdentifier.getId());
+		Identifier newIdentifier = null;
 
-		final Folder newFolder = new FolderDataGen().nextPersisted();
+		try {
+			final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
+			newIdentifier = identifierAPI.createNew(invalidFolder, host);
+			invalidFolder.setIdentifier(newIdentifier.getId());
 
-		folderAPI.copy(invalidFolder, newFolder, APILocator.systemUser(), false);
+			final Folder newFolder = new FolderDataGen().nextPersisted();
+
+			folderAPI.copy(invalidFolder, newFolder, APILocator.systemUser(), false);
+		} finally {
+			identifierAPI.delete(newIdentifier);
+		}
 	}
 
-	@Test(expected = DotDataException.class)
+	@Test(expected = InvalidFolderNameException.class)
 	@UseDataProvider("reservedFolderNames")
 	public void testCopyToHost_BlacklistedName_ShouldFail(final String reservedName)
 			throws DotDataException, DotSecurityException, IOException {
-
 		final Folder invalidFolder = new FolderDataGen().name(reservedName).next();
 		final Identifier newIdentifier = identifierAPI.createNew(invalidFolder, host);
 		invalidFolder.setIdentifier(newIdentifier.getId());
-
 		final Host newHost = new SiteDataGen().nextPersisted();
-
 		folderAPI.copy(invalidFolder, newHost, APILocator.systemUser(), false);
 	}
 
-	@Test(expected = DotDataException.class)
+	@Test(expected = InvalidFolderNameException.class)
 	@UseDataProvider("reservedFolderNames")
 	public void testRename_BlacklistedName_ShouldFail(final String reservedName)
 			throws DotDataException, DotSecurityException {
-		final Folder folder = new FolderDataGen().name("testFolderRename" + System.currentTimeMillis()).next();
-		final Identifier newIdentifier = identifierAPI.createNew(folder, host);
-		folder.setIdentifier(newIdentifier.getId());
-		folderAPI.save(folder, APILocator.systemUser(), false);
 
-		folderAPI.renameFolder(folder,reservedName,user,false);
+		Identifier newIdentifier = null;
+
+		try {
+			final Folder folder = new FolderDataGen()
+					.name("testFolderRename" + System.currentTimeMillis()).next();
+			newIdentifier = identifierAPI.createNew(folder, host);
+			folder.setIdentifier(newIdentifier.getId());
+			folderAPI.save(folder, APILocator.systemUser(), false);
+
+			folderAPI.renameFolder(folder, reservedName, user, false);
+		} finally {
+			if(newIdentifier!=null) {
+				identifierAPI.delete(newIdentifier);
+			}
+		}
 	}
 
-	@Test(expected = DotDataException.class)
+	@Test(expected = InvalidFolderNameException.class)
 	@UseDataProvider("reservedFolderNames")
-	public void testCreateFolders_BlacklistedName_ShouldFail(final String reservedName)
+	public void testCreateFolders_AtRootLevel_BlacklistedName_ShouldFail(final String reservedName)
 			throws DotDataException, DotSecurityException {
-		final String foldersString = "/testFolders/" + reservedName;
+		final String foldersString = "/" + reservedName;
 		folderAPI.createFolders(foldersString,host,user,false);
+	}
+
+	@Test(expected = InvalidFolderNameException.class)
+	@UseDataProvider("reservedFolderNames")
+	public void testSave_BlacklistedName_NotAtRootLevel_ShouldSucceed(final String reservedName)
+			throws DotDataException, DotSecurityException {
+		Identifier newIdentifier = null;
+
+		try {
+			final Folder parentFolder = new FolderDataGen().next();
+			final Folder invalidFolder = new FolderDataGen().parent(parentFolder)
+					.name(reservedName).next();
+			newIdentifier = identifierAPI.createNew(invalidFolder, host);
+			invalidFolder.setIdentifier(newIdentifier.getId());
+			folderAPI.save(invalidFolder, APILocator.systemUser(), false);
+		} finally {
+			identifierAPI.delete(newIdentifier);
+		}
+	}
+
+	@Test(expected = InvalidFolderNameException.class)
+	@UseDataProvider("reservedFolderNames")
+	public void testRename_BlacklistedName_NotAtRootLevel_ShouldSucceed(final String reservedName)
+			throws DotDataException, DotSecurityException {
+		Identifier newIdentifier = null;
+
+		try {
+			final Folder parentFolder = new FolderDataGen().next();
+			final Folder folder = new FolderDataGen().parent(parentFolder)
+					.name("testFolderRename" + System.currentTimeMillis()).next();
+			newIdentifier = identifierAPI.createNew(folder, host);
+			folder.setIdentifier(newIdentifier.getId());
+			folderAPI.save(folder, APILocator.systemUser(), false);
+
+			folderAPI.renameFolder(folder,reservedName,user,false);
+		} finally {
+			identifierAPI.delete(newIdentifier);
+		}
+	}
+
+	@UseDataProvider("reservedFolderNames")
+	public void testCreateFolders_NotAtRootLevel_BlacklistedName_ShouldSucceed(final String reservedName)
+			throws DotDataException, DotSecurityException {
+		Folder folder = null;
+		try {
+			final String foldersString = "/testFolders/" + reservedName;
+			folder = folderAPI.createFolders(foldersString, host, user, false);
+		} finally {
+			if(folder!=null) {
+				APILocator.getFolderAPI().delete(folder, APILocator.systemUser(), false);
+			}
+		}
 	}
 
 }
