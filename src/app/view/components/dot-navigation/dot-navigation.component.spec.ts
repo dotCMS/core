@@ -23,13 +23,12 @@ import { TooltipModule } from 'primeng/primeng';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 
 class FakeNavigationService {
-    private _collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(false);
-
     _routeEvents: BehaviorSubject<NavigationEnd> = new BehaviorSubject(
         new NavigationEnd(0, '', '')
     );
     _items$: BehaviorSubject<DotMenu[]> = new BehaviorSubject([dotMenuMock(), dotMenuMock1()]);
 
+    private _collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(false);
     get items$(): Observable<DotMenu[]> {
         return this._items$.asObservable();
     }
@@ -78,6 +77,7 @@ class FakeNavigationService {
 
     goTo() {}
     reloadCurrentPortlet() {}
+    closeAllSections() {}
 }
 
 describe('DotNavigationComponent', () => {
@@ -137,6 +137,14 @@ describe('DotNavigationComponent', () => {
         expect(items.length).toBe(2);
         expect(items[0].componentInstance.data).toEqual(dotMenuMock());
         expect(items[1].componentInstance.data).toEqual(dotMenuMock1());
+    });
+
+    it('should close on document click', () => {
+        const collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(true);
+        spyOnProperty(dotNavigationService, 'collapsed$', 'get').and.returnValue(collapsed$);
+        spyOn(dotNavigationService, 'closeAllSections');
+        document.dispatchEvent(new MouseEvent('click'));
+        expect(dotNavigationService.closeAllSections).toHaveBeenCalledTimes(1);
     });
 
     describe('itemClick event', () => {
@@ -221,6 +229,26 @@ describe('DotNavigationComponent', () => {
             it('should NOT navigate to porlet', () => {
                 expect(dotNavigationService.goTo).not.toHaveBeenCalled();
             });
+        });
+    });
+
+    describe('menuRickClick event ', () => {
+        let iframeOverlayService: IframeOverlayService;
+
+        beforeEach(() => {
+            iframeOverlayService = de.injector.get(IframeOverlayService);
+            spyOn(iframeOverlayService, 'show');
+
+            navItem.triggerEventHandler('menuRightClick', {
+                originalEvent: {},
+                data: dotMenuMock()
+            });
+            fixture.detectChanges();
+        });
+
+        it('should call set open and call iframeOverlayService', () => {
+            expect(dotNavigationService.setOpen).toHaveBeenCalledWith(dotMenuMock().id);
+            expect(iframeOverlayService.show).toHaveBeenCalledTimes(1);
         });
     });
 });

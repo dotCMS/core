@@ -84,11 +84,92 @@ describe('DotSubNavComponent', () => {
         link.triggerEventHandler('click', { hello: 'world' });
     });
 
-    it('should set contextmenu class when is true', () => {
+    it('should set contextmenu class when is Open and collapsed', () => {
         const list: DebugElement = de.query(By.css('.dot-nav-sub'));
         expect(list.nativeElement.classList.contains('contextmenu')).toBe(false);
-        component.contextmenu = true;
+        component.collapsed = true;
+        component.data = { ...data, isOpen: true };
         fixture.detectChanges();
         expect(list.nativeElement.classList.contains('contextmenu')).toBe(true);
+    });
+
+    describe('dot-sub-nav', () => {
+        let subNav: DebugElement;
+
+        beforeEach(() => {
+            subNav = de.query(By.css('.dot-nav-sub'));
+        });
+
+        describe('is Open', () => {
+            beforeEach(() => {
+                component.data.isOpen = true;
+            });
+
+            describe('menu collapsed', () => {
+                beforeEach(() => {
+                    component.collapsed = true;
+                    fixture.detectChanges();
+                });
+
+                it('should set expandAnimation collapsed', () => {
+                    expect(subNav.properties['@expandAnimation']).toEqual('collapsed');
+                });
+
+                it('should contain contextmenu class', () => {
+                    expect(subNav.nativeElement.classList.contains('contextmenu')).toBe(true);
+                });
+            });
+
+            describe('menu expanded', () => {
+                beforeEach(() => {
+                    component.collapsed = false;
+                    fixture.detectChanges();
+                });
+
+                it('should set expandAnimation expanded', () => {
+                    expect(subNav.properties['@expandAnimation']).toEqual('expanded');
+                });
+
+                it('should not contain contextmenu class', () => {
+                    expect(subNav.nativeElement.classList.contains('contextmenu')).toBe(false);
+                });
+            });
+        });
+
+        describe('is Close', () => {
+            beforeEach(() => {
+                component.data.isOpen = false;
+            });
+
+            describe('menu collapsed', () => {
+                beforeEach(() => {
+                    component.collapsed = true;
+                    fixture.detectChanges();
+                });
+
+                it('should set expandAnimation collapsed', () => {
+                    expect(subNav.properties['@expandAnimation']).toEqual('collapsed');
+                });
+
+                it('should contain contextmenu class', () => {
+                    expect(subNav.nativeElement.classList.contains('contextmenu')).toBe(false);
+                });
+            });
+
+            describe('menu expanded', () => {
+                beforeEach(() => {
+                    component.collapsed = false;
+                    fixture.detectChanges();
+                });
+
+                it('should set expandAnimation expanded', () => {
+                    expect(subNav.properties['@expandAnimation']).toEqual('collapsed');
+                });
+
+                it('should not contain contextmenu class', () => {
+                    expect(subNav.nativeElement.classList.contains('contextmenu')).toBe(false);
+                });
+            });
+        });
     });
 });

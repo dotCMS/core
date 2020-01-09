@@ -27,12 +27,10 @@ import { DotMenu, DotMenuItem } from '@models/navigation';
     styleUrls: ['./dot-sub-nav.component.scss']
 })
 export class DotSubNavComponent {
-    @Input()
-    data: DotMenu;
-    @Input()
-    contextmenu: boolean;
+    @Input() data: DotMenu;
     @Output()
     itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
+    @Input() collapsed: boolean;
 
     constructor() {}
 

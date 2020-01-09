@@ -20,6 +20,12 @@
         }
     }
 
+    &:not(.contextmenu) {
+        dot-sub-nav {
+            transition: opacity $basic-speed ease, width $basic-speed ease;
+        }
+    }
+
     &.collapsed {
         dot-icon,
         .dot-nav__item-label {
@@ -63,7 +69,6 @@
 
 dot-sub-nav {
     opacity: 1;
-    transition: opacity $basic-speed ease, width $basic-speed ease;
     width: $navigation-width;
 }
 

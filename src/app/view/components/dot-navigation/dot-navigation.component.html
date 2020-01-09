@@ -1,10 +1,14 @@
 <nav [class.collapsed]="dotNavigationService.collapsed$ | async" role="navigation">
     <ul class="dot-nav">
-        <li *ngFor="let item of menu$ | async" class="dot-nav__list-item" [class.dot-nav__list-item--active]="item.isOpen">
+        <li *ngFor="let item of menu$ | async"
+            class="dot-nav__list-item"
+            [class.dot-nav__list-item--active]="item.isOpen">
             <dot-nav-item
                 [data]="item"
                 [collapsed]="dotNavigationService.collapsed$ | async"
+                [class.contextmenu]="item.isOpen && dotNavigationService.collapsed$ | async"
                 (menuClick)="onMenuClick($event)"
+                (menuRightClick)="onMenuRightClick($event)"
                 (itemClick)="onItemClick($event)">
             </dot-nav-item>
         </li>

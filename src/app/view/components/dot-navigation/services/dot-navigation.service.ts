@@ -125,14 +125,22 @@ export class DotNavigationService {
      *
      * @memberof DotNavigationService
      */
-    collapseMenu(): void {
-        this._collapsed$.next(true);
-
+    closeAllSections(): void {
         const closedMenu: DotMenu[] = this._items$.getValue().map((menu: DotMenu) => {
             menu.isOpen = false;
             return menu;
         });
         this.setMenu(closedMenu);
+    }
+
+    /**
+     * Collapse the menu and close all the sections in the menu
+     *
+     * @memberof DotNavigationService
+     */
+    collapseMenu(): void {
+        this._collapsed$.next(true);
+        this.closeAllSections();
     }
 
     /**
@@ -203,10 +211,9 @@ export class DotNavigationService {
      */
     toggle(): void {
         this.dotEventsService.notify('dot-side-nav-toggle');
-
         const isCollapsed = this._collapsed$.getValue();
         isCollapsed ? this.expandMenu() : this.collapseMenu();
-        this.dotLocalstorageService.setItem<boolean>(DOTCMS_MENU_STATUS, isCollapsed);
+        this.dotLocalstorageService.setItem<boolean>(DOTCMS_MENU_STATUS, this._collapsed$.getValue());
     }
 
     /**
@@ -216,11 +223,6 @@ export class DotNavigationService {
      * @memberof DotNavigationService
      */
     setOpen(id: string): void {
-        const isCollapsed = this._collapsed$.getValue();
-        if (isCollapsed) {
-            this._collapsed$.next(false);
-        }
-        this.dotLocalstorageService.setItem<boolean>(DOTCMS_MENU_STATUS, isCollapsed);
         const updatedMenu: DotMenu[] = this._items$.getValue().map((menu: DotMenu) => {
             menu.isOpen = menu.isOpen ? false : id === menu.id;
             return menu;

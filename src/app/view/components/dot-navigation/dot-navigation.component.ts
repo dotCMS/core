@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { DotMenu, DotMenuItem } from '@models/navigation';
 import { DotNavigationService } from './services/dot-navigation.service';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 
 @Component({
     providers: [],
@@ -13,7 +14,10 @@ import { DotNavigationService } from './services/dot-navigation.service';
 export class DotNavigationComponent implements OnInit {
     menu$: Observable<DotMenu[]>;
 
-    constructor(public dotNavigationService: DotNavigationService) {}
+    constructor(
+        public dotNavigationService: DotNavigationService,
+        public iframeOverlayService: IframeOverlayService
+    ) {}
 
     ngOnInit() {
         this.menu$ = this.dotNavigationService.items$;
@@ -46,6 +50,29 @@ export class DotNavigationComponent implements OnInit {
             this.dotNavigationService.goTo(event.data.menuItems[0].menuLink);
         } else {
             this.dotNavigationService.setOpen(event.data.id);
+        }
+    }
+
+    /**
+     * Set isOpen to the passed DotMenu item
+     *
+     * @param DotMenu currentItem
+     * @memberof DotNavigationComponent
+     */
+    onMenuRightClick(event: { originalEvent: MouseEvent; data: DotMenu }): void {
+        this.dotNavigationService.setOpen(event.data.id);
+        this.iframeOverlayService.show();
+    }
+
+    /**
+     * Handle click on document to hide the fly-out menu
+     *
+     * @memberof DotNavItemComponent
+     */
+    @HostListener('document:click')
+    handleDocumentClick(): void {
+        if (this.dotNavigationService.collapsed$.getValue()) {
+            this.dotNavigationService.closeAllSections();
         }
     }
 }

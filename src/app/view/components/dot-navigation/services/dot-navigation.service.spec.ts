@@ -140,42 +140,44 @@ describe('DotNavigationService', () => {
     let loginService: LoginServiceMock;
     let router;
 
-    beforeEach(async(() => {
-        const testbed = DOTTestBed.configureTestingModule({
-            providers: [
-                DotNavigationService,
-                {
-                    provide: DotcmsEventsService,
-                    useClass: DotcmsEventsServiceMock
-                },
-                {
-                    provide: DotMenuService,
-                    useClass: DotMenuServiceMock
-                },
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: Router,
-                    useClass: RouterMock
-                }
-            ],
-            imports: [RouterTestingModule]
-        });
+    beforeEach(
+        async(() => {
+            const testbed = DOTTestBed.configureTestingModule({
+                providers: [
+                    DotNavigationService,
+                    {
+                        provide: DotcmsEventsService,
+                        useClass: DotcmsEventsServiceMock
+                    },
+                    {
+                        provide: DotMenuService,
+                        useClass: DotMenuServiceMock
+                    },
+                    {
+                        provide: LoginService,
+                        useClass: LoginServiceMock
+                    },
+                    {
+                        provide: Router,
+                        useClass: RouterMock
+                    }
+                ],
+                imports: [RouterTestingModule]
+            });
 
-        service = testbed.get(DotNavigationService);
-        dotRouterService = testbed.get(DotRouterService);
-        dotcmsEventsService = testbed.get(DotcmsEventsService);
-        dotMenuService = testbed.get(DotMenuService);
-        loginService = testbed.get(LoginService);
-        dotEventService = testbed.get(DotEventsService);
-        router = testbed.get(Router);
+            service = testbed.get(DotNavigationService);
+            dotRouterService = testbed.get(DotRouterService);
+            dotcmsEventsService = testbed.get(DotcmsEventsService);
+            dotMenuService = testbed.get(DotMenuService);
+            loginService = testbed.get(LoginService);
+            dotEventService = testbed.get(DotEventsService);
+            router = testbed.get(Router);
 
-        spyOn(dotEventService, 'notify');
-        spyOn(dotMenuService, 'reloadMenu').and.callThrough();
-        localStorage.clear();
-    }));
+            spyOn(dotEventService, 'notify');
+            spyOn(dotMenuService, 'reloadMenu').and.callThrough();
+            localStorage.clear();
+        })
+    );
 
     describe('goToFirstPortlet', () => {
         it('should go to first portlet: ', () => {
@@ -196,11 +198,9 @@ describe('DotNavigationService', () => {
         });
     });
 
-    describe('collapseMenu', () => {
+    describe('closeAllSections', () => {
         it('should close all the menu sections', () => {
-            expect(service.collapsed$.getValue()).toBe(true);
             let counter = 0;
-
             service.items$.subscribe((menus: DotMenu[]) => {
                 if (counter === 0) {
                     expect(menus.map((menu: DotMenu) => menu.isOpen)).toEqual([true, false]);
@@ -209,9 +209,17 @@ describe('DotNavigationService', () => {
                 }
                 counter++;
             });
+            service.collapseMenu();
+        });
+    });
 
+    describe('collapseMenu', () => {
+        it('should collapse menu and call closeAllSections', () => {
+            expect(service.collapsed$.getValue()).toBe(true);
+            spyOn(service, 'closeAllSections');
             service.collapseMenu();
             expect(service.collapsed$.getValue()).toBe(true);
+            expect(service.closeAllSections).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -236,9 +244,7 @@ describe('DotNavigationService', () => {
     });
 
     describe('setOpen', () => {
-        it('should expand expecific menu section', () => {
-            expect(service.collapsed$.getValue()).toBe(true);
-
+        it('should set isOpen attribute to expecific menu section', () => {
             let counter = 0;
             service.items$.subscribe((menus: DotMenu[]) => {
                 if (counter === 0) {
@@ -251,8 +257,6 @@ describe('DotNavigationService', () => {
             });
 
             service.setOpen('456');
-
-            expect(service.collapsed$.getValue()).toBe(false);
         });
     });
 
