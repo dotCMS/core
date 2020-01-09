@@ -320,7 +320,7 @@ public String getGravatar(String postedBy){
 		
 		    <!-- START Comments -->
 		        <div id="commentsTab" dojoType="dijit.layout.ContentPane" title="Comments">
-                    <div style="max-height:500px;overflow: auto;border:1px solid silver;max-width:1024px;padding:15px;">
+                    <div style="max-height:500px;overflow: auto;border-bottom:1px solid silver;padding:15px;">
 		                <table style="width:100%;padding: 0px;">
 		                    <% 
 		                        for(WorkflowTimelineItem comment : commentsHistory){ %>
@@ -348,7 +348,7 @@ public String getGravatar(String postedBy){
 		                    <% } %>
 		                </table>
 		              </div>
-                      <div style="padding:20px;max-width:1024px;border-top:1px solid silver">
+                      <div style="padding:20px;max-width:1024px;border-top:0px solid silver">
                          <div id="commentFormletShow" class="buttonRow">
                             <button dojoType="dijit.form.Button" type="button" onClick="document.getElementById('commentFormletShow').style.display='none';document.getElementById('commentFormlet').style.display=''">
                                 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
