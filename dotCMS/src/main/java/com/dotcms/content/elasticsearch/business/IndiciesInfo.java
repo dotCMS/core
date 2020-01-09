@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.beanutils.PropertyUtils;
 
 /**
  * Handle the current Index name into the cluster.
@@ -169,10 +170,10 @@ public class IndiciesInfo implements Serializable {
     }
 
     public Map<IndexType, String> asMap() {
-        Map<IndexType, String> actives = new HashMap<>();
+        final Map<IndexType, String> actives = new HashMap<>();
         for (IndexType type : IndexType.values()) {
-            final String indexType = type.toString().toLowerCase();
-            final String newValue = Try.of(() -> (String) IndiciesInfo.class.getDeclaredField(indexType).get(this)).getOrNull();
+            final String newValue = Try.of(() -> (String) PropertyUtils
+                    .getProperty(this, type.getPropertyName())).getOrNull();
             if (newValue != null) {
                 actives.put(type, newValue);
             }

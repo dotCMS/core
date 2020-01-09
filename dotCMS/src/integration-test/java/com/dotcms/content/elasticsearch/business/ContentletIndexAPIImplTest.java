@@ -27,6 +27,7 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotcms.util.IntegrationTestInitService;
@@ -963,6 +964,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //Set up a test contentlet
         Contentlet testContentlet = new Contentlet();
+        testContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
         testContentlet.setStructureInode( testStructure.getInode() );
         testContentlet.setHost( defaultHost.getIdentifier() );
         testContentlet.setLanguageId( defaultLanguage.getId() );
@@ -1090,13 +1092,10 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         List<Language> languages = languageAPI.getLanguages();
         if (languages.size() < 5) {
-            // create 3 langauges
+            // create 3 languages
             for (int i = 0; i < 3; i++) {
-                Language newLang = new Language();
-                newLang.setCountry("x" + i);
-                newLang.setLanguage("en");
-                newLang.setCountryCode("x" + i);
-                languageAPI.saveLanguage(newLang);
+                new LanguageDataGen().country("x" + i).languageName("dummyLanguage" + i)
+                        .languageCode("en").countryCode("x" + i).nextPersisted();
             }
         }
         languages = new ArrayList<>();
@@ -1113,7 +1112,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             newCon.setLanguageId(lang.getId());
             newCon.setInode(null);
             newCon.setIdentifier(baseCon.getIdentifier());
-            newCon.setIndexPolicy(IndexPolicy.FORCE);
+            newCon.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contents.add(contentletAPI.checkin(newCon, user, false));
         }
 
@@ -1244,8 +1243,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             //parse json mapping and validate
             assertNotNull(mapping);
 
-            final JSONObject contentJSON = (JSONObject) (new JSONObject(mapping)).get("content");
-            final JSONObject propertiesJSON = (JSONObject) contentJSON.get("properties");
+            final JSONObject propertiesJSON = (JSONObject) (new JSONObject(mapping)).get("properties");
             final JSONObject contentTypeJSON = (JSONObject) ((JSONObject) propertiesJSON
                     .get(parentContentType.variable().toLowerCase())).get("properties");
 
