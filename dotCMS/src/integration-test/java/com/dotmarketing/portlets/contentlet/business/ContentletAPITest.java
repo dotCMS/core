@@ -4529,7 +4529,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * --- Add  1 Binary field called File
      * --- Set an application/* as a {@link com.dotcms.contenttype.model.field.BinaryField#ALLOWED_FILE_TYPES}
      * --- Upload a wrong file
-     * --- expecteds DotContentletValidationException
+     * --- expects DotContentletValidationException
      *
      */
     @Test (expected = DotContentletValidationException.class)
@@ -4601,7 +4601,7 @@ public class ContentletAPITest extends ContentletBaseTest {
      * --- Add  1 Binary field called File
      * --- Set an application/* as a {@link com.dotcms.contenttype.model.field.BinaryField#ALLOWED_FILE_TYPES}
      * --- Upload a wrong file
-     * --- expecteds DotContentletValidationException
+     * --- expects DotContentletValidationException
      *
      */
     @Test (expected = DotContentletValidationException.class)
