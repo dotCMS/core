@@ -27,6 +27,7 @@ ul {
         .dot-nav-sub__link {
             color: $black;
             padding: $basic-padding $basic-padding * 3;
+            transition: none;
 
             &--active,
             &:hover {
