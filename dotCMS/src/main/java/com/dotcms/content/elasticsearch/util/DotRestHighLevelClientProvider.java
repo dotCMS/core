@@ -109,7 +109,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
         final RestClientBuilder clientBuilder = RestClient
                 .builder(new HttpHost(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
-                        Config.getIntProperty("ES_PORT", 19200), "https"))
+                        Config.getIntProperty("ES_PORT", 9200), "https"))
                 .setHttpClientConfigCallback((httpClientBuilder) -> {
                     if (sslContextFromPem != null) {
                         httpClientBuilder
