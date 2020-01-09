@@ -50,6 +50,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.URLUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
@@ -93,7 +94,7 @@ public class DotWebdavHelper {
 
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
-	private IdentifierAPI idapi = APILocator.getIdentifierAPI();
+	private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 	private FolderCache fc = CacheLocator.getFolderCache();
 	private PermissionAPI perAPI = APILocator.getPermissionAPI();
 	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
@@ -445,7 +446,7 @@ public class DotWebdavHelper {
 			}
 			for ( Folder folder : folderListSubChildren ) {
 				if ( !folder.isArchived() ) {
-					String path = idapi.find( folder ).getPath();
+					String path = identifierAPI.find( folder ).getPath();
 
 					FolderResourceImpl resource = new FolderResourceImpl( folder, prePath + folderHost.getHostname() + "/" + (path.startsWith( "/" ) ? path.substring( 1 ) : path) );
 					result.add( resource );
@@ -456,7 +457,7 @@ public class DotWebdavHelper {
 			if ( p.contains( "/" ) )
 				p.replace( "/", File.separator );
 			File tempDir = new File( tempHolderDir.getPath() + File.separator + folderHost.getHostname() + p );
-			p = idapi.find( parentFolder ).getPath();
+			p = identifierAPI.find( parentFolder ).getPath();
 			if ( !p.endsWith( "/" ) )
 				p = p + "/";
 			if ( !p.startsWith( "/" ) )
@@ -525,7 +526,7 @@ public class DotWebdavHelper {
 	public void copyFolderToTemp(Folder folder, File tempFolder, User user, String name,boolean isAutoPub, long lang) throws IOException{
 		String p = "";
 		try {
-			p = idapi.find(folder).getPath();
+			p = identifierAPI.find(folder).getPath();
 		} catch (Exception e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
@@ -1073,10 +1074,9 @@ public class DotWebdavHelper {
 			}
 
 			try{
-				Identifier identifier  = APILocator.getIdentifierAPI().find(host, getPath(fromPathStripped));
-
-				Identifier identTo  = APILocator.getIdentifierAPI().find(host, getPath(toPath));
-				boolean destinationExists=identTo!=null && InodeUtils.isSet(identTo.getId());
+				final Identifier identifier  = APILocator.getIdentifierAPI().find(host, getPath(fromPathStripped));
+				final Identifier identTo = APILocator.getIdentifierAPI().find(host, getPath(toPath));
+				final boolean destinationExists = identTo != null && InodeUtils.isSet(identTo.getId());
 
 				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 					Contentlet fileAssetCont = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
@@ -1090,30 +1090,39 @@ public class DotWebdavHelper {
 						} else {
 							APILocator.getFileAssetAPI().moveFile(fileAssetCont, toParentFolder, user, false);
 						}
-					}
-					else {
+					} else {
 						// if the destination exists lets just create a new version and delete the original file
-						Contentlet origin = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
-						Contentlet toContentlet = conAPI.findContentletByIdentifier(identTo.getId(), false, defaultLang, user, false);
-						Contentlet newversion = conAPI.checkout(toContentlet.getInode(), user, false);
+						final Contentlet origin = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
+						final Contentlet toContentlet = conAPI.findContentletByIdentifier(identTo.getId(), false, defaultLang, user, false);
+						Contentlet newVersion = conAPI.checkout(toContentlet.getInode(), user, false);
+
+						final boolean sameSourceAndTarget = (origin.getIdentifier().equals(newVersion.getIdentifier()));
 
 						// get a copy in a tmp folder to avoid filename change
-						File tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-								+File.separator+UUIDGenerator.generateUuid());
-						File tmp=new File(tmpDir, toContentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+						final File tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+								+ File.separator+UUIDGenerator.generateUuid());
+						final File tmp = new File(tmpDir, toContentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName());
 						FileUtil.copyFile(origin.getBinary(FileAssetAPI.BINARY_FIELD), tmp);
 
-						newversion.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
-						newversion.setLanguageId(defaultLang);
-						newversion = conAPI.checkin(newversion, user, false);
+						newVersion.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
+						newVersion.setLanguageId(defaultLang);
+						newVersion = conAPI.checkin(newVersion, user, false);
 						if(autoPublish) {
-							conAPI.publish(newversion, user, false);
+							conAPI.publish(newVersion, user, false);
+						}
+						if(sameSourceAndTarget){
+						   //If source and target are the same this could be a rename attempt
+						   identTo.setAssetName(getFileName(toPath));
+						   identifierAPI.save(identTo);
 						}
 
-						conAPI.unlock(newversion, user, false);
-						conAPI.archive(origin, APILocator.getUserAPI().getSystemUser(), false);
-						conAPI.delete(origin, APILocator.getUserAPI().getSystemUser(), false);
-						//while(conAPI.isInodeIndexed(origin.getInode(),1)); // this seems to be ok, since need to known when the origin is deleted.
+						conAPI.unlock(newVersion, user, false);
+						// if we don't validate source and destination are the same we will end-up loosing the file.
+						if(!sameSourceAndTarget){
+						  final User sysUser = APILocator.systemUser();
+						  conAPI.archive(origin, sysUser, false);
+						  conAPI.delete(origin, sysUser, false);
+						}
 					}
 				}
 
@@ -1146,7 +1155,7 @@ public class DotWebdavHelper {
 							final Folder folder = folderAPI
 									.findFolderByPath(folderToPath, host, user, false);
 							removeObject(toPath, user);
-							fc.removeFolder(folder, idapi.find(folder));
+							fc.removeFolder(folder, identifierAPI.find(folder));
 
 						} catch (Exception e) {
 							Logger.debug(this, "Unable to delete toPath " + toPath);
@@ -1158,7 +1167,7 @@ public class DotWebdavHelper {
 						final Folder folder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
 						renamed = folderAPI.renameFolder(folder, getFileName(toPath),user,false);
 						if (!sourceAndDestinationAreTheSame) {
-						    fc.removeFolder(folder,idapi.find(folder));
+						    fc.removeFolder(folder, identifierAPI.find(folder));
 						}
 					}catch (Exception e) {
 						throw new DotDataException(e.getMessage(), e);
@@ -1178,15 +1187,15 @@ public class DotWebdavHelper {
 						throw new DotRuntimeException(e1.getMessage(), e1);
 					}
 					if(fromFolder != null){
-						Logger.debug(this, "Calling folder factory to move from " + idapi.find(fromFolder).getPath() + " to " + toParentPath);
+						Logger.debug(this, "Calling folder factory to move from " + identifierAPI.find(fromFolder).getPath() + " to " + toParentPath);
 						Logger.debug(this, "the from folder inode is " + fromFolder.getInode());
 					}else{
 						Logger.debug(this, "The from folder is null");
 					}
 					try {
 						folderAPI.move(fromFolder, toParentFolder,user,false);
-						fc.removeFolder(fromFolder,idapi.find(fromFolder));
-						fc.removeFolder(toParentFolder,idapi.find(toParentFolder));
+						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder));
+						fc.removeFolder(toParentFolder, identifierAPI.find(toParentFolder));
 						//folderAPI.updateMovedFolderAssets(fromFolder);
 					} catch (Exception e) {
 						Logger.error(DotWebdavHelper.class, e.getMessage(), e);
@@ -1206,7 +1215,7 @@ public class DotWebdavHelper {
 					final Folder fromFolder = Try.of(()->folderAPI.findFolderByPath(getPath(fromPathStripped), host, user,false)).get();
 					try{
 						folderAPI.renameFolder(fromFolder, getFileName(toPath),user,false);
-						fc.removeFolder(fromFolder,idapi.find(fromFolder));
+						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder));
 					}catch (Exception e) {
 						if( UtilMethods.isSet(fromFolder.getName()) && fromFolder.getName().toLowerCase().contains("untitled folder")){
 							try {
@@ -1222,7 +1231,7 @@ public class DotWebdavHelper {
 					try {
 						fromFolder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
 						folderAPI.move(fromFolder, host,user,false);
-						fc.removeFolder(fromFolder,idapi.find(fromFolder));
+						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder));
 					} catch (Exception e) {
 						Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 						throw new DotDataException(e.getMessage(), e);
@@ -1375,6 +1384,7 @@ public class DotWebdavHelper {
 	 * @param resourceName this ia an extra param to perform an additional validation on the resourceName
 	 * @return same resource returns true otherwise false.
 	 */
+    @VisibleForTesting
 	boolean isSameResourceURL(String sourceUrl, String targetUrl, final String resourceName) {
 
 		try {
@@ -1394,7 +1404,8 @@ public class DotWebdavHelper {
 		return false;
 	}
 
-	private Resource getResourceFromURL(String url) {
+    @VisibleForTesting
+	Resource getResourceFromURL(String url) {
 		String host = null;
 		String path = null;
 		final URLUtils.ParsedURL sourceParts = URLUtils.parseURL(url);
@@ -1639,7 +1650,7 @@ public class DotWebdavHelper {
 							Summary s = new Summary();
 							s.setName(folderAux.getName());
 							s.setPath("/" + host.getHostname()
-									+ idapi.find(folderAux).getPath());
+									+ identifierAPI.find(folderAux).getPath());
 							s.setPath(s.getPath().substring(0,
 									s.getPath().length() - 1));
 							s.setFolder(true);
@@ -1687,7 +1698,7 @@ public class DotWebdavHelper {
 								s.setModifyDate(folderAux.getModDate());
 								s.setName(folderAux.getName());
 								s.setPath("/" + host.getHostname()
-										+ idapi.find(folderAux).getPath());
+										+ identifierAPI.find(folderAux).getPath());
 								s.setPath(s.getPath().substring(0,
 										s.getPath().length() - 1));
 								s.setHost(host);
@@ -1769,7 +1780,7 @@ public class DotWebdavHelper {
 		}
 		return returnValue;
 	}
-	private void setResourceContent(String resourceUri, InputStream content,	String contentType, String characterEncoding, User user) throws Exception {
+	private void setResourceContent(String resourceUri, InputStream content, String contentType, String characterEncoding, User user) throws Exception {
 		try {
 			setResourceContent(resourceUri, content, contentType, characterEncoding, Calendar.getInstance().getTime(), user, false);
 		} catch (Exception e) {
