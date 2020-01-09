@@ -6,6 +6,7 @@ version: "3.7"
 
 networks:
   db_net:
+  es_net:
 
 services:
 
@@ -29,6 +30,7 @@ services:
 #        target: /custom/dotsecure/license/license.dat
     networks:
       - db_net
+      - es_net
 
   database:
     networks:
@@ -36,4 +38,4 @@ services:
 
   elasticsearch:
     networks:
-      - db_net
+      - es_net
