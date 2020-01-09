@@ -11201,10 +11201,6 @@ a.category_higlighted, a.tag_higlighted {
   z-index: 1;
 }
 
-.view-user__form form {
-  width: 500px;
-}
-
 .view-user__form dd {
   flex: 1;
 }
