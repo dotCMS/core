@@ -141,8 +141,8 @@ public class ConversionUtils implements Serializable {
 	 * Converts 1kb to 1024
 	 * Converts 1mb to 1024 * 1024
 	 * Converts 1gb to 1024 * 1024 * 1024
-	 * @param humanDisplaySize
-	 * @param defaultLong
+	 * @param humanDisplaySize String human display size such as 100, 1kb, 2mb, 3gb, etc
+	 * @param defaultLong long default long in case the humanDisplaySize can not be parsed
 	 * @return long
 	 */
 	public static long toLongFromByteCountHumanDisplaySize (final String humanDisplaySize, final long defaultLong) {
