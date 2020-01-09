@@ -42,8 +42,12 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,6 +58,9 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class ContentUtilsTest {
 
+    public static final String QUERY_BY_STRUCTURE_NAME = "+live:true +structureName:%s";
+    public static final String SYS_PUBLISH_DATE = "sysPublishDate";
+    public static final String SYS_EXPIRE_DATE = "sysExpireDate";
     private static User user;
     private static LanguageAPI languageAPI;
 
@@ -794,4 +801,163 @@ public class ContentUtilsTest {
         }
     }
 
+    /**
+     * Method to test: {@link ContentUtils#pull(String, int, String, User, String)}
+     * When: there is a content with a publish date in the future and the time machine parameter in null
+     * Should: Not return the content
+     */
+    @Test
+    public void whenTheTimeMachineDateIsNullAndPublishDateInFutureShouldNotReturnAnything() {
+        final String timeMachine = null;
+        final Calendar contentPublishDate = Calendar.getInstance();
+        contentPublishDate.add(Calendar.DATE, 1);
+
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        new ContentletDataGen(contentType.id())
+                .setPolicy(IndexPolicy.FORCE)
+                .setProperty(SYS_PUBLISH_DATE, contentPublishDate.getTime())
+                .nextPersisted();
+
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+
+        final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(), timeMachine);
+
+        assertEquals(0, contentlets.size());
+
+        final List<Contentlet> workingContent = ContentUtils.pull(query.replace("live", "working"),
+                10, null, APILocator.systemUser(), null);
+        assertEquals(1, workingContent.size());
+    }
+
+    /**
+     * Method to test: {@link ContentUtils#pull(String, int, String, User, String)}
+     * When: there is a content with a publish date set to tomorrow and the time machine date is the date after tomorrow
+     * Should: return one content
+     */
+    @Test
+    public void whenTheTimeMachineDateAndPublishDateAreTomorrowShouldReturnOneContent() {
+        final Calendar publishDate = Calendar.getInstance();
+        publishDate.add(Calendar.DATE, 1);
+
+        final Calendar timeMachine = Calendar.getInstance();
+        timeMachine.add(Calendar.DATE, 2);
+
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setProperty(SYS_PUBLISH_DATE, publishDate.getTime())
+                .nextPersisted();
+
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+
+        final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(),
+                String.valueOf(timeMachine.getTime().getTime()));
+
+        assertEquals(1  , contentlets.size());
+        assertEquals(contentlet.getIdentifier(), contentlets.get(0).getIdentifier());
+
+        assertEquals(0, ContentUtils.pull(query, 10, null, APILocator.systemUser(), null).size());
+    }
+
+    /**
+     * Method to test: {@link ContentUtils#pull(String, int, String, User, String)}
+     * When: there is a content with a expire  date set to tomorrow and the time machine date is the date after tomorrow
+     * Should: return one content
+     */
+    @Test
+    public void whenTheTimeMachineDateIsAfterTomorrowAndExpireDateIsTomorrowShouldNotReturnContent() {
+        final Calendar expireDate = Calendar.getInstance();
+        expireDate.add(Calendar.DATE, 2);
+
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        new ContentletDataGen(contentType.id())
+                .setPolicy(IndexPolicy.FORCE)
+                .setProperty(SYS_EXPIRE_DATE, expireDate.getTime())
+                .nextPersisted();
+
+        final Calendar afterTomorrow = Calendar.getInstance();
+        afterTomorrow.add(Calendar.DATE, 3);
+        final String timeMachine = String.valueOf(afterTomorrow.getTime().getTime());
+
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+
+        final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(), timeMachine);
+
+        assertEquals(0, contentlets.size());
+
+        final List<Contentlet> workingContent = ContentUtils.pull(query.replace("live", "working"),
+                10, null, APILocator.systemUser(), null);
+        assertEquals(1, workingContent.size());
+    }
+
+    /**
+     * Method to test: {@link ContentUtils#pull(String, int, String, User, String)}
+     * When: there is a content with a publish date set to tomorrow and expire date set in the future
+     * and the time machine date is set to tomorrow
+     * Should: return one content
+     */
+    @Test
+    public void whenTheTimeMachineDateIsAfterTomorrowAndExpireDateIsInFutureShouldReturnContent() {
+        final Calendar publishDate = Calendar.getInstance();
+        publishDate.add(Calendar.DATE, 1);
+
+        final Calendar expireDate = Calendar.getInstance();
+        expireDate.add(Calendar.DATE, 3);
+
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .setPolicy(IndexPolicy.FORCE)
+                .setProperty(SYS_PUBLISH_DATE, publishDate.getTime())
+                .setProperty(SYS_EXPIRE_DATE, expireDate.getTime())
+                .nextPersisted();
+
+        final Calendar timeMachine = Calendar.getInstance();
+        timeMachine.add(Calendar.DATE, 2);
+
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+
+        final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(),
+                String.valueOf(timeMachine.getTime().getTime()));
+
+        assertEquals(1, contentlets.size());
+        assertEquals(contentlet.getIdentifier(), contentlets.get(0).getIdentifier());
+
+        final List<Contentlet> contentNotTM = ContentUtils.pull(query, 10, null, APILocator.systemUser(), null);
+        assertEquals(0, contentNotTM.size());
+    }
+
+    /**
+     * Method to test: {@link ContentUtils#pull(String, int, String, User, String)}
+     * When: there is a content with a publish date set to tomorrow and expire date set to after tomorrow
+     * and the time machine date set after that
+     * Should: return no one content
+     */
+    @Test
+    public void whenPublishAndExpireDatesAreInTheFutureAndTimeMachineIsAfterBoth() {
+        final Calendar publishDate = Calendar.getInstance();
+        publishDate.add(Calendar.DATE, 1);
+
+        final Calendar expireDate = Calendar.getInstance();
+        expireDate.add(Calendar.DATE, 2);
+
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        new ContentletDataGen(contentType.id())
+                .setPolicy(IndexPolicy.FORCE)
+                .setProperty(SYS_PUBLISH_DATE, publishDate.getTime())
+                .setProperty(SYS_EXPIRE_DATE, expireDate.getTime())
+                .nextPersisted();
+
+        final Calendar timeMachine = Calendar.getInstance();
+        timeMachine.add(Calendar.DATE, 3);
+
+        final String query = String.format(QUERY_BY_STRUCTURE_NAME, contentType.variable());
+
+        final List<Contentlet> contentlets = ContentUtils.pull(query, 10, null, APILocator.systemUser(),
+                String.valueOf(timeMachine.getTime().getTime()));
+
+        assertEquals(0, contentlets.size());
+
+        final List<Contentlet> contentNoTM = ContentUtils.pull(String.format("+structureName:%s", contentType.variable()), 10, null,
+                APILocator.systemUser(), null);
+        assertEquals(1, contentNoTM.size());
+    }
 }

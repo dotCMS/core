@@ -1,12 +1,92 @@
 {
 	"info": {
-		"_postman_id": "b1872329-741b-4a2d-9467-129256164829",
+		"_postman_id": "8cc9462f-9cd2-4c27-912c-96ae49956130",
 		"name": "LanguageResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "CreateLanguage",
+			"name": "GetLanguage",
+			"item": [
+				{
+					"name": "ListLanguages",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "31581b95-4105-4560-9e6e-fd89f9d6bffc",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.be.ok });",
+									"",
+									"pm.test(\"languageCode returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"languageCode\");",
+									"});",
+									"",
+									"pm.test(\"countryCode returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"countryCode\");",
+									"});",
+									"",
+									"pm.test(\"language returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"language\");",
+									"});",
+									"",
+									"pm.test(\"country returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"country\");",
+									"});",
+									"",
+									"pm.test(\"No errors returned\", function () {",
+									"    pm.expect(pm.response.text()).to.include('errors\":[]');",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v2/languages",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"languages"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "SaveLanguage",
 			"item": [
 				{
 					"name": "CreateLanguageSuccess",
@@ -227,6 +307,28 @@
 						}
 					},
 					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "6ff155f2-8b1b-4ad9-b389-c14a8ac687db",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "86c5663b-7e0b-4946-b5d0-4ebc10328883",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			],
 			"protocolProfileBehavior": {}
