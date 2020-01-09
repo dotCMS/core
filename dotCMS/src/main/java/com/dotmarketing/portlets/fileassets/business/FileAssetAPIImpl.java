@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -597,7 +598,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	 */
 	public String getRelativeAssetsRootPath() {
         String path = "";
-        path = Try.of(()->Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH)).getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
+        path = Try.of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
+                .getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
         return path;
     }
 
@@ -607,13 +609,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
      * @return the root folder of where assets are stored
      */
     public String getRealAssetsRootPath() {
-        String realPath = Try.of(()->Config.getStringProperty("ASSET_REAL_PATH")).getOrNull();
-        if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator))
-            realPath = realPath + java.io.File.separator;
-        if (!UtilMethods.isSet(realPath))
-            return FileUtil.getRealPath(getRelativeAssetsRootPath());
-        else
-            return realPath;
+        return ConfigUtils.getAbsoluteAssetsRootPath();
     }
 
 	public String getRealAssetPath(String inode) {
