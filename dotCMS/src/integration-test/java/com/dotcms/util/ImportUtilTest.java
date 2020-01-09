@@ -7,19 +7,25 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -32,12 +38,12 @@ import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -51,7 +57,6 @@ import com.dotmarketing.portlets.workflows.actionlet.UnpublishContentActionlet;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
@@ -60,6 +65,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -77,7 +83,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.junit.AfterClass;
+import javax.servlet.http.HttpServletRequest;
+import org.glassfish.jersey.internal.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -93,6 +100,7 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
+    private static final String BINARY_FIELD_NAME = "binaryField";
     private static User user;
     private static Host defaultSite;
     private static Language defaultLanguage;
@@ -273,6 +281,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         addWhoCanUseToAction(unpublishAction, rolesIds);
         rolesIds.remove(publisherRole.getId());
         workflowAPI.saveAction(unpublishAction.getId(), initialStep.getId(), APILocator.systemUser());
+        workflowAPI.saveAction(unpublishAction.getId(), step1.getId(), APILocator.systemUser());
+        workflowAPI.saveAction(unpublishAction.getId(), step3.getId(), APILocator.systemUser());
 
         //step1 publishAction configuration
         schemeResultTemp = createActionActionlet(schemeStepActionResult2.getScheme().getId(),
@@ -284,6 +294,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         addWhoCanUseToAction(publishAction, rolesIds);
         rolesIds.remove(publisherRole.getId());
         workflowAPI.saveAction(publishAction.getId(), initialStep.getId(), APILocator.systemUser());
+        workflowAPI.saveAction(publishAction.getId(), step2.getId(), APILocator.systemUser());
         workflowAPI.saveAction(publishAction.getId(), step3.getId(), APILocator.systemUser());
 
         //Step3 publish2Action configuration
@@ -297,6 +308,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         rolesIds.remove(publisherRole.getId());
         workflowAPI.saveAction(publish2Action.getId(), initialStep.getId(), APILocator.systemUser());
         workflowAPI.saveAction(publish2Action.getId(), step1.getId(), APILocator.systemUser());
+        workflowAPI.saveAction(publish2Action.getId(), step2.getId(), APILocator.systemUser());
 
 
         //Special Users
@@ -304,12 +316,15 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         janeReviewer = TestUserUtils.getJaneReviewerUser(); //APILocator.getUserAPI().loadUserById("dotcms.org.2787");
         chrisPublisher = TestUserUtils.getChrisPublisherUser();  //APILocator.getUserAPI().loadUserById("dotcms.org.2795");
 
+        // Make sure the spanish language exist
+        TestDataUtils.getSpanishLanguage();
+
     }
 
     /**
      * Testing the {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean,
      * com.liferay.portal.model.User, long, String[], com.dotcms.repackage.com.csvreader.CsvReader,
-     * int, int, java.io.Reader, String)} method
+     * int, int, java.io.Reader, String, HttpServletRequest)} method
      */
     @Test
     @Ignore("Temporarily disabled")
@@ -358,7 +373,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             HashMap<String, List<String>> results = ImportUtil
                     .importFile(0L, defaultSite.getInode(), contentType.getInode(), new String[]{},
                             true, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                            -1, reader, schemeStepActionResult1.getAction().getId());
+                            -1, reader, schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, true, false, true);
 
@@ -385,7 +400,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             results = ImportUtil
                     .importFile(0L, defaultSite.getInode(), contentType.getInode(), new String[]{},
                             false, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                            -1, reader, schemeStepActionResult1.getAction().getId());
+                            -1, reader, schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, false, false, true);
 
@@ -419,7 +434,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             results = ImportUtil
                     .importFile(0L, defaultSite.getInode(), contentType.getInode(), new String[]{},
                             true, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                            -1, reader, schemeStepActionResult1.getAction().getId());
+                            -1, reader, schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, true, true, true);
 
@@ -459,7 +474,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             results = ImportUtil.importFile(0L, defaultSite.getInode(), contentType.getInode(),
                     new String[]{textField.getInode()}, false, false, user, defaultLanguage.getId(),
                     csvHeaders, csvreader, -1, -1, reader,
-                    schemeStepActionResult1.getAction().getId());
+                    schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, false, false,
                     true);//We should expect warnings: Line #X. The key fields chosen match 1 existing content(s) - more than one match suggests key(s) are not properly unique
@@ -496,7 +511,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             results = ImportUtil
                     .importFile(0L, defaultSite.getInode(), contentType.getInode(), new String[]{},
                             false, false, user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
-                            -1, reader, schemeStepActionResult1.getAction().getId());
+                            -1, reader, schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, false, false, true);
 
@@ -524,7 +539,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             results = ImportUtil.importFile(0L, defaultSite.getInode(), contentType.getInode(),
                     new String[]{textField.getInode()}, false, true, user, -1, csvHeaders,
                     csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader,
-                    schemeStepActionResult1.getAction().getId());
+                    schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, false, false, false);
 
@@ -614,100 +629,66 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
     public void importFile_success_when_twoLinesHaveSameUniqueKeysButDifferentLanguage()
             throws DotSecurityException, DotDataException, IOException {
 
-        ContentType type;
         CsvReader csvreader;
         com.dotcms.contenttype.model.field.Field titleField, hostField;
         HashMap<String, List<String>> results;
         Reader reader;
         String[] csvHeaders;
-        long time;
 
-        //Creating new content type with one unique field
-        time = System.currentTimeMillis();
+        ContentType type = new ContentTypeDataGen().host(APILocator.systemHost()).nextPersisted();
 
-        type = ContentTypeBuilder
-                .builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
-                .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER)
-                .host(Host.SYSTEM_HOST)
-                .name("ContentTypeTestingWithFields" + time).owner("owner")
-                .variable("velocityVarNameTesting" + time)
-                .build();
+        titleField =
+                FieldBuilder.builder(TextField.class).name("testTitle").variable("testTitle")
+                        .unique(true)
+                        .contentTypeId(type.id()).dataType(
+                        DataTypes.TEXT).build();
+        hostField =
+                FieldBuilder.builder(HostFolderField.class).name("testHost")
+                        .variable("testHost")
+                        .contentTypeId(type.id()).dataType(
+                        DataTypes.TEXT).build();
+        titleField = fieldAPI.save(titleField, user);
+        fieldAPI.save(hostField, user);
 
-        type = contentTypeApi.save(type);
+        workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
+                Arrays.asList(schemeStepActionResult1.getScheme()));
 
-        try {
-            titleField =
-                    FieldBuilder.builder(TextField.class).name("testTitle").variable("testTitle")
-                            .unique(true)
-                            .contentTypeId(type.id()).dataType(
-                            DataTypes.TEXT).build();
-            hostField =
-                    FieldBuilder.builder(HostFolderField.class).name("testHost")
-                            .variable("testHost")
-                            .contentTypeId(type.id()).dataType(
-                            DataTypes.TEXT).build();
-            titleField = fieldAPI.save(titleField, user);
-            fieldAPI.save(hostField, user);
+        //Creating csv
+        reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
+                "es, ES, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
+                "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n");
+        csvreader = new CsvReader(reader);
+        csvreader.setSafetySwitch(false);
+        csvHeaders = csvreader.getHeaders();
 
-            workflowAPI.saveSchemesForStruct(new StructureTransformer(type).asStructure(),
-                    Arrays.asList(schemeStepActionResult1.getScheme()));
+        int languageCodeHeaderColumn = 0;
+        int countryCodeHeaderColumn = 1;
+        //Preview=false
+        results =
+                ImportUtil
+                        .importFile(0L, defaultSite.getInode(), type.inode(),
+                                new String[]{titleField.id()}, true, true,
+                                user, -1, csvHeaders, csvreader, languageCodeHeaderColumn,
+                                countryCodeHeaderColumn, reader,
+                                schemeStepActionResult1.getAction().getId(),getHttpRequest());
+        //Validations
+        validate(results, true, false, true);
 
-            //Creating csv
-            reader = createTempFile("languageCode, countryCode, testTitle, testHost" + "\r\n" +
-                    "es, ES, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n" +
-                    "en, US, UniqueTitle, " + defaultSite.getIdentifier() + "\r\n");
-            csvreader = new CsvReader(reader);
-            csvreader.setSafetySwitch(false);
-            csvHeaders = csvreader.getHeaders();
-
-            int languageCodeHeaderColumn = 0;
-            int countryCodeHeaderColumn = 1;
-            //Preview=false
-            results =
-                    ImportUtil
-                            .importFile(0L, defaultSite.getInode(), type.inode(),
-                                    new String[]{titleField.id()}, true, true,
-                                    user, -1, csvHeaders, csvreader, languageCodeHeaderColumn,
-                                    countryCodeHeaderColumn, reader,
-                                    schemeStepActionResult1.getAction().getId());
-            //Validations
-            validate(results, true, false, true);
-
-            assertTrue(results.get("warnings").size() == 1);
-            assertEquals("The Content Type field testTitle is unique.",results.get("warnings").get(0));
-
-
-        } finally {
-            try {
-                contentTypeApi.delete(type);
-            }catch (Exception e) { e.printStackTrace(); }
-        }
+        assertTrue(results.get("warnings").size() == 1);
+        assertEquals("The Content Type field testTitle is unique.", results.get("warnings").get(0));
     }
 
     @Test
     public void importFile_fails_when_twoLinesHaveSameUniqueKeys()
             throws DotSecurityException, DotDataException, IOException {
 
-        ContentType type;
         CsvReader csvreader;
         com.dotcms.contenttype.model.field.Field titleField, hostField;
         HashMap<String, List<String>> results;
         Reader reader;
         String[] csvHeaders;
-        long time;
 
-        //Creating new content type with one unique field
-        time = System.currentTimeMillis();
-
-        type = ContentTypeBuilder
-                .builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
-                .description("description" + time).folder(FolderAPI.SYSTEM_FOLDER)
-                .host(Host.SYSTEM_HOST)
-                .name("ContentTypeTestingWithFields" + time).owner("owner")
-                .variable("velocityVarNameTesting" + time)
-                .build();
-
-        type = contentTypeApi.save(type);
+        ContentType type = new ContentTypeDataGen().host(APILocator.systemHost()).nextPersisted();
 
         try {
             titleField =
@@ -743,7 +724,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, true, true,
                                     user, -1, csvHeaders, csvreader, languageCodeHeaderColumn,
                                     countryCodeHeaderColumn, reader,
-                                    schemeStepActionResult1.getAction().getId());
+                                    schemeStepActionResult1.getAction().getId(),getHttpRequest());
             //Validations
             validate(results, true, false, true);
 
@@ -808,7 +789,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     joeContributor, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    saveAsDraftAction.getId());
+                                    saveAsDraftAction.getId(),getHttpRequest());
             //Validations
             validate(results, false, false, true);
             /*
@@ -890,7 +871,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     janeReviewer, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    saveAsDraftAction.getId());
+                                    saveAsDraftAction.getId(),getHttpRequest());
             //Validations
             validate(results, false, false, true);
             /*
@@ -977,7 +958,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     janeReviewer, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    null);
+                                    null,getHttpRequest());
             //Validations
             validate(results, false, false, true);
             /*
@@ -1067,7 +1048,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     chrisPublisher, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    null);
+                                    null,getHttpRequest());
             //Validations
             validate(results, false, false, false);
             assertEquals(results.get("warnings").size(), 0);
@@ -1110,7 +1091,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      */
     @Test
     public void importFile_success_when_importLinesUpdateExistingContent()
-            throws DotSecurityException, DotDataException, IOException, InterruptedException {
+            throws Exception {
 
         ContentType contentType = null;
         CsvReader csvreader;
@@ -1131,69 +1112,18 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             //create content type
             contentType = createTestContentType(contentTypeName, contentTypeVarName);
             titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
             //Creating csv
-            reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
+            String tempFile = TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
                     + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
                     testM + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(saveAction.getId())
                     + "\r\n" +
                     testN + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(saveAndPublishAction
                     .getId()) + "\r\n" +
                     testO + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(saveAsDraftAction
-                    .getId()));
-
-            csvreader = new CsvReader(reader);
-            csvreader.setSafetySwitch(false);
-            csvHeaders = csvreader.getHeaders();
-
-            //Preview=false
-            results =
-                    ImportUtil
-                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
-                                    new String[]{titleField.id()}, false, false,
-                                    chrisPublisher, defaultLanguage.getId(), csvHeaders, csvreader,
-                                    -1, -1, reader,
-                                    null);
-            //Validations
-            validate(results, false, false, false);
-            assertEquals(results.get("warnings").size(), 0);
-            assertEquals(results.get("errors").size(), 0);
-
-            List<Contentlet> savedData = contentletAPI
-                    .findByStructure(contentType.inode(), user, false, 0, 0);
-            assertNotNull(savedData);
-            assertEquals(3, savedData.size());
-            for (final Contentlet cont : savedData) {
-                final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
-                if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
-                    assertNotNull(task);
-                    assertFalse(cont.isLive());
-                    assertEquals(task.getStatus(), step1.getId());
-                } else if(cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testN)) {
-                    assertNotNull(task);
-                    assertTrue(cont.isLive());
-                    assertEquals(task.getStatus(), step2.getId());
-                } else {
-                    assertNotNull(task);
-                    assertFalse(cont.isLive());
-                    assertEquals(task.getStatus(), step3.getId());
-                }
-
-                cont.setIndexPolicy(IndexPolicy.FORCE);
-                APILocator.getContentletIndexAPI().addContentToIndex(cont);
-            }
-
-            //Update ContentType
-            Thread.sleep(1000);
-            String tempFile = "Identifier," + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
-                    + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
-                    savedData.get(0).getIdentifier() + "," + testM + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publishAction.getId())
-                    + "\r\n" +
-                    savedData.get(1).getIdentifier() + "," + testN + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(unpublishAction.getId())
-                    + "\r\n" +
-                    savedData.get(2).getIdentifier() + "," + testO + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publish2Action
                     .getId());
 
-            Logger.info(this, "tempFile: " + tempFile);
+            Logger.info(this, "tempFile1: " + tempFile);
             reader = createTempFile(tempFile);
 
             csvreader = new CsvReader(reader);
@@ -1207,30 +1137,104 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                                     new String[]{titleField.id()}, false, false,
                                     chrisPublisher, defaultLanguage.getId(), csvHeaders, csvreader,
                                     -1, -1, reader,
-                                    null);
+                                    null,getHttpRequest());
+            //Validations
+            validate(results, false, false, false);
+            assertEquals(results.get("warnings").size(), 0);
+            assertEquals(results.get("errors").size(), 0);
+
+            List<Contentlet> savedData = contentletAPI
+                    .findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertEquals(3, savedData.size());
+
+            String identifier1 = savedData.get(0).getIdentifier();
+            String identifier2 = savedData.get(1).getIdentifier();
+            String identifier3 = savedData.get(2).getIdentifier();
+
+            for (final Contentlet cont : savedData) {
+                final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
+                if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
+                    assertNotNull(task);
+                    assertFalse(cont.isLive());
+                    assertEquals(task.getStatus(), step1.getId());
+                    identifier1 = cont.getIdentifier();
+                } else if(cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testN)) {
+                    assertNotNull(task);
+                    assertTrue(cont.isLive());
+                    assertEquals(task.getStatus(), step2.getId());
+                    identifier2 = cont.getIdentifier();
+                } else if(cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testO)) {
+                    assertNotNull(task);
+                    assertFalse(cont.isLive());
+                    assertEquals(task.getStatus(), step3.getId());
+                    identifier3 = cont.getIdentifier();
+                }
+
+                cont.setIndexPolicy(IndexPolicy.FORCE);
+            }
+
+            APILocator.getContentletIndexAPI().addContentToIndex(savedData);
+
+            //Update ContentType
+            Thread.sleep(1000);
+
+            tempFile = "Identifier," + TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", "
+                    + Contentlet.WORKFLOW_ACTION_KEY + "\r\n" +
+                    identifier1 + "," + testM + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publishAction.getId())
+                    + "\r\n" +
+                    identifier2 + "," + testN + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(unpublishAction.getId())
+                    + "\r\n" +
+                    identifier3 + "," + testO + TEST_WITH_WF_ACTION_ON_CSV + shortyIdAPI.shortify(publish2Action.getId());
+
+            Logger.info(this, "tempFile2: " + tempFile);
+            final Reader reader2 = createTempFile(tempFile);
+
+            final CsvReader csvreader2 = new CsvReader(reader2);
+            csvreader2.setSafetySwitch(false);
+
+            //Preview=false
+            final String inode = contentType.inode();
+            results =
+                    LocalTransaction.wrapReturnWithListeners( ()-> importFile(inode, titleField, csvreader2, reader2));
             //Validations
             validate(results, false, false, true);
+            Logger.info(this, "results.get(\"warnings\"): " + results.get("warnings"));
             assertEquals(results.get("warnings").size(), 3);
             assertEquals(results.get("errors").size(), 0);
+
+            Thread.sleep(2000);
 
             savedData = contentletAPI
                     .findByStructure(contentType.inode(), user, false, 0, 0);
             assertNotNull(savedData);
             assertEquals(3, savedData.size());
+
             for (final Contentlet cont : savedData) {
                 final WorkflowTask task = workflowAPI.findTaskByContentlet(cont);
-                if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testM)) {
+                boolean isLive = APILocator.getVersionableAPI().hasLiveVersion(cont);
+
+                Logger.info(this, "Contentlet id:    "  + cont.getIdentifier());
+                Logger.info(this, "Contentlet inode: "  + cont.getInode());
+                Logger.info(this, "Contentlet isLive: " + isLive);
+                Logger.info(this, "Contentlet name: " + cont.getStringProperty(TITLE_FIELD_NAME));
+                Logger.info(this, "Contentlet task: " + task.getStatus());
+                Logger.info(this, "Contentlet step1: " + step1.getId());
+                Logger.info(this, "Contentlet step2: " + step2.getId());
+                Logger.info(this, "Contentlet step3: " + step3.getId());
+
+                if (cont.getIdentifier().equals(identifier1)) {
                     assertNotNull(task);
-                    assertEquals(task.getStatus(), step1.getId());
-                    assertTrue(cont.isLive());
-                } else if (cont.getStringProperty(TITLE_FIELD_NAME).startsWith(testN)) {
+                    assertTrue("the contentlet: " + cont.getIdentifier() + " should be live", isLive);
+                    assertEquals( "the contentlet: " + cont.getIdentifier() + ":" + cont.getStringProperty(TITLE_FIELD_NAME) + " is on wrong step", step1.getId(), task.getStatus());
+                } else if (cont.getIdentifier().equals(identifier2)) {
                     assertNotNull(task);
-                    assertFalse(cont.isLive());
-                    assertEquals(task.getStatus(), step2.getId());
-                } else {
+                    assertFalse("the contentlet: " + cont.getIdentifier() + " should NOT be live", isLive);
+                    assertEquals( "the contentlet: " + cont.getIdentifier() + ":" + cont.getStringProperty(TITLE_FIELD_NAME) + " is on wrong step", step2.getId(), task.getStatus());
+                } else if (cont.getIdentifier().equals(identifier3)) {
                     assertNotNull(task);
-                    assertTrue(cont.isLive());
-                    assertEquals(task.getStatus(), step3.getId());
+                    assertTrue("the contentlet: " + cont.getIdentifier() + " should be live", isLive);
+                    assertEquals( "the contentlet: " + cont.getIdentifier() + ":" + cont.getStringProperty(TITLE_FIELD_NAME) + " is on wrong step", step3.getId(), task.getStatus());
                 }
             }
 
@@ -1240,6 +1244,24 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     contentTypeApi.delete(contentType);
                 }
             }catch (Exception e) {e.printStackTrace();}
+        }
+    }
+
+    private HashMap<String, List<String>>  importFile (final String inode, com.dotcms.contenttype.model.field.Field titleField,
+            final CsvReader csvreader, final Reader reader) {
+        try  {
+            return ImportUtil
+                    .importFile(0L, defaultSite.getInode(), inode,
+                            new String[]{titleField.id()}, false, false,
+                            chrisPublisher, defaultLanguage.getId(),
+                            csvreader.getHeaders(), csvreader,
+                            -1, -1, reader,
+                            null,getHttpRequest());
+        }catch (Exception e) {
+
+            return new HashMap<>();
+        } finally {
+            CloseUtils.closeQuietly(reader);
         }
     }
 
@@ -1786,7 +1808,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 .importFile(0L, defaultSite.getInode(), type.inode(),
                         keyFields, false, false,
                         user, defaultLanguage.getId(), csvHeaders, csvreader, -1, -1,
-                        reader, null);
+                        reader, null,getHttpRequest());
     }
 
     /**
@@ -1800,20 +1822,8 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             final String contentTypeVarName)
             throws DotDataException, DotSecurityException {
 
-        //Creating new content type for impor
-        com.dotcms.contenttype.model.field.Field titleField, bodyField;
-
-        ContentType contentType = ContentTypeBuilder
-                .builder(BaseContentType.getContentTypeClass(BaseContentType.CONTENT.getType()))
-                .description("description").folder(FolderAPI.SYSTEM_FOLDER)
-                .host(Host.SYSTEM_HOST)
-                .name(contentTypeName).owner("owner")
-                .variable(contentTypeVarName)
-                .build();
-
-        contentType = contentTypeApi.save(contentType);
-
-        titleField =
+        List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+        fields.add(
                 ImmutableTextField.builder()
                         .name(TITLE_FIELD_NAME)
                         .variable(TITLE_FIELD_NAME)
@@ -1821,15 +1831,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         .listed(true)
                         .indexed(true)
                         .sortOrder(1)
-                        .contentTypeId(contentType.id())
                         .fixed(true)
                         .searchable(true)
                         .values("")
-                        .build();
+                        .build());
 
-        fieldAPI.save(titleField, user);
-
-        bodyField =
+        fields.add(
                 ImmutableTextAreaField.builder()
                         .name(BODY_FIELD_NAME)
                         .variable(BODY_FIELD_NAME)
@@ -1837,13 +1844,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                         .listed(true)
                         .indexed(true)
                         .sortOrder(1)
-                        .contentTypeId(contentType.id())
                         .fixed(true)
                         .searchable(true)
                         .values("")
-                        .build();
+                        .build());
 
-        fieldAPI.save(bodyField, user);
+        ContentType contentType = new ContentTypeDataGen()
+                .name(contentTypeName)
+                .velocityVarName(contentTypeVarName)
+                .host(APILocator.systemHost())
+                .fields(fields)
+                .nextPersisted();
 
         //refresh Content Type
         contentType = contentTypeApi.find(contentType.id());
@@ -1885,21 +1896,171 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertTrue(warning.contains("User doesn't have permissions to execute"));
     }
 
-    /**
-     * Remove the workflows created for the test
+    private HttpServletRequest getHttpRequest() {
+        MockHeaderRequest request = new MockHeaderRequest(
+                new MockSessionRequest(new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
+                        .request());
+
+        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Origin", "localhost");
+        request.setAttribute(WebKeys.USER,user);
+        request.setAttribute(WebKeys.USER_ID,user.getUserId());
+
+        return request;
+    }
+
+    /***
+     * Creates a ContentType with a Title, Body and Binary Field
+     * Creates a CSV with an URL on the Binary Field
+     * Import the CSV and the Content should be created successfully and File downloaded
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
      */
-    @AfterClass
-    public static void cleanup() throws Exception {
-        if (null != schemeStepActionResult1 && null != schemeStepActionResult1.getScheme()) {
-            final WorkflowScheme wfScheme = schemeStepActionResult1.getScheme();
-            workflowAPI.archive(wfScheme, user);
-            workflowAPI.deleteScheme(wfScheme, user).get();
-        }
-        if (null != schemeStepActionResult2 && null != schemeStepActionResult2.getScheme()) {
-            final WorkflowScheme wfScheme2 = schemeStepActionResult2.getScheme();
-            workflowAPI.archive(wfScheme2, user);
-            workflowAPI.deleteScheme(wfScheme2, user).get();
+    @Test
+    public void importFile_importBinaryFieldUsingURL_success()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        CsvReader csvreader;
+        long time;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            time = System.currentTimeMillis();
+            final String contentTypeName = "ContentTypeBinaryField" + time;
+            final String contentTypeVarName = "contentTypeBinaryField" + time;
+
+            //create content type
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            final com.dotcms.contenttype.model.field.Field binaryField = FieldBuilder.builder(BinaryField.class).name(BINARY_FIELD_NAME)
+                    .contentTypeId(contentType.id()).variable(BINARY_FIELD_NAME).sortOrder(1).required(false)
+                    .build();
+            fieldAPI.save(binaryField,user);
+
+            //Creating csv
+            reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + BINARY_FIELD_NAME + "\r\n" +
+                    "test1" + time + ", " +
+                    "test1" + time + ", " +
+                    "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            results =
+                    ImportUtil
+                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
+                                    new String[]{titleField.id()}, false, false,
+                                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                                    -1, reader,
+                                    saveAsDraftAction.getId(), getHttpRequest());
+
+            //Validations
+            validate(results, false, false, false);
+
+            assertEquals(results.get("warnings").size(), 0);
+            assertEquals(results.get("errors").size(), 0);
+
+            final List<Contentlet> savedData = contentletAPI
+                    .findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertTrue(savedData.size() == 1);
+            assertNotNull(savedData.get(0).getBinary(BINARY_FIELD_NAME));
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
+
+    /***
+     * Creates a ContentType with a Title, Body and Binary Field
+     * Creates a CSV with 3 Lines, each one returns a diff error 400, 404, and false (since URL does not starts with http or https)
+     * Import the CSV and the importer should return with errors, so no content can be created and no file is downloaded.
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void importFile_importBinaryFieldUsingURL_failed_URLsareNotValid()
+            throws DotSecurityException, DotDataException, IOException {
+
+        ContentType contentType = null;
+        CsvReader csvreader;
+        long time;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        try {
+            time = System.currentTimeMillis();
+            final String contentTypeName = "ContentTypeBinaryField" + time;
+            final String contentTypeVarName = "contentTypeBinaryField" + time;
+
+            //create content type
+            contentType = createTestContentType(contentTypeName, contentTypeVarName);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, TITLE_FIELD_NAME);
+
+            final com.dotcms.contenttype.model.field.Field binaryField = FieldBuilder.builder(BinaryField.class).name(BINARY_FIELD_NAME)
+                    .contentTypeId(contentType.id()).variable(BINARY_FIELD_NAME).sortOrder(1).required(false)
+                    .build();
+            fieldAPI.save(binaryField,user);
+
+            //Creating csv
+            reader = createTempFile(TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + BINARY_FIELD_NAME + "\r\n" +
+                    "test400" + time + ", " +
+                    "test400" + time + ", " +
+                    "https://raw.githubusercontent.com/url/throws/400.jpg" + "\r\n" +
+                    "test404" + time + ", " +
+                    "test404" + time + ", " +
+                    "https://raw.githubusercontent.com/dotCMS/core/throws/dotCMS/404.jpg" + "\r\n" +
+                    "testDoesNotStartWithHTTPorHTTPS" + time + ", " +
+                    "testDoesNotStartWithHTTPorHTTPS" + time + ", " +
+                    "test://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif");
+            csvreader = new CsvReader(reader);
+            csvreader.setSafetySwitch(false);
+            csvHeaders = csvreader.getHeaders();
+
+            results =
+                    ImportUtil
+                            .importFile(0L, defaultSite.getInode(), contentType.inode(),
+                                    new String[]{titleField.id()}, false, false,
+                                    user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                                    -1, reader,
+                                    saveAsDraftAction.getId(), getHttpRequest());
+
+            //Validations
+            validate(results, true, true, false);
+
+            assertEquals(4,results.get("errors").size());//one for each line, and the fourth one is the summary
+
+            final List<Contentlet> savedData = contentletAPI
+                    .findByStructure(contentType.inode(), user, false, 0, 0);
+            assertNotNull(savedData);
+            assertTrue(savedData.isEmpty());
+
+        } finally {
+            try {
+                if (null != contentType) {
+                    contentTypeApi.delete(contentType);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
