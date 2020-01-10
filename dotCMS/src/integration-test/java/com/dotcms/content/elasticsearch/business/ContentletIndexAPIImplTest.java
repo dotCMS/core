@@ -630,7 +630,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //Adding it to the index
         siteSearchAPI.putToIndex( indexName, res, "HTMLPage");
-        
+        isDocIndexed( docId );
         DateUtil.sleep(5000);
 
         try {
