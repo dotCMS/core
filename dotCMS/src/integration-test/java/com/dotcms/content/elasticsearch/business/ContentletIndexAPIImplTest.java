@@ -61,6 +61,7 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UUIDGenerator;
@@ -629,7 +630,9 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //Adding it to the index
         siteSearchAPI.putToIndex( indexName, res, "HTMLPage");
-        isDocIndexed( docId );
+        if (!isDocIndexed( docId )){
+            DateUtil.sleep(5000);
+        }
 
         try {
 
@@ -651,7 +654,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             //Testing the stemer
             SiteSearchResults siteSearchResults = siteSearchAPI.search( indexName, "argu", 0, 100 );
             //Validations
-            assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
+            assertTrue( siteSearchResults.getError(), siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
             assertTrue( siteSearchResults.getTotalResults() > 0 );
             String highLights = siteSearchResults.getResults().get( 0 ).getHighLights()[0];
             assertTrue( highLights.contains( "<em>argue</em>" ) );
@@ -723,11 +726,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         } finally {
             //And finally remove the index
             contentTypeAPI.delete(new StructureTransformer(testStructure).from());
-            try {
-                contentletAPI.destroy(testContentlet, user, false);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
             siteSearchAPI.deleteFromIndex( indexName, docId );
         }
     }
@@ -993,7 +991,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 return false;
             }
             if ( lc.getTotalHits().value > 0 ) {
-                found = true;
                 return true;
             }
             try {
