@@ -17,7 +17,22 @@ import static com.dotcms.util.CollectionsUtils.list;
 @Value.Immutable
 public abstract class BinaryField extends Field {
 
+	/**
+	 * Supports things such as application/pdf or application/*
+	 */
+	public static final String ALLOWED_FILE_TYPES = "allowedFileTypes";
+
+	/**
+	 * Supports things such as 100 (100 bytes) 1kb (1024 bytes) 1mb (1024 kb) 1gb (1024 mb)
+	 */
+	public static final String MAX_FILE_LENGTH    = "maxFileLength";
+
 	private static final long serialVersionUID = 1L;
+
+	@Override
+	public List<String> fieldVariableKeys() {
+		return ImmutableList.of(ALLOWED_FILE_TYPES, MAX_FILE_LENGTH);
+	}
 
 	@Override
 	public Class type() {
@@ -28,6 +43,9 @@ public abstract class BinaryField extends Field {
 	public List<DataTypes> acceptedDataTypes() {
 		return ImmutableList.of(DataTypes.SYSTEM);
 	}
+
+
+
 
 	@Value.Default
 	@Override

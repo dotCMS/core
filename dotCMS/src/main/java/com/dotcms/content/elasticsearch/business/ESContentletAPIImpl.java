@@ -19,17 +19,12 @@ import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.transform.field.FieldTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -48,7 +43,9 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
+import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -155,6 +152,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import com.liferay.util.StringUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
@@ -165,6 +163,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -188,6 +187,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.activation.MimeType;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -4367,11 +4367,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     this.throwSecurityException(contentlet, user);
                 }
             }
-            if (createNewVersion && cats == null)
+
+            if (createNewVersion && cats == null) {
                 throw new IllegalArgumentException(
                         "The categories cannot be null when trying to checkin. The method was called improperly");
+            }
+
             try {
-                validateContentlet(contentlet, contentRelationships, cats);
+                // note: we do this in this way in order to invoke hooks if they are
+                APILocator.getContentletAPI().validateContentlet(contentlet, contentRelationships, cats);
 
             } catch (DotContentletValidationException ve) {
                 throw ve;
@@ -5916,158 +5920,52 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final ContentType contentType = Sneaky.sneak(() -> APILocator.getContentTypeAPI(APILocator.systemUser()).find
                 (contentTypeId));
         if (BaseContentType.FILEASSET.getType() == contentType.baseType().getType()) {
-            if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
-                final DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
-                Logger.warn(this, "File Asset [" + contentIdentifier + "] cannot be created directly under System " +
-                        "Host");
-                cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
-                        .HOST_FOLDER_FIELD)).asOldField());
-                throw cve;
-            }
-
-            //Enforce validation only if the file name isn't the same we've already got
-            if(hasNewIncomingFile(contentlet)){
-                boolean fileNameExists = false;
-                try {
-                    final Host site = APILocator.getHostAPI ().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
-                    final Folder folder = UtilMethods.isSet(contentlet.getFolder())?
-                            APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false):
-                            APILocator.getFolderAPI().findSystemFolder();
-
-                    String fileName = contentlet.getBinary(FileAssetAPI.BINARY_FIELD) != null ? contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName() : StringPool.BLANK;
-                    if(UtilMethods.isSet(contentlet.getStringProperty("fileName"))){
-                        fileName = contentlet.getStringProperty("fileName");
-                    }
-                    if(UtilMethods.isSet(fileName)){
-                        fileNameExists = APILocator.getFileAssetAPI().fileNameExists(site, folder, fileName, contentlet.getIdentifier());
-                        if(!APILocator.getFolderAPI().matchFilter(folder, fileName)) {
-                            final DotContentletValidationException cve = new FileAssetValidationException("message.file_asset.error.filename.filters");
-                            Logger.warn(this, "File Asset [" + contentIdentifier + "] does not match specified folder" +
-                                    " file filters");
-                            cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
-                                    .HOST_FOLDER_FIELD)).asOldField());
-                            throw cve;
-                        }
-                    }
-
-                } catch (final Exception e) {
-                    if(e instanceof FileAssetValidationException) {
-                        throw (FileAssetValidationException) e;
-                    }
-                    final String errorMsg = "Unable to validate field: " + FileAssetAPI.BINARY_FIELD + " in " +
-                            "contentlet [" + contentIdentifier + "]";
-                    Logger.warn(this, errorMsg);
-                    throw new FileAssetValidationException(errorMsg, e);
-                }
-                if(fileNameExists){
-                    final DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.filename.already.exists");
-                    Logger.warn(this, "Name of File Asset [" + contentIdentifier + "] already exists");
-                    cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
-                            .HOST_FOLDER_FIELD)).asOldField());
-                    throw cve;
-                }
-            }
+            this.validateFileAsset(contentlet, contentIdentifier, contentType);
         }
 
         if (BaseContentType.HTMLPAGE.getType() == contentType.baseType().getType()) {
-            if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
-                final DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
-                Logger.warn(this, "HTML Page [" + contentIdentifier + "] cannot be created directly under System " +
-                        "Host");
-                cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
-                        .HOST_FOLDER_FIELD)).asOldField());
-                throw cve;
-            }
-            try{
-                final Host site = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
-                Folder folder = null;
-                if(UtilMethods.isSet(contentlet.getFolder())){
-                    folder=APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
-                }
-                else{
-                    folder=APILocator.getFolderAPI().findSystemFolder();
-                }
-
-                //Get the URL from Identifier if it is not in Contentlet
-                String url = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
-
-                if(!UtilMethods.isSet(url)){
-
-                    if (InodeUtils.isSet(contentlet.getVersionId()) || InodeUtils.isSet(contentlet.getInode())) {
-                        Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
-                        if (UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())) {
-
-                            url = identifier.getAssetName();
-                        }
-                    }
-                }
-
-                if(UtilMethods.isSet(url)){
-                    contentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, url);
-                    Identifier folderId = APILocator.getIdentifierAPI().find(folder);
-                    String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+url:folderId.getPath()+url;
-                    Identifier htmlpage = APILocator.getIdentifierAPI().find(site, path);
-                    if(htmlpage!=null && InodeUtils.isSet(htmlpage.getId()) && !htmlpage.getId().equals(contentlet.getIdentifier()) ){
-                        final String errorMsg = "Page URL [" + path + "] already exists with content ID [" + htmlpage
-                                .getId() + "]";
-                        final DotContentletValidationException cve = new FileAssetValidationException(errorMsg);
-                        Logger.warn(this, errorMsg);
-                        cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(HTMLPageAssetAPI
-                                .URL_FIELD)).asOldField());
-                        throw cve;
-                    }
-                    UtilMethods.validateFileName(url);
-                }
-
-            } catch (final DotDataException | DotSecurityException | IllegalArgumentException e) {
-                final String errorMsg = "Contentlet [" + contentIdentifier + "] has an invalid URL: " + contentlet
-                        .getStringProperty(HTMLPageAssetAPI.URL_FIELD);
-                final DotContentletValidationException cve = new FileAssetValidationException(errorMsg);
-                Logger.warn(this, errorMsg);
-                cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(HTMLPageAssetAPI
-                        .URL_FIELD)).asOldField());
-                throw cve;
-            }
+            this.validateHtmlPage(contentlet, contentIdentifier, contentType);
         }
         boolean hasError = false;
         final DotContentletValidationException cve = new DotContentletValidationException("Contentlet [" +
                 contentIdentifier + "] has invalid / missing field(s).");
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentTypeId);
-        final Map<String, Object> conMap = contentlet.getMap();
+        final Map<String, Object> contentletMap = contentlet.getMap();
         final Set<String> nullValueProperties = contentlet.getNullProperties();
         for (final Field field : fields) {
-            final Object o = (nullValueProperties.contains(field.getVelocityVarName()) ? null : conMap.get(field.getVelocityVarName()));
-            if(o != null){
+            final Object fieldValue = (nullValueProperties.contains(field.getVelocityVarName()) ? null : contentletMap.get(field.getVelocityVarName()));
+            // Validate Field Type
+            if(fieldValue != null){
                 if(isFieldTypeString(field)){
-                    if(!(o instanceof String)){
+                    if(!(fieldValue instanceof String)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type String");
                         hasError = true;
                         continue;
                     }
                 }else if(isFieldTypeDate(field)){
-                    if(!(o instanceof Date)){
+                    if(!(fieldValue instanceof Date)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Date");
                         hasError = true;
                         continue;
                     }
                 }else if(isFieldTypeBoolean(field)){
-                    if(!(o instanceof Boolean)){
+                    if(!(fieldValue instanceof Boolean)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Boolean");
                         hasError = true;
                         continue;
                     }
                 }else if(isFieldTypeFloat(field)){
-                    if(!(o instanceof Float)){
+                    if(!(fieldValue instanceof Float)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Float");
                         hasError = true;
                         continue;
                     }
                 }else if(isFieldTypeLong(field)){
-                    if(!(o instanceof Long || o instanceof Integer)){
+                    if(!(fieldValue instanceof Long || fieldValue instanceof Integer)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type Long or Integer");
                         hasError = true;
@@ -6075,7 +5973,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     //  binary field validation
                 }else if(isFieldTypeBinary(field)){
-                    if(!(o instanceof java.io.File)){
+                    if(!(fieldValue instanceof java.io.File)){
                         cve.addBadTypeField(field);
                         Logger.warn(this, "Value of field [" + field.getVelocityVarName() + "] must be of type File");
                         hasError = true;
@@ -6088,9 +5986,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     throw new DotContentletStateException("Field [" + field.getVelocityVarName() + "] has an unknown type");
                 }
             }
+            // validate required
             if (field.isRequired()) {
-                if(o instanceof String){
-                    String s1 = (String)o;
+                if(fieldValue instanceof String){
+                    String s1 = (String)fieldValue;
                     if(!UtilMethods.isSet(s1.trim()) || (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())) && s1.equals("{}")) {
                         cve.addRequiredField(field);
                         hasError = true;
@@ -6098,8 +5997,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         continue;
                     }
                 }
-                else if(o instanceof java.io.File){
-                    String s1 = ((java.io.File) o).getPath();
+                else if(fieldValue instanceof java.io.File){
+                    String s1 = ((java.io.File) fieldValue).getPath();
                     if(!UtilMethods.isSet(s1.trim())||s1.trim().contains("-removed-")) {
                         cve.addRequiredField(field);
                         hasError = true;
@@ -6108,10 +6007,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
                 else if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())){
-                    if(!UtilMethods.isSet(o)){
+                    if(!UtilMethods.isSet(fieldValue)){
                         if (null != contentType.expireDateVar()) {
                             if(field.getVelocityVarName().equals(contentType.expireDateVar())){
-                                if(NEVER_EXPIRE.equals(conMap.get(NEVER_EXPIRE))){
+                                if(NEVER_EXPIRE.equals(contentletMap.get(NEVER_EXPIRE))){
                                     continue;
                                 }else{
                                     cve.addRequiredField(field);
@@ -6178,23 +6077,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         Logger.warn(this, "Site or Folder Field [" + field.getVelocityVarName() + "] is required");
                         continue;
                     }
-                } else if(!UtilMethods.isSet(o)) {
+                } else if(!UtilMethods.isSet(fieldValue)) {
                     cve.addRequiredField(field);
                     hasError = true;
                     Logger.warn(this, "Field [" + field.getVelocityVarName() + "] is required");
                     continue;
                 }
                 if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())){
-                    if(o instanceof Number){
-                        Number n = (Number)o;
+                    if(fieldValue instanceof Number){
+                        Number n = (Number)fieldValue;
                         if(n.longValue() == 0){
                             cve.addRequiredField(field);
                             hasError = true;
                             Logger.warn(this, "Image Field (as number) [" + field.getVelocityVarName() + "] is required");
                             continue;
                         }
-                    }else if(o instanceof String){
-                        String s = (String)o;
+                    }else if(fieldValue instanceof String){
+                        String s = (String)fieldValue;
                         if(s.trim().equals("0")){
                             cve.addRequiredField(field);
                             hasError = true;
@@ -6204,8 +6103,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                     //WYSIWYG patch for blank content
                 }else if(field.getFieldType().equals(Field.FieldType.WYSIWYG.toString())){
-                    if(o instanceof String){
-                        String s = (String)o;
+                    if(fieldValue instanceof String){
+                        String s = (String)fieldValue;
                         if (s.trim().toLowerCase().equals("<br>")){
                             cve.addRequiredField(field);
                             hasError = true;
@@ -6215,6 +6114,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
             }
+
+            // validate unique
             if(field.isUnique()){
                 try{
                     StringBuilder buffy = new StringBuilder();
@@ -6250,8 +6151,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             boolean isDataTypeNumber = field.getDataType().contains(DataTypes.INTEGER.toString())
                                     || field.getDataType().contains(DataTypes.FLOAT.toString());
 
-                            if ( ( isDataTypeNumber && o.equals(obj) ) ||
-                                    ( !isDataTypeNumber && ((String) obj).equalsIgnoreCase(((String) o)) ) )  {
+                            if ( ( isDataTypeNumber && fieldValue.equals(obj) ) ||
+                                    ( !isDataTypeNumber && ((String) obj).equalsIgnoreCase(((String) fieldValue)) ) )  {
                                 unique = false;
                                 break;
                             }
@@ -6284,11 +6185,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Logger.warn(this,"Unable to get contentlets for Content Type: " + contentlet.getStructure().getName(), e);
                 }
             }
+
+            // validate text
             String dataType = (field.getFieldContentlet() != null) ? field.getFieldContentlet().replaceAll("[0-9]*", "") : "";
-            if (UtilMethods.isSet(o) && dataType.equals("text")) {
+            if (UtilMethods.isSet(fieldValue) && dataType.equals("text")) {
                 String s = "";
                 try{
-                    s = (String)o;
+                    s = (String)fieldValue;
                 }catch (Exception e) {
                     Logger.warn(this, "Unable to get string value from text field [" + field.getVelocityVarName() +
                             "] in contentlet", e);
@@ -6302,11 +6205,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     continue;
                 }
             }
+
+            // validate regex
             String regext = field.getRegexCheck();
             if (UtilMethods.isSet(regext)) {
-                if (UtilMethods.isSet(o)) {
-                    if(o instanceof Number){
-                        Number n = (Number)o;
+                if (UtilMethods.isSet(fieldValue)) {
+                    if(fieldValue instanceof Number){
+                        Number n = (Number)fieldValue;
                         String s = n.toString();
                         boolean match = Pattern.matches(regext, s);
                         if (!match) {
@@ -6316,8 +6221,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     "match");
                             continue;
                         }
-                    }else if(o instanceof String && UtilMethods.isSet(((String)o).trim())){
-                        String s = ((String)o).trim();
+                    }else if(fieldValue instanceof String && UtilMethods.isSet(((String)fieldValue).trim())){
+                        String s = ((String)fieldValue).trim();
                         boolean match = Pattern.matches(regext, s);
                         if (!match) {
                             hasError = true;
@@ -6329,9 +6234,213 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
             }
+
+            // validate binary
+            if(isFieldTypeBinary(field)) {
+                this.validateBinary (File.class.cast(fieldValue), field.getFieldName(), field, contentType);
+            }
+
         }
         if(hasError){
             throw cve;
+        }
+    }
+
+    private String getMimeType (final File binary) {
+
+        final Path path = binary.toPath();
+        String mimeType = Sneaky.sneak(() -> Files.probeContentType(path));
+
+        if  (!UtilMethods.isSet(mimeType)) {
+
+            mimeType = Config.CONTEXT.getMimeType(binary.getAbsolutePath());
+
+            if( !UtilMethods.isSet(mimeType)){
+                try {
+                    mimeType = new TikaUtils().detect(binary);
+                } catch(Exception e) {
+                    Logger.warn(this.getClass(), e.getMessage() +  e.getStackTrace()[0]);
+                }
+            }
+        }
+
+        return mimeType;
+    }
+
+    private void validateBinary(final File binary, final String fieldName, final Field legacyField, final ContentType contentType) {
+
+        final Map<String, com.dotcms.contenttype.model.field.Field> fieldMap = contentType.fieldMap();
+
+        if (fieldMap.containsKey(fieldName) && null != binary) {
+
+            final List<FieldVariable> fieldVariables = fieldMap.get(fieldName).fieldVariables();
+
+            if (UtilMethods.isSet(fieldVariables)) {
+
+                for (final FieldVariable fieldVariable : fieldVariables) {
+
+                    final String keyField = fieldVariable.key();
+
+                    if (BinaryField.ALLOWED_FILE_TYPES.equalsIgnoreCase(keyField)) {
+
+                        final String binaryMimeType   = this.getMimeType(binary);
+                        final String allowedFileTypes = fieldVariable.value();
+                        if (UtilMethods.isSet(allowedFileTypes) && UtilMethods.isSet(binaryMimeType)) {
+
+                            boolean allowed = false;
+                            final MimeType fileMimeType = Sneaky.sneak(() -> new MimeType(binaryMimeType));
+                            final String[] allowedFileTypeArray = StringUtil.split(allowedFileTypes);
+                            for (final String allowFileType : allowedFileTypeArray) {
+
+                                final MimeType mimeType = Sneaky.sneak(() -> new MimeType(allowFileType));
+                                allowed |= mimeType.match(fileMimeType);
+                            }
+
+                            // if the extension of the file is not supported
+                            if (!allowed) {
+
+                                final DotContentletValidationException cve = new DotContentletValidationException("message.contentlet.binary.type.notallowed");
+                                Logger.warn(this, "Name of Binary field [" + fieldName + "] has an not allowed type: " + binaryMimeType);
+                                cve.addBadTypeField(legacyField);
+                                throw cve;
+                            }
+                        }
+                    }
+
+                    if (BinaryField.MAX_FILE_LENGTH.equalsIgnoreCase(keyField)) {
+
+                        final long fileLength        = binary.length();
+                        final String maxLengthString = fieldVariable.value();
+                        final long maxLength         = ConversionUtils.toLongFromByteCountHumanDisplaySize(maxLengthString, -1l);
+
+                        if (-1 != maxLength && // if the user sets a valid value
+                                fileLength > maxLength) {
+
+                            final DotContentletValidationException cve = new DotContentletValidationException("message.contentlet.binary.invalidlength");
+                            Logger.warn(this, "Name of Binary field [" + fieldName + "] has a length: " + fileLength
+                                    + " but the max length is: " + maxLength);
+                            cve.addBadTypeField(legacyField);
+                            throw cve;
+                        }
+                    }
+                }
+            }
+        }
+    } // validateBinary.
+
+    private void validateHtmlPage(Contentlet contentlet, String contentIdentifier, ContentType contentType) {
+        if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
+            final DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
+            Logger.warn(this, "HTML Page [" + contentIdentifier + "] cannot be created directly under System " +
+                    "Host");
+            cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
+                    .HOST_FOLDER_FIELD)).asOldField());
+            throw cve;
+        }
+        try{
+            final Host site = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
+            Folder folder = null;
+            if(UtilMethods.isSet(contentlet.getFolder())){
+                folder=APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
+            }
+            else{
+                folder=APILocator.getFolderAPI().findSystemFolder();
+            }
+
+            //Get the URL from Identifier if it is not in Contentlet
+            String url = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+
+            if(!UtilMethods.isSet(url)){
+
+                if (InodeUtils.isSet(contentlet.getVersionId()) || InodeUtils.isSet(contentlet.getInode())) {
+                    Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+                    if (UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())) {
+
+                        url = identifier.getAssetName();
+                    }
+                }
+            }
+
+            if(UtilMethods.isSet(url)){
+                contentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, url);
+                Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+                String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+url:folderId.getPath()+url;
+                Identifier htmlpage = APILocator.getIdentifierAPI().find(site, path);
+                if(htmlpage!=null && InodeUtils.isSet(htmlpage.getId()) && !htmlpage.getId().equals(contentlet.getIdentifier()) ){
+                    final String errorMsg = "Page URL [" + path + "] already exists with content ID [" + htmlpage
+                            .getId() + "]";
+                    final DotContentletValidationException cve = new FileAssetValidationException(errorMsg);
+                    Logger.warn(this, errorMsg);
+                    cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(HTMLPageAssetAPI
+                            .URL_FIELD)).asOldField());
+                    throw cve;
+                }
+                UtilMethods.validateFileName(url);
+            }
+
+        } catch (final DotDataException | DotSecurityException | IllegalArgumentException e) {
+            final String errorMsg = "Contentlet [" + contentIdentifier + "] has an invalid URL: " + contentlet
+                    .getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+            final DotContentletValidationException cve = new FileAssetValidationException(errorMsg);
+            Logger.warn(this, errorMsg);
+            cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(HTMLPageAssetAPI
+                    .URL_FIELD)).asOldField());
+            throw cve;
+        }
+    }
+
+    private void validateFileAsset(final Contentlet contentlet, final String contentIdentifier, final ContentType contentType) {
+
+        if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
+            final DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
+            Logger.warn(this, "File Asset [" + contentIdentifier + "] cannot be created directly under System " +
+                    "Host");
+            cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
+                    .HOST_FOLDER_FIELD)).asOldField());
+            throw cve;
+        }
+
+        //Enforce validation only if the file name isn't the same we've already got
+        if(hasNewIncomingFile(contentlet)){
+            boolean fileNameExists = false;
+            try {
+                final Host site = APILocator.getHostAPI ().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
+                final Folder folder = UtilMethods.isSet(contentlet.getFolder())?
+                        APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false):
+                        APILocator.getFolderAPI().findSystemFolder();
+
+                String fileName = contentlet.getBinary(FileAssetAPI.BINARY_FIELD) != null ? contentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName() : StringPool.BLANK;
+                if(UtilMethods.isSet(contentlet.getStringProperty("fileName"))){
+                    fileName = contentlet.getStringProperty("fileName");
+                }
+                if(UtilMethods.isSet(fileName)){
+                    fileNameExists = APILocator.getFileAssetAPI().fileNameExists(site, folder, fileName, contentlet.getIdentifier());
+                    if(!APILocator.getFolderAPI().matchFilter(folder, fileName)) {
+                        final DotContentletValidationException cve = new FileAssetValidationException("message.file_asset.error.filename.filters");
+                        Logger.warn(this, "File Asset [" + contentIdentifier + "] does not match specified folder" +
+                                " file filters");
+                        cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
+                                .HOST_FOLDER_FIELD)).asOldField());
+                        throw cve;
+                    }
+                }
+
+            } catch (final Exception e) {
+                if(e instanceof FileAssetValidationException) {
+                    throw (FileAssetValidationException) e;
+                }
+                final String errorMsg = "Unable to validate field: " + FileAssetAPI.BINARY_FIELD + " in " +
+                        "contentlet [" + contentIdentifier + "]";
+                Logger.warn(this, errorMsg);
+                throw new FileAssetValidationException(errorMsg, e);
+            }
+            if(fileNameExists){
+                final DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.filename.already.exists");
+                Logger.warn(this, "Name of File Asset [" + contentIdentifier + "] already exists");
+                cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
+                        .HOST_FOLDER_FIELD)).asOldField());
+                throw cve;
+            }
         }
     }
 

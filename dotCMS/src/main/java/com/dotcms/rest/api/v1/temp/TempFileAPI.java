@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -124,10 +125,10 @@ public class TempFileAPI {
   public long maxFileSize(final HttpServletRequest request) {
     
 
-    final long requestedMax = Try.of(()->Long.parseLong(request.getParameter("maxFileLength"))).getOrElse(-1l);
-    final long systemMax =  Config.getLongProperty(TEMP_RESOURCE_MAX_FILE_SIZE, -1l);
-    final long anonMax =  Config.getLongProperty(TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS, -1l);
-    final boolean isAnon = PortalUtil.getUserId(request) == null || UserAPI.CMS_ANON_USER_ID.equals(PortalUtil.getUserId(request));
+    final long requestedMax = ConversionUtils.toLongFromByteCountHumanDisplaySize(request.getParameter("maxFileLength"), -1);
+    final long systemMax    =  Config.getLongProperty(TEMP_RESOURCE_MAX_FILE_SIZE, -1l);
+    final long anonMax      =  Config.getLongProperty(TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS, -1l);
+    final boolean isAnon    = PortalUtil.getUserId(request) == null || UserAPI.CMS_ANON_USER_ID.equals(PortalUtil.getUserId(request));
     
     List<Long> longs = (isAnon) ? Lists.newArrayList(requestedMax,systemMax,anonMax) : Lists.newArrayList(requestedMax,systemMax);
     longs.removeIf(i-> i < 0);
