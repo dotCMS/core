@@ -1,12 +1,30 @@
 package com.dotmarketing.webdav;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
 import com.dotcms.rendering.velocity.services.DotResourceCache;
-import com.dotcms.repackage.com.bradmcevoy.http.*;
+import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
+import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
+import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
+import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
+import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
+import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
+import com.dotcms.repackage.com.bradmcevoy.http.Request;
+import com.dotcms.repackage.com.bradmcevoy.http.Request.Method;
+import com.dotcms.repackage.com.bradmcevoy.http.Resource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -17,7 +35,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -27,7 +44,13 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.URLUtils;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
@@ -35,12 +58,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
-import org.apache.commons.lang.StringUtils;
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
-import org.apache.velocity.runtime.resource.ResourceManager;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,12 +67,18 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.*;
-import org.jetbrains.annotations.NotNull;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Optional;
+import java.util.Timer;
+import org.apache.commons.lang.StringUtils;
+import org.apache.oro.text.regex.MalformedPatternException;
+import org.apache.oro.text.regex.Perl5Compiler;
+import org.apache.oro.text.regex.Perl5Matcher;
+import org.apache.velocity.runtime.resource.ResourceManager;
 
 public class DotWebdavHelper {
 
@@ -71,7 +94,7 @@ public class DotWebdavHelper {
 
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
-	private IdentifierAPI idapi = APILocator.getIdentifierAPI();
+	private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 	private FolderCache fc = CacheLocator.getFolderCache();
 	private PermissionAPI perAPI = APILocator.getPermissionAPI();
 	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
@@ -97,12 +120,12 @@ public class DotWebdavHelper {
 		Perl5Compiler c = new Perl5Compiler();
 		try{
 			tempResourcePattern = c.compile("/\\(.*\\)|/._\\(.*\\)|/\\.|^\\.|^\\(.*\\)",Perl5Compiler.READ_ONLY_MASK);
-    	}catch (MalformedPatternException mfe) {
-    		Logger.fatal(this,"Unable to instaniate webdav servlet : " + mfe.getMessage(),mfe);
+		}catch (MalformedPatternException mfe) {
+			Logger.fatal(this,"Unable to instaniate webdav servlet : " + mfe.getMessage(),mfe);
 			Logger.error(this,mfe.getMessage(),mfe);
 		}
 
-    	try {
+		try {
 			tempHolderDir = File.createTempFile("placeHolder", "dot");
 			String tp = tempHolderDir.getParentFile().getPath() + File.separator + tempFolderPath;
 			FileUtil.deltree(tempHolderDir);
@@ -128,12 +151,12 @@ public class DotWebdavHelper {
 			if(path.startsWith("/webdav/autopub")){
 				return true;
 			}
-				return false;
+			return false;
 		}else{
 			if(path.startsWith("/webdav/live")){
 				return true;
 			}
-				return false;
+			return false;
 		}
 	}
 
@@ -169,17 +192,17 @@ public class DotWebdavHelper {
 			_user = userAPI.loadByUserByEmail(username, userAPI.getSystemUser(), false);
 		}
 
-        if (_user == null) {
-            throw new DotSecurityException("The user was returned NULL");
-        }
+		if (_user == null) {
+			throw new DotSecurityException("The user was returned NULL");
+		}
 
-        // Validate password and rehash when is needed
-        if (LoginFactory.passwordMatch(passwd, _user)) {
-            return _user;
-        } else {
-            Logger.debug(this, "The user's passwords didn't match");
-            throw new DotSecurityException("The user's passwords didn't match");
-        }
+		// Validate password and rehash when is needed
+		if (LoginFactory.passwordMatch(passwd, _user)) {
+			return _user;
+		} else {
+			Logger.debug(this, "The user's passwords didn't match");
+			throw new DotSecurityException("The user's passwords didn't match");
+		}
 	}
 
 	public boolean isFolder(String uriAux, User user) throws IOException {
@@ -266,18 +289,18 @@ public class DotWebdavHelper {
 			throw new IOException(e.getMessage(),e);
 		}
 		if(folder!=null && InodeUtils.isSet(folder.getInode())) {
-    		// FileName
-    		String fileName = getFileName(path);
-    		fileName = deleteSpecialCharacter(fileName);
+			// FileName
+			String fileName = getFileName(path);
+			fileName = deleteSpecialCharacter(fileName);
 
-    		if (InodeUtils.isSet(host.getInode())) {
-    			try {
+			if (InodeUtils.isSet(host.getInode())) {
+				try {
 					returnValue = APILocator.getFileAssetAPI().fileNameExists(host, folder, fileName, "");
 
-    			} catch (Exception ex) {
-    				Logger.debug(this, "Error verifying if file already exists",ex);
-    			}
-    		}
+				} catch (Exception ex) {
+					Logger.debug(this, "Error verifying if file already exists",ex);
+				}
+			}
 		}
 		return returnValue;
 	}
@@ -302,31 +325,31 @@ public class DotWebdavHelper {
 
 		IFileAsset f =null;
 		try {
-    		 id = APILocator.getIdentifierAPI().find(host, url);
-    		if(id!=null && InodeUtils.isSet(id.getId())) {
-    		    if(id.getAssetType().equals("contentlet")){
-    		        cont = conAPI.findContentletByIdentifier(id.getId(), false, defaultLang, user, false);
-    	            if(cont!=null && InodeUtils.isSet(cont.getIdentifier()) && !APILocator.getVersionableAPI().isDeleted(cont)){
-    	                f = APILocator.getFileAssetAPI().fromContentlet(cont);
-    	            }
-    		    }
-    		}
+			id = APILocator.getIdentifierAPI().find(host, url);
+			if(id!=null && InodeUtils.isSet(id.getId())) {
+				if(id.getAssetType().equals("contentlet")){
+					cont = conAPI.findContentletByIdentifier(id.getId(), false, defaultLang, user, false);
+					if(cont!=null && InodeUtils.isSet(cont.getIdentifier()) && !APILocator.getVersionableAPI().isDeleted(cont)){
+						f = APILocator.getFileAssetAPI().fromContentlet(cont);
+					}
+				}
+			}
 		}catch (Exception ex) {
-		    f = null;
+			f = null;
 		}
 
 		return f;
 	}
 
-    public String getAssetName(final IFileAsset fileAsset){
-        try{
-           final Identifier identifier = APILocator.getIdentifierAPI().find(fileAsset.getIdentifier());
-           return identifier.getAssetName();
-        }catch (Exception e){
-           Logger.error( DotWebdavHelper.class," Failed to obtain file-asset name ", e);
-        }
-        return fileAsset.getFileName();
-    }
+	public String getAssetName(final IFileAsset fileAsset){
+		try{
+			final Identifier identifier = APILocator.getIdentifierAPI().find(fileAsset.getIdentifier());
+			return identifier.getAssetName();
+		}catch (Exception e){
+			Logger.error( DotWebdavHelper.class," Failed to obtain file-asset name ", e);
+		}
+		return fileAsset.getFileName();
+	}
 
 	public Folder loadFolder(String url,User user) throws IOException{
 		url = stripMapping(url);
@@ -359,115 +382,115 @@ public class DotWebdavHelper {
 		return f;
 	}
 
-    /**
-     * Returns a collection of child Resources for a given folder
-     *
-     * @param parentFolder Parent folder
-     * @param user         Authenticated user
-     * @param isAutoPub
-     * @return
-     * @throws IOException
-     */
-    public List<Resource> getChildrenOfFolder ( Folder parentFolder, User user, boolean isAutoPub, long lang ) throws IOException {
+	/**
+	 * Returns a collection of child Resources for a given folder
+	 *
+	 * @param parentFolder Parent folder
+	 * @param user         Authenticated user
+	 * @param isAutoPub
+	 * @return
+	 * @throws IOException
+	 */
+	public List<Resource> getChildrenOfFolder ( Folder parentFolder, User user, boolean isAutoPub, long lang ) throws IOException {
 
-        String prePath = "/webdav/";
-        if(legacyPath){
-        	if ( isAutoPub ) {
-            	prePath += "autopub/";
-        	} else {
-            	prePath += "nonpub/";
-        	}
-        }else{
-        	if ( isAutoPub ) {
-            	prePath += "live/";
-        	} else {
-            	prePath += "working/";
-        	}
-        	defaultLang = lang;
-        	prePath += defaultLang;
-        	prePath += "/";
-        }
+		String prePath = "/webdav/";
+		if(legacyPath){
+			if ( isAutoPub ) {
+				prePath += "autopub/";
+			} else {
+				prePath += "nonpub/";
+			}
+		}else{
+			if ( isAutoPub ) {
+				prePath += "live/";
+			} else {
+				prePath += "working/";
+			}
+			defaultLang = lang;
+			prePath += defaultLang;
+			prePath += "/";
+		}
 
-        Host folderHost;
-        try {
-            folderHost = hostAPI.find( parentFolder.getHostId(), user, false );
-        } catch ( DotDataException e ) {
-            Logger.error( DotWebdavHelper.class, e.getMessage(), e );
-            throw new IOException( e.getMessage() );
-        } catch ( DotSecurityException e ) {
-            Logger.error( DotWebdavHelper.class, e.getMessage(), e );
-            throw new IOException( e.getMessage() );
-        }
+		Host folderHost;
+		try {
+			folderHost = hostAPI.find( parentFolder.getHostId(), user, false );
+		} catch ( DotDataException e ) {
+			Logger.error( DotWebdavHelper.class, e.getMessage(), e );
+			throw new IOException( e.getMessage() );
+		} catch ( DotSecurityException e ) {
+			Logger.error( DotWebdavHelper.class, e.getMessage(), e );
+			throw new IOException( e.getMessage() );
+		}
 
-        List<Resource> result = new ArrayList<Resource>();
-        try {
+		List<Resource> result = new ArrayList<Resource>();
+		try {
 
-            //Search for child folders
-            List<Folder> folderListSubChildren = folderAPI.findSubFolders( parentFolder, user, false );
-            //Search for child files
-            List<Versionable> filesListSubChildren = new ArrayList<Versionable>();
-            try {
-                filesListSubChildren.addAll( APILocator.getFileAssetAPI().findFileAssetsByFolder( parentFolder, user, false ) );
-            } catch ( Exception e2 ) {
-                Logger.error( this, "Could not load files : ", e2 );
-            }
+			//Search for child folders
+			List<Folder> folderListSubChildren = folderAPI.findSubFolders( parentFolder, user, false );
+			//Search for child files
+			List<Versionable> filesListSubChildren = new ArrayList<Versionable>();
+			try {
+				filesListSubChildren.addAll( APILocator.getFileAssetAPI().findFileAssetsByFolder( parentFolder, user, false ) );
+			} catch ( Exception e2 ) {
+				Logger.error( this, "Could not load files : ", e2 );
+			}
 
-            for ( Versionable file : filesListSubChildren ) {
-                if ( !file.isArchived() ) {
-                    IFileAsset fileAsset = (IFileAsset) file;
-                    if(fileAsset.getLanguageId()==defaultLang){
-                    	FileResourceImpl resource = new FileResourceImpl( fileAsset, prePath + folderHost.getHostname() + "/" + fileAsset.getPath() );
-                    	result.add( resource );
-                    }
-                }
-            }
-            for ( Folder folder : folderListSubChildren ) {
-                if ( !folder.isArchived() ) {
-                    String path = idapi.find( folder ).getPath();
+			for ( Versionable file : filesListSubChildren ) {
+				if ( !file.isArchived() ) {
+					IFileAsset fileAsset = (IFileAsset) file;
+					if(fileAsset.getLanguageId()==defaultLang){
+						FileResourceImpl resource = new FileResourceImpl( fileAsset, prePath + folderHost.getHostname() + "/" + fileAsset.getPath() );
+						result.add( resource );
+					}
+				}
+			}
+			for ( Folder folder : folderListSubChildren ) {
+				if ( !folder.isArchived() ) {
+					String path = identifierAPI.find( folder ).getPath();
 
-                    FolderResourceImpl resource = new FolderResourceImpl( folder, prePath + folderHost.getHostname() + "/" + (path.startsWith( "/" ) ? path.substring( 1 ) : path) );
-                    result.add( resource );
-                }
-            }
+					FolderResourceImpl resource = new FolderResourceImpl( folder, prePath + folderHost.getHostname() + "/" + (path.startsWith( "/" ) ? path.substring( 1 ) : path) );
+					result.add( resource );
+				}
+			}
 
-            String p = APILocator.getIdentifierAPI().find( parentFolder ).getPath();
-            if ( p.contains( "/" ) )
-                p.replace( "/", File.separator );
-            File tempDir = new File( tempHolderDir.getPath() + File.separator + folderHost.getHostname() + p );
-            p = idapi.find( parentFolder ).getPath();
-            if ( !p.endsWith( "/" ) )
-                p = p + "/";
-            if ( !p.startsWith( "/" ) )
-                p = "/" + p;
-            if ( tempDir.exists() && tempDir.isDirectory() ) {
-                File[] files = tempDir.listFiles();
-                for ( File file : files ) {
-                    String tp = prePath + folderHost.getHostname() + p + file.getName();
-                    if ( !isTempResource( tp ) ) {
-                        continue;
-                    }
-                    if ( file.isDirectory() ) {
-                        TempFolderResourceImpl tr = new TempFolderResourceImpl( tp, file, isAutoPub );
-                        result.add( tr );
-                    } else {
-                        TempFileResourceImpl tr = new TempFileResourceImpl( file, tp, isAutoPub );
-                        result.add( tr );
-                    }
-                }
-            }
-        } catch ( Exception e ) {
-            Logger.error( DotWebdavHelper.class, e.getMessage(), e );
-            throw new IOException( e.getMessage() );
-        }
+			String p = APILocator.getIdentifierAPI().find( parentFolder ).getPath();
+			if ( p.contains( "/" ) )
+				p.replace( "/", File.separator );
+			File tempDir = new File( tempHolderDir.getPath() + File.separator + folderHost.getHostname() + p );
+			p = identifierAPI.find( parentFolder ).getPath();
+			if ( !p.endsWith( "/" ) )
+				p = p + "/";
+			if ( !p.startsWith( "/" ) )
+				p = "/" + p;
+			if ( tempDir.exists() && tempDir.isDirectory() ) {
+				File[] files = tempDir.listFiles();
+				for ( File file : files ) {
+					String tp = prePath + folderHost.getHostname() + p + file.getName();
+					if ( !isTempResource( tp ) ) {
+						continue;
+					}
+					if ( file.isDirectory() ) {
+						TempFolderResourceImpl tr = new TempFolderResourceImpl( tp, file, isAutoPub );
+						result.add( tr );
+					} else {
+						TempFileResourceImpl tr = new TempFileResourceImpl( file, tp, isAutoPub );
+						result.add( tr );
+					}
+				}
+			}
+		} catch ( Exception e ) {
+			Logger.error( DotWebdavHelper.class, e.getMessage(), e );
+			throw new IOException( e.getMessage() );
+		}
 
-        return result;
-    }
+		return result;
+	}
 
-    public File getTempDir () {
-        return tempHolderDir;
-    }
+	public File getTempDir () {
+		return tempHolderDir;
+	}
 
-    public String getHostName ( String uri ) {
+	public String getHostName ( String uri ) {
 		try {
 			return getHostname(stripMapping(uri));
 		} catch (IOException e) {
@@ -503,7 +526,7 @@ public class DotWebdavHelper {
 	public void copyFolderToTemp(Folder folder, File tempFolder, User user, String name,boolean isAutoPub, long lang) throws IOException{
 		String p = "";
 		try {
-			p = idapi.find(folder).getPath();
+			p = identifierAPI.find(folder).getPath();
 		} catch (Exception e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
@@ -587,31 +610,31 @@ public class DotWebdavHelper {
 			for (int i = children.length - 1; i >= 0; i--) {
 				// children[i] = "/" + children[i];
 
-			if (!children[i].isFolder()) {
+				if (!children[i].isFolder()) {
 
-				setResourceContent(destinationPath + "/" + children[i].getName(), getResourceContent(sourcePath + "/" + children[i].getName(),user), null, null, user);
+					setResourceContent(destinationPath + "/" + children[i].getName(), getResourceContent(sourcePath + "/" + children[i].getName(),user), null, null, user);
 
-				// ### Copy the permission ###
-				// Source
-				boolean live = false;
+					// ### Copy the permission ###
+					// Source
+					boolean live = false;
 
-				Identifier identifier  = APILocator.getIdentifierAPI().find(children[i].getHost(), destinationPath + "/" + children[i].getName());
-				Permissionable destinationFile = null;
- 				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
- 					destinationFile = conAPI.findContentletByIdentifier(identifier.getId(), live, defaultLang, user, false);
+					Identifier identifier  = APILocator.getIdentifierAPI().find(children[i].getHost(), destinationPath + "/" + children[i].getName());
+					Permissionable destinationFile = null;
+					if(identifier!=null && identifier.getAssetType().equals("contentlet")){
+						destinationFile = conAPI.findContentletByIdentifier(identifier.getId(), live, defaultLang, user, false);
+					}
+
+					// Delete the new permissions
+					perAPI.removePermissions(destinationFile);
+
+					// Copy the new permissions
+					perAPI.copyPermissions((Permissionable)children[i].getFile(), destinationFile);
+
+					// ### END Copy the permission ###
+					// }
+				} else {
+					copyFolder(sourcePath + "/" + children[i].getName(), destinationPath + "/" + children[i].getName(), user, autoPublish);
 				}
-
-				// Delete the new permissions
-				perAPI.removePermissions(destinationFile);
-
-				// Copy the new permissions
-				perAPI.copyPermissions((Permissionable)children[i].getFile(), destinationFile);
-
-				// ### END Copy the permission ###
-				// }
-			} else {
-				copyFolder(sourcePath + "/" + children[i].getName(), destinationPath + "/" + children[i].getName(), user, autoPublish);
-			}
 
 			}
 
@@ -649,7 +672,7 @@ public class DotWebdavHelper {
 		}
 		return;
 	}
-	
+
 	private File writeDataIfEmptyFile(Folder folder, String fileName, File fileData) throws IOException{
 		if(fileData.length() == 0 && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)){
 			Logger.warn(this, "The file " + folder.getPath() + fileName + " that is trying to be uploaded is empty. A byte will be written to the file because empty files are not allowed in the system");
@@ -659,7 +682,7 @@ public class DotWebdavHelper {
 	}
 
 	public void setResourceContent(String resourceUri,
-			InputStream content,	String contentType, String characterEncoding, Date modifiedDate, User user, boolean isAutoPub) throws Exception {
+								   InputStream content,	String contentType, String characterEncoding, Date modifiedDate, User user, boolean isAutoPub) throws Exception {
 		resourceUri = stripMapping(resourceUri);
 		Logger.debug(this.getClass(), "setResourceContent");
 		String hostName = getHostname(resourceUri);
@@ -667,7 +690,7 @@ public class DotWebdavHelper {
 		String folderName = getFolderName(path);
 		String fileName = getFileName(path);
 		fileName = deleteSpecialCharacter(fileName);
-        final boolean disableWorkflow = Config.getBooleanProperty("dotcms.webdav.disableworkflow", false);
+		final boolean disableWorkflow = Config.getBooleanProperty("dotcms.webdav.disableworkflow", false);
 
 		Host host;
 		try {
@@ -693,7 +716,7 @@ public class DotWebdavHelper {
 			Contentlet fileAssetCont = null;
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 			if(identifier!=null && InodeUtils.isSet(identifier.getId()) && identifier.getAssetType().equals("contentlet")){
-				List<Contentlet> list = conAPI.findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);	
+				List<Contentlet> list = conAPI.findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
 				long langContentlet = list.get(0).getLanguageId();
 				if(langContentlet != defaultLang){
 					for(Contentlet c : list){
@@ -709,7 +732,7 @@ public class DotWebdavHelper {
 				parent = APILocator.getFolderAPI().findFolderByPath(identifier.getParentPath(), host, user, false);
 
 				if(fileAssetCont.isArchived()) {
-				    conAPI.unarchive(fileAssetCont, user, false);
+					conAPI.unarchive(fileAssetCont, user, false);
 				}
 			}
 
@@ -732,13 +755,13 @@ public class DotWebdavHelper {
 
 				// Saving the new working data
 				try (final ReadableByteChannel inputChannel = Channels.newChannel(content);
-                        final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(fileData.toPath()))){
+					 final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(fileData.toPath()))){
 
-				    FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
-                    Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
-                }
-                
-                //Avoid uploading an empty file
+					FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+					Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
+				}
+
+				//Avoid uploading an empty file
 				if(HttpManager.request().getUserAgentHeader().contains("Cyberduck")){
 					fileData = writeDataIfEmptyFile(folder, fileName, fileData);
 				}
@@ -753,7 +776,7 @@ public class DotWebdavHelper {
 				//Validate if the user have the right permission before
 				this.validatePermissions(user, isAutoPub, disableWorkflow, fileAsset);
 			} else {
-			    File fileData;
+				File fileData;
 
 				Structure faStructure = CacheLocator.getContentTypeCache().getStructureByInode(folder.getDefaultFileType());
 				Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
@@ -763,14 +786,14 @@ public class DotWebdavHelper {
 
 
 				// Saving the new working data
-                try (final ReadableByteChannel inputChannel = Channels.newChannel(content);
-                        final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(fileData.toPath()))){
+				try (final ReadableByteChannel inputChannel = Channels.newChannel(content);
+					 final WritableByteChannel outputChannel = Channels.newChannel(Files.newOutputStream(fileData.toPath()))){
 
-                    FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
-                    Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
-                }
-                
-                //Avoid uploading an empty file
+					FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+					Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
+				}
+
+				//Avoid uploading an empty file
 				fileData = writeDataIfEmptyFile(folder, fileName, fileData);
 
 				fileAssetCont.setInode(null);
@@ -782,7 +805,7 @@ public class DotWebdavHelper {
 				//Wiping out the thumbnails and resized versions
 				//http://jira.dotmarketing.net/browse/DOTCMS-5911
 				APILocator.getFileAssetAPI().cleanThumbnailsFromFileAsset(destinationFile);
-				
+
 				//Wipe out empty versions that Finder creates
 				final List<Contentlet> versions = conAPI.findAllVersions(identifier, user, false);
 				for(final Contentlet contentlet : versions){
@@ -801,7 +824,7 @@ public class DotWebdavHelper {
 	} // setResourceContent.
 
 	private void validatePermissions(User user, boolean isAutoPub, boolean disableWorkflow,
-			Contentlet fileAsset) throws DotDataException, DotSecurityException {
+									 Contentlet fileAsset) throws DotDataException, DotSecurityException {
 		if (isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user)) {
 
 			if (disableWorkflow) {
@@ -831,7 +854,7 @@ public class DotWebdavHelper {
 	}
 
 	private Contentlet runWorkflowIfPossible(final String resourceUri, final User user, final boolean isAutoPub,
-			final boolean disableWorkflow, final Contentlet fileAsset)
+											 final boolean disableWorkflow, final Contentlet fileAsset)
 			throws DotDataException, DotSecurityException {
 
 		fileAsset.getMap().put(Contentlet.VALIDATE_EMPTY_FILE, false);
@@ -843,16 +866,16 @@ public class DotWebdavHelper {
 
 	private boolean hasPermissionPublish (final Contentlet fileAsset, final User user) throws DotDataException, DotSecurityException {
 
-    	return UtilMethods.isSet(fileAsset.getPermissionId())?
+		return UtilMethods.isSet(fileAsset.getPermissionId())?
 				this.perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user):
 				this.perAPI.doesUserHavePermission(fileAsset.getContentType(), PermissionAPI.PERMISSION_PUBLISH, user);
 	}
 
 	private Contentlet runWorkflow(final String resourceUri, final User user, final boolean isAutoPub,
-			final boolean disableWorkflow, Contentlet fileAsset)
+								   final boolean disableWorkflow, Contentlet fileAsset)
 			throws DotDataException, DotSecurityException {
 
-    	if (!isAutoPub) { // if it is just save
+		if (!isAutoPub) { // if it is just save
 
 			final Optional<WorkflowAction> saveActionOpt = fileAsset.isNew()?
 					APILocator.getWorkflowAPI().findActionMappedBySystemActionContentlet(fileAsset, SystemAction.NEW, user):
@@ -912,7 +935,7 @@ public class DotWebdavHelper {
 	}
 
 	private Contentlet runCheckinPublishNoWorkflow(final String resourceUri, final User user, final boolean isAutoPub,
-			final boolean disableWorkflow, Contentlet fileAsset)
+												   final boolean disableWorkflow, Contentlet fileAsset)
 			throws DotDataException, DotSecurityException {
 
 		fileAsset.setBoolProperty(Contentlet.DISABLE_WORKFLOW, disableWorkflow);
@@ -932,32 +955,32 @@ public class DotWebdavHelper {
 	}
 
 	/**
-     * Create temporal user folder and create a file inside of it
-     *
-     * @param fieldVar
-     * @param userId
-     * @param fileName
-     * @return created file
-     */
+	 * Create temporal user folder and create a file inside of it
+	 *
+	 * @param fieldVar
+	 * @param userId
+	 * @param fileName
+	 * @return created file
+	 */
 	private File createFileInTemporalFolder(Field fieldVar, final String userId, final String fileName) {
-        final String folderPath = new StringBuilder()
-                .append(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary())
-                .append(File.separator).append(userId).append(File.separator)
-                .append(fieldVar.getFieldContentlet()).toString();
+		final String folderPath = new StringBuilder()
+				.append(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary())
+				.append(File.separator).append(userId).append(File.separator)
+				.append(fieldVar.getFieldContentlet()).toString();
 
-        File tempUserFolder = new File(folderPath);
-        if (!tempUserFolder.exists())
-            tempUserFolder.mkdirs();
+		File tempUserFolder = new File(folderPath);
+		if (!tempUserFolder.exists())
+			tempUserFolder.mkdirs();
 
-        final String filePath = new StringBuilder()
-        .append(tempUserFolder.getAbsolutePath())
-        .append(File.separator).append(fileName).toString();
+		final String filePath = new StringBuilder()
+				.append(tempUserFolder.getAbsolutePath())
+				.append(File.separator).append(fileName).toString();
 
-        File fileData = new File(filePath);
-        if(fileData.exists())
-            fileData.delete();
+		File fileData = new File(filePath);
+		if(fileData.exists())
+			fileData.delete();
 
-        return fileData;
+		return fileData;
 	}
 
 	public Folder createFolder(String folderUri, User user) throws IOException, DotDataException {
@@ -990,13 +1013,10 @@ public class DotWebdavHelper {
 				parentFolder = folderAPI.findFolderByPath(parentPath,host,user,false);
 				hasPermission = perAPI.doesUserHavePermission(parentFolder,	PERMISSION_CAN_ADD_CHILDREN, user, false);
 			} catch (Exception e) {
-				Logger.error(DotWebdavHelper.class,e.getMessage(),e);
+				Logger.error(DotWebdavHelper.class,"Error creating folder with URI: " + folderUri + ". Error: " + e.getMessage(),e);
 				throw new IOException(e.getMessage(),e);
 			}
 		} else {
-			if (host != null && InodeUtils.isSet(host.getInode())) {
-				folderAPI.validateFolderName(path.substring(1));
-			}
 			try {
 				hasPermission = perAPI.doesUserHavePermission(host, PERMISSION_CAN_ADD_CHILDREN, user, false);
 			} catch (DotDataException e) {
@@ -1020,11 +1040,10 @@ public class DotWebdavHelper {
 	}
 
 	public void move(String fromPath, String toPath, User user,boolean autoPublish)throws IOException, DotDataException {
-	    String resourceFromPath = fromPath;
+		String resourceFromPath = fromPath;
 		final String fromPathStripped = stripMapping(fromPath);
 		toPath = stripMapping(toPath);
 		PermissionAPI perAPI = APILocator.getPermissionAPI();
-
 		String hostName = getHostname(fromPathStripped);
 		String toParentPath = getFolderName(getPath(toPath));
 
@@ -1032,7 +1051,7 @@ public class DotWebdavHelper {
 		Folder toParentFolder;
 		try {
 			host = hostAPI.findByName(hostName, user, false);
-		    toParentFolder = folderAPI.findFolderByPath(toParentPath,host,user,false);
+			toParentFolder = folderAPI.findFolderByPath(toParentPath,host,user,false);
 		} catch (DotDataException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			throw new IOException(e.getMessage(),e);
@@ -1055,47 +1074,55 @@ public class DotWebdavHelper {
 			}
 
 			try{
-				Identifier identifier  = APILocator.getIdentifierAPI().find(host, getPath(fromPathStripped));
-
-				Identifier identTo  = APILocator.getIdentifierAPI().find(host, getPath(toPath));
-				boolean destinationExists=identTo!=null && InodeUtils.isSet(identTo.getId());
+				final Identifier identifier  = APILocator.getIdentifierAPI().find(host, getPath(fromPathStripped));
+				final Identifier identTo = APILocator.getIdentifierAPI().find(host, getPath(toPath));
+				final boolean destinationExists = identTo != null && InodeUtils.isSet(identTo.getId());
 
 				if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 					Contentlet fileAssetCont = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 					if(!destinationExists) {
-    					if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
-    						String fileName = getFileName(toPath);
-    						if(fileName.contains(".")){
-    							fileName = fileName.substring(0, fileName.lastIndexOf("."));
-    						}
-    						APILocator.getFileAssetAPI().renameFile(fileAssetCont, fileName, user, false);
-    					} else {
-    						APILocator.getFileAssetAPI().moveFile(fileAssetCont, toParentFolder, user, false);
-    					}
-					}
-					else {
-					    // if the destination exists lets just create a new version and delete the original file
-					    Contentlet origin = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
-					    Contentlet toContentlet = conAPI.findContentletByIdentifier(identTo.getId(), false, defaultLang, user, false);
-					    Contentlet newversion = conAPI.checkout(toContentlet.getInode(), user, false);
+						if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
+							String fileName = getFileName(toPath);
+							if(fileName.contains(".")){
+								fileName = fileName.substring(0, fileName.lastIndexOf("."));
+							}
+							APILocator.getFileAssetAPI().renameFile(fileAssetCont, fileName, user, false);
+						} else {
+							APILocator.getFileAssetAPI().moveFile(fileAssetCont, toParentFolder, user, false);
+						}
+					} else {
+						// if the destination exists lets just create a new version and delete the original file
+						final Contentlet origin = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
+						final Contentlet toContentlet = conAPI.findContentletByIdentifier(identTo.getId(), false, defaultLang, user, false);
+						Contentlet newVersion = conAPI.checkout(toContentlet.getInode(), user, false);
 
-					    // get a copy in a tmp folder to avoid filename change
-					    File tmpDir=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                                +File.separator+UUIDGenerator.generateUuid());
-					    File tmp=new File(tmpDir, toContentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName());
-					    FileUtil.copyFile(origin.getBinary(FileAssetAPI.BINARY_FIELD), tmp);
+						final boolean sameSourceAndTarget = (origin.getIdentifier().equals(newVersion.getIdentifier()));
 
-					    newversion.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
-					    newversion.setLanguageId(defaultLang);
-					    newversion = conAPI.checkin(newversion, user, false);
-					    if(autoPublish) {
-					        conAPI.publish(newversion, user, false);
-					    }
+						// get a copy in a tmp folder to avoid filename change
+						final File tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+								+ File.separator+UUIDGenerator.generateUuid());
+						final File tmp = new File(tmpDir, toContentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+						FileUtil.copyFile(origin.getBinary(FileAssetAPI.BINARY_FIELD), tmp);
 
-					    conAPI.unlock(newversion, user, false);
+						newVersion.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
+						newVersion.setLanguageId(defaultLang);
+						newVersion = conAPI.checkin(newVersion, user, false);
+						if(autoPublish) {
+							conAPI.publish(newVersion, user, false);
+						}
+						if(sameSourceAndTarget){
+						   //If source and target are the same this could be a rename attempt
+						   identTo.setAssetName(getFileName(toPath));
+						   identifierAPI.save(identTo);
+						}
 
-					    conAPI.delete(origin, APILocator.getUserAPI().getSystemUser(), false);
-					    while(conAPI.isInodeIndexed(origin.getInode(),1)); // this seems to be ok, since need to known when the origin is deleted.
+						conAPI.unlock(newVersion, user, false);
+						// if we don't validate source and destination are the same we will end-up loosing the file.
+						if(!sameSourceAndTarget){
+						  final User sysUser = APILocator.systemUser();
+						  conAPI.archive(origin, sysUser, false);
+						  conAPI.delete(origin, sysUser, false);
+						}
 					}
 				}
 
@@ -1112,32 +1139,44 @@ public class DotWebdavHelper {
 					Logger.error(DotWebdavHelper.class,e1.getMessage(),e1);
 					throw new IOException(e1.getMessage());
 				}
-				if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
-					Logger.debug(this, "Calling Folderfactory to rename " + fromPathStripped + " to " + toPath);
-					try{
-					    // Folder must end with "/", otherwise we get the parent folder
-                        String folderToPath = getPath(toPath);
-                        if(!folderToPath.endsWith("/")) { folderToPath = folderToPath + "/"; }
+				final boolean sourceAndDestinationAreTheSame = isSameResourcePath(fromPathStripped, toPath, user);
+				if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) { //This line verifies the parent folder is the same.
+					Logger.debug(this, "Calling FolderFactory to rename " + fromPathStripped + " to " + toPath);
 
-                        Folder folder = folderAPI.findFolderByPath(folderToPath, host, user, false);
-                        removeObject(toPath, user);
-                        fc.removeFolder(folder, idapi.find(folder));
-					}catch (Exception e) {
-						Logger.debug(this, "Unable to delete toPath " + toPath);
+					//need to verify the source and destination are not the same because we could be renaming the folder to be the same but with different casing.
+					if (!sourceAndDestinationAreTheSame) {
+						try {
+							// Folder must end with "/", otherwise we get the parent folder
+							String folderToPath = getPath(toPath);
+							if (!folderToPath.endsWith("/")) {
+								folderToPath = folderToPath + "/";
+							}
+
+							final Folder folder = folderAPI
+									.findFolderByPath(folderToPath, host, user, false);
+							removeObject(toPath, user);
+							fc.removeFolder(folder, identifierAPI.find(folder));
+
+						} catch (Exception e) {
+							Logger.debug(this, "Unable to delete toPath " + toPath);
+						}
 					}
-					boolean renamed = false;
+
+					final boolean renamed;
 					try{
-						Folder folder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
+						final Folder folder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
 						renamed = folderAPI.renameFolder(folder, getFileName(toPath),user,false);
-						fc.removeFolder(folder,idapi.find(folder));
-						//folderAPI.updateMovedFolderAssets(folder);
+						if (!sourceAndDestinationAreTheSame) {
+						    fc.removeFolder(folder, identifierAPI.find(folder));
+						}
 					}catch (Exception e) {
 						throw new DotDataException(e.getMessage(), e);
 					}
 					if(!renamed){
-						Logger.error(this, "Unable to remame folder");
+						Logger.error(this, "Unable to rename folder");
 						throw new IOException("Unable to rename folder");
 					}
+
 				} else {
 					Logger.debug(this, "Calling folder factory to move from " + fromPathStripped + " to " + toParentPath);
 					Folder fromFolder;
@@ -1148,15 +1187,15 @@ public class DotWebdavHelper {
 						throw new DotRuntimeException(e1.getMessage(), e1);
 					}
 					if(fromFolder != null){
-						Logger.debug(this, "Calling folder factory to move from " + idapi.find(fromFolder).getPath() + " to " + toParentPath);
+						Logger.debug(this, "Calling folder factory to move from " + identifierAPI.find(fromFolder).getPath() + " to " + toParentPath);
 						Logger.debug(this, "the from folder inode is " + fromFolder.getInode());
 					}else{
 						Logger.debug(this, "The from folder is null");
 					}
 					try {
 						folderAPI.move(fromFolder, toParentFolder,user,false);
-						fc.removeFolder(fromFolder,idapi.find(fromFolder));
-						fc.removeFolder(toParentFolder,idapi.find(toParentFolder));
+						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder));
+						fc.removeFolder(toParentFolder, identifierAPI.find(toParentFolder));
 						//folderAPI.updateMovedFolderAssets(fromFolder);
 					} catch (Exception e) {
 						Logger.error(DotWebdavHelper.class, e.getMessage(), e);
@@ -1173,14 +1212,14 @@ public class DotWebdavHelper {
 					throw new IOException(e.getMessage(),e);
 				}
 				if (getFolderName(fromPathStripped).equals(getFolderName(toPath))) {
-					final Folder fromfolder = Try.of(()->folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false)).get();
+					final Folder fromFolder = Try.of(()->folderAPI.findFolderByPath(getPath(fromPathStripped), host, user,false)).get();
 					try{
-						folderAPI.renameFolder(fromfolder, getFileName(toPath),user,false);
-						fc.removeFolder(fromfolder,idapi.find(fromfolder));
+						folderAPI.renameFolder(fromFolder, getFileName(toPath),user,false);
+						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder));
 					}catch (Exception e) {
-						if(fromfolder.getName().contains("untitled folder")){
+						if( UtilMethods.isSet(fromFolder.getName()) && fromFolder.getName().toLowerCase().contains("untitled folder")){
 							try {
-								folderAPI.delete(fromfolder,user,false);
+								folderAPI.delete(fromFolder,user,false);
 							} catch (DotSecurityException ex) {
 								throw new DotDataException(ex.getMessage(), ex);
 							}
@@ -1188,11 +1227,11 @@ public class DotWebdavHelper {
 						throw new DotDataException(e.getMessage(), e);
 					}
 				} else {
-					Folder fromFolder;
+					final Folder fromFolder;
 					try {
 						fromFolder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
 						folderAPI.move(fromFolder, host,user,false);
-						fc.removeFolder(fromFolder,idapi.find(fromFolder));
+						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder));
 					} catch (Exception e) {
 						Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 						throw new DotDataException(e.getMessage(), e);
@@ -1204,7 +1243,7 @@ public class DotWebdavHelper {
 	}
 
 	public void removeObject(String uri, User user) throws IOException, DotDataException, DotSecurityException {
-	    String resourceUri = uri;
+		String resourceUri = uri;
 		uri = stripMapping(uri);
 		Logger.debug(this.getClass(), "In the removeObject Method");
 		String hostName = getHostname(uri);
@@ -1237,25 +1276,29 @@ public class DotWebdavHelper {
 			}
 
 			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
-			    Contentlet fileAssetCont = conAPI
-			    		.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
+				Contentlet fileAssetCont = conAPI
+						.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
 
-			    //Webdav calls the delete method when is creating a new file. But it creates the file with 0 content length.
-			    //No need to wait 10 seconds with files with 0 length.
-			    if(canDelete
-			    		|| (fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD) != null
-			    			&& fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD).length() <= 0)){
+				//Webdav calls the delete method when is creating a new file. But it creates the file with 0 content length.
+				//No need to wait 10 seconds with files with 0 length.
+				if(canDelete
+						|| (fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD) != null
+						&& fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD).length() <= 0)){
 
-			    	try{
-				        conAPI.archive(fileAssetCont, user, false);
-				    }catch (Exception e) {
-				        Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-				        throw new DotDataException(e.getMessage(), e);
-				    }
+					try{
+						conAPI.archive(fileAssetCont, user, false);
+						if (UtilMethods.isSet(fileAssetCont.getActionId())) {
+
+							fileAssetCont.getMap().remove(Contentlet.WORKFLOW_ACTION_KEY);
+						}
+					}catch (Exception e) {
+						Logger.error(DotWebdavHelper.class, e.getMessage(), e);
+						throw new DotDataException(e.getMessage(), e);
+					}
 
 
-				    fileResourceCache.remove(uri + "|" + user.getUserId());
-			    }
+					fileResourceCache.remove(uri + "|" + user.getUserId());
+				}
 			}
 
 		} else if (isFolder(resourceUri,user)) {
@@ -1267,8 +1310,8 @@ public class DotWebdavHelper {
 				RefreshMenus.deleteMenu(folder);
 				CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 				if(!path.equals("/")) {
-				    Identifier ii=APILocator.getIdentifierAPI().find(folder);
-				    CacheLocator.getNavToolCache().removeNavByPath(ii.getHostId(), ii.getParentPath());
+					Identifier ii=APILocator.getIdentifierAPI().find(folder);
+					CacheLocator.getNavToolCache().removeNavByPath(ii.getHostId(), ii.getParentPath());
 				}
 			}
 
@@ -1276,7 +1319,125 @@ public class DotWebdavHelper {
 
 		}
 
+	}
 
+	/**
+	 * This will validate that the operation triggered is a Method `MOVE` call
+	 * And extracts the source and target to compare if the source and destination
+	 * @param resourceValidationName
+	 * @return
+	 */
+	boolean isSameTargetAndDestinationResourceOnMove(final String resourceValidationName) {
+		final Request request = HttpManager.request();
+		if (null != request) {
+			final Request.Method method = request.getMethod();
+			if (Method.MOVE.equals(method)) {
+				if (UtilMethods.isSet(request.getAbsoluteUrl()) && UtilMethods
+						.isSet(request.getDestinationHeader())) {
+					final boolean sameResource = isSameResourceURL(request.getAbsoluteUrl(),request.getDestinationHeader(), resourceValidationName);
+					if (sameResource) {
+						Logger.warn(DotWebdavHelper.class,
+								() -> " Attempt to perform a `MOVE` operation over the same source and target resource.");
+					}
+					return sameResource;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 *
+	 * @param sourcePath
+	 * @param targetPath
+	 * @return
+	 */
+	boolean isSameResourcePath(final String sourcePath, final String targetPath, final User user) {
+		try {
+			final Folder sourceFolder = getFolder(sourcePath, user);
+			final Folder targetFolder = getFolder(targetPath, user);
+			if (null != sourceFolder && UtilMethods.isSet(sourceFolder.getIdentifier())
+					&& null != targetFolder && UtilMethods.isSet(targetFolder.getIdentifier())) {
+				return sourceFolder.getIdentifier().equals(targetFolder.getIdentifier());
+			}
+		} catch (DotDataException | DotSecurityException e) {
+			Logger.error(DotWebdavHelper.class,
+					String.format("Error trying to determine if these 2 uris (`%s`,`%s`) are the same folder.", sourcePath, targetPath),
+					e);
+		}
+		return false;
+	}
+
+	private Folder getFolder(final String uri, final User user)
+			throws DotSecurityException, DotDataException {
+	   final String hostName = getHostName(uri);
+	   final String path = getPath(uri);
+	   final Host host = hostAPI.findByName(hostName, user, false);
+	   return folderAPI.findFolderByPath(path, host, user, false);
+	}
+
+	/**
+ 	 * This takes care of situations like case sensitivity and and backslash at the end etc.
+	 * Example  http:/demo.dotcms.com/blah/products vs http:/demo.dotcms.com/blah/Products/
+	 * @param sourceUrl basically url#1
+	 * @param targetUrl basically url#2
+	 * @param resourceName this ia an extra param to perform an additional validation on the resourceName
+	 * @return same resource returns true otherwise false.
+	 */
+    @VisibleForTesting
+	boolean isSameResourceURL(String sourceUrl, String targetUrl, final String resourceName) {
+
+		try {
+			final Resource source = getResourceFromURL(sourceUrl);
+			final Resource target = getResourceFromURL(targetUrl);
+
+			if (source != null && target != null) {
+					return source.getUniqueId().equals(target.getUniqueId()) && UtilMethods
+							.isSet(source.getName()) && source.getName()
+							.equalsIgnoreCase(resourceName);
+			}
+		} catch (Exception e) {
+			Logger.error(DotWebdavHelper.class,
+					String.format("Error trying to determine if these 2 urls (`%s`,`%s`) are the same resource.", sourceUrl, targetUrl),
+			  e);
+		}
+		return false;
+	}
+
+    @VisibleForTesting
+	Resource getResourceFromURL(String url) {
+		String host = null;
+		String path = null;
+		final URLUtils.ParsedURL sourceParts = URLUtils.parseURL(url);
+		if (null != sourceParts) {
+			if (UtilMethods.isSet(sourceParts.getHost())) {
+				host = sourceParts.getHost();
+			}
+
+			if (UtilMethods.isSet(sourceParts.getPath())) {
+				path = sourceParts.getPath();
+			}
+
+			if (UtilMethods.isSet(sourceParts.getResource())) {
+				if (UtilMethods.isSet(path)) {
+					if (!path.endsWith("/")) {
+						path = path + "/" + sourceParts.getResource();
+					} else {
+						path = path + sourceParts.getResource();
+					}
+				}
+			}
+		}
+		//This a fallback..
+		if (host == null) {
+			host = getHostName(url);
+		}
+		if (path == null) {
+			path = getPath(url);
+		}
+
+		return ResourceFactorytImpl
+				.getResource(host, path, this, hostAPI);
 	}
 
 //  Previously this was was used to store a reference to the Lock token.
@@ -1285,45 +1446,45 @@ public class DotWebdavHelper {
 //	private static LockToken currentLock;
 
 	public final LockResult lock(LockTimeout lockTimeout, LockInfo lockInfo, String uid)
-	  {
-        //Logger.debug("Lock : " + lockTimeout + " info : " + lockInfo + " on resource : " + getName() + " in : " + parent);
-	    LockToken token = new LockToken();
-	    token.info = lockInfo;
-	    token.timeout = LockTimeout.parseTimeout("30");
-	    token.tokenId = uid;
-	    // no need to save a reference
-	    //locks.put(uid, token);
-	    // But we need to return a LockResult different from null. Or it'll break.
-	    return LockResult.success(token);
-	  }
+	{
+		//Logger.debug("Lock : " + lockTimeout + " info : " + lockInfo + " on resource : " + getName() + " in : " + parent);
+		LockToken token = new LockToken();
+		token.info = lockInfo;
+		token.timeout = LockTimeout.parseTimeout("30");
+		token.tokenId = uid;
+		// no need to save a reference
+		//locks.put(uid, token);
+		// But we need to return a LockResult different from null. Or it'll break.
+		return LockResult.success(token);
+	}
 
-	  public final LockResult refreshLock(String uid)
-	  {
-        // log.trace("RefreshLock : " + tokenId + " on resource : " + getName() + " in : " + parent);
-	    LockToken token = new LockToken();
-	    token.info = null;
-	    token.timeout = LockTimeout.parseTimeout("30");
-	    token.tokenId = uid;
-	    // locks.put(uid, token);
+	public final LockResult refreshLock(String uid)
+	{
+		// log.trace("RefreshLock : " + tokenId + " on resource : " + getName() + " in : " + parent);
+		LockToken token = new LockToken();
+		token.info = null;
+		token.timeout = LockTimeout.parseTimeout("30");
+		token.tokenId = uid;
+		// locks.put(uid, token);
 		// Again we need to return a LockResult different from null. Or it'll break.
-	    return LockResult.success(token);
-	  }
+		return LockResult.success(token);
+	}
 
-	  public void unlock(String uid)
-	  {
-        // log.trace("UnLock : " + arg0 + " on resource : " + getName() + " in : " + parent);
-        // No need to perform any clean up since we're not saving anything.
+	public void unlock(String uid)
+	{
+		// log.trace("UnLock : " + arg0 + " on resource : " + getName() + " in : " + parent);
+		// No need to perform any clean up since we're not saving anything.
 		// locks.remove(uid);
-	  }
+	}
 
-	  public final LockToken getCurrentLock(String uid)
-	  {
-       // log.trace("GetCurrentLock");
-	   // return locks.get(uid);
-	   // In order to disable the lock-unlock mechanism. all we need to do is return a null instead of an existing token
-	   // That should trick the upper HandlerHelper.isLockedOut to believe there is no lock already installed. Therefore nothing will ever be considered to be locked again.
-	   return null;
-	  }
+	public final LockToken getCurrentLock(String uid)
+	{
+		// log.trace("GetCurrentLock");
+		// return locks.get(uid);
+		// In order to disable the lock-unlock mechanism. all we need to do is return a null instead of an existing token
+		// That should trick the upper HandlerHelper.isLockedOut to believe there is no lock already installed. Therefore nothing will ever be considered to be locked again.
+		return null;
+	}
 
 	private String getFileName(String uri) {
 		int begin = uri.lastIndexOf("/") + 1;
@@ -1358,21 +1519,21 @@ public class DotWebdavHelper {
 		uri = uri.substring(begin, end);
 		return uri;
 	}
-	
+
 	public long getLanguage(){
 		return defaultLang;
 	}
-	
+
 	/**
-	 * This method takes the path and strips all strings that are related to the endpoint. 
+	 * This method takes the path and strips all strings that are related to the endpoint.
 	 * Also, if the new pathing is used when it's stripping it, set it as defaultLang, so it can be used by the other methods.
-	 * 
+	 *
 	 * e.g: uri = /webdav/live/2/demo.dotcms.com/home -> defaultLang set to 2 and returns /demo.dotcms.com/home (after stripping)
-	 * 
+	 *
 	 * @param uri Full URL of the connection
 	 * @return the URL without the endpoint
 	 * @throws IOException when the language passed in the path doesn't exist the IOException will be thrown.
-	 * 
+	 *
 	 */
 	public String stripMapping(final String uri) throws IOException {
 		String r = uri;
@@ -1396,9 +1557,9 @@ public class DotWebdavHelper {
 			//[languageId]
 			// etc ie "demo.dotcms.com/..."
 			if( splitUri.length >= 4 &&
-				"webdav".equals(splitUri[1]) &&
-				("working".equals(splitUri[2]) || "live".equals(splitUri[2])) &&
-				StringUtils.isNumeric(splitUri[3])) {
+					"webdav".equals(splitUri[1]) &&
+					("working".equals(splitUri[2]) || "live".equals(splitUri[2])) &&
+					StringUtils.isNumeric(splitUri[3])) {
 
 				// Validate that the language exists.
 				long uriLangId = Long.parseLong(splitUri[3]);
@@ -1406,7 +1567,7 @@ public class DotWebdavHelper {
 					defaultLang = uriLangId;
 				} else {
 					Logger.error(DotWebdavHelper.class,
-						"The language id specified in the path does not exists: " + uriLangId);
+							"The language id specified in the path does not exists: " + uriLangId);
 					throw new IOException("The language id specified in the path does not exists");
 				}
 
@@ -1489,7 +1650,7 @@ public class DotWebdavHelper {
 							Summary s = new Summary();
 							s.setName(folderAux.getName());
 							s.setPath("/" + host.getHostname()
-									+ idapi.find(folderAux).getPath());
+									+ identifierAPI.find(folderAux).getPath());
 							s.setPath(s.getPath().substring(0,
 									s.getPath().length() - 1));
 							s.setFolder(true);
@@ -1537,7 +1698,7 @@ public class DotWebdavHelper {
 								s.setModifyDate(folderAux.getModDate());
 								s.setName(folderAux.getName());
 								s.setPath("/" + host.getHostname()
-										+ idapi.find(folderAux).getPath());
+										+ identifierAPI.find(folderAux).getPath());
 								s.setPath(s.getPath().substring(0,
 										s.getPath().length() - 1));
 								s.setHost(host);
@@ -1608,18 +1769,18 @@ public class DotWebdavHelper {
 			throw new IOException(e.getMessage(),e);
 		}
 		if (host != null && InodeUtils.isSet(host.getInode()) && InodeUtils.isSet(folder.getInode())) {
-            InputStream is = null;
+			InputStream is = null;
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
-                Contentlet cont  = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
-			    File workingFile = cont.getBinary(FileAssetAPI.BINARY_FIELD);
-                is = Files.newInputStream(workingFile.toPath());
+				Contentlet cont  = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
+				File workingFile = cont.getBinary(FileAssetAPI.BINARY_FIELD);
+				is = Files.newInputStream(workingFile.toPath());
 			}
 			returnValue = is;
 		}
 		return returnValue;
 	}
-	private void setResourceContent(String resourceUri, InputStream content,	String contentType, String characterEncoding, User user) throws Exception {
+	private void setResourceContent(String resourceUri, InputStream content, String contentType, String characterEncoding, User user) throws Exception {
 		try {
 			setResourceContent(resourceUri, content, contentType, characterEncoding, Calendar.getInstance().getTime(), user, false);
 		} catch (Exception e) {
