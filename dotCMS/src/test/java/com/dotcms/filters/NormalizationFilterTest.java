@@ -1,7 +1,6 @@
 package com.dotcms.filters;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
@@ -49,32 +48,32 @@ public class NormalizationFilterTest extends UnitTestBase {
         // A ".." segment is removed only if it is preceded by a non-".." segment
         String originalURI = "/test/../folder/important/secret_file.dat";
         String expectedNormalizedURI = "/folder/important/secret_file.dat";
-        compare(originalURI, expectedNormalizedURI, Boolean.FALSE);
+        compare(originalURI, expectedNormalizedURI);
 
         // A ".." segment is removed only if it is preceded by a non-".." segment
         originalURI = "/test/../folder/folder1/forward_jsp.jsp?FORWARD_URL=http://google.com";
         expectedNormalizedURI = "/folder/folder1/forward_jsp.jsp?FORWARD_URL=http://google.com";
-        compare(originalURI, expectedNormalizedURI, Boolean.FALSE);
+        compare(originalURI, expectedNormalizedURI);
 
         // A ".." segment is removed only if it is preceded by a non-".." segment
         originalURI = "/test/../folder/important/../secret_file.dat";
         expectedNormalizedURI = "/folder/secret_file.dat";
-        compare(originalURI, expectedNormalizedURI, Boolean.FALSE);
+        compare(originalURI, expectedNormalizedURI);
 
         // Each "." segment is simply removed
         originalURI = "./folder/folder1/file.dat";
         expectedNormalizedURI = "folder/folder1/file.dat";
-        compare(originalURI, expectedNormalizedURI, Boolean.FALSE);
+        compare(originalURI, expectedNormalizedURI);
 
         // Each "." segment is simply removed
         originalURI = "./folder/./folder1/file.dat";
         expectedNormalizedURI = "folder/folder1/file.dat";
-        compare(originalURI, expectedNormalizedURI, Boolean.FALSE);
+        compare(originalURI, expectedNormalizedURI);
 
         // Each "." segment is simply removed
         originalURI = "/folder/./folder1/file.dat";
         expectedNormalizedURI = "/folder/folder1/file.dat";
-        compare(originalURI, expectedNormalizedURI, Boolean.FALSE);
+        compare(originalURI, expectedNormalizedURI);
     }
 
     /**
@@ -85,21 +84,20 @@ public class NormalizationFilterTest extends UnitTestBase {
     public void test_uri_normalization_valid_URI() throws IOException, ServletException {
 
         String originalURI = "/folder/important/secret_file.dat";
-        compare(originalURI, originalURI, Boolean.TRUE);
+        compare(originalURI, originalURI);
 
         originalURI = "/folder/folder1/forward_jsp.jsp?FORWARD_URL=http://google.com";
-        compare(originalURI, originalURI, Boolean.TRUE);
+        compare(originalURI, originalURI);
 
         originalURI = "folder/folder1/file.dat";
-        compare(originalURI, originalURI, Boolean.TRUE);
+        compare(originalURI, originalURI);
 
         // A ".." segment is removed only if it is preceded by a non-".." segment
         originalURI = "../folder/folder1/file.dat";
-        compare(originalURI, originalURI, Boolean.TRUE);
+        compare(originalURI, originalURI);
     }
 
-    private void compare(final String originalURI, final String expectedNormalizedURI,
-            boolean equals)
+    private void compare(final String originalURI, final String expectedNormalizedURI)
             throws IOException, ServletException {
 
         HttpServletRequest request = mock(HttpServletRequest.class);
@@ -111,11 +109,6 @@ public class NormalizationFilterTest extends UnitTestBase {
         final String normalizedValueByFilter = capturedRequest.getValue().getRequestURI();
 
         assertNotNull(normalizedValueByFilter);
-        if (equals) {
-            assertEquals(originalURI, normalizedValueByFilter);
-        } else {
-            assertNotEquals(originalURI, normalizedValueByFilter);
-        }
         assertEquals(expectedNormalizedURI, normalizedValueByFilter);
     }
 
