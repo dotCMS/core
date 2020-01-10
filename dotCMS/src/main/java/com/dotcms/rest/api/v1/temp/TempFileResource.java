@@ -1,7 +1,5 @@
 package com.dotcms.rest.api.v1.temp;
 
-import com.dotcms.util.ConversionUtils;
-import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.util.UtilMethods;
 import java.io.InputStream;
 import java.net.URL;
@@ -66,11 +64,10 @@ public class TempFileResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response uploadTempResourceMulti(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, 
-            @DefaultValue("-1") @QueryParam(MAX_FILE_LENGTH_PARAM) final String maxFileLengthString, // this is being used later
+            @DefaultValue("-1") @QueryParam(MAX_FILE_LENGTH_PARAM) final long maxFileLength, 
             final FormDataMultiPart body) {
 
         try {
-
             verifyTempResourceEnabled();
 
             final boolean allowAnonToUseTempFiles = Config
@@ -104,8 +101,7 @@ public class TempFileResource {
                 if (fileName == null || fileName.startsWith(".") || fileName.contains("/.")) {
                     continue;
                 }
-
-                tempFiles.add(this.tempApi.createTempFile(fileName, request, in));
+                tempFiles.add(tempApi.createTempFile(fileName, request, in));
             }
 
             return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();
