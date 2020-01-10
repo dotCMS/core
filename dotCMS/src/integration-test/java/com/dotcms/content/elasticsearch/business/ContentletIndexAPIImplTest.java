@@ -61,7 +61,6 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UUIDGenerator;
@@ -631,7 +630,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         //Adding it to the index
         siteSearchAPI.putToIndex( indexName, res, "HTMLPage");
         isDocIndexed( docId );
-        DateUtil.sleep(5000);
 
         try {
 
@@ -660,7 +658,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             assertTrue( highLights.contains( "<em>argued</em>" ) );
             assertTrue( highLights.contains( "<em>argues</em>" ) );
             assertTrue( highLights.contains( "<em>arguing</em>" ) );
-            //assertTrue( highLights.contains( "<em>argus</em>" ) );//Not found..., verify this....
+            assertTrue( highLights.contains( "<em>argus</em>" ) );
 
             //Testing the stemer
             siteSearchResults = siteSearchAPI.search( indexName, "cats", 0, 100 );
