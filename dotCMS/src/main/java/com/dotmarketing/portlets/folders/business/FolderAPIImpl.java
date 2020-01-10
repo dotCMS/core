@@ -134,7 +134,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		boolean renamed;
 
 		if (!permissionAPI.doesUserHavePermission(folder, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId() : BLANK) + " does not have permission to edit folder" + folder.getPath());
+			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId() : BLANK) + " does not have permission to edit folder " + folder.getPath());
 		}
 
 		try {
