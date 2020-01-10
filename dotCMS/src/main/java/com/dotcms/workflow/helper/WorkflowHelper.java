@@ -178,7 +178,7 @@ public class WorkflowHelper {
         for (final Aggregation aggregation : aggregations.asList()) {
 
             if (aggregation instanceof StringTerms) {
-                ((StringTerms) aggregation)
+                StringTerms.class.cast(aggregation)
                 .getBuckets().forEach(
                     bucket -> stepCounts.put(bucket.getKeyAsString(), bucket.getDocCount())
                 );
@@ -1331,7 +1331,7 @@ public class WorkflowHelper {
 
         Role role = null;
         final String newid = id.substring
-                (id.indexOf("-") + 1);
+                (id.indexOf("-") + 1, id.length());
 
         if(id.startsWith("user-")) {
 
