@@ -1,7 +1,11 @@
 package com.dotmarketing.util;
 
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotcms.rest.api.v1.temp.DotTempFile;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.LowerKeyMap;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
@@ -50,6 +54,7 @@ import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.net.URL;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -57,6 +62,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -152,7 +158,7 @@ public class ImportUtil {
 	 * @throws DotDataException
 	 *             An error occurred when analyzing the CSV file.
 	 */
-    public static HashMap<String, List<String>> importFile(Long importId, String currentSiteId, String contentTypeInode, String[] keyfields, boolean preview, boolean isMultilingual, User user, long language, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader, String wfActionId)
+    public static HashMap<String, List<String>> importFile(Long importId, String currentSiteId, String contentTypeInode, String[] keyfields, boolean preview, boolean isMultilingual, User user, long language, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader, String wfActionId, final HttpServletRequest request)
             throws DotRuntimeException, DotDataException {
 
         HashMap<String, List<String>> results = new HashMap<String, List<String>>();
@@ -247,7 +253,7 @@ public class ImportUtil {
 
                                 //Importing content record...
                                 importLine( csvLine, currentSiteId, contentType, preview, isMultilingual, user, results, lineNumber, languageToImport, headers, keyFields, choosenKeyField,
-                                        counters, keyContentUpdated, contentTypePermissions, uniqueFieldBeans, uniqueFields, relationships, onlyChild, onlyParent, sameKeyBatchInsert, wfActionId );
+                                        counters, keyContentUpdated, contentTypePermissions, uniqueFieldBeans, uniqueFields, relationships, onlyChild, onlyParent, sameKeyBatchInsert, wfActionId, request );
 
                                 //Storing the record keys we just imported for a later reference...
                                 if ( keyFields != null && !keyFields.isEmpty() ) {
@@ -410,12 +416,6 @@ public class ImportUtil {
                                 LanguageUtil.get(user, "Header")+": \"" + header
 
                                 +"\" "+ LanguageUtil.get(user, "matches-a-field-of-type-button-this-column-of-data-will-be-ignored"));
-                    }
-                    else if (field.getFieldType().equals(Field.FieldType.BINARY.toString())){
-                        found = true;
-                        results.get("warnings").add(
-                                LanguageUtil.get(user, "Header")+": \"" + header
-                                + "\" "+ LanguageUtil.get(user, "matches-a-field-of-type-binary-this-column-of-data-will-be-ignored"));
                     }
                     else if (field.getFieldType().equals(Field.FieldType.LINE_DIVIDER.toString())){
                         found = true;
@@ -673,7 +673,7 @@ public class ImportUtil {
     private static void importLine ( String[] line, String currentHostId, Structure contentType, boolean preview, boolean isMultilingual, User user, HashMap<String, List<String>> results, int lineNumber, long language,
             HashMap<Integer, Field> headers, HashMap<Integer, Field> keyFields, StringBuffer choosenKeyField, Counters counters,
             HashSet<String> keyContentUpdated, List<Permission> contentTypePermissions, List<UniqueFieldBean> uniqueFieldBeans, List<Field> uniqueFields, HashMap<Integer, Relationship> relationships, HashMap<Integer, Boolean> onlyChild, HashMap<Integer, Boolean> onlyParent,
-            boolean sameKeyBatchInsert, String wfActionId ) throws DotRuntimeException {
+            boolean sameKeyBatchInsert, String wfActionId, final HttpServletRequest request ) throws DotRuntimeException {
 
         try {
             //Building a values HashMap based on the headers/columns position
@@ -783,6 +783,11 @@ public class ImportUtil {
                     if(valueObj ==null){
                         throw new DotRuntimeException("Line #" + lineNumber + " contains errors, Column: " + field.getVelocityVarName() +
                                 ", value: " + value + ", invalid host/folder inode found, line will be ignored.");
+                    }
+                } else if (new LegacyFieldTransformer(field).from().typeName().equals(BinaryField.class.getName())){
+                    if(UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)){
+                        throw new BadRequestException(
+                                "Line #" + lineNumber + "URL does not start http or https.");
                     }
                 }else if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
                     String filePath = value;
@@ -1218,7 +1223,14 @@ public class ImportUtil {
                         }
                     }
                     try{
-                        conAPI.setContentletProperty(cont, field, value);
+                        if (new LegacyFieldTransformer(field).from().typeName().equals(BinaryField.class.getName()) && !preview){
+                            if(UtilMethods.isSet(value)){
+                                final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFileFromUrl(null,request,new URL(value.toString()),-1,-1);
+                                cont.setBinary(field.getVelocityVarName(), tempFile.file);
+                            }
+                        } else {
+                            conAPI.setContentletProperty(cont, field, value);
+                        }
                     }catch(DotContentletStateException de){
                         if(!field.isRequired() || (value!=null && UtilMethods.isSet(String.valueOf(value)))){
                             throw de;
@@ -1890,7 +1902,6 @@ public class ImportUtil {
                 field.getFieldType().equals( Field.FieldType.BUTTON.toString() ) ||
                 field.getFieldType().equals( Field.FieldType.LINE_DIVIDER.toString() ) ||
                 field.getFieldType().equals( Field.FieldType.TAB_DIVIDER.toString() ) ||
-                field.getFieldType().equals( Field.FieldType.BINARY.toString() ) ||
                 field.getFieldType().equals( Field.FieldType.PERMISSIONS_TAB.toString()) ||
                 field.getFieldType().equals(Field.FieldType.COLUMN.toString())      ||  
                 field.getFieldType().equals(Field.FieldType.ROW.toString())    

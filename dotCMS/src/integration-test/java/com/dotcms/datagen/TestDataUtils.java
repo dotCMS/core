@@ -372,6 +372,9 @@ public class TestDataUtils {
             final Set<String> workflowIds,
             String parentCategoryInode) {
 
+        final String publishDateFieldName = "sysPublishDate";
+        final String expireDateFieldName = "sysExpireDate";
+
         ContentType newsType = null;
         try {
             try {
@@ -413,8 +416,16 @@ public class TestDataUtils {
                 );
                 fields.add(
                         new FieldDataGen()
-                                .name("Publish")
+                                .name(publishDateFieldName)
                                 .velocityVarName("sysPublishDate")
+                                .defaultValue(null)
+                                .type(DateField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name(expireDateFieldName)
+                                .velocityVarName("sysExpireDate")
                                 .defaultValue(null)
                                 .type(DateField.class)
                                 .next()
@@ -459,6 +470,8 @@ public class TestDataUtils {
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
                         .workflowId(workflowIds)
+                        .expireDateFieldVarName(expireDateFieldName)
+                        .publishDateFieldVarName(publishDateFieldName)
                         .fields(fields);
 
                 if (null != site) {
@@ -937,7 +950,12 @@ public class TestDataUtils {
     }
 
     public static Contentlet getNewsContent(Boolean persist, long languageId,
-            String contentTypeId, Host site) {
+                                            String contentTypeId, Host site) {
+        return getNewsContent(persist, languageId, contentTypeId, site, new Date());
+    }
+
+    public static Contentlet getNewsContent(Boolean persist, long languageId,
+            String contentTypeId, Host site, Date sysPublishDate) {
 
         if (null == contentTypeId) {
             contentTypeId = getNewsLikeContentType().id();
@@ -953,7 +971,7 @@ public class TestDataUtils {
                     .setProperty("title", "newsContent Title" + millis)
                     .setProperty("urlTitle", "news-content-url-title" + millis)
                     .setProperty("byline", "byline")
-                    .setProperty("sysPublishDate", new Date())
+                    .setProperty("sysPublishDate", sysPublishDate)
                     .setProperty("story", "newsStory")
                     .setProperty("tags", "test");
 
