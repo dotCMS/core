@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutablePersonaContentType.class)
 @Gson.TypeAdapters
 @Value.Immutable
-public abstract class PersonaContentType extends ContentType implements Expireable{
+public abstract class PersonaContentType extends ContentType implements Expireable, EnterpriseType {
 
 
 

@@ -358,8 +358,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     }
 
     private Language getCurrentLanguage(final HttpServletRequest request) {
-        final Language defaultLanguage = this.languageAPI.getDefaultLanguage();
-        return request != null ? this.languageWebAPI.getLanguage(request) : defaultLanguage;
+        return request != null ? this.languageWebAPI.getLanguage(request) : this.languageAPI.getDefaultLanguage();
     }
 
     private Host resolveSite(final PageContext context, final HttpServletRequest request)
@@ -367,21 +366,46 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         final User user = context.getUser();
         final PageMode mode = context.getPageMode();
-        
+
+        Optional<Host> optionalSite = this.getHostFromRequest(request, user, mode);
+
+        if (!optionalSite.isPresent()) {
+            optionalSite = this.getHostFromSession(request, user, mode);
+        }
+
+        return optionalSite.isPresent() ? optionalSite.get()
+                : this.hostAPI.resolveHostName(request.getServerName(), user, mode.respectAnonPerms) ;
+
+    }
+
+    private Optional<Host> getHostFromSession(final HttpServletRequest request, final User user, final PageMode mode)
+            throws DotSecurityException, DotDataException {
+        final Object hostId = request.getSession().getAttribute(WebKeys.CMS_SELECTED_HOST_ID);
+
+        if(mode.isAdmin && hostId !=null) {
+            final Host host = this.hostAPI.find(hostId.toString(), user, mode.respectAnonPerms);
+            return Optional.ofNullable(host);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Host> getHostFromRequest(final HttpServletRequest request, final User user, final PageMode mode)
+            throws DotSecurityException, DotDataException {
+
         final String hostId = request.getParameter("host_id");
+
         if (null != hostId) {
-            return this.hostAPI.find(hostId, user, mode.respectAnonPerms);
+            return Optional.ofNullable(this.hostAPI.find(hostId, user, mode.respectAnonPerms));
         }
-        
-        final String siteName = (null == request.getParameter(Host.HOST_VELOCITY_VAR_NAME)) ?
-                request.getServerName() : request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
-        Host site = this.hostWebAPI.resolveHostName(siteName, user, mode.respectAnonPerms);
 
-        if(mode.isAdmin && request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID )!=null) {
-            site = this.hostAPI.find(request.getSession().getAttribute( com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID ).toString(), user, mode.respectAnonPerms);
+        final String hostName = request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
+
+        if (null != hostName) {
+            return this.hostWebAPI.resolveHostNameWithoutDefault(hostName, user, mode.respectAnonPerms);
         }
-        return site;
 
+        return Optional.empty();
     }
 
     public class HTMLPageUrl {

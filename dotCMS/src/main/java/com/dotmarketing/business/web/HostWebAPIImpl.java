@@ -81,9 +81,7 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
             } else {
 
                 final String serverName = request.getServerName();
-                if (UtilMethods.isSet(serverName)) {
-                    host = resolveHostName(serverName, systemUser, respectFrontendRoles);
-                }
+                host = resolveHostName(serverName, systemUser, respectFrontendRoles);
             }
         }
 

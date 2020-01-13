@@ -59,7 +59,6 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	 * @see com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
 	 */
 	public CollectionResource createCollection(String newName) throws DotRuntimeException {
-		newName = newName.toLowerCase();
 
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		String folderPath ="";
@@ -101,7 +100,13 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	 * @see com.dotcms.repackage.com.bradmcevoy.http.CollectionResource#child(java.lang.String)
 	 */
 	public Resource child(String childName) {
-	    User user=(User)HttpManager.request().getAuthorization().getTag();
+
+		if(dotDavHelper.isSameTargetAndDestinationResourceOnMove(childName)){
+		   //This a small hack that prevents Milton's MoveHandler from removing the destination folder when the source and destination are the same.
+		   return null;
+		}
+
+	    final User user = (User)HttpManager.request().getAuthorization().getTag();
 		List<Resource> children;
 		try {
 			children = dotDavHelper.getChildrenOfFolder(folder, user, isAutoPub, lang);
@@ -109,24 +114,24 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 			Logger.error(FolderResourceImpl.class, e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
-		for (Resource resource : children) {
+		for (final Resource resource : children) {
 			if(resource instanceof FolderResourceImpl){
-				String name = ((FolderResourceImpl)resource).getFolder().getName();
+				final String name = ((FolderResourceImpl)resource).getFolder().getName();
 				if(name.equalsIgnoreCase(childName)){
 					return resource;
 				}
 			}else if(resource instanceof TempFolderResourceImpl){
-				String name = ((TempFolderResourceImpl)resource).getFolder().getName();
+				final String name = ((TempFolderResourceImpl)resource).getFolder().getName();
 				if(name.equalsIgnoreCase(childName)){
 					return resource;
 				}
 			}else if(resource instanceof TempFileResourceImpl){
-				String name = ((TempFileResourceImpl)resource).getFile().getName();
+				final String name = ((TempFileResourceImpl)resource).getFile().getName();
 				if(name.equalsIgnoreCase(childName)){
 					return resource;
 				}
 			}else{
-				String name = ((FileResourceImpl)resource).getFile().getFileName();
+				final String name = ((FileResourceImpl)resource).getFile().getFileName();
 				if(name.equalsIgnoreCase(childName)){
 					return resource;
 				}
@@ -290,7 +295,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	public void moveTo(CollectionResource collRes, String name) throws DotRuntimeException{
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
-			Logger.debug(this, "Webdav clients wants to move a file from dotcms to a tempory storage but we don't allow this in fear that the tranaction may break and delete a file from dotcms");
+			Logger.debug(this, "Webdav clients wants to move a file from dotcms to a temporary storage but we don't allow this in fear that the transaction may break and delete a file from dotcms");
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {
 				dotDavHelper.copyFolderToTemp(folder, tr.getFolder(), user, name, isAutoPub, lang);

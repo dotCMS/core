@@ -7021,13 +7021,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @WrapInTransaction
     @Override
     public Contentlet copyContentlet(final Contentlet sourceContentlet, final Host host, final Folder folder, final User user, final String copySuffix, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+
         Contentlet copyContentlet = new Contentlet();
         String newIdentifier = StringPool.BLANK;
-        ArrayList<Contentlet> versionsToCopy = new ArrayList<>();
         List<Contentlet> versionsToMarkWorking = new ArrayList<>();
         Map<String, Map<String, Contentlet>> contentletsToCopyRules = Maps.newHashMap();
         final Identifier sourceContentletIdentifier = APILocator.getIdentifierAPI().find(sourceContentlet.getIdentifier());
-        versionsToCopy.addAll(findAllVersions(sourceContentletIdentifier, false, user, respectFrontendRoles));
+        List<Contentlet> versionsToCopy = new ArrayList<>(
+                findAllVersions(sourceContentletIdentifier, false, user, respectFrontendRoles));
 
         // we need to save the versions from older-to-newer to make sure the last save
         // is the current version
@@ -7035,8 +7036,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         for(Contentlet contentlet : versionsToCopy){
 
-            boolean isContentletLive = false;
-            boolean isContentletWorking = false;
+            final boolean isContentletLive = contentlet.isLive();
+            final boolean isContentletWorking = contentlet.isWorking();
 
             if (user == null) {
                 throw new DotSecurityException("A user must be specified.");
@@ -7050,11 +7051,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Contentlet newContentlet = new Contentlet();
             newContentlet.setStructureInode(contentlet.getStructureInode());
             copyProperties(newContentlet, contentlet.getMap(),true);
-
-            if(contentlet.isLive())
-                isContentletLive = true;
-            if(contentlet.isWorking())
-                isContentletWorking = true;
 
             newContentlet.setInode(StringPool.BLANK);
             newContentlet.setIdentifier(StringPool.BLANK);
@@ -7209,21 +7205,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        for(Contentlet con : versionsToMarkWorking){
+        for(final Contentlet con : versionsToMarkWorking){
             APILocator.getVersionableAPI().setWorking(con);
         }
 
         if (sourceContentlet.isHTMLPage()) {
-            // If the content is an HTML Page then copy page associated contentlets
-            final List<MultiTree> pageContents = APILocator.getMultiTreeAPI().getMultiTrees(sourceContentlet.getIdentifier());
-            for (final MultiTree multitree : pageContents) {
-
-                APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(copyContentlet.getIdentifier(),
-                        multitree.getContainer(),
-                        multitree.getContentlet(),
-                        multitree.getRelationType(),
-                        multitree.getTreeOrder(), 
-                        multitree.getPersonalization()));
+            final boolean copyingSite = (!copyContentlet.getHost().equals(sourceContentlet.getHost()));
+            if (!copyingSite) { // We only want to execute this logic if we're not copying a whole site.
+                // If the content is an HTML Page then copy page associated contentlets
+                final List<MultiTree> pageContents = APILocator.getMultiTreeAPI()
+                        .getMultiTrees(sourceContentlet.getIdentifier());
+                for (final MultiTree multitree : pageContents) {
+                    APILocator.getMultiTreeAPI()
+                            .saveMultiTree(new MultiTree(copyContentlet.getIdentifier(),
+                                    multitree.getContainer(),
+                                    multitree.getContentlet(),
+                                    multitree.getRelationType(),
+                                    multitree.getTreeOrder(),
+                                    multitree.getPersonalization()));
+                }
             }
         }
 
@@ -7238,27 +7238,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             newTask.setLanguageId(copyContentlet.getLanguageId());
             APILocator.getWorkflowAPI().saveWorkflowTask(newTask);
 
-            for (final WorkflowComment comment : APILocator.getWorkflowAPI().findWorkFlowComments(task)) {
-                final WorkflowComment newComment = new WorkflowComment();
-                BeanUtils.copyProperties(comment, newComment);
-                newComment.setId(null);
-                newComment.setWorkflowtaskId(newTask.getId());
-                APILocator.getWorkflowAPI().saveComment(newComment);
-            }
 
-            for (final WorkflowHistory history : APILocator.getWorkflowAPI().findWorkflowHistory(task)) {
-                final WorkflowHistory newHistory = new WorkflowHistory();
-                BeanUtils.copyProperties(history, newHistory);
-                newHistory.setId(null);
-                newHistory.setWorkflowtaskId(newTask.getId());
-                APILocator.getWorkflowAPI().saveWorkflowHistory(newHistory);
-            }
+            final WorkflowComment newComment = new WorkflowComment();
+            newComment.setPostedBy(user.getUserId());
+            newComment.setComment("Content copied from content id: " + sourceContentlet.getIdentifier());
+            newComment.setCreationDate(new Date());
+            newComment.setWorkflowtaskId(newTask.getId());
+            APILocator.getWorkflowAPI().saveComment(newComment);
+            
 
-            final List<IFileAsset> files = APILocator.getWorkflowAPI()
-                    .findWorkflowTaskFilesAsContent(task, APILocator.getUserAPI().getSystemUser());
-            for (final IFileAsset f : files) {
-                APILocator.getWorkflowAPI().attachFileToTask(newTask, f.getInode());
-            }
         }
 
         this.sendCopyEvent(copyContentlet);

@@ -18,7 +18,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -65,7 +64,6 @@ import com.thoughtworks.xstream.io.xml.DomDriver;
 import com.thoughtworks.xstream.mapper.Mapper;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -395,24 +393,19 @@ public class CMSMaintenanceAjax {
 			Logger.info(this, "Deleted " + count + " Files");
 		}
 
-		public void moveAssetsToBackupDir() throws FileNotFoundException, IOException{
+		public void moveAssetsToBackupDir() throws IOException{
 			validateUser();
-			String assetDir;
-			File backupDir = new File(backupTempFilePath);
+			final String assetDir = ConfigUtils.getAbsoluteAssetsRootPath();
+			final File backupDir = new File(backupTempFilePath);
 			backupDir.mkdirs();
 			Logger.info(this, "Moving assets to back up directory: " + backupTempFilePath);
-			if(!UtilMethods.isSet(assetRealPath)){
-				assetDir = FileUtil.getRealPath(assetPath);
-			}else{
-				assetDir = assetRealPath;
-			}
 			FileUtil.copyDirectory(assetDir, backupTempFilePath + File.separator + "asset", new AssetFileNameFilter());
 
 			//do not ship the license.
-			String f = backupTempFilePath + File.separator + "asset" + File.separator + "license";
+			final String f = backupTempFilePath + File.separator + "asset" + File.separator + "license";
 			FileUtil.deltree(f);
 
-			String d = backupTempFilePath + File.separator + "asset" + File.separator + "dotGenerated";
+			final String d = backupTempFilePath + File.separator + "asset" + File.separator + "dotGenerated";
 			FileUtil.deltree(d);
 
 		}

@@ -15,7 +15,6 @@ public class DoesNotExistExceptionMapper
     @Override
     public Response toResponse(final DoesNotExistException exception) {
         SecurityLogger.logInfo(DoesNotExistExceptionMapper.class, exception.getMessage());
-
         return ExceptionMapperUtil.createResponse(exception, ERROR_KEY, Response.Status.NOT_FOUND);
     }
 }
