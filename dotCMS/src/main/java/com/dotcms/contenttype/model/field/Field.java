@@ -277,8 +277,9 @@ public abstract class Field implements FieldIf, Serializable {
    * Returns a collection of variable keys that the Field should respect
    * @return List of String (property names)
    */
+  @JsonIgnore
   @Value.Default
   public List<String> fieldVariableKeys() {
-    return ImmutableList.of();
+    return Collections.emptyList();
   }
 }

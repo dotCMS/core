@@ -29,6 +29,7 @@ public abstract class BinaryField extends Field {
 
 	private static final long serialVersionUID = 1L;
 
+	@JsonIgnore
 	@Override
 	public List<String> fieldVariableKeys() {
 		return ImmutableList.of(ALLOWED_FILE_TYPES, MAX_FILE_LENGTH);
