@@ -10,14 +10,11 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -96,17 +93,19 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
         }
     }
 
-    private void checkHostPermission(User user, boolean respectAnonPerms, Host host) throws DotDataException, DotSecurityException {
-        if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectAnonPerms)){
-            String u = (user != null) ? user.getUserId() : null;
+    private void checkHostPermission(final User user, boolean respectAnonPerms, final Host host)
+            throws DotDataException, DotSecurityException {
 
-            String message = "User " + u + " does not have permission to host:" + host.getHostname();
+        if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectAnonPerms)){
+            final String userId = (user != null) ? user.getUserId() : null;
+
+            final String message = "User " + userId + " does not have permission to host:" + host.getHostname();
             Logger.error(HostAPIImpl.class, message);
             throw new DotSecurityException(message);
         }
     }
 
-    private Optional<Host> getCurrentHostFromSession(final HttpServletRequest request, User user, boolean respectAnonPerms)
+    private Optional<Host> getCurrentHostFromSession(final HttpServletRequest request, final User user, final boolean respectAnonPerms)
             throws DotSecurityException, DotDataException {
 
         final HttpSession session = request.getSession(false);
@@ -130,12 +129,12 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
         return Optional.ofNullable(host);
     }
 
-    private Optional<Host> getCurrentHostFromRequest(final HttpServletRequest request, final User user, boolean respectAnonPerms)
+    private Optional<Host> getCurrentHostFromRequest(final HttpServletRequest request, final User user, final boolean respectAnonPerms)
             throws DotDataException, DotSecurityException {
 
 	    final String hostId = request.getParameter("host_id");
 
-	    if ((hostId != null && user.isBackendUser())) {
+	    if (hostId != null && user.isBackendUser()) {
 	        return Optional.ofNullable(find(hostId, user, respectAnonPerms));
         } else if (request.getParameter(Host.HOST_VELOCITY_VAR_NAME) != null) {
             final String hostName = request.getParameter(Host.HOST_VELOCITY_VAR_NAME);

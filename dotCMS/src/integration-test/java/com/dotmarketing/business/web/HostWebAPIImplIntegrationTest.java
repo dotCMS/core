@@ -26,6 +26,8 @@ import javax.servlet.http.HttpSession;
 
 public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
 
+    public static final String HOST_ID_PARAMETER_NAME = "host_id";
+
     @BeforeClass
     public static void prepare () throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -43,7 +45,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(host.getIdentifier());
 
         final User user = createBackendUser(host);
 
