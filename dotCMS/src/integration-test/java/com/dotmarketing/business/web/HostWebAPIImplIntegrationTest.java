@@ -71,7 +71,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session, anotherHost);
-        when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(host.getIdentifier());
 
         final User user = createUser(host);
 
@@ -96,7 +96,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(host.getIdentifier());
 
         final User user = createBackendUser();
 
@@ -125,7 +125,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(null);
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(null);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(host.getName());
 
         final User user = createBackendUser(host);
@@ -151,7 +151,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(null);
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(null);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(host.getName());
 
         final User user = createUser(host);
@@ -178,7 +178,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(null);
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(null);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(host.getName());
 
         final User user = createBackendUser();
@@ -208,7 +208,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(null);
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(null);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(host.getName());
 
         final User user = createUser();
@@ -234,7 +234,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(null);
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(null);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(null);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
 
@@ -261,7 +261,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(null);
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(null);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(null);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
 
@@ -291,7 +291,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(null);
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(null);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(null);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
 
@@ -318,7 +318,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(null);
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(null);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(null);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(null);
         when(session.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
@@ -346,7 +346,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(null);
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(null);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(null);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(null);
         when(session.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
@@ -408,7 +408,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(null);
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(null);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(null);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(null);
         when(session.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(null);
@@ -469,7 +469,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         final HttpSession session = mock(HttpSession.class);
 
         setAllParametersAndAttributes(request, session);
-        when(request.getParameter("host_id")).thenReturn(null);
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(null);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(null);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(null);
         when(session.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(null);
@@ -710,7 +710,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         final Host anotherHost = host == null ? new SiteDataGen().nextPersisted() : host;
 
-        when(request.getParameter("host_id")).thenReturn(anotherHost.getIdentifier());
+        when(request.getParameter(HOST_ID_PARAMETER_NAME)).thenReturn(anotherHost.getIdentifier());
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(anotherHost.getName());
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(anotherHost);
         when(request.getServerName()).thenReturn(anotherHost.getName());
