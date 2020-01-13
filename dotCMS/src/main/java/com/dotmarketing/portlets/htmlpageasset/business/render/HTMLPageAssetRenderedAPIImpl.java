@@ -15,8 +15,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.Constants;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
@@ -45,10 +43,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
     private final LanguageAPI languageAPI;
-    private final HostAPI hostAPI;
     private final PermissionAPI permissionAPI;
     private final UserAPI userAPI;
-    private final VersionableAPI versionableAPI;
     private final URLMapAPIImpl urlMapAPIImpl;
     private final LanguageWebAPI languageWebAPI;
 
@@ -59,8 +55,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             WebAPILocator.getHostWebAPI(),
             APILocator.getLanguageAPI(),
             APILocator.getHTMLPageAssetAPI(),
-            APILocator.getVersionableAPI(),
-            APILocator.getHostAPI(),
             APILocator.getURLMapAPI(),
             WebAPILocator.getLanguageWebAPI()
         );
@@ -73,8 +67,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final HostWebAPI hostWebAPI,
             final LanguageAPI languageAPI,
             final HTMLPageAssetAPI htmlPageAssetAPI,
-            final VersionableAPI versionableAPI,
-            final HostAPI hostAPI,
             final URLMapAPIImpl urlMapAPIImpl,
             final LanguageWebAPI languageWebAPI
     ){
@@ -84,8 +76,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         this.hostWebAPI = hostWebAPI;
         this.languageAPI = languageAPI;
         this.htmlPageAssetAPI = htmlPageAssetAPI;
-        this.versionableAPI = versionableAPI;
-        this.hostAPI = hostAPI;
         this.urlMapAPIImpl = urlMapAPIImpl;
         this.languageWebAPI = languageWebAPI;
     }
@@ -124,7 +114,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final HttpServletResponse response)
                 throws DotSecurityException, DotDataException {
 
-        final Host host = resolveSite(context, request);
+        final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
         final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
 
         fireRulesOnPage(htmlPageUrl.getHTMLPage(), request, response);
@@ -172,7 +162,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         PageMode.setPageMode(request, mode);
 
-        final Host host = resolveSite(context, request);
+        final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
         final HTMLPageUrl htmlPageUrl = context.getPage() != null
                 ? new HTMLPageUrl(context.getPage())
                 : getHtmlPageAsset(context, host, request);
@@ -216,12 +206,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         try {
             final User systemUser = userAPI.getSystemUser();
 
-            final Host host = this.resolveSite(
-                    PageContextBuilder.builder()
-                            .setUser(systemUser)
-                            .setPageMode(PageMode.PREVIEW_MODE)
-                            .build(),
-                    request);
+            final Host host = this.hostWebAPI.getCurrentHost(request, systemUser);
 
             final IHTMLPage htmlPageAsset = this.getHtmlPageAsset(
                     PageContextBuilder.builder()
@@ -246,7 +231,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final HttpServletResponse response)
                 throws DotSecurityException, DotDataException {
 
-        final Host host = resolveSite(context, request);
+        final Host host = this.hostWebAPI.getCurrentHost(request, context.getUser());
         final IHTMLPage page = getHtmlPageAsset(context, host, request).getHTMLPage();
 
         return new HTMLPageAssetRenderedBuilder()
@@ -359,53 +344,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     private Language getCurrentLanguage(final HttpServletRequest request) {
         return request != null ? this.languageWebAPI.getLanguage(request) : this.languageAPI.getDefaultLanguage();
-    }
-
-    private Host resolveSite(final PageContext context, final HttpServletRequest request)
-            throws DotDataException, DotSecurityException {
-
-        final User user = context.getUser();
-        final PageMode mode = context.getPageMode();
-
-        Optional<Host> optionalSite = this.getHostFromRequest(request, user, mode);
-
-        if (!optionalSite.isPresent()) {
-            optionalSite = this.getHostFromSession(request, user, mode);
-        }
-
-        return optionalSite.isPresent() ? optionalSite.get()
-                : this.hostAPI.resolveHostName(request.getServerName(), user, mode.respectAnonPerms) ;
-
-    }
-
-    private Optional<Host> getHostFromSession(final HttpServletRequest request, final User user, final PageMode mode)
-            throws DotSecurityException, DotDataException {
-        final Object hostId = request.getSession().getAttribute(WebKeys.CMS_SELECTED_HOST_ID);
-
-        if(mode.isAdmin && hostId !=null) {
-            final Host host = this.hostAPI.find(hostId.toString(), user, mode.respectAnonPerms);
-            return Optional.ofNullable(host);
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    private Optional<Host> getHostFromRequest(final HttpServletRequest request, final User user, final PageMode mode)
-            throws DotSecurityException, DotDataException {
-
-        final String hostId = request.getParameter("host_id");
-
-        if (null != hostId) {
-            return Optional.ofNullable(this.hostAPI.find(hostId, user, mode.respectAnonPerms));
-        }
-
-        final String hostName = request.getParameter(Host.HOST_VELOCITY_VAR_NAME);
-
-        if (null != hostName) {
-            return this.hostWebAPI.resolveHostNameWithoutDefault(hostName, user, mode.respectAnonPerms);
-        }
-
-        return Optional.empty();
     }
 
     public class HTMLPageUrl {
