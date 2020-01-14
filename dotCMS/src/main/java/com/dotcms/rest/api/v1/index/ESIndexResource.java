@@ -78,7 +78,7 @@ public class ESIndexResource {
 
 	public ESIndexResource(){
 		this.indexAPI = APILocator.getESIndexAPI();
-		this.indexHelper = ESIndexHelper.INSTANCE;
+		this.indexHelper = ESIndexHelper.getInstance();
 		this.responseUtil = ResponseUtil.INSTANCE;
 		this.webResource = new WebResource();
 		this.layoutAPI = APILocator.getLayoutAPI();

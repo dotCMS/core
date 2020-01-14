@@ -18,13 +18,12 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
 import java.util.stream.Collectors;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+
+import javax.servlet.http.HttpSession;
 
 /**
  * The purpose of this class is to abstract the methods called from the ContentTool Viewtool
@@ -163,14 +162,44 @@ public class ContentUtils {
 		public static List<Contentlet> pull(String query,int limit, String sort, User user, String tmDate){
 		    return pull(query,-1,limit,sort, user, tmDate);
 		}
-		
-		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate){
+
+		/**
+		 * Pull content using query if a Time Machine Date is set into session then it ios take account when the query is
+		 * ran.
+		 * 
+		 * @param query
+		 * @param offset
+		 * @param limit
+		 * @param sort
+		 * @param user
+		 * @param tmDate
+		 * @return
+		 */
+		public static PaginatedArrayList<Contentlet> pull(
+				final String query,
+				final int offset,
+				final int limit,
+				final String sort,
+				final User user,
+				final String tmDate){
 			return pull(query, offset, limit, sort, user, tmDate, PageMode.get().respectAnonPerms);
 		}
 
-		public static PaginatedArrayList<Contentlet> pull(String query, final int offset, final int limit, final String sort, final User user, final String tmDate, final boolean respectFrontendRoles){
+		public static PaginatedArrayList<Contentlet> pull(final String query, final int offset, final int limit,
+														  final String sort, final User user, final boolean respectFrontendRoles) {
+			final String tmDate = getTimeMachine().orElse(null);
+			return pull(query, offset, limit, sort, user, tmDate, respectFrontendRoles);
+		}
+
+	private static Optional<String> getTimeMachine() {
+		final HttpSession session = HttpServletRequestThreadLocal.INSTANCE.getRequest().getSession();
+		final Object timeMachineObject = session != null ? session.getAttribute("tm_date") : null;
+		return Optional.ofNullable(timeMachineObject != null ? timeMachineObject.toString() : null);
+	}
+
+	public static PaginatedArrayList<Contentlet> pull(String query, final int offset, final int limit, final String sort, final User user, final String tmDate, final boolean respectFrontendRoles){
 		    final PaginatedArrayList<Contentlet> ret = new PaginatedArrayList<>();
-		    
+
 			try {
 				//need to send the query with the defaults --- 
 			    List<Contentlet> contentlets=null;
@@ -181,9 +210,9 @@ public class ContentUtils {
                             .replaceAll("\\+working\\:true", "");
                     final String formatedDate = ESMappingAPIImpl.datetimeFormat.format(futureDate);
 
-                    final String notExpired = " +expdate_dotraw:[" + formatedDate + " TO 29990101000000] ";
+                    final String notExpired = " +expdate:[" + formatedDate + " TO 29990101000000] ";
                     final String workingQuery = query + " +working:true " +
-                            "+pubdate_dotraw:[" + ESMappingAPIImpl.datetimeFormat.format(new Date())
+                            "+pubdate:[" + ESMappingAPIImpl.datetimeFormat.format(new Date())
                             +
                             " TO " + formatedDate + "] " + notExpired;
                     final String liveQuery = query + " +live:true " + notExpired;

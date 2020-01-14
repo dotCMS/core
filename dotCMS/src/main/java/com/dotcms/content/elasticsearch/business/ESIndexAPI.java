@@ -134,7 +134,7 @@ public class ESIndexAPI {
 
 	public ESIndexAPI(){
 		this.iapi = new ContentletIndexAPIImpl();
-		this.esIndexHelper = ESIndexHelper.INSTANCE;
+		this.esIndexHelper = ESIndexHelper.getInstance();
 		this.clusterAPI = APILocator.getClusterAPI();
 	}
 

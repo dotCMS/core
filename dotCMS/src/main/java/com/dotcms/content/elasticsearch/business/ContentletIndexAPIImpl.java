@@ -105,7 +105,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private static ReindexQueueAPI queueApi = null;
     private static final ESIndexAPI esIndexApi = new ESIndexAPI();
     private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
-    public static final IndiciesAPI indicesAPI = APILocator.getIndiciesAPI();
 
 
     public ContentletIndexAPIImpl() {
@@ -113,7 +112,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public synchronized void getRidOfOldIndex() throws DotDataException {
-        IndiciesInfo idxs = indicesAPI.loadIndicies();
+        IndiciesInfo idxs = APILocator.getIndiciesAPI().loadIndicies();
         if (idxs.getWorking() != null)
             delete(idxs.getWorking());
         if (idxs.getLive() != null)
@@ -131,7 +130,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * @throws DotDataException
      */
     private synchronized boolean indexReady() throws DotDataException {
-        IndiciesInfo info = indicesAPI.loadIndicies();
+        IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         return info.getWorking() != null && info.getLive() != null;
     }
 
@@ -335,7 +334,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         try {
 
             final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
-            final IndiciesInfo oldInfo = indicesAPI.loadIndicies();
+            final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
 
             if (oldInfo != null && oldInfo.getSiteSearch() != null){
                 builder.setSiteSearch(oldInfo.getSiteSearch());
@@ -347,7 +346,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             createContentIndex(info.getWorking(), 0);
             createContentIndex(info.getLive(), 0);
 
-            indicesAPI.point(info);
+            APILocator.getIndiciesAPI().point(info);
             return timeStamp;
         } catch (Exception e) {
             throw new ElasticsearchException(e.getMessage(), e);
@@ -423,7 +422,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             try {
 
                 final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
-                final IndiciesInfo oldInfo = indicesAPI.loadIndicies();
+                final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
 
                 builder.setWorking(oldInfo.getWorking());
                 builder.setLive(oldInfo.getLive());
@@ -435,7 +434,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 createContentIndex(info.getReindexWorking(), 0);
                 createContentIndex(info.getReindexLive(), 0);
 
-                indicesAPI.point(info);
+                APILocator.getIndiciesAPI().point(info);
 
                 return timeStamp;
             } catch (Exception e) {
@@ -447,7 +446,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     @CloseDBIfOpened
     public boolean isInFullReindex() throws DotDataException {
-        IndiciesInfo info = indicesAPI.loadIndicies();
+        IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         return info.getReindexWorking() != null && info.getReindexLive() != null;
     }
 
@@ -472,7 +471,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
           return false;
         }
         try {
-            final IndiciesInfo oldInfo = indicesAPI.loadIndicies();
+            final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
             final String luckyServer = Try.of(() -> APILocator.getServerAPI().getOldestServer()).getOrElse(ConfigUtils.getServerId());
             if (!forceSwitch) {
                 if (!isInFullReindex()) {
@@ -495,7 +494,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final IndiciesInfo newInfo = builder.build();
 
             logSwitchover(oldInfo);
-            indicesAPI.point(newInfo);
+            APILocator.getIndiciesAPI().point(newInfo);
 
             DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
                 try {
@@ -517,7 +516,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     private long reindexTimeElapsedInLong() {
         try {
-            final IndiciesInfo oldInfo = indicesAPI.loadIndicies();
+            final IndiciesInfo oldInfo = APILocator.getIndiciesAPI().loadIndicies();
             if (oldInfo.getReindexWorking() != null) {
                 return oldInfo.getIndexTimeStamp(IndexType.REINDEX_WORKING);
             }
@@ -835,7 +834,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     + "\n");
 
             final IndiciesInfo info = Sneaky
-                    .sneak(() -> indicesAPI.loadIndicies());
+                    .sneak(() -> APILocator.getIndiciesAPI().loadIndicies());
             final Gson gson = new Gson(); // todo why do we create a new Gson everytime
             String mapping = null;
 
@@ -947,7 +946,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public void appendBulkRemoveRequest(final BulkIndexWrapper bulk, final ReindexEntry entry)
             throws DotDataException {
         final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
-        final IndiciesInfo info = indicesAPI.loadIndicies();
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         // delete for every language and in every index
         for (Language language : languages) {
@@ -1036,7 +1035,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             throws DotDataException, DotSecurityException, DotMappingException {
 
         final String id = builder(contentlet.getIdentifier(), StringPool.UNDERLINE, contentlet.getLanguageId()).toString();
-        final IndiciesInfo info = indicesAPI.loadIndicies();
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         final BulkRequest bulkRequest = new BulkRequest();
 
         // we want to wait until the content is already indexed
@@ -1137,7 +1136,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             throw new DotDataException("ContentType with Inode or VarName: " + structureInode + "not found");
         }
         final String structureName = contentType.variable();
-        final IndiciesInfo info = indicesAPI.loadIndicies();
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         // collecting indexes
         final List<String> idxs = new ArrayList<>();
@@ -1166,7 +1165,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             if (!isInFullReindex())
                 return;
 
-            IndiciesInfo info = indicesAPI.loadIndicies();
+            IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
             final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
             builder.setWorking(info.getWorking());
@@ -1178,7 +1177,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final String rew = info.getReindexWorking();
             final String rel = info.getReindexLive();
 
-            indicesAPI.point(newinfo);
+            APILocator.getIndiciesAPI().point(newinfo);
 
             esIndexApi.moveIndexBackToCluster(rew);
             esIndexApi.moveIndexBackToCluster(rel);
@@ -1210,7 +1209,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
 
     public void activateIndex(String indexName) throws DotDataException {
-        final IndiciesInfo info = indicesAPI.loadIndicies();
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
 
         if (IndexType.WORKING.is(indexName)) {
@@ -1218,11 +1217,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         } else if (IndexType.LIVE.is(indexName)) {
             builder.setLive(indexName);
         }
-        indicesAPI.point(builder.build());
+        APILocator.getIndiciesAPI().point(builder.build());
     }
 
     public void deactivateIndex(String indexName) throws DotDataException, IOException {
-        final IndiciesInfo info = indicesAPI.loadIndicies();
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
 
         if (IndexType.WORKING.is(indexName)) {
@@ -1236,12 +1235,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             esIndexApi.moveIndexBackToCluster(info.getReindexLive());
             builder.setReindexLive(null);
         }
-        indicesAPI.point(builder.build());
+        APILocator.getIndiciesAPI().point(builder.build());
     }
 
     public synchronized List<String> getCurrentIndex() throws DotDataException {
         final List<String> newIdx = new ArrayList<String>();
-        final IndiciesInfo info = indicesAPI.loadIndicies();
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         newIdx.add(esIndexApi.removeClusterIdFromIndexName(info.getWorking()));
         newIdx.add(esIndexApi.removeClusterIdFromIndexName(info.getLive()));
         return newIdx;
@@ -1249,7 +1248,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     public synchronized List<String> getNewIndex() throws DotDataException {
         final List<String> newIdx = new ArrayList<String>();
-        final IndiciesInfo info = indicesAPI.loadIndicies();
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         if (info.getReindexWorking() != null)
             newIdx.add(esIndexApi.removeClusterIdFromIndexName(info.getReindexWorking()));
@@ -1259,7 +1258,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     public String getActiveIndexName(final String type) throws DotDataException {
-        final IndiciesInfo info = indicesAPI.loadIndicies();
+        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         if (IndexType.WORKING.is(type)) {
             return esIndexApi.removeClusterIdFromIndexName(info.getWorking());
