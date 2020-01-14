@@ -317,7 +317,7 @@ public class WorkflowHelper {
      * @throws DotDataException
      */
     @CloseDBIfOpened
-    public String getActionIdByName(final String actionName,
+    public String getActionIdOnList(final String actionName,
                                     final Contentlet contentlet,
                                     final User user) throws DotSecurityException, DotDataException {
 

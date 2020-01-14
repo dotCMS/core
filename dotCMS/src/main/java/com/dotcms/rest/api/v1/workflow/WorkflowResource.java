@@ -68,7 +68,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
-import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
@@ -1287,7 +1286,7 @@ public class WorkflowResource {
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
-            actionId = this.workflowHelper.getActionIdByName
+            actionId = this.workflowHelper.getActionIdOnList
                     (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
 
             Logger.debug(this, "fire ActionByName Multipart with the actionid: " + actionId);
@@ -1340,7 +1339,7 @@ public class WorkflowResource {
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
                             fireActionForm, initDataObject, mode);
 
-            actionId = this.workflowHelper.getActionIdByName
+            actionId = this.workflowHelper.getActionIdOnList
                     (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
 
             Logger.debug(this, "fire ActionByName with the actionid: " + actionId);
