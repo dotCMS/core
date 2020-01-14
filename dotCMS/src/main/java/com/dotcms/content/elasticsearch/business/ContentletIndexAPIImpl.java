@@ -553,11 +553,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
         Logger.info(this, "Switching Server Id : " + ConfigUtils.getServerId() );
         Logger.info(this, "Old indicies        : [" + esIndexApi
-                .removeClusterIdFromIndexName(oldInfo.getWorking()) + "," + esIndexApi
-                .removeClusterIdFromIndexName(oldInfo.getLive()) + "]");
+                .removeClusterIdFromName(oldInfo.getWorking()) + "," + esIndexApi
+                .removeClusterIdFromName(oldInfo.getLive()) + "]");
         Logger.info(this, "New indicies        : [" + esIndexApi
-                .removeClusterIdFromIndexName(oldInfo.getReindexWorking()) + "," + esIndexApi
-                .removeClusterIdFromIndexName(oldInfo.getReindexLive()) + "]");
+                .removeClusterIdFromName(oldInfo.getReindexWorking()) + "," + esIndexApi
+                .removeClusterIdFromName(oldInfo.getReindexLive()) + "]");
         Logger.info(this, "-------------------------------");
 
     }
@@ -1241,8 +1241,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public synchronized List<String> getCurrentIndex() throws DotDataException {
         final List<String> newIdx = new ArrayList<String>();
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-        newIdx.add(esIndexApi.removeClusterIdFromIndexName(info.getWorking()));
-        newIdx.add(esIndexApi.removeClusterIdFromIndexName(info.getLive()));
+        newIdx.add(esIndexApi.removeClusterIdFromName(info.getWorking()));
+        newIdx.add(esIndexApi.removeClusterIdFromName(info.getLive()));
         return newIdx;
     }
 
@@ -1251,9 +1251,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         if (info.getReindexWorking() != null)
-            newIdx.add(esIndexApi.removeClusterIdFromIndexName(info.getReindexWorking()));
+            newIdx.add(esIndexApi.removeClusterIdFromName(info.getReindexWorking()));
         if (info.getReindexLive() != null)
-            newIdx.add(esIndexApi.removeClusterIdFromIndexName(info.getReindexLive()));
+            newIdx.add(esIndexApi.removeClusterIdFromName(info.getReindexLive()));
         return newIdx;
     }
 
@@ -1261,9 +1261,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
         if (IndexType.WORKING.is(type)) {
-            return esIndexApi.removeClusterIdFromIndexName(info.getWorking());
+            return esIndexApi.removeClusterIdFromName(info.getWorking());
         } else if (IndexType.LIVE.is(type)) {
-            return esIndexApi.removeClusterIdFromIndexName(info.getLive());
+            return esIndexApi.removeClusterIdFromName(info.getLive());
         }
 
         return null;
