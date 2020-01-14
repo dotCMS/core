@@ -44,16 +44,16 @@ public class ESReindexationProcessStatus implements Serializable {
     public static String currentIndexPath() throws DotDataException {
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         final ESIndexAPI esIndexAPI = APILocator.getESIndexAPI();
-        return "[" + esIndexAPI.removeClusterIdFromIndexName(info.getWorking()) + "," + esIndexAPI
-                .removeClusterIdFromIndexName(info.getLive()) + "]";
+        return "[" + esIndexAPI.removeClusterIdFromName(info.getWorking()) + "," + esIndexAPI
+                .removeClusterIdFromName(info.getLive()) + "]";
     }
 
     @CloseDBIfOpened
     public static String getNewIndexPath() throws DotDataException {
         final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
         final ESIndexAPI esIndexAPI = APILocator.getESIndexAPI();
-        return "[" + esIndexAPI.removeClusterIdFromIndexName(info.getReindexWorking()) + ","
-                + esIndexAPI.removeClusterIdFromIndexName(info.getReindexLive()) + "]";
+        return "[" + esIndexAPI.removeClusterIdFromName(info.getReindexWorking()) + ","
+                + esIndexAPI.removeClusterIdFromName(info.getReindexLive()) + "]";
     }
 
     @CloseDBIfOpened

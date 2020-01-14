@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotmarketing.sitesearch.business.SiteSearchAPI.ES_SITE_SEARCH_NAME;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -55,6 +56,7 @@ public class ESSiteSearchAPITest {
             CacheLocator.getIndiciesCache().clearCache();
             assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
             assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
+            assertEquals(aliasName, indexAPI.getIndexAlias(indexName));
         } finally {
             siteSearchAPI.deactivateIndex(indexName);
             indexAPI.delete(indexName);
@@ -81,6 +83,7 @@ public class ESSiteSearchAPITest {
             CacheLocator.getIndiciesCache().clearCache();
             assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
             assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
+            assertEquals(aliasName, indexAPI.getIndexAlias(indexName));
         } finally {
             contentletIndexAPI.stopFullReindexation();
             siteSearchAPI.deactivateIndex(indexName);
@@ -114,6 +117,7 @@ public class ESSiteSearchAPITest {
             CacheLocator.getIndiciesCache().clearCache();
             assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
             assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
+            assertEquals(aliasName, indexAPI.getIndexAlias(indexName));
         } finally {
             contentletIndexAPI.stopFullReindexation();
             siteSearchAPI.deactivateIndex(indexName);
