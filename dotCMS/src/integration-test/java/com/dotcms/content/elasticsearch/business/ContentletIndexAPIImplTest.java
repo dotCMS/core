@@ -1224,7 +1224,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
             //Build the index name
             String timestamp = String.valueOf(new Date().getTime());
-            workingIndex = new ESIndexAPI().getIndexNameWithClusterIDPrefix(IndexType.WORKING.getPrefix() + "_" + timestamp);
+            workingIndex = new ESIndexAPI().getNameWithClusterIDPrefix(IndexType.WORKING.getPrefix() + "_" + timestamp);
 
             //Create a working index
             boolean result = indexAPI.createContentIndex(workingIndex);
