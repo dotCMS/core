@@ -7,6 +7,7 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.tika.TikaUtils;
@@ -516,7 +517,12 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			throws DotDataException, DotSecurityException {
 		List<FileAsset> assets = null;
 		try{
-			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":""), -1, 0, sortBy , user, respectFrontendRoles),
+			final StringBuffer query = new StringBuffer();
+			query.append("+baseType:" + BaseContentType.FILEASSET.getType())
+					.append(" +conFolder:" + parentFolder.getInode())
+					.append(" +conHost:" + parentFolder.getHostId())
+					.append(live?" +live:true":"");
+			assets = fromContentlets(perAPI.filterCollection(contAPI.search(query.toString(), -1, 0, sortBy , user, respectFrontendRoles),
 					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
