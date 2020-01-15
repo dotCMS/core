@@ -56,13 +56,13 @@ public class VelocityServlet extends HttpServlet {
             goToEditPage(uri,request, response);
         } else {
 
-            /*if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) ||
+            if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) ||
                     (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < LicenseLevel.PRIME.level) ||
                     (!LicenseUtil.isASAllowed())) {
                 Logger.error(this, "Enterprise License is required");
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
-            }*/
+            }
 
             final PageMode mode = PageMode.getWithNavigateMode(request);
             try {
