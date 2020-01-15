@@ -295,7 +295,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     for (int i = 1; i < 100000; i++) {
       dc.setSQL(this.contentTypeSql.SELECT_COUNT_VAR);
       dc.addParam(varName.toLowerCase());
-      if (dc.getInt("test") == 0 && !reservedContentTypeVars.contains(varName)) {
+      if (dc.getInt("test") == 0 && !reservedContentTypeVars.contains(varName.toLowerCase())) {
         return varName;
       }
       varName = suggestedVarName + i;
