@@ -183,7 +183,13 @@ public class FileAssetContainerUtil {
         return identifier.getId();
     }
 
-    private String getPathFromFullPath(final String hostname, final String fullPath) {
+    /**
+     * Remove the hostname from the fullPath (if it has the host)
+     * @param hostname {@link String} host name to remove (must be not null)
+     * @param fullPath {@link String} full path, could be relative or full (if full, the host will be removed)
+     * @return returns the relative path
+     */
+    public String getPathFromFullPath(final String hostname, final String fullPath) {
 
         final int indexOf = fullPath.indexOf(hostname);
 

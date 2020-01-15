@@ -19,13 +19,23 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotmarketing.portlets.containers.business.FileAssetContainerUtil" %>
 <%@ page import="com.dotmarketing.business.web.WebAPILocator" %>
+<%@ page import="com.dotmarketing.beans.Host" %>
+<%@ page import="com.dotmarketing.util.HostUtil" %>
 
 <%
     String containerIdentifier = request.getParameter("container_id");
     User user = PortalUtil.getUser(request);
-    Container container = FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerIdentifier)?
-            APILocator.getContainerAPI().getWorkingContainerByFolderPath(containerIdentifier, WebAPILocator.getHostWebAPI().getHost(request), APILocator.getUserAPI().getSystemUser(), false):
-            APILocator.getContainerAPI().getWorkingContainerById(containerIdentifier, APILocator.getUserAPI().getSystemUser(), false);
+    Container container = null;
+    if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerIdentifier)) {
+
+        final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost(containerIdentifier);
+        final Host   host            = hostOpt.isPresent()? hostOpt.get():WebAPILocator.getHostWebAPI().getHost(request);
+        final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(host.getHostname(), containerIdentifier);
+        container = APILocator.getContainerAPI().getWorkingContainerByFolderPath(relativePath, host, APILocator.getUserAPI().getSystemUser(), false);
+    } else {
+
+        container = APILocator.getContainerAPI().getWorkingContainerById(containerIdentifier, APILocator.getUserAPI().getSystemUser(), false);
+    }
 
     List<ContentType> contentTypes = null;
     String baseTypeToAdd = request.getParameter("add");

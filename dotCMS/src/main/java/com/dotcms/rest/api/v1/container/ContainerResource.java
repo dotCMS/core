@@ -11,6 +11,8 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import com.dotmarketing.util.HostUtil;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -370,9 +372,12 @@ public class ContainerResource implements Serializable {
 
         if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
 
+            final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost(containerId);
+            final Host   containerHost   = hostOpt.isPresent()? hostOpt.get():host;
+            final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(containerHost.getHostname(), containerId);
             return mode.showLive?
-                    this.containerAPI.getLiveContainerByFolderPath   (containerId, host, user, mode.respectAnonPerms):
-                    this.containerAPI.getWorkingContainerByFolderPath(containerId, host, user, mode.respectAnonPerms);
+                    this.containerAPI.getLiveContainerByFolderPath   (relativePath, containerHost, user, mode.respectAnonPerms):
+                    this.containerAPI.getWorkingContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms);
         }
 
         final ShortyId containerShorty = this.shortyAPI.getShorty(containerId)
