@@ -1,34 +1,24 @@
-<%@page import="com.liferay.portal.util.WebKeys"%>
-<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI"%>
-<%@page import="java.util.TimeZone"%>
-<%@page import="java.util.Date"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.business.PermissionAPI"%>
-<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@page import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI" %>
-<%@page import="com.dotmarketing.business.CacheLocator"%>
+<%@page import="com.liferay.portal.util.WebKeys"%> <%@page
+import="com.dotmarketing.portlets.languagesmanager.model.Language"%> <%@page
+import="com.dotmarketing.business.APILocator"%> <%@page
+import="com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI"%> <%@page import="java.util.TimeZone"%>
+<%@page import="java.util.Date"%> <%@page import="com.dotmarketing.util.UtilMethods"%> <%@page
+import="com.dotmarketing.business.PermissionAPI"%> <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure"%> <%@page
+import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI" %> <%@page
+import="com.dotmarketing.business.CacheLocator"%> <% Structure defaultFileAssetStructure =
+CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+String selectedLang=String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null){ selectedLang = (String)
+session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED); } %>
 
-<%
-Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
-
-
-    String selectedLang=String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-    if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null){
-        selectedLang = (String) session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
-    }
-
-
-%>
 <script type="text/javascript" src="/dwr/interface/HostAjax.js"></script>
 
 <script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>
 <script src="/html/js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
 
-<% // Include javascript method to upload multiple files %>
-<%@ include file="/html/portlet/ext/fileupload/upload_multiple_js_inc.jsp" %>
+<% // Include javascript method to upload multiple files %> <%@ include
+file="/html/portlet/ext/fileupload/upload_multiple_js_inc.jsp" %>
 <script language="JavaScript">
 
     dojo.require("dotcms.dojo.data.StructureReadStore");
@@ -83,7 +73,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
     //Events Handlers
 
-    var myHost = '<%= (myHost != null) ? myHost.getHostname() :""%>';
+    var myHost = '<%= (myHost != null) ? myHost.getHostname() : ""%>';
     var myHostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
 
     var selectedLang = '<%= selectedLang %>';
@@ -369,7 +359,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             editLink(inode,referer);
         }
         if (inodes[inode].type == 'htmlpage') {
-        	
+
             previewHTMLPage(e.target.dataset.url || e.target.parentNode.dataset.url, inodes[inode]);
         }
         return;
@@ -1582,12 +1572,12 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     function previewHTMLPage(url, content) {
         // We can't new CustomEvent becuase it's not supported by IE11
         var customEvent = document.createEvent("CustomEvent");
-        console.log(url);
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-page",
             data: {
+                hostId: myHostId,
                 url: url,
-                content: content
+                languageId: content.languageId
             }
         });
         document.dispatchEvent(customEvent);
@@ -1910,7 +1900,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
         if(!isMultiple){
             var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-            
+
             createContentlet(loc);
         } else {
             addMultipleFile(folderInode, selected, escape(refererVar));
@@ -2460,6 +2450,4 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
-
-
 </script>
