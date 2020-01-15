@@ -1,24 +1,31 @@
-<%@page import="com.liferay.portal.util.WebKeys"%> <%@page
-import="com.dotmarketing.portlets.languagesmanager.model.Language"%> <%@page
-import="com.dotmarketing.business.APILocator"%> <%@page
-import="com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI"%> <%@page import="java.util.TimeZone"%>
-<%@page import="java.util.Date"%> <%@page import="com.dotmarketing.util.UtilMethods"%> <%@page
-import="com.dotmarketing.business.PermissionAPI"%> <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@page import="com.dotmarketing.portlets.structure.model.Structure"%> <%@page
-import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI" %> <%@page
-import="com.dotmarketing.business.CacheLocator"%> <% Structure defaultFileAssetStructure =
-CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
-String selectedLang=String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null){ selectedLang = (String)
-session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED); } %>
+<%@page import="com.liferay.portal.util.WebKeys"%>
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI"%>
+<%@page import="java.util.TimeZone"%>
+<%@page import="java.util.Date"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
+<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@page import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI" %>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
+
+<%
+Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+    String selectedLang=String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+    if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null){
+        selectedLang = (String) session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
+    }
+%>
 
 <script type="text/javascript" src="/dwr/interface/HostAjax.js"></script>
 
 <script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>
 <script src="/html/js/scriptaculous/scriptaculous.js" type="text/javascript"></script>
 
-<% // Include javascript method to upload multiple files %> <%@ include
-file="/html/portlet/ext/fileupload/upload_multiple_js_inc.jsp" %>
+<% // Include javascript method to upload multiple files %>
+<%@ include file="/html/portlet/ext/fileupload/upload_multiple_js_inc.jsp" %>
 <script language="JavaScript">
 
     dojo.require("dotcms.dojo.data.StructureReadStore");
