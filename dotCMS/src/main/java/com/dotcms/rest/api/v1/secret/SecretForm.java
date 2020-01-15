@@ -20,7 +20,7 @@ public class SecretForm extends Validated {
         return serviceKey;
     }
 
-    public void setServiceKey(String serviceKey) {
+    public void setServiceKey(final String serviceKey) {
         this.serviceKey = serviceKey;
     }
 
@@ -28,7 +28,7 @@ public class SecretForm extends Validated {
         return hostId;
     }
 
-    public void setHostId(String hostId) {
+    public void setHostId(final String hostId) {
         this.hostId = hostId;
     }
 
@@ -36,7 +36,7 @@ public class SecretForm extends Validated {
         return params;
     }
 
-    public void setParams(Map<String, Param> params) {
+    public void setParams(final Map<String, Param> params) {
         this.params = params;
     }
 

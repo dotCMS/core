@@ -27,9 +27,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
@@ -84,9 +84,9 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
     }
 
     private InputStream createServiceDescriptorFile(final String fileName, final String serviceKey,
-            final String serviceName, final String description,
+            final String serviceName, final String description, final boolean allowExtraParameters,
             final Map<String, Param> paramMap) throws IOException {
-        final ServiceDescriptor serviceDescriptor = new ServiceDescriptor(serviceKey, serviceName, description, "/black.png");
+        final ServiceDescriptor serviceDescriptor = new ServiceDescriptor(serviceKey, serviceName, description, "/black.png", allowExtraParameters);
 
         for (final Entry<String, Param> entry : paramMap.entrySet()) {
             final Param param = entry.getValue();
@@ -98,7 +98,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final File file = new File(basePath,fileName);
         ymlMapper.writeValue(file, serviceDescriptor);
         //System.out.println(file);
-        return new FileInputStream(file);
+        return Files.newInputStream(Paths.get(file.getPath()));
     }
 
     private FormDataMultiPart createFormDataMultiPart(final String fileName, final InputStream inputStream) {
@@ -125,7 +125,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final String serviceKey = String.format("lol_%d",System.currentTimeMillis());
         final String fileName = String.format("%s.yml",serviceKey);
         final InputStream inputStream = createServiceDescriptorFile(fileName, serviceKey, "lola",
-                "A bunch of string params to demo the mechanism.", paramMap);
+                "A bunch of string params to demo the mechanism.", false, paramMap);
         final Response serviceIntegrationResponse = serviceIntegrationResource.createServiceIntegration(request, response, createFormDataMultiPart(fileName, inputStream));
         Assert.assertNotNull(serviceIntegrationResponse);
         Assert.assertEquals(HttpStatus.SC_OK, serviceIntegrationResponse.getStatus());
@@ -186,7 +186,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final String serviceKey = String.format("lol_%d",System.currentTimeMillis());
         final String fileName = String.format("%s.yml",serviceKey);
         final InputStream inputStream = createServiceDescriptorFile(fileName, serviceKey, "lola",
-                "A bunch of string params to demo the mechanism.", paramMap);
+                "A bunch of string params to demo the mechanism.", false, paramMap);
         final Response serviceIntegrationResponse = serviceIntegrationResource.createServiceIntegration(request, response, createFormDataMultiPart(fileName, inputStream));
         Assert.assertNotNull(serviceIntegrationResponse);
         Assert.assertEquals(HttpStatus.SC_OK, serviceIntegrationResponse.getStatus());

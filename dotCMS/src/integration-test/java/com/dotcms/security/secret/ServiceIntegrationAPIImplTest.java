@@ -105,7 +105,7 @@ public class ServiceIntegrationAPIImplTest {
                 .withSecret("h1:bool2", false)
                 .build();
 
-        ServiceSecrets.Builder builder2 = new ServiceSecrets.Builder();
+        final ServiceSecrets.Builder builder2 = new ServiceSecrets.Builder();
 
         final ServiceSecrets bean1Host2 = builder2.withServiceKey("serviceKey-1-Host-2")
                 .withHiddenSecret("h2:secret1", "sec1")

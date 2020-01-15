@@ -15,7 +15,7 @@ public class ServiceIntegrationView {
     private final String iconUrl;
 
     public ServiceIntegrationView(final ServiceDescriptor serviceDescriptor, final long configurationsCount) {
-        this.serviceKey = serviceDescriptor.getServiceKey();
+        this.serviceKey = serviceDescriptor.getKey();
         this.name = serviceDescriptor.getName();
         this.description = serviceDescriptor.getDescription();
         this.iconUrl = serviceDescriptor.getIconUrl();

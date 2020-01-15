@@ -6,7 +6,7 @@ import java.util.Objects;
 
 public class ServiceDescriptor {
 
-    private String serviceKey;
+    private String key;
 
     private String name;
 
@@ -14,20 +14,24 @@ public class ServiceDescriptor {
 
     private String iconUrl;
 
+    private boolean allowExtraParameters;
+
     private Map<String,Param> params;
 
-    public ServiceDescriptor(final String serviceKey, final String name, final String description, final String iconUrl) {
-        this.serviceKey = serviceKey;
+    public ServiceDescriptor(final String key, final String name, final String description,
+            final String iconUrl, final boolean allowExtraParameters) {
+        this.key = key;
         this.name = name;
         this.description = description;
         this.iconUrl = iconUrl;
+        this.allowExtraParameters = allowExtraParameters;
     }
 
     public ServiceDescriptor() {
     }
 
-    public String getServiceKey() {
-        return serviceKey;
+    public String getKey() {
+        return key;
     }
 
     public String getName() {
@@ -40,6 +44,10 @@ public class ServiceDescriptor {
 
     public String getIconUrl() {
         return iconUrl;
+    }
+
+    public boolean isAllowExtraParameters() {
+        return allowExtraParameters;
     }
 
     public Map<String, Param> getParams() {
@@ -55,19 +63,19 @@ public class ServiceDescriptor {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(final Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        final ServiceDescriptor that = (ServiceDescriptor) o;
-        return serviceKey.equals(that.serviceKey);
+        final ServiceDescriptor that = (ServiceDescriptor) object;
+        return key.equals(that.key);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(serviceKey);
+        return Objects.hash(key);
     }
 }

@@ -5,7 +5,7 @@ public class HostView {
     private String hostId;
     private String hostName;
 
-    public HostView(String hostId, String hostName) {
+    public HostView(final String hostId, final String hostName) {
         this.hostId = hostId;
         this.hostName = hostName;
     }

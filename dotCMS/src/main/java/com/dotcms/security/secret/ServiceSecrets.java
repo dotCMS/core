@@ -9,6 +9,8 @@ import java.util.Map;
 
 public class ServiceSecrets implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private final String serviceKey;
 
     private final Map<String,Secret> secrets;

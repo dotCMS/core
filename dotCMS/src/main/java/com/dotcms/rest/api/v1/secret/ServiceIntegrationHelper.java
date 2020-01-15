@@ -22,8 +22,9 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -62,7 +63,7 @@ class ServiceIntegrationHelper {
                 .getAvailableServiceDescriptors(user);
         final List<Host> hosts = hostAPI.findAll(user, false);
         for (final ServiceDescriptor serviceDescriptor : serviceDescriptors) {
-            final String serviceKey = serviceDescriptor.getServiceKey();
+            final String serviceKey = serviceDescriptor.getKey();
             final long configurationsCount = computeHostsWithConfigurations(serviceKey, hosts, user).size();
             viewsBuilder.add(new ServiceIntegrationView(serviceDescriptor, configurationsCount));
         }
@@ -293,11 +294,12 @@ class ServiceIntegrationHelper {
      */
     private void validateIncomingParamNames(final Set<String> paramNames, final ServiceDescriptor serviceDescriptor)
             throws DotDataException {
-        final Map<String, Param> serviceDescriptorParams = serviceDescriptor.getParams();
-        if(serviceDescriptorParams.containsKey("*")){
-            //If a star has been specified we can have whatever param name we want added.
+
+        if(serviceDescriptor.isAllowExtraParameters()){
+            //If this flag has been specified we can have whatever param name we want added.
            return;
         }
+        final Map<String, Param> serviceDescriptorParams = serviceDescriptor.getParams();
         for (final String paramName : paramNames) {
             if(!serviceDescriptor.getParams().containsKey(paramName)){
                 throw new DotDataException(String.format("Params named `%s` can not be matched against service descriptor.",paramName));
@@ -321,7 +323,7 @@ class ServiceIntegrationHelper {
             throw new DotDataException("Unable to extract any files from multi-part request.");
         }
         for (final File file : files) {
-            serviceIntegrationAPI.createServiceDescriptor(new FileInputStream(file), user);
+            serviceIntegrationAPI.createServiceDescriptor(Files.newInputStream(Paths.get(file.getPath())), user);
         }
     }
 

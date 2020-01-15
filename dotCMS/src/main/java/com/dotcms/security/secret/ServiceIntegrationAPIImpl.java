@@ -283,7 +283,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         if (!UtilMethods.isSet(descriptorsByServiceKey)) {
 
             descriptorsByServiceKey = getAvailableServiceDescriptors(user).stream().collect(
-                    Collectors.toMap(ServiceDescriptor::getServiceKey, Function.identity(),
+                    Collectors.toMap(ServiceDescriptor::getKey, Function.identity(),
                             (serviceDescriptor, serviceDescriptor2) -> serviceDescriptor));
             CacheLocator.getCacheAdministrator()
                     .put(DESCRIPTORS_MAPPED_BY_SERVICE_KEY, descriptorsByServiceKey,
@@ -324,7 +324,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
 
         if (validateServiceDescriptor(serviceDescriptor, user)) {
 
-            final String serviceKey = serviceDescriptor.getServiceKey();
+            final String serviceKey = serviceDescriptor.getKey();
             final File incomingFile = new File(basePath, String.format("%s.yml", serviceKey));
             if (incomingFile.exists()) {
                 throw new DotDataException(
@@ -379,7 +379,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
             for (final Path path : stream) {
                 if (!Files.isDirectory(path)) {
                     final String fileName = path.getFileName().toString();
-                    if (fileName.equals("yaml") || fileName.endsWith("yml")) {
+                    if (fileName.endsWith("yaml") || fileName.endsWith("yml")) {
                         fileList.add(path.toString());
                     }
                 }
@@ -407,14 +407,14 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
 
    private boolean validateServiceDescriptor(final ServiceDescriptor serviceDescriptor, final User user)
            throws DotDataException, DotSecurityException {
-       if(UtilMethods.isNotSet(serviceDescriptor.getServiceKey())){
+       if(UtilMethods.isNotSet(serviceDescriptor.getKey())){
           throw new DotDataException("The required field `serviceKey` isn't set on the incoming file.");
        }
 
-       if (getServiceDescriptorMap(user).containsKey(serviceDescriptor.getServiceKey())) {
+       if (getServiceDescriptorMap(user).containsKey(serviceDescriptor.getKey())) {
            throw new DotDataException(
                    String.format("There's a service already registered under key `%s`.",
-                           serviceDescriptor.getServiceKey()));
+                           serviceDescriptor.getKey()));
        }
 
        if(UtilMethods.isNotSet(serviceDescriptor.getName())){
@@ -441,7 +441,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         final ServiceDescriptor serviceDescriptor = new ServiceDescriptor("sampleDescriptor",
                 "Sample Descriptor.",
                 "This is an empty descriptor created by the system to show you the expected structure.",
-                "/black_18dp.png");
+                "/black_18dp.png", true);
         serviceDescriptor.addParam("stringParam", "This is a string.", false, Type.STRING, "This is string param",
                 "Test string.");
         serviceDescriptor.addParam("boolParam", "true", false, Type.BOOL, "This is a Bool Param",
