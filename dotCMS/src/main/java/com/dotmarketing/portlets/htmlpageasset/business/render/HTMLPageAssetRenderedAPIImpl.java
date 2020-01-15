@@ -240,7 +240,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setRequest(request)
                 .setResponse(response)
                 .setSite(host)
-                .getPageHTML();
+                .getPageHTML(context.getPageMode());
     }
 
     private HTMLPageUrl getHtmlPageAsset(

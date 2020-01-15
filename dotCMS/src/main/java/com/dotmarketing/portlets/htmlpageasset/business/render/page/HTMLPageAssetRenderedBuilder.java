@@ -186,16 +186,21 @@ public class HTMLPageAssetRenderedBuilder {
         return Optional.ofNullable(contentlet);
     }
 
-    @CloseDBIfOpened
     public String getPageHTML() throws DotSecurityException, DotDataException {
 
         final PageMode mode = PageMode.get(request);
 
-        if(mode.isAdmin ) {
+        return getPageHTML(mode);
+    }
+
+    @CloseDBIfOpened
+    public String getPageHTML(final PageMode pageMode) throws DotSecurityException, DotDataException {
+
+        if(pageMode.isAdmin ) {
             APILocator.getPermissionAPI().checkPermission(htmlPageAsset, PermissionLevel.READ, user);
         }
 
-        return VelocityModeHandler.modeHandler(mode, request, response, htmlPageAsset.getURI(), site).eval();
+        return VelocityModeHandler.modeHandler(pageMode, request, response, htmlPageAsset.getURI(), site).eval();
     }
 
     private Template getTemplate(final PageMode mode) throws DotDataException {
