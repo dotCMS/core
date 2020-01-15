@@ -367,7 +367,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     ContentType retType = builder.build();
-
+    if(reservedContentTypeVars.contains(retType.variable().toLowerCase())){
+        throw new IllegalArgumentException("Invalid content type variable - reserved var name: " + retType.variable().toLowerCase());
+    }
     if (oldContentType == null) {
     	dbInodeInsert(retType);
     	dbInsert(retType);
