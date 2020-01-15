@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import com.dotmarketing.filters.CMSUrlUtil;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.dotmarketing.beans.Host;
@@ -24,12 +26,8 @@ import java.io.OutputStream;
  */
 public class VelocityNavigateEditMode  extends VelocityModeHandler {
 
-    protected final HttpServletRequest request;
-    protected final HttpServletResponse response;
-    protected final String uri;
-    private final Host host;
     private final User user;
-
+    final String uri;
     private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI = APILocator.getHTMLPageAssetRenderedAPI();
 
     private final static String JS_CODE =
@@ -42,20 +40,17 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
                 "window.top.document.dispatchEvent(customEvent);" +
             "</script>";
 
-    public VelocityNavigateEditMode(final HttpServletRequest request,
-                                    final HttpServletResponse response,
-                                    final String uri,
-                                    final Host host) {
-        super();
-        this.request = request;
-        this.response = response;
-        this.uri = uri;
-        this.host = host;
-        this.user = WebAPILocator.getUserWebAPI().getUser(request);
-    }
 
-    public VelocityNavigateEditMode(HttpServletRequest request, HttpServletResponse response) {
-        this(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request));
+    public VelocityNavigateEditMode(
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final IHTMLPage htmlPage,
+            final Host host) {
+
+        super(request, response, htmlPage, host);
+        uri = CMSUrlUtil.getCurrentURI(request);
+        this.setMode(this.getMode());
+        this.user = WebAPILocator.getUserWebAPI().getUser(request);
     }
 
     @Override

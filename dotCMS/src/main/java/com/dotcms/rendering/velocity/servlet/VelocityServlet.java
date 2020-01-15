@@ -8,6 +8,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.util.Logger;
@@ -39,9 +40,7 @@ public class VelocityServlet extends HttpServlet {
     @CloseDB
     protected final void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
         VelocityRequestWrapper request = new VelocityRequestWrapper(req);
-        final String uri = URLDecoder.decode((request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE) != null)
-                ? (String) request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE)
-                : request.getRequestURI(), "UTF-8");
+        final String uri = CMSUrlUtil.getCurrentURI(request);
 
         if (uri == null) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "VelocityServlet called without running through the CMS Filter");
@@ -57,13 +56,13 @@ public class VelocityServlet extends HttpServlet {
             goToEditPage(uri,request, response);
         } else {
 
-            if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) ||
+            /*if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) ||
                     (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < LicenseLevel.PRIME.level) ||
                     (!LicenseUtil.isASAllowed())) {
                 Logger.error(this, "Enterprise License is required");
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
-            }
+            }*/
 
             final PageMode mode = PageMode.getWithNavigateMode(request);
             try {
@@ -72,6 +71,7 @@ public class VelocityServlet extends HttpServlet {
                                 .setPageUri(uri)
                                 .setPageMode(mode)
                                 .setUser(APILocator.getLoginServiceAPI().getLoggedInUser())
+                                .setPageMode(mode)
                                 .build(),
                         request,
                         response

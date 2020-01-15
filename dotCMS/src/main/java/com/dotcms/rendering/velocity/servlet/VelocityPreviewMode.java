@@ -22,26 +22,15 @@ import java.io.*;
 
 public class VelocityPreviewMode extends VelocityModeHandler {
 
+    public VelocityPreviewMode(
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final IHTMLPage htmlPage,
+            final Host host) {
 
-
-    private final HttpServletRequest request;
-    private final HttpServletResponse response;
-    private static final PageMode mode = PageMode.PREVIEW_MODE;
-    private final String uri;
-    private final Host host;
-
-    public VelocityPreviewMode(HttpServletRequest request, HttpServletResponse response, String uri, Host host) {
-        this.request = request;
-        this.response = response;
-        this.uri = uri;
-        this.host = host;
+        super(request, response, htmlPage, host);
+        this.setMode(PageMode.PREVIEW_MODE);
     }
-
-    public VelocityPreviewMode(HttpServletRequest request, HttpServletResponse response) {
-        this(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request));
-    }
-
-
 
     @Override
     public void serve() throws DotDataException, IOException, DotSecurityException {
@@ -55,18 +44,12 @@ public class VelocityPreviewMode extends VelocityModeHandler {
 
 
         // Getting the user to check the permissions
-        User user = WebAPILocator.getUserWebAPI().getUser(request);
+        final  User user = WebAPILocator.getUserWebAPI().getUser(request);
 
-        // Getting the identifier from the uri
-        Identifier id = APILocator.getIdentifierAPI().find(host, uri);
-
-
-        // creates the context where to place the variables
+         // creates the context where to place the variables
         response.setContentType(CHARSET);
         Context context = VelocityUtil.getWebContext(request, response);
 
-        long langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
-        IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, langId, mode.showLive,user, mode.respectAnonPerms);
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
 

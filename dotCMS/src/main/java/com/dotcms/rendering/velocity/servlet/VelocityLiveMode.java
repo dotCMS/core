@@ -35,28 +35,15 @@ import java.io.*;
 import java.util.Optional;
 
 public class VelocityLiveMode extends VelocityModeHandler {
+    public VelocityLiveMode(
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final IHTMLPage htmlPage,
+            final Host host) {
 
-
-
-    private final HttpServletRequest request;
-    private final HttpServletResponse response;
-    private static final PageMode mode = PageMode.LIVE;
-    private final String uri;
-    private final Host host;
-
-
-
-    public VelocityLiveMode(HttpServletRequest request, HttpServletResponse response, String uri, Host host) {
-        this.request = request;
-        this.response = response;
-        this.uri = uri;
-        this.host = host;
+        super(request, response, htmlPage, host);
+        this.setMode(PageMode.LIVE);
     }
-
-    public VelocityLiveMode(HttpServletRequest request, HttpServletResponse response) {
-        this(request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request));
-    }
-
 
     @Override
     public final void serve() throws DotDataException, IOException, DotSecurityException {
@@ -74,7 +61,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
 
             // now we check identifier cache first (which DOES NOT have a 404 cache )
-            Identifier id = APILocator.getIdentifierAPI().find(host, uri);
+            Identifier id = APILocator.getIdentifierAPI().find(this.htmlPage.getIdentifier());
             if (!host.isLive() || id == null || id.getId() == null) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
@@ -98,14 +85,8 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
 
             User user = getUser();
-
+            final String uri = CMSUrlUtil.getCurrentURI(request);
             Logger.debug(this.getClass(), "Page Permissions for URI=" + uri);
-
-
-
-            IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, langId, mode.showLive,
-                    APILocator.systemUser(), mode.respectAnonPerms);
-
 
             // Verify and handle the case for unauthorized access of this contentlet
             Boolean unauthorized = CMSUrlUtil.getInstance().isUnauthorizedAndHandleError(htmlPage, uri, user, request, response);
