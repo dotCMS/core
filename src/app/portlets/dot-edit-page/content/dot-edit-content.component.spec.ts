@@ -540,9 +540,9 @@ describe('DotEditContentComponent', () => {
                             }
                         });
 
-                        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(
-                            'url/from/event'
-                        );
+                        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                            url: 'url/from/event'
+                        });
                     }));
 
                     it('should handle in-iframe', fakeAsync(() => {
@@ -591,9 +591,10 @@ describe('DotEditContentComponent', () => {
                     }));
 
                     it('should handle load-edit-mode-page to internal navigation', fakeAsync(() => {
-                        spyOn(dotPageStateService, 'setInternalNavigationState').and.callFake(
-                            () => {}
-                        );
+                        spyOn(
+                            dotPageStateService,
+                            'setInternalNavigationState'
+                        ).and.callFake(() => {});
 
                         detectChangesForIframeRender(fixture);
 
@@ -615,9 +616,9 @@ describe('DotEditContentComponent', () => {
                         expect(dotPageStateService.setInternalNavigationState).toHaveBeenCalledWith(
                             dotRenderedPageStateExpected
                         );
-                        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(
-                            mockDotRenderedPageCopy.page.pageURI
-                        );
+                        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                            url: mockDotRenderedPageCopy.page.pageURI
+                        });
                     }));
 
                     it('should handle save-menu-order', fakeAsync(() => {

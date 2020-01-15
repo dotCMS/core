@@ -118,13 +118,18 @@ describe('DotContentletWrapperComponent', () => {
                         name: 'edit-page',
                         data: {
                             url: 'some/fake/url',
-                            language_id: '1'
+                            languageId: '1',
+                            hostId: '123'
                         }
                     }
                 });
 
-                expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('some/fake/url', '1');
-            })
+                expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                    url: 'some/fake/url',
+                    language_id: '1',
+                    host_id: '123'
+                });
+            });
 
             describe('beforeClose', () => {
                 it('should close without confirmation dialog', () => {

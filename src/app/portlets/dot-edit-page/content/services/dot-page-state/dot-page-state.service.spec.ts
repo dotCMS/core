@@ -78,6 +78,10 @@ describe('DotPageStateService', () => {
         ).and.callThrough();
 
         service = injector.get(DotPageStateService);
+
+        spyOnProperty(dotRouterService, 'queryParams', 'get').and.returnValue({
+            url: ''
+        });
     });
 
     describe('$state', () => {
@@ -97,10 +101,13 @@ describe('DotPageStateService', () => {
                 url: '/an/url/test'
             });
             service.reload();
-            expect(dotPageRenderServiceGetSpy).toHaveBeenCalledWith({
-                mode: 'PREVIEW_MODE',
-                url: '/an/url/test'
-            });
+            expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+                {
+                    mode: 'PREVIEW_MODE',
+                    url: '/an/url/test'
+                },
+                {}
+            ]);
         });
     });
 
@@ -126,10 +133,13 @@ describe('DotPageStateService', () => {
                 );
 
                 expect(dotContentletLockerService.lock).toHaveBeenCalledWith('2');
-                expect(dotPageRenderServiceGetSpy).toHaveBeenCalledWith({
-                    mode: 'ADMIN_MODE',
-                    url: '/an/url/test'
-                });
+                expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+                    {
+                        mode: 'ADMIN_MODE',
+                        url: '/an/url/test'
+                    },
+                    {}
+                ]);
             });
 
             it('should unlock', () => {
@@ -146,10 +156,13 @@ describe('DotPageStateService', () => {
                 );
 
                 expect(dotContentletLockerService.unlock).toHaveBeenCalledWith('2');
-                expect(dotPageRenderServiceGetSpy).toHaveBeenCalledWith({
-                    mode: 'PREVIEW_MODE',
-                    url: '/an/url/test'
-                });
+                expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+                    {
+                        mode: 'PREVIEW_MODE',
+                        url: '/an/url/test'
+                    },
+                    {}
+                ]);
             });
         });
 
@@ -164,12 +177,18 @@ describe('DotPageStateService', () => {
 
                 service.setDevice(device);
 
-                expect(dotPageRenderServiceGetSpy).toHaveBeenCalledWith({
-                    viewAs: {
-                        device: device
-                    },
-                    url: '/an/url/test'
-                });
+                expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual(
+                    [
+                        {
+                            viewAs: {
+                                device: device
+                            },
+                            url: '/an/url/test'
+                        },
+                        {}
+                    ],
+                    {}
+                );
             });
         });
 
@@ -177,12 +196,15 @@ describe('DotPageStateService', () => {
             it('should set laguage 1', () => {
                 service.setLanguage(1);
 
-                expect(dotPageRenderServiceGetSpy).toHaveBeenCalledWith({
-                    viewAs: {
-                        language: 1
+                expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+                    {
+                        viewAs: {
+                            language: 1
+                        },
+                        url: '/an/url/test'
                     },
-                    url: '/an/url/test'
-                });
+                    {}
+                ]);
             });
         });
 
@@ -196,12 +218,15 @@ describe('DotPageStateService', () => {
                 };
                 service.setPersona(persona);
 
-                expect(dotPageRenderServiceGetSpy).toHaveBeenCalledWith({
-                    viewAs: {
-                        persona: persona
+                expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+                    {
+                        viewAs: {
+                            persona: persona
+                        },
+                        url: '/an/url/test'
                     },
-                    url: '/an/url/test'
-                });
+                    {}
+                ]);
             });
         });
     });

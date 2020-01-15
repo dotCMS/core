@@ -132,7 +132,9 @@ describe('DotEditPageMainComponent', () => {
         spyOn(dotPageStateService, 'get').and.callThrough();
 
         component.pageState$.subscribe((res) => {
-            expect(res).toEqual(new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage)));
+            expect(res).toEqual(
+                new DotPageRenderState(mockUser, new DotPageRender(mockDotRenderedPage))
+            );
         });
 
         dotContentletEditorService.close$.next(true);
@@ -163,10 +165,10 @@ describe('DotEditPageMainComponent', () => {
                 }
             });
             dotContentletEditorService.close$.next(true);
-            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith(
-                '/about-us/index2',
-                mockDotRenderedPage.page.languageId.toString()
-            );
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: '/about-us/index2',
+                language_id: mockDotRenderedPage.page.languageId.toString()
+            });
         });
 
         it('should go to site-browser when page is deleted', () => {

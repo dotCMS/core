@@ -201,7 +201,7 @@ describe('DotEditLayoutDesignerComponent', () => {
                 By.css('.dot-edit-layout__toolbar-action-cancel')
             );
             cancelButton.triggerEventHandler('click', {});
-            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('/an/url/test');
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({ url: '/an/url/test' });
         });
 
         it('should show save button', () => {

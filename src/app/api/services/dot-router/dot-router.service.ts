@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute, Params } from '@angular/router';
 
 import { PortletNav } from '@models/navigation';
 import { Subject } from 'rxjs';
@@ -10,13 +10,18 @@ export class DotRouterService {
     private _previousSavedURL: string;
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
 
-    constructor(private router: Router) {}
+    constructor(private router: Router, private route: ActivatedRoute) {}
 
     get currentPortlet(): PortletNav {
         return {
             url: this.router.routerState.snapshot.url,
             id: this.getPortletId(this.router.routerState.snapshot.url)
         };
+    }
+
+    get queryParams(): Params {
+        const nav = this.router.getCurrentNavigation();
+        return nav ? nav.finalUrl.queryParams : this.route.snapshot.queryParams;
     }
 
     /**
@@ -37,9 +42,9 @@ export class DotRouterService {
      * @returns Promise<boolean>
      * @memberof DotRouterService
      */
-    goToEditPage(url: string, languageId?: string): Promise<boolean> {
+    goToEditPage(queryParams: Params): Promise<boolean> {
         return this.router.navigate(['/edit-page/content'], {
-            queryParams: !!languageId ? { url: url, language_id: languageId } : { url: url }
+            queryParams
         });
     }
 
@@ -73,7 +78,11 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     goToMain(userEditPageRedirect?: string): Promise<boolean> {
-        return userEditPageRedirect ? this.goToEditPage(userEditPageRedirect) : this.redirectMain();
+        return userEditPageRedirect
+            ? this.goToEditPage({
+                  url: userEditPageRedirect
+              })
+            : this.redirectMain();
     }
 
     goToLogin(parameters?: any): void {

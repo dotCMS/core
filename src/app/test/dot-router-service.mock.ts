@@ -14,6 +14,10 @@ export class MockDotRouterService {
         return of('some-id');
     }
 
+    get queryParams() {
+        return {};
+    }
+
     getPortletId = jasmine.createSpy('getPortletId').and.returnValue('test');
     goToEditContentType = jasmine.createSpy('goToEditContentType');
     goToEditContentlet = jasmine.createSpy('goToEditContentlet');

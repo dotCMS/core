@@ -7,6 +7,7 @@ import { DotPageRender } from '@portlets/dot-edit-page/shared/models/dot-rendere
 import { DotPageMode } from '@portlets/dot-edit-page/shared/models/dot-page-mode.enum';
 import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
 import { DotDevice } from '@shared/models/dot-device/dot-device.model';
+import { Params } from '@angular/router';
 
 /**
  * Get a render page with the received params
@@ -25,14 +26,17 @@ export class DotPageRenderService {
      * @returns {Observable<DotPageRender>}
      * @memberof DotPageRenderService
      */
-    get({ viewAs, mode, url }: DotPageRenderOptions): Observable<DotPageRender.Parameters> {
+    get(
+        { viewAs, mode, url }: DotPageRenderOptions,
+        extraParams?: Params
+    ): Observable<DotPageRender.Parameters> {
         const params: DotPageRenderRequestParams = this.getOptionalViewAsParams(viewAs, mode);
 
         return this.coreWebService
             .requestView({
                 method: RequestMethod.Get,
                 url: `v1/page/render/${url.replace(/^\//, '')}`,
-                params: params
+                params: { ...params, ...extraParams }
             })
             .pipe(pluck('entity'));
     }

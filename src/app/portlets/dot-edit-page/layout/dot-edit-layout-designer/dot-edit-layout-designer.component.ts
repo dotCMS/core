@@ -130,7 +130,7 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
      * @memberof DotEditLayoutDesignerComponent
      */
     onCancel(): void {
-        this.dotRouterService.goToEditPage(this.pageState.page.pageURI);
+        this.dotRouterService.goToEditPage({ url: this.pageState.page.pageURI });
     }
 
     /**
@@ -255,20 +255,20 @@ export class DotEditLayoutDesignerComponent implements OnInit, OnDestroy {
     private cleanUpBody(body: DotLayoutBody): DotLayoutBody {
         return body
             ? {
-                rows: body.rows.map((row: DotLayoutRow) => {
-                    return {
-                        ...row,
-                        columns: row.columns.map((column: DotLayoutColumn) => {
-                            return {
-                                containers: column.containers,
-                                leftOffset: column.leftOffset,
-                                width: column.width,
-                                styleClass: column.styleClass
-                            };
-                        })
-                    };
-                })
-            }
+                  rows: body.rows.map((row: DotLayoutRow) => {
+                      return {
+                          ...row,
+                          columns: row.columns.map((column: DotLayoutColumn) => {
+                              return {
+                                  containers: column.containers,
+                                  leftOffset: column.leftOffset,
+                                  width: column.width,
+                                  styleClass: column.styleClass
+                              };
+                          })
+                      };
+                  })
+              }
             : null;
     }
 

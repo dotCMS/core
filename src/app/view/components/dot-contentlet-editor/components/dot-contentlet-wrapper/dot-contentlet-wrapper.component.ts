@@ -4,11 +4,12 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { DotAlertConfirmService } from '@services/dot-alert-confirm';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
-interface DotCMSEditPageEvent {
+export interface DotCMSEditPageEvent {
     name: string;
     data: {
         url: string;
-        language_id: string;
+        languageId: string;
+        hostId: string;
     };
 }
 
@@ -44,11 +45,12 @@ export class DotContentletWrapperComponent implements OnInit {
                 close: () => {
                     this.onClose();
                 },
-                'edit-page': (event: CustomEvent<DotCMSEditPageEvent>) => {
-                    this.dotRouterService.goToEditPage(
-                        event.detail.data.url,
-                        event.detail.data.language_id
-                    );
+                'edit-page': ({ detail: { data } }: CustomEvent<DotCMSEditPageEvent>) => {
+                    this.dotRouterService.goToEditPage({
+                        url: data.url,
+                        language_id: data.languageId,
+                        host_id: data.hostId
+                    });
                 },
                 'deleted-page': () => {
                     this.onClose();

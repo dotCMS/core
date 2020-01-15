@@ -37,16 +37,19 @@ describe('DotIframeEventsHandler', () => {
                     name: 'edit-page',
                     data: {
                         url: 'some/url',
-                        content: {
-                            languageId: '2'
-                        }
+                        languageId: '2',
+                        hostId: '123'
                     }
                 }
             })
         );
 
         expect(dotLoadingIndicatorService.show).toHaveBeenCalledTimes(1);
-        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith('some/url', '2');
+        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+            url: 'some/url',
+            language_id: '2',
+            host_id: '123'
+        });
     });
 
     it('should create a contentlet', () => {

@@ -54,7 +54,7 @@ describe('DotRouterService', () => {
         spyOn(service, 'goToEditPage');
         service.goToMain('/about/us');
 
-        expect(service.goToEditPage).toHaveBeenCalledWith('/about/us');
+        expect(service.goToEditPage).toHaveBeenCalledWith({ url: '/about/us' });
     });
 
     it('should go to edit content type page', () => {
@@ -71,14 +71,14 @@ describe('DotRouterService', () => {
     });
 
     it('should go to edit page', () => {
-        service.goToEditPage('abc/def');
+        service.goToEditPage({ url: 'abc/def' });
         expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
             queryParams: { url: 'abc/def' }
         });
     });
 
     it('should go to edit page with language_id', () => {
-        service.goToEditPage('abc/def', '1');
+        service.goToEditPage({ url: 'abc/def', language_id: '1' });
         expect(router.navigate).toHaveBeenCalledWith(['/edit-page/content'], {
             queryParams: { url: 'abc/def', language_id: '1' }
         });
@@ -123,7 +123,10 @@ describe('DotRouterService', () => {
     it('should return the correct  Portlet Id', () => {
         expect(service.getPortletId('#/c/content?test=value')).toBe('content');
         expect(service.getPortletId('/c/add/content?fds=ds')).toBe('content');
-        expect(service.getPortletId('c/content%3Ffilter%3DProducts/19d3aecc-5b68-4d98-ba1b-297d5859403c')).toBe('content');
+        expect(
+            service.getPortletId(
+                'c/content%3Ffilter%3DProducts/19d3aecc-5b68-4d98-ba1b-297d5859403c'
+            )
+        ).toBe('content');
     });
-
 });

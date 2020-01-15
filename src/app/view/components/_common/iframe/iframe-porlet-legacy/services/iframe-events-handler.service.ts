@@ -4,6 +4,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotContentletEditorService } from '../../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColors, DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import { DotIframeService } from '../../service/dot-iframe/dot-iframe.service';
+import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
 /**
  * Handle events triggered by the iframe in the IframePortletLegacyComponent
@@ -51,12 +52,13 @@ export class DotIframeEventsHandler {
         });
     }
 
-    private goToEditPage($event: CustomEvent): void {
+    private goToEditPage($event: CustomEvent<DotCMSEditPageEvent>): void {
         this.dotLoadingIndicatorService.show();
-        this.dotRouterService.goToEditPage(
-            $event.detail.data.url,
-            $event.detail.data.content.languageId
-        );
+        this.dotRouterService.goToEditPage({
+            url: $event.detail.data.url,
+            language_id: $event.detail.data.languageId,
+            host_id: $event.detail.data.hostId
+        });
     }
 
     private editContentlet($event: CustomEvent): void {
@@ -68,9 +70,10 @@ export class DotIframeEventsHandler {
     }
 
     private setDotcmsUiColors($event: CustomEvent): void {
-        this.dotUiColorsService.setColors(document.querySelector('html'), <DotUiColors>(
-            $event.detail.payload.colors
-        ));
+        this.dotUiColorsService.setColors(
+            document.querySelector('html'),
+            <DotUiColors>$event.detail.payload.colors
+        );
         this.dotIframeService.reloadColors();
     }
 }
