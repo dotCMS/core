@@ -101,6 +101,14 @@ public interface ContentletIndexAPI {
 
     void deactivateIndex(String indexName) throws DotDataException, IOException;
 
+    /**
+     * Gets the document count of a given index. In case the index does not exist, a runtime exception
+     * is thrown
+     * @param indexName
+     * @return Documents count - long
+     */
+    long getIndexDocumentCount(String indexName);
+
     public List<String> getCurrentIndex() throws DotDataException;
 
     public List<String> getNewIndex() throws DotDataException;

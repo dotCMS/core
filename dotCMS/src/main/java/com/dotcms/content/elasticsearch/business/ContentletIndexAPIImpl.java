@@ -84,6 +84,8 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -92,6 +94,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.reindex.BulkByScrollResponse;
 import org.elasticsearch.index.reindex.DeleteByQueryRequest;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
@@ -1236,6 +1239,21 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             builder.setReindexLive(null);
         }
         APILocator.getIndiciesAPI().point(builder.build());
+    }
+
+    @Override
+    public long getIndexDocumentCount(String indexName) {
+        final CountRequest countRequest = new CountRequest(
+                esIndexApi.getNameWithClusterIDPrefix(indexName));
+        final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+        countRequest.source(searchSourceBuilder);
+
+        final CountResponse countResponse = Sneaky
+                .sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
+                        .count(countRequest, RequestOptions.DEFAULT));
+
+        return countResponse.getCount();
     }
 
     public synchronized List<String> getCurrentIndex() throws DotDataException {

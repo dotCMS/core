@@ -3,8 +3,12 @@ package com.dotcms.rest.api.v1.index;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.*;
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
+import com.dotcms.content.elasticsearch.business.DotIndexException;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexHelper;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -30,7 +34,6 @@ import com.google.gson.Gson;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,11 +57,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.core.CountRequest;
-import org.elasticsearch.client.core.CountResponse;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
@@ -208,17 +206,8 @@ public class ESIndexResource {
         AdminLogger.log(ESIndexResource.class, "deactivateIndex", "Index deactivated: " + indexName);
     }
 
-    public static long indexDocumentCount(String indexName) {
-
-        final CountRequest countRequest = new CountRequest(indexName);
-        final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
-        countRequest.source(searchSourceBuilder);
-
-        final CountResponse countResponse = Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
-                .count(countRequest, RequestOptions.DEFAULT));
-
-        return countResponse.getCount();
+    public static long indexDocumentCount(final String indexName) {
+        return APILocator.getContentletIndexAPI().getIndexDocumentCount(indexName);
     }
 
     /**
