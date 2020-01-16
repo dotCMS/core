@@ -200,7 +200,7 @@ public class HTMLPageAssetRenderedBuilder {
             APILocator.getPermissionAPI().checkPermission(htmlPageAsset, PermissionLevel.READ, user);
         }
 
-        return VelocityModeHandler.modeHandler(pageMode, request, response, htmlPageAsset.getURI(), site).eval();
+        return VelocityModeHandler.modeHandler(htmlPageAsset, pageMode, request, response, site).eval();
     }
 
     private Template getTemplate(final PageMode mode) throws DotDataException {

@@ -88,7 +88,7 @@ public abstract class VelocityModeHandler {
             throw new DotRuntimeException(e);
         }
     }
-    
+
     public static final VelocityModeHandler modeHandler(final PageMode mode, final HttpServletRequest request, final HttpServletResponse response, final String uri, final Host host) {
         // Find the current language
         final long langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
@@ -106,9 +106,17 @@ public abstract class VelocityModeHandler {
         }
 
     }
-    
+
+    public static final VelocityModeHandler modeHandler(final IHTMLPage htmlPage,
+                                                        final PageMode mode,
+                                                        final HttpServletRequest request,
+                                                        final HttpServletResponse response,
+                                                        final Host host) {
+        return pageModeVelocityMap.get(mode).apply(request, response, htmlPage, host);
+    }
+
     public static final VelocityModeHandler modeHandler(final PageMode mode, final HttpServletRequest request, final HttpServletResponse response) {
-        return modeHandler(mode, request, response);
+        return modeHandler(mode, request, response, request.getRequestURI(), hostWebAPI.getCurrentHostNoThrow(request));
     }
 
     public final Template getTemplate(final IHTMLPage page, final PageMode mode) {
