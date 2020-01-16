@@ -93,4 +93,64 @@ public class HostUtilTest extends IntegrationTestBase {
         assertTrue( hostOpt.isPresent() );
         assertEquals("Should return the default one", hostOpt.get().getIdentifier(), host.getIdentifier());
     }
+
+    @Test
+    public void getHostFromPathOrCurrentHost_null_expected_empty () {
+
+        final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost(null, Constants.CONTAINER_FOLDER_PATH);
+        assertNotNull( hostOpt );
+        assertFalse( hostOpt.isPresent() );
+    }
+
+    @Test
+    public void getHostFromPathOrCurrentHost_empty_expected_empty () {
+
+        final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost("   ", Constants.CONTAINER_FOLDER_PATH);
+        assertNotNull( hostOpt );
+        assertFalse( hostOpt.isPresent() );
+    }
+
+    @Test
+    public void getHostFromPathOrCurrentHost_no_request_on_threadlocal_relative_path () {
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost("/application/containers/custom-container", Constants.CONTAINER_FOLDER_PATH);
+        assertNotNull( hostOpt );
+        assertTrue( hostOpt.isPresent() );
+        assertEquals("should return the default one", hostOpt.get().getIdentifier(), defaultHost.getIdentifier());
+    }
+
+    @Test
+    public void getHostFromPathOrCurrentHost_custom_host_request_on_threadlocal_relative_custom_host_path () {
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        final String hostName = "custom" + System.currentTimeMillis() + ".dotcms.com";
+        final Host host = new SiteDataGen().name(hostName).nextPersisted(true);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpSession        session = mock(HttpSession.class);
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(host.getIdentifier());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost("/application/containers/custom-container", Constants.CONTAINER_FOLDER_PATH);
+        assertNotNull( hostOpt );
+        assertTrue( hostOpt.isPresent() );
+        assertEquals("should return the custom one", hostOpt.get().getIdentifier(), host.getIdentifier());
+    }
+
+    @Test
+    public void getHostFromPathOrCurrentHost_default_host_request_on_threadlocal_absolute_custom_host_path () {
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        final String hostName = "custom" + System.currentTimeMillis() + ".dotcms.com";
+        final Host host = new SiteDataGen().name(hostName).nextPersisted(true);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpSession        session = mock(HttpSession.class);
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(defaultHost.getIdentifier());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost("//" + hostName + "/application/containers/custom-container", Constants.CONTAINER_FOLDER_PATH);
+        assertNotNull( hostOpt );
+        assertTrue( hostOpt.isPresent() );
+        assertEquals("should return the custom one", hostOpt.get().getIdentifier(), host.getIdentifier());
+    }
 }

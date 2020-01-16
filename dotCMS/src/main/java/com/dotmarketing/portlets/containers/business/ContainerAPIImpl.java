@@ -290,7 +290,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	private Tuple2<String, Host> getContainerPathHost(final String containerIdOrPath, final User user,
                                                       final Supplier<Host> resourceHost) throws DotSecurityException, DotDataException {
 
-		return HostUtil.splitPathHost(containerIdOrPath, user, resourceHost);
+		return HostUtil.splitPathHost(containerIdOrPath, user, Constants.CONTAINER_FOLDER_PATH, resourceHost);
 	}
 
     @CloseDBIfOpened

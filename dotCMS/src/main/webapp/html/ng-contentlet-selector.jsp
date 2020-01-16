@@ -21,6 +21,7 @@
 <%@ page import="com.dotmarketing.business.web.WebAPILocator" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ page import="com.dotmarketing.util.HostUtil" %>
+<%@ page import="com.dotmarketing.util.Constants" %>
 
 <%
     String containerIdentifier = request.getParameter("container_id");
@@ -28,7 +29,7 @@
     Container container = null;
     if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerIdentifier)) {
 
-        final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost(containerIdentifier);
+        final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost(containerIdentifier, Constants.CONTAINER_FOLDER_PATH);
         final Host   host            = hostOpt.isPresent()? hostOpt.get():WebAPILocator.getHostWebAPI().getHost(request);
         final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(host.getHostname(), containerIdentifier);
         container = APILocator.getContainerAPI().getWorkingContainerByFolderPath(relativePath, host, APILocator.getUserAPI().getSystemUser(), false);
