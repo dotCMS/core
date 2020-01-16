@@ -153,4 +153,19 @@ public class HostUtilTest extends IntegrationTestBase {
         assertTrue( hostOpt.isPresent() );
         assertEquals("should return the custom one", hostOpt.get().getIdentifier(), host.getIdentifier());
     }
+
+    @Test
+    public void getHostFromPathOrCurrentHost_default_host_request_on_threadlocal_absolute_non_existing_host_path () {
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpSession        session = mock(HttpSession.class);
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(WebKeys.CMS_SELECTED_HOST_ID)).thenReturn(defaultHost.getIdentifier());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost("//noexist.dotcms.com/application/containers/custom-container", Constants.CONTAINER_FOLDER_PATH);
+        assertNotNull( hostOpt );
+        assertTrue( hostOpt.isPresent() );
+        assertEquals("should return the custom one", hostOpt.get().getIdentifier(), defaultHost.getIdentifier());
+    }
 }
