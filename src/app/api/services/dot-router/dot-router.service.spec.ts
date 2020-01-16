@@ -2,7 +2,7 @@ import { DotRouterService } from './dot-router.service';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { RouterTestingModule } from '@angular/router/testing';
 import { LoginService } from 'dotcms-js';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { async } from '@angular/core/testing';
 
 class RouterMock {
@@ -19,6 +19,20 @@ class RouterMock {
             resolve(true);
         });
     });
+
+    getCurrentNavigation() {
+        return {
+            finalUrl: {}
+        };
+    }
+}
+
+class ActivatedRouteMock {
+    snapshot = {
+        queryParams: {
+            hello: 'world'
+        }
+    }
 }
 
 describe('DotRouterService', () => {
@@ -36,6 +50,10 @@ describe('DotRouterService', () => {
                 {
                     provide: Router,
                     useClass: RouterMock
+                },
+                {
+                    provide: ActivatedRoute,
+                    useClass: ActivatedRouteMock
                 }
             ],
             imports: [RouterTestingModule]
@@ -44,6 +62,27 @@ describe('DotRouterService', () => {
         service = testbed.get(DotRouterService);
         router = testbed.get(Router);
     }));
+
+    it('should get queryParams from Router', () => {
+        spyOn(router, 'getCurrentNavigation').and.returnValue({
+                finalUrl: {
+                    queryParams: {
+                        hola: 'mundo'
+                    }
+                }
+        })
+        expect(service.queryParams).toEqual({
+            hola: 'mundo'
+        });
+    });
+
+    it('should get queryParams from ActivatedRoute', () => {
+        spyOn(router, 'getCurrentNavigation').and.returnValue(null)
+        expect(service.queryParams).toEqual({
+            hello: 'world'
+        });
+    });
+
 
     it('should go to main', () => {
         service.goToMain();
