@@ -373,7 +373,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final Language language = this.getCurrentLanguage(request);
 
-        return APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, language.getId(), mode.showLive, userAPI.getSystemUser(),
+        return this.htmlPageAssetAPI.findByIdLanguageFallback(id, language.getId(), mode.showLive, userAPI.getSystemUser(),
                 mode.respectAnonPerms);
     }
 
