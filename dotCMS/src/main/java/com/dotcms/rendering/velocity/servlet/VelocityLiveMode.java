@@ -35,7 +35,18 @@ import java.io.*;
 import java.util.Optional;
 
 public class VelocityLiveMode extends VelocityModeHandler {
-    public VelocityLiveMode(
+
+    @Deprecated
+    public VelocityLiveMode(final HttpServletRequest request, final HttpServletResponse response, final String uri, final Host host) {
+        this(
+                request,
+                response,
+                VelocityModeHandler.getHtmlPageFromURI(PageMode.get(request), request, response, uri, host),
+                host
+        );
+    }
+
+    protected VelocityLiveMode(
             final HttpServletRequest request,
             final HttpServletResponse response,
             final IHTMLPage htmlPage,

@@ -22,7 +22,17 @@ import java.io.*;
 
 public class VelocityPreviewMode extends VelocityModeHandler {
 
-    public VelocityPreviewMode(
+    @Deprecated
+    public VelocityPreviewMode(final HttpServletRequest request, final HttpServletResponse response, final String uri, final Host host) {
+        this(
+                request,
+                response,
+                VelocityModeHandler.getHtmlPageFromURI(PageMode.get(request), request, response, uri, host),
+                host
+        );
+    }
+
+    protected VelocityPreviewMode(
             final HttpServletRequest request,
             final HttpServletResponse response,
             final IHTMLPage htmlPage,

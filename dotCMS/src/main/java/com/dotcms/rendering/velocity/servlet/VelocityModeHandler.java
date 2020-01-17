@@ -49,7 +49,24 @@ public abstract class VelocityModeHandler {
             .put(PageMode.NAVIGATE_EDIT_MODE, VelocityNavigateEditMode::new)
             .build();
 
-    public VelocityModeHandler(
+    /**
+     * @deprecated use {@link VelocityModeHandler#modeHandler(PageMode, HttpServletRequest, HttpServletResponse, String, Host)} instead
+     * @param request
+     * @param response
+     * @param uri
+     * @param host
+     */
+    @Deprecated
+    public VelocityModeHandler(final HttpServletRequest request, final HttpServletResponse response, final String uri, final Host host) {
+        this(
+                request,
+                response,
+                VelocityModeHandler.getHtmlPageFromURI(PageMode.get(request), request, response, uri, host),
+                host
+        );
+    }
+
+    protected VelocityModeHandler(
             final HttpServletRequest request,
             final HttpServletResponse response,
             final IHTMLPage htmlPage,
@@ -91,20 +108,23 @@ public abstract class VelocityModeHandler {
 
     public static final VelocityModeHandler modeHandler(final PageMode mode, final HttpServletRequest request, final HttpServletResponse response, final String uri, final Host host) {
         // Find the current language
+        final IHTMLPage htmlPage= getHtmlPageFromURI(mode, request, response, uri, host);
+        return pageModeVelocityMap.get(mode).apply(request, response, htmlPage, host);
+    }
+
+    protected static IHTMLPage getHtmlPageFromURI(PageMode mode, HttpServletRequest request, HttpServletResponse response, String uri, Host host) {
         final long langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
         try {
             // now we check identifier cache first (which DOES NOT have a 404 cache )
             final Identifier id = APILocator.getIdentifierAPI().find(host, uri);
 
-            final IHTMLPage htmlPage = APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, langId, mode.showLive,
+            return APILocator.getHTMLPageAssetAPI().findByIdLanguageFallback(id, langId, mode.showLive,
                     APILocator.systemUser(), mode.respectAnonPerms);
 
-            return pageModeVelocityMap.get(mode).apply(request, response, htmlPage, host);
         } catch (DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }
-
     }
 
     public static final VelocityModeHandler modeHandler(final IHTMLPage htmlPage,

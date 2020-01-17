@@ -41,7 +41,17 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
             "</script>";
 
 
-    public VelocityNavigateEditMode(
+    @Deprecated
+    public VelocityNavigateEditMode(final HttpServletRequest request, final HttpServletResponse response, final String uri, final Host host) {
+        this(
+                request,
+                response,
+                VelocityModeHandler.getHtmlPageFromURI(PageMode.get(request), request, response, uri, host),
+                host
+        );
+    }
+
+    protected VelocityNavigateEditMode(
             final HttpServletRequest request,
             final HttpServletResponse response,
             final IHTMLPage htmlPage,

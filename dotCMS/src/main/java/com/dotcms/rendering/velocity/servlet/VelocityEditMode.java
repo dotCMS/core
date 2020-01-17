@@ -26,7 +26,17 @@ public class VelocityEditMode extends VelocityModeHandler {
     private final User user;
     private final static String REORDER_MENU_URL="/c/portal/layout?p_l_id={0}&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu";
 
-    public VelocityEditMode(
+    @Deprecated
+    public VelocityEditMode(final HttpServletRequest request, final HttpServletResponse response, final String uri, final Host host) {
+        this(
+                request,
+                response,
+                VelocityModeHandler.getHtmlPageFromURI(PageMode.get(request), request, response, uri, host),
+                host
+        );
+    }
+
+    protected VelocityEditMode(
             final HttpServletRequest request,
             final HttpServletResponse response,
             final IHTMLPage htmlPage,
