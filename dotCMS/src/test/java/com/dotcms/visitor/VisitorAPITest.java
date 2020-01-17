@@ -76,7 +76,8 @@ public class VisitorAPITest extends UnitTestBase {
     @Test
     public void testGetVisitor_When_force_session_is_false_returns_different_visitors() {
         // Session and attribute ready mock request
-        HttpServletRequest mockRequest = new MockHttpRequest("localhost", "/").request();
+        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getSession(false)).thenReturn(null);
 
         LanguageWebAPI mockLanguageWebAPI = mock(LanguageWebAPI.class);
         when(mockLanguageWebAPI.getLanguage(mockRequest)).thenReturn(getLanguage());
@@ -85,12 +86,12 @@ public class VisitorAPITest extends UnitTestBase {
         Optional<Visitor> visitor1 = visitorAPI.getVisitor(mockRequest, false);
 
         assertTrue(visitor1.isPresent());
-        
+
         Optional<Visitor> visitor2 = visitorAPI.getVisitor(mockRequest, false);
         
         assertTrue(visitor2.isPresent());
         
-        assertTrue(visitor1 != visitor2);
+        assertTrue(visitor1.get() != visitor2.get());
         
     }
     
