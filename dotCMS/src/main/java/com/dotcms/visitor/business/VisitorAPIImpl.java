@@ -51,58 +51,46 @@ public class VisitorAPIImpl implements VisitorAPI {
     }
 
     @Override
-    public Optional<Visitor> getVisitor(HttpServletRequest request, boolean create) {
+    public Optional<Visitor> getVisitor(HttpServletRequest request, boolean forceSession) {
 
         DotPreconditions.checkNotNull(request, IllegalArgumentException.class, "Null Request");
+        final HttpSession session = request.getSession(forceSession);
+        
+        final Visitor visitor = session !=null && session.getAttribute(WebKeys.VISITOR)!=null
+                        ? (Visitor) session.getAttribute(WebKeys.VISITOR)
+                        : request.getAttribute(WebKeys.VISITOR)!=null
+                            ?  (Visitor) request.getAttribute(WebKeys.VISITOR)
+                            :  createVisitor(request);
 
-        Optional<Visitor> visitorOpt;
+        if(forceSession) {
+            session.setAttribute(WebKeys.VISITOR, visitor);
+        }
+        request.setAttribute(WebKeys.VISITOR, visitor);
+
+        if (Objects.nonNull(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER))) {
 
 
-        if(!create) {
+            final PageMode pageMode = PageMode.get(request);
+            try {
 
-            final HttpSession session = request.getSession(false);
-            visitorOpt = Objects.isNull(session)?
-                    Optional.empty():Optional.ofNullable((Visitor) session.getAttribute(WebKeys.VISITOR));
-        } else {
-            // lets create a session if not already created
-            final HttpSession session = request.getSession();
-            Visitor visitor           = (Visitor) session.getAttribute(WebKeys.VISITOR);
-
-            if(Objects.isNull(visitor)) {
-                visitor = createVisitor(request);
-                session.setAttribute(WebKeys.VISITOR, visitor);
+                final User user = com.liferay.portal.util.PortalUtil.getUser(request);
+                final Persona persona = pageMode.showLive
+                                ? personaAPI.findLive(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true)
+                                : personaAPI.find(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true);
+                visitor.setPersona(persona);
+            } catch (DotContentletStateException e) {
+                // This is meant to catch the "Can't find contentlet" error.
+                Logger.debug(this, e.getMessage(), e);
+                visitor.setPersona(null);
+            } catch (Exception e) {
+                // Anything else will be reported here.
+                Logger.error(this, e);
+                visitor.setPersona(null);
             }
-
-            visitorOpt = Optional.of(visitor);
         }
         
-        // If we are forcing a persona on a visitor
-        if(visitorOpt.isPresent()) {
 
-			if(Objects.nonNull(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER))){
-
-				final Visitor visitor   = visitorOpt.get();
-				final PageMode pageMode = PageMode.get(request);
-				try {
-
-					final User user = com.liferay.portal.util.PortalUtil.getUser(request);
-					final Persona persona = pageMode.showLive?
-                            personaAPI.findLive(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true):
-                            personaAPI.find(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true);
-					visitor.setPersona(persona);
-				}catch(DotContentletStateException e) {
-				    // This is meant to catch the "Can't find contentlet" error.
-                    Logger.debug(this, e.getMessage(), e);
-                    visitor.setPersona(null);
-                } catch(Exception e) {
-                    //Anything else will be reported here.
-                    Logger.error(this, e);
-					visitor.setPersona(null);
-				}
-			}
-        }
-
-        return visitorOpt;
+        return Optional.of(visitor);
     }
 
     public void removeVisitor(final HttpServletRequest request){

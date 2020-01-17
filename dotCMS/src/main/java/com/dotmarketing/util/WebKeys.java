@@ -22,7 +22,7 @@ public final class WebKeys {
 	public static final String IMAGE_TOOL_SAVE_FILES = "_imageToolSaveFile";
 	public static final String LONG_LIVED_DOTCMS_ID_COOKIE = "dmid";
 	public static final String ONCE_PER_VISIT_COOKIE = "opvc";
-	public static final String SITE_VISITS_COOKIE = "sitevisitscookie";
+	public static final String SITE_VISITS_COOKIE = "svc";
 
 	public static final String DIRECTOR_URL = "com.dotmarketing.preview.DirectorURL";
 	public static final String VIEW_FOLDERS_URL = "com.dotmarketing.preview.ViewFolderURL";
