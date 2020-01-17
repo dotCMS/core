@@ -5,6 +5,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -70,7 +71,7 @@ public class VelocityServlet extends HttpServlet {
                         PageContextBuilder.builder()
                                 .setPageUri(uri)
                                 .setPageMode(mode)
-                                .setUser(APILocator.getLoginServiceAPI().getLoggedInUser())
+                                .setUser(WebAPILocator.getUserWebAPI().getLoggedInUser(request))
                                 .setPageMode(mode)
                                 .build(),
                         request,
