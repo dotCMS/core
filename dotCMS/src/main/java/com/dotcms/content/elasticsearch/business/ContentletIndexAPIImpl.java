@@ -1242,7 +1242,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     @Override
-    public long getIndexDocumentCount(String indexName) {
+    public long getIndexDocumentCount(final String indexName) {
         final CountRequest countRequest = new CountRequest(
                 esIndexApi.getNameWithClusterIDPrefix(indexName));
         final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
