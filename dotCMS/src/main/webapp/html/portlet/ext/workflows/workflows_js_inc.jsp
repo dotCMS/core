@@ -90,7 +90,7 @@
 	}
 
 		dojo.connect(window, "onresize", this, "resizeBrowser");
-
+		dojo.require("dotcms.dojo.push.PushHandler");
 	    dojo.declare("dotcms.dijit.contentlet.ContentAdmin", null, {
 	    	contentletIdentifier : "",
 	    	contentletInode : "",
