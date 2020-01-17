@@ -24,6 +24,8 @@ import { DotMenuService } from '@services/dot-menu.service';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotGravatarModule } from '../dot-gravatar/dot-gravatar.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { DotMessageService } from '@services/dot-messages-service';
+import { Observable } from 'rxjs';
 
 describe('DotToolbarUserComponent', () => {
     let comp: DotToolbarUserComponent;
@@ -33,6 +35,7 @@ describe('DotToolbarUserComponent', () => {
     let loginService: LoginService;
     let locationService: Location;
     let dotNavigationService: DotNavigationService;
+    let dotMessageService: DotMessageService;
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
@@ -54,7 +57,7 @@ describe('DotToolbarUserComponent', () => {
                 IframeOverlayService,
                 Jsonp,
                 DotNavigationService,
-                DotMenuService,
+                DotMenuService
             ],
             imports: [
                 BrowserAnimationsModule,
@@ -63,7 +66,7 @@ describe('DotToolbarUserComponent', () => {
                 DotIconButtonModule,
                 DotIconModule,
                 SearchableDropDownModule,
-                RouterTestingModule,
+                RouterTestingModule
             ]
         });
 
@@ -74,16 +77,46 @@ describe('DotToolbarUserComponent', () => {
         loginService = de.injector.get(LoginService);
         locationService = de.injector.get(LOCATION_TOKEN);
         dotNavigationService = de.injector.get(DotNavigationService);
+        dotMessageService = de.injector.get(DotMessageService);
+
+        comp.auth = mockAuth;
     }));
 
+    it('should call get message until if result is not empty', () => {
+        const mockFunction = (times) => {
+            let count = 0;
+            return Observable.create((observer) => {
+                if (count++ > times) {
+                    observer.next({
+                        hello: 'world'
+                    });
+                } else {
+                    observer.next({});
+                }
+            });
+        };
+
+        spyOn(dotMessageService, 'getMessages').and.callFake(() => {
+            return mockFunction(2);
+        });
+
+        fixture.detectChanges();
+
+        expect(comp.i18nMessages).toEqual({
+            hello: 'world'
+        });
+
+    });
+
     it('should call "logoutAs" in "LoginService" on logout click', async(() => {
-        spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(new Promise((resolve) => {
-            resolve(true);
-        }));
+        spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
+            new Promise((resolve) => {
+                resolve(true);
+            })
+        );
         spyOn(locationService, 'reload');
         spyOn(loginService, 'logoutAs').and.callThrough();
 
-        comp.auth = mockAuth;
         fixture.detectChanges();
 
         dotDropdownComponent = de.query(By.css('dot-dropdown-component')).componentInstance;
