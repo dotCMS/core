@@ -623,6 +623,16 @@
 		<auth-constraint>
 		</auth-constraint>
 	</security-constraint>
+
+	<security-constraint>
+		<display-name>Secure area</display-name>
+		<web-resource-collection>
+			<web-resource-name>assets</web-resource-name>
+			<url-pattern>/assets/*</url-pattern>
+		</web-resource-collection>
+		<auth-constraint>
+		</auth-constraint>
+	</security-constraint>
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SECURITY-CONSTRAINTS -->

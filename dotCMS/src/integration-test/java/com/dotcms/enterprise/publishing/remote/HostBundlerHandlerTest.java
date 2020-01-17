@@ -14,6 +14,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -80,6 +81,7 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getHostSet()).thenReturn(contentSet);
             Mockito.when(config.isDownloading()).thenReturn(true);
             Mockito.when(config.getOperation()).thenReturn(Operation.UNPUBLISH);
+            Mockito.when(config.getId()).thenReturn(UUIDGenerator.generateUuid());
             hostBundler.setConfig(config);
 
             //Creating temp bundle dir
