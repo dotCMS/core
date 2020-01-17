@@ -367,7 +367,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
      * @see ContentletIndexAPI
      * @see ContentletIndexAPIImpl
      */
-    @Ignore
     @Test
     public void activateDeactivateIndex () throws Exception {
 

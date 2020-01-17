@@ -1216,9 +1216,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final IndiciesInfo.Builder builder = IndiciesInfo.Builder.copy(info);
 
         if (IndexType.WORKING.is(indexName)) {
-            builder.setWorking(indexName);
+            builder.setWorking(esIndexApi.getNameWithClusterIDPrefix(indexName));
         } else if (IndexType.LIVE.is(indexName)) {
-            builder.setLive(indexName);
+            builder.setLive(esIndexApi.getNameWithClusterIDPrefix(indexName));
         }
         APILocator.getIndiciesAPI().point(builder.build());
     }
