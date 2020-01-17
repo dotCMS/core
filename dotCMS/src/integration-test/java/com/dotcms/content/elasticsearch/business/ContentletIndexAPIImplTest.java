@@ -88,6 +88,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -366,6 +367,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
      * @see ContentletIndexAPI
      * @see ContentletIndexAPIImpl
      */
+    @Ignore
     @Test
     public void activateDeactivateIndex () throws Exception {
 
