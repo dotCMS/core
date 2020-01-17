@@ -5,7 +5,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
+import static org.mockito.Matchers.anyBoolean;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
@@ -37,25 +37,67 @@ public class VisitorAPITest extends UnitTestBase {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         when(mockRequest.getSession(false)).thenReturn(null);
         Optional<Visitor> visitor = new VisitorAPIImpl().getVisitor(mockRequest, false);
-        assertFalse(visitor.isPresent());
+        assertTrue(visitor.isPresent());
     }
 
+    /**
+     * Insures that the Visitor object gets stored in session when forceSession is true
+     * and that visitor in session gets returned if it exists
+     */
     @Test
     public void testGetVisitor_WhenCreateEqualsTrue_ReturnVisitor() {
-        HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-        HttpSession mockSession = mock(HttpSession.class);
-        when(mockRequest.getSession()).thenReturn(mockSession);
+        
+        // Session and attribute ready mock request
+        HttpServletRequest mockRequest = new MockHttpRequest("localhost", "/").request();
+        
+        LanguageWebAPI mockLanguageWebAPI = mock(LanguageWebAPI.class);
+        when(mockLanguageWebAPI.getLanguage(mockRequest)).thenReturn(getLanguage());
+
+        VisitorAPI visitorAPI =  new VisitorAPIImpl(mockLanguageWebAPI,new PersonaAPIImpl());
+        Optional<Visitor> visitor = visitorAPI.getVisitor(mockRequest, true);
+
+        assertTrue(visitor.isPresent());
+
+        
+        Optional<Visitor> visitor2 = visitorAPI.getVisitor(mockRequest, false);
+        
+        assertTrue(visitor2.isPresent());
+        
+        // Visitor is stored in session
+        assertTrue(visitor.get() == visitor2.get());
+        
+        
+    }
+
+    /**
+     * If getVisitor(forceSession==false) then the visitorAPI should create a new visitor 
+     * every time one is requested 
+     */
+    @Test
+    public void testGetVisitor_When_force_session_is_false_returns_different_visitors() {
+        // Session and attribute ready mock request
+        HttpServletRequest mockRequest = new MockHttpRequest("localhost", "/").request();
 
         LanguageWebAPI mockLanguageWebAPI = mock(LanguageWebAPI.class);
         when(mockLanguageWebAPI.getLanguage(mockRequest)).thenReturn(getLanguage());
 
-        new VisitorAPIImpl(mockLanguageWebAPI,new PersonaAPIImpl());
-        Optional<Visitor> visitor = new VisitorAPIImpl().getVisitor(mockRequest, true);
-        verify(mockRequest).getSession();
-        assertTrue(visitor.isPresent());
-        verify(mockSession).setAttribute(WebKeys.VISITOR, visitor.get());
-    }
+        VisitorAPI visitorAPI =  new VisitorAPIImpl(mockLanguageWebAPI,new PersonaAPIImpl());
+        Optional<Visitor> visitor1 = visitorAPI.getVisitor(mockRequest, false);
 
+        assertTrue(visitor1.isPresent());
+        
+        Optional<Visitor> visitor2 = visitorAPI.getVisitor(mockRequest, false);
+        
+        assertTrue(visitor2.isPresent());
+        
+        assertTrue(visitor1 != visitor2);
+        
+    }
+    
+    
+    
+    
+    
     /**
      * Should remove {@link WebKeys#VISITOR} from session
      */
