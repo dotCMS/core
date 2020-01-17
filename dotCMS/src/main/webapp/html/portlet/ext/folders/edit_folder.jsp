@@ -166,9 +166,9 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
 						<dd>
 							<% if (parentFolder != null) { %>
-								<input id="pathToFolder" readonly="true" style="width:250px;border:0;" value="<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %><%= folder.getName() %>" />
+								<input id="pathToFolder" readonly="true" style="width:1000px;border:0;" value="<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %><%= folder.getName() %>" />
 							<% } else { %>
-								<input id="pathToFolder" readonly="true" style="width:250px;border:0;" value="/<%= folder.getName() %>" />
+								<input id="pathToFolder" readonly="true" style="width:1000px;border:0;" value="/<%= folder.getName() %>" />
 							<% } %>
 							<!--<html:hidden property="name" />-->
 						</dd>
@@ -176,9 +176,9 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
 							<dd>
 								<% if (parentFolder != null) { %>
-									<input id="pathToFolder" readonly="true" style="width:250px;border:0;" value="<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>" />
+									<input id="pathToFolder" readonly="true" style="width:1000px;border:0;" value="<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>" />
 								<% } else { %>
-									<input id="pathToFolder" readonly="true" style="width:250px;border:0;" value="/" />
+									<input id="pathToFolder" readonly="true" style="width:1000px;border:0;" value="/" />
 								<% } %>
 								<!--<html:hidden property="name" />-->
 							</dd>
