@@ -102,6 +102,7 @@ public abstract class VelocityModeHandler {
             serve(out);
             return new String(out.toByteArray());
         } catch (DotDataException | IOException | DotSecurityException e) {
+            Logger.debug(VelocityModeHandler.class, e.getMessage(), e);
             throw new DotRuntimeException(e);
         }
     }

@@ -539,6 +539,7 @@ public class CMSUrlUtil {
 					? (String) request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE)
 					: request.getRequestURI(), "UTF-8");
 		} catch (UnsupportedEncodingException e) {
+			Logger.debug(CMSUrlUtil.class, e.getMessage(), e);
 			throw new DotRuntimeException(e);
 		}
 	}
