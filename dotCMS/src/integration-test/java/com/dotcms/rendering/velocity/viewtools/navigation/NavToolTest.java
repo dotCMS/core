@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
@@ -187,22 +188,16 @@ public class NavToolTest extends IntegrationTestBase{
             //Create a FileAsset In English With ShowOnMenu = true
             final File file = File.createTempFile("fileTestEngTrue", ".txt");
             FileUtil.write(file, "helloworld");
-            final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(systemFolder, file);
-            final Contentlet fileAsset = fileAssetDataGen.nextPersisted();
-            fileAssetShown = APILocator.getContentletAPI().find(fileAsset.getInode(), user, false);
-            fileAssetShown.setStringProperty(FileAssetAPI.SHOW_ON_MENU, "true");
-            fileAssetShown.setInode("");
-            fileAssetShown = APILocator.getContentletAPI().checkin(fileAssetShown, user, false);
-            APILocator.getContentletAPI().publish(fileAssetShown, user, false);
-            APILocator.getContentletAPI().isInodeIndexed(fileAssetShown.getInode(), true);
+            fileAssetShown = new FileAssetDataGen(systemFolder, file)
+                    .host(site).setProperty(FileAssetAPI.SHOW_ON_MENU, "true").nextPersisted();
+            ContentletDataGen.publish(fileAssetShown);
 
             //Create a FileAsset In English With ShowOnMenu = false
             final File file2 = File.createTempFile("fileTestEngFalse", ".txt");
             FileUtil.write(file2, "helloworld");
-            final FileAssetDataGen fileAssetDataGen2 = new FileAssetDataGen(systemFolder, file2);
-            fileAssetNotShown = fileAssetDataGen2.nextPersisted();
-            APILocator.getContentletAPI().publish(fileAssetNotShown, user, false);
-            APILocator.getContentletAPI().isInodeIndexed(fileAssetNotShown.getInode(), true);
+            fileAssetNotShown = new FileAssetDataGen(systemFolder, file2)
+                    .host(site).setProperty(FileAssetAPI.SHOW_ON_MENU, "false").nextPersisted();
+            ContentletDataGen.publish(fileAssetNotShown);
 
             //Get the Nav at the Root Level
             final NavResult navResult = new NavTool()
@@ -213,7 +208,7 @@ public class NavToolTest extends IntegrationTestBase{
             final int currentShowOnMenuItems = findShowOnMenuUnderFolder(systemFolder, user);
 
             assertNotNull(navResult.getChildren());
-            assertFalse(navResult.getChildren().isEmpty());
+            assertEquals(currentShowOnMenuItems,navResult.getChildren().size());
         }finally {
             //Now remove all the pages that we created for this tests.
             if(fileAssetShown!=null) {
@@ -407,6 +402,43 @@ public class NavToolTest extends IntegrationTestBase{
         }
 
         return showOnMenu;
+    }
+
+    @Test
+    public void testNavTool_rootLevel_returnItemsOnlyForSite() throws Exception
+    {
+        //Get SystemFolder
+        final Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
+        //Create new Host
+        final Host newHost1 = new SiteDataGen().nextPersisted();
+
+        //Create contentlets on one host
+        final File file = File.createTempFile("fileTestEngTrue", ".txt");
+        FileUtil.write(file, "helloworld");
+        final Contentlet fileAssetOneHost = new FileAssetDataGen(systemFolder, file)
+                .host(newHost1).setProperty(FileAssetAPI.SHOW_ON_MENU, "true").nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Contentlet pageAssetOneHost = new HTMLPageDataGen(systemFolder, template)
+                .showOnMenu(true).host(newHost1).nextPersisted();
+        ContentletDataGen.publish(pageAssetOneHost);
+        ContentletDataGen.publish(fileAssetOneHost);
+
+        //Create new Host
+        final Host newHost2 = new SiteDataGen().nextPersisted();
+
+        //Create contentlets on default host
+        final Contentlet fileAssetNewHost = new FileAssetDataGen(systemFolder, file)
+                .host(newHost2).setProperty(FileAssetAPI.SHOW_ON_MENU, "true").nextPersisted();
+        final Contentlet pageAssetNewHost = new HTMLPageDataGen(systemFolder, template)
+                .showOnMenu(true).host(newHost2).nextPersisted();
+        ContentletDataGen.publish(pageAssetNewHost);
+        ContentletDataGen.publish(fileAssetNewHost);
+
+        NavResult navResult = new NavTool().getNav(newHost2, systemFolder.getPath());
+        assertNotNull(navResult);
+        assertEquals(2,navResult.getChildren().size());
+
     }
 
 }
