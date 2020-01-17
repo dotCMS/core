@@ -51,13 +51,17 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     private final LanguageWebAPI languageWebAPI;
 
     @FunctionalInterface
+    /**
+     * It is a function to search a {@link HTMLPageAsset}, if the page is resolve using URL MAP then the URL Map
+     * information is returned too
+     */
     private interface SearchPageFunction {
         Optional<HTMLPageUrl> search(final PageContext context,
                              final Host host,
                              final HttpServletRequest request) throws DotDataException, DotSecurityException;
     }
 
-    final List<SearchPageFunction> pageSearchers = list(
+    private final List<SearchPageFunction> pageSearchers = list(
             (context, host, request) -> findPageByContext(host, context),
             (context, host, request) -> findByURLMap(context, host, request)
     );
@@ -337,7 +341,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             request.setAttribute(Constants.CMS_FILTER_URI_OVERRIDE, context.getPageUri());
 
             return Optional.of(new HTMLPageUrl(
-                    (HTMLPageAsset) getPageById(context.getPageMode(), host, urlMapInfo.getIdentifier().getId()),
+                    (HTMLPageAsset) getPageById(context.getPageMode(), urlMapInfo.getIdentifier().getId()),
                     context.getPageUri(),
                     urlMapInfo.getContentlet().isLive()
 
@@ -367,11 +371,11 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return htmlPage;
     }
 
-    private IHTMLPage getPageById(final PageMode mode, final Host host, final String id)
+    private IHTMLPage getPageById(final PageMode mode, final String id)
             throws DotDataException, DotSecurityException {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        final Language language = this.getCurrentLanguage(request);
+        final Language language = request != null ? this.getCurrentLanguage(request) : this.languageAPI.getDefaultLanguage();
 
         return this.htmlPageAssetAPI.findByIdLanguageFallback(id, language.getId(), mode.showLive, userAPI.getSystemUser(),
                 mode.respectAnonPerms);
