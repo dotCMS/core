@@ -76,7 +76,6 @@ public class VelocityServlet extends HttpServlet {
                         request,
                         response
                 );
-
                 response.getOutputStream().write(pageHtml.getBytes());
             } catch (ResourceNotFoundException rnfe) {
                 Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);

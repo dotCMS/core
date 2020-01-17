@@ -76,7 +76,7 @@ public class VelocityNavigateEditMode  extends VelocityModeHandler {
         final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
         final String renderedPageString = objectWriter.writeValueAsString(htmlPageAssetRendered)
                 .replace("</script>", "\\</script\\>");
-        this.response.getOutputStream().write(String.format(JS_CODE, renderedPageString).getBytes());
+        out.write(String.format(JS_CODE, renderedPageString).getBytes());
     }
 
     private PageMode getMode() {
