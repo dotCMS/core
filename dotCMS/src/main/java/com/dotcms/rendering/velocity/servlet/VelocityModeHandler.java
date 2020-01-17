@@ -77,7 +77,7 @@ public abstract class VelocityModeHandler {
         this.host = host;
     }
 
-    public void setMode(PageMode mode) {
+    public void setMode(final PageMode mode) {
         this.mode = mode;
     }
 

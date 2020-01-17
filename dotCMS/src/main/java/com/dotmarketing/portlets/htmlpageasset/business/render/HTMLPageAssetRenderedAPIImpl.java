@@ -285,7 +285,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return htmlPageUrl;
     }
 
-    private void checkPagePermission(PageContext context, IHTMLPage htmlPageAsset) throws DotDataException, DotSecurityException {
+    private void checkPagePermission(final PageContext context, final IHTMLPage htmlPageAsset)
+            throws DotDataException, DotSecurityException {
+        
         final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(
                 htmlPageAsset,
                 PermissionLevel.READ.getType(),

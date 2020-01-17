@@ -61,24 +61,24 @@ public class VelocityServletIntegrationTest {
 
         request = mock(HttpServletRequest.class);
         // Mock setAttribute
-        Mockito.doAnswer(new Answer<Void>() {
+        doAnswer(new Answer<Void>() {
             @Override
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                String key = invocation.getArgumentAt(0, String.class);
-                Object value = invocation.getArgumentAt(1, Object.class);
+            public Void answer(final InvocationOnMock invocation) throws Throwable {
+                final String key = invocation.getArgumentAt(0, String.class);
+                final Object value = invocation.getArgumentAt(1, Object.class);
                 attributes.put(key, value);
                 return null;
             }
-        }).when(request).setAttribute(Mockito.anyString(), Mockito.anyObject());
+        }).when(request).setAttribute(anyString(), anyObject());
 
         // Mock getAttribute
-        Mockito.doAnswer(new Answer<Object>() {
+        doAnswer(new Answer<Object>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                String key = invocation.getArgumentAt(0, String.class);
+            public Object answer(final InvocationOnMock invocation) throws Throwable {
+                final String key = invocation.getArgumentAt(0, String.class);
                 return attributes.get(key);
             }
-        }).when(request).getAttribute(Mockito.anyString());
+        }).when(request).getAttribute(anyString());
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
         when(request.getParameter("host_id")).thenReturn(host.getIdentifier());
@@ -87,7 +87,7 @@ public class VelocityServletIntegrationTest {
         when(session.getAttribute(WebKeys.PAGE_MODE_SESSION)).thenReturn(PageMode.LIVE);
         when(request.getSession()).thenReturn(session);
         when(request.getSession(true)).thenReturn(session);
-        Clickstream clickstream = mock(Clickstream.class);
+        final Clickstream clickstream = mock(Clickstream.class);
         when(session.getAttribute("clickstream")).thenReturn(clickstream);
 
         response = mock(HttpServletResponse.class);
@@ -150,7 +150,7 @@ public class VelocityServletIntegrationTest {
         createAndPublishVanityURL(htmlPageAsset.getPageUrl(), VANITY_URI);
 
         when(request.getRequestURI()).thenReturn(VANITY_URI);
-        FilterChain chain = Mockito.mock(FilterChain.class);
+        final FilterChain chain = mock(FilterChain.class);
 
         final VanityURLFilter vanityURLFilter = new VanityURLFilter();
         vanityURLFilter.doFilter(request, response, chain);
