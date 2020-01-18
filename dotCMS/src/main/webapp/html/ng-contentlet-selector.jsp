@@ -22,6 +22,7 @@
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ page import="com.dotmarketing.util.HostUtil" %>
 <%@ page import="com.dotmarketing.util.Constants" %>
+<%@ page import="com.dotcms.contenttype.exception.NotFoundInDbException" %>
 
 <%
     String containerIdentifier = request.getParameter("container_id");
@@ -32,7 +33,16 @@
         final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost(containerIdentifier, Constants.CONTAINER_FOLDER_PATH);
         final Host   host            = hostOpt.isPresent()? hostOpt.get():WebAPILocator.getHostWebAPI().getHost(request);
         final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(host.getHostname(), containerIdentifier);
-        container = APILocator.getContainerAPI().getWorkingContainerByFolderPath(relativePath, host, APILocator.getUserAPI().getSystemUser(), false);
+        try {
+            container = APILocator.getContainerAPI().getWorkingContainerByFolderPath(relativePath, host, APILocator.getUserAPI().getSystemUser(), false);
+        } catch (NotFoundInDbException e) {
+            // if does not found in the host path or current host, tries the default one if it is not the same
+            final Host defaultHost = WebAPILocator.getHostWebAPI().findDefaultHost(user, false);
+            if (!defaultHost.getIdentifier().equals(host.getIdentifier())) {
+
+                container = APILocator.getContainerAPI().getWorkingContainerByFolderPath(relativePath, defaultHost, APILocator.getUserAPI().getSystemUser(), false);
+            }
+        }
     } else {
 
         container = APILocator.getContainerAPI().getWorkingContainerById(containerIdentifier, APILocator.getUserAPI().getSystemUser(), false);
