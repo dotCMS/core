@@ -1,4 +1,4 @@
-import { Subscription, Observable, of } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 import {
     Component,
     ViewEncapsulation,
@@ -15,6 +15,7 @@ import { Site, SiteService } from 'dotcms-js';
 import { PaginatorService } from '@services/paginator';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
 
 /**
  * It is dropdown of sites, it handle pagination and global search
@@ -33,30 +34,22 @@ import { DotEventsService } from '@services/dot-events/dot-events.service';
     templateUrl: 'dot-site-selector.component.html'
 })
 export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
-    @Input()
-    archive: boolean;
-    @Input()
-    id: string;
-    @Input()
-    live: boolean;
-    @Input()
-    system: boolean;
+    @Input() archive: boolean;
+    @Input() id: string;
+    @Input() live: boolean;
+    @Input() system: boolean;
 
-    @Output()
-    change: EventEmitter<Site> = new EventEmitter();
-    @Output()
-    hide: EventEmitter<any> = new EventEmitter();
-    @Output()
-    show: EventEmitter<any> = new EventEmitter();
+    @Output() change: EventEmitter<Site> = new EventEmitter();
+    @Output() hide: EventEmitter<any> = new EventEmitter();
+    @Output() show: EventEmitter<any> = new EventEmitter();
 
-    @ViewChild('searchableDropdown')
-    searchableDropdown: SearchableDropdownComponent;
+    @ViewChild('searchableDropdown') searchableDropdown: SearchableDropdownComponent;
 
     currentSite: Observable<Site>;
     sitesCurrentPage: Site[];
     totalRecords: number;
 
-    private refreshSitesSub: Subscription;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private siteService: SiteService,
@@ -71,15 +64,22 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
         this.paginationService.setExtraParams('live', this.live);
         this.paginationService.setExtraParams('system', this.system);
 
-        this.refreshSitesSub = this.siteService.refreshSites$.subscribe((_site: Site) =>
-            this.handleSitesRefresh()
-        );
+        this.siteService.refreshSites$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((_site: Site) => this.handleSitesRefresh(_site));
 
         this.getSitesList();
         ['login-as', 'logout-as'].forEach((event: string) => {
-            this.dotEventsService.listen(event).subscribe(() => {
-                this.getSitesList();
-            });
+            this.dotEventsService
+                .listen(event)
+                .pipe(takeUntil(this.destroy$))
+                .subscribe(() => {
+                    this.getSitesList();
+                });
+        });
+
+        this.siteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.currentSite = of(this.siteService.currentSite);
         });
     }
 
@@ -90,19 +90,54 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        this.refreshSitesSub.unsubscribe();
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
      * Manage the sites refresh when a event happen
      * @memberof SiteSelectorComponent
      */
-    handleSitesRefresh(): void {
-        this.paginationService.getCurrentPage().subscribe((items) => {
-            this.sitesCurrentPage = [...items];
-            this.totalRecords = this.paginationService.totalRecords;
-            this.currentSite = of(this.siteService.currentSite);
-        });
+    handleSitesRefresh(site: Site): void {
+        if (site.archived) {
+            this.paginationService
+                .getCurrentPage()
+                .pipe(
+                    takeUntil(this.destroy$),
+                    tap((items: Site[]) => {
+                        if (
+                            items.findIndex((item: Site) => site.identifier === item.identifier) >=
+                            0
+                        ) {
+                            throw new Error('Indexing... site still present');
+                        }
+                    }),
+                    retryWhen(error => error.pipe(delay(1000)))
+                )
+                .subscribe((items: Site[]) => {
+                    this.updateValues(items);
+                });
+        } else {
+            this.siteService
+                .getSiteById(site.identifier)
+                .pipe(
+                    takeUntil(this.destroy$),
+                    tap((item: Site) => {
+                        if (item === undefined) {
+                            throw new Error('Indexing... site not present');
+                        }
+                    }),
+                    retryWhen(error => error.pipe(delay(1000)))
+                )
+                .subscribe(() => {
+                    this.paginationService
+                        .getCurrentPage()
+                        .pipe(take(1))
+                        .subscribe((items: Site[]) => {
+                            this.updateValues(items);
+                        });
+                });
+        }
     }
 
     /**
@@ -132,7 +167,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     getSitesList(filter = '', offset = 0): void {
         // Set filter if undefined
         this.paginationService.filter = filter;
-        this.paginationService.getWithOffset(offset).subscribe((items) => {
+        this.paginationService.getWithOffset(offset).subscribe(items => {
             this.sitesCurrentPage = [...items];
             this.totalRecords = this.totalRecords || this.paginationService.totalRecords;
 
@@ -154,7 +189,7 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     private getSiteByIdFromCurrentPage(siteId: string): Site {
         return (
             this.sitesCurrentPage &&
-            this.sitesCurrentPage.filter((site) => site.identifier === siteId)[0]
+            this.sitesCurrentPage.filter(site => site.identifier === siteId)[0]
         );
     }
 
@@ -166,6 +201,12 @@ export class DotSiteSelectorComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     private setCurrentSiteAsDefault() {
+        this.currentSite = of(this.siteService.currentSite);
+    }
+
+    private updateValues(items: Site[]): void {
+        this.sitesCurrentPage = [...items];
+        this.totalRecords = this.paginationService.totalRecords;
         this.currentSite = of(this.siteService.currentSite);
     }
 }

@@ -47,6 +47,10 @@ export class SiteService {
             .subscribeToEvents<Site>(this.events)
             .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.siteEventsHandler(data));
 
+        dotcmsEventsService
+            .subscribeToEvents<Site>(['SWITCH_SITE'])
+            .subscribe(({ data }: DotEventTypeWrapper<Site>) => this.setCurrentSite(data));
+
         loginService.watchUser((auth: Auth) => {
             if (!auth.isLoginAs) {
                 this.loadCurrentSite();
@@ -134,10 +138,7 @@ export class SiteService {
                 method: RequestMethod.Get,
                 url: `content/render/false/query/+contentType:host%20+identifier:${id}`
             })
-            .pipe(
-                pluck('contentlets'),
-                map((sites: Site[]) => sites[0])
-            );
+            .pipe(pluck('contentlets'), map((sites: Site[]) => sites[0]));
     }
 
     /**
@@ -147,13 +148,12 @@ export class SiteService {
      */
     switchSite(site: Site): void {
         this.loggerService.debug('Applying a Site Switch', site.identifier);
-
         this.coreWebService
             .requestView({
                 method: RequestMethod.Put,
                 url: `${this.urls.switchSiteUrl}/${site.identifier}`
             })
-            .subscribe(() => this.setCurrentSite(site));
+            .subscribe();
     }
 
     /**
@@ -178,11 +178,8 @@ export class SiteService {
     }
 
     private setCurrentSite(site: Site): void {
-        if (this.selectedSite) {
-            this._switchSite$.next({ ...site });
-        }
-
         this.selectedSite = site;
+        this._switchSite$.next({ ...site });
     }
 
     private loadCurrentSite(): void {

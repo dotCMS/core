@@ -1,4 +1,4 @@
-import { of as observableOf } from 'rxjs';
+import { Observable, of as observableOf } from 'rxjs';
 import { ComponentFixture, async, fakeAsync, tick } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { DotSiteSelectorComponent } from './dot-site-selector.component';
@@ -14,42 +14,67 @@ import { PaginatorService } from '@services/paginator';
 import { IframeOverlayService } from '../iframe/service/iframe-overlay.service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { Site } from '../../../../../../projects/dotcms-js/src/lib/core/site.service';
+
+const sites: Site[] = [
+    {
+        identifier: '1',
+        hostname: 'Site 1',
+        archived: false,
+        type: 'host'
+    },
+    {
+        identifier: '2',
+        hostname: 'Site 2',
+        archived: false,
+        type: 'host'
+    },
+    {
+        identifier: '3',
+        hostname: 'Site 3',
+        archived: true,
+        type: 'host'
+    }
+];
 
 describe('SiteSelectorComponent', () => {
     let comp: DotSiteSelectorComponent;
     let fixture: ComponentFixture<DotSiteSelectorComponent>;
     let de: DebugElement;
     let paginatorService: PaginatorService;
+    let siteService: SiteService;
+    const siteServiceMock = new SiteServiceMock();
 
-    beforeEach(async(() => {
-        const messageServiceMock = new MockDotMessageService({
-            search: 'Search'
-        });
+    beforeEach(
+        async(() => {
+            const messageServiceMock = new MockDotMessageService({
+                search: 'Search'
+            });
+            DOTTestBed.configureTestingModule({
+                declarations: [DotSiteSelectorComponent],
+                imports: [SearchableDropDownModule, BrowserAnimationsModule],
+                providers: [
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    { provide: SiteService, useValue: siteServiceMock },
+                    IframeOverlayService,
+                    PaginatorService
+                ]
+            });
 
-        const siteServiceMock = new SiteServiceMock();
-
-        DOTTestBed.configureTestingModule({
-            declarations: [DotSiteSelectorComponent],
-            imports: [SearchableDropDownModule, BrowserAnimationsModule],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: SiteService, useValue: siteServiceMock },
-                IframeOverlayService,
-                PaginatorService
-            ]
-        });
-
-        fixture = DOTTestBed.createComponent(DotSiteSelectorComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        paginatorService = de.injector.get(PaginatorService);
-    }));
+            fixture = DOTTestBed.createComponent(DotSiteSelectorComponent);
+            comp = fixture.componentInstance;
+            de = fixture.debugElement;
+            paginatorService = de.injector.get(PaginatorService);
+            siteService = de.injector.get(SiteService);
+        })
+    );
 
     it(
         'should send notification when login-as/logout-as',
         fakeAsync(() => {
             const dotEventsService = de.injector.get(DotEventsService);
             spyOn(comp, 'getSitesList');
+            spyOn(comp, 'handleSitesRefresh');
             fixture.detectChanges();
             dotEventsService.notify('login-as');
             tick(0);
@@ -84,20 +109,8 @@ describe('SiteSelectorComponent', () => {
     });
 
     it('should call getSitesList', () => {
-        const site1 = {
-            identifier: 1,
-            name: 'Site 1'
-        };
-
-        const site2 = {
-            identifier: 2,
-            name: 'Site 2'
-        };
-
-        const siteService = de.injector.get(SiteService);
-        spyOn(siteService, 'switchSite$').and.returnValue(observableOf(site1));
-
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([site1, site2]));
+        spyOn(siteService, 'switchSite$').and.returnValue(observableOf(sites[0]));
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
 
         fixture.detectChanges();
 
@@ -105,18 +118,7 @@ describe('SiteSelectorComponent', () => {
     });
 
     it('should call refresh if a event happen', () => {
-        const site1 = {
-            identifier: 1,
-            name: 'Site 1'
-        };
-
-        const site2 = {
-            identifier: 2,
-            name: 'Site 2'
-        };
-
-        const siteService = de.injector.get(SiteService);
-        spyOn(siteService, 'refreshSites$').and.returnValue(observableOf([site1, site2]));
+        spyOn(siteService, 'refreshSites$').and.returnValue(observableOf(sites[0]));
         spyOn(comp, 'handleSitesRefresh').and.callThrough();
 
         fixture.detectChanges();
@@ -124,14 +126,14 @@ describe('SiteSelectorComponent', () => {
         expect(comp.handleSitesRefresh).toHaveBeenCalledTimes(1);
     });
 
+    describe('Pagination', () => {});
+
     it('should change page', () => {
         const filter = 'filter';
         const page = 1;
 
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
-
-        const siteService = de.injector.get(SiteService);
         spyOn(siteService, 'switchSite$').and.returnValue(observableOf({}));
 
         fixture.detectChanges();
@@ -157,8 +159,6 @@ describe('SiteSelectorComponent', () => {
 
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
-
-        const siteService = de.injector.get(SiteService);
         spyOn(siteService, 'switchSite$').and.returnValue(observableOf({}));
 
         fixture.detectChanges();
@@ -194,13 +194,13 @@ describe('SiteSelectorComponent', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
-
+        spyOn(comp, 'handleSitesRefresh');
         fixture.detectChanges();
         const searchableDropdownComponent: DebugElement = de.query(
             By.css('dot-searchable-dropdown')
         );
         let result: any;
-        comp.change.subscribe((res) => (result = res));
+        comp.change.subscribe(res => (result = res));
         searchableDropdownComponent.triggerEventHandler('change', { fake: 'site' });
 
         expect(result).toEqual({ fake: 'site' });
@@ -210,12 +210,61 @@ describe('SiteSelectorComponent', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
         spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
-
+        spyOn(comp, 'handleSitesRefresh');
         fixture.detectChanges();
 
         let result: any;
-        comp.currentSite.subscribe((res) => (result = res));
+        comp.currentSite.subscribe(res => (result = res));
 
         expect(result).toEqual(mockSites[0]);
+    });
+
+    it('should set current on switchSite$', () => {
+        fixture.detectChanges();
+        siteServiceMock.setFakeCurrentSite(sites[1]);
+
+        comp.currentSite.subscribe(site => {
+            expect(site).toEqual(sites[1]);
+        });
+    });
+
+    describe('sitesCurrentPage', () => {
+        const mockFunction = (times, success, fail) => {
+            let count = 0;
+            return Observable.create(observer => {
+                if (count++ >= times) {
+                    observer.next(success);
+                } else {
+                    observer.next(fail);
+                }
+            });
+        };
+
+        it(
+            'should update until site is not present after archived',
+            fakeAsync(() => {
+                spyOn(paginatorService, 'getCurrentPage').and.callFake(() =>
+                    mockFunction(2, sites.slice(0, 2), sites)
+                );
+                comp.handleSitesRefresh(sites[2]);
+                tick(2500);
+                expect(paginatorService.getCurrentPage).toHaveBeenCalledTimes(1);
+                expect(comp.sitesCurrentPage).toEqual(sites.slice(0, 2));
+            })
+        );
+
+        it(
+            'should update until site is present after add',
+            fakeAsync(() => {
+                spyOn(siteService, 'getSiteById').and.callFake(() =>
+                    mockFunction(2, sites[1], undefined)
+                );
+                spyOn(paginatorService, 'getCurrentPage').and.callThrough();
+                comp.handleSitesRefresh(sites[0]);
+                tick(2500);
+                expect(siteService.getSiteById).toHaveBeenCalledWith(sites[0].identifier);
+                expect(paginatorService.getCurrentPage).toHaveBeenCalledTimes(1);
+            })
+        );
     });
 });

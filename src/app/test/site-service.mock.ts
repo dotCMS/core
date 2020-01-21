@@ -24,8 +24,8 @@ export class SiteServiceMock {
         return this._currentSite || mockSites[0];
     }
 
-    getSiteById(): Site {
-        return null;
+    getSiteById(): Observable<Site> {
+        return observableOf(mockSites[0]);
     }
 
     paginateSites(): Observable<Site[]> {
