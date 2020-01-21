@@ -386,18 +386,27 @@ public class PersonaAPIImpl implements PersonaAPI, DotInitializer {
     }
 
     sw.append(" +conhost:").append(persona.getHost());
-    sw.append(" +basetype:6 +languageid:* +(");
+    sw.append(" +basetype:6 +languageid:* ");
 
-    for (Structure s : personaStructs) {
-      sw.append(s.getVelocityVarName()).append(".").append(KEY_TAG_FIELD).append(":").append(keyTag).append(" ");
+    if (!personaStructs.isEmpty()) {
+      sw.append("+(");
 
+      for (Structure s : personaStructs) {
+        sw.append(s.getVelocityVarName()).append(".").append(KEY_TAG_FIELD).append(":").append(keyTag).append(" ");
+
+      }
+      sw.append(") ");
     }
-    sw.append(") ");
 
     try {
 
       if (APILocator.getContentletAPI().indexCount(sw.toString(), APILocator.getUserAPI().getSystemUser(), false) > 0) {
         Language l = APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
+
+        if (l == null) {
+          l = APILocator.getLanguageAPI().getDefaultLanguage();
+        }
+
         String message = APILocator.getLanguageAPI().getStringKey(l, "message.persona.error.invalidKeyTagField");
         message = message.replace("{0}", persona.getKeyTag());
 
