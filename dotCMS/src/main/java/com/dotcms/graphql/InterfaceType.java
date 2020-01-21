@@ -75,6 +75,7 @@ public enum InterfaceType {
     public static final String VANITY_URL_INTERFACE_NAME = "VanityURLBaseType";
     public static final String KEY_VALUE_INTERFACE_NAME = "KeyValueBaseType";
     public static final String FORM_INTERFACE_NAME = "FormBaseType";
+    public static final String FIELD_PREFIX = "dot_";
 
     static {
 
@@ -91,7 +92,7 @@ public enum InterfaceType {
         contentFields.put("conLanguage", new TypeFetcher(CustomFieldType.LANGUAGE.getType(), new LanguageDataFetcher()));
         contentFields.put(IDENTIFIER, new TypeFetcher(GraphQLID));
         contentFields.put(INODE, new TypeFetcher(GraphQLID));
-        contentFields.put(HOST_KEY, new TypeFetcher(CustomFieldType.SITE.getType(), new SiteFieldDataFetcher()));
+        contentFields.put(FIELD_PREFIX + HOST_KEY, new TypeFetcher(CustomFieldType.SITE.getType(), new SiteFieldDataFetcher()));
         contentFields.put(FOLDER_KEY, new TypeFetcher(CustomFieldType.FOLDER.getType(), new FolderFieldDataFetcher()));
         contentFields.put(URL_MAP, new TypeFetcher(GraphQLString));
         contentFields.put(OWNER_KEY, new TypeFetcher(CustomFieldType.USER.getType(), new UserDataFetcher()));
