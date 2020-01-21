@@ -1,5 +1,17 @@
 package com.dotcms.security.secret;
 
+import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
+import com.liferay.util.Encryptor;
+import com.liferay.util.FileUtil;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,22 +26,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.google.common.annotations.VisibleForTesting;
-import com.liferay.util.Encryptor;
-import com.liferay.util.FileUtil;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 
 /**
@@ -43,7 +46,9 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     private static final String SECRETS_STORE_FILE = "dotSecretsStore.p12";
     private static final String SECRETS_STORE_KEYSTORE_TYPE = "pkcs12";
     private static final String SECRETS_STORE_SECRET_KEY_FACTORY_TYPE = "PBE";
-    protected static final String SECRETS_CACHE_GROUP = "SECRETS_CACHE";
+    protected static final String SECRETS_CACHE_GROUP = "SECRETS_CACHE_GROUP";
+    protected static final String SECRETS_CACHE_KEYS_GROUP = "KEYS_CACHE_GROUP";
+    protected static final String SECRETS_CACHE_KEY = "KEYS_CACHE";
     private static final String SECRETS_KEYSTORE_PASSWORD_KEY = "SECRETS_KEYSTORE_PASSWORD_KEY";
     private static final String SECRETS_KEYSTORE_FILE_PATH_KEY = "SECRETS_KEYSTORE_FILE_PATH_KEY";
     private final String secretsKeyStorePath;
@@ -150,6 +155,19 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     protected final static char[] CACHE_404 = new char[] {'4', '0', '4'};
 
     /**
+     * Verifies if the key exists in the store
+     * @param variableKey
+     * @return
+     */
+    public boolean containsKey(final String variableKey){
+        try {
+            return getKeysFromCache().contains(variableKey);
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
+    /**
      * secret values are stored encryped in cache for 30 seconds and are decrypted when requested. If
      * value is not in cache, it will be read from the keystore
      * 
@@ -177,8 +195,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
            final KeyStore keyStore = getSecretsStore();
             if (keyStore.containsAlias(variableKey)) {
                 final PasswordProtection keyStorePP = new PasswordProtection(loadStorePassword());
-                final SecretKeyFactory factory = SecretKeyFactory.getInstance(
-                        SECRETS_STORE_SECRET_KEY_FACTORY_TYPE);
+                final SecretKeyFactory factory = SecretKeyFactory.getInstance(SECRETS_STORE_SECRET_KEY_FACTORY_TYPE);
                 final SecretKeyEntry secretKeyEntry = (SecretKeyEntry) keyStore.getEntry(variableKey, keyStorePP);
                 return ((PBEKeySpec) factory.getKeySpec(secretKeyEntry.getSecretKey(), PBEKeySpec.class)).getPassword();
             } else {
@@ -192,9 +209,8 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
 
 
     @Override
-    public List<String> listKeys() {
-        final KeyStore keyStore = getSecretsStore();
-        return Sneaky.sneak(() -> Collections.list(keyStore.aliases()));
+    public Set<String> listKeys() {
+        return Sneaky.sneak(this::getKeysFromCache);
     }
 
     @Override
@@ -222,14 +238,14 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     @Override
     public boolean saveValue(final String variableKey, final char[] variableValue) {
         try {
-            final SecretKeyFactory factory = SecretKeyFactory.getInstance(
-                    SECRETS_STORE_SECRET_KEY_FACTORY_TYPE);
-            final SecretKey generatedSecret = factory.generateSecret(new PBEKeySpec(encrypt(variableValue).toCharArray()));
+            final SecretKeyFactory factory = SecretKeyFactory.getInstance(SECRETS_STORE_SECRET_KEY_FACTORY_TYPE);
             final KeyStore keyStore = getSecretsStore();
+            final char [] encryptedVal = encrypt(variableValue).toCharArray();
+            final SecretKey generatedSecret = factory.generateSecret(new PBEKeySpec(encryptedVal));
             final PasswordProtection keyStorePP = new PasswordProtection(loadStorePassword());
             keyStore.setEntry(variableKey, new KeyStore.SecretKeyEntry(generatedSecret), keyStorePP);
             saveSecretsStore(keyStore);
-            flushCache(variableKey);
+            putInCache(variableKey, encryptedVal);
         } catch (Exception e) {
             Logger.warn(this.getClass(), "Unable to save secret from " + SECRETS_STORE_FILE + ": " + e);
             throw new DotRuntimeException(e);
@@ -297,12 +313,36 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         return retVal;
     }
 
+    private synchronized void putInCache(final String key, final char[] val)
+            throws KeyStoreException, DotCacheException {
+        CacheLocator.getCacheAdministrator().put(key, val ,SECRETS_CACHE_GROUP);
+        putInCache(key);
+    }
+
+    private synchronized void putInCache(final String key) throws KeyStoreException, DotCacheException{
+         final Set <String> keys =  getKeysFromCache();
+         keys.add(key);
+         CacheLocator.getCacheAdministrator().put(SECRETS_CACHE_KEY, keys, SECRETS_CACHE_KEYS_GROUP);
+    }
+
+   private synchronized Set<String> getKeysFromCache() throws KeyStoreException, DotCacheException {
+        Set<String> keys = (Set<String>) CacheLocator.getCacheAdministrator().get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
+        if (!UtilMethods.isSet(keys)) {
+            final KeyStore keyStore = getSecretsStore();
+            keys = new HashSet<>(Collections.list(keyStore.aliases()));
+            CacheLocator.getCacheAdministrator().put(SECRETS_CACHE_KEY, keys, SECRETS_CACHE_KEYS_GROUP);
+        }
+        return keys;
+    }
+
     private void flushCache() {
         CacheLocator.getCacheAdministrator().flushGroup(SECRETS_CACHE_GROUP);
+        CacheLocator.getCacheAdministrator().flushGroup(SECRETS_CACHE_KEYS_GROUP);
     }
 
     private void flushCache(final String key) {
         CacheLocator.getCacheAdministrator().remove(key, SECRETS_CACHE_GROUP);
+        CacheLocator.getCacheAdministrator().remove(key, SECRETS_CACHE_KEYS_GROUP);
     }
 
 }

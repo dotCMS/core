@@ -250,4 +250,51 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         
     }
 
+
+    @Test
+    public void  Test_Create_service_descriptor_Then_Create_Service_Integration_Then_Delete_Service_Descriptor() throws IOException {
+        final Map<String, Param> paramMap = ImmutableMap.of(
+                "param1", Param.newParam("val-1", false, Type.STRING, "label", "hint"),
+                "param2", Param.newParam("val-2", false, Type.STRING, "label", "hint"),
+                "param3", Param.newParam("val-3", false, Type.STRING, "label", "hint")
+        );
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final String serviceKey = String.format("lol_%d", System.currentTimeMillis());
+        final String fileName = String.format("%s.yml", serviceKey);
+        final InputStream inputStream = createServiceDescriptorFile(fileName, serviceKey, serviceKey,
+                "This should go away.", false, paramMap);
+        final Response serviceIntegrationResponse = serviceIntegrationResource
+                .createServiceIntegration(request, response,
+                        createFormDataMultiPart(fileName, inputStream));
+        Assert.assertNotNull(serviceIntegrationResponse);
+        Assert.assertEquals(HttpStatus.SC_OK, serviceIntegrationResponse.getStatus());
+
+        final int max = 10;
+        for(int i = 1; i <= max; i++) {
+            final Host host = new SiteDataGen().nextPersisted();
+            final SecretForm secretForm = new SecretForm();
+            secretForm.setServiceKey(serviceKey);
+            secretForm.setHostId(host.getIdentifier());
+            secretForm.setParams(paramMap);
+            final Response createSecretResponse = serviceIntegrationResource
+                    .createServiceIntegrationSecrets(request, response, secretForm);
+            Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
+        }
+
+        //The Service does exist and so it does the secrets.
+        final Response hostIntegrationsResponse = serviceIntegrationResource.getServiceIntegrationByKey(request, response, serviceKey);
+        Assert.assertEquals(HttpStatus.SC_OK, hostIntegrationsResponse.getStatus());
+        final ResponseEntityView responseEntityView = (ResponseEntityView) hostIntegrationsResponse.getEntity();
+        final ServiceIntegrationHostView serviceIntegrationHostView = (ServiceIntegrationHostView) responseEntityView.getEntity();
+        final ServiceIntegrationView serviceIntegrationView = serviceIntegrationHostView.getService();
+        Assert.assertEquals(max, serviceIntegrationView.getConfigurationsCount());
+
+        //Now lets get rid of the service Descriptor ans verify
+        final Response deleteServiceIntegrationResponse = serviceIntegrationResource.deleteServiceIntegration(request, response, serviceKey);
+        Assert.assertEquals(HttpStatus.SC_OK, deleteServiceIntegrationResponse.getStatus());
+
+      }
+
 }

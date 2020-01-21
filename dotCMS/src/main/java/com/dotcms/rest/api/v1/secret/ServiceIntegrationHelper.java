@@ -19,6 +19,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
 import java.io.File;
@@ -59,12 +60,11 @@ class ServiceIntegrationHelper {
     List<ServiceIntegrationView> getAvailableDescriptorViews(final User user)
             throws DotSecurityException, DotDataException {
         final ImmutableList.Builder<ServiceIntegrationView> viewsBuilder = new ImmutableList.Builder<>();
-        final List<ServiceDescriptor> serviceDescriptors = serviceIntegrationAPI
-                .getAvailableServiceDescriptors(user);
-        final List<Host> hosts = hostAPI.findAll(user, false);
+        final List<ServiceDescriptor> serviceDescriptors = serviceIntegrationAPI.getServiceDescriptors(user);
+        final List<Host> hosts = getHosts(user);
         for (final ServiceDescriptor serviceDescriptor : serviceDescriptors) {
             final String serviceKey = serviceDescriptor.getKey();
-            final long configurationsCount = computeHostsWithConfigurations(serviceKey, hosts, user).size();
+            final long configurationsCount = computeSitesWithConfigurations(serviceKey, hosts, user).size();
             viewsBuilder.add(new ServiceIntegrationView(serviceDescriptor, configurationsCount));
         }
         return viewsBuilder.build();
@@ -88,8 +88,8 @@ class ServiceIntegrationHelper {
             final ImmutableList.Builder<HostView> hostViewBuilder = new ImmutableList.Builder<>();
 
             final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
-            final List<Host> allAvailableHosts = hostAPI.findAll(user, false);
-            final List<Host> hostsWithConfigurations = computeHostsWithConfigurations(serviceKey, allAvailableHosts, user);
+            final List<Host> hosts = getHosts(user);
+            final List<Host> hostsWithConfigurations = computeSitesWithConfigurations(serviceKey, hosts, user);
             for (final Host host : hostsWithConfigurations) {
                 hostViewBuilder.add(new HostView(host.getIdentifier(), host.getHostname()));
             }
@@ -125,7 +125,7 @@ class ServiceIntegrationHelper {
                throw new DotDataException(String.format(" Couldn't find any host with identifier `%s` ",hostId));
             }
             final HostView hostView = new HostView(host.getIdentifier(), host.getHostname());
-            final Optional<ServiceSecrets> optionalServiceSecrets = serviceIntegrationAPI.getSecretsForService(serviceKey, host, user);
+            final Optional<ServiceSecrets> optionalServiceSecrets = serviceIntegrationAPI.getSecrets(serviceKey, host, user);
             if (optionalServiceSecrets.isPresent()) {
                 final ServiceSecrets serviceSecrets = optionalServiceSecrets.get();
                 return Optional.of(new ServiceIntegrationDetailedView(
@@ -172,17 +172,25 @@ class ServiceIntegrationHelper {
      * @param user Logged in user
      * @return a list where the service-key is present (a Configuration exist for the given host)
      */
-    private List<Host> computeHostsWithConfigurations(final String serviceKey, final List<Host> hosts, final User user){
+    private List<Host> computeSitesWithConfigurations(final String serviceKey, final List<Host> hosts, final User user){
         return hosts.stream().filter(host -> {
             try {
-                return serviceIntegrationAPI.getSecretsForService(serviceKey, false, host, user)
-                        .isPresent();
+                return serviceIntegrationAPI.hasAnySecrets(serviceKey, host, user);
             } catch (DotDataException | DotSecurityException e) {
                 Logger.error(ServiceIntegrationHelper.class,
                         String.format("Error getting secret from `%s` ", serviceKey), e);
             }
             return false;
         }).collect(Collectors.toList());
+    }
+
+    private List<Host> getHosts(final User user) throws DotSecurityException, DotDataException {
+        final Builder<Host> builder = ImmutableList.builder();
+        final Set<String> hostIds = serviceIntegrationAPI.serviceKeysByHost().keySet();
+        for(final String hostId:hostIds) {
+            builder.add(hostAPI.find(hostId, user, false));
+        }
+        return builder.build();
     }
 
     /**
@@ -220,7 +228,7 @@ class ServiceIntegrationHelper {
         validateIncomingParamNames(params.keySet(),serviceDescriptor);
 
         final Optional<ServiceSecrets> serviceSecretsOptional = serviceIntegrationAPI
-                .getSecretsForService(serviceKey, host, user);
+                .getSecrets(serviceKey, host, user);
         if (!serviceSecretsOptional.isPresent()) {
             //Create a brand new secret for the present service
             final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
@@ -278,7 +286,7 @@ class ServiceIntegrationHelper {
         validateIncomingParamNames(params.keySet(),serviceDescriptor);
 
         final Optional<ServiceSecrets> serviceSecretsOptional = serviceIntegrationAPI
-                .getSecretsForService(serviceKey, host, user);
+                .getSecrets(serviceKey, host, user);
         if (!serviceSecretsOptional.isPresent()) {
             throw new DotDataException(String.format("Unable to find a secret for serviceKey `%s`.",serviceKey));
         } else {
@@ -299,9 +307,10 @@ class ServiceIntegrationHelper {
             //If this flag has been specified we can have whatever param name we want added.
            return;
         }
+        //Should this be case sensitive ????
         final Map<String, Param> serviceDescriptorParams = serviceDescriptor.getParams();
         for (final String paramName : paramNames) {
-            if(!serviceDescriptor.getParams().containsKey(paramName)){
+            if(!serviceDescriptorParams.containsKey(paramName)){
                 throw new DotDataException(String.format("Params named `%s` can not be matched against service descriptor.",paramName));
             }
         }
@@ -323,8 +332,21 @@ class ServiceIntegrationHelper {
             throw new DotDataException("Unable to extract any files from multi-part request.");
         }
         for (final File file : files) {
+            //TODO: verify file length and kit it back if exceeds a max
             serviceIntegrationAPI.createServiceDescriptor(Files.newInputStream(Paths.get(file.getPath())), user);
         }
+    }
+
+    /**
+     *
+     * @param serviceKey
+     * @param user
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    void deleteServiceDescriptor(final String serviceKey, final User user)
+            throws DotSecurityException, DotDataException {
+        serviceIntegrationAPI.removeServiceDescriptor(serviceKey, user);
     }
 
 }

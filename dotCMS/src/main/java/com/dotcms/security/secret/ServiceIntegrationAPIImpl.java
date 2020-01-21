@@ -7,6 +7,7 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -26,6 +27,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,13 +40,14 @@ import java.util.stream.Collectors;
 
 public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
 
+    static final String INTEGRATIONS_PORTLET_ID = "integration-services";
     private static final String HOST_SECRET_KEY_SEPARATOR = ":";
     private static final String DOT_GLOBAL_SERVICE = "dotCMSGlobalService";
-    private static final String INTEGRATIONS_PORTLET_ID = "integrationsPortlet";
     private static final String SERVICE_INTEGRATION_DIR_PATH_KEY = "SERVICE_INTEGRATION_DIR_PATH_KEY";
 
     private UserAPI userAPI;
     private LayoutAPI layoutAPI;
+    private HostAPI hostAPI;
     private SecretsStore secretsStore;
 
 
@@ -91,15 +94,16 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @VisibleForTesting
-    public ServiceIntegrationAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI,
+    public ServiceIntegrationAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI, final HostAPI hostAPI,
             final SecretsStore secretsRepository) {
         this.userAPI = userAPI;
         this.layoutAPI = layoutAPI;
+        this.hostAPI = hostAPI;
         this.secretsStore = secretsRepository;
     }
 
     public ServiceIntegrationAPIImpl() {
-        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), SecretsStore.INSTANCE.get());
+        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI() ,SecretsStore.INSTANCE.get());
     }
 
     private boolean userDoesNotHaveAccess(final User user) throws DotDataException {
@@ -123,20 +127,22 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @Override
-    public Map<String, List<String>> serviceKeysByHost() {
+    public Map<String, Set<String>> serviceKeysByHost() {
         return secretsStore.listKeys().stream()
+                .filter(s -> s.contains(HOST_SECRET_KEY_SEPARATOR))
                 .map(s -> s.split(HOST_SECRET_KEY_SEPARATOR))
+                .filter(strings -> strings.length == 2)
                 .collect(Collectors.groupingBy(strings -> strings[0],
-                        Collectors.mapping(strings -> strings[1], Collectors.toList())));
+                        Collectors.mapping(strings -> strings[1], Collectors.toSet())));
     }
     @Override
-    public Optional<ServiceSecrets> getSecretsForService(final String serviceKey,
+    public Optional<ServiceSecrets> getSecrets(final String serviceKey,
             final Host host, final User user) throws DotDataException, DotSecurityException {
-            return getSecretsForService(serviceKey, false, host, user);
+            return getSecrets(serviceKey, false, host, user);
     }
 
     @Override
-    public Optional<ServiceSecrets> getSecretsForService(final String serviceKey,
+    public Optional<ServiceSecrets> getSecrets(final String serviceKey,
             final boolean fallbackOnSystemHost,
             final Host host, final User user) throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
@@ -164,10 +170,21 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @Override
+    public boolean hasAnySecrets(final String serviceKey,
+            final Host host, final User user) throws DotDataException, DotSecurityException {
+        if (userDoesNotHaveAccess(user)) {
+            throw new DotSecurityException(String.format(
+                    "Invalid secret access attempt on `%s` performed by user with id `%s` and host `%s` ",
+                    serviceKey, user.getUserId(), host.getIdentifier()));
+        }
+        return secretsStore.containsKey(internalKey(serviceKey, host));
+    }
+
+    @Override
     public void deleteSecret(final String serviceKey, final Set<String> propOrSecretName,
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
-        final Optional<ServiceSecrets> secretsForService = getSecretsForService(serviceKey, host,
+        final Optional<ServiceSecrets> secretsForService = getSecrets(serviceKey, host,
                 user);
         if (secretsForService.isPresent()) {
             final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
@@ -191,7 +208,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     public void saveSecret(final String serviceKey, final Tuple2<String, Secret> keyAndSecret,
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
-        final Optional<ServiceSecrets> secretsForService = getSecretsForService(serviceKey, host,
+        final Optional<ServiceSecrets> secretsForService = getSecrets(serviceKey, host,
                 user);
         if (secretsForService.isPresent()) {
             //The secret already exists and wee need to update one specific entry they rest should be copy as they are
@@ -225,7 +242,6 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         } else {
             final String internalKey = internalKey(secrets.getServiceKey(), host);
             secretsStore.saveValue(internalKey, toJsonString(secrets).toCharArray());
-            invalidateCache();
         }
     }
 
@@ -238,7 +254,6 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                     serviceKey, host.getIdentifier(), user.getUserId()));
         } else {
             secretsStore.deleteValue(internalKey(serviceKey, host));
-            invalidateCache();
         }
     }
 
@@ -247,7 +262,12 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     private static final String DESCRIPTORS_MAPPED_BY_SERVICE_KEY = "DESCRIPTORS_MAPPED_BY_SERVICE_KEY";
 
     @Override
-    public List<ServiceDescriptor> getAvailableServiceDescriptors(final User user)
+    public List<ServiceDescriptor> getServiceDescriptors(User user)
+            throws DotDataException, DotSecurityException{
+       return getServiceDescriptorsMeta(user).stream().map(ServiceDescriptorMeta::getServiceDescriptor).collect(Collectors.toList());
+    };
+
+    private List<ServiceDescriptorMeta> getServiceDescriptorsMeta(final User user)
             throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
@@ -255,40 +275,43 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                     user.getUserId()));
         }
 
-        List<ServiceDescriptor> serviceDescriptors = (List<ServiceDescriptor>) CacheLocator
-                .getCacheAdministrator().getNoThrow(
-                        DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
-        if (!UtilMethods.isSet(serviceDescriptors)) {
-            try {
-                serviceDescriptors = loadServiceDescriptors();
-            } catch (IOException e) {
-                Logger.error(ServiceIntegrationAPIImpl.class,
-                        "An error occurred while loading the service descriptor yml files. ",
-                        e);
-                throw new DotDataException(e);
+            List<ServiceDescriptorMeta> serviceDescriptors = (List<ServiceDescriptorMeta>) CacheLocator
+                    .getCacheAdministrator().getNoThrow(
+                            DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
+            if (!UtilMethods.isSet(serviceDescriptors)) {
+                synchronized (ServiceIntegrationAPIImpl.class) {
+                    try {
+                        serviceDescriptors = loadServiceDescriptors();
+                    } catch (IOException e) {
+                        Logger.error(ServiceIntegrationAPIImpl.class,
+                                "An error occurred while loading the service descriptor yml files. ",
+                                e);
+                        throw new DotDataException(e);
+                    }
+                    CacheLocator.getCacheAdministrator()
+                            .put(DESCRIPTORS_LIST_KEY, serviceDescriptors, DESCRIPTORS_CACHE_GROUP);
+                }
             }
-            CacheLocator.getCacheAdministrator()
-                    .put(DESCRIPTORS_LIST_KEY, serviceDescriptors, DESCRIPTORS_CACHE_GROUP);
-        }
-        return serviceDescriptors;
-
+            return serviceDescriptors;
     }
 
-    private Map<String, ServiceDescriptor> getServiceDescriptorMap(User user)
+    private Map<String, ServiceDescriptorMeta> getServiceDescriptorMap(User user)
             throws DotSecurityException, DotDataException {
 
-        Map<String, ServiceDescriptor> descriptorsByServiceKey = (Map<String, ServiceDescriptor>) CacheLocator
+        Map<String, ServiceDescriptorMeta> descriptorsByServiceKey = (Map<String, ServiceDescriptorMeta>) CacheLocator
                 .getCacheAdministrator().getNoThrow(
                         DESCRIPTORS_MAPPED_BY_SERVICE_KEY, DESCRIPTORS_CACHE_GROUP);
         if (!UtilMethods.isSet(descriptorsByServiceKey)) {
+            synchronized (ServiceIntegrationAPIImpl.class) {
+                descriptorsByServiceKey = getServiceDescriptorsMeta(user).stream().collect(
+                        Collectors.toMap(serviceDescriptorMeta -> serviceDescriptorMeta
+                                        .getServiceDescriptor().getKey(), Function.identity(),
+                                (serviceDescriptor, serviceDescriptor2) -> serviceDescriptor));
 
-            descriptorsByServiceKey = getAvailableServiceDescriptors(user).stream().collect(
-                    Collectors.toMap(ServiceDescriptor::getKey, Function.identity(),
-                            (serviceDescriptor, serviceDescriptor2) -> serviceDescriptor));
-            CacheLocator.getCacheAdministrator()
-                    .put(DESCRIPTORS_MAPPED_BY_SERVICE_KEY, descriptorsByServiceKey,
-                            DESCRIPTORS_CACHE_GROUP);
-
+                CacheLocator.getCacheAdministrator()
+                        .put(DESCRIPTORS_MAPPED_BY_SERVICE_KEY, descriptorsByServiceKey,
+                                DESCRIPTORS_CACHE_GROUP);
+            }
         }
         return descriptorsByServiceKey;
     }
@@ -297,8 +320,10 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     public Optional<ServiceDescriptor> getServiceDescriptor(final String serviceKey,
             final User user)
             throws DotDataException, DotSecurityException {
-        final ServiceDescriptor serviceDescriptor = getServiceDescriptorMap(user).get(serviceKey);
-        return null == serviceDescriptor ? Optional.empty() : Optional.of(serviceDescriptor);
+        final ServiceDescriptorMeta serviceDescriptorMeta = getServiceDescriptorMap(user)
+                .get(serviceKey);
+        return null == serviceDescriptorMeta ? Optional.empty()
+                : Optional.of(serviceDescriptorMeta.getServiceDescriptor());
     }
 
     @Override
@@ -338,7 +363,49 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         }
     }
 
-    private void invalidateCache(){
+    @Override
+    public void removeServiceDescriptor(final String serviceKey, final User user)
+            throws DotSecurityException, DotDataException {
+        if (userDoesNotHaveAccess(user)) {
+            throw new DotSecurityException(String.format(
+                    "Invalid attempt to delete a service descriptors performed by user with id `%s`.",
+                    user.getUserId()));
+        }
+        final ServiceDescriptorMeta serviceDescriptorMeta = getServiceDescriptorMap(user).get(serviceKey);
+        if (null == serviceDescriptorMeta) {
+            throw new DotDataException(String.format("The requested descriptor `%s` does not exist.",serviceKey));
+        }else{
+            // if we succeed trying to find the descriptor.
+            // Lets get all the service-keys and organized by host-id
+            final Map<String, Set<String>> serviceKeysByHost = serviceKeysByHost();
+            for (final Entry<String, Set<String>> entry : serviceKeysByHost.entrySet()) {
+                final String hostId = entry.getKey();
+                final Set<String> serviceKeys = entry.getValue();
+                //Now we need to verify the service-key has a configuration for this host.
+                if(serviceKeys.contains(serviceKey.toLowerCase())){
+                    //And if it does we attempt to delete all the secrets.
+                    final Host host = hostAPI.find(hostId, user, false);
+                    deleteSecrets(serviceKey, host, user);
+                }
+            }
+            final String fileName = serviceDescriptorMeta.getFileName();
+            //Now we need to remove the file it self.
+            final String ymlFilesPath = getServiceDescriptorDirectory();
+            final Path file = Paths.get(ymlFilesPath + File.separator + fileName ).normalize();
+            if(!file.toFile().exists()){
+                throw new DotDataException(String.format(" File with path `%s` does not exist. ",file));
+            }
+            try {
+                Logger.debug(ServiceIntegrationAPIImpl.class,()-> String.format(" Failed attempt to delete file with path `%s` ",file));
+                Files.delete(file);
+            } catch (IOException e) {
+                throw new DotDataException(e);
+            }
+            invalidateCache();
+        }
+    }
+
+    private synchronized void invalidateCache(){
         CacheLocator
                 .getCacheAdministrator()
                 .remove(DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
@@ -365,9 +432,9 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         final Set<String> files = listFiles(ymlFilesPath);
         if (!UtilMethods.isSet(files)) {
             // No files were found a default empty descriptor will be created.
-            ymlMapper.writeValue(new File(basePath, "sample-service-descriptor.yml"),
-                    emptyDescriptor());
-            return listFiles(ymlFilesPath);
+            // ymlMapper.writeValue(new File(basePath, "sample-service-descriptor.yml"), emptyDescriptor());
+            // return listFiles(ymlFilesPath);
+           return Collections.emptySet();
         } else {
             return files;
         }
@@ -388,17 +455,17 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         return fileList;
     }
 
-    private List<ServiceDescriptor> loadServiceDescriptors() throws IOException {
-        final ImmutableList.Builder<ServiceDescriptor> builder = new ImmutableList.Builder<>();
-        final Set<String> files = listAvailableYamlFiles();
-        for (final String file : files) {
+    private List<ServiceDescriptorMeta> loadServiceDescriptors() throws IOException {
+        final ImmutableList.Builder<ServiceDescriptorMeta> builder = new ImmutableList.Builder<>();
+        final Set<String> fileNames = listAvailableYamlFiles();
+        for (final String fileName : fileNames) {
             try {
-                final ServiceDescriptor serviceDescriptor = ymlMapper
-                        .readValue(new File(file), ServiceDescriptor.class);
-                builder.add(serviceDescriptor);
+                final File file = new File(fileName);
+                final ServiceDescriptor serviceDescriptor = ymlMapper.readValue(file, ServiceDescriptor.class);
+                builder.add(new ServiceDescriptorMeta(serviceDescriptor, file.getName()));
             } catch (IOException e) {
                 Logger.error(ServiceIntegrationAPIImpl.class,
-                        String.format("Error reading yml file `%s`.", file), e);
+                        String.format("Error reading yml file `%s`.", fileName), e);
             }
         }
 
@@ -408,7 +475,11 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
    private boolean validateServiceDescriptor(final ServiceDescriptor serviceDescriptor, final User user)
            throws DotDataException, DotSecurityException {
        if(UtilMethods.isNotSet(serviceDescriptor.getKey())){
-          throw new DotDataException("The required field `serviceKey` isn't set on the incoming file.");
+          throw new DotDataException("The required field `key` isn't set on the incoming file.");
+       }
+
+       if(serviceDescriptor.getKey().length() > 100){
+           throw new DotDataException("The required field `key` is too large.");
        }
 
        if (getServiceDescriptorMap(user).containsKey(serviceDescriptor.getKey())) {
@@ -437,6 +508,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
 
    }
 
+    /*
     private ServiceDescriptor emptyDescriptor() {
         final ServiceDescriptor serviceDescriptor = new ServiceDescriptor("sampleDescriptor",
                 "Sample Descriptor.",
@@ -448,5 +520,6 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                 "Test Bool.");
         serviceDescriptor.addParam("myFile", "", false, Type.FILE, "", "");
         return serviceDescriptor;
-    }
+    }*/
+
 }

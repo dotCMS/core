@@ -292,4 +292,32 @@ public class ServiceIntegrationResource {
         }
     }
 
+
+    @DELETE
+    @Path("/{serviceKey}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response deleteServiceIntegration(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("serviceKey") final String serviceKey
+    ) {
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            helper.deleteServiceDescriptor(serviceKey, user);
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),"Exception creating secret with message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
 }

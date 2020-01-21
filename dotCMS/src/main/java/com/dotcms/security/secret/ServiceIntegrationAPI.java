@@ -28,7 +28,7 @@ public interface ServiceIntegrationAPI {
      * Conforms a map where the Elements are lists of service unique names, organized by host as key.
      * @return
      */
-    Map<String, List<String>> serviceKeysByHost();
+    Map<String, Set<String>> serviceKeysByHost();
 
     /**
      * This returns a json object read from the secret store that contains the service integration configuration and secret.
@@ -37,7 +37,7 @@ public interface ServiceIntegrationAPI {
      * @param user logged in user
      * @return
      */
-     Optional<ServiceSecrets> getSecretsForService(String serviceKey,
+     Optional<ServiceSecrets> getSecrets(String serviceKey,
              Host host, User user) throws DotDataException, DotSecurityException;
 
     /**
@@ -52,9 +52,22 @@ public interface ServiceIntegrationAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Optional<ServiceSecrets> getSecretsForService(String serviceKey,
+    Optional<ServiceSecrets> getSecrets(String serviceKey,
             boolean fallbackOnSystemHost,
             Host host, User user) throws DotDataException, DotSecurityException;
+
+    /**
+     * In s similar fashion as `getSecrets` does this method hits the secrets repo but it does not deal or convert the entry into a json object
+     * This only tells you if the service-key exists for a specific host.
+     * @param serviceKey
+     * @param host
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    boolean hasAnySecrets(final String serviceKey,
+            final Host host, final User user) throws DotDataException, DotSecurityException;
 
     /**
      * Lookup for an individual secret/property then updates the single entry.
@@ -97,7 +110,7 @@ public interface ServiceIntegrationAPI {
      * This method should read the yml file service definition
      * @return
      */
-    List<ServiceDescriptor> getAvailableServiceDescriptors(User user)
+    List<ServiceDescriptor> getServiceDescriptors(User user)
             throws DotDataException, DotSecurityException;
 
     /**
@@ -113,6 +126,9 @@ public interface ServiceIntegrationAPI {
 
     void createServiceDescriptor(final InputStream inputStream,
             User user) throws IOException, DotDataException, DotSecurityException;
+
+    void removeServiceDescriptor(final String serviceKey, final User user)
+            throws DotSecurityException, DotDataException;
 
     enum INSTANCE {
         INSTANCE;

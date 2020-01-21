@@ -5,19 +5,28 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.LayoutDataGen;
+import com.dotcms.datagen.PortletDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -46,7 +55,7 @@ public class ServiceIntegrationAPIImplTest {
         final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
         api.saveSecrets(bean, host, admin);
         final Optional<ServiceSecrets> optionalBean = api
-                .getSecretsForService(serviceKey, host, admin);
+                .getSecrets(serviceKey, host, admin);
 
         assertTrue(optionalBean.isPresent());
 
@@ -121,7 +130,7 @@ public class ServiceIntegrationAPIImplTest {
         api.saveSecrets(bean3Host1, host1, admin);
         api.saveSecrets(bean1Host2, host2, admin);
 
-        final Map<String,List<String>> serviceKeysByHost = api.serviceKeysByHost();
+        final Map<String, Set<String>> serviceKeysByHost = api.serviceKeysByHost();
         assertNotNull(serviceKeysByHost.get(host1.getIdentifier()));
         assertNotNull(serviceKeysByHost.get(host2.getIdentifier()));
 
@@ -154,7 +163,7 @@ public class ServiceIntegrationAPIImplTest {
 
         api.saveSecrets(beanSystemHost1, systemHost, admin);
 
-        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecretsForService("serviceKey-1-Any-Host", host1, admin);
+        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecrets("serviceKey-1-Any-Host", true, host1, admin);
         assertTrue(serviceSecretsOptional.isPresent());
         final ServiceSecrets recoveredBean = serviceSecretsOptional.get();
         assertEquals("serviceKey-1-Any-Host", recoveredBean.getServiceKey());
@@ -180,7 +189,7 @@ public class ServiceIntegrationAPIImplTest {
                 .withHiddenSecret("test:secret1", "secret1")
                 .build();
         api.saveSecrets(secrets2, host, admin);
-        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecretsForService("serviceKey-1-Host-1", host, admin);
+        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecrets("serviceKey-1-Host-1", host, admin);
         assertTrue(serviceSecretsOptional.isPresent());
         final ServiceSecrets recoveredBean = serviceSecretsOptional.get();
         assertEquals("serviceKey-1-Host-1", recoveredBean.getServiceKey());
@@ -212,7 +221,7 @@ public class ServiceIntegrationAPIImplTest {
         //Update the individual secret
         api.saveSecret("serviceKey-1-Host-1", new Tuple2<>("test:secret3",secret), host, admin);
         //The other properties of the object should remind the same so lets verify so.
-        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecretsForService("serviceKey-1-Host-1", host, admin);
+        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecrets("serviceKey-1-Host-1", host, admin);
         assertTrue(serviceSecretsOptional.isPresent());
         final ServiceSecrets recoveredBean = serviceSecretsOptional.get();
         assertEquals("serviceKey-1-Host-1", recoveredBean.getServiceKey());
@@ -251,7 +260,7 @@ public class ServiceIntegrationAPIImplTest {
         api.deleteSecret("serviceKeyHost-1",new ImmutableSet.Builder<String>().add("test:secret3").build(), host, admin);
 
         //The other properties of the object should remind the same so lets verify so.
-        final Optional<ServiceSecrets> serviceSecretsOptional1 = api.getSecretsForService("serviceKeyHost-1", host, admin);
+        final Optional<ServiceSecrets> serviceSecretsOptional1 = api.getSecrets("serviceKeyHost-1", host, admin);
         assertTrue(serviceSecretsOptional1.isPresent());
         final ServiceSecrets recoveredBean1 = serviceSecretsOptional1.get();
         assertEquals("serviceKeyHost-1", recoveredBean1.getServiceKey());
@@ -272,7 +281,7 @@ public class ServiceIntegrationAPIImplTest {
         //This should create again the entry we just removed.
         api.saveSecret("serviceKeyHost-1", new Tuple2<>("test:secret3",secret), host, admin);
 
-        final Optional<ServiceSecrets> serviceSecretsOptional2 = api.getSecretsForService("serviceKeyHost-1", host, admin);
+        final Optional<ServiceSecrets> serviceSecretsOptional2 = api.getSecrets("serviceKeyHost-1", host, admin);
         assertTrue(serviceSecretsOptional2.isPresent());
         final ServiceSecrets recoveredBean2 = serviceSecretsOptional2.get();
         assertEquals("serviceKeyHost-1", recoveredBean2.getServiceKey());
@@ -289,7 +298,6 @@ public class ServiceIntegrationAPIImplTest {
         assertEquals("secret-4", recoveredBean2.getSecrets().get("test:secret4").getString());
     }
 
-
     @Test(expected = DotSecurityException.class)
     public void Test_Non_Admin_User_Read_Attempt() throws DotDataException, DotSecurityException {
         final User nonAdmin = TestUserUtils.getChrisPublisherUser();
@@ -298,5 +306,39 @@ public class ServiceIntegrationAPIImplTest {
         api.saveSecrets(builder.build(), APILocator.systemHost() , nonAdmin);
     }
 
+    @Test
+    public void Test_Non_Admin_User_With_Portlet_Read_Attempt() throws DotDataException, DotSecurityException {
+        final String integrationsPortletId = ServiceIntegrationAPIImpl.INTEGRATIONS_PORTLET_ID;
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        final Role backEndUserRole = TestUserUtils.getBackendRole();
+        final Portlet portlet = getOrCreateServiceIntegrationPortlet();
+
+        assertNotNull(portlet);
+        final LayoutDataGen layoutDataGen = new LayoutDataGen();
+        final Layout layout = layoutDataGen
+                .portletIds(integrationsPortletId).nextPersisted();
+
+        final RoleDataGen roleDataGen1 = new RoleDataGen();
+        final Role role1 = roleDataGen1.layout(layout).nextPersisted();
+        final User nonAdminUserWithAccessToPortlet = new UserDataGen().roles(role1,backEndUserRole).nextPersisted();
+
+        assertTrue(layoutAPI.doesUserHaveAccessToPortlet(integrationsPortletId, nonAdminUserWithAccessToPortlet));
+
+        final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
+        final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
+        api.saveSecrets(builder.build(), APILocator.systemHost() , nonAdminUserWithAccessToPortlet);
+    }
+
+
+    private Portlet getOrCreateServiceIntegrationPortlet(){
+        final String integrationsPortletId = ServiceIntegrationAPIImpl.INTEGRATIONS_PORTLET_ID;
+        final PortletAPI portletAPI = APILocator.getPortletAPI();
+        Portlet portlet = portletAPI.findPortlet(integrationsPortletId);
+        if(null == portlet) {
+            final PortletDataGen portletDataGen = new PortletDataGen();
+            portlet = portletDataGen.portletId(integrationsPortletId).nextPersisted();
+        }
+        return portlet;
+    }
 
 }

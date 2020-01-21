@@ -1,11 +1,18 @@
 package com.dotcms.security.secret;
 
-import java.util.List;
 import java.util.Optional;
 import com.dotmarketing.util.Config;
 import io.vavr.control.Try;
+import java.util.Set;
 
 public interface SecretsStore {
+
+    /**
+     * verifies if the key is present
+     * @param variableKey
+     * @return
+     */
+     boolean containsKey(final String variableKey);
 
     /**
      * Optionally returns the secrets value if there is one, empty if not
@@ -20,7 +27,7 @@ public interface SecretsStore {
      * 
      * @return
      */
-    List<String> listKeys();
+    Set<String> listKeys();
 
     /**
      * deletes all the entries in the secretsStore
