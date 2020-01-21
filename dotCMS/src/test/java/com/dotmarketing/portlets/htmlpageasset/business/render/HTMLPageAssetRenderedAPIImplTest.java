@@ -55,8 +55,6 @@ public class HTMLPageAssetRenderedAPIImplTest {
     private final HostWebAPI hostWebAPI = mock(HostWebAPI.class);
     private final LanguageAPI languageAPI = mock(LanguageAPI.class);
     private final HTMLPageAssetAPI htmlPageAssetAPI = mock(HTMLPageAssetAPI.class);
-    private final VersionableAPI versionableAPI = mock(VersionableAPI.class);
-    private final HostAPI hostAPI = mock(HostAPI.class);
     private final HttpSession httpSession = mock(HttpSession.class);
     private HTMLPageAssetRenderedAPIImpl hTMLPageAssetRenderedAPIImpl;
     private final URLMapAPIImpl urlMapAPIImpl = mock(URLMapAPIImpl.class);
@@ -71,13 +69,14 @@ public class HTMLPageAssetRenderedAPIImplTest {
 
         when(request.getServerName()).thenReturn(CURRENT_HOST_NAME);
         when(request.getSession()).thenReturn(httpSession);
+        when(request.getSession(false)).thenReturn(httpSession);
 
         when(languageAPI.getDefaultLanguage()).thenReturn(DEFAULT_LANGUAGE);
         when(DEFAULT_LANGUAGE.getId()).thenReturn(1l);
 
         hTMLPageAssetRenderedAPIImpl = new HTMLPageAssetRenderedAPIImpl(
-                permissionAPI, userAPI, hostWebAPI, languageAPI, htmlPageAssetAPI, versionableAPI,
-                hostAPI, urlMapAPIImpl, languageWebAPI);
+                permissionAPI, userAPI, hostWebAPI, languageAPI, htmlPageAssetAPI,
+                urlMapAPIImpl, languageWebAPI);
     }
 
     @Test
@@ -102,8 +101,7 @@ public class HTMLPageAssetRenderedAPIImplTest {
         when(this.permissionAPI.doesUserHavePermission(htmlPage, PermissionLevel.READ.getType(), systemUser,
                 PageMode.PREVIEW_MODE.respectAnonPerms)).thenReturn(true);
 
-        when(this.hostAPI.resolveHostName(CURRENT_HOST_NAME, systemUser, PageMode.PREVIEW_MODE.respectAnonPerms))
-                .thenReturn(currentHost);
+        when(this.hostWebAPI.getCurrentHost(request, systemUser)).thenReturn(currentHost);
 
         when(languageWebAPI.getLanguage(request)).thenReturn(DEFAULT_LANGUAGE);
 
@@ -139,8 +137,7 @@ public class HTMLPageAssetRenderedAPIImplTest {
                 PageMode.PREVIEW_MODE.respectAnonPerms)).thenReturn(true);
 
 
-        when(this.hostAPI.resolveHostName(CURRENT_HOST_NAME, systemUser, PageMode.PREVIEW_MODE.respectAnonPerms))
-                .thenReturn(currentHost);
+        when(this.hostWebAPI.getCurrentHost(request, systemUser)).thenReturn(currentHost);
         try {
             hTMLPageAssetRenderedAPIImpl.getDefaultEditPageMode(user, request, pageUri);
         } catch (final DotRuntimeException e) {
@@ -170,8 +167,7 @@ public class HTMLPageAssetRenderedAPIImplTest {
         when(this.permissionAPI.doesUserHavePermission(htmlPage, PermissionLevel.READ.getType(), systemUser,
                 PageMode.PREVIEW_MODE.respectAnonPerms)).thenReturn(true);
 
-        when(this.hostAPI.resolveHostName(CURRENT_HOST_NAME, systemUser, PageMode.PREVIEW_MODE.respectAnonPerms))
-                .thenReturn(currentHost);
+        when(this.hostWebAPI.getCurrentHost(request, systemUser)).thenReturn(currentHost);
 
         final PageMode defaultEditPageMode =
                 hTMLPageAssetRenderedAPIImpl.getDefaultEditPageMode(user, request, pageUri);
@@ -232,8 +228,7 @@ public class HTMLPageAssetRenderedAPIImplTest {
         when(urlMapAPIImpl.processURLMap(urlMapContext))
                 .thenReturn(Optional.of(urlMapInfo));
 
-        when(this.hostAPI.resolveHostName(CURRENT_HOST_NAME, systemUser, PageMode.PREVIEW_MODE.respectAnonPerms))
-                .thenReturn(currentHost);
+        when(this.hostWebAPI.getCurrentHost(request, systemUser)).thenReturn(currentHost);
 
         final PageMode defaultEditPageMode =
                 hTMLPageAssetRenderedAPIImpl.getDefaultEditPageMode(user, request, pageUri);
@@ -263,8 +258,7 @@ public class HTMLPageAssetRenderedAPIImplTest {
         when(this.permissionAPI.doesUserHavePermission(htmlPage, PermissionLevel.READ.getType(), systemUser,
                 PageMode.PREVIEW_MODE.respectAnonPerms)).thenReturn(true);
 
-        when(this.hostAPI.resolveHostName(CURRENT_HOST_NAME, systemUser, PageMode.PREVIEW_MODE.respectAnonPerms))
-                .thenReturn(currentHost);
+        when(this.hostWebAPI.getCurrentHost(request, systemUser)).thenReturn(currentHost);
 
         final PageMode defaultEditPageMode =
                 hTMLPageAssetRenderedAPIImpl.getDefaultEditPageMode(user, request, pageUri);
