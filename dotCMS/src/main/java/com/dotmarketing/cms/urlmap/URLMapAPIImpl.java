@@ -81,7 +81,7 @@ public class URLMapAPIImpl implements URLMapAPI {
 
             final Identifier pageUriIdentifier = this.getDetailtPageUri(structure);
 
-            return Optional.of(new URLMapInfo(contentlet, pageUriIdentifier));
+            return Optional.of(new URLMapInfo(contentlet, pageUriIdentifier, context.getUri()));
         } else {
             return Optional.empty();
         }

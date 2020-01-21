@@ -100,7 +100,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
             Logger.debug(this.getClass(), "Page Permissions for URI=" + uri);
 
             // Verify and handle the case for unauthorized access of this contentlet
-            Boolean unauthorized = CMSUrlUtil.getInstance().isUnauthorizedAndHandleError(htmlPage, uri, user, request, response);
+            boolean unauthorized = CMSUrlUtil.getInstance().isUnauthorizedAndHandleError(htmlPage, uri, user, request, response);
             if (unauthorized) {
                 return;
             }

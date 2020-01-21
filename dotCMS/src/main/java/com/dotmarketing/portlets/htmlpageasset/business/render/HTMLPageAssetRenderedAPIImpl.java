@@ -30,12 +30,10 @@ import com.liferay.portal.model.User;
 
 import io.vavr.control.Try;
 
-import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * {@link HTMLPageAssetRenderedAPI} implementation
@@ -49,22 +47,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     private final UserAPI userAPI;
     private final URLMapAPIImpl urlMapAPIImpl;
     private final LanguageWebAPI languageWebAPI;
-
-    @FunctionalInterface
-    /**
-     * It is a function to search a {@link HTMLPageAsset}, if the page is resolve using URL MAP then the URL Map
-     * information is returned too
-     */
-    private interface SearchPageFunction {
-        Optional<HTMLPageUrl> search(final PageContext context,
-                             final Host host,
-                             final HttpServletRequest request) throws DotDataException, DotSecurityException;
-    }
-
-    private final List<SearchPageFunction> pageSearchers = list(
-            (context, host, request) -> findPageByContext(host, context),
-            (context, host, request) -> findByURLMap(context, host, request)
-    );
 
     public HTMLPageAssetRenderedAPIImpl(){
         this(
@@ -192,7 +174,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setRequest(request)
                 .setResponse(response)
                 .setSite(host)
-                .setURLMapper(htmlPageUrl.pageUrlMapper)
+                .setURLMapper(htmlPageUrl.getPageUrlMapper())
                 .setLive(htmlPageUrl.hasLive())
                 .build(true, mode);
     }
@@ -258,7 +240,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setRequest(request)
                 .setResponse(response)
                 .setSite(host)
-                .setURLMapper(htmlPageUrl.pageUrlMapper)
+                .setURLMapper(htmlPageUrl.getPageUrlMapper())
                 .setLive(htmlPageUrl.hasLive())
                 .getPageHTML(context.getPageMode());
     }
@@ -266,20 +248,17 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     private HTMLPageUrl getHtmlPageAsset(final PageContext context, final Host host, final HttpServletRequest request)
             throws DotDataException, DotSecurityException {
 
-        HTMLPageUrl htmlPageUrl = null;
-        for (final SearchPageFunction pageSearcher : pageSearchers) {
-            final Optional<HTMLPageUrl> optional = pageSearcher.search(context, host, request);
+        Optional<HTMLPageUrl> htmlPageUrlOptional = findPageByContext(host, context);
 
-            if (optional.isPresent()) {
-                htmlPageUrl = optional.get();
-                break;
-            }
+        if (!htmlPageUrlOptional.isPresent()) {
+            htmlPageUrlOptional = findByURLMap(context, host, request);
         }
 
-        if(htmlPageUrl == null ){
+        if(!htmlPageUrlOptional.isPresent()){
             throw new HTMLPageAssetNotFoundException(context.getPageUri());
         }
 
+        final HTMLPageUrl htmlPageUrl = htmlPageUrlOptional.get();
         checkPagePermission(context, htmlPageUrl.htmlPage);
 
         return htmlPageUrl;
@@ -344,8 +323,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
             return Optional.of(new HTMLPageUrl(
                     (HTMLPageAsset) getPageById(context.getPageMode(), urlMapInfo.getIdentifier().getId()),
-                    context.getPageUri(),
-                    urlMapInfo.getContentlet().isLive()
+                    urlMapInfo
 
             ));
         } else {
@@ -388,24 +366,22 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     }
 
     public static class HTMLPageUrl {
-        private String pageUrlMapper;
+        private URLMapInfo urlMapInfo;
         private HTMLPageAsset htmlPage;
-        private Boolean hasLive = null;
 
-        private HTMLPageUrl(final HTMLPageAsset htmlPage, final String pageUrlMapper, final Boolean hasLive) {
+        private HTMLPageUrl(final HTMLPageAsset htmlPage, final URLMapInfo urlMapInfo) {
             this.htmlPage = htmlPage;
-            this.pageUrlMapper = pageUrlMapper;
-            this.hasLive = hasLive;
+            this.urlMapInfo = urlMapInfo;
         }
 
         private HTMLPageUrl(final HTMLPageAsset htmlPage) {
-            this(htmlPage, null, null);
+            this(htmlPage, null);
         }
 
         public boolean hasLive() {
             try {
-                return hasLive == null ? this.htmlPage.hasLiveVersion() : this.hasLive;
-            } catch(DotDataException e) {
+                return urlMapInfo != null ? urlMapInfo.getContentlet().isLive() : this.htmlPage.hasLiveVersion();
+            } catch(DotDataException | DotSecurityException e) {
                 throw new DotRuntimeException(e);
             }
         }
@@ -415,7 +391,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         }
 
         public String getPageUrlMapper() {
-            return pageUrlMapper;
+            return urlMapInfo != null ? urlMapInfo.getUrlMapped() : htmlPage.getPageUrl();
         }
 
         public IHTMLPage getHTMLPage() {

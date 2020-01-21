@@ -186,7 +186,7 @@ public class HTMLPageAssetRenderedBuilder {
         return Optional.ofNullable(contentlet);
     }
 
-    public String getPageHTML() throws DotSecurityException, DotDataException {
+    public String getPageHTML() throws DotSecurityException {
 
         final PageMode mode = PageMode.get(request);
 
@@ -194,7 +194,7 @@ public class HTMLPageAssetRenderedBuilder {
     }
 
     @CloseDBIfOpened
-    public String getPageHTML(final PageMode pageMode) throws DotSecurityException, DotDataException {
+    public String getPageHTML(final PageMode pageMode) throws DotSecurityException {
 
         if(pageMode.isAdmin ) {
             APILocator.getPermissionAPI().checkPermission(htmlPageAsset, PermissionLevel.READ, user);
