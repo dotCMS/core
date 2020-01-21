@@ -20,7 +20,7 @@ public class VelocityAdminMode extends VelocityLiveMode {
         this(
                 request,
                 response,
-                VelocityModeHandler.getHtmlPageFromURI(PageMode.get(request), request, response, uri, host),
+                VelocityModeHandler.getHtmlPageFromURI(PageMode.get(request), request, uri, host),
                 host
         );
     }

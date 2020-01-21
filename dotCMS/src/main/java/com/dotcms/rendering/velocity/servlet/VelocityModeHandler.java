@@ -61,7 +61,7 @@ public abstract class VelocityModeHandler {
         this(
                 request,
                 response,
-                VelocityModeHandler.getHtmlPageFromURI(PageMode.get(request), request, response, uri, host),
+                VelocityModeHandler.getHtmlPageFromURI(PageMode.get(request), request, uri, host),
                 host
         );
     }
@@ -109,11 +109,11 @@ public abstract class VelocityModeHandler {
 
     public static final VelocityModeHandler modeHandler(final PageMode mode, final HttpServletRequest request, final HttpServletResponse response, final String uri, final Host host) {
         // Find the current language
-        final IHTMLPage htmlPage= getHtmlPageFromURI(mode, request, response, uri, host);
+        final IHTMLPage htmlPage= getHtmlPageFromURI(mode, request, uri, host);
         return pageModeVelocityMap.get(mode).apply(request, response, htmlPage, host);
     }
 
-    protected static IHTMLPage getHtmlPageFromURI(PageMode mode, HttpServletRequest request, HttpServletResponse response, String uri, Host host) {
+    protected static IHTMLPage getHtmlPageFromURI(final PageMode mode, final HttpServletRequest request, final  String uri, final Host host) {
         final long langId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
         try {

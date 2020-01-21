@@ -535,8 +535,8 @@ public class CMSUrlUtil {
 
 	public static String getCurrentURI(final HttpServletRequest request)  {
 		try {
-			return URLDecoder.decode((request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE) != null)
-					? (String) request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE)
+			return URLDecoder.decode((request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null)
+					? (String) request.getAttribute(CMS_FILTER_URI_OVERRIDE)
 					: request.getRequestURI(), "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			Logger.debug(CMSUrlUtil.class, e.getMessage(), e);

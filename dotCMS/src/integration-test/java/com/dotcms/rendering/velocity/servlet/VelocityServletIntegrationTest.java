@@ -196,7 +196,7 @@ public class VelocityServletIntegrationTest {
         createAndPublishVanityURL(FORWARD_URL, VANITY_URI);
 
         when(request.getRequestURI()).thenReturn("/vanityURL/" + contentlet.getStringProperty("urlTitle"));
-        FilterChain chain = Mockito.mock(FilterChain.class);
+        final FilterChain chain = Mockito.mock(FilterChain.class);
 
         final VanityURLFilter vanityURLFilter = new VanityURLFilter();
         vanityURLFilter.doFilter(request, response, chain);

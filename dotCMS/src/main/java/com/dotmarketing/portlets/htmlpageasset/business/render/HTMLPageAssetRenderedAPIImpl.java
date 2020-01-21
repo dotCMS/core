@@ -287,7 +287,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     private void checkPagePermission(final PageContext context, final IHTMLPage htmlPageAsset)
             throws DotDataException, DotSecurityException {
-        
+
         final boolean doesUserHavePermission = this.permissionAPI.doesUserHavePermission(
                 htmlPageAsset,
                 PermissionLevel.READ.getType(),
@@ -387,18 +387,18 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return request != null ? this.languageWebAPI.getLanguage(request) : this.languageAPI.getDefaultLanguage();
     }
 
-    public class HTMLPageUrl {
+    public static class HTMLPageUrl {
         private String pageUrlMapper;
         private HTMLPageAsset htmlPage;
         private Boolean hasLive = null;
 
-        public HTMLPageUrl(final HTMLPageAsset htmlPage, final String pageUrlMapper, final Boolean hasLive) {
+        private HTMLPageUrl(final HTMLPageAsset htmlPage, final String pageUrlMapper, final Boolean hasLive) {
             this.htmlPage = htmlPage;
             this.pageUrlMapper = pageUrlMapper;
             this.hasLive = hasLive;
         }
 
-        public HTMLPageUrl(final HTMLPageAsset htmlPage) {
+        private HTMLPageUrl(final HTMLPageAsset htmlPage) {
             this(htmlPage, null, null);
         }
 
