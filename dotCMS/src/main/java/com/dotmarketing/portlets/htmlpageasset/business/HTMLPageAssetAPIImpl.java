@@ -332,6 +332,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 		query.append(liveWorkingDeleted);
 		if (parent instanceof Folder) {
 			query.append(" +conFolder:" + ((Folder) parent).getInode());
+			query.append(" +conHost:" + ((Folder) parent).getHostId());
 		} else if (parent instanceof Host) {
 			query.append(" +conFolder:SYSTEM_FOLDER +conHost:"
 					+ ((Host) parent).getIdentifier());
