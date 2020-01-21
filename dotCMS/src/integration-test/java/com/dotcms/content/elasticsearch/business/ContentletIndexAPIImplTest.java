@@ -70,12 +70,14 @@ import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -366,7 +368,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
      * @see ContentletIndexAPIImpl
      */
     @Test
-    @Ignore
     public void activateDeactivateIndex () throws Exception {
 
         //Build the index names
@@ -531,7 +532,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
      * @see ContentletIndexAPIImpl
      */
     @Test
-    @Ignore
     public void removeContentFromIndexByStructureInode () throws Exception {
 
         //Creating a test structure
@@ -1276,6 +1276,26 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 ContentTypeDataGen.remove(childContentType);
             }
         }
+    }
+
+    /**
+     * Method to test: {@link ContentletIndexAPI#getIndexDocumentCount(String)}
+     * Test Case: Tries to get the document count of an active index
+     * Expected Results: Value should be more than 0
+     */
+    @Test
+    public void testGetIndexDocumentCountSuccess() throws  DotDataException {
+        assertTrue(indexAPI.getIndexDocumentCount(indexAPI.getCurrentIndex().get(0)) > 0);
+    }
+
+    /**
+     * Method to test: {@link ContentletIndexAPI#getIndexDocumentCount(String)}
+     * Test Case: Tries to get the document count of an index that does not exist
+     * Expected Results: Throws ElasticsearchStatusException
+     */
+    @Test(expected= ElasticsearchStatusException.class)
+    public void testGetIndexDocumentCountWithInvalidIndexNameFails(){
+        indexAPI.getIndexDocumentCount("invalidIndexName");
     }
 
     public static Relationship createLegacyRelationship(final ContentType parentContentType,
