@@ -7,9 +7,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.Lists;
 import io.vavr.control.Try;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -42,32 +42,42 @@ public class Task05200WorkflowTaskUniqueKey implements StartupTask {
         }
         final DotConnect dotConnect = new DotConnect();
         
-        List<Map<String,Object>> results = dotConnect.setSQL("select webasset,language_id from workflow_task group by webasset,language_id having count(*)>1").loadObjectResults();
+        final List<Map<String,Object>> results = dotConnect.setSQL("select webasset,language_id from workflow_task group by webasset,language_id having count(*)>1").loadObjectResults();
         
         for(final Map<String,Object> map : results) {
             final String webAsset = (String) map.get("webasset");
-            final long lang = Try.of(()->(Long) map.get("language_id")).getOrElse(0l);
+            final Number lang = Try.of(()->(Number) map.get("language_id")).getOrElse(0);
+            //Number is the super class of Long, Integer and BidDecimal making it cross-driver.
             final List<String> deleteMes = dotConnect
             .setSQL("select id from workflow_task where webasset=? and language_id=? order by mod_date desc")
             .addParam(webAsset)
-            .addParam(lang)
+            .addParam(lang.longValue())
             .setStartRow(1) //magic happens here
             .loadObjectResults()
             .stream()
             .map(r->(String)r.get("id")).collect(Collectors.toList());
-            
-            String subquery = "'" + String.join("','" , deleteMes) + "'";
-            
-            Logger.warn(this, "Found multiple workflow tasks for contentlet id:" + webAsset + " language: " + lang + ". Keeping the most recent workflow task");
-            
-            new DotConnect().setSQL("delete from workflow_comment where workflowtask_id in (" + subquery + ")" ).loadResult();
 
-            new DotConnect().setSQL("delete from workflow_history where workflowtask_id  in (" + subquery + ")" ).loadResult();
-        
-            new DotConnect().setSQL("delete from workflowtask_files where workflowtask_id in (" + subquery + ")" ).loadResult();
-        
-            new DotConnect().setSQL("delete from workflow_task where id in (" + subquery + ")" ).loadResult();
+            final List<List<String>> partitionDeleteMes = Lists.partition(deleteMes, 100);
 
+            for(final List<String> partition : partitionDeleteMes) {
+                final String subQuery = "'" + String.join("','", partition) + "'";
+
+                Logger.warn(this, "Found multiple workflow tasks for contentlet id:" + webAsset
+                        + " language: " + lang + ". Keeping the most recent workflow task");
+
+                new DotConnect()
+                        .setSQL("delete from workflow_comment where workflowtask_id in (" + subQuery
+                                + ")").loadResult();
+
+                new DotConnect().setSQL("delete from workflow_history where workflowtask_id  in ("
+                        + subQuery + ")").loadResult();
+
+                new DotConnect().setSQL("delete from workflowtask_files where workflowtask_id in ("
+                        + subQuery + ")").loadResult();
+
+                new DotConnect().setSQL("delete from workflow_task where id in (" + subQuery + ")")
+                        .loadResult();
+            }
 
         }
         

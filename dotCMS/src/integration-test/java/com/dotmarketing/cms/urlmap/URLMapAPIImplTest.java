@@ -3,7 +3,10 @@ package com.dotmarketing.cms.urlmap;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertFalse;
+import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.when;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.FolderDataGen;
@@ -25,11 +28,16 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 public class URLMapAPIImplTest {
     public static final String TEST_PATTERN = "/testpattern";
@@ -38,9 +46,10 @@ public class URLMapAPIImplTest {
 
     private URLMapAPIImpl urlMapAPI;
     private static HTMLPageAsset detailPage;
+    private static HttpSession session;
 
-    @BeforeClass
-    public static void prepare() throws Exception {
+    @Before
+    public void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
 
         systemUser = APILocator.getUserAPI().getSystemUser();
@@ -58,6 +67,12 @@ public class URLMapAPIImplTest {
                 .pageURL("news-detail")
                 .title("news-detail")
                 .nextPersisted();
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        session = mock(HttpSession.class);
+
+        when(request.getSession()).thenReturn(session);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
     }
 
     @Before
@@ -195,6 +210,94 @@ public class URLMapAPIImplTest {
         assertFalse(urlMapAPI.isUrlPattern(context));
     }
 
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url when both the Content Type and Content exists, but the public date for
+     * the content is in the future and the mode requested is {@link PageMode#LIVE}
+     * ExpectedResult: Should return a {@link Optional#empty()}
+     */
+    @Test
+    public void shouldReturnEmptyOptionalWhenContentExistsInFuture()
+            throws DotDataException, DotSecurityException {
+        final String newsPatternPrefix =
+                TEST_PATTERN + System.currentTimeMillis() + "/";
+
+        final Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        final Date tomorrow = calendar.getTime();
+
+        final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix, tomorrow);
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"), PageMode.LIVE);
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        assertFalse(urlMapInfoOptional.isPresent());
+    }
+
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url when both the Content Type and Content exists, and the public date for
+     * the content is in the future, but the time machine is set to a day after the publish date
+     * ExpectedResult: Should return a {@link URLMapInfo} wit the right content ans detail page
+     */
+    @Test
+    public void shouldReturnURLInfoWhenContentExistsInFutureButTimeMachineIsSet()
+            throws DotDataException, DotSecurityException {
+
+
+        final String newsPatternPrefix =
+                TEST_PATTERN + System.currentTimeMillis() + "/";
+
+        final Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        final Date tomorrow = calendar.getTime();
+
+        final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix, tomorrow);
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"), PageMode.LIVE);
+
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        final Date afterTomorrow = calendar.getTime();
+
+        when(session.getAttribute("tm_date")).thenReturn(String.valueOf(afterTomorrow.getTime()));
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent.getStringProperty("title"),
+                urlMapInfo.getContentlet().getName());
+        assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
+    }
+
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Process a URL Map url when both the Content Type and Content exists, and the public date for
+     * the content is in the future, and the mode requested is {@link PageMode#PREVIEW_MODE}
+     * ExpectedResult: Should return a {@link URLMapInfo} wit the right content ans detail page
+     */
+    @Test
+    public void shouldReturnInPREVIEW_MODEWhenContentExistsInFuture()
+            throws DotDataException, DotSecurityException {
+        final String newsPatternPrefix =
+                TEST_PATTERN + System.currentTimeMillis() + "/";
+
+        final Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, 1);
+        final Date tomorrow = calendar.getTime();
+
+        final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix, tomorrow);
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent.getStringProperty("urlTitle"), PageMode.PREVIEW_MODE);
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent.getStringProperty("title"),
+                urlMapInfo.getContentlet().getName());
+        assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
+    }
+
     private static void deleteAllUrlMapperContentType() throws DotDataException {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
         final List<SimpleStructureURLMap> structureURLMapPatterns =
@@ -213,6 +316,10 @@ public class URLMapAPIImplTest {
     }
 
     private static Contentlet createURLMapperContentType(final String newsPatternPrefix) {
+        return createURLMapperContentType(newsPatternPrefix, new Date());
+    }
+
+    private static Contentlet createURLMapperContentType(final String newsPatternPrefix, final Date sysPublishDate) {
 
         final ContentType newsContentType = getNewsLikeContentType(
                 "News" + System.currentTimeMillis(),
@@ -222,16 +329,20 @@ public class URLMapAPIImplTest {
 
         return TestDataUtils
                 .getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                        newsContentType.id(), host);
+                        newsContentType.id(), host, sysPublishDate);
     }
 
-    private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri) {
+    private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri, final PageMode pageMode) {
         return UrlMapContextBuilder.builder()
                 .setHost(host)
                 .setLanguageId(1L)
-                .setMode(PageMode.PREVIEW_MODE)
+                .setMode(pageMode)
                 .setUri(uri)
                 .setUser(systemUser)
                 .build();
+    }
+
+    private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri) {
+        return getUrlMapContext(systemUser, host, uri, PageMode.PREVIEW_MODE);
     }
 }

@@ -281,9 +281,9 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		for (var i = 0; i < assets.length; i++){
 			var asset = assets[i];
 			this._normalizeAssetData(asset);
-
-			var rowHTML = dojo.replace(template, { id: asset.identifier, name: asset.name, description: asset.friendlyName,
-					modUser: asset.modUserName, modDate: asset.modDateFormatted, className: className, icon: asset.icon, thumbnail: asset.thumbnail, title: asset.title });
+            // Shorten 'name' and 'title' values to 30 chars max, for display purposes ONLY. Leave original values as they are
+			var rowHTML = dojo.replace(template, { id: asset.identifier, name: shortenString(asset.title, 30), description: asset.friendlyName,
+					modUser: asset.modUserName, modDate: asset.modDateFormatted, className: className, icon: asset.icon, thumbnail: asset.thumbnail, title: shortenString(asset.title, 30) });
 
 			if(columnNumber == 0) {
 				if(this.currentView == 'details')
@@ -390,17 +390,11 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	_normalizeAssetData: function(asset) {
 
         var name = asset.title;
-
-        name = shortenString(name, 30);
-
    		var assetIcon = '/icon?i=' + asset.extension;
    		var assetThumbnail = '/icon?i=' + asset.extension;
 
    		if (asset.type == 'file_asset') {
    			name = asset.fileName;
-
-            name = shortenString(name, 30);
-
             assetIcon = '/html/images/icons/' + asset.extension + '.png';
 
    			if(asset.mimeType != null && asset.mimeType.indexOf('image/') == 0 ){
