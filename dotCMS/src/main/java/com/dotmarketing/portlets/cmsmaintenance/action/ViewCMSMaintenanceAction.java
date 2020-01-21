@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.cmsmaintenance.action;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -887,14 +887,14 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			file = new File(backupTempFilePath + "/RuleImportExportObject.json");
 			RulesImportExportUtil.getInstance().export(file);
 
-			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
+			final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 
 			file = new File(backupTempFilePath + "/index_working.json");
-			new ESIndexAPI().backupIndex(info.working, file);
+			new ESIndexAPI().backupIndex(info.getWorking(), file);
 
 
 			file = new File(backupTempFilePath + "/index_live.json");
-			new ESIndexAPI().backupIndex(info.live, file);
+			new ESIndexAPI().backupIndex(info.getLive(), file);
 
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);

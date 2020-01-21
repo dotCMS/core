@@ -21,7 +21,8 @@ public class SearchSourceBuilderUtilTest extends UnitTestBase {
         Assert.assertNotNull(builder);
         Assert.assertTrue(builder.aggregations().getAggregatorFactories().size() == 1);
         Assert.assertTrue(
-                builder.aggregations().getAggregatorFactories().get(0).getName().equals("entries"));
+                builder.aggregations().getAggregatorFactories().iterator().next()
+                        .getName().equals("entries"));
     }
 
 }

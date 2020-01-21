@@ -46,6 +46,7 @@ import org.apache.velocity.context.Context;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
 
 import javax.servlet.http.HttpServletRequest;
@@ -177,8 +178,8 @@ public class WorkflowHelper {
 
         for (final Aggregation aggregation : aggregations.asList()) {
 
-            if (aggregation instanceof StringTerms) {
-                StringTerms.class.cast(aggregation)
+            if (aggregation instanceof ParsedStringTerms) {
+                ((ParsedStringTerms) aggregation)
                 .getBuckets().forEach(
                     bucket -> stepCounts.put(bucket.getKeyAsString(), bucket.getDocCount())
                 );

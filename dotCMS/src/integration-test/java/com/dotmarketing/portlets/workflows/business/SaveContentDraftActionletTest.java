@@ -87,7 +87,7 @@ public class SaveContentDraftActionletTest extends BaseWorkflowIntegrationTest {
                 .expireDateVar(null).folder(FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST)
                 .description("SaveContentAsDraftActionletTest...")
                 .name("SaveContentDraftAsActionletTest").owner(APILocator.systemUser().toString())
-                .variable("SaveContentAsDraftActionletTest").build());
+                .variable("SaveContentAsDraftActionletTest"+ System.currentTimeMillis()).build());
 
         final List<Field> fields = new ArrayList<>(SaveContentDraftActionletTest.type.fields());
 
