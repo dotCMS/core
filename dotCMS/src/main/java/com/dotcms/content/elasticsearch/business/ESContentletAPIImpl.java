@@ -7031,6 +7031,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final boolean isContentletLive = contentlet.isLive();
             final boolean isContentletWorking = contentlet.isWorking();
+            final boolean isContentletDeleted = contentlet.isArchived();
 
             if (user == null) {
                 throw new DotSecurityException("A user must be specified.");
@@ -7182,7 +7183,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(isContentletWorking) {
                 versionsToMarkWorking.add(newContentlet);
             }
-
+            if (isContentletDeleted) {
+                APILocator.getVersionableAPI().setDeleted(newContentlet, true);
+            }
             if(contentlet.getInode().equals(sourceContentlet.getInode())){
                 copyContentlet = newContentlet;
             }
@@ -8124,5 +8127,4 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
-    
 }
