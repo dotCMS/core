@@ -8,7 +8,9 @@ import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
-
+/**
+ * FocalPoint cache
+ */
 public class FocalPointCache implements Cachable {
 
     private DotCacheAdministrator cache;
@@ -17,13 +19,15 @@ public class FocalPointCache implements Cachable {
 
 
     // region's name for the cache
-    private static String[] groupNames = {primaryGroup};
+    private static String[] groupNames = { primaryGroup };
 
     public FocalPointCache() {
+
         cache = CacheLocator.getCacheAdministrator();
     }
 
     private String key(final String inode, final String fieldVar) {
+
         return primaryGroup + inode + fieldVar;
     }
 
@@ -31,13 +35,12 @@ public class FocalPointCache implements Cachable {
 
     public FocalPoint add(final String inode, final String fieldVar, final FocalPoint focalPoint) {
 
-
         if (UtilMethods.isSet(inode) && UtilMethods.isSet(fieldVar)) {
             cache.put(key(inode, fieldVar), focalPoint, primaryGroup);
         }
+
         return focalPoint;
     }
-
 
 
     public void clearCache() {
@@ -46,8 +49,8 @@ public class FocalPointCache implements Cachable {
 
 
     public void remove(final String inode, final String fieldVar) {
-        cache.remove(key(inode, fieldVar), primaryGroup);
 
+        cache.remove(key(inode, fieldVar), primaryGroup);
     }
 
 
@@ -62,6 +65,7 @@ public class FocalPointCache implements Cachable {
 
 
     public Optional<FocalPoint> get(final String inode, final String fieldVar) {
+
         FocalPoint retVal = null;
         try {
             retVal = (FocalPoint) cache.get(key(inode, fieldVar), primaryGroup);

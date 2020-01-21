@@ -4,8 +4,28 @@ import java.util.Map;
 import io.vavr.Function0;
 
 public interface ImageFilterAPI {
-    Function0<ImageFilterApiImpl> apiInstance = Function0.of(ImageFilterApiImpl::new).memoized();
 
+    String CROP        = "crop";
+    String EXPOSURE    = "exposure";
+    String FLIP        = "flip";
+    String FOCAL_POINT = "focalpoint";
+    String GAMMA       = "gamma";
+    String GIF         = "gif";
+    String GRAY_SCALE  = "grayscale";
+    String HSB         = "hsb";
+    String JPEG        = "jpeg";
+    String JPG         = "jpg";
+    String PDF         = "pdf";
+    String PNG         = "png";
+    String RESIZE      = "resize";
+    String ROTATE      = "rotate";
+    String SCALE       = "scale";
+    String THUMBNAIL   = "thumbnail";
+    String THUMB       = "thumb";
+    String WEBP        = "webp";
+
+
+    Function0<ImageFilterApiImpl> apiInstance = Function0.of(ImageFilterApiImpl::new).memoized();
 
     default ImageFilterAPI getInstance() {
         return apiInstance.apply();
