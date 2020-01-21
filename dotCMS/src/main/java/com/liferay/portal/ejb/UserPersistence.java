@@ -33,6 +33,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -42,6 +43,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.net.sf.hibernate.Query;
@@ -57,9 +59,9 @@ import com.dotcms.repackage.net.sf.hibernate.Session;
  */
 public class UserPersistence extends BasePersistence {
 
-	private static final String SEARCH_USER_BY_ID="select * from user_ where userid=?";
-	private static final UserTransformer userTransformer = new LiferayUserTransformer();
-
+	private final String SEARCH_USER_BY_ID="select * from user_ where userid=?";
+	private final UserTransformer userTransformer = new LiferayUserTransformer();
+    private final String SELECT_ALL_USERS="select * from user_ where companyid <> 'default' and delete_in_progress = " + DbConnectionFactory.getDBFalse() + " order by firstname, lastname";
 	protected com.liferay.portal.model.User create(String userId) {
 		return new com.liferay.portal.model.User(userId);
 	}
@@ -261,114 +263,29 @@ public class UserPersistence extends BasePersistence {
 	}
 
 	@CloseDBIfOpened
-	protected List findByCompanyId(String companyId) throws SystemException {
+	protected List<User> findByCompanyId(String companyId) throws SystemException {
 
 
-		try {
-
-
-			StringBuffer query = new StringBuffer();
-			query.append(
-					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
-
-			query.append(" AND delete_in_progress = ");
-			query.append(DbConnectionFactory.getDBFalse());
-
-			query.append(" ORDER BY ");
-			query.append("firstName ASC").append(", ");
-			query.append("middleName ASC").append(", ");
-			query.append("lastName ASC");
-
-			HibernateUtil util = new HibernateUtil();
-			util.setQuery(query.toString());
-			util.setParam(companyId);
-			
-			
-
-
-			return util.list();
-		}
-		catch (DotHibernateException e) {
-		    throw new SystemException(e);
-        }
+		return findAll();
 
 	}
 
 	protected List findByCompanyId(String companyId, int begin, int end)
 			throws SystemException {
-		return findByCompanyId(companyId, begin, end, null);
+	    return findAll(begin, end, null);
 	}
+	
 	@CloseDBIfOpened
 	protected List findByCompanyId(String companyId, int begin, int end,
 			OrderByComparator obc) throws SystemException {
-		Session session = null;
-
-		try {
-			session = openSession();
-
-			StringBuffer query = new StringBuffer();
-			query.append(
-					"FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM WHERE ");
-			query.append("companyId = ?");
-
-			query.append(" AND delete_in_progress = ");
-			query.append(DbConnectionFactory.getDBFalse());
-
-			if (obc != null) {
-				query.append(" ORDER BY " + obc.getOrderBy());
-			}
-			else {
-				query.append(" ORDER BY ");
-				query.append("firstName ASC").append(", ");
-				query.append("middleName ASC").append(", ");
-				query.append("lastName ASC");
-			}
-
-			Query q = session.createQuery(query.toString());
-			int queryPos = 0;
-			q.setString(queryPos++, companyId);
-
-			List list = new ArrayList();
-
-			if (getDialect().supportsLimit()) {
-				q.setMaxResults(end - begin);
-				q.setFirstResult(begin);
-
-				Iterator itr = q.list().iterator();
-
-				while (itr.hasNext()) {
-					UserHBM userHBM = (UserHBM)itr.next();
-					list.add(UserHBMUtil.model(userHBM));
-				}
-			}
-			else {
-				ScrollableResults sr = q.scroll();
-
-				if (sr.first() && sr.scroll(begin)) {
-					for (int i = begin; i < end; i++) {
-						UserHBM userHBM = (UserHBM)sr.get(0);
-						list.add(UserHBMUtil.model(userHBM));
-
-						if (!sr.next()) {
-							break;
-						}
-					}
-				}
-			}
-
-			return list;
-		}
-		catch (HibernateException he) {
-			throw new SystemException(he);
-		}
+        return findAll(begin, end, obc);
 
 	}
 
 	protected com.liferay.portal.model.User findByCompanyId_First(
 			String companyId, OrderByComparator obc)
 			throws NoSuchUserException, SystemException {
-		List list = findByCompanyId(companyId, 0, 1, obc);
+		List list = findAll(0, 1, obc);
 
 		if (list.size() == 0) {
 			throw new NoSuchUserException();
@@ -821,36 +738,34 @@ public class UserPersistence extends BasePersistence {
 
 	}
 	@CloseDBIfOpened
-	protected List findAll() throws SystemException {
-		Session session = null;
-
-		try {
-			session = openSession();
-
-			StringBuffer query = new StringBuffer();
-			query.append("FROM User_ IN CLASS com.liferay.portal.ejb.UserHBM ");
-			query.append(" WHERE delete_in_progress = ");
-			query.append(DbConnectionFactory.getDBFalse());
-			query.append(" ORDER BY ");
-			query.append("firstName ASC").append(", ");
-			query.append("middleName ASC").append(", ");
-			query.append("lastName ASC");
-
-			Iterator itr = session.find(query.toString()).iterator();
-			List list = new ArrayList();
-
-			while (itr.hasNext()) {
-				UserHBM userHBM = (UserHBM)itr.next();
-				list.add(UserHBMUtil.model(userHBM));
-			}
-
-			return list;
-		}
-		catch (HibernateException he) {
-			throw new SystemException(he);
-		}
-
+	protected List<User> findAll() throws SystemException {
+		return findAll(0, 100000, null);
 	}
+	
+
+    @CloseDBIfOpened
+    protected List<User> findAll(int begin, int end, OrderByComparator obc) {
+
+
+        try {
+            DotConnect dc = new DotConnect();
+            dc.setSQL(SELECT_ALL_USERS);
+            dc.setStartRow(begin);
+            dc.setMaxRows(end - begin);
+
+            List<User> users = dc.loadObjectResults().stream().map(m -> userTransformer.fromMap(m)).collect(Collectors.toList());
+            if (obc != null) {
+                users.sort(obc);
+            }
+            return users;
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+	
+	
+	
+	
 	@WrapInTransaction
 	protected void removeByCompanyId(String companyId)
 			throws SystemException {
