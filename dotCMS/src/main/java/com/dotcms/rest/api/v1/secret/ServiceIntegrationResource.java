@@ -8,7 +8,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationDetailedView;
-import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationHostView;
+import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationSiteView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationView;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Logger;
@@ -95,8 +95,8 @@ public class ServiceIntegrationResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            final Optional<ServiceIntegrationHostView> serviceIntegrationView = helper
-                    .getServiceIntegrationHostView(serviceKey, user);
+            final Optional<ServiceIntegrationSiteView> serviceIntegrationView = helper
+                    .getServiceIntegrationSiteView(serviceKey, user);
             if (serviceIntegrationView.isPresent()) {
                 return Response.ok(new ResponseEntityView(serviceIntegrationView.get()))
                         .build(); // 200
@@ -112,7 +112,7 @@ public class ServiceIntegrationResource {
     }
 
     @GET
-    @Path("/{serviceKey}/{hostId}")
+    @Path("/{serviceKey}/{siteId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -120,7 +120,7 @@ public class ServiceIntegrationResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("serviceKey") final String serviceKey,
-            @PathParam("hostId") final String hostId
+            @PathParam("siteId") final String siteId
     ) {
         try {
             final InitDataObject initData =
@@ -131,17 +131,15 @@ public class ServiceIntegrationResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-
-                //if the hostId is set it will be used to bring the configuration detail for that specific host
-                final Optional<ServiceIntegrationDetailedView> serviceIntegrationDetailedView = helper
-                        .getServiceIntegrationHostDetailedView(serviceKey, hostId, user);
-                if (serviceIntegrationDetailedView.isPresent()) {
-                    return Response.ok(new ResponseEntityView(serviceIntegrationDetailedView.get()))
-                            .build(); // 200
-                }
-                throw new DoesNotExistException(String.format(
-                        "Nope. No service integration was found for key `%s` and hostId `%s`. ",
-                        serviceKey, hostId));
+            final Optional<ServiceIntegrationDetailedView> serviceIntegrationDetailedView = helper
+                        .getServiceIntegrationSiteDetailedView(serviceKey, siteId, user);
+            if (serviceIntegrationDetailedView.isPresent()) {
+                return Response.ok(new ResponseEntityView(serviceIntegrationDetailedView.get()))
+                .build(); // 200
+            }
+            throw new DoesNotExistException(String.format(
+                        "Nope. No service integration was found for key `%s` and siteId `%s`. ",
+                        serviceKey, siteId));
 
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception getting service integration and secrets with message: " + e.getMessage(), e);
@@ -150,7 +148,7 @@ public class ServiceIntegrationResource {
     }
 
     @DELETE
-    @Path("/{serviceKey}/{hostId}")
+    @Path("/{serviceKey}/{siteId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -158,7 +156,7 @@ public class ServiceIntegrationResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("serviceKey") final String serviceKey,
-            @PathParam("hostId") final String hostId
+            @PathParam("siteId") final String siteId
     ) {
         try {
             final InitDataObject initData =
@@ -169,8 +167,8 @@ public class ServiceIntegrationResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            //this will remove a specific configuration for the key and host combination. All the secrets at once will be lost.
-            helper.deleteServiceIntegrationSecrets(serviceKey, hostId, user);
+            //this will remove a specific configuration for the key and site combination. All the secrets at once will be lost.
+            helper.deleteServiceIntegrationSecrets(serviceKey, siteId, user);
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception getting service integration and secrets with message: " + e.getMessage(), e);

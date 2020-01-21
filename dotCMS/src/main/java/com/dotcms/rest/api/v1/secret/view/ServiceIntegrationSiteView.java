@@ -2,24 +2,24 @@ package com.dotcms.rest.api.v1.secret.view;
 
 import java.util.List;
 
-public class ServiceIntegrationHostView {
+public class ServiceIntegrationSiteView {
 
     private final ServiceIntegrationView service;
 
-    private final List<HostView> hosts;
+    private final List<SiteView> sites;
 
-    public ServiceIntegrationHostView(
+    public ServiceIntegrationSiteView(
             final ServiceIntegrationView service,
-            final List<HostView> hosts) {
+            final List<SiteView> sites) {
         this.service = service;
-        this.hosts = hosts;
+        this.sites = sites;
     }
 
     public ServiceIntegrationView getService() {
         return service;
     }
 
-    public List<HostView> getHosts() {
-        return hosts;
+    public List<SiteView> getSites() {
+        return sites;
     }
 }

@@ -1,9 +1,9 @@
 package com.dotcms.rest.api.v1.secret;
 
 import com.dotcms.rest.api.MultiPartUtils;
-import com.dotcms.rest.api.v1.secret.view.HostView;
+import com.dotcms.rest.api.v1.secret.view.SiteView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationDetailedView;
-import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationHostView;
+import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationSiteView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationView;
 import com.dotcms.security.secret.Param;
 import com.dotcms.security.secret.Secret;
@@ -78,23 +78,23 @@ class ServiceIntegrationHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    Optional<ServiceIntegrationHostView> getServiceIntegrationHostView(final String serviceKey,
+    Optional<ServiceIntegrationSiteView> getServiceIntegrationSiteView(final String serviceKey,
             final User user)
             throws DotSecurityException, DotDataException {
 
         final Optional<ServiceDescriptor> serviceDescriptorOptional = serviceIntegrationAPI
                 .getServiceDescriptor(serviceKey, user);
         if (serviceDescriptorOptional.isPresent()) {
-            final ImmutableList.Builder<HostView> hostViewBuilder = new ImmutableList.Builder<>();
+            final ImmutableList.Builder<SiteView> hostViewBuilder = new ImmutableList.Builder<>();
 
             final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
             final List<Host> hosts = getHosts(user);
             final List<Host> hostsWithConfigurations = computeSitesWithConfigurations(serviceKey, hosts, user);
             for (final Host host : hostsWithConfigurations) {
-                hostViewBuilder.add(new HostView(host.getIdentifier(), host.getHostname()));
+                hostViewBuilder.add(new SiteView(host.getIdentifier(), host.getHostname()));
             }
             return Optional.of(
-               new ServiceIntegrationHostView(
+               new ServiceIntegrationSiteView(
                   new ServiceIntegrationView(serviceDescriptor, hostsWithConfigurations.size()),
                   hostViewBuilder.build()
                )
@@ -106,25 +106,25 @@ class ServiceIntegrationHelper {
     /**
      * This gives you a detailed view with all the configuration secrets for a given service-key host pair.
      * @param serviceKey unique service id for the given host.
-     * @param hostId Host Id
+     * @param siteId Host Id
      * @param user Logged in user
      * @return view
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    Optional<ServiceIntegrationDetailedView> getServiceIntegrationHostDetailedView(
-            final String serviceKey, final String hostId,
+    Optional<ServiceIntegrationDetailedView> getServiceIntegrationSiteDetailedView(
+            final String serviceKey, final String siteId,
             final User user)
             throws DotSecurityException, DotDataException {
         final Optional<ServiceDescriptor> serviceDescriptorOptional = serviceIntegrationAPI
                 .getServiceDescriptor(serviceKey, user);
         if (serviceDescriptorOptional.isPresent()) {
             final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
-            final Host host = hostAPI.find(hostId, user, false);
+            final Host host = hostAPI.find(siteId, user, false);
             if(null == host) {
-               throw new DotDataException(String.format(" Couldn't find any host with identifier `%s` ",hostId));
+               throw new DotDataException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
             }
-            final HostView hostView = new HostView(host.getIdentifier(), host.getHostname());
+            final SiteView hostView = new SiteView(host.getIdentifier(), host.getHostname());
             final Optional<ServiceSecrets> optionalServiceSecrets = serviceIntegrationAPI.getSecrets(serviceKey, host, user);
             if (optionalServiceSecrets.isPresent()) {
                 final ServiceSecrets serviceSecrets = optionalServiceSecrets.get();
@@ -139,13 +139,13 @@ class ServiceIntegrationHelper {
     /**
      * This will remove all the secrets under a service-integration for a given host.
      * @param serviceKey unique service id for the given host.
-     * @param hostId Host Id
+     * @param siteId Host Id
      * @param user Logged in user
      * @throws DotSecurityException
      * @throws DotDataException
      */
     void deleteServiceIntegrationSecrets(
-            final String serviceKey, final String hostId,
+            final String serviceKey, final String siteId,
             final User user)
             throws DotSecurityException, DotDataException {
         final Optional<ServiceDescriptor> serviceDescriptorOptional = serviceIntegrationAPI
@@ -153,12 +153,12 @@ class ServiceIntegrationHelper {
         if (!serviceDescriptorOptional.isPresent()) {
             throw new DotDataException(
                     String.format(" Couldn't find a descriptor under key `%s` for host `%s` ",
-                            serviceKey, hostId));
+                            serviceKey, siteId));
         }
-        final Host host = hostAPI.find(hostId, user, false);
+        final Host host = hostAPI.find(siteId, user, false);
         if (null == host) {
             throw new DotDataException(
-                    String.format(" Couldn't find any host with identifier `%s` ", hostId));
+                    String.format(" Couldn't find any site with identifier `%s` ", siteId));
         }
         serviceIntegrationAPI.deleteSecrets(serviceKey, host, user);
     }
@@ -168,12 +168,12 @@ class ServiceIntegrationHelper {
      * If the service key is used in a given host the host will come back in the resulting list.
      * Otherwise it means no configurations exist for the given host.
      * @param serviceKey unique service id for the given host.
-     * @param hosts a list of host
+     * @param sites a list of host
      * @param user Logged in user
      * @return a list where the service-key is present (a Configuration exist for the given host)
      */
-    private List<Host> computeSitesWithConfigurations(final String serviceKey, final List<Host> hosts, final User user){
-        return hosts.stream().filter(host -> {
+    private List<Host> computeSitesWithConfigurations(final String serviceKey, final List<Host> sites, final User user){
+        return sites.stream().filter(host -> {
             try {
                 return serviceIntegrationAPI.hasAnySecrets(serviceKey, host, user);
             } catch (DotDataException | DotSecurityException e) {
@@ -207,13 +207,13 @@ class ServiceIntegrationHelper {
         if (!UtilMethods.isSet(serviceKey)) {
             throw new DotDataException("Required param serviceKey isn't set.");
         }
-        final String hostId = form.getHostId();
-        if (!UtilMethods.isSet(hostId)) {
+        final String siteId = form.getSiteId();
+        if (!UtilMethods.isSet(siteId)) {
             throw new DotDataException("Required Param siteId isn't set.");
         }
-        final Host host = hostAPI.find(hostId, user, false);
+        final Host host = hostAPI.find(siteId, user, false);
         if(null == host) {
-            throw new DotDataException(String.format(" Couldn't find any host with identifier `%s` ",hostId));
+            throw new DotDataException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
         }
         final Optional<ServiceDescriptor> optionalServiceDescriptor = serviceIntegrationAPI
                 .getServiceDescriptor(serviceKey, user);
@@ -265,13 +265,13 @@ class ServiceIntegrationHelper {
         if (!UtilMethods.isSet(serviceKey)) {
             throw new DotDataException("Required param serviceKey isn't set.");
         }
-        final String hostId = form.getHostId();
-        if (!UtilMethods.isSet(hostId)) {
+        final String siteId = form.getSiteId();
+        if (!UtilMethods.isSet(siteId)) {
             throw new DotDataException("Required Param siteId isn't set.");
         }
-        final Host host = hostAPI.find(hostId, user, false);
+        final Host host = hostAPI.find(siteId, user, false);
         if(null == host) {
-            throw new DotDataException(String.format(" Couldn't find any host with identifier `%s` ",hostId));
+            throw new DotDataException(String.format(" Couldn't find any site with identifier `%s` ",siteId));
         }
         final Optional<ServiceDescriptor> optionalServiceDescriptor = serviceIntegrationAPI
                 .getServiceDescriptor(serviceKey, user);

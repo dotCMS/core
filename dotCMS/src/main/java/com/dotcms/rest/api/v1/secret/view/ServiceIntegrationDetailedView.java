@@ -10,14 +10,14 @@ public class ServiceIntegrationDetailedView {
 
     private final ServiceIntegrationView service;
 
-    private final HostView host;
+    private final SiteView host;
 
     @JsonInclude(Include.NON_NULL)
     private final Map<String, Secret> secrets;
 
     public ServiceIntegrationDetailedView(
             final ServiceIntegrationView service,
-            final HostView host,
+            final SiteView host,
             final ServiceSecrets serviceSecrets) {
         this.service = service;
         this.host = host;
@@ -28,7 +28,7 @@ public class ServiceIntegrationDetailedView {
         return service;
     }
 
-    public HostView getHost() {
+    public SiteView getHost() {
         return host;
     }
 
