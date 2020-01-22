@@ -1,10 +1,10 @@
 package com.dotcms.content.elasticsearch.util;
 
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.List;
 
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.client.Client;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
@@ -16,6 +16,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.unit.TimeValue;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
@@ -46,15 +48,21 @@ public class ESMigrationUtil {
 			if (cons.size() == 0) {
 				break;
 			}
-			Client client = new ESClient().getClient();
-			BulkRequestBuilder bulkRequest = client.prepareBulk();
+
+
+			final BulkRequest request = new BulkRequest();
+			request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+
 			for (Contentlet c : cons) {
 
 				//bulkRequest.add(client.prepareIndex(ESIndexAPI.ES_INDEX_NAME, type, c.getInode()).setSource(
 				//		new ESMappingAPIImpl().toJson(c)));
 
 			}
-			BulkResponse bulkResponse = bulkRequest.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+
+			BulkResponse bulkResponse = Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
+					.bulk(request, RequestOptions.DEFAULT));
+
 			if (bulkResponse.hasFailures()) {
 				Logger.error(this.getClass(), bulkResponse.buildFailureMessage());
 			}

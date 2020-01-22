@@ -2,24 +2,18 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
-<%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
-<%@page import="org.elasticsearch.action.admin.indices.stats.IndexStats"%>
-<%@page import="com.dotcms.content.elasticsearch.util.ESUtils"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
-<%@page import="com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@page import="java.util.ArrayList"%>
-<%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="java.util.Map"%>
 <%@ include file="/html/common/init.jsp"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="org.apache.commons.lang.StringUtils"%>
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
+<%@ page import="com.dotcms.content.elasticsearch.business.IndexStats" %>
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
@@ -52,7 +46,7 @@ List<String> newIdx =idxApi.getNewIndex();
 
 List<String> indices=idxApi.listDotCMSIndices();
 List<String> closedIndices=idxApi.listDotCMSClosedIndices();
-Map<String, IndexStats> indexInfo = esapi.getIndicesAndStatus();
+Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 
 SimpleDateFormat dater = new SimpleDateFormat("yyyyMMddHHmmss");
 
@@ -150,7 +144,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 
 				<tr class="<%=(active) ? "trIdxActive" : (building) ? "trIdxBuilding" : "trIdxNothing" %>" id="<%=x%>Row">
-					<td  align="center" class="showPointer" >
+					<td  align="center" class="showPointer">
 						<%if(active){ %>
 							<%= LanguageUtil.get(pageContext,"active") %>
 						<%}else if(building){ %>
@@ -161,11 +155,11 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 					<td><%=UtilMethods.webifyString(myDate) %></td>
 
 					<td align="center">
-						<%=(status !=null && status.getTotal() !=null && status.getTotal().getDocs() != null) ? status.getTotal().getDocs().getCount(): "n/a"%>
+						<%=status !=null ? status.getDocumentCount() : "n/a"%>
 					</td>
 					<td align="center"><%=(health !=null) ? health.getNumberOfShards() : "n/a"%></td>
 					<td align="center"><%=(health !=null) ? health.getNumberOfReplicas(): "n/a"%></td>
-					<td align="center"><%=(status !=null && status.getTotal() !=null && status.getTotal().getStore() !=null) ? status.getTotal().getStore().size(): "n/a"%></td>
+					<td align="center"><%=status !=null ? status.getSize(): "n/a"%></td>
 					<td align="center">
 					          <div onclick="showIndexClusterStatus('<%=x%>')"  style='cursor:pointer;background:<%=(health !=null) ? health.getStatus().toString(): "n/a"%>; width:20px;height:20px;'>
 					          </div>
@@ -190,7 +184,11 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			         <td  align="center" class="showPointer"> <%= LanguageUtil.get(pageContext,"Closed") %> </td>
 			         <td  class="showPointer" ><%=idx%></td>
 			         <td><%=UtilMethods.webifyString(myDate) %></td>
-			         <td colspan="5">n/a</td>
+			         <td align="center">n/a</td>
+					<td align="center">n/a</td>
+					<td align="center">n/a</td>
+					<td align="center">n/a</td>
+					<td align="center">n/a</td>
 			    </tr>
 			<% } %>
 			<tr>

@@ -72,7 +72,6 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 				if(REST_CLASSES == null){
 					REST_CLASSES = new HashSet<>();
                     REST_CLASSES.add(MultiPartFeature.class);
-					REST_CLASSES.add(com.dotcms.rest.ESIndexResource.class);
 					REST_CLASSES.add(com.dotcms.rest.api.v1.index.ESIndexResource.class);
 					REST_CLASSES.add(com.dotcms.rest.RoleResource.class);
 					REST_CLASSES.add(com.dotcms.rest.BundleResource.class);
