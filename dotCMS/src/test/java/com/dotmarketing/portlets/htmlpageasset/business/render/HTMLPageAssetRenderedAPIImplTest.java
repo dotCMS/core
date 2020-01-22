@@ -197,7 +197,7 @@ public class HTMLPageAssetRenderedAPIImplTest {
         when(htmlPageAssetAPI.getPageByPath(pageUri, currentHost, DEFAULT_LANGUAGE.getId(),
                 PageMode.PREVIEW_MODE.showLive)).thenReturn(null);
 
-        when(htmlPageAssetAPI.getPageByPath("uri", currentHost, DEFAULT_LANGUAGE.getId(),
+        when(htmlPageAssetAPI.getPageByPath(pageUri, currentHost, DEFAULT_LANGUAGE.getId(),
                 PageMode.PREVIEW_MODE.showLive)).thenReturn(htmlPage);
 
         when(languageWebAPI.getLanguage(request)).thenReturn(language);
@@ -213,7 +213,6 @@ public class HTMLPageAssetRenderedAPIImplTest {
 
         when(this.permissionAPI.doesUserHavePermission(htmlPage, PermissionLevel.READ.getType(), user,
                 PageMode.PREVIEW_MODE.respectAnonPerms)).thenReturn(true);
-
         when(this.permissionAPI.doesUserHavePermission(htmlPage, PermissionLevel.READ.getType(), systemUser,
                 PageMode.PREVIEW_MODE.respectAnonPerms)).thenReturn(true);
 
