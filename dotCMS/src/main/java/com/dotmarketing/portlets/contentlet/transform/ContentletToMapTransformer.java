@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.util.CollectionsUtils;
@@ -107,7 +108,7 @@ public class ContentletToMapTransformer {
                 properties.put(HTMLPageAssetAPI.URL_FIELD, url);
             }
         }
-
+        addConstants(contentlet);
         setAdditionalProperties(contentlet);
         clean(contentlet);
         return contentlet.getMap();
@@ -150,6 +151,22 @@ public class ContentletToMapTransformer {
         return contentlet;
     }
 
+    
+    /**
+     * Use this method to add any additional property
+     * @param contentlet Same contentlet with any additional property added
+     */
+    private void addConstants(final Contentlet contentlet){
+        try {
+            contentlet.getContentType().fields(ConstantField.class)
+            .stream()
+            .filter(f->f.values()!=null)
+            .forEach(f-> contentlet.getMap().put(f.variable(), f.values()));
+        } catch (Exception e) {
+            Logger.warnAndDebug(getClass(),"Error Populating Constant Field: "  + e.getMessage(), e);
+        }
+    }
+    
     /**
      * Use this method to add any additional property
      * @param contentlet Same contentlet with any additional property added
