@@ -5,6 +5,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.*;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -24,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.List;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
@@ -529,5 +531,16 @@ public class CMSUrlUtil {
 		return (-1 != indexOf && indexOf+1 < uri.length())?
 				uri.substring(indexOf+1):
 				null;
+	}
+
+	public static String getCurrentURI(final HttpServletRequest request)  {
+		try {
+			return URLDecoder.decode((request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null)
+					? (String) request.getAttribute(CMS_FILTER_URI_OVERRIDE)
+					: request.getRequestURI(), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			Logger.debug(CMSUrlUtil.class, e.getMessage(), e);
+			throw new DotRuntimeException(e);
+		}
 	}
 }
