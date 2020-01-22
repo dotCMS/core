@@ -55,7 +55,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
 
     private static String getSecretStorePath() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + File.separator + "server" + File.separator + SECRETS_STORE_FILE;
+                + File.separator + "server" + File.separator + "secrets" + File.separator + SECRETS_STORE_FILE;
         final String dirPath = Config.getStringProperty(SECRETS_KEYSTORE_FILE_PATH_KEY, supplier.get());
         return Paths.get(dirPath).normalize().toString();
     }

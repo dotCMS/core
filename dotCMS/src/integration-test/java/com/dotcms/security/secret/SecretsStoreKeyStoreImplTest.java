@@ -196,9 +196,9 @@ public class SecretsStoreKeyStoreImplTest {
 
         final Collection<String> keys = secretsStore.listKeys();
         assertTrue (keys.size() > 2);
-        assertTrue (keys.contains(key.toLowerCase()));
-        assertTrue (keys.contains(key2.toLowerCase()));
-        assertTrue (keys.contains(key3.toLowerCase()));
+        assertTrue (keys.contains(key));
+        assertTrue (keys.contains(key2));
+        assertTrue (keys.contains(key3));
     }
 
 

@@ -1,15 +1,16 @@
 package com.dotcms.rest.api.v1.secret;
 
 import com.dotcms.rest.api.MultiPartUtils;
-import com.dotcms.rest.api.v1.secret.view.SiteView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationDetailedView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationSiteView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationView;
+import com.dotcms.rest.api.v1.secret.view.SiteView;
 import com.dotcms.security.secret.Param;
 import com.dotcms.security.secret.Secret;
 import com.dotcms.security.secret.ServiceDescriptor;
 import com.dotcms.security.secret.ServiceIntegrationAPI;
 import com.dotcms.security.secret.ServiceSecrets;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -26,6 +27,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -50,6 +53,9 @@ class ServiceIntegrationHelper {
         this(APILocator.getServiceIntegrationAPI(), APILocator.getHostAPI());
     }
 
+    private static Comparator<ServiceIntegrationView> compareByNameAndConfiguration = Comparator
+            .comparing(ServiceIntegrationView::getName).thenComparing(ServiceIntegrationView::getConfigurationsCount);
+
     /**
      * This will give you the whole list of service descriptors.
      * @param user Logged in user
@@ -59,15 +65,15 @@ class ServiceIntegrationHelper {
      */
     List<ServiceIntegrationView> getAvailableDescriptorViews(final User user)
             throws DotSecurityException, DotDataException {
-        final ImmutableList.Builder<ServiceIntegrationView> viewsBuilder = new ImmutableList.Builder<>();
+        final List<ServiceIntegrationView> views = new ArrayList<>();
         final List<ServiceDescriptor> serviceDescriptors = serviceIntegrationAPI.getServiceDescriptors(user);
         final List<Host> hosts = getHosts(user);
         for (final ServiceDescriptor serviceDescriptor : serviceDescriptors) {
             final String serviceKey = serviceDescriptor.getKey();
             final long configurationsCount = computeSitesWithConfigurations(serviceKey, hosts, user).size();
-            viewsBuilder.add(new ServiceIntegrationView(serviceDescriptor, configurationsCount));
+            views.add(new ServiceIntegrationView(serviceDescriptor, configurationsCount));
         }
-        return viewsBuilder.build();
+        return views.stream().sorted(compareByNameAndConfiguration).collect(CollectionsUtils.toImmutableList());
     }
 
     /**
@@ -121,13 +127,16 @@ class ServiceIntegrationHelper {
         if (serviceDescriptorOptional.isPresent()) {
             final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
             final Host host = hostAPI.find(siteId, user, false);
-            if(null == host) {
-               throw new DotDataException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
+            if (null == host) {
+                throw new DotDataException(
+                        String.format(" Couldn't find any host with identifier `%s` ", siteId));
             }
             final SiteView hostView = new SiteView(host.getIdentifier(), host.getHostname());
-            final Optional<ServiceSecrets> optionalServiceSecrets = serviceIntegrationAPI.getSecrets(serviceKey, host, user);
+            final Optional<ServiceSecrets> optionalServiceSecrets = serviceIntegrationAPI
+                    .getSecrets(serviceKey, host, user);
             if (optionalServiceSecrets.isPresent()) {
-                final ServiceSecrets serviceSecrets = optionalServiceSecrets.get();
+                final ServiceSecrets serviceSecrets = protectHiddenSecrets(
+                        optionalServiceSecrets.get());
                 return Optional.of(new ServiceIntegrationDetailedView(
                         new ServiceIntegrationView(serviceDescriptor, 1L),
                         hostView, serviceSecrets));
@@ -225,7 +234,7 @@ class ServiceIntegrationHelper {
             throw new DotDataException("Required Params aren't set.");
         }
         final ServiceDescriptor serviceDescriptor = optionalServiceDescriptor.get();
-        validateIncomingParamNames(params.keySet(),serviceDescriptor);
+        validateIncomingParams(params, serviceDescriptor);
 
         final Optional<ServiceSecrets> serviceSecretsOptional = serviceIntegrationAPI
                 .getSecrets(serviceKey, host, user);
@@ -283,7 +292,7 @@ class ServiceIntegrationHelper {
             throw new DotDataException("Required Params aren't set.");
         }
         final ServiceDescriptor serviceDescriptor = optionalServiceDescriptor.get();
-        validateIncomingParamNames(params.keySet(),serviceDescriptor);
+        validateIncomingParams(params,serviceDescriptor, true);
 
         final Optional<ServiceSecrets> serviceSecretsOptional = serviceIntegrationAPI
                 .getSecrets(serviceKey, host, user);
@@ -296,22 +305,48 @@ class ServiceIntegrationHelper {
 
     /**
      * Validate the incoming params match the params described by a serviceDescriptor yml.
-     * @param paramNames a set of paramNames
+     * @param incomingParams a set of paramNames
      * @param serviceDescriptor the service template
      * @throws DotDataException This will give bac an exception if you send an invalid param.
      */
-    private void validateIncomingParamNames(final Set<String> paramNames, final ServiceDescriptor serviceDescriptor)
+    private void validateIncomingParams(final Map<String, Param> incomingParams, final ServiceDescriptor serviceDescriptor)
+            throws DotDataException {
+            validateIncomingParams(incomingParams, serviceDescriptor, false);
+    }
+
+    /**
+     * Validate the incoming params match the params described by a serviceDescriptor yml.
+     * @param incomingParams a set of paramNames
+     * @param serviceDescriptor the service template
+     * @param skipRequiredValidation if true no required fields are validated (useful when calling it from a delete where we only need the param names)
+     * @throws DotDataException This will give bac an exception if you send an invalid param.
+     */
+    private void validateIncomingParams(final Map<String, Param> incomingParams, final ServiceDescriptor serviceDescriptor, boolean skipRequiredValidation)
             throws DotDataException {
 
-        if(serviceDescriptor.isAllowExtraParameters()){
-            //If this flag has been specified we can have whatever param name we want added.
-           return;
-        }
-        //Should this be case sensitive ????
+        //Param/Property names are case sensitive.
         final Map<String, Param> serviceDescriptorParams = serviceDescriptor.getParams();
-        for (final String paramName : paramNames) {
-            if(!serviceDescriptorParams.containsKey(paramName)){
-                throw new DotDataException(String.format("Params named `%s` can not be matched against service descriptor.",paramName));
+        for (final Entry<String, Param> incomingParamEntry : incomingParams.entrySet()) {
+            final String incomingParamName = incomingParamEntry.getKey();
+            final Param describedParam = serviceDescriptorParams.get(incomingParamName);
+            if(serviceDescriptor.isAllowExtraParameters() && null == describedParam){
+               //if the param isn't found in our description but the allow extra params flag is true we're ok
+               continue;
+            }
+            //If the flag isn't true. Then we must reject the unknown param.
+            if(null == describedParam) {
+                throw new DotDataException(String.format(
+                        "Params named `%s` can not be matched against service descriptor. ",
+                        incomingParamName));
+            }
+            if(skipRequiredValidation){
+              Logger.debug(ServiceIntegrationHelper.class,()->"skipping required values validation.");
+              return;
+            }
+            final Param incomingParam = incomingParamEntry.getValue();
+            //We revise the incoming param against the definition loaded from the yml.
+            if(describedParam.isRequired() && UtilMethods.isNotSet(incomingParam.getValue())){
+               throw new DotDataException(String.format("Params named `%s` is marked as required in the descriptor but does not have any value.", incomingParamName));
             }
         }
     }
@@ -347,6 +382,28 @@ class ServiceIntegrationHelper {
     void deleteServiceDescriptor(final String serviceKey, final User user)
             throws DotSecurityException, DotDataException {
         serviceIntegrationAPI.removeServiceDescriptor(serviceKey, user);
+    }
+
+    @VisibleForTesting
+    static final String PROTECTED_HIDDEN_SECRET = "*****";
+
+    /**
+     * Hidden secrets should never be exposed so this will replace the secret values with anything
+     * @param serviceSecrets
+     * @return
+     */
+    private ServiceSecrets protectHiddenSecrets(final ServiceSecrets serviceSecrets){
+        final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
+        builder.withServiceKey(serviceSecrets.getServiceKey());
+        final Map<String,Secret> sourceSecrets = serviceSecrets.getSecrets();
+        for (final Entry<String, Secret> secretEntry : sourceSecrets.entrySet()) {
+            if(secretEntry.getValue().isHidden()){
+                builder.withHiddenSecret(secretEntry.getKey(), PROTECTED_HIDDEN_SECRET);
+            } else {
+                builder.withSecret(secretEntry.getKey(),secretEntry.getValue());
+            }
+        }
+        return builder.build();
     }
 
 }

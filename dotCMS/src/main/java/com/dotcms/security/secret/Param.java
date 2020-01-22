@@ -5,14 +5,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Param extends AbstractProperty<String>{
 
-    private String label;
+    private final String label;
 
-    private String hint;
+    private final String hint;
 
-    private Param(final String value, final boolean hidden, final Type type, final String label, final String hint) {
+    private final boolean required;
+
+    private Param(final String value, final boolean hidden, final Type type, final String label, final String hint, final boolean required) {
         super(value, hidden, type);
         this.label = label;
         this.hint = hint;
+        this.required = required;
     }
 
     public String getLabel() {
@@ -23,13 +26,18 @@ public class Param extends AbstractProperty<String>{
         return hint;
     }
 
+    public boolean isRequired() {
+        return required;
+    }
+
     @JsonCreator
     public static Param newParam(@JsonProperty("value") final String value,
             @JsonProperty("hidden") final boolean hidden,
             @JsonProperty("type") final Type type,
             @JsonProperty("label") final String label,
-            @JsonProperty("hint") final String hint) {
-        return new Param(value, hidden, type, label, hint);
+            @JsonProperty("hint") final String hint,
+            @JsonProperty("required") final boolean required) {
+        return new Param(value, hidden, type, label, hint, required);
     }
 
 }

@@ -263,9 +263,11 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
 
     @Override
     public List<ServiceDescriptor> getServiceDescriptors(User user)
-            throws DotDataException, DotSecurityException{
-       return getServiceDescriptorsMeta(user).stream().map(ServiceDescriptorMeta::getServiceDescriptor).collect(Collectors.toList());
-    };
+            throws DotDataException, DotSecurityException {
+        return getServiceDescriptorsMeta(user).stream()
+                .map(ServiceDescriptorMeta::getServiceDescriptor)
+                .collect(Collectors.toList());
+    }
 
     private List<ServiceDescriptorMeta> getServiceDescriptorsMeta(final User user)
             throws DotDataException, DotSecurityException {
@@ -320,8 +322,9 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     public Optional<ServiceDescriptor> getServiceDescriptor(final String serviceKey,
             final User user)
             throws DotDataException, DotSecurityException {
+        final String serviceKeyLC = serviceKey.toLowerCase();
         final ServiceDescriptorMeta serviceDescriptorMeta = getServiceDescriptorMap(user)
-                .get(serviceKey);
+                .get(serviceKeyLC);
         return null == serviceDescriptorMeta ? Optional.empty()
                 : Optional.of(serviceDescriptorMeta.getServiceDescriptor());
     }
@@ -347,7 +350,8 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         final ServiceDescriptor serviceDescriptor = ymlMapper
                 .readValue(inputStream, ServiceDescriptor.class);
 
-        if (validateServiceDescriptor(serviceDescriptor, user)) {
+        if (validateServiceDescriptor(serviceDescriptor)
+                && validateServiceDescriptorUniqueName(serviceDescriptor, user)) {
 
             final String serviceKey = serviceDescriptor.getKey();
             final File incomingFile = new File(basePath, String.format("%s.yml", serviceKey));
@@ -371,7 +375,8 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                     "Invalid attempt to delete a service descriptors performed by user with id `%s`.",
                     user.getUserId()));
         }
-        final ServiceDescriptorMeta serviceDescriptorMeta = getServiceDescriptorMap(user).get(serviceKey);
+        final String serviceKeyLC = serviceKey.toLowerCase();
+        final ServiceDescriptorMeta serviceDescriptorMeta = getServiceDescriptorMap(user).get(serviceKeyLC);
         if (null == serviceDescriptorMeta) {
             throw new DotDataException(String.format("The requested descriptor `%s` does not exist.",serviceKey));
         }else{
@@ -382,7 +387,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                 final String hostId = entry.getKey();
                 final Set<String> serviceKeys = entry.getValue();
                 //Now we need to verify the service-key has a configuration for this host.
-                if(serviceKeys.contains(serviceKey.toLowerCase())){
+                if(serviceKeys.contains(serviceKeyLC)){
                     //And if it does we attempt to delete all the secrets.
                     final Host host = hostAPI.find(hostId, user, false);
                     deleteSecrets(serviceKey, host, user);
@@ -415,7 +420,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
 
     private static String getServiceDescriptorDirectory() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + File.separator + "server" + File.separator;
+                + File.separator + "services" + File.separator;
         final String dirPath = Config
                 .getStringProperty(SERVICE_INTEGRATION_DIR_PATH_KEY, supplier.get());
         return Paths.get(dirPath).normalize().toString();
@@ -455,14 +460,27 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         return fileList;
     }
 
-    private List<ServiceDescriptorMeta> loadServiceDescriptors() throws IOException {
+    private List<ServiceDescriptorMeta> loadServiceDescriptors()
+            throws IOException, DotDataException {
+        final Set<String> loadedServiceKeys = new HashSet<>();
         final ImmutableList.Builder<ServiceDescriptorMeta> builder = new ImmutableList.Builder<>();
         final Set<String> fileNames = listAvailableYamlFiles();
         for (final String fileName : fileNames) {
             try {
                 final File file = new File(fileName);
-                final ServiceDescriptor serviceDescriptor = ymlMapper.readValue(file, ServiceDescriptor.class);
-                builder.add(new ServiceDescriptorMeta(serviceDescriptor, file.getName()));
+                final ServiceDescriptor serviceDescriptor = ymlMapper
+                        .readValue(file, ServiceDescriptor.class);
+                if (validateServiceDescriptor(serviceDescriptor)) {
+                    if (loadedServiceKeys.contains(serviceDescriptor.getKey())) {
+                        throw new DotDataException(
+                                String.format(
+                                        "There's a service already registered under key `%s`.",
+                                        serviceDescriptor.getKey())
+                                );
+                    }
+                    builder.add(new ServiceDescriptorMeta(serviceDescriptor, file.getName()));
+                    loadedServiceKeys.add(serviceDescriptor.getKey());
+                }
             } catch (IOException e) {
                 Logger.error(ServiceIntegrationAPIImpl.class,
                         String.format("Error reading yml file `%s`.", fileName), e);
@@ -472,20 +490,14 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         return builder.build();
     }
 
-   private boolean validateServiceDescriptor(final ServiceDescriptor serviceDescriptor, final User user)
-           throws DotDataException, DotSecurityException {
+   private boolean validateServiceDescriptor(final ServiceDescriptor serviceDescriptor)
+           throws DotDataException {
        if(UtilMethods.isNotSet(serviceDescriptor.getKey())){
           throw new DotDataException("The required field `key` isn't set on the incoming file.");
        }
 
        if(serviceDescriptor.getKey().length() > 100){
            throw new DotDataException("The required field `key` is too large.");
-       }
-
-       if (getServiceDescriptorMap(user).containsKey(serviceDescriptor.getKey())) {
-           throw new DotDataException(
-                   String.format("There's a service already registered under key `%s`.",
-                           serviceDescriptor.getKey()));
        }
 
        if(UtilMethods.isNotSet(serviceDescriptor.getName())){
@@ -507,6 +519,18 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
        return true;
 
    }
+
+    private boolean validateServiceDescriptorUniqueName(final ServiceDescriptor serviceDescriptor,
+            final User user)
+            throws DotDataException, DotSecurityException {
+
+        if (getServiceDescriptorMap(user).containsKey(serviceDescriptor.getKey())) {
+            throw new DotDataException(
+                    String.format("There's a service already registered under key `%s`.",
+                            serviceDescriptor.getKey()));
+        }
+        return true;
+    }
 
     /*
     private ServiceDescriptor emptyDescriptor() {

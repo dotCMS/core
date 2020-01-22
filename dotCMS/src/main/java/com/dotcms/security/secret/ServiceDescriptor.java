@@ -20,7 +20,7 @@ public class ServiceDescriptor {
 
     public ServiceDescriptor(final String key, final String name, final String description,
             final String iconUrl, final boolean allowExtraParameters) {
-        this.key = key;
+        this.key = key.toLowerCase(); //We need to guarantee uniqueness.
         this.name = name;
         this.description = description;
         this.iconUrl = iconUrl;
@@ -58,8 +58,8 @@ public class ServiceDescriptor {
     }
 
     public void addParam(final String name, final String value, final boolean hidden,
-            final Type type, final String label, final String hint) {
-        getParams().put(name, Param.newParam(value, hidden, type, label, hint));
+            final Type type, final String label, final String hint, final boolean required) {
+        getParams().put(name, Param.newParam(value, hidden, type, label, hint, required));
     }
 
     @Override
