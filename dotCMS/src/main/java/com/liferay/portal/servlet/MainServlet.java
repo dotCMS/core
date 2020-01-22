@@ -21,6 +21,8 @@ package com.liferay.portal.servlet;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.config.DotInitializationService;
+import com.dotcms.content.elasticsearch.business.ClusterStats;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
@@ -62,7 +64,7 @@ import com.liferay.util.servlet.EncryptedServletRequest;
 import com.liferay.util.servlet.UploadServletRequest;
 
 import io.vavr.API;
-
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
@@ -70,8 +72,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -112,6 +116,13 @@ public class MainServlet extends ActionServlet {
       } catch (IOException e1) {
         Logger.debug(InitServlet.class, "IOException: " + e1.getMessage(), e1);
       }
+      
+      // Make sure elasticseach is up
+      new ESIndexAPI().waitUtilIndexReady();
+      
+      
+      
+      
 
       // Checking for execute upgrades
       try {
