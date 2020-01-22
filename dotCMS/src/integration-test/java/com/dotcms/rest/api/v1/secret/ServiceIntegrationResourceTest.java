@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -156,12 +158,12 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final ServiceIntegrationView serviceIntegrationView2 = serviceIntegrationHostView2.getService();
         Assert.assertEquals(1, serviceIntegrationView2.getConfigurationsCount());
         Assert.assertEquals("lola", serviceIntegrationView2.getName());
-        final List<SiteView> hosts = serviceIntegrationHostView2.getSites();
-        Assert.assertNotNull(hosts);
-        Assert.assertFalse(hosts.isEmpty());
-        Assert.assertEquals(hosts.get(0).getSiteId(),host.getIdentifier());
+        final List<SiteView> hosts1 = serviceIntegrationHostView2.getSites();
+        Assert.assertNotNull(hosts1);
+        Assert.assertFalse(hosts1.isEmpty());
+        Assert.assertEquals(hosts1.get(0).getSiteId(),host.getIdentifier());
         Assert.assertTrue(
-                hosts.stream().anyMatch(hostView -> host.getIdentifier().equals(hostView.getSiteId()))
+                hosts1.stream().anyMatch(hostView -> host.getIdentifier().equals(hostView.getSiteId()))
                 );
 
         final Response detailedIntegrationResponse = serviceIntegrationResource.getDetailedServiceIntegration(request, response, serviceKey, host.getIdentifier());
@@ -176,6 +178,17 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final Response detailedIntegrationResponseAfterDelete = serviceIntegrationResource.getDetailedServiceIntegration(request, response, serviceKey, host.getIdentifier());
         Assert.assertEquals(HttpStatus.SC_NOT_FOUND, detailedIntegrationResponseAfterDelete.getStatus());
 
+        //Now test the entry has been removed from the list of available configurations.
+        final Response hostIntegrationsResponseAfterDelete = serviceIntegrationResource.getServiceIntegrationByKey(request, response, serviceKey);
+        Assert.assertEquals(HttpStatus.SC_OK, hostIntegrationsResponseAfterDelete.getStatus());
+        final ResponseEntityView responseEntityViewAfterDelete = (ResponseEntityView) hostIntegrationsResponseAfterDelete.getEntity();
+        final ServiceIntegrationSiteView serviceIntegrationHostViewAfterDelete = (ServiceIntegrationSiteView) responseEntityViewAfterDelete.getEntity();
+        final ServiceIntegrationView serviceIntegrationViewAafterDelete = serviceIntegrationHostViewAfterDelete.getService();
+        Assert.assertEquals(0, serviceIntegrationViewAafterDelete.getConfigurationsCount());
+        Assert.assertEquals("lola", serviceIntegrationViewAafterDelete.getName());
+        final List<SiteView> expectedEmptyHosts = serviceIntegrationHostViewAfterDelete.getSites();
+        Assert.assertNotNull(expectedEmptyHosts);
+        Assert.assertTrue(expectedEmptyHosts.isEmpty());
     }
 
     @Test
@@ -232,16 +245,16 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final ServiceIntegrationDetailedView serviceIntegrationDetailedView1 = (ServiceIntegrationDetailedView) responseEntityView3.getEntity();
         Assert.assertEquals(serviceIntegrationDetailedView1.getHost().getSiteId(),host.getIdentifier());
 
-        final Map<String, Param> paramsToDeleteMap = ImmutableMap.of(
-                "param1", Param.newParam("", false, Type.STRING, "", "", true),
-                "param3", Param.newParam("", false, Type.STRING, "", "", true)
+        final Set<String> paramsToDelete = ImmutableSet.of(
+                "param1",
+                "param3"
         );
 
-        final SecretForm secretForm1 = new SecretForm();
-        secretForm1.setServiceKey(serviceKey);
-        secretForm1.setSiteId(host.getIdentifier());
-        secretForm1.setParams(paramsToDeleteMap);
-        final Response deleteIndividualSecretResponse = serviceIntegrationResource.deleteIndividualServiceIntegrationSecret(request, response, secretForm1);
+        final DeleteSecretForm deleteSecretForm = new DeleteSecretForm();
+        deleteSecretForm.setServiceKey(serviceKey);
+        deleteSecretForm.setSiteId(host.getIdentifier());
+        deleteSecretForm.setParams(paramsToDelete);
+        final Response deleteIndividualSecretResponse = serviceIntegrationResource.deleteIndividualServiceIntegrationSecret(request, response, deleteSecretForm);
         Assert.assertEquals(HttpStatus.SC_OK, deleteIndividualSecretResponse.getStatus());
 
         final Response detailedIntegrationResponseAfterDelete = serviceIntegrationResource.getDetailedServiceIntegration(request, response, serviceKey, host.getIdentifier());
@@ -251,6 +264,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final ServiceIntegrationDetailedView serviceIntegrationDetailedView2 = (ServiceIntegrationDetailedView) responseEntityView4.getEntity();
         final Map<String, Secret> secretsAfterDelete = serviceIntegrationDetailedView2.getSecrets();
         Assert.assertTrue(secretsAfterDelete.containsKey("param2"));
+        //The ones we removed must not be present.. right?
         Assert.assertFalse(secretsAfterDelete.containsKey("param1"));
         Assert.assertFalse(secretsAfterDelete.containsKey("param3"));
     }

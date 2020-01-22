@@ -267,7 +267,7 @@ class ServiceIntegrationHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    void deleteSecret(final SecretForm form, final User user)
+    void deleteSecret(final DeleteSecretForm form, final User user)
             throws DotSecurityException, DotDataException {
 
         final String serviceKey = form.getServiceKey();
@@ -287,19 +287,19 @@ class ServiceIntegrationHelper {
         if (!optionalServiceDescriptor.isPresent()) {
             throw new DotDataException(String.format("Unable to find a service descriptor bound to the  serviceKey `%s`. You must upload a yml descriptor.",serviceKey));
         }
-        final Map<String, Param> params = form.getParams();
+        final Set<String> params = form.getParams();
         if(!UtilMethods.isSet(params)){
             throw new DotDataException("Required Params aren't set.");
         }
         final ServiceDescriptor serviceDescriptor = optionalServiceDescriptor.get();
-        validateIncomingParams(params,serviceDescriptor, true);
+        validateIncomingParams(params, serviceDescriptor);
 
         final Optional<ServiceSecrets> serviceSecretsOptional = serviceIntegrationAPI
                 .getSecrets(serviceKey, host, user);
         if (!serviceSecretsOptional.isPresent()) {
             throw new DotDataException(String.format("Unable to find a secret for serviceKey `%s`.",serviceKey));
         } else {
-            serviceIntegrationAPI.deleteSecret(serviceKey, params.keySet(), host, user);
+            serviceIntegrationAPI.deleteSecret(serviceKey, params, host, user);
         }
     }
 
@@ -310,18 +310,6 @@ class ServiceIntegrationHelper {
      * @throws DotDataException This will give bac an exception if you send an invalid param.
      */
     private void validateIncomingParams(final Map<String, Param> incomingParams, final ServiceDescriptor serviceDescriptor)
-            throws DotDataException {
-            validateIncomingParams(incomingParams, serviceDescriptor, false);
-    }
-
-    /**
-     * Validate the incoming params match the params described by a serviceDescriptor yml.
-     * @param incomingParams a set of paramNames
-     * @param serviceDescriptor the service template
-     * @param skipRequiredValidation if true no required fields are validated (useful when calling it from a delete where we only need the param names)
-     * @throws DotDataException This will give bac an exception if you send an invalid param.
-     */
-    private void validateIncomingParams(final Map<String, Param> incomingParams, final ServiceDescriptor serviceDescriptor, boolean skipRequiredValidation)
             throws DotDataException {
 
         //Param/Property names are case sensitive.
@@ -339,14 +327,39 @@ class ServiceIntegrationHelper {
                         "Params named `%s` can not be matched against service descriptor. ",
                         incomingParamName));
             }
-            if(skipRequiredValidation){
-              Logger.debug(ServiceIntegrationHelper.class,()->"skipping required values validation.");
-              return;
-            }
+
             final Param incomingParam = incomingParamEntry.getValue();
             //We revise the incoming param against the definition loaded from the yml.
             if(describedParam.isRequired() && UtilMethods.isNotSet(incomingParam.getValue())){
                throw new DotDataException(String.format("Params named `%s` is marked as required in the descriptor but does not have any value.", incomingParamName));
+            }
+        }
+    }
+
+    /**
+     * Validate the incoming param names match the params described by a serviceDescriptor yml.
+     * This is mostly useful to validate a delete param request
+     * @param incomingParamNames
+     * @param serviceDescriptor
+     * @throws DotDataException
+     */
+    private void validateIncomingParams(final Set<String> incomingParamNames, final ServiceDescriptor serviceDescriptor)
+            throws DotDataException {
+
+        //Param/Property names are case sensitive.
+        final Map<String, Param> serviceDescriptorParams = serviceDescriptor.getParams();
+        for (final String incomingParamName : incomingParamNames) {
+
+            final Param describedParam = serviceDescriptorParams.get(incomingParamName);
+            if(serviceDescriptor.isAllowExtraParameters() && null == describedParam){
+                //if the param isn't found in our description but the allow extra params flag is true we're ok
+                continue;
+            }
+            //If the flag isn't true. Then we must reject the unknown param.
+            if(null == describedParam) {
+                throw new DotDataException(String.format(
+                        "Params named `%s` can not be matched against service descriptor. ",
+                        incomingParamName));
             }
         }
     }

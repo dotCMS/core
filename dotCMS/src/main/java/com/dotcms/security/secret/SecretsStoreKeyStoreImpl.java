@@ -263,7 +263,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
             keyStore.deleteEntry(secretKey);
             saveSecretsStore(keyStore);
             flushCache(secretKey);
-        } catch (KeyStoreException e) {
+        } catch (KeyStoreException | DotCacheException e) {
             Logger.warn(this.getClass(), "Unable to delete secret from  " + SECRETS_STORE_FILE + ": " + e);
             throw new DotRuntimeException(e);
         }
@@ -335,14 +335,18 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         return keys;
     }
 
-    private void flushCache() {
+    private synchronized void flushCache() {
         CacheLocator.getCacheAdministrator().flushGroup(SECRETS_CACHE_GROUP);
         CacheLocator.getCacheAdministrator().flushGroup(SECRETS_CACHE_KEYS_GROUP);
     }
 
-    private void flushCache(final String key) {
+    private synchronized void flushCache(final String key) throws DotCacheException {
         CacheLocator.getCacheAdministrator().remove(key, SECRETS_CACHE_GROUP);
-        CacheLocator.getCacheAdministrator().remove(key, SECRETS_CACHE_KEYS_GROUP);
+        final Set<String> keys = (Set<String>) CacheLocator.getCacheAdministrator().get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
+        if(UtilMethods.isSet(keys)){
+           keys.remove(key);
+           CacheLocator.getCacheAdministrator().put(SECRETS_CACHE_KEY, keys, SECRETS_CACHE_KEYS_GROUP);
+        }
     }
 
 }

@@ -270,7 +270,7 @@ public class ServiceIntegrationResource {
     public final Response deleteIndividualServiceIntegrationSecret(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final SecretForm secretForm
+            final DeleteSecretForm secretForm
     ) {
         try {
             secretForm.checkValid();
