@@ -114,9 +114,6 @@ function editPage(url, languageId) {
 <%} %>
 
 
-
-
-<%if(!wfActionsAll.isEmpty()){%>
 <div class="content-edit-actions">
 
 		<%if(isContLocked && (contentEditable || isUserCMSAdmin)) {%>
@@ -178,29 +175,27 @@ function editPage(url, languageId) {
 
 	<% } %>
 
+
 	<%--Start workflow tasks --%>
 	<%if(wfActions.size()>0) {%>
 
 		<%for(WorkflowAction action : wfActions){ %>
 			<% List<WorkflowActionClass> actionlets = APILocator.getWorkflowAPI().findActionClasses(action); %>
 
-
-
 			<a
 			style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
 			onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || UtilMethods.isSet(action.getCondition()) %>)">
-				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>   
+				<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
 				<%if(action.hasSaveActionlet()){ %>
-                    <i class="fa fa-save" style="opacity:.35;float:right"></i>
-                <%} %>
+					<i class="fa fa-save" style="opacity:.35;float:right"></i>
+				<%} %>
 
 			</a>
 		<%} %>
 
 	<%}  %>
-
 </div>
-<%} %>
+
 
 <div class="content-edit-workflow">
 	<% if (!isHost) { %>
@@ -237,7 +232,7 @@ function editPage(url, languageId) {
 </div>
 
 
-<%if(wfActionsAll.isEmpty() && contentlet!=null && contentlet.getContentType()!=null){ %>
+<%if(wfActionsAll.isEmpty() && wfActions.isEmpty() && contentlet!=null && contentlet.getContentType()!=null){ %>
     <div style="padding:5px;"><%=LanguageUtil.get(pageContext, "dot.common.message.no.workflow.schemes") %></div>
 <%} %>
 
