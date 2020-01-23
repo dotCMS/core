@@ -115,10 +115,11 @@ public class DbConnectionFactory {
                         defaultDataSource = DBPropertiesDatasourceStrategy.getInstance().getDatasource();
                         Logger.info(DbConnectionFactory.class, "Datasource loaded from db.properties file");
                     } else if (System.getenv("DOTCMS_DB_NAME") != null) {
-                        defaultDataSource = new SystemEnvDatasourceStrategy().getDatasource();
+                        defaultDataSource = SystemEnvDatasourceStrategy.getInstance().getDatasource();
                         Logger.info(DbConnectionFactory.class, "Datasource loaded from system environment");
                     } else {
-                        defaultDataSource = new DockerSecretDatasourceStrategy().getDatasource();
+                        defaultDataSource = DockerSecretDatasourceStrategy.getInstance().getDatasource();
+                        Logger.info(DbConnectionFactory.class, "Datasource loaded from Docker Secret");
                     }
 
                     if (null == defaultDataSource){
