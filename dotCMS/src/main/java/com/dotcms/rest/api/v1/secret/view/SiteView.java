@@ -7,31 +7,31 @@ import java.util.Map;
 
 public class SiteView {
 
-    private final String siteId;
-    private final String siteName;
+    private final String id;
+    private final String name;
 
     @JsonInclude(Include.NON_NULL)
     private final Map<String, Secret> secrets;
 
-    public SiteView(final String siteId, final String siteName) {
-        this.siteId = siteId;
-        this.siteName = siteName;
+    public SiteView(final String id, final String name) {
+        this.id = id;
+        this.name = name;
         this.secrets = null;
     }
 
-    public SiteView(final String siteId,final String siteName,
+    public SiteView(final String id,final String name,
             final Map<String, Secret> secrets) {
-        this.siteId = siteId;
-        this.siteName = siteName;
+        this.id = id;
+        this.name = name;
         this.secrets = secrets;
     }
 
-    public String getSiteId() {
-        return siteId;
+    public String getId() {
+        return id;
     }
 
-    public String getSiteName() {
-        return siteName;
+    public String getName() {
+        return name;
     }
 
     public Map<String, Secret> getSecrets() {

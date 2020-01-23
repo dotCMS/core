@@ -20,7 +20,7 @@ public class ServiceDescriptor {
 
     public ServiceDescriptor(final String key, final String name, final String description,
             final String iconUrl, final boolean allowExtraParameters) {
-        this.key = key.toLowerCase(); //We need to guarantee uniqueness.
+        this.key = key;
         this.name = name;
         this.description = description;
         this.iconUrl = iconUrl;

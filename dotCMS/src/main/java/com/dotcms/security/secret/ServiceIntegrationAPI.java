@@ -124,9 +124,25 @@ public interface ServiceIntegrationAPI {
     Optional<ServiceDescriptor> getServiceDescriptor(final String serviceKey, final User user)
             throws DotDataException, DotSecurityException;
 
+    /**
+     *
+     * @param inputStream
+     * @param user
+     * @throws IOException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     void createServiceDescriptor(final InputStream inputStream,
             User user) throws IOException, DotDataException, DotSecurityException;
 
+    /**
+     *
+     * @param serviceKey
+     * @param user
+     * @param removeDescriptor
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     void removeServiceIntegration(final String serviceKey, final User user,
             final boolean removeDescriptor)
             throws DotSecurityException, DotDataException;

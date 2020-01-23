@@ -307,7 +307,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
             synchronized (ServiceIntegrationAPIImpl.class) {
                 descriptorsByServiceKey = getServiceDescriptorsMeta(user).stream().collect(
                         Collectors.toMap(serviceDescriptorMeta -> serviceDescriptorMeta
-                                        .getServiceDescriptor().getKey(), Function.identity(),
+                                        .getServiceDescriptor().getKey().toLowerCase(), Function.identity(),
                                 (serviceDescriptor, serviceDescriptor2) -> serviceDescriptor));
 
                 CacheLocator.getCacheAdministrator()

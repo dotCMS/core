@@ -193,7 +193,10 @@ class ServiceIntegrationHelper {
         final Builder<Host> builder = ImmutableList.builder();
         final Set<String> hostIds = serviceIntegrationAPI.serviceKeysByHost().keySet();
         for(final String hostId:hostIds) {
-            builder.add(hostAPI.find(hostId, user, false));
+            final Host host = hostAPI.find(hostId, user, false);
+            if(null != host){
+                builder.add(host);
+            }
         }
         return builder.build();
     }

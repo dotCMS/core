@@ -13,6 +13,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationView;
 import com.dotcms.rest.api.v1.secret.view.SiteView;
 import com.dotcms.security.secret.Param;
+import com.dotcms.security.secret.Secret;
 import com.dotcms.security.secret.ServiceDescriptor;
 import com.dotcms.security.secret.Type;
 import com.dotcms.util.IntegrationTestInitService;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -154,9 +157,9 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final List<SiteView> sites = serviceIntegrationWithSites.getSites();
         Assert.assertNotNull(sites);
         Assert.assertFalse(sites.isEmpty());
-        Assert.assertEquals(sites.get(0).getSiteId(),host.getIdentifier());
+        Assert.assertEquals(sites.get(0).getId(),host.getIdentifier());
         Assert.assertTrue(
-                sites.stream().anyMatch(hostView -> host.getIdentifier().equals(hostView.getSiteId()))
+                sites.stream().anyMatch(hostView -> host.getIdentifier().equals(hostView.getId()))
                 );
 
         final Response detailedIntegrationResponse = serviceIntegrationResource.getDetailedServiceIntegration(request, response, serviceKey, host.getIdentifier());
@@ -165,7 +168,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final ServiceIntegrationView serviceIntegrationDetailedView = (ServiceIntegrationView) responseEntityView3.getEntity();
         Assert.assertNotNull(serviceIntegrationDetailedView.getSites());
         Assert.assertFalse(serviceIntegrationDetailedView.getSites().isEmpty());
-        Assert.assertEquals(serviceIntegrationDetailedView.getSites().get(0).getSiteId(),host.getIdentifier());
+        Assert.assertEquals(serviceIntegrationDetailedView.getSites().get(0).getId(),host.getIdentifier());
 
         final Response deleteIntegrationsResponse = serviceIntegrationResource.deleteAllServiceIntegrationSecrets(request, response, serviceKey, host.getIdentifier());
         Assert.assertEquals(HttpStatus.SC_OK, deleteIntegrationsResponse.getStatus());
@@ -186,7 +189,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         Assert.assertTrue(expectedEmptyHosts.isEmpty());
     }
 
-/*
+
     @Test
     public void  Test_Create_service_descriptor_Then_Create_Service_Integration_Then_Delete_One_Single_Secret() throws IOException {
 
@@ -202,6 +205,8 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final String fileName = String.format("%s.yml",serviceKey);
         final InputStream inputStream = createServiceDescriptorFile(fileName, serviceKey, "lola",
                 "A bunch of string params to demo the mechanism.", false, paramMap);
+
+        // Create Service integration Descriptor
         final Response serviceIntegrationResponse = serviceIntegrationResource.createServiceIntegration(request, response, createFormDataMultiPart(fileName, inputStream));
         Assert.assertNotNull(serviceIntegrationResponse);
         Assert.assertEquals(HttpStatus.SC_OK, serviceIntegrationResponse.getStatus());
@@ -213,6 +218,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         Assert.assertTrue(
                 integrationViewList.stream().anyMatch(serviceIntegrationView ->  "lola".equals(serviceIntegrationView.getName())));
 
+        // Add secrets to it.
         final SecretForm secretForm = new SecretForm();
         secretForm.setServiceKey(serviceKey);
         secretForm.setSiteId(host.getIdentifier());
@@ -220,27 +226,33 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final Response createSecretResponse = serviceIntegrationResource.createServiceIntegrationSecrets(request, response, secretForm);
         Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
 
-        final Response hostIntegrationsResponse = serviceIntegrationResource.getServiceIntegrationByKey(request, response, serviceKey);
-        Assert.assertEquals(HttpStatus.SC_OK, hostIntegrationsResponse.getStatus());
-        final ResponseEntityView responseEntityView2 = (ResponseEntityView) hostIntegrationsResponse.getEntity();
-        final ServiceIntegrationSiteView serviceIntegrationHostView2 = (ServiceIntegrationSiteView) responseEntityView2.getEntity();
-        final ServiceIntegrationView serviceIntegrationView2 = serviceIntegrationHostView2.getService();
-        Assert.assertEquals(1, serviceIntegrationView2.getConfigurationsCount());
-        Assert.assertEquals("lola", serviceIntegrationView2.getName());
-        final List<SiteView> hosts = serviceIntegrationHostView2.getSites();
+        //fetch and verify the secrets by service-key
+        final Response serviceIntegrationByKey = serviceIntegrationResource.getServiceIntegrationByKey(request, response, serviceKey);
+        Assert.assertEquals(HttpStatus.SC_OK, serviceIntegrationByKey.getStatus());
+        final ResponseEntityView responseEntityView2 = (ResponseEntityView) serviceIntegrationByKey.getEntity();
+        final ServiceIntegrationView serviceIntegrationByKeyView = (ServiceIntegrationView) responseEntityView2.getEntity();
+
+        Assert.assertEquals(1, serviceIntegrationByKeyView.getConfigurationsCount());
+        Assert.assertEquals("lola", serviceIntegrationByKeyView.getName());
+        final List<SiteView> hosts = serviceIntegrationByKeyView.getSites();
         Assert.assertNotNull(hosts);
         Assert.assertFalse(hosts.isEmpty());
-        Assert.assertEquals(hosts.get(0).getSiteId(),host.getIdentifier());
+        Assert.assertEquals(hosts.get(0).getId(),host.getIdentifier());
         Assert.assertTrue(
-                hosts.stream().anyMatch(hostView -> host.getIdentifier().equals(hostView.getSiteId()))
+                hosts.stream().anyMatch(hostView -> host.getIdentifier().equals(hostView.getId()))
         );
 
         final Response detailedIntegrationResponse = serviceIntegrationResource.getDetailedServiceIntegration(request, response, serviceKey, host.getIdentifier());
         Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
         final ResponseEntityView responseEntityView3 = (ResponseEntityView) detailedIntegrationResponse.getEntity();
-        final ServiceIntegrationDetailedView serviceIntegrationDetailedView1 = (ServiceIntegrationDetailedView) responseEntityView3.getEntity();
-        Assert.assertEquals(serviceIntegrationDetailedView1.getHost().getSiteId(),host.getIdentifier());
+        final ServiceIntegrationView serviceIntegrationDetailedView = (ServiceIntegrationView) responseEntityView3.getEntity();
 
+        Assert.assertNotNull(serviceIntegrationDetailedView.getSites());
+        Assert.assertFalse(serviceIntegrationDetailedView.getSites().isEmpty());
+        Assert.assertEquals(serviceIntegrationDetailedView.getSites().get(0).getId(),host.getIdentifier());
+        Assert.assertEquals(serviceIntegrationDetailedView.getSites().get(0).getId(),host.getIdentifier());
+
+        //Delete individual secrets
         final Set<String> paramsToDelete = ImmutableSet.of(
                 "param1",
                 "param3"
@@ -253,18 +265,22 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final Response deleteIndividualSecretResponse = serviceIntegrationResource.deleteIndividualServiceIntegrationSecret(request, response, deleteSecretForm);
         Assert.assertEquals(HttpStatus.SC_OK, deleteIndividualSecretResponse.getStatus());
 
+        //The service integration should still be there but the individual params/secrets should be gone
         final Response detailedIntegrationResponseAfterDelete = serviceIntegrationResource.getDetailedServiceIntegration(request, response, serviceKey, host.getIdentifier());
         Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponseAfterDelete.getStatus());
 
-        final ResponseEntityView responseEntityView4 = (ResponseEntityView) detailedIntegrationResponseAfterDelete.getEntity();
-        final ServiceIntegrationDetailedView serviceIntegrationDetailedView2 = (ServiceIntegrationDetailedView) responseEntityView4.getEntity();
-        final Map<String, Secret> secretsAfterDelete = serviceIntegrationDetailedView2.getSecrets();
+        final ResponseEntityView responseAfterDeleteEntityView = (ResponseEntityView) detailedIntegrationResponseAfterDelete.getEntity();
+        final ServiceIntegrationView serviceIntegrationViewAfterDelete = (ServiceIntegrationView) responseAfterDeleteEntityView.getEntity();
+
+        Assert.assertNotNull(serviceIntegrationViewAfterDelete.getSites());
+        Assert.assertFalse(serviceIntegrationViewAfterDelete.getSites().isEmpty());
+        final Map<String, Secret> secretsAfterDelete = serviceIntegrationViewAfterDelete.getSites().get(0).getSecrets();
         Assert.assertTrue(secretsAfterDelete.containsKey("param2"));
         //The ones we removed must not be present.. right?
         Assert.assertFalse(secretsAfterDelete.containsKey("param1"));
         Assert.assertFalse(secretsAfterDelete.containsKey("param3"));
     }
-*/
+
     /*
         @Test
         public void  Test_Create_service_descriptor_Then_Create_Service_Integration_Then_Delete_Service_Descriptor() throws IOException {
