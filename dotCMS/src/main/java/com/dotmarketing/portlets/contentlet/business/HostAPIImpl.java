@@ -113,17 +113,14 @@ public class HostAPIImpl implements HostAPI {
         User systemUser = APILocator.systemUser();
 
         if(host == null){
+
             try {
-                host = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles).get();
+                final Optional<Host> optional = resolveHostNameWithoutDefault(serverName, systemUser, respectFrontendRoles);
+                host = optional.isPresent() ? optional.get() : findDefaultHost(systemUser, respectFrontendRoles);
             } catch (Exception e) {
-                return findDefaultHost(systemUser, respectFrontendRoles);
-            }
-            
-            //If no host matches then we set the default host.
-            if(host == null){
                 host = findDefaultHost(systemUser, respectFrontendRoles);
             }
-            
+
             if(host != null){
                 hostCache.addHostAlias(serverName, host);
             }
