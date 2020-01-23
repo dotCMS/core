@@ -3,20 +3,31 @@ package com.dotmarketing.db;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.JNDIUtil;
 import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
-
 import io.vavr.control.Try;
-
-import javax.naming.*;
-import javax.sql.DataSource;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import javax.naming.Binding;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 
 public class DbConnectionFactory {
 
@@ -100,21 +111,19 @@ public class DbConnectionFactory {
             synchronized (DbConnectionFactory.class) {
 
                 if (null == defaultDataSource) {
+                    if (DBPropertiesDatasourceStrategy.getInstance().existsDBPropertiesFile()) {
+                        defaultDataSource = DBPropertiesDatasourceStrategy.getInstance().getDatasource();
+                        Logger.info(DbConnectionFactory.class, "Datasource loaded from db.properties file");
+                    } else if (System.getenv("DOTCMS_DB_NAME") != null) {
+                        defaultDataSource = new SystemEnvDatasourceStrategy().getDatasource();
+                        Logger.info(DbConnectionFactory.class, "Datasource loaded from system environment");
+                    } else {
+                        defaultDataSource = new DockerSecretDatasourceStrategy().getDatasource();
+                    }
 
-                    try {
-                        final InitialContext ctx = new InitialContext();
-                        defaultDataSource = (DataSource) JNDIUtil.lookup(ctx, Constants.DATABASE_DEFAULT_DATASOURCE);
-                    } catch (Throwable e) {
-                        Logger.error(DbConnectionFactory.class,
-                                "---------- DBConnectionFactory: error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE,
-                                e);
-                        if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
-                          e.printStackTrace();
-                          System.exit(1);
-                        }
-                        
-                        
-                        throw new DotRuntimeException(e.toString());
+                    if (null == defaultDataSource){
+                        defaultDataSource = TomcatDatasourceStrategy.getInstance().getDatasource();
+                        Logger.info(DbConnectionFactory.class, "Datasource loaded from context.xml");
                     }
                 }
             }
@@ -122,6 +131,7 @@ public class DbConnectionFactory {
 
         return defaultDataSource;
     }
+
 
     /**
      * This is used to get data source to other database != than the default dotCMS one
