@@ -12,13 +12,13 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
 import java.io.File;
@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -189,16 +190,17 @@ class ServiceIntegrationHelper {
         }).collect(Collectors.toList());
     }
 
-    private List<Host> getHosts(final User user) throws DotSecurityException, DotDataException {
-        final Builder<Host> builder = ImmutableList.builder();
+    private List<Host> getHosts(final User user) {
         final Set<String> hostIds = serviceIntegrationAPI.serviceKeysByHost().keySet();
-        for(final String hostId:hostIds) {
-            final Host host = hostAPI.find(hostId, user, false);
-            if(null != host){
-                builder.add(host);
+        return hostIds.stream().map(hostId -> {
+            try {
+                return hostAPI.find(hostId, user, false);
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.warn(ServiceIntegrationHelper.class,
+                  String.format("Unable to lookup site for the given id `%s`. The secret config entry is probably no longer valid.",hostId), e);
             }
-        }
-        return builder.build();
+            return null;
+        }).filter(Objects::nonNull).collect(CollectionsUtils.toImmutableList());
     }
 
     /**
@@ -322,7 +324,7 @@ class ServiceIntegrationHelper {
             }
             //If the flag isn't true. Then we must reject the unknown param.
             if(null == describedParam) {
-                throw new DotDataException(String.format(
+                throw new DotDataValidationException(String.format(
                         "Params named `%s` can not be matched against service descriptor. ",
                         incomingParamName));
             }
@@ -330,7 +332,8 @@ class ServiceIntegrationHelper {
             final Param incomingParam = incomingParamEntry.getValue();
             //We revise the incoming param against the definition loaded from the yml.
             if(describedParam.isRequired() && UtilMethods.isNotSet(incomingParam.getValue())){
-               throw new DotDataException(String.format("Params named `%s` is marked as required in the descriptor but does not have any value.", incomingParamName));
+               throw new DotDataValidationException(
+               String.format("Params named `%s` is marked as required in the descriptor but does not have any value.", incomingParamName));
             }
         }
     }
@@ -356,7 +359,7 @@ class ServiceIntegrationHelper {
             }
             //If the flag isn't true. Then we must reject the unknown param.
             if(null == describedParam) {
-                throw new DotDataException(String.format(
+                throw new DotDataValidationException(String.format(
                         "Params named `%s` can not be matched against service descriptor. ",
                         incomingParamName));
             }
