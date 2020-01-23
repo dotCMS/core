@@ -212,11 +212,11 @@
                                       </tr>
                                       <tr>
                                           <th><%= LanguageUtil.get(pageContext, "Password") %>:</th>
-                                          <td><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off" /></td>
+                                          <td><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="new-password" /></td>
                                       </tr>
                                       <tr>
                                           <th><%= LanguageUtil.get(pageContext, "Password-Again") %>:</th>
-                                          <td><input id="passwordCheck" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="off"/></td>
+                                          <td><input id="passwordCheck" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="new-password" /></td>
                                       </tr>
                                     <tr>
                                         <th><%= LanguageUtil.get(pageContext, "Last-Login") %>:</th>
