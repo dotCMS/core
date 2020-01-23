@@ -4,6 +4,7 @@ import com.dotcms.repackage.com.zaxxer.hikari.HikariConfig;
 import com.dotcms.repackage.com.zaxxer.hikari.HikariDataSource;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.net.URL;
@@ -47,11 +48,10 @@ public class DBPropertiesDatasourceStrategy implements DotDatasourceStrategy {
         final PropertiesConfiguration properties = new PropertiesConfiguration();
         try {
             properties.load(loader.getResourceAsStream(DB_PROPERTIES_FILE_NAME));
-            properties.getString("");
 
             final HikariConfig config = new HikariConfig();
 
-            config.setPoolName(properties.getString("connection.name", "jdbc/dotCMSPool"));
+            config.setPoolName(properties.getString("connection.db.name", Constants.DATABASE_DEFAULT_DATASOURCE));
             config.setDriverClassName(properties.getString("connection.db.driver"));
             config.setJdbcUrl(properties.getString("connection.db.base.url"));
             config.setUsername(properties.getString("connection.db.username"));
@@ -71,8 +71,9 @@ public class DBPropertiesDatasourceStrategy implements DotDatasourceStrategy {
             properties.clear();
             return new HikariDataSource(config);
         } catch (ConfigurationException e) {
-            Logger.error(DbConnectionFactory.class,
-                    "---------- DBPropertiesDatasourceStrategy: error getting dbconnection from db.properties file",
+            Logger.error(DBPropertiesDatasourceStrategy.class,
+                    "---------- Error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE
+                            + " from db.properties file",
                     e);
             if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
                 e.printStackTrace();
