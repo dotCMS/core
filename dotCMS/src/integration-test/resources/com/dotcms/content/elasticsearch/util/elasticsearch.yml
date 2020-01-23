@@ -1,9 +1,0 @@
-cluster.name: dotCMSContentIndex_5x
-path.data: esdata
-path.repo: essnapshot/snapshots
-path.logs: tomcat8/logs
-http.port: 9200
-http.host: localhost
-http.enabled: true
-http.cors.enabled: false
-transport.tcp.port: 9400

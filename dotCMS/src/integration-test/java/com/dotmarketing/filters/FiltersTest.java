@@ -3,6 +3,8 @@ package com.dotmarketing.filters;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.vanityurl.business.VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE;
 import static org.mockito.Matchers.startsWith;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -53,7 +55,7 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
 
-import org.apache.felix.framework.OSGIUtil;
+import com.liferay.portal.util.WebKeys;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -74,14 +76,14 @@ public class FiltersTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
-        Mockito.when(Config.CONTEXT.getRealPath(startsWith("/"))).thenAnswer(new Answer<String>() {
+        when(Config.CONTEXT.getRealPath(startsWith("/"))).thenAnswer(new Answer<String>() {
             @Override
             public String answer(InvocationOnMock invocation) throws Throwable {
                 return (String) invocation.getArguments()[0];
             }
         });
 
-        Mockito.when(Config.CONTEXT.getResourceAsStream(startsWith("/")))
+        when(Config.CONTEXT.getResourceAsStream(startsWith("/")))
                 .thenAnswer(
                         (Answer<InputStream>) invocation ->
                                 Files.newInputStream(Paths.get((String) invocation.getArguments()[0])));
@@ -441,22 +443,26 @@ public class FiltersTest {
     private MockResponseWrapper getMockResponse() throws IOException {
         final HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
 
-        Mockito.when(response.getOutputStream()).thenReturn(Mockito.mock(ServletOutputStream.class));
+        when(response.getOutputStream()).thenReturn(Mockito.mock(ServletOutputStream.class));
         return new MockResponseWrapper(response);
     }
 
     private HttpServletRequest getMockRequest(String hostName, String uri) {
+        return getMockRequest(hostName, uri, null);
+    }
+
+    private HttpServletRequest getMockRequest(String hostName, String uri, User user) {
 
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(request.getAttribute("host")).thenReturn(site);
-        Mockito.when(request.getRequestURI()).thenReturn(uri);
-        Mockito.when(request.getRequestURL())
+        when(request.getAttribute("host")).thenReturn(site);
+        when(request.getRequestURI()).thenReturn(uri);
+        when(request.getRequestURL())
                 .thenReturn(new StringBuffer("http://" + hostName + uri));
-        Mockito.when(request.getCookies()).thenReturn(new Cookie[]{});
-        Mockito.when(request.getServerName()).thenReturn(hostName);
-        Mockito.when(request.getSession()).thenReturn(new MockSession());
-        Mockito.when(request.getSession(Mockito.anyBoolean())).thenReturn(new MockSession());
-        Mockito.when(request.getRequestDispatcher("/servlets/VelocityServlet"))
+        when(request.getCookies()).thenReturn(new Cookie[]{});
+        when(request.getServerName()).thenReturn(hostName);
+        when(request.getSession()).thenReturn(new MockSession());
+        when(request.getSession(Mockito.anyBoolean())).thenReturn(new MockSession());
+        when(request.getRequestDispatcher("/servlets/VelocityServlet"))
                 .thenReturn(new RequestDispatcher() {
 
                     @Override
@@ -474,7 +480,7 @@ public class FiltersTest {
                         servlet.service(arg0, arg1);
                     }
                 });
-        Mockito.when(request.getRequestDispatcher(Mockito.startsWith("/dotAsset/")))
+        when(request.getRequestDispatcher(Mockito.startsWith("/dotAsset/")))
                 .thenReturn(new RequestDispatcher() {
 
                     @Override
@@ -495,6 +501,7 @@ public class FiltersTest {
 
         MockRequestWrapper reqWrap = new MockRequestWrapper(request);
         reqWrap.setAttribute("host", site);
+        reqWrap.setAttribute(WebKeys.USER, user);
         return reqWrap;
 
     }
@@ -541,7 +548,7 @@ public class FiltersTest {
 
         Logger.info(this.getClass(), "/images/404.jpg should give us a 200");
         HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
-        Mockito.when(res.getOutputStream()).thenReturn(sos);
+        when(res.getOutputStream()).thenReturn(sos);
         MockResponseWrapper response = new MockResponseWrapper(res);
 
         FilterChain chain = Mockito.mock(FilterChain.class);
@@ -569,8 +576,11 @@ public class FiltersTest {
         HttpServletResponse res = Mockito.mock(HttpServletResponse.class);
         MockResponseWrapper response = new MockResponseWrapper(res);
 
+        final ServletOutputStream servletOutputStream = mock(ServletOutputStream.class);
+        when(response.getOutputStream()).thenReturn(servletOutputStream);
+
         FilterChain chain = Mockito.mock(FilterChain.class);
-        HttpServletRequest request = getMockRequest(site.getHostname(), "/intranet/");
+        HttpServletRequest request = getMockRequest(site.getHostname(), "/intranet/", APILocator.systemUser());
 
         try {
             new CMSFilter().doFilter(request, response, chain);

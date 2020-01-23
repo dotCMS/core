@@ -1,61 +1,61 @@
 {
-    "dot_site_search": {
-      "properties": {
-        "content": {
-          "type": "text",
-          "analyzer": "standard_content",
-          "fields": {
-            "untouched": {
-              "type": "keyword",
-              "ignore_above": 8191,
-              "doc_values" : true
-            },
-            "ngram": {
-              "search_analyzer": "standard_content",
-              "analyzer": "partial_content",
-              "type": "text"
-            }
+
+    "properties": {
+      "content": {
+        "type": "text",
+        "analyzer": "standard_content",
+        "fields": {
+          "untouched": {
+            "type": "keyword",
+            "ignore_above": 8191,
+            "doc_values" : true
+          },
+          "ngram": {
+            "search_analyzer": "standard_content",
+            "analyzer": "partial_content",
+            "type": "text"
           }
-        },
-        "host": {
-          "type": "keyword",
-          "doc_values" : true
-        },
-        "contentLength": {
-          "type": "long"
-        },
-        "uri": {
-          "type": "keyword",
-          "doc_values" : true
-        },
-        "url": {
-          "type": "keyword",
-          "doc_values" : true
-        },
-        "mimeType": {
-          "type": "keyword",
-          "doc_values" : true
-        },
-        "title": {
-          "type": "text"
-        },
-        "description": {
-          "type": "text"
-        },
-        "modified": {
-          "type": "date",
-          "doc_values" : true
-        },
-        "keywords": {
-          "type": "keyword",
-          "doc_values" : true
-		},
-        "language": {
-          "type": "keyword"
-        },
-        "author": {
-          "type": "text"
         }
+      },
+      "host": {
+        "type": "keyword",
+        "doc_values" : true
+      },
+      "contentLength": {
+        "type": "long"
+      },
+      "uri": {
+        "type": "keyword",
+        "doc_values" : true
+      },
+      "url": {
+        "type": "keyword",
+        "doc_values" : true
+      },
+      "mimeType": {
+        "type": "keyword",
+        "doc_values" : true
+      },
+      "title": {
+        "type": "text"
+      },
+      "description": {
+        "type": "text"
+      },
+      "modified": {
+        "type": "date",
+        "doc_values" : true
+      },
+      "keywords": {
+        "type": "keyword",
+        "doc_values" : true
+      },
+      "language": {
+        "type": "integer"
+      },
+      "author": {
+        "type": "text"
       }
     }
+
 }
