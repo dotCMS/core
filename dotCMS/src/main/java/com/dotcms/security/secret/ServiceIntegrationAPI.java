@@ -127,7 +127,8 @@ public interface ServiceIntegrationAPI {
     void createServiceDescriptor(final InputStream inputStream,
             User user) throws IOException, DotDataException, DotSecurityException;
 
-    void removeServiceDescriptor(final String serviceKey, final User user)
+    void removeServiceIntegration(final String serviceKey, final User user,
+            final boolean removeDescriptor)
             throws DotSecurityException, DotDataException;
 
     enum INSTANCE {

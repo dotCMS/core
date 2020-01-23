@@ -1,8 +1,6 @@
 package com.dotcms.rest.api.v1.secret;
 
 import com.dotcms.rest.api.MultiPartUtils;
-import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationDetailedView;
-import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationSiteView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationView;
 import com.dotcms.rest.api.v1.secret.view.SiteView;
 import com.dotcms.security.secret.Param;
@@ -84,7 +82,7 @@ class ServiceIntegrationHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    Optional<ServiceIntegrationSiteView> getServiceIntegrationSiteView(final String serviceKey,
+    Optional<ServiceIntegrationView> getServiceIntegrationSiteView(final String serviceKey,
             final User user)
             throws DotSecurityException, DotDataException {
 
@@ -100,10 +98,7 @@ class ServiceIntegrationHelper {
                 hostViewBuilder.add(new SiteView(host.getIdentifier(), host.getHostname()));
             }
             return Optional.of(
-               new ServiceIntegrationSiteView(
-                  new ServiceIntegrationView(serviceDescriptor, hostsWithConfigurations.size()),
-                  hostViewBuilder.build()
-               )
+                    new ServiceIntegrationView(serviceDescriptor, hostsWithConfigurations.size(), hostViewBuilder.build())
             );
         }
         return Optional.empty();
@@ -118,7 +113,7 @@ class ServiceIntegrationHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    Optional<ServiceIntegrationDetailedView> getServiceIntegrationSiteDetailedView(
+    Optional<ServiceIntegrationView> getServiceIntegrationSiteDetailedView(
             final String serviceKey, final String siteId,
             final User user)
             throws DotSecurityException, DotDataException {
@@ -131,15 +126,16 @@ class ServiceIntegrationHelper {
                 throw new DotDataException(
                         String.format(" Couldn't find any host with identifier `%s` ", siteId));
             }
-            final SiteView hostView = new SiteView(host.getIdentifier(), host.getHostname());
+
             final Optional<ServiceSecrets> optionalServiceSecrets = serviceIntegrationAPI
                     .getSecrets(serviceKey, host, user);
             if (optionalServiceSecrets.isPresent()) {
                 final ServiceSecrets serviceSecrets = protectHiddenSecrets(
                         optionalServiceSecrets.get());
-                return Optional.of(new ServiceIntegrationDetailedView(
-                        new ServiceIntegrationView(serviceDescriptor, 1L),
-                        hostView, serviceSecrets));
+                final SiteView siteView = new SiteView(host.getIdentifier(), host.getHostname(),
+                        serviceSecrets.getSecrets());
+                return Optional.of(new ServiceIntegrationView(serviceDescriptor, 1L,
+                        ImmutableList.of(siteView)));
             }
         }
         return Optional.empty();
@@ -392,9 +388,9 @@ class ServiceIntegrationHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    void deleteServiceDescriptor(final String serviceKey, final User user)
+    void removeServiceIntegration(final String serviceKey, final User user, final boolean removeDescriptor)
             throws DotSecurityException, DotDataException {
-        serviceIntegrationAPI.removeServiceDescriptor(serviceKey, user);
+        serviceIntegrationAPI.removeServiceIntegration(serviceKey, user, removeDescriptor);
     }
 
     @VisibleForTesting

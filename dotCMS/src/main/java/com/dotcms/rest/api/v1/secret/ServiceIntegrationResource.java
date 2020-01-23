@@ -7,8 +7,6 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationDetailedView;
-import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationSiteView;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationView;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Logger;
@@ -27,6 +25,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -95,7 +94,7 @@ public class ServiceIntegrationResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            final Optional<ServiceIntegrationSiteView> serviceIntegrationView = helper
+            final Optional<ServiceIntegrationView> serviceIntegrationView = helper
                     .getServiceIntegrationSiteView(serviceKey, user);
             if (serviceIntegrationView.isPresent()) {
                 return Response.ok(new ResponseEntityView(serviceIntegrationView.get()))
@@ -131,7 +130,7 @@ public class ServiceIntegrationResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            final Optional<ServiceIntegrationDetailedView> serviceIntegrationDetailedView = helper
+            final Optional<ServiceIntegrationView> serviceIntegrationDetailedView = helper
                         .getServiceIntegrationSiteDetailedView(serviceKey, siteId, user);
             if (serviceIntegrationDetailedView.isPresent()) {
                 return Response.ok(new ResponseEntityView(serviceIntegrationDetailedView.get()))
@@ -141,35 +140,6 @@ public class ServiceIntegrationResource {
                         "Nope. No service integration was found for key `%s` and siteId `%s`. ",
                         serviceKey, siteId));
 
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Exception getting service integration and secrets with message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
-    }
-
-    @DELETE
-    @Path("/{serviceKey}/{siteId}")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteAllServiceIntegrationSecrets(
-            @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @PathParam("serviceKey") final String serviceKey,
-            @PathParam("siteId") final String siteId
-    ) {
-        try {
-            final InitDataObject initData =
-                    new WebResource.InitBuilder(webResource)
-                            .requiredBackendUser(true)
-                            .requiredFrontendUser(false)
-                            .requestAndResponse(request, response)
-                            .rejectWhenNoUser(true)
-                            .init();
-            final User user = initData.getUser();
-            //this will remove a specific configuration for the key and site combination. All the secrets at once will be lost.
-            helper.deleteServiceIntegrationSecrets(serviceKey, siteId, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(), "Exception getting service integration and secrets with message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
@@ -290,16 +260,16 @@ public class ServiceIntegrationResource {
         }
     }
 
-
     @DELETE
-    @Path("/{serviceKey}")
+    @Path("/{serviceKey}/{siteId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteServiceIntegration(
+    public final Response deleteAllServiceIntegrationSecrets(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("serviceKey") final String serviceKey
+            @PathParam("serviceKey") final String serviceKey,
+            @PathParam("siteId") final String siteId
     ) {
         try {
             final InitDataObject initData =
@@ -310,7 +280,36 @@ public class ServiceIntegrationResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            helper.deleteServiceDescriptor(serviceKey, user);
+            //this will remove a specific configuration for the key and site combination. All the secrets at once will be lost.
+            helper.deleteServiceIntegrationSecrets(serviceKey, siteId, user);
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Exception getting service integration and secrets with message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    @DELETE
+    @Path("/{serviceKey}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response deleteServiceIntegration(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("serviceKey") final String serviceKey,
+            @QueryParam("removeDescriptor") final boolean removeDescriptor
+    ) {
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            helper.removeServiceIntegration(serviceKey, user, removeDescriptor);
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),"Exception creating secret with message: " + e.getMessage(), e);

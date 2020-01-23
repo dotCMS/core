@@ -368,7 +368,8 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @Override
-    public void removeServiceDescriptor(final String serviceKey, final User user)
+    public void removeServiceIntegration(final String serviceKey, final User user,
+            boolean removeDescriptor)
             throws DotSecurityException, DotDataException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
@@ -393,18 +394,22 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                     deleteSecrets(serviceKey, host, user);
                 }
             }
-            final String fileName = serviceDescriptorMeta.getFileName();
-            //Now we need to remove the file it self.
-            final String ymlFilesPath = getServiceDescriptorDirectory();
-            final Path file = Paths.get(ymlFilesPath + File.separator + fileName ).normalize();
-            if(!file.toFile().exists()){
-                throw new DotDataException(String.format(" File with path `%s` does not exist. ",file));
-            }
-            try {
-                Logger.debug(ServiceIntegrationAPIImpl.class,()-> String.format(" Failed attempt to delete file with path `%s` ",file));
-                Files.delete(file);
-            } catch (IOException e) {
-                throw new DotDataException(e);
+            if(removeDescriptor) {
+                final String fileName = serviceDescriptorMeta.getFileName();
+                //Now we need to remove the file it self.
+                final String ymlFilesPath = getServiceDescriptorDirectory();
+                final Path file = Paths.get(ymlFilesPath + File.separator + fileName).normalize();
+                if (!file.toFile().exists()) {
+                    throw new DotDataException(
+                            String.format(" File with path `%s` does not exist. ", file));
+                }
+                try {
+                    Logger.debug(ServiceIntegrationAPIImpl.class, () -> String
+                            .format(" Failed attempt to delete file with path `%s` ", file));
+                    Files.delete(file);
+                } catch (IOException e) {
+                    throw new DotDataException(e);
+                }
             }
             invalidateCache();
         }
