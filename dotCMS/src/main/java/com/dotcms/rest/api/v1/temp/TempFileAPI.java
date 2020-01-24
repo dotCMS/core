@@ -217,17 +217,20 @@ public class TempFileAPI {
    * @return
    * @throws IOException
    */
-  public boolean validUrl(final String url) throws IOException {
+  public boolean validUrl(final String url) {
 
     if(!(url.toLowerCase().startsWith("http://") ||
             url.toLowerCase().startsWith("https://"))){
       Logger.error(this, "URL does not starts with http or https");
       return false;
     }
-
-    final CircuitBreakerUrl urlGetter =
-            CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url).build();
-    urlGetter.doString();
+    try {
+      final CircuitBreakerUrl urlGetter =
+              CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url).build();
+      urlGetter.doString();
+    } catch (Exception e) {//If response is not 200, url is invalid
+      return false;
+    }
 
     return true;
   }
