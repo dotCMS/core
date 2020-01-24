@@ -310,7 +310,7 @@ public class DbConnectionFactory {
             if (connection == null || connection.isClosed()) {
                 DataSource db = getDataSource(dataSource);
                 Logger.debug(DbConnectionFactory.class,
-                    "Opening connection for thread " + Thread.currentThread().getId() + "-" +
+                                ()-> "Opening connection for thread " + Thread.currentThread().getId() + "-" +
                         dataSource + "\n" + UtilMethods.getDotCMSStackTrace());
                 connection = db.getConnection();
                 connectionsList.put(dataSource, connection);
@@ -342,7 +342,7 @@ public class DbConnectionFactory {
                 connectionsHolder.set(connectionsList);
             }
 
-            Logger.debug(DbConnectionFactory.class, "Closing all connections for " + Thread.currentThread().getId() +
+            Logger.debug(DbConnectionFactory.class, ()-> "Closing all connections for " + Thread.currentThread().getId() +
                 "\n" + UtilMethods.getDotCMSStackTrace());
             for (Entry<String, Connection> entry : connectionsList.entrySet()) {
 
@@ -359,7 +359,7 @@ public class DbConnectionFactory {
                 }
             }
 
-            Logger.debug(DbConnectionFactory.class, "All connections closed for " + Thread.currentThread().getId());
+            Logger.debug(DbConnectionFactory.class, ()-> "All connections closed for " + Thread.currentThread().getId());
             connectionsList.clear();
 
         } catch (Exception e) {
@@ -388,7 +388,7 @@ public class DbConnectionFactory {
 
             if (cn != null) {
                 Logger.debug(DbConnectionFactory.class,
-                    "Closing connection for " + Thread.currentThread().getId() + "-" + ds +
+                    "Closing connection for ()-> " + Thread.currentThread().getId() + "-" + ds +
                         "\n" + UtilMethods.getDotCMSStackTrace());
                 cn.close();
                 connectionsList.remove(ds);

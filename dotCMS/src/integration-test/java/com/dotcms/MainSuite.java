@@ -226,7 +226,7 @@ import org.junit.runners.Suite.SuiteClasses;
         TestConfig.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
-        com.dotmarketing.startup.runonce.Task05200WorkflowTaskUniqueKeyTest.class
+        com.dotmarketing.startup.runonce.Task05200WorkflowTaskUniqueKeyTest.class,
         VelocityServletIntegrationTest.class
 })
 public class MainSuite {
