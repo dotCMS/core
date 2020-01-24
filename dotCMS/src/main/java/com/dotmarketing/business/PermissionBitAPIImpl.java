@@ -1406,7 +1406,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	private boolean isHost(final Permissionable permissionable) {
 
 		return permissionable instanceof Host ||
-				(permissionable instanceof Contentlet && Host.class.getSimpleName().equals(((Contentlet) permissionable).getContentType().name())) ||
+				(permissionable instanceof Contentlet && ((Contentlet) permissionable).isHost()) ||
 				(null != permissionable && permissionable instanceof PermissionableProxy
 						&& Host.class.getName().equals(PermissionableProxy.class.cast(permissionable).getType()));
 	}
