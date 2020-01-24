@@ -47,6 +47,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -223,7 +224,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                                             + "\"ignore_above\": 8191\n"
                                             + "}")));
                     mappingAPI.putMapping(indexName, properties.toString());
-                } catch (Exception e) {
+                } catch (JSONException | IOException e) {
                     handleInvalidCustomMappingError(indexName, relationshipName);
                     final String message = "Error updating index mapping for relationship " + relationshipName
                             + ". This custom mapping will be ignored for index: " + indexName;
