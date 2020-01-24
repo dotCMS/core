@@ -18,13 +18,13 @@ public class TempFileAPITest {
         IntegrationTestInitService.getInstance().init();
     }
 
-    @Test(expected = BadRequestException.class)
+    @Test
     public void testValidURL_urlReturn400_throwsException() {
         final String url =  "https://raw.githubusercontent.com/url/throws/400.jpg";
         assertFalse(APILocator.getTempFileAPI().validUrl(url));
     }
 
-    @Test(expected = BadRequestException.class)
+    @Test
     public void testValidURL_urlReturn404_throwsException() {
         final String url =  "https://raw.githubusercontent.com/dotCMS/core/throws/dotCMS/404.jpg";
         assertFalse(APILocator.getTempFileAPI().validUrl(url));
