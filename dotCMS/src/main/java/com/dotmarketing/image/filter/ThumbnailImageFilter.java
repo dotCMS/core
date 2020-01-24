@@ -112,6 +112,7 @@ public class ThumbnailImageFilter extends ImageFilter {
 	        // save thumbnail image to OUTFILE
 	        final BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(resultFile.toPath()));
 	        ImageIO.write(bgImage, "png", out);
+	        bgImage.flush();
 	        out.close();
 
 	        Logger.debug(ImageResizeUtils.class, "Done.");

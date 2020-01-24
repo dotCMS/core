@@ -16,6 +16,7 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.image.focalpoint.FocalPoint;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -59,9 +60,14 @@ public class ShortyServlet extends HttpServlet {
   private static final String  WEBP                       = "webp";
   private static final String  FILE_ASSET_DEFAULT          = FileAssetAPI.BINARY_FIELD;
   public  static final String  SHORTY_SERVLET_FORWARD_PATH = "shorty.servlet.forward.path";
-  private static final Pattern widthPattern                = Pattern.compile("/\\d+[w]");
-  private static final Pattern heightPattern               = Pattern.compile("/\\d+[h]");
-  private static final Pattern qualityPattern               = Pattern.compile("/\\d+[q]");
+  private static final Pattern widthPattern                = Pattern.compile("/(\\d+)[w]");
+  private static final Pattern heightPattern               = Pattern.compile("/(\\d+)[h]");
+  private static final Pattern cropWidthPattern                = Pattern.compile("/(\\d+)cw");
+  private static final Pattern cropHeightPattern               = Pattern.compile("/(\\d+)ch");
+  
+  private static final Pattern focalPointPattern               = Pattern.compile("/(\\.\\d+,\\.\\d+)fp");
+  
+  private static final Pattern qualityPattern               = Pattern.compile("/(\\d+)q");
   
   @CloseDBIfOpened
   protected void service(final HttpServletRequest request, final HttpServletResponse response)
@@ -74,6 +80,20 @@ public class ShortyServlet extends HttpServlet {
     }
   }
 
+  
+    private Optional<String> getParameter(final String uri, final String paramName) {
+
+        int start  = uri.indexOf("/" + paramName + "/") + paramName.length() + 2;
+        int end  = uri.indexOf("/", start) >-1 ? uri.indexOf("/", start) : uri.length();
+        
+        
+        return Optional.ofNullable(uri.indexOf("/" + paramName + "/") > 0 
+                        ? uri.substring(start,end) 
+                                        : null);
+
+    }
+  
+  
 
   private int getWidth(final String uri, final int defaultWidth) {
 
@@ -84,6 +104,11 @@ public class ShortyServlet extends HttpServlet {
       width = widthMatcher.find()?
               Integer.parseInt(widthMatcher.group().substring(1).replace("w", StringPool.BLANK)):
               defaultWidth;
+      if(width>0) {
+          return width;
+      }
+      width = this.getParameter(uri, "resize_w").isPresent() ? Integer.parseInt(this.getParameter(uri, "resize_w").get()) :0;  
+              
     } catch(Exception e){
       Logger.debug(this, e.getMessage());
     }
@@ -91,6 +116,53 @@ public class ShortyServlet extends HttpServlet {
     return width;
   }
 
+    private int cropWidth(final String uri) {
+
+        int cropWidth=0;
+        try {
+            final Matcher widthMatcher = cropWidthPattern.matcher(uri);
+            cropWidth= widthMatcher.find() ? Integer.parseInt(widthMatcher.group(1)) : 0;
+            if(cropWidth==0) {
+                cropWidth = this.getParameter(uri, "crop_w").isPresent() ? Integer.parseInt(this.getParameter(uri, "crop_w").get()) :0;
+            }
+           
+
+        } catch (Exception e) {
+            Logger.debug(this, e.getMessage());
+        }
+
+        return cropWidth;
+    }
+  
+    private int cropHeight(final String uri) {
+        int cropHeight=0;
+        try {
+            final Matcher heightMatcher = cropHeightPattern.matcher(uri);
+            cropHeight= heightMatcher.find() ? Integer.parseInt(heightMatcher.group(1)) : 0;
+            if(cropHeight>0) {
+                return cropHeight;
+            }
+            cropHeight = this.getParameter(uri, "crop_h").isPresent() ? Integer.parseInt(this.getParameter(uri, "crop_h").get()) :0;
+
+            
+        } catch (Exception e) {
+            Logger.debug(this, e.getMessage());
+        }
+
+        return cropHeight;
+    }
+
+    private Optional<FocalPoint> getFocalPoint(final String uri) {
+
+        final Matcher focalPointMatcher = focalPointPattern.matcher(uri);
+        Optional<FocalPoint> focalPoint =  focalPointMatcher.find() ? Optional.of(new FocalPoint(focalPointMatcher.group(1))) : Optional.empty();
+        if(!focalPoint.isPresent()) {
+            focalPoint =  this.getParameter(uri, "fp").isPresent() ? Optional.of(new FocalPoint(this.getParameter(uri, "fp").get())) : Optional.empty();
+        }
+        return focalPoint;
+    }
+  
+  
   private int getHeight (final String uri, final int defaultHeight) {
 
     int height = 0;
@@ -100,6 +172,12 @@ public class ShortyServlet extends HttpServlet {
       height = heightMatcher.find() ?
               Integer.parseInt(heightMatcher.group().substring(1).replace("h", StringPool.BLANK)) :
               defaultHeight;
+              
+      if(height==0) {
+          height = this.getParameter(uri, "resize_h").isPresent() ? Integer.parseInt(this.getParameter(uri, "resize_h").get()) :0;
+      }
+    
+
     } catch(Exception e){
       Logger.debug(this, e.getMessage());
     }
@@ -114,8 +192,15 @@ public class ShortyServlet extends HttpServlet {
     try {
       final Matcher qualityMatcher = qualityPattern.matcher(uri);
       quality = qualityMatcher.find() ?
-              Integer.parseInt(qualityMatcher.group().substring(1).replace("q", StringPool.BLANK)) :
+              Integer.parseInt(qualityMatcher.group(1)) :
                 defaultQuality;
+              
+      if(quality==0) {
+          quality = this.getParameter(uri, "quality_q").isPresent() ? Integer.parseInt(this.getParameter(uri, "quality_q").get()) :0;
+      }
+    
+
+              
     } catch(Exception e){
       Logger.debug(this, e.getMessage());
     }
@@ -168,10 +253,13 @@ public class ShortyServlet extends HttpServlet {
     final int      width   = this.getWidth(lowerUri, 0);
     final int      height  = this.getHeight(lowerUri, 0);
     final int      quality  = this.getQuality(lowerUri, 0);
+    final Optional<FocalPoint> focalPoint = this.getFocalPoint(lowerUri);
+    final int      cropWidth  = this.cropWidth(lowerUri);
+    final int      cropHeight  = this.cropHeight(lowerUri);
     final boolean  jpeg    = lowerUri.contains(JPEG);
     final boolean  jpegp   = jpeg && lowerUri.contains(JPEGP);
     final boolean  webp    = lowerUri.contains(WEBP);
-    final boolean  isImage = webp || jpeg || width+height > 0 || quality>0;
+    final boolean  isImage = webp || jpeg || width+height > 0 || quality>0 || focalPoint.isPresent() || cropHeight>0 || cropWidth>0;
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
     final User systemUser  = APILocator.systemUser();
@@ -199,7 +287,7 @@ public class ShortyServlet extends HttpServlet {
       final StringBuilder pathBuilder = new StringBuilder(path)
               .append(id).append("/byInode/true");
 
-      this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder);
+      this.addImagePath(width, height, quality, jpeg, jpegp,webp, isImage, pathBuilder, focalPoint, cropWidth,cropHeight);
       this.doForward(request, response, pathBuilder.toString());
     } catch (DotContentletStateException e) {
 
@@ -230,7 +318,10 @@ public class ShortyServlet extends HttpServlet {
                             final boolean jpegp,
                             final boolean webp,
                             final boolean isImage,
-                            final StringBuilder pathBuilder) {
+                            final StringBuilder pathBuilder,
+                            final Optional<FocalPoint> focalPoint,
+                            final int cropWidth,
+                            final int cropHeight ) {
       if(isImage) {
 
           pathBuilder.append("/filter/");
@@ -244,6 +335,16 @@ public class ShortyServlet extends HttpServlet {
           }
           pathBuilder.append(weight > 0? "/resize_w/" + weight : StringPool.BLANK);
           pathBuilder.append(height > 0? "/resize_h/" + height : StringPool.BLANK);
+          if(focalPoint.isPresent()) {
+              pathBuilder.append("/fp/" + focalPoint.get());
+          }
+          if(cropWidth>0) {
+              pathBuilder.append("/crop_w/" + cropWidth);
+          }
+          if(cropHeight>0) {
+              pathBuilder.append("/crop_h/" + cropHeight);
+          }
+          
       }
   }
 
