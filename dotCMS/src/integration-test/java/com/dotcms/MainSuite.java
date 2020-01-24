@@ -5,7 +5,11 @@ import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+<<<<<<< HEAD
 import com.dotcms.rest.api.v1.secret.ServiceIntegrationResourceTest;
+=======
+import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
+>>>>>>> master
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.util.TestConfig;
@@ -26,8 +30,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.publishing.PublisherAPITest.class,
         com.dotcms.publishing.remote.RemoteReceiverLanguageResolutionTest.class,
         com.dotcms.cluster.business.ServerAPIImplTest.class,
-        com.dotcms.cluster.business.ClusterAPITest.class,
-        com.dotcms.cache.DotJSONCacheTest.class,
         com.dotcms.cache.KeyValueCacheImplTest.class,
         com.dotcms.enterprise.publishing.remote.handler.RuleBundlerHandlerTest.class,
         com.dotcms.enterprise.publishing.remote.CategoryBundlerHandlerTest.class,
@@ -48,14 +50,11 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.publisher.assets.business.PushedAssetsAPITest.class,
         com.dotcms.notification.business.NotificationAPITest.class,
         com.dotcms.business.LocalTransactionAndCloseDBIfOpenedFactoryTest.class,
-        com.dotcms.content.elasticsearch.util.ESClientIntegrationTest.class,
-        com.dotcms.content.elasticsearch.util.ESUtilTest.class,
         com.dotcms.content.elasticsearch.business.IndiciesFactoryTest.class,
         com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
         com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
-        com.dotcms.content.elasticsearch.business.ESIndexAPITest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         com.dotcms.keyvalue.busines.KeyValueAPIImplTest.class,
@@ -229,7 +228,8 @@ import org.junit.runners.Suite.SuiteClasses;
         BundleFactoryTest.class,
         com.dotcms.security.secret.SecretsStoreKeyStoreImplTest.class,
         com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class,
-        ServiceIntegrationResourceTest.class
+        ServiceIntegrationResourceTest.class,
+        VelocityServletIntegrationTest.class
 })
 public class MainSuite {
 

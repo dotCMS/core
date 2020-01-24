@@ -1,5 +1,6 @@
 package com.dotmarketing.sitesearch.ajax;
 
+import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -17,7 +18,6 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus;
-import com.dotcms.rest.ESIndexResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -262,9 +262,10 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
     public void getIndexStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
 	    try {
     	    Map<String, String> map = getURIParams();
-    	    String indexName = ESIndexResource.getIndexNameOrAlias(map,"indexName","indexAlias");
+    	    String indexName = ESIndexHelper.getInstance().getIndexNameOrAlias(map,"indexName",
+					"indexAlias", APILocator.getESIndexAPI());
     	    response.setContentType("text/plain");
-            response.getWriter().println(APILocator.getIndiciesAPI().loadIndicies().site_search.equals(indexName) ? "default" : "inactive");
+            response.getWriter().println(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch().equals(indexName) ? "default" : "inactive");
 	    }
 	    catch(Exception ex) {
 	        throw new RuntimeException(ex);
@@ -274,7 +275,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 	@Override
     public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response) throws IOException {
 	    try {
-            String defaultIndex=APILocator.getIndiciesAPI().loadIndicies().site_search;
+            String defaultIndex=APILocator.getIndiciesAPI().loadIndicies().getSiteSearch();
             List<String> ret=new ArrayList<String>();
             for(String ii : APILocator.getSiteSearchAPI().listIndices())
                 if(defaultIndex==null || !defaultIndex.equals(ii))

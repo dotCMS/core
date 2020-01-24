@@ -160,10 +160,19 @@
                           es: {
                             status: nodeStatus.esStatus,
                             clusterName: nodeStatus.esClusterName,
+                            timedout: nodeStatus.esTimedout,
                             numberOfNodes: nodeStatus.esNumberOfNodes,
-                            activeShards: nodeStatus.esActiveShards,
+                            numberOfDataNodes: nodeStatus.esNumberOfDataNodes,
                             activePrimaryShards: nodeStatus.esActivePrimaryShards,
-                            port: nodeStatus.esPort
+                            activeShards: nodeStatus.esActiveShards,
+                              relocatingShards: nodeStatus.esRelocatingShards,
+                              initializingShards: nodeStatus.esInitializingShards,
+                              unassignedShards: nodeStatus.esUnassignedShards,
+                              delayedUnasignedShards: nodeStatus.esDelayedUnasignedShards,
+                              numberOfPendingTasks: nodeStatus.esNumberOfPendingTasks,
+                              numberOfInFlightFetch: nodeStatus.esNumberOfInFlightFetch,
+                              taskMaxWaitingInQueueMillis: nodeStatus.esTaskMaxWaitingInQueueMillis,
+                              activeShardsPercentAsNumber: nodeStatus.esActiveShardsPercentAsNumber,
                           },
 
                           assets: {

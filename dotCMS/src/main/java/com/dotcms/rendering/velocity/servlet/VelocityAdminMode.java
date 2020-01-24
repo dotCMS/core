@@ -2,6 +2,8 @@ package com.dotcms.rendering.velocity.servlet;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
@@ -13,9 +15,19 @@ import javax.servlet.http.HttpSession;
  */
 public class VelocityAdminMode extends VelocityLiveMode {
 
-    public VelocityAdminMode(final HttpServletRequest request, final HttpServletResponse response, final String uri,
+    @Deprecated
+    public VelocityAdminMode(final HttpServletRequest request, final HttpServletResponse response, final String uri, final Host host) {
+        this(
+                request,
+                response,
+                VelocityModeHandler.getHtmlPageFromURI(PageMode.get(request), request, uri, host),
+                host
+        );
+    }
+
+    protected VelocityAdminMode(final HttpServletRequest request, final HttpServletResponse response, final IHTMLPage htmlPage,
                              final Host host) {
-        super(request, response, uri, host);
+        super(request, response, htmlPage, host);
     }
 
     @Override

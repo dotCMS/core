@@ -1,8 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ContentletIndexAPI.ES_LIVE_INDEX_NAME;
-import static com.dotcms.content.elasticsearch.business.ContentletIndexAPI.ES_WORKING_INDEX_NAME;
 import static com.dotmarketing.sitesearch.business.SiteSearchAPI.ES_SITE_SEARCH_NAME;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -41,7 +40,7 @@ public class ESSiteSearchAPITest {
     public void testCreateSiteSearchIndexAndMakeItDefault() throws IOException, DotDataException {
 
         final String timeStamp = String.valueOf(new Date().getTime());
-        final String indexName = ES_SITE_SEARCH_NAME + timeStamp;
+        final String indexName = ES_SITE_SEARCH_NAME + "_" + timeStamp;
         final String aliasName = "indexAlias" + timeStamp;
 
         siteSearchAPI.createSiteSearchIndex(indexName, aliasName, 1);
@@ -49,14 +48,15 @@ public class ESSiteSearchAPITest {
         assertTrue(indexAPI.listIndices().contains(indexName));
 
         //verifies that there is no a default site search index
-        assertTrue(indiciesAPI.loadIndicies().site_search == null || !indiciesAPI
-                .loadIndicies().site_search.equals(indexName));
+        assertTrue(indiciesAPI.loadIndicies().getSiteSearch() == null || !indiciesAPI
+                .loadIndicies().getSiteSearch().equals(indexName));
         siteSearchAPI.activateIndex(indexName);
 
         try {
             CacheLocator.getIndiciesCache().clearCache();
-            assertNotNull(indiciesAPI.loadIndicies().site_search);
-            assertTrue(indiciesAPI.loadIndicies().site_search.equals(indexName));
+            assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
+            assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
+            assertEquals(aliasName, indexAPI.getIndexAlias(indexName));
         } finally {
             siteSearchAPI.deactivateIndex(indexName);
             indexAPI.delete(indexName);
@@ -81,16 +81,17 @@ public class ESSiteSearchAPITest {
         try {
             indexTimestamp = contentletIndexAPI.fullReindexStart();
             CacheLocator.getIndiciesCache().clearCache();
-            assertNotNull(indiciesAPI.loadIndicies().site_search);
-            assertTrue(indiciesAPI.loadIndicies().site_search.equals(indexName));
+            assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
+            assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
+            assertEquals(aliasName, indexAPI.getIndexAlias(indexName));
         } finally {
             contentletIndexAPI.stopFullReindexation();
             siteSearchAPI.deactivateIndex(indexName);
             indexAPI.delete(indexName);
 
             if (indexTimestamp != null){
-                indexAPI.delete(ES_WORKING_INDEX_NAME + "_" + indexTimestamp);
-                indexAPI.delete(ES_LIVE_INDEX_NAME + "_" + indexTimestamp);
+                indexAPI.delete(IndexType.WORKING.getPrefix() + "_" + indexTimestamp);
+                indexAPI.delete(IndexType.LIVE.getPrefix() + "_" + indexTimestamp);
             }
 
         }
@@ -114,16 +115,17 @@ public class ESSiteSearchAPITest {
             indexTimestamp = contentletIndexAPI.fullReindexStart();
             contentletIndexAPI.fullReindexAbort();
             CacheLocator.getIndiciesCache().clearCache();
-            assertNotNull(indiciesAPI.loadIndicies().site_search);
-            assertTrue(indiciesAPI.loadIndicies().site_search.equals(indexName));
+            assertNotNull(indiciesAPI.loadIndicies().getSiteSearch());
+            assertTrue(indiciesAPI.loadIndicies().getSiteSearch().equals(indexName));
+            assertEquals(aliasName, indexAPI.getIndexAlias(indexName));
         } finally {
             contentletIndexAPI.stopFullReindexation();
             siteSearchAPI.deactivateIndex(indexName);
             indexAPI.delete(indexName);
 
             if (indexTimestamp != null){
-                indexAPI.delete(ES_WORKING_INDEX_NAME + "_" + indexTimestamp);
-                indexAPI.delete(ES_LIVE_INDEX_NAME + "_" + indexTimestamp);
+                indexAPI.delete(IndexType.WORKING.getPrefix() + "_" + indexTimestamp);
+                indexAPI.delete(IndexType.LIVE.getPrefix() + "_" + indexTimestamp);
             }
 
         }

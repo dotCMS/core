@@ -19,6 +19,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
@@ -589,6 +590,25 @@ public class HostAPITest extends IntegrationTestBase  {
         final Optional<Host> optional = APILocator.getHostAPI().resolveHostNameWithoutDefault(
                 "not_exists_host", APILocator.systemUser(), false);
         assertFalse(optional.isPresent());
+    }
+
+    /**
+     * Method to test: {@link HostAPI#resolveHostName(String, User, boolean)}
+     * When the host does not exist
+     * Should return the default host and store it into host cache
+     */
+    @Test
+    public void shouldStoreDefaultHostIntoCache() throws DotSecurityException, DotDataException {
+        final String hostName = "not_exists_host";
+        final Host notExistsHost = APILocator.getHostAPI().resolveHostName(hostName
+                , APILocator.systemUser(), false);
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), true);
+        assertEquals(notExistsHost.getIdentifier(), defaultHost.getIdentifier());
+
+        final HostCache hostCache = CacheLocator.getHostCache();
+        final Host hostByAlias = hostCache.getHostByAlias(hostName);
+
+        assertEquals(hostByAlias.getIdentifier(), defaultHost.getIdentifier());
     }
 
     /**
