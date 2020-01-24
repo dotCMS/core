@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.languagesmanager.business;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import com.dotmarketing.exception.DotDataException;
@@ -145,6 +146,13 @@ public abstract class LanguageFactory {
      * @return The fallback {@link Language} object.
      */
     protected abstract Language getFallbackLanguage(final String languageCode);
+
+    /**
+     * Finds the first language with the language code if possible
+     * @param languageCode String
+     * @return Optional language
+     */
+    protected abstract Optional<Language> getFindFirstLanguageByCode(final String languageCode);
 
     /**
      * Deletes a language by id

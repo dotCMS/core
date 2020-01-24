@@ -14,7 +14,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 public class WorkflowProcessor {
@@ -34,6 +36,7 @@ public class WorkflowProcessor {
 	List<WorkflowActionClass> actionClasses;
 	ContentletDependencies    contentletDependencies;
 	private final AtomicBoolean abort  = new AtomicBoolean(false);
+	private final Map<String, Object> contextMap = new HashMap<>();
 
 	private ConcurrentMap<String,Object> actionsContext;
 
@@ -58,6 +61,14 @@ public class WorkflowProcessor {
 
 	public void setContentletDependencies(final ContentletDependencies contentletDependencies) {
 		this.contentletDependencies = contentletDependencies;
+	}
+
+	/**
+	 * Get the context map for this processor.
+	 * @return Map
+	 */
+	public Map<String, Object> getContextMap() {
+		return contextMap;
 	}
 
 	public List<WorkflowActionClass> getActionClasses() {

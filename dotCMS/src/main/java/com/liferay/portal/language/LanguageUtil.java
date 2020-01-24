@@ -602,7 +602,7 @@ public class LanguageUtil {
     private static class MessageResult {}
 
 	/**
-	 * Search a Httpsession's attribute named {@link Globals.LOCALE_KEY}, if it exists then return it,
+	 * Search a Httpsession's attribute named {@link Globals#LOCALE_KEY}, if it exists then return it,
 	 * if it doesn't exists then return the default user's locale and set it as a session's attribute.
 	 *
 	 * @param req

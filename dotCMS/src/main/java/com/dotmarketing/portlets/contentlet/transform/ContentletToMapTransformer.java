@@ -132,7 +132,9 @@ public class ContentletToMapTransformer {
      */
     private Contentlet copy(final Contentlet contentlet) {
         final Contentlet newContentlet = new Contentlet();
-        newContentlet.getMap().putAll(contentlet.getMap());
+        if (null != contentlet && null != contentlet.getMap()) {
+            newContentlet.getMap().putAll(contentlet.getMap());
+        }
         return newContentlet;
     }
 

@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.servlet.http.HttpServletRequest;
@@ -391,6 +392,12 @@ public class LanguageAPIImpl implements LanguageAPI {
     public Language getFallbackLanguage(final String languageCode) {
         return this.factory.getFallbackLanguage(languageCode);
     }
+
+	@CloseDBIfOpened
+	@Override
+	public Optional<Language> getFindFirstLanguageByCode(final String languageCode) {
+		return this.factory.getFindFirstLanguageByCode(languageCode);
+	}
 
 	@Override
 	@CloseDBIfOpened

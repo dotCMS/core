@@ -526,29 +526,6 @@ public interface ContentletAPI {
 	public void archive(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
 
 	/**
-	 * This method completely deletes the given contentlet from the system
-	 * @param contentlet
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return true when no errors occurs otherwise false
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
-
-	/**
-	 * This method completely deletes the given contentlet from the system. It was added for the jira issue
-	 * http://jira.dotmarketing.net/browse/DOTCMS-2059
-	 * @param contentlet
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @param allVersions
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException, DotContentletStateException;
-
-	/**
 	 * Destroys the specified {@link Contentlet}. This method will automatically
 	 * un-publish, archive, and delete ALL the information related to this
 	 * contentlet in all of its languages.
@@ -683,6 +660,29 @@ public interface ContentletAPI {
 	public void deleteAllVersionsandBackup(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
 
 	/**
+	 * This method completely deletes the given contentlet from the system
+	 * @param contentlet
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return true when no errors occurs otherwise false
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
+
+	/**
+	 * This method completely deletes the given contentlet from the system. It was added for the jira issue
+	 * http://jira.dotmarketing.net/browse/DOTCMS-2059
+	 * @param contentlet
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param allVersions
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException, DotContentletStateException;
+
+	/**
 	 * Deletes the specified list of {@link Contentlet} objects ONLY in the
 	 * specified language. If any of the specified contentlets is not archived,
 	 * an exception will be thrown. If there's only one language for a given
@@ -696,7 +696,19 @@ public interface ContentletAPI {
 	 */
 	public boolean delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
 
-    /**
+	/**
+	 * This method completely deletes the given contentlet from the system. It was added for the jira issue
+	 * http://jira.dotmarketing.net/browse/DOTCMS-2059
+	 * @param contentlets
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param allVersions
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public void delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException, DotContentletStateException;
+
+	/**
      * This method completely deletes all contentlets from the system for a the
      * given host.
      * <p>
@@ -713,18 +725,7 @@ public interface ContentletAPI {
      */
     public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
-	/**
-	 * This method completely deletes the given contentlet from the system. It was added for the jira issue
-	 * http://jira.dotmarketing.net/browse/DOTCMS-2059
-	 * @param contentlets
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @param allVersions
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public void delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException, DotContentletStateException;
-	
+
 	/**
 	 * Deletes all related content from passed in contentlet and relationship 
 	 * @param contentlet

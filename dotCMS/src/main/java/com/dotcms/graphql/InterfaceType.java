@@ -23,6 +23,18 @@ import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLString;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.EnterpriseType;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.model.type.FormContentType;
+import com.dotcms.contenttype.model.type.KeyValueContentType;
+import com.dotcms.contenttype.model.type.PageContentType;
+import com.dotcms.contenttype.model.type.PersonaContentType;
+import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotcms.contenttype.model.type.WidgetContentType;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.graphql.datafetcher.FolderFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.LanguageDataFetcher;
 import com.dotcms.graphql.datafetcher.SiteFieldDataFetcher;
@@ -37,15 +49,21 @@ import java.util.Map;
 import java.util.Set;
 
 public enum InterfaceType {
-    CONTENTLET,
-    CONTENT,
-    FILEASSET,
-    HTMLPAGE,
-    PERSONA,
-    WIDGET,
-    VANITY_URL,
-    KEY_VALUE,
-    FORM;
+    CONTENTLET(SimpleContentType.class),
+    CONTENT(SimpleContentType.class),
+    FILEASSET(FileAssetContentType.class),
+    HTMLPAGE(PageContentType.class),
+    PERSONA(PersonaContentType.class),
+    WIDGET(WidgetContentType.class),
+    VANITY_URL(VanityUrlContentType.class),
+    KEY_VALUE(KeyValueContentType.class),
+    FORM(FormContentType.class);
+
+    private Class<? extends ContentType> baseContentType;
+
+    InterfaceType(final Class<? extends ContentType> baseContentType) {
+        this.baseContentType = baseContentType;
+    }
 
     private static Map<String, GraphQLInterfaceType> interfaceTypes = new HashMap<>();
 
@@ -114,7 +132,10 @@ public enum InterfaceType {
 
         for(final InterfaceType type : InterfaceType.values()) {
             if(type.getType()!=null) {
-                types.add(type.getType());
+                if(!EnterpriseType.class.isAssignableFrom(type.baseContentType)
+                        || LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level) {
+                    types.add(type.getType());
+                }
             }
         }
 
@@ -131,5 +152,4 @@ public enum InterfaceType {
 
         return type;
     }
-
 }

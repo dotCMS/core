@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonDeserialize(as = ImmutableFormContentType.class)
 @Gson.TypeAdapters
 @Value.Immutable
-public abstract class FormContentType extends ContentType implements Expireable{
+public abstract class FormContentType extends ContentType implements Expireable, EnterpriseType {
 
 	public abstract static class Builder implements ContentTypeBuilder {}
 
