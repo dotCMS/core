@@ -3,7 +3,7 @@ package com.dotcms.rendering.velocity.viewtools.navigation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -46,7 +46,8 @@ public final class NavResultHydrated extends NavResult{
             if (req != null) {
                 // We exclude the page name from the Request URI so we can check if page's parent
                 // object is the real active object
-                String reqURI = req.getRequestURI();
+                String reqURI = req.getRequestURI().equals("/servlets/VelocityServlet") ? (String) req.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) : req.getRequestURI() ;
+                reqURI = reqURI!=null ? reqURI.replace("/api/v1/page/render", "") : reqURI;
                 String parentPath = reqURI.substring(0, reqURI.lastIndexOf("/"));
                 if (!parentPath.endsWith("/"))
                     // Adding a slash at the end of the path, so it avoids false positives
