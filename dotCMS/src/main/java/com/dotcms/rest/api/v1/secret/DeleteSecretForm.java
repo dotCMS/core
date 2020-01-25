@@ -4,10 +4,13 @@ import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 import java.util.Set;
 
+/**
+ * Form that allows deleting a set of secrets/params
+ */
 public class DeleteSecretForm extends Validated {
 
     @NotNull
-    private String serviceKey;
+    private String key;
 
     @NotNull
     private String siteId;
@@ -15,14 +18,22 @@ public class DeleteSecretForm extends Validated {
     @NotNull
     private Set<String> params;
 
-    public String getServiceKey() {
-        return serviceKey;
+    /**
+     * This should contain the unique identifier that differentiates the service
+     * @return
+     */
+    public String getKey() {
+        return key;
     }
 
-    public void setServiceKey(String serviceKey) {
-        this.serviceKey = serviceKey;
+    public void setKey(String key) {
+        this.key = key;
     }
 
+    /**
+     * This should contain the site-id the config belongs to
+     * @return
+     */
     public String getSiteId() {
         return siteId;
     }
@@ -31,6 +42,10 @@ public class DeleteSecretForm extends Validated {
         this.siteId = siteId;
     }
 
+    /**
+     * Param names passed to delete
+     * @return
+     */
     public Set<String> getParams() {
         return params;
     }

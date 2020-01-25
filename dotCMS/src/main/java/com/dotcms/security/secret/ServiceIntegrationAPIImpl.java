@@ -5,6 +5,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -45,10 +46,10 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     private static final String DOT_GLOBAL_SERVICE = "dotCMSGlobalService";
     private static final String SERVICE_INTEGRATION_DIR_PATH_KEY = "SERVICE_INTEGRATION_DIR_PATH_KEY";
 
-    private UserAPI userAPI;
-    private LayoutAPI layoutAPI;
-    private HostAPI hostAPI;
-    private SecretsStore secretsStore;
+    private final UserAPI userAPI;
+    private final LayoutAPI layoutAPI;
+    private final HostAPI hostAPI;
+    private final SecretsStore secretsStore;
 
 
     private final ObjectMapper jsonMapper = new ObjectMapper()
@@ -369,7 +370,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
 
     @Override
     public void removeServiceIntegration(final String serviceKey, final User user,
-            boolean removeDescriptor)
+            final boolean removeDescriptor)
             throws DotSecurityException, DotDataException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
@@ -379,7 +380,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         final String serviceKeyLC = serviceKey.toLowerCase();
         final ServiceDescriptorMeta serviceDescriptorMeta = getServiceDescriptorMap(user).get(serviceKeyLC);
         if (null == serviceDescriptorMeta) {
-            throw new DotDataException(String.format("The requested descriptor `%s` does not exist.",serviceKey));
+            throw new DoesNotExistException(String.format("The requested descriptor `%s` does not exist.",serviceKey));
         }else{
             // if we succeed trying to find the descriptor.
             // Lets get all the service-keys and organized by host-id
@@ -395,23 +396,32 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                 }
             }
             if(removeDescriptor) {
-                final String fileName = serviceDescriptorMeta.getFileName();
-                //Now we need to remove the file it self.
-                final String ymlFilesPath = getServiceDescriptorDirectory();
-                final Path file = Paths.get(ymlFilesPath + File.separator + fileName).normalize();
-                if (!file.toFile().exists()) {
-                    throw new DotDataException(
-                            String.format(" File with path `%s` does not exist. ", file));
-                }
-                try {
-                    Logger.debug(ServiceIntegrationAPIImpl.class, () -> String
-                            .format(" Failed attempt to delete file with path `%s` ", file));
-                    Files.delete(file);
-                } catch (IOException e) {
-                    throw new DotDataException(e);
-                }
+                removeDescriptor(serviceDescriptorMeta);
             }
             invalidateCache();
+        }
+    }
+
+    /**
+     * Removes the yml file itself.
+     * @param serviceDescriptorMeta
+     * @throws DotDataException
+     */
+    private void removeDescriptor(final ServiceDescriptorMeta serviceDescriptorMeta) throws DotDataException{
+        final String fileName = serviceDescriptorMeta.getFileName();
+        //Now we need to remove the file it self.
+        final String ymlFilesPath = getServiceDescriptorDirectory();
+        final Path file = Paths.get(ymlFilesPath + File.separator + fileName).normalize();
+        if (!file.toFile().exists()) {
+            throw new DotDataException(
+                    String.format(" File with path `%s` does not exist. ", file));
+        }
+        try {
+            Logger.warn(ServiceIntegrationAPIImpl.class, () -> String
+                    .format(" Failed attempt to delete file with path `%s` ", file));
+            Files.delete(file);
+        } catch (IOException e) {
+            throw new DotDataException(e);
         }
     }
 

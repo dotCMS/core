@@ -36,10 +36,12 @@ import javax.crypto.spec.PBEKeySpec;
 
 
 /**
- * https://stackoverflow.com/questions/6243446/how-to-store-a-simple-key-string-inside-java-keystore
- * https://medium.com/@danojadias/aes-256bit-encryption-decryption-and-storing-in-the-database-using-java-2ada3f2a0b14
- * https://neilmadden.blog/2017/11/17/java-keystores-the-gory-details/
- *
+ * This is basically a safe repository implemented using java.security.KeyStore
+ * Which according to the official Java documentation Represents a storage facility for cryptographic keys and certificates.
+ * More info Below:
+ * @see <a href=https://stackoverflow.com/questions/6243446/how-to-store-a-simple-key-string-inside-java-keystore>https://stackoverflow.com/questions/6243446/how-to-store-a-simple-key-string-inside-java-keystore</a>
+ * @see <a href=https://medium.com/@danojadias/aes-256bit-encryption-decryption-and-storing-in-the-database-using-java-2ada3f2a0b14>https://medium.com/@danojadias/aes-256bit-encryption-decryption-and-storing-in-the-database-using-java-2ada3f2a0b14</a>
+ * @see <a href=https://neilmadden.blog/2017/11/17/java-keystores-the-gory-details/>https://neilmadden.blog/2017/11/17/java-keystores-the-gory-details</a>
  */
 public class SecretsStoreKeyStoreImpl implements SecretsStore {
 
@@ -98,7 +100,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
                 flushCache();
                 saveSecretsStore(keyStore);
             } catch (Exception e) {
-                Logger.warn(this.getClass(), "unable to create secrets store " + SECRETS_STORE_FILE + ": " + e);
+                Logger.error(this.getClass(), "unable to create secrets store " + SECRETS_STORE_FILE + ": " + e);
                 throw new DotRuntimeException(e);
             }
         }
@@ -122,7 +124,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
             return keyStore;
 
         } catch (Exception e) {
-            Logger.warn(this.getClass(), "unable to load secrets store " + SECRETS_STORE_FILE + ": " + e);
+            Logger.error(this.getClass(), "unable to load secrets store " + SECRETS_STORE_FILE + ": " + e);
             throw new DotRuntimeException(e);
         }
 
@@ -145,7 +147,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
             FileUtil.copyFile(secretStoreFileTmp, secretStoreFile);
             secretStoreFileTmp.delete();
         } catch (Exception e) {
-            Logger.warn(this.getClass(), "unable to save secrets store " + secretStoreFileTmp + ": " + e);
+            Logger.error(this.getClass(), "unable to save secrets store " + secretStoreFileTmp + ": " + e);
             throw new DotRuntimeException(e);
         }
         return keyStore;
@@ -163,6 +165,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         try {
             return getKeysFromCache().contains(variableKey);
         } catch (Exception e) {
+            Logger.error(SecretsStoreKeyStoreImpl.class,e);
             throw new DotRuntimeException(e);
         }
     }
@@ -203,11 +206,16 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
             }
 
         } catch (Exception e) {
+            Logger.error(SecretsStoreKeyStoreImpl.class,e);
             throw new DotRuntimeException(e);
         }
     }
 
-
+    /**
+     * Lists all keys.
+     * Keys will be loaded from cache if available otherwise they will be loaded from disk
+     * @return
+     */
     @Override
     public Set<String> listKeys() {
         return Sneaky.sneak(this::getKeysFromCache);
@@ -269,6 +277,10 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         }
     }
 
+    /**
+     * While In memory, values remain encrypted. This is the key used for such purpose
+     * @return
+     */
     private Key key() {
         return Sneaky.sneak(() -> APILocator.getCompanyAPI().getDefaultCompany()).getKeyObj();
     }

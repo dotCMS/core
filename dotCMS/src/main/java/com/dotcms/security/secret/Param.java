@@ -3,6 +3,11 @@ package com.dotcms.security.secret;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * This is an implementation of a Parameter
+ * Class used to collect properties or secrets set from the front-end
+ * This is mostly used to pass values from the front-end into the Resource.
+ */
 public class Param extends AbstractProperty<String>{
 
     private final String label;

@@ -14,6 +14,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Entry Point to manage secrets and third party service integrations
+ */
 public interface ServiceIntegrationAPI {
 
     /**

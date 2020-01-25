@@ -5,6 +5,9 @@ import com.dotmarketing.util.Config;
 import io.vavr.control.Try;
 import java.util.Set;
 
+/**
+ * This is basically a safe repository implemented using java.security.KeyStore
+ */
 public interface SecretsStore {
 
     /**

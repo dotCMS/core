@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.util.List;
 
+/**
+ *
+ */
 public class ServiceIntegrationView {
 
     private final long configurationsCount;

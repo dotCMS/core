@@ -5,10 +5,14 @@ import com.dotcms.rest.api.Validated;
 import com.dotcms.security.secret.Param;
 import java.util.Map;
 
+/**
+ * Form used to feed-in secrets
+ */
 public class SecretForm extends Validated {
 
+
     @NotNull
-    private String serviceKey;
+    private String key;
 
     @NotNull
     private String siteId;
@@ -16,14 +20,22 @@ public class SecretForm extends Validated {
     @NotNull
     private Map<String, Param> params;
 
-    public String getServiceKey() {
-        return serviceKey;
+    /**
+     * This should contain the unique identifier that differentiates the service
+     * @return
+     */
+    public String getKey() {
+        return key;
     }
 
-    public void setServiceKey(final String serviceKey) {
-        this.serviceKey = serviceKey;
+    public void setKey(final String key) {
+        this.key = key;
     }
 
+    /**
+     * This should contain the site-id the config belongs to
+     * @return
+     */
     public String getSiteId() {
         return siteId;
     }
@@ -32,6 +44,10 @@ public class SecretForm extends Validated {
         this.siteId = siteId;
     }
 
+    /**
+     * Param Name and Value Map
+     * @return
+     */
     public Map<String, Param> getParams() {
         return params;
     }

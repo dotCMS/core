@@ -6,13 +6,15 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationView;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -31,121 +33,162 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
-@Path("/v1/service/integration")
+
+/**
+ * Resource API that deals with secrets and their usage on third-party service integrations
+ */
+@Path("/v1/service-integrations")
 public class ServiceIntegrationResource {
 
     private final WebResource webResource;
     private ServiceIntegrationHelper helper;
 
     @VisibleForTesting
-    public ServiceIntegrationResource(final WebResource webResource,final ServiceIntegrationHelper helper) {
+    public ServiceIntegrationResource(final WebResource webResource,
+            final ServiceIntegrationHelper helper) {
         this.webResource = webResource;
         this.helper = helper;
     }
 
     public ServiceIntegrationResource() {
-       this(new WebResource(),new ServiceIntegrationHelper());
+        this(new WebResource(), new ServiceIntegrationHelper());
     }
 
+
+    /**
+     * List all the services available to integrate with.
+     * @param request
+     * @param response
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @GET
     @Path("/")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response listAvailableServices(@Context final HttpServletRequest request,
-                                                @Context final HttpServletResponse response
-    ) {
-        try {
-            final InitDataObject initData =
-                    new WebResource.InitBuilder(webResource)
-                            .requiredBackendUser(true)
-                            .requiredFrontendUser(false)
-                            .requestAndResponse(request, response)
-                            .rejectWhenNoUser(true)
-                            .init();
-            final User user = initData.getUser();
-            final List<ServiceIntegrationView> integrationViews = helper.getAvailableDescriptorViews(user);
-            if(!integrationViews.isEmpty()){
-                return Response.ok(new ResponseEntityView(integrationViews)).build(); // 200
-            }
-            throw new DoesNotExistException("Nope. No service integration is available to configure. Try uploading a file!");
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Exception on listing available service integration descriptors.", e);
-            return ResponseUtil.mapExceptionResponse(e);
+            @Context final HttpServletResponse response)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+        final User user = initData.getUser();
+        final List<ServiceIntegrationView> integrationViews = helper
+                .getAvailableDescriptorViews(user);
+        if (!integrationViews.isEmpty()) {
+            return Response.ok(new ResponseEntityView(integrationViews)).build(); // 200
         }
+        final String message = "No service integration is available to configure. Try uploading a file!";
+        Logger.error(ServiceIntegrationResource.class, message);
+        throw new DoesNotExistException(message);
     }
 
+    /**
+     * Once you have a list of all the available services you can take the key and feed this endpoint to get a detailed view.
+     * The Detailed view will include all sites that have a configuration for the specified service.
+     * @param request
+     * @param response
+     * @param serviceKey service unique identifier
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @GET
-    @Path("/{serviceKey}")
+    @Path("/{key}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getServiceIntegrationByKey(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("serviceKey") final String serviceKey
-    ) {
-        try {
-            final InitDataObject initData =
-                    new WebResource.InitBuilder(webResource)
-                            .requiredBackendUser(true)
-                            .requiredFrontendUser(false)
-                            .requestAndResponse(request, response)
-                            .rejectWhenNoUser(true)
-                            .init();
-            final User user = initData.getUser();
-            final Optional<ServiceIntegrationView> serviceIntegrationView = helper
-                    .getServiceIntegrationSiteView(serviceKey, user);
-            if (serviceIntegrationView.isPresent()) {
-                return Response.ok(new ResponseEntityView(serviceIntegrationView.get()))
-                        .build(); // 200
-            }
-            throw new DoesNotExistException(
-                    String.format("Nope. No service integration was found for key `%s`. ",
-                            serviceKey));
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Exception getting service integration with message: " + e.getMessage(),
-                    e);
-            return ResponseUtil.mapExceptionResponse(e);
+            @PathParam("key") final String serviceKey
+    ) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+        final User user = initData.getUser();
+        final Optional<ServiceIntegrationView> serviceIntegrationView = helper
+                .getServiceIntegrationSiteView(serviceKey, user);
+        if (serviceIntegrationView.isPresent()) {
+            return Response.ok(new ResponseEntityView(serviceIntegrationView.get()))
+                    .build(); // 200
         }
+        final String message = String
+                .format("No service integration was found for key `%s`. ", serviceKey);
+        Logger.error(ServiceIntegrationResource.class, message);
+        throw new DoesNotExistException(message);
+
     }
 
+    /**
+     * Once you have a detailed view with all the available sites.
+     * You can take a site-id and feed into this endpoint.
+     * To explore the specific configuration for that site.
+     * @param request
+     * @param response
+     * @param serviceKey service unique identifier
+     * @param siteId site
+     * @return Response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @GET
-    @Path("/{serviceKey}/{siteId}")
+    @Path("/{key}/{siteId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response getDetailedServiceIntegration(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("serviceKey") final String serviceKey,
+            @PathParam("key") final String serviceKey,
             @PathParam("siteId") final String siteId
-    ) {
-        try {
-            final InitDataObject initData =
-                    new WebResource.InitBuilder(webResource)
-                            .requiredBackendUser(true)
-                            .requiredFrontendUser(false)
-                            .requestAndResponse(request, response)
-                            .rejectWhenNoUser(true)
-                            .init();
-            final User user = initData.getUser();
-            final Optional<ServiceIntegrationView> serviceIntegrationDetailedView = helper
-                        .getServiceIntegrationSiteDetailedView(serviceKey, siteId, user);
-            if (serviceIntegrationDetailedView.isPresent()) {
-                return Response.ok(new ResponseEntityView(serviceIntegrationDetailedView.get()))
-                .build(); // 200
-            }
-            throw new DoesNotExistException(String.format(
-                        "Nope. No service integration was found for key `%s` and siteId `%s`. ",
-                        serviceKey, siteId));
+    ) throws DotDataException, DotSecurityException {
 
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Exception getting service integration and secrets with message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+        final User user = initData.getUser();
+        final Optional<ServiceIntegrationView> serviceIntegrationDetailedView = helper
+                .getServiceIntegrationSiteDetailedView(serviceKey, siteId, user);
+        if (serviceIntegrationDetailedView.isPresent()) {
+            return Response.ok(new ResponseEntityView(serviceIntegrationDetailedView.get()))
+                    .build(); // 200
         }
+
+        final String message = String
+                .format("Nope. No service integration was found for key `%s` and siteId `%s`. ",
+                        serviceKey, siteId);
+        Logger.error(ServiceIntegrationResource.class, message);
+        throw new DoesNotExistException(message);
     }
 
+    /**
+     * This basically allows you to upload a new service definition which has to be specified through a yml file.
+     * @see <a href=https://auth5.dotcms.com/devwiki/service-descriptor>Service descriptors</a>
+     * @param request
+     * @param response
+     * @param multipart
+     * @return Response
+     * @throws DotSecurityException
+     * @throws IOException
+     * @throws DotDataException
+     */
     @POST
     @Path("/")
     @JSONP
@@ -156,26 +199,29 @@ public class ServiceIntegrationResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final FormDataMultiPart multipart
-    ) {
-        try {
+    ) throws DotSecurityException, IOException, DotDataException {
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
 
-            final InitDataObject initData =
-                    new WebResource.InitBuilder(webResource)
-                            .requiredBackendUser(true)
-                            .requiredFrontendUser(false)
-                            .requestAndResponse(request, response)
-                            .rejectWhenNoUser(true)
-                            .init();
-
-            final User user = initData.getUser();
-            helper.createServiceIntegration(multipart, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(),"Exception saving/creating a service integration with message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+        final User user = initData.getUser();
+        helper.createServiceIntegration(multipart, user);
+        return Response.ok(new ResponseEntityView(OK)).build(); // 200
     }
 
+    /**
+     * This is the endpoint used to feed secrets into the system for a specific service/host configuration.
+     * @param request
+     * @param response
+     * @param secretForm
+     * @return response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @POST
     @Path("/")
     @JSONP
@@ -185,25 +231,30 @@ public class ServiceIntegrationResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final SecretForm secretForm
-    ) {
-        try {
-            secretForm.checkValid();
-            final InitDataObject initData =
-                    new WebResource.InitBuilder(webResource)
-                            .requiredBackendUser(true)
-                            .requiredFrontendUser(false)
-                            .requestAndResponse(request, response)
-                            .rejectWhenNoUser(true)
-                            .init();
-            final User user = initData.getUser();
-            helper.saveUpdateSecret(secretForm, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(),"Exception creating secret with message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+    ) throws DotDataException, DotSecurityException {
+
+        secretForm.checkValid();
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+        final User user = initData.getUser();
+        helper.saveUpdateSecret(secretForm, user);
+        return Response.ok(new ResponseEntityView(OK)).build(); // 200
     }
 
+    /**
+     * This is the endpoint used to feed/update secrets for a specific service/host configuration.
+     * @param request
+     * @param response
+     * @param secretForm form
+     * @return response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @PUT
     @Path("/")
     @JSONP
@@ -213,25 +264,29 @@ public class ServiceIntegrationResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final SecretForm secretForm
-    ) {
-        try {
-            secretForm.checkValid();
-            final InitDataObject initData =
-                    new WebResource.InitBuilder(webResource)
-                            .requiredBackendUser(true)
-                            .requiredFrontendUser(false)
-                            .requestAndResponse(request, response)
-                            .rejectWhenNoUser(true)
-                            .init();
-            final User user = initData.getUser();
-            helper.saveUpdateSecret(secretForm, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(),"Exception saving/updating secret with message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+    ) throws DotDataException, DotSecurityException {
+        secretForm.checkValid();
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+        final User user = initData.getUser();
+        helper.saveUpdateSecret(secretForm, user);
+        return Response.ok(new ResponseEntityView(OK)).build(); // 200
     }
 
+    /**
+     * This is the endpoint used to delete individual secrets for a specific service/host configuration.
+     * @param request
+     * @param response
+     * @param secretForm form
+     * @return response
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @DELETE
     @Path("/")
     @JSONP
@@ -241,80 +296,90 @@ public class ServiceIntegrationResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final DeleteSecretForm secretForm
-    ) {
-        try {
-            secretForm.checkValid();
-            final InitDataObject initData =
-                    new WebResource.InitBuilder(webResource)
-                            .requiredBackendUser(true)
-                            .requiredFrontendUser(false)
-                            .requestAndResponse(request, response)
-                            .rejectWhenNoUser(true)
-                            .init();
-            final User user = initData.getUser();
-            helper.deleteSecret(secretForm, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(),"Exception creating secret with message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+    ) throws DotDataException, DotSecurityException {
+
+        secretForm.checkValid();
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+        final User user = initData.getUser();
+        helper.deleteSecret(secretForm, user);
+        return Response.ok(new ResponseEntityView(OK)).build(); // 200
     }
 
+    /**
+     * This will remove a specific configuration for the key and site combination.
+     * All the secrets at once will be lost.
+     * But the Site Configuration and Service description remains intact.
+     * @param request
+     * @param response
+     * @param serviceKey service unique identifier
+     * @param siteId site
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @DELETE
-    @Path("/{serviceKey}/{siteId}")
+    @Path("/{key}/{siteId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deleteAllServiceIntegrationSecrets(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("serviceKey") final String serviceKey,
+            @PathParam("key") final String serviceKey,
             @PathParam("siteId") final String siteId
-    ) {
-        try {
-            final InitDataObject initData =
-                    new WebResource.InitBuilder(webResource)
-                            .requiredBackendUser(true)
-                            .requiredFrontendUser(false)
-                            .requestAndResponse(request, response)
-                            .rejectWhenNoUser(true)
-                            .init();
-            final User user = initData.getUser();
-            //this will remove a specific configuration for the key and site combination. All the secrets at once will be lost.
-            helper.deleteServiceIntegrationSecrets(serviceKey, siteId, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Exception getting service integration and secrets with message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+    ) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+        final User user = initData.getUser();
+        helper.deleteServiceIntegrationSecrets(serviceKey, siteId, user);
+        return Response.ok(new ResponseEntityView(OK)).build(); // 200
     }
 
+    /**
+     * This endpoint removes all integrations associated with an service.
+     * @param request
+     * @param response
+     * @param serviceKey service unique identifier
+     * @param removeDescriptor if passed the descriptor will be removed as well.
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @DELETE
-    @Path("/{serviceKey}")
+    @Path("/{key}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response deleteServiceIntegration(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("serviceKey") final String serviceKey,
+            @PathParam("key") final String serviceKey,
             @QueryParam("removeDescriptor") final boolean removeDescriptor
-    ) {
-        try {
-            final InitDataObject initData =
-                    new WebResource.InitBuilder(webResource)
-                            .requiredBackendUser(true)
-                            .requiredFrontendUser(false)
-                            .requestAndResponse(request, response)
-                            .rejectWhenNoUser(true)
-                            .init();
-            final User user = initData.getUser();
-            helper.removeServiceIntegration(serviceKey, user, removeDescriptor);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
-        } catch (Exception e) {
-            Logger.error(this.getClass(),"Exception creating secret with message: " + e.getMessage(), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
+    ) throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .init();
+        final User user = initData.getUser();
+        helper.removeServiceIntegration(serviceKey, user, removeDescriptor);
+        return Response.ok(new ResponseEntityView(OK)).build(); // 200
+
     }
 
 }

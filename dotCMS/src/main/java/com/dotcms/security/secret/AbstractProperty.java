@@ -2,6 +2,10 @@ package com.dotcms.security.secret;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+/**
+ * Duh its a super class that serves as the base form both Params and Secrets.
+ * @param <T>
+ */
 public abstract class AbstractProperty<T> {
 
     protected final T value;

@@ -11,8 +11,8 @@ import com.dotcms.security.secret.ServiceSecrets;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
@@ -20,7 +20,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import io.vavr.Tuple2;
+import io.vavr.Tuple;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -33,7 +33,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 class ServiceIntegrationHelper {
@@ -52,8 +51,8 @@ class ServiceIntegrationHelper {
         this(APILocator.getServiceIntegrationAPI(), APILocator.getHostAPI());
     }
 
-    private static Comparator<ServiceIntegrationView> compareByNameAndConfiguration = Comparator
-            .comparing(ServiceIntegrationView::getName).thenComparing(ServiceIntegrationView::getConfigurationsCount);
+    private static Comparator<ServiceIntegrationView> compareByCountAndName = Comparator
+            .comparing(ServiceIntegrationView::getConfigurationsCount).thenComparing(ServiceIntegrationView::getName);
 
     /**
      * This will give you the whole list of service descriptors.
@@ -72,7 +71,7 @@ class ServiceIntegrationHelper {
             final long configurationsCount = computeSitesWithConfigurations(serviceKey, hosts, user).size();
             views.add(new ServiceIntegrationView(serviceDescriptor, configurationsCount));
         }
-        return views.stream().sorted(compareByNameAndConfiguration).collect(CollectionsUtils.toImmutableList());
+        return views.stream().sorted(compareByCountAndName).collect(CollectionsUtils.toImmutableList());
     }
 
     /**
@@ -157,7 +156,7 @@ class ServiceIntegrationHelper {
         final Optional<ServiceDescriptor> serviceDescriptorOptional = serviceIntegrationAPI
                 .getServiceDescriptor(serviceKey, user);
         if (!serviceDescriptorOptional.isPresent()) {
-            throw new DotDataException(
+            throw new DoesNotExistException(
                     String.format(" Couldn't find a descriptor under key `%s` for host `%s` ",
                             serviceKey, siteId));
         }
@@ -187,7 +186,7 @@ class ServiceIntegrationHelper {
                         String.format("Error getting secret from `%s` ", serviceKey), e);
             }
             return false;
-        }).collect(Collectors.toList());
+        }).collect(CollectionsUtils.toImmutableList());
     }
 
     private List<Host> getHosts(final User user) {
@@ -213,7 +212,7 @@ class ServiceIntegrationHelper {
     void saveUpdateSecret(final SecretForm form, final User user)
             throws DotSecurityException, DotDataException {
 
-        final String serviceKey = form.getServiceKey();
+        final String serviceKey = form.getKey();
         if (!UtilMethods.isSet(serviceKey)) {
             throw new DotDataException("Required param serviceKey isn't set.");
         }
@@ -228,7 +227,7 @@ class ServiceIntegrationHelper {
         final Optional<ServiceDescriptor> optionalServiceDescriptor = serviceIntegrationAPI
                 .getServiceDescriptor(serviceKey, user);
         if (!optionalServiceDescriptor.isPresent()) {
-            throw new DotDataException(  String.format("Unable to find a service descriptor bound to the  serviceKey `%s`. You must upload a yml descriptor.",serviceKey));
+            throw new DoesNotExistException(  String.format("Unable to find a service descriptor bound to the  serviceKey `%s`. You must upload a yml descriptor.",serviceKey));
         }
         final Map<String, Param> params = form.getParams();
         if(!UtilMethods.isSet(params)){
@@ -256,7 +255,8 @@ class ServiceIntegrationHelper {
                 final String name = stringParamEntry.getKey();
                 final Param param = stringParamEntry.getValue();
                 final Secret secret = Secret.newSecret(param.getValue().toCharArray(), param.getType(), param.isHidden());
-                serviceIntegrationAPI.saveSecret(serviceKey, new Tuple2<>(name, secret), host, user);
+
+                serviceIntegrationAPI.saveSecret(serviceKey, Tuple.of(name, secret), host, user);
             }
         }
     }
@@ -271,26 +271,26 @@ class ServiceIntegrationHelper {
     void deleteSecret(final DeleteSecretForm form, final User user)
             throws DotSecurityException, DotDataException {
 
-        final String serviceKey = form.getServiceKey();
+        final String serviceKey = form.getKey();
         if (!UtilMethods.isSet(serviceKey)) {
-            throw new DotDataException("Required param serviceKey isn't set.");
+            throw new IllegalArgumentException("Required param serviceKey isn't set.");
         }
         final String siteId = form.getSiteId();
         if (!UtilMethods.isSet(siteId)) {
-            throw new DotDataException("Required Param siteId isn't set.");
+            throw new IllegalArgumentException("Required Param siteId isn't set.");
         }
         final Host host = hostAPI.find(siteId, user, false);
         if(null == host) {
-            throw new DotDataException(String.format(" Couldn't find any site with identifier `%s` ",siteId));
+            throw new IllegalArgumentException(String.format(" Couldn't find any site with identifier `%s` ",siteId));
         }
         final Optional<ServiceDescriptor> optionalServiceDescriptor = serviceIntegrationAPI
                 .getServiceDescriptor(serviceKey, user);
         if (!optionalServiceDescriptor.isPresent()) {
-            throw new DotDataException(String.format("Unable to find a service descriptor bound to the  serviceKey `%s`. You must upload a yml descriptor.",serviceKey));
+            throw new DoesNotExistException(String.format("Unable to find a service descriptor bound to the  serviceKey `%s`. You must upload a yml descriptor.",serviceKey));
         }
         final Set<String> params = form.getParams();
         if(!UtilMethods.isSet(params)){
-            throw new DotDataException("Required Params aren't set.");
+            throw new IllegalArgumentException("Required Params aren't set.");
         }
         final ServiceDescriptor serviceDescriptor = optionalServiceDescriptor.get();
         validateIncomingParams(params, serviceDescriptor);
@@ -298,7 +298,7 @@ class ServiceIntegrationHelper {
         final Optional<ServiceSecrets> serviceSecretsOptional = serviceIntegrationAPI
                 .getSecrets(serviceKey, host, user);
         if (!serviceSecretsOptional.isPresent()) {
-            throw new DotDataException(String.format("Unable to find a secret for serviceKey `%s`.",serviceKey));
+            throw new DoesNotExistException(String.format("Unable to find a secret for service with Key `%s`.",serviceKey));
         } else {
             serviceIntegrationAPI.deleteSecret(serviceKey, params, host, user);
         }
@@ -324,7 +324,7 @@ class ServiceIntegrationHelper {
             }
             //If the flag isn't true. Then we must reject the unknown param.
             if(null == describedParam) {
-                throw new DotDataValidationException(String.format(
+                throw new IllegalArgumentException(String.format(
                         "Params named `%s` can not be matched against service descriptor. ",
                         incomingParamName));
             }
@@ -332,7 +332,7 @@ class ServiceIntegrationHelper {
             final Param incomingParam = incomingParamEntry.getValue();
             //We revise the incoming param against the definition loaded from the yml.
             if(describedParam.isRequired() && UtilMethods.isNotSet(incomingParam.getValue())){
-               throw new DotDataValidationException(
+               throw new IllegalArgumentException(
                String.format("Params named `%s` is marked as required in the descriptor but does not have any value.", incomingParamName));
             }
         }
@@ -359,7 +359,7 @@ class ServiceIntegrationHelper {
             }
             //If the flag isn't true. Then we must reject the unknown param.
             if(null == describedParam) {
-                throw new DotDataValidationException(String.format(
+                throw new IllegalArgumentException(String.format(
                         "Params named `%s` can not be matched against service descriptor. ",
                         incomingParamName));
             }
