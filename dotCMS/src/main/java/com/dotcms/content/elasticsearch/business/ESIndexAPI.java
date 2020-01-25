@@ -24,6 +24,7 @@ import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -1373,6 +1374,33 @@ public class ESIndexAPI {
 		return deleteRepository(repositoryName, true);
 	}
 
+	/**
+	 * This method will wait for 5 minutes for elasticsearch to become available, after
+	 * which it will shut the dotCMS down.
+	 * @return
+	 */
+    public boolean waitUtilIndexReady() {
+        ClusterStats stats = null;
+        for (int i = 0; i < Config.getIntProperty("ES_CONNECTION_ATTEMPTS", 24); i++) {
+            try {
+                stats = getClusterStats();
+                break;
+            } catch (Exception e) {
+                Logger.error(this.getClass(), "Elasticsearch Attempt #" + (i + 1) + " : " + e.getMessage());
+            }
+            Try.run(() -> Thread.sleep(5000));
+        }
+        if (stats == null) {
+            Logger.fatal(this.getClass(), "No Elasticsearch, dying an ugly death");
+            System.exit(1);
+        }
+        return true;
+
+    }
+	
+	
+	
+	
 	/**
 	 * Deletes repository, by setting cleanUp to true the repository will be
 	 * removed from file system, beware various snapshot might be stored on the

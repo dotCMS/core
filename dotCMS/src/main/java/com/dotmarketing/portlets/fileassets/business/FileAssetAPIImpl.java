@@ -1,5 +1,16 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -40,17 +51,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 /**
  * This class is a bridge impl that will support the older
@@ -69,13 +69,18 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	private final IdentifierAPI identifierAPI;
 
 	public FileAssetAPIImpl() {
-
-		contAPI = APILocator.getContentletAPI();
-		perAPI = APILocator.getPermissionAPI();
-		systemEventsAPI = APILocator.getSystemEventsAPI();
-		identifierAPI   = APILocator.getIdentifierAPI();
+	    this(APILocator.getContentletAPI(),APILocator.getPermissionAPI(),APILocator.getSystemEventsAPI(),APILocator.getIdentifierAPI());
 	}
 
+   public FileAssetAPIImpl(ContentletAPI contAPI,PermissionAPI perAPI, SystemEventsAPI systemEventsAPI, IdentifierAPI identifierAPI ) {
+
+        this.contAPI = contAPI;
+        this.perAPI = perAPI;
+        this.systemEventsAPI = systemEventsAPI;
+        this.identifierAPI   = identifierAPI;
+    }
+	
+	
 	/*
 	 * This method will allow you to pass a file where the identifier is not set.  It the file exists on the set host/path
 	 * the identifier and all necessary data will be set in order to checkin as a new version of the existing file. The method will
@@ -257,7 +262,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		CacheLocator.getContentletCache().add(fileAsset);
 		return fileAsset;
 	}
-
+	
+	
 	public List<FileAsset> fromContentlets(final List<Contentlet> contentlets) {
 		final List<FileAsset> fileAssets = new ArrayList<>();
 		for (Contentlet con : contentlets) {

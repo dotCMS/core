@@ -734,7 +734,7 @@
 
                 <a href="javascript:toggleAdvancedSearchDiv()" class="advanced-search-button">
                     <div id="toggleDivText">
-                        <%= LanguageUtil.get(pageContext, "Advanced") %>
+                        <%= LanguageUtil.get(pageContext, "advanced") %>
                     </div>
                 </a>
 

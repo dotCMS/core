@@ -499,19 +499,4 @@ public String getPostedby(String postedBy){
 
 <div dojoAttachPoint="fileBrowser" jsId="fileBrowser" onFileSelected="attachFileCallback" onlyFiles="true" dojoType="dotcms.dijit.FileBrowserDialog">
 </div>
-
-<form id="submitWorkflowTaskFrm" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=executeAction">
-    <input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
-    <input name="wfActionComments" id="wfActionComments" type="hidden" value="">
-    <input name="wfActionId" id="wfActionId" type="hidden" value="">
-    <input name="wfContentletId" id="wfContentletId" type="hidden" value="<%=contentlet.getInode()%>">
-
-    <!-- PUSH PUBLISHING ACTIONLET -->
-    <input name="wfPublishDate" id="wfPublishDate" type="hidden" value="">
-    <input name="wfPublishTime" id="wfPublishTime" type="hidden" value="">
-    <input name="wfExpireDate" id="wfExpireDate" type="hidden" value="">
-    <input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
-    <input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
-    <input name="whereToSend" id="whereToSend" type="hidden" value="">
-</form>
 </div>

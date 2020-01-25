@@ -91,6 +91,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -980,12 +981,12 @@ public class ContentletAjax {
 		if (headers.size() == 0) {
 			Map<String, String> fieldMap = new HashMap<> ();
 			fieldMap.put("fieldVelocityVarName", "__title__");
-			fieldMap.put("fieldName", "Title");
+			fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Title")).getOrElse("Title"));
 			headers.add(fieldMap);
 
 			fieldMap = new HashMap<> ();
 			fieldMap.put("fieldVelocityVarName", "__type__");
-			fieldMap.put("fieldName", "Type");
+			fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Type")).getOrElse("Type"));
 			headers.add(fieldMap);
 
 
@@ -993,11 +994,7 @@ public class ContentletAjax {
 
 		final Map<String, String> fieldMap = new HashMap<> ();
 		fieldMap.put("fieldVelocityVarName", "__wfstep__");
-		try {
-			fieldMap.put("fieldName", LanguageUtil.get(currentUser, "Step"));
-		} catch (LanguageException e) {
-			fieldMap.put("fieldName", "Step");
-		}
+		fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Step")).getOrElse("Step"));
 		headers.add(fieldMap);
 
 		results.add(headers);
