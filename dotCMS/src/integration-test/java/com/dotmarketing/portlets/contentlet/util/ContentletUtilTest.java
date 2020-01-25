@@ -290,14 +290,14 @@ public class ContentletUtilTest extends IntegrationTestBase {
         assertNotNull(categoryList);
         assertEquals(categories.length, categoryList.size());
         for (final Category category : categories) {
-            Optional<?> matchElement = categoryList.stream()
+            final Optional<?> matchElement = categoryList.stream()
                     .filter(map -> {
                         final Map<?,?> cMap = (Map<?,?>) map;
                         return cMap.containsKey("key")
                                 && cMap.get("key").equals(category.getKey());
                     }).findFirst();
             assertTrue(matchElement.isPresent());
-            Map<?,?> categoryMap = (Map<?, ?>) matchElement.get();
+            final Map<?,?> categoryMap = (Map<?, ?>) matchElement.get();
             assertEquals(category.getCategoryName(), categoryMap.get("categoryName"));
         }
 
