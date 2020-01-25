@@ -1,16 +1,23 @@
 package com.dotmarketing.portlets.contentlet.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.ImmutableCategoryField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -18,9 +25,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -28,31 +33,32 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.*;
+import java.util.Optional;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Created by Oscar Arrieta on 6/13/17.
  */
+@RunWith(DataProviderRunner.class)
 public class ContentletUtilTest extends IntegrationTestBase {
 
     private static User user;
     private static Language language;
 
     private static CategoryAPI categoryAPI;
-    private static ContentletAPI contentletAPI;
-    private static ContentTypeAPI contentTypeAPI;
-    private static FieldAPI fieldAPI;
 
-    private static Host defaultHost;
+    private static Host host;
 
     @BeforeClass
     public static void prepare () throws Exception {
@@ -64,231 +70,118 @@ public class ContentletUtilTest extends IntegrationTestBase {
         language = APILocator.getLanguageAPI().getDefaultLanguage();
 
         categoryAPI = APILocator.getCategoryAPI();
-        contentletAPI = APILocator.getContentletAPI();
-        contentTypeAPI = APILocator.getContentTypeAPI( user, false );
-        fieldAPI = APILocator.getContentTypeFieldAPI();
 
-        defaultHost = APILocator.getHostAPI().findDefaultHost( user, false );
+        host = new SiteDataGen().nextPersisted();
     }
 
+    private static final String CATEGORY_NAMES = "categoryNames";
+    private static final String ALL_CATEGORIES_INFO = "allCategoriesInfo";
+
+    @DataProvider
+    public static Object[] categoryTestCases() {
+        return new String[] {
+                CATEGORY_NAMES, ALL_CATEGORIES_INFO
+        };
+    }
 
     /**
      * https://github.com/dotCMS/core/issues/11751
      */
     @Test
-    public void validateContentPrintableMapMethodReturnProperCategories() throws Exception{
+    @UseDataProvider("categoryTestCases")
+    public void validateContentPrintableMapMethodReturnProperCategories(
+            final String categoryInfoType) throws Exception {
 
         Contentlet contentlet = null;
-        Field textField = null;
-        Field categoryField1 = null;
-        Field categoryField2 = null;
         ContentType contentType = null;
         Category contentCategory = null;
-        Category popularCategory = null;
         Category contentBeltsCategory = null;
-        Category flightsCategory = null;
-        Category homeCategory = null;
 
         try {
 
             //Creating Categories.
-            //Create Parent Content Category.
-            contentCategory = new Category();
-            contentCategory.setCategoryName( "Content" );
-            contentCategory.setKey( "content" );
-            contentCategory.setCategoryVelocityVarName( "content" );
-            contentCategory.setSortOrder( (String) null );
-            contentCategory.setKeywords( null );
+            //Create Parent Content Category and Child Popular Category.
+            final Category popularCategory = createCategory("Popular", 1).next();
+            contentCategory = createCategory("Content", 0)
+                    .children(popularCategory).nextPersisted();
 
-            categoryAPI.save( null, contentCategory, user, false );
+            //Create Parent Content belts Category and Child Flights and Home Categories.
+            final Category flightsCategory = createCategory("Flights", 1).next();
+            final Category homeCategory = createCategory("Home", 2).next();
+            contentBeltsCategory = createCategory("Content Belts", 0)
+                    .children(flightsCategory, homeCategory).nextPersisted();
 
-            Category foundCategory = categoryAPI.find( contentCategory.getCategoryId(), user, false );
-            assertNotNull( foundCategory );
-
-            //Create Child Popular Category.
-            popularCategory = new Category();
-            popularCategory.setCategoryName( "Popular" );
-            popularCategory.setKey( "popular" );
-            popularCategory.setCategoryVelocityVarName( "popular" );
-            popularCategory.setSortOrder( 1 );
-            popularCategory.setKeywords( null );
-
-            categoryAPI.save( contentCategory, popularCategory, user, false );
-
-            foundCategory = categoryAPI.find( popularCategory.getCategoryId(), user, false );
-            assertNotNull( foundCategory );
-
-            //Create Parent Content belts Category.
-            contentBeltsCategory = new Category();
-            contentBeltsCategory.setCategoryName( "Content Belts" );
-            contentBeltsCategory.setKey( "contentbelts" );
-            contentBeltsCategory.setCategoryVelocityVarName( "contentbelts" );
-            contentBeltsCategory.setSortOrder( (String) null );
-            contentBeltsCategory.setKeywords( null );
-
-            categoryAPI.save( null, contentBeltsCategory, user, false );
-
-            foundCategory = categoryAPI.find( contentBeltsCategory.getCategoryId(), user, false );
-            assertNotNull( foundCategory );
-
-            //Create Child Flights Category.
-            flightsCategory = new Category();
-            flightsCategory.setCategoryName( "Popular" );
-            flightsCategory.setKey( "popular" );
-            flightsCategory.setCategoryVelocityVarName( "popular" );
-            flightsCategory.setSortOrder( 1 );
-            flightsCategory.setKeywords( null );
-
-            categoryAPI.save( contentBeltsCategory, flightsCategory, user, false );
-
-            foundCategory = categoryAPI.find( flightsCategory.getCategoryId(), user, false );
-            assertNotNull( foundCategory );
-
-            //Create Child Flights Category.
-            homeCategory = new Category();
-            homeCategory.setCategoryName( "Home" );
-            homeCategory.setKey( "home" );
-            homeCategory.setCategoryVelocityVarName( "home" );
-            homeCategory.setSortOrder( 1 );
-            homeCategory.setKeywords( null );
-
-            categoryAPI.save( contentBeltsCategory, homeCategory, user, false );
-
-            foundCategory = categoryAPI.find( homeCategory.getCategoryId(), user, false );
-            assertNotNull( foundCategory );
-
-            //Create Content Type.
-            contentType = ContentTypeBuilder.builder( BaseContentType.CONTENT.immutableClass() )
-                    .description( "Test ContentType" )
-                    .host( defaultHost.getIdentifier() )
-                    .name( "Test ContentType" )
-                    .owner( "owner" )
-                    .variable( "testVelocityVarName" )
-                    .build();
-
-            contentType = contentTypeAPI.save( contentType );
-
-            ContentType foundContentType = contentTypeAPI.find( contentType.inode() );
-            assertNotNull( foundContentType );
-
-            //Save Fields. 1. Text, 2. Category, 3. Category.
-            textField = ImmutableTextField.builder()
-                    .name("Title")
-                    .variable("title")
-                    .contentTypeId( contentType.id() )
-                    .dataType( DataTypes.TEXT)
-                    .build();
-
+            //Create Content Type with a Text Field and two Category Fields.
             final String CATEGORY_NAME_CONTENT = "content";
-
-            categoryField1 = ImmutableCategoryField.builder()
-                    .name( CATEGORY_NAME_CONTENT )
-                    .variable( CATEGORY_NAME_CONTENT )
-                    .contentTypeId( contentType.id() )
-                    .values( contentCategory.getInode() )
-                    .build();
-
             final String CATEGORY_NAME_CONTENT_BELTS = "contentBelts";
-
-            categoryField2 = ImmutableCategoryField.builder()
-                    .name( CATEGORY_NAME_CONTENT_BELTS )
-                    .variable( CATEGORY_NAME_CONTENT_BELTS )
-                    .contentTypeId( contentType.id() )
-                    .values( contentBeltsCategory.getInode() )
-                    .build();
-
-            textField = fieldAPI.save( textField, user );
-            categoryField1  = fieldAPI.save( categoryField1, user );
-            categoryField2 = fieldAPI.save( categoryField2, user );
-
-            textField = fieldAPI.find( textField.id() );
-            categoryField1 = fieldAPI.find( categoryField1.id() );
-            categoryField2 = fieldAPI.find( categoryField2.id() );
-
-            assertNotNull( textField );
-            assertNotNull( categoryField1 );
-            assertNotNull( categoryField2 );
+            final List<Field> fields = new ArrayList<>();
+            fields.add(new FieldDataGen().name("Title").velocityVarName("title").next());
+            fields.add(new FieldDataGen().type(CategoryField.class)
+                    .name(CATEGORY_NAME_CONTENT).velocityVarName(CATEGORY_NAME_CONTENT)
+                    .values(contentCategory.getInode()).next());
+            fields.add(new FieldDataGen().type(CategoryField.class)
+                    .name(CATEGORY_NAME_CONTENT_BELTS).velocityVarName(CATEGORY_NAME_CONTENT_BELTS)
+                    .values(contentBeltsCategory.getInode()).next());
+            contentType = new ContentTypeDataGen().host(host).fields(fields).nextPersisted();
 
             //Creating content.
-            contentlet = new Contentlet();
-            contentlet.setStructureInode( contentType.inode() );
-            contentlet.setLanguageId( language.getId() );
-            contentlet.setStringProperty( textField.variable(), "Test Contentlet" );
+            contentlet = new ContentletDataGen(contentType.id())
+                    .languageId(language.getId())
+                    .setProperty("title", "Test Contentlet")
+                    .addCategory(popularCategory)
+                    .addCategory(homeCategory).addCategory(flightsCategory)
+                    .nextPersisted();
 
-            List<Category> contentletCategories = Arrays.asList( popularCategory, homeCategory );
+            final Map<String, Object> contentPrintableMap = ContentletUtil
+                    .getContentPrintableMap( user, contentlet,
+                            categoryInfoType.equals(ALL_CATEGORIES_INFO));
 
-            contentletAPI.validateContentlet( contentlet, contentletCategories  );
-            contentlet.setIndexPolicy(IndexPolicy.FORCE);
-            contentlet = contentletAPI.checkin( contentlet, null, contentletCategories, user, false );
-
-            assertTrue( UtilMethods.isSet( contentlet.getInode() ) );
-
-            final Map<String, Object> contentPrintableMap = ContentletUtil.getContentPrintableMap( user, contentlet );
-            assertTrue( contentPrintableMap.containsKey( CATEGORY_NAME_CONTENT ) );
-            assertTrue( contentPrintableMap.containsKey( CATEGORY_NAME_CONTENT_BELTS ) );
-            assertEquals( popularCategory.getCategoryName(), contentPrintableMap.get( CATEGORY_NAME_CONTENT ) );
-            assertEquals( homeCategory.getCategoryName(), contentPrintableMap.get( CATEGORY_NAME_CONTENT_BELTS ) );
-
-        } catch ( Exception e ){
-
-            fail(e.getMessage());
+            assertTrue(contentPrintableMap.containsKey(CATEGORY_NAME_CONTENT));
+            assertTrue(contentPrintableMap.containsKey(CATEGORY_NAME_CONTENT_BELTS));
+            if (categoryInfoType.equals(ALL_CATEGORIES_INFO)) {
+                verifyCategoriesForField(contentPrintableMap, CATEGORY_NAME_CONTENT,
+                        popularCategory);
+                verifyCategoriesForField(contentPrintableMap, CATEGORY_NAME_CONTENT_BELTS,
+                        homeCategory, flightsCategory);
+            } else {
+                assertEquals( popularCategory.getCategoryName(), contentPrintableMap.get( CATEGORY_NAME_CONTENT ) );
+                String [] resultCategories = contentPrintableMap.get(CATEGORY_NAME_CONTENT_BELTS)
+                        .toString().split(",\\s?");
+                assertEquals(2, resultCategories.length);
+                assertTrue(Arrays.stream(resultCategories)
+                        .anyMatch(c -> c.equals(homeCategory.getCategoryName())));
+                assertTrue(Arrays.stream(resultCategories)
+                        .anyMatch(c -> c.equals(flightsCategory.getCategoryName())));
+            }
 
         } finally {
-
-            //Delete Contentlet.
-            if ( contentlet != null ){
-
-                contentletAPI.destroy(contentlet, user, false);
+            if (UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getInode())) {
+                ContentletDataGen.remove(contentlet);
             }
-
-            //Cleaning.
-            //Delete Content Type and Fields.
-            if ( textField != null ){
-                fieldAPI.delete( textField );
-                assertTrue( checkNotFoundInDbException( textField ) );
+            if (UtilMethods.isSet(contentType) && UtilMethods.isSet(contentType.id())) {
+                ContentTypeDataGen.remove(contentType);
             }
-            if ( categoryField1 != null ){
-                fieldAPI.delete( categoryField1 );
-                assertTrue( checkNotFoundInDbException( categoryField1 ) );
-            }
-            if ( categoryField2 != null ){
-                fieldAPI.delete( categoryField2 );
-                assertTrue( checkNotFoundInDbException( categoryField2 ) );
-            }
-            if ( contentType != null ){
-                contentTypeAPI.delete( contentType );
-                assertTrue( checkNotFoundInDbException( contentType ) );
-            }
-
             //Delete Categories.
-            if ( contentCategory != null ){
+            if (UtilMethods.isSet(contentCategory) && UtilMethods.isSet(contentCategory.getInode())){
                 categoryAPI.delete( contentCategory, user, false );
             }
-            if ( popularCategory != null ){
-                categoryAPI.delete( popularCategory, user, false );
-            }
-            if ( contentBeltsCategory != null ){
+            if (UtilMethods.isSet(contentBeltsCategory) && UtilMethods.isSet(contentBeltsCategory.getInode())){
                 categoryAPI.delete( contentBeltsCategory, user, false );
             }
-            if ( flightsCategory != null ){
-                categoryAPI.delete( flightsCategory, user, false );
-            }
-            if ( homeCategory != null ){
-                categoryAPI.delete( homeCategory, user, false );
-            }
-
         }
 
     }
 
     @Test
     public void test_getContentPrintableMap_WhenContentTypeIsNeitherFileAssetNorPage_PathIsNotAddedToTheMap()
-            throws DotSecurityException, DotDataException, IOException {
+            throws DotDataException, IOException {
 
-        final ContentType contentType = createContentType(BaseContentType.CONTENT);
+        ContentType contentType = null;
         Contentlet contentlet = null;
 
         try {
+            contentType = new ContentTypeDataGen().host(host).nextPersisted();
+
             contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
 
             final Map<String, Object> contentPrintableMap = ContentletUtil
@@ -296,19 +189,19 @@ public class ContentletUtilTest extends IntegrationTestBase {
 
             assertFalse(contentPrintableMap.containsKey("path"));
         } finally {
-            if (UtilMethods.isSet(contentlet.getInode())) {
-
-                contentletAPI.destroy(contentlet, user, false);
+            if (UtilMethods.isSet(contentlet) && UtilMethods.isSet(contentlet.getInode())) {
+                ContentletDataGen.remove(contentlet);
             }
-
-            contentTypeAPI.delete(contentType);
+            if (UtilMethods.isSet(contentType) && UtilMethods.isSet(contentType.id())) {
+                ContentTypeDataGen.remove(contentType);
+            }
         }
 
     }
 
     @Test
     public void test_getContentPrintableMap_WhenContentTypeIsHTMLPage_PathIsAddedToTheMap()
-            throws DotSecurityException, DotDataException, IOException {
+            throws DotDataException, IOException {
 
         Folder folder = null;
         HTMLPageAsset page = null;
@@ -377,43 +270,32 @@ public class ContentletUtilTest extends IntegrationTestBase {
         }
     }
 
-    private ContentType createContentType(final BaseContentType baseContentType)
-            throws DotSecurityException, DotDataException {
-
-        final long i = System.currentTimeMillis();
-        //Create Content Type.
-        final ContentType contentType = ContentTypeBuilder.builder(baseContentType.immutableClass())
-                .description("Test ContentType" + i)
-                .host(defaultHost.getIdentifier())
-                .name("Test ContentType" + i)
-                .owner("owner")
-                .variable("testVelocityVarName")
-                .build();
-
-        return contentTypeAPI.save(contentType);
+    private CategoryDataGen createCategory(final String categoryName, final int sortOrder) {
+        final String categoryKey = categoryName.toLowerCase().replaceAll("\\s", "");
+        return new CategoryDataGen().setCategoryName(categoryName)
+            .setKey(categoryKey).setCategoryVelocityVarName(categoryKey)
+            .setSortOrder(sortOrder);
     }
 
+    private void verifyCategoriesForField(
+            final Map<String, Object> contentPrintableMap,
+            final String fieldName, final Category ...categories) {
 
-    /**
-     * Util method to check if NotFoundInDbException is returned when trying to find a Field or ContentType.
-     * @param o ContentType or Field to find.
-     * @return true is NotFoundInDbException is returned, false if else.
-     */
-    private boolean checkNotFoundInDbException (Object o){
-        if ( o instanceof ContentType ){
-            try {
-                contentTypeAPI.find( ((ContentType)o).inode() );
-            } catch ( Exception e ){
-                return true;
-            }
+        final List<?> categoryList = (List<?>) contentPrintableMap.get(fieldName);
+        assertNotNull(categoryList);
+        assertEquals(categories.length, categoryList.size());
+        for (final Category category : categories) {
+            Optional<?> matchElement = categoryList.stream()
+                    .filter(map -> {
+                        final Map<?,?> cMap = (Map<?,?>) map;
+                        return cMap.containsKey("key")
+                                && cMap.get("key").equals(category.getKey());
+                    }).findFirst();
+            assertTrue(matchElement.isPresent());
+            Map<?,?> categoryMap = (Map<?, ?>) matchElement.get();
+            assertEquals(category.getCategoryName(), categoryMap.get("categoryName"));
         }
-        if ( o instanceof Field ){
-            try {
-                fieldAPI.find( ((Field)o).id() );
-            } catch ( Exception e ){
-                return true;
-            }
-        }
-        return false;
+
     }
+
 }
