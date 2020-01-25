@@ -41,6 +41,7 @@ public class FlipImageFilter extends ImageFilter {
 			BufferedImage src = ImageIO.read(file);
 			BufferedImage dst = filter.filter(src, null);
 			ImageIO.write(dst, "png", resultFile);
+			dst.flush();
 		} catch (IOException e) {
 			Logger.error(this.getClass(), e.getMessage());
 		}

@@ -29,7 +29,7 @@ List<WorkflowAction> wfActionsAll = null;
 try{
 	wfSteps = APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
 	wfActions = APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, user);
-	wfActionsAll= APILocator.getWorkflowAPI().findActions(wfSteps, user);
+	wfActionsAll= APILocator.getWorkflowAPI().findActions(wfSteps, user, contentlet);
 	if(null != wfSteps && !wfSteps.isEmpty() && wfSteps.size() == 1) {
 		wfStep = wfSteps.get(0);
 		scheme = APILocator.getWorkflowAPI().findScheme(wfStep.getSchemeId());
