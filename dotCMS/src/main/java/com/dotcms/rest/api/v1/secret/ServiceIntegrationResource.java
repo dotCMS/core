@@ -6,6 +6,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationView;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -69,25 +70,27 @@ public class ServiceIntegrationResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response listAvailableServices(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response)
-            throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requestAndResponse(request, response)
-                        .rejectWhenNoUser(true)
-                        .init();
-        final User user = initData.getUser();
-        final List<ServiceIntegrationView> integrationViews = helper
-                .getAvailableDescriptorViews(user);
-        if (!integrationViews.isEmpty()) {
-            return Response.ok(new ResponseEntityView(integrationViews)).build(); // 200
+                                                @Context final HttpServletResponse response
+    ) {
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            final List<ServiceIntegrationView> integrationViews = helper.getAvailableDescriptorViews(user);
+            if(!integrationViews.isEmpty()){
+                return Response.ok(new ResponseEntityView(integrationViews)).build(); // 200
+            }
+            throw new DoesNotExistException("No service integration is available to configure. Try uploading a file!");
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(), "Exception on listing all available service-integrations.", e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
-        final String message = "No service integration is available to configure. Try uploading a file!";
-        Logger.error(ServiceIntegrationResource.class, message);
-        throw new DoesNotExistException(message);
     }
 
     /**
@@ -109,27 +112,32 @@ public class ServiceIntegrationResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("key") final String serviceKey
-    ) throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requestAndResponse(request, response)
-                        .rejectWhenNoUser(true)
-                        .init();
-        final User user = initData.getUser();
-        final Optional<ServiceIntegrationView> serviceIntegrationView = helper
-                .getServiceIntegrationSiteView(serviceKey, user);
-        if (serviceIntegrationView.isPresent()) {
-            return Response.ok(new ResponseEntityView(serviceIntegrationView.get()))
-                    .build(); // 200
+    ) {
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            final Optional<ServiceIntegrationView> serviceIntegrationView = helper
+                    .getServiceIntegrationSiteView(serviceKey, user);
+            if (serviceIntegrationView.isPresent()) {
+                return Response.ok(new ResponseEntityView(serviceIntegrationView.get()))
+                        .build(); // 200
+            }
+            throw new DoesNotExistException(
+                  String.format("Nope. No service integration was found for key `%s`. ", serviceKey)
+            );
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(),
+                    String.format("Exception getting service integration for  key: `%s`. ",serviceKey) , e
+            );
+            return ResponseUtil.mapExceptionResponse(e);
         }
-        final String message = String
-                .format("No service integration was found for key `%s`. ", serviceKey);
-        Logger.error(ServiceIntegrationResource.class, message);
-        throw new DoesNotExistException(message);
-
     }
 
     /**
@@ -154,28 +162,31 @@ public class ServiceIntegrationResource {
             @Context final HttpServletResponse response,
             @PathParam("key") final String serviceKey,
             @PathParam("siteId") final String siteId
-    ) throws DotDataException, DotSecurityException {
+    ) {
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            final Optional<ServiceIntegrationView> serviceIntegrationDetailedView = helper
+                        .getServiceIntegrationSiteDetailedView(serviceKey, siteId, user);
+            if (serviceIntegrationDetailedView.isPresent()) {
+                return Response.ok(new ResponseEntityView(serviceIntegrationDetailedView.get()))
+                .build(); // 200
+            }
+            throw new DoesNotExistException(String.format(
+                        "Nope. No service integration was found for key `%s` and siteId `%s`. ",
+                        serviceKey, siteId));
 
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requestAndResponse(request, response)
-                        .rejectWhenNoUser(true)
-                        .init();
-        final User user = initData.getUser();
-        final Optional<ServiceIntegrationView> serviceIntegrationDetailedView = helper
-                .getServiceIntegrationSiteDetailedView(serviceKey, siteId, user);
-        if (serviceIntegrationDetailedView.isPresent()) {
-            return Response.ok(new ResponseEntityView(serviceIntegrationDetailedView.get()))
-                    .build(); // 200
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(), "Exception getting service integration and secrets with message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
         }
-
-        final String message = String
-                .format("Nope. No service integration was found for key `%s` and siteId `%s`. ",
-                        serviceKey, siteId);
-        Logger.error(ServiceIntegrationResource.class, message);
-        throw new DoesNotExistException(message);
     }
 
     /**
@@ -199,18 +210,25 @@ public class ServiceIntegrationResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final FormDataMultiPart multipart
-    ) throws DotSecurityException, IOException, DotDataException {
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requestAndResponse(request, response)
-                        .rejectWhenNoUser(true)
-                        .init();
+    ) {
+        try {
 
-        final User user = initData.getUser();
-        helper.createServiceIntegration(multipart, user);
-        return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+
+            final User user = initData.getUser();
+            helper.createServiceIntegration(multipart, user);
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(),"Exception saving/creating a service integration ", e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
     }
 
     /**
@@ -231,19 +249,26 @@ public class ServiceIntegrationResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final SecretForm secretForm
-    ) throws DotDataException, DotSecurityException {
-
-        secretForm.checkValid();
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requestAndResponse(request, response)
-                        .rejectWhenNoUser(true)
-                        .init();
-        final User user = initData.getUser();
-        helper.saveUpdateSecret(secretForm, user);
-        return Response.ok(new ResponseEntityView(OK)).build(); // 200
+    ) {
+        try {
+            secretForm.checkValid();
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            helper.saveUpdateSecret(secretForm, user);
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(),
+                    String.format("Exception creating secret integration with form `%s` ",secretForm), e
+            );
+            return ResponseUtil.mapExceptionResponse(e);
+        }
     }
 
     /**
@@ -264,18 +289,26 @@ public class ServiceIntegrationResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final SecretForm secretForm
-    ) throws DotDataException, DotSecurityException {
-        secretForm.checkValid();
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requestAndResponse(request, response)
-                        .rejectWhenNoUser(true)
-                        .init();
-        final User user = initData.getUser();
-        helper.saveUpdateSecret(secretForm, user);
-        return Response.ok(new ResponseEntityView(OK)).build(); // 200
+    ) {
+        try {
+            secretForm.checkValid();
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            helper.saveUpdateSecret(secretForm, user);
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(),
+               String.format("Exception saving/updating secret with form `%s` ",secretForm), e
+            );
+            return ResponseUtil.mapExceptionResponse(e);
+        }
     }
 
     /**
@@ -296,19 +329,26 @@ public class ServiceIntegrationResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final DeleteSecretForm secretForm
-    ) throws DotDataException, DotSecurityException {
-
-        secretForm.checkValid();
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requestAndResponse(request, response)
-                        .rejectWhenNoUser(true)
-                        .init();
-        final User user = initData.getUser();
-        helper.deleteSecret(secretForm, user);
-        return Response.ok(new ResponseEntityView(OK)).build(); // 200
+    ) {
+        try {
+            secretForm.checkValid();
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            helper.deleteSecret(secretForm, user);
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(),
+               String.format("Exception creating secret with form `%s`",secretForm), e
+            );
+            return ResponseUtil.mapExceptionResponse(e);
+        }
     }
 
     /**
@@ -333,18 +373,26 @@ public class ServiceIntegrationResource {
             @Context final HttpServletResponse response,
             @PathParam("key") final String serviceKey,
             @PathParam("siteId") final String siteId
-    ) throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requestAndResponse(request, response)
-                        .rejectWhenNoUser(true)
-                        .init();
-        final User user = initData.getUser();
-        helper.deleteServiceIntegrationSecrets(serviceKey, siteId, user);
-        return Response.ok(new ResponseEntityView(OK)).build(); // 200
+    ) {
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            //this will remove a specific configuration for the key and site combination. All the secrets at once will be lost.
+            helper.deleteServiceIntegrationSecrets(serviceKey, siteId, user);
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(),
+              String.format("Exception getting service integration and secrets for `%s`, and `%s` ",serviceKey, siteId) , e
+            );
+            return ResponseUtil.mapExceptionResponse(e);
+        }
     }
 
     /**
@@ -367,19 +415,23 @@ public class ServiceIntegrationResource {
             @Context final HttpServletResponse response,
             @PathParam("key") final String serviceKey,
             @QueryParam("removeDescriptor") final boolean removeDescriptor
-    ) throws DotDataException, DotSecurityException {
-
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requestAndResponse(request, response)
-                        .rejectWhenNoUser(true)
-                        .init();
-        final User user = initData.getUser();
-        helper.removeServiceIntegration(serviceKey, user, removeDescriptor);
-        return Response.ok(new ResponseEntityView(OK)).build(); // 200
-
+    ) {
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            helper.removeServiceIntegration(serviceKey, user, removeDescriptor);
+            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(),String.format("Exception creating secret for key %s",serviceKey), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
     }
 
 }

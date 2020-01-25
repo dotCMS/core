@@ -37,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -93,7 +94,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
             final String serviceName, final String description, final boolean allowExtraParameters,
             final Map<String, Param> paramMap) throws IOException {
         final ServiceDescriptor serviceDescriptor = new ServiceDescriptor(serviceKey, serviceName,
-                description, "/black.png", allowExtraParameters);
+                description, "/black.png", allowExtraParameters, new HashMap<>());
 
         for (final Entry<String, Param> entry : paramMap.entrySet()) {
             final Param param = entry.getValue();
@@ -156,10 +157,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
                             serviceIntegrationView -> "lola"
                                     .equals(serviceIntegrationView.getName())));
 
-            final SecretForm secretForm = new SecretForm();
-            secretForm.setKey(serviceKey);
-            secretForm.setSiteId(host.getIdentifier());
-            secretForm.setParams(paramMap);
+            final SecretForm secretForm = new SecretForm(serviceKey,host.getIdentifier(), paramMap);
             final Response createSecretResponse = serviceIntegrationResource
                     .createServiceIntegrationSecrets(request, response, secretForm);
             Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
@@ -265,10 +263,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
                                     .equals(serviceIntegrationView.getName())));
 
             // Add secrets to it.
-            final SecretForm secretForm = new SecretForm();
-            secretForm.setKey(serviceKey);
-            secretForm.setSiteId(host.getIdentifier());
-            secretForm.setParams(paramMap);
+            final SecretForm secretForm = new SecretForm(serviceKey,host.getIdentifier(), paramMap);
             final Response createSecretResponse = serviceIntegrationResource
                     .createServiceIntegrationSecrets(request, response, secretForm);
             Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
@@ -315,10 +310,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
                     "param3"
             );
 
-            final DeleteSecretForm deleteSecretForm = new DeleteSecretForm();
-            deleteSecretForm.setKey(serviceKey);
-            deleteSecretForm.setSiteId(host.getIdentifier());
-            deleteSecretForm.setParams(paramsToDelete);
+            final DeleteSecretForm deleteSecretForm = new DeleteSecretForm(serviceKey,host.getIdentifier(),paramsToDelete);
             final Response deleteIndividualSecretResponse = serviceIntegrationResource
                     .deleteIndividualServiceIntegrationSecret(request, response, deleteSecretForm);
             Assert.assertEquals(HttpStatus.SC_OK, deleteIndividualSecretResponse.getStatus());
@@ -582,12 +574,8 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
                     "param1", Param.newParam("", false, Type.STRING, null, null, true)
             );
 
-            final SecretForm secretForm = new SecretForm();
             final Host host = new SiteDataGen().nextPersisted();
-            secretForm.setKey(serviceKey);
-            secretForm.setSiteId(host.getIdentifier());
-            secretForm.setParams(secretParam);
-
+            final SecretForm secretForm = new SecretForm(serviceKey, host.getIdentifier(), secretParam);
             final Response createSecretResponse = serviceIntegrationResource
                     .createServiceIntegrationSecrets(request, response, secretForm);
             Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, createSecretResponse.getStatus());
@@ -602,11 +590,8 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
     private Host createServiceIntegrationParams(final Map<String, Param> paramMap,
             final String serviceKey, final HttpServletRequest request,
             final HttpServletResponse response) throws DotSecurityException, DotDataException {
-        final SecretForm secretForm = new SecretForm();
         final Host host = new SiteDataGen().nextPersisted();
-        secretForm.setKey(serviceKey);
-        secretForm.setSiteId(host.getIdentifier());
-        secretForm.setParams(paramMap);
+        final SecretForm secretForm = new SecretForm(serviceKey, host.getIdentifier(), paramMap);
         final Response createSecretResponse = serviceIntegrationResource
                 .createServiceIntegrationSecrets(request, response, secretForm);
         Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());

@@ -2,7 +2,10 @@ package com.dotcms.rest.api.v1.secret;
 
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Set;
+import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * Form that allows deleting a set of secrets/params
@@ -10,13 +13,20 @@ import java.util.Set;
 public class DeleteSecretForm extends Validated {
 
     @NotNull
-    private String key;
+    private final String key;
 
     @NotNull
-    private String siteId;
+    private final String siteId;
 
     @NotNull
-    private Set<String> params;
+    private final Set<String> params;
+
+    @JsonCreator
+    public DeleteSecretForm(@JsonProperty("key") final String key, @JsonProperty("siteId") final String siteId, @JsonProperty("params") final Set<String> params) {
+        this.key = key;
+        this.siteId = siteId;
+        this.params = params;
+    }
 
     /**
      * This should contain the unique identifier that differentiates the service
@@ -24,10 +34,6 @@ public class DeleteSecretForm extends Validated {
      */
     public String getKey() {
         return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
     }
 
     /**
@@ -38,10 +44,6 @@ public class DeleteSecretForm extends Validated {
         return siteId;
     }
 
-    public void setSiteId(String siteId) {
-        this.siteId = siteId;
-    }
-
     /**
      * Param names passed to delete
      * @return
@@ -50,7 +52,9 @@ public class DeleteSecretForm extends Validated {
         return params;
     }
 
-    public void setParams(Set<String> params) {
-        this.params = params;
+
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString( this );
     }
 }

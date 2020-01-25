@@ -1,7 +1,8 @@
 package com.dotcms.security.secret;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -26,17 +27,17 @@ import java.util.Objects;
  */
 public class ServiceDescriptor {
 
-    private String key;
+    private final String key;
 
-    private String name;
+    private final String name;
 
-    private String description;
+    private final String description;
 
-    private String iconUrl;
+    private final String iconUrl;
 
-    private boolean allowExtraParameters;
+    private final boolean allowExtraParameters;
 
-    private Map<String,Param> params;
+    private final Map<String,Param> params;
 
     /**
      * This constructor isn't used by the object mapper that reads the yml files.
@@ -47,22 +48,21 @@ public class ServiceDescriptor {
      * @param iconUrl
      * @param allowExtraParameters
      */
+
     @VisibleForTesting
-    public ServiceDescriptor(final String key, final String name, final String description,
-            final String iconUrl, final boolean allowExtraParameters) {
+    @JsonCreator
+    public ServiceDescriptor(@JsonProperty("key") final String key,
+            @JsonProperty("name") final String name,
+            @JsonProperty("description") final String description,
+            @JsonProperty("iconUrl") final String iconUrl,
+            @JsonProperty("allowExtraParameters") final boolean allowExtraParameters,
+            @JsonProperty("params") final Map<String,Param> params) {
         this.key = key;
         this.name = name;
         this.description = description;
         this.iconUrl = iconUrl;
         this.allowExtraParameters = allowExtraParameters;
-    }
-
-    /**
-     * Required by the Object Mapper that reads the yml files.
-     * Because of this the attributes on this class can not be made final.
-     */
-    public ServiceDescriptor() {
-
+        this.params = params;
     }
 
     /**
@@ -110,9 +110,6 @@ public class ServiceDescriptor {
      * @return
      */
     public Map<String, Param> getParams() {
-        if(null == params){
-            params = new HashMap<>();
-        }
         return params;
     }
 

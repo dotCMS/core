@@ -23,6 +23,7 @@ import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -372,18 +373,21 @@ class ServiceIntegrationHelper {
      * @param multipart The multi-part form
      * @param user Logged in dude.
      * @throws IOException
-     * @throws DotSecurityException
      * @throws DotDataException
      */
     void createServiceIntegration(final FormDataMultiPart multipart, final User user)
-            throws IOException, DotSecurityException, DotDataException {
+            throws IOException, DotDataException {
         final List<File> files = new MultiPartUtils().getBinariesFromMultipart(multipart);
         if(!UtilMethods.isSet(files)){
             throw new DotDataException("Unable to extract any files from multi-part request.");
         }
         for (final File file : files) {
             //TODO: verify file length and kit it back if exceeds a max
-            serviceIntegrationAPI.createServiceDescriptor(Files.newInputStream(Paths.get(file.getPath())), user);
+            try(final InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))){
+                serviceIntegrationAPI.createServiceDescriptor(inputStream, user);
+            }catch (Exception e){
+               Logger.error(ServiceIntegrationHelper.class, e);
+            }
         }
     }
 
