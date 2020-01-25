@@ -1,9 +1,8 @@
 package com.dotcms.mock.response;
 
+import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-import java.io.File;
-import java.io.IOException;
 
 public class MockHttpStatusResponse extends HttpServletResponseWrapper implements MockResponse {
 
@@ -19,12 +18,12 @@ public class MockHttpStatusResponse extends HttpServletResponseWrapper implement
     }
 
     @Override
-    public void sendError(int status) throws IOException {
+    public void sendError(final int status) throws IOException {
         this.status = status;
     }
 
     @Override
-    public void setStatus(int status) {
+    public void setStatus(final int status) {
         this.status = status;
     }
 

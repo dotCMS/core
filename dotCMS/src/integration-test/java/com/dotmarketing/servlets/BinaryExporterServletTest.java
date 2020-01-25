@@ -28,22 +28,23 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collection;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
-@RunWith(DataProviderRunner.class)
+@RunWith(Parameterized.class)
 public class BinaryExporterServletTest {
 
     // Temporary binary png file
@@ -51,7 +52,7 @@ public class BinaryExporterServletTest {
 
         private final Path pngFilePath;
 
-        public TmpBinaryFile(boolean setContent) throws IOException {
+        public TmpBinaryFile(final boolean setContent) throws IOException {
             pngFilePath = Files.createTempFile("tmp", ".png");
             if (setContent) {
                 Files.write(pngFilePath, ShortyServletAndTitleImageTest.pngPixel);
@@ -78,8 +79,16 @@ public class BinaryExporterServletTest {
     private static final String READ_PERMISSIONS = "has-read-permissions";
     private static final String NO_PERMISSIONS = "no-permissions";
 
-    private static Host host = null;
-    private static Role role = null;
+    private static Host host;
+    private static Role role;
+
+    final private boolean byIdentifier;
+    final private boolean permissionsRequired;
+
+    public BinaryExporterServletTest(final String byIdType, final String permissionType) {
+        this.byIdentifier = byIdType.equals(BY_ID);
+        this.permissionsRequired = permissionType.equals(NO_PERMISSIONS);
+    }
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -90,24 +99,19 @@ public class BinaryExporterServletTest {
         role = new RoleDataGen().nextPersisted();
     }
 
-    @DataProvider
-    public static Object[] testCases() {
-        return new String[][] {
+    @Parameters(name = "{0},{1}")
+    public static Collection<Object[]> testCases() {
+        return Arrays.asList(new Object[][] {
                 { BY_ID, READ_PERMISSIONS },
                 { BY_ID, NO_PERMISSIONS },
                 { BY_INODE, READ_PERMISSIONS },
                 { BY_INODE, NO_PERMISSIONS },
-        };
+        });
     }
 
-
     @Test
-    @UseDataProvider("testCases")
-    public void requestBinaryFile(
-            final String byIdType, final String permissionType) throws Exception {
-
-        final boolean byIdentifier = byIdType.equals(BY_ID);
-        final boolean permissionsRequired = permissionType.equals(NO_PERMISSIONS);
+    public void requestBinaryFile()
+            throws DotDataException, DotSecurityException, ServletException, IOException {
 
         Contentlet fileAsset = null;
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
@@ -170,7 +174,7 @@ public class BinaryExporterServletTest {
                 "/contentAsset"));
     }
 
-    private HttpServletResponse mockServletResponse(TmpBinaryFile tmpTargetFile) {
+    private HttpServletResponse mockServletResponse(final TmpBinaryFile tmpTargetFile) {
         return new MockHttpStatusResponse(new MockHttpCaptureResponse(
                 new BaseResponse().response(), tmpTargetFile.getFile()));
     }
@@ -184,7 +188,7 @@ public class BinaryExporterServletTest {
 
     }
 
-    private void addPermissions(Contentlet fileAsset)
+    private void addPermissions(final Contentlet fileAsset)
             throws DotSecurityException, DotDataException {
 
         final User systemUser = APILocator.systemUser();
