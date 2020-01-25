@@ -8,7 +8,7 @@ public class MockHttpStatusResponse extends HttpServletResponseWrapper implement
 
     private int status = HttpServletResponse.SC_OK;
 
-    public MockHttpStatusResponse(HttpServletResponse response) {
+    public MockHttpStatusResponse(final HttpServletResponse response) {
         super(response);
     }
 

@@ -28,23 +28,22 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Collection;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
-@RunWith(Parameterized.class)
+@RunWith(DataProviderRunner.class)
 public class BinaryExporterServletTest {
 
     // Temporary binary png file
@@ -82,36 +81,35 @@ public class BinaryExporterServletTest {
     private static Host host;
     private static Role role;
 
-    final private boolean byIdentifier;
-    final private boolean permissionsRequired;
-
-    public BinaryExporterServletTest(final String byIdType, final String permissionType) {
-        this.byIdentifier = byIdType.equals(BY_ID);
-        this.permissionsRequired = permissionType.equals(NO_PERMISSIONS);
-    }
-
     @BeforeClass
     public static void prepare() throws Exception {
+
         // Set testing environment
         IntegrationTestInitService.getInstance().init();
 
         host = new SiteDataGen().nextPersisted();
         role = new RoleDataGen().nextPersisted();
+
     }
 
-    @Parameters(name = "{0},{1}")
-    public static Collection<Object[]> testCases() {
-        return Arrays.asList(new Object[][] {
+    @DataProvider
+    public static Object[][] testCases() {
+        return new Object[][] {
                 { BY_ID, READ_PERMISSIONS },
                 { BY_ID, NO_PERMISSIONS },
                 { BY_INODE, READ_PERMISSIONS },
                 { BY_INODE, NO_PERMISSIONS },
-        });
+        };
     }
 
+    @UseDataProvider("testCases")
     @Test
-    public void requestBinaryFile()
+    public void requestBinaryFile(
+            final String byIdType, final String permissionType)
             throws DotDataException, DotSecurityException, ServletException, IOException {
+
+        final boolean byIdentifier = byIdType.equals(BY_ID);
+        final boolean permissionsRequired = permissionType.equals(NO_PERMISSIONS);
 
         Contentlet fileAsset = null;
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
