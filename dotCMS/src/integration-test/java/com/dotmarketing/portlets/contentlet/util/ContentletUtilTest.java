@@ -38,8 +38,10 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -90,7 +92,8 @@ public class ContentletUtilTest extends IntegrationTestBase {
     @Test
     @UseDataProvider("categoryTestCases")
     public void validateContentPrintableMapMethodReturnProperCategories(
-            final String categoryInfoType) throws Exception {
+            final String categoryInfoType)
+            throws IOException, DotDataException, DotSecurityException {
 
         Contentlet contentlet = null;
         ContentType contentType = null;
@@ -145,7 +148,7 @@ public class ContentletUtilTest extends IntegrationTestBase {
                         homeCategory, flightsCategory);
             } else {
                 assertEquals( popularCategory.getCategoryName(), contentPrintableMap.get( CATEGORY_NAME_CONTENT ) );
-                String [] resultCategories = contentPrintableMap.get(CATEGORY_NAME_CONTENT_BELTS)
+                final String [] resultCategories = contentPrintableMap.get(CATEGORY_NAME_CONTENT_BELTS)
                         .toString().split(",\\s?");
                 assertEquals(2, resultCategories.length);
                 assertTrue(Arrays.stream(resultCategories)
@@ -271,7 +274,9 @@ public class ContentletUtilTest extends IntegrationTestBase {
     }
 
     private CategoryDataGen createCategory(final String categoryName, final int sortOrder) {
-        final String categoryKey = categoryName.toLowerCase().replaceAll("\\s", "");
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd-HHmmss");
+        final String categoryKey = categoryName.toLowerCase().replaceAll("\\s", "")
+                + "-" + simpleDateFormat.format(new Date());
         return new CategoryDataGen().setCategoryName(categoryName)
             .setKey(categoryKey).setCategoryVelocityVarName(categoryKey)
             .setSortOrder(sortOrder);

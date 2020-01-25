@@ -130,7 +130,7 @@ public class ContentletUtil {
 	 * (e.g. REST, ES portlet)
 	 *
 	 * @param user User from Front End with permission to read Special Fields.
-	 * @param contentlet the contentlet to generate the printable map from
+	 * @param sourceContentlet the contentlet to generate the printable map from
 	 * @param allCategoriesInfo {@code "true"} to return all fields for
 	 * the categories associated to the content (key, name, description),{@code "false"}
 	 * to return only categories names.
@@ -141,13 +141,13 @@ public class ContentletUtil {
 	 * @throws IOException
 	 */
 	public static Map<String, Object> getContentPrintableMap(
-			final User user, Contentlet contentlet, final boolean allCategoriesInfo)
+			final User user, final Contentlet sourceContentlet, final boolean allCategoriesInfo)
 			throws DotDataException, IOException {
 
 		Map<String, Object> m = new HashMap<>();
 
-		contentlet.setTags();
-		contentlet = ContentHelper.getInstance().hydrateContentlet(contentlet);
+		sourceContentlet.setTags();
+		final Contentlet contentlet = ContentHelper.getInstance().hydrateContentlet(sourceContentlet);
 		m.putAll(contentlet.getMap());
 
 		ContentType type=contentlet.getContentType();

@@ -37,7 +37,7 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.BaseResponse;
-import com.dotcms.mock.response.MockHttpStatusResponse;
+import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
@@ -760,8 +760,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
             // Build request and response
             final HttpServletRequest request = createHttpRequest(null, null);
-            final HttpServletResponse response = new MockHttpStatusResponse(
-                    new BaseResponse().response());
+            final HttpServletResponse response = new MockHttpResponse(new BaseResponse().response());
 
             // Send request
             final ContentResource contentResource = new ContentResource();
@@ -937,11 +936,11 @@ public class ContentResourceTest extends IntegrationTestBase {
         for (int i = 0; i < resultCategories.length(); i++) {
             final JSONObject resultCategory = resultCategories.getJSONObject(i);
             final String resultCategoryKey = resultCategory.getString("key");
-            Optional<Category> matchCategory = Arrays.stream(categories)
+            final Optional<Category> matchCategory = Arrays.stream(categories)
                     .filter(category -> category.getKey().equals(resultCategoryKey))
                     .findFirst();
             assertTrue(matchCategory.isPresent());
-            Category expectedCategory = matchCategory.get();
+            final Category expectedCategory = matchCategory.get();
             assertEquals(expectedCategory.getCategoryName(), resultCategory.get("categoryName"));
         }
 
@@ -1057,9 +1056,10 @@ public class ContentResourceTest extends IntegrationTestBase {
         final InputSource xmlSource = new InputSource(new StringReader(
                 resultXml.replaceAll("\\n", "")));
 
-        XPath xPath = XPathFactory.newInstance().newXPath();
+        final XPath xPath = XPathFactory.newInstance().newXPath();
 
-        NodeList itemList = (NodeList) xPath.evaluate("//customTopic/item",
+        final NodeList itemList = (NodeList) xPath.evaluate(
+                "//" + categoryElement + "/item",
                 xmlSource, XPathConstants.NODESET);
 
         assertEquals(categories.length, itemList.getLength());
@@ -1067,11 +1067,11 @@ public class ContentResourceTest extends IntegrationTestBase {
             final Element resultCategory = (Element) itemList.item(i);
             final String resultCategoryKey = (String) xPath.evaluate("key",
                     resultCategory, XPathConstants.STRING);
-            Optional<Category> matchCategory = Arrays.stream(categories)
+            final Optional<Category> matchCategory = Arrays.stream(categories)
                     .filter(category -> category.getKey().equals(resultCategoryKey))
                     .findFirst();
             assertTrue(matchCategory.isPresent());
-            Category expectedCategory = matchCategory.get();
+            final Category expectedCategory = matchCategory.get();
             assertEquals(expectedCategory.getCategoryName(), (String) xPath.evaluate(
                     "categoryName", resultCategory, XPathConstants.STRING));
         }
@@ -1374,7 +1374,7 @@ public class ContentResourceTest extends IntegrationTestBase {
     }
 
     private CategoryDataGen createCategory(final String categoryName, final int sortOrder) {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd-HHmmss");
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd-HHmmss");
         final String categoryKey = categoryName.toLowerCase().replaceAll("\\s", "")
                 + "-" + simpleDateFormat.format(new Date());
         return new CategoryDataGen().setCategoryName(categoryName)
