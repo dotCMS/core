@@ -2076,6 +2076,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 						}
 					}
 
+					this.scanDefaultPackagesForActionlets ();
+
 					// get the included (shipped with) actionlet classes
 					for (Class<? extends WorkFlowActionlet> z : actionletClasses) {
 						try {
@@ -2109,6 +2111,51 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				}
 			}
 
+		}
+	}
+
+	private void scanDefaultPackagesForActionlets() {
+
+		final String [] packagesForScan = Config.getStringArrayProperty(WebKeys.WORKFLOW_BASE_PACKAGES_ACTIONLET_CLASSES,
+				"com.dotmarketing.portlets.workflows.actionlet.custom");
+
+		if (UtilMethods.isSet(packagesForScan)) {
+			for (final String packageForScan : packagesForScan) {
+
+				this.scanPackageForActionlets(packageForScan);
+			}
+		}
+	}
+
+	@Override
+	public void scanPackageForActionlets(final String packageForScan) {
+
+		final Set<Class<?>> actionletClasses = AnnotationUtils.scanClassAnnotatedBy(packageForScan, Actionlet.class);
+		if (UtilMethods.isSet(actionletClasses)) {
+
+			for (final Class<?> clazz : actionletClasses) {
+
+				Logger.debug(this,
+						() -> "Adding actionlet class: " + clazz);
+
+				//Prevent dupes
+				final Class<? extends WorkFlowActionlet> actionletClass =
+						(Class<? extends WorkFlowActionlet>)clazz;
+				removeActionlet(actionletClass);
+				this.actionletClasses.add(actionletClass);
+			}
+		}
+	}
+
+	@Override
+	public void scanPackageForActionlets(final String packageForScan, final ClassLoader classLoader) {
+
+		final Set<Class<?>> actionletClasses = AnnotationUtils.scanClassAnnotatedBy(packageForScan, classLoader, Actionlet.class);
+		if (UtilMethods.isSet(actionletClasses)) {
+
+			for (final Class<?> clazz : actionletClasses) {
+				this.addActionlet((Class<? extends WorkFlowActionlet>) clazz);
+			}
 		}
 	}
 

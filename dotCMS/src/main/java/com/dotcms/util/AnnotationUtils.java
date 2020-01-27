@@ -3,6 +3,7 @@ package com.dotcms.util;
 
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.collections.keyvalue.MultiKey;
+import org.reflections.Reflections;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -49,7 +50,7 @@ public class AnnotationUtils {
      */
     public static boolean isBeanAnnotatedBy (final Class beanClass, final Class<? extends Annotation> annotationType) {
 
-        for (Annotation annotation : Arrays.asList(beanClass.getDeclaredAnnotations())) {
+        for (final Annotation annotation : Arrays.asList(beanClass.getDeclaredAnnotations())) {
             if (annotation.annotationType().equals(annotationType)) {
                 return true;
             }
@@ -92,7 +93,7 @@ public class AnnotationUtils {
         }
 
         return annotationFound;
-    } // isBeanAnnotatedBy.
+    } // getBeanAnnotation.
 
 
     /**
@@ -125,7 +126,7 @@ public class AnnotationUtils {
         } else {
 
             final List<String> fieldList = new ArrayList<>();
-            for (Field field : beanClass.getDeclaredFields()) {
+            for (final Field field : beanClass.getDeclaredFields()) {
 
                 if (isFieldAnnotatedBy(field, annotationType)) {
 
@@ -198,7 +199,7 @@ public class AnnotationUtils {
 
         final Annotation [] annotations = field.getDeclaredAnnotations();
 
-        for (Annotation annotation : annotations) {
+        for (final Annotation annotation : annotations) {
 
             if (annotation.annotationType().equals(annotationType)) {
 
@@ -219,7 +220,7 @@ public class AnnotationUtils {
 
         final Annotation [] annotations = field.getDeclaredAnnotations();
 
-        for (Annotation annotation : annotations) {
+        for (final Annotation annotation : annotations) {
 
             if (annotation.annotationType().equals(annotationType)) {
 
@@ -240,7 +241,7 @@ public class AnnotationUtils {
 
         final Annotation [] annotations = method.getDeclaredAnnotations();
 
-        for (Annotation annotation : annotations) {
+        for (final Annotation annotation : annotations) {
 
             if (annotation.annotationType().equals(annotationType)) {
 
@@ -261,7 +262,7 @@ public class AnnotationUtils {
 
         final Annotation [] annotations = method.getDeclaredAnnotations();
 
-        for (Annotation annotation : annotations) {
+        for (final Annotation annotation : annotations) {
 
             if (annotation.annotationType().equals(annotationType)) {
 
@@ -287,7 +288,7 @@ public class AnnotationUtils {
 
         if (null != clazz) {
 
-            for (Method method : clazz.getMethods()) {
+            for (final Method method : clazz.getMethods()) {
 
                 if (isMethodAnnotatedBy(method, annotationType)) {
 
@@ -298,5 +299,53 @@ public class AnnotationUtils {
 
         return setBuilder.build();
     } // getMethodsAnnotatedBy.
+
+    /**
+     * Scan classes annotated by "annotationType" into the package "aPackage"
+     * @param aPackage {@link Package}
+     * @param annotationType {@link Class} of annotation
+     * @return Set of Classes
+     */
+    public static Set<Class<?>> scanClassAnnotatedBy(final Package aPackage, final Class<? extends Annotation> annotationType) {
+
+        return scanClassAnnotatedBy(aPackage.getName(), annotationType);
+    }
+
+
+    /**
+     * Scan classes annotated by "annotationType" into the package "aPackage"
+     * @param aPackage {@link Package} the package to find into the classpath
+     * @param classLoader {@link ClassLoader} an specific class loader to do the scanning
+     * @param annotationType {@link Class} of annotation
+     * @return Set of Classes
+     */
+    public static Set<Class<?>> scanClassAnnotatedBy(final Package aPackage, final ClassLoader classLoader, final Class<? extends Annotation> annotationType) {
+
+        return scanClassAnnotatedBy(aPackage.getName(), classLoader, annotationType);
+    }
+
+    /**
+     * Scan classes annotated by "annotationType" into the package "basePackage"
+     * @param basePackage {@link String} the package to find into the classpath
+     * @param annotationType {@link Class} of annotation
+     * @return Set of Classes
+     */
+    public static Set<Class<?>> scanClassAnnotatedBy(final String basePackage, final Class<? extends Annotation> annotationType) {
+
+        return new Reflections(basePackage).getTypesAnnotatedWith(annotationType);
+    }
+
+    /**
+     * Scan classes annotated by "annotationType" into the package "basePackage"
+     * @param basePackage {@link String} the package to find into the classpath
+     * @param classLoader {@link ClassLoader} an specific class loader to do the scanning
+     * @param annotationType {@link Class} of annotation
+     * @return Set of Classes
+     */
+    public static Set<Class<?>> scanClassAnnotatedBy(final String basePackage, final ClassLoader classLoader,
+                                              final Class<? extends Annotation> annotationType) {
+
+        return new Reflections(basePackage, classLoader).getTypesAnnotatedWith(annotationType);
+    }
 
 } // E:O:F:AnnotationUtils,

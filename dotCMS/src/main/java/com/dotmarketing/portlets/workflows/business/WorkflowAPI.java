@@ -1054,6 +1054,18 @@ public interface WorkflowAPI {
 	 */
 	Map<String, List<WorkflowScheme>> findSchemesMapForContentType(List<ContentType> contentTypes)  throws DotDataException;
 
+	/**
+	 * Scan the package looking for actionlets
+	 * @param packageForScan {@link String}
+	 */
+	void scanPackageForActionlets(final String packageForScan);
+
+	/**
+	 * Scan the package looking for actionlet, it uses a custom class loader for scanning
+	 * @param packageForScan {@link String}
+	 * @param classLoader {@link ClassLoader}
+	 */
+	void scanPackageForActionlets(final String packageForScan, final ClassLoader classLoader);
 
 	/**
 	 * Render mode for the available actions
