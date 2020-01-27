@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.container;
 
 import com.beust.jcommander.internal.Maps;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -11,6 +12,8 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import com.dotmarketing.util.*;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -40,9 +43,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
@@ -370,9 +370,24 @@ public class ContainerResource implements Serializable {
 
         if (FileAssetContainerUtil.getInstance().isFolderAssetContainerId(containerId)) {
 
-            return mode.showLive?
-                    this.containerAPI.getLiveContainerByFolderPath   (containerId, host, user, mode.respectAnonPerms):
-                    this.containerAPI.getWorkingContainerByFolderPath(containerId, host, user, mode.respectAnonPerms);
+            final Optional<Host> hostOpt = HostUtil.getHostFromPathOrCurrentHost(containerId, Constants.CONTAINER_FOLDER_PATH);
+            final Host   containerHost   = hostOpt.isPresent()? hostOpt.get():host;
+            final String relativePath    = FileAssetContainerUtil.getInstance().getPathFromFullPath(containerHost.getHostname(), containerId);
+            try {
+                
+                return mode.showLive ?
+                        this.containerAPI.getLiveContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms) :
+                        this.containerAPI.getWorkingContainerByFolderPath(relativePath, containerHost, user, mode.respectAnonPerms);
+            } catch (NotFoundInDbException e) {
+
+                // if does not found in the host path or current host, tries the default one if it is not the same
+                final Host defaultHost = WebAPILocator.getHostWebAPI().findDefaultHost(user, false);
+                if (!defaultHost.getIdentifier().equals(containerHost.getIdentifier())) {
+
+                    return  this.containerAPI.getWorkingContainerByFolderPath(relativePath,
+                            defaultHost, APILocator.getUserAPI().getSystemUser(), false);
+                }
+            }
         }
 
         final ShortyId containerShorty = this.shortyAPI.getShorty(containerId)
