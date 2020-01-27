@@ -1,12 +1,5 @@
 package com.dotmarketing.business;
 
-import com.dotcms.publisher.business.PublishAuditAPI;
-import com.dotcms.publisher.business.PublishAuditAPIImpl;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -20,12 +13,17 @@ import com.dotcms.cms.login.LoginServiceAPIFactory;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.company.CompanyAPIFactory;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
-import com.dotcms.contenttype.business.*;
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPI;
+import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPIImpl;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.FieldAPIImpl;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.RulesAPIProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
@@ -48,6 +46,8 @@ import com.dotcms.publisher.assets.business.PushedAssetsAPI;
 import com.dotcms.publisher.assets.business.PushedAssetsAPIImpl;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.bundle.business.BundleAPIImpl;
+import com.dotcms.publisher.business.PublishAuditAPI;
+import com.dotcms.publisher.business.PublishAuditAPIImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPIImpl;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
@@ -58,6 +58,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.security.secret.ServiceIntegrationAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
@@ -134,6 +135,10 @@ import com.dotmarketing.tag.business.TagAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * APILocator is a factory method (pattern) to get single(ton) service objects.
@@ -960,6 +965,14 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Single point of entry to the service integration api
+	 * @return The {@link ServiceIntegrationAPI} class.
+	 */
+	public static ServiceIntegrationAPI getServiceIntegrationAPI(){
+	   return (ServiceIntegrationAPI) getInstance(APIIndex.SERVICE_INTEGRATION_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1098,7 +1111,8 @@ enum APIIndex
 	GRAPHQL_API,
 	URLMAP_API,
 	CONTENT_TYPE_FIELD_LAYOUT_API,
-	PUBLISH_AUDIT_API;
+	PUBLISH_AUDIT_API,
+	SERVICE_INTEGRATION_API;
 
 
 
@@ -1178,6 +1192,7 @@ enum APIIndex
 			case URLMAP_API: return new URLMapAPIImpl();
 			case CONTENT_TYPE_FIELD_LAYOUT_API: return new ContentTypeFieldLayoutAPIImpl();
 			case PUBLISH_AUDIT_API: return PublishAuditAPIImpl.getInstance();
+			case SERVICE_INTEGRATION_API: return ServiceIntegrationAPI.INSTANCE.get();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
