@@ -6,7 +6,8 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.util.List;
 
 /**
- *
+ * Represents a service integration. Which serves as the top level entry for all the endpoints.
+ * The view unfolds itself in the specifics for the associated sites.
  */
 public class ServiceIntegrationView {
 
@@ -23,6 +24,11 @@ public class ServiceIntegrationView {
     @JsonInclude(Include.NON_NULL)
     private final List<SiteView> sites;
 
+    /**
+     * Used to build a site-less integration view
+     * @param serviceDescriptor
+     * @param configurationsCount
+     */
     public ServiceIntegrationView(final ServiceDescriptor serviceDescriptor, final long configurationsCount) {
         this.key = serviceDescriptor.getKey();
         this.name = serviceDescriptor.getName();
@@ -32,6 +38,13 @@ public class ServiceIntegrationView {
         this.sites = null;
     }
 
+    /**
+     * Use to build a more detailed integration view
+     * Including site specific config info.
+     * @param serviceDescriptor
+     * @param configurationsCount
+     * @param sites
+     */
     public ServiceIntegrationView(final ServiceDescriptor serviceDescriptor, final long configurationsCount, final List<SiteView> sites) {
         this.key = serviceDescriptor.getKey();
         this.name = serviceDescriptor.getName();
@@ -41,26 +54,50 @@ public class ServiceIntegrationView {
         this.sites = sites;
     }
 
+    /**
+     * number of configuration (Total count)
+     * @return
+     */
     public long getConfigurationsCount() {
         return configurationsCount;
     }
 
+    /**
+     * Service unique identifier
+     * @return
+     */
     public String getKey() {
         return key;
     }
 
+    /**
+     * any given name
+     * @return
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Any given description
+     * @return
+     */
     public String getDescription() {
         return description;
     }
 
+    /**
+     * The url of the avatar used on the UI
+     * @return
+     */
     public String getIconUrl() {
         return iconUrl;
     }
 
+    /**
+     * All site specific configurations
+     * @return
+     */
     public List<SiteView> getSites() {
         return sites;
     }
