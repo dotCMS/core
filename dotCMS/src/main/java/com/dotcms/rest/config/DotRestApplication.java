@@ -1,16 +1,12 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.contenttype.model.field.FieldTypeResource;
-import com.dotcms.rest.api.v1.personalization.PersonalizationResource;
-import com.dotcms.rest.api.v1.system.UpgradeTaskResource;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
-import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
+import com.dotcms.rest.api.v1.authentication.ApiTokenResource;
 import com.dotcms.rest.api.v1.authentication.AuthenticationResource;
 import com.dotcms.rest.api.v1.authentication.CreateJsonWebTokenResource;
 import com.dotcms.rest.api.v1.authentication.ForgotPasswordResource;
-import com.dotcms.rest.api.v1.authentication.ApiTokenResource;
 import com.dotcms.rest.api.v1.authentication.LoginFormResource;
 import com.dotcms.rest.api.v1.authentication.LogoutResource;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordResource;
@@ -23,14 +19,17 @@ import com.dotcms.rest.api.v1.contenttype.ContentTypeResource;
 import com.dotcms.rest.api.v1.contenttype.FieldResource;
 import com.dotcms.rest.api.v1.contenttype.FieldVariableResource;
 import com.dotcms.rest.api.v1.event.EventsResource;
+import com.dotcms.rest.api.v1.fileasset.FileAssetsResource;
 import com.dotcms.rest.api.v1.folder.FolderResource;
 import com.dotcms.rest.api.v1.languages.LanguagesResource;
 import com.dotcms.rest.api.v1.menu.MenuResource;
 import com.dotcms.rest.api.v1.page.NavResource;
 import com.dotcms.rest.api.v1.page.PageResource;
+import com.dotcms.rest.api.v1.personalization.PersonalizationResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
 import com.dotcms.rest.api.v1.portlet.PortletResource;
 import com.dotcms.rest.api.v1.relationships.RelationshipsResource;
+import com.dotcms.rest.api.v1.secret.ServiceIntegrationResource;
 import com.dotcms.rest.api.v1.site.SiteResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.actions.ActionResource;
@@ -39,6 +38,7 @@ import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionResourc
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueResource;
 import com.dotcms.rest.api.v1.system.AppContextInitResource;
 import com.dotcms.rest.api.v1.system.ConfigurationResource;
+import com.dotcms.rest.api.v1.system.UpgradeTaskResource;
 import com.dotcms.rest.api.v1.system.i18n.I18NResource;
 import com.dotcms.rest.api.v1.system.monitor.MonitorResource;
 import com.dotcms.rest.api.v1.system.role.RoleResource;
@@ -51,6 +51,7 @@ import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.rest.personas.PersonasResourcePortlet;
 import java.util.HashSet;
 import java.util.Set;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -159,6 +160,8 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 					REST_CLASSES.add(TempFileResource.class);
 
 					REST_CLASSES.add(UpgradeTaskResource.class);
+
+					REST_CLASSES.add(ServiceIntegrationResource.class);
 				}
 			}
 		}
