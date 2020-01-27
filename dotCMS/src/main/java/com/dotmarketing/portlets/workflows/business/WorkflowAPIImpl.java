@@ -2130,27 +2130,15 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@Override
 	public void scanPackageForActionlets(final String packageForScan) {
 
-		final Set<Class<?>> actionletClasses = AnnotationUtils.scanClassAnnotatedBy(packageForScan, Actionlet.class);
-		if (UtilMethods.isSet(actionletClasses)) {
-
-			for (final Class<?> clazz : actionletClasses) {
-
-				Logger.debug(this,
-						() -> "Adding actionlet class: " + clazz);
-
-				//Prevent dupes
-				final Class<? extends WorkFlowActionlet> actionletClass =
-						(Class<? extends WorkFlowActionlet>)clazz;
-				removeActionlet(actionletClass);
-				this.actionletClasses.add(actionletClass);
-			}
-		}
+		this.scanPackageForActionlets(packageForScan, null);
 	}
 
 	@Override
 	public void scanPackageForActionlets(final String packageForScan, final ClassLoader classLoader) {
 
-		final Set<Class<?>> actionletClasses = AnnotationUtils.scanClassAnnotatedBy(packageForScan, classLoader, Actionlet.class);
+		final Set<Class<?>> actionletClasses = null == classLoader?
+				AnnotationUtils.scanClassAnnotatedBy(packageForScan, Actionlet.class):
+				AnnotationUtils.scanClassAnnotatedBy(packageForScan, classLoader, Actionlet.class);
 		if (UtilMethods.isSet(actionletClasses)) {
 
 			for (final Class<?> clazz : actionletClasses) {
