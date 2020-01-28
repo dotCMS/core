@@ -45,7 +45,6 @@ dojo.declare("dotcms.dijit.AddToBundleDialog", null, {
         dojo.connect(dia, "onDownloadEnd", function () {
             var lastSelectedBundle = JSON.parse(sessionStorage.getItem("lastSelectedBundle"));
             if (lastSelectedBundle && lastSelectedBundle.name) {
-                dojo.byId("bundleName").value = lastSelectedBundle.name;
                 dijit.byId('bundleSelect').set('value', lastSelectedBundle.name);
             }
         });
