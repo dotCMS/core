@@ -8,11 +8,7 @@ import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.workflows.model.MultiUserReferenceParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
-import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.portlets.workflows.model.*;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -180,6 +176,8 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
             // Sending notification message
             WorkflowEmailUtil.sendWorkflowEmail(processor, emailsToSend, emailSubject, emailBody, isHtml);
         }
+
+        processor.getContextMap().put("type", WorkflowHistoryType.APPROVAL);
     }
 
 }

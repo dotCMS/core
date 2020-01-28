@@ -1,10 +1,15 @@
 package com.dotmarketing.portlets.workflows.model;
 
+import com.dotcms.util.marshal.MarshalFactory;
+import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
+import com.liferay.util.StringPool;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class WorkflowHistory  implements Serializable, WorkflowTimelineItem
@@ -65,7 +70,30 @@ public class WorkflowHistory  implements Serializable, WorkflowTimelineItem
     }
 
     public String getChangeDescription() {
-        return changeDescription;
+
+        if (UtilMethods.isSet(this.changeDescription) && this.changeDescription.trim().startsWith("{")) {
+            // if it is json
+            return(String) this.getChangeMap().get("description");
+        }
+
+        // if the representation of the json, if it is  json. otherwise is gonna be description, getChangeDescription
+        return this.changeDescription;
+    }
+
+    public String getRawChangeDescription() {
+        return this.changeDescription;
+    }
+
+    public Map<String, Object> getChangeMap () {
+
+        if (UtilMethods.isSet(this.changeDescription) && this.changeDescription.trim().startsWith("{")) {
+            // if it is json
+            return MarshalFactory.getInstance().getMarshalUtils().unmarshal(this.changeDescription, Map.class);
+        }
+
+        // if the representation of the json, if it is  json. otherwise is gonna be description, getChangeDescription
+        return ImmutableMap.of("description", null == this.changeDescription? StringPool.BLANK:this.changeDescription,
+                "type", WorkflowHistoryType.COMMENT);
     }
 
     public void setChangeDescription(String changeDescription) {
@@ -143,7 +171,6 @@ public class WorkflowHistory  implements Serializable, WorkflowTimelineItem
 
     @Override
     public String type() {
-        // TODO Auto-generated method stub
         return this.getClass().getSimpleName();
     }
 }
