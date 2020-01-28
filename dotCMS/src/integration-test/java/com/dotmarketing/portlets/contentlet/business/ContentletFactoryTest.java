@@ -10,13 +10,18 @@ import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.junit.Test;
 
 /**
@@ -63,33 +68,44 @@ public class ContentletFactoryTest extends ContentletBaseTest {
     @Test
     public void findAllCurrentOffsetLimit () throws DotDataException, DotSecurityException {
 
-        //Getting all contentlets live/working contentlets
-        List<Contentlet> contentlets = contentletFactory.findAllCurrent( 0, 5 );
+        final ContentType type = new ContentTypeDataGen().nextPersisted();
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(type.id());
+        final List<Contentlet> newContentlets = new ArrayList<>();
 
-        //Validations
-        assertTrue( contentlets != null && !contentlets.isEmpty() );
-        assertEquals( contentlets.size(), 5 );
+        try {
 
-        //Validate the integrity of the array
-        Contentlet foundContentlet = null;
-        for ( Contentlet contentlet : contentlets ) {
+            // Let's create 10 contentlets, 5 live 5 working
+            IntStream.range(0, 10).forEach(
+                    (i) -> {
+                        final Contentlet newContent = contentletDataGen.nextPersisted();
+                        if (i % 2 == 0) {
+                            Sneaky.sneaked(() -> APILocator.getContentletAPI()
+                                    .publish(newContent, user, false));
+                        }
+                        newContentlets.add(newContent);
+                    }
+            );
 
-            //TODO: We need to verify for null because the findAllCurrent CAN return null objects, this could happen because the index can return inodes that are not into the db....
-            if ( contentlet != null ) {
-                foundContentlet = contentlet;
-                break;
+            //Getting all contentlets live/working contentlets
+            List<Contentlet> contentlets = contentletFactory.findAllCurrent(0, 10);
+
+            //Validations
+            assertTrue(contentlets != null && !contentlets.isEmpty());
+            assertTrue(contentlets.size() >= 10);
+
+            //Search for one of the objects we found
+            String inode = contentlets.get(0).getInode();
+            Contentlet contentlet = contentletFactory.find(inode);
+
+            //Validations
+            assertTrue(
+                    contentlet != null && (contentlet.getInode() != null && !contentlet.getInode()
+                            .isEmpty()));
+        } finally {
+            if(UtilMethods.isSet(newContentlets)) {
+                APILocator.getContentletAPI().destroy(newContentlets, user, false);
             }
         }
-
-        //Validations
-        assertNotNull( foundContentlet );
-
-        //Search for one of the objects we found
-        String inode = foundContentlet.getInode();
-        Contentlet contentlet = contentletFactory.find(inode);
-
-        //Validations
-        assertTrue( contentlet != null && ( contentlet.getInode() != null && !contentlet.getInode().isEmpty() ) );
     }
 
     /**
