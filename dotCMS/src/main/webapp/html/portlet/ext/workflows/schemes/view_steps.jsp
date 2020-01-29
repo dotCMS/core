@@ -211,6 +211,9 @@
 	        <div style="float: left;">&nbsp;
 	            <span class="showPointer" href="#" onclick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');"><i class="fa fa-pencil" aria-hidden="true"></i></span>
 	        </div>
+			<div style="...">
+				<a href="/api/v1/workflow/schemes/<%=scheme.getId()%>/export" target="_blank" onclick="event.stopPropagation();">API</a>
+			</div>
 		</div>
 		<div style="float:left">
 			<div class="inline-form">
@@ -224,12 +227,11 @@
 		</div>
 	
 		<div style="float:right">
-			<!-- ADD STEP -->
+
 			<button dojoType="dijit.form.Button"
-					onClick="schemeAdmin.exportScheme('<%=scheme.getId()%>');return false;" iconClass="addIcon">
-				<%=LanguageUtil.get(pageContext, "Export-Workflow-Scheme")%>
+					onClick="schemeAdmin.showEditDefaultActions('<%=scheme.getId()%>');" iconClass="addIcon">
+				<%=LanguageUtil.get(pageContext, "Default-Actions")%>
 			</button>
-		   <!-- ADD STEP -->
 		</div>
 
 </div>
