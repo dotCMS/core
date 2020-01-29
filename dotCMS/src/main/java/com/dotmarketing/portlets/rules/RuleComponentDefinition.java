@@ -10,10 +10,15 @@ import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.elasticsearch.common.Nullable;
 
 /**
  * @author Geoff M. Granum
@@ -26,7 +31,20 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
     private final Map<String, ParameterDefinition> parameterDefinitions;
 
     protected RuleComponentDefinition(String i18nKey, ParameterDefinition... parameterDefinitions) {
-        this.id = this.getClass().getSimpleName();
+        this(null, i18nKey, parameterDefinitions);
+    }
+
+    /**
+     * @deprecated Do not use this method directly, it exists only for the <em>Jackson</em>-binding
+     * infrastructure
+     */
+    protected RuleComponentDefinition(String id, String i18nKey,
+            ParameterDefinition... parameterDefinitions) {
+
+        if (null == id) {
+            id = this.getClass().getSimpleName();
+        }
+        this.id = id;
         this.i18nKey = i18nKey;
         Map<String, ParameterDefinition> defs = Maps.newLinkedHashMap();
         for (ParameterDefinition def : parameterDefinitions) {
@@ -120,5 +138,41 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
     }
 
     public abstract boolean evaluate(HttpServletRequest request, HttpServletResponse response, T instance);
-}
 
+    /**
+     * Utility type used to correctly read immutable object from JSON representation.
+     *
+     * @deprecated Do not use this type directly, it exists only for the <em>Jackson</em>-binding
+     * infrastructure
+     */
+    @Deprecated
+    @JsonDeserialize
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.NONE)
+    static protected final class Json {
+
+        @javax.annotation.Nullable
+        public String id;
+        @javax.annotation.Nullable
+        public String i18nKey;
+        @javax.annotation.Nullable
+        public Map<String, ParameterDefinition> parameterDefinitions;
+
+        @JsonProperty("id")
+        public void setId(@Nullable String id) {
+            this.id = id;
+        }
+
+        @JsonProperty("i18nKey")
+        public void setI18nKey(@Nullable String i18nKey) {
+            this.i18nKey = i18nKey;
+        }
+
+        @JsonProperty("parameterDefinitions")
+        public void setParameterDefinitions(
+                @Nullable Map<String, ParameterDefinition> parameterDefinitions) {
+            this.parameterDefinitions = parameterDefinitions;
+        }
+    }
+
+}
