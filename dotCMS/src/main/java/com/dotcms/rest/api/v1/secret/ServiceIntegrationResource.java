@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -36,7 +37,7 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 
 /**
- * Resource API that deals with secrets and their usage on third-party service integrations
+ * Resource API that deals with secrets and their usage on third-party service integrations.
  */
 @Path("/v1/service-integrations")
 public class ServiceIntegrationResource {
@@ -96,6 +97,7 @@ public class ServiceIntegrationResource {
     /**
      * Once you have a list of all the available services you can take the key and feed this endpoint to get a detailed view.
      * The Detailed view will include all sites that have a configuration for the specified service.
+     * Url example: v1/service-integrations?filter=slack&page=2&orderBy=name
      * @param request
      * @param response
      * @param serviceKey service unique identifier
@@ -111,7 +113,8 @@ public class ServiceIntegrationResource {
     public final Response getServiceIntegrationByKey(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("key") final String serviceKey
+            @PathParam("key") final String serviceKey,
+            @BeanParam final PaginationContext paginationContext
     ) {
         try {
             final InitDataObject initData =
@@ -122,15 +125,7 @@ public class ServiceIntegrationResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            final Optional<ServiceIntegrationView> serviceIntegrationView = helper
-                    .getServiceIntegrationSiteView(serviceKey, user);
-            if (serviceIntegrationView.isPresent()) {
-                return Response.ok(new ResponseEntityView(serviceIntegrationView.get()))
-                        .build(); // 200
-            }
-            throw new DoesNotExistException(
-                  String.format("Nope. No service integration was found for key `%s`. ", serviceKey)
-            );
+            return helper.getServiceIntegrationSiteView(request, serviceKey, paginationContext, user);
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),

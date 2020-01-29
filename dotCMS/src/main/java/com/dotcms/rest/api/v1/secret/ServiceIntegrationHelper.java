@@ -9,6 +9,8 @@ import com.dotcms.security.secret.ServiceDescriptor;
 import com.dotcms.security.secret.ServiceIntegrationAPI;
 import com.dotcms.security.secret.ServiceSecrets;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -16,9 +18,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import java.io.File;
@@ -31,9 +35,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 class ServiceIntegrationHelper {
@@ -52,8 +58,13 @@ class ServiceIntegrationHelper {
         this(APILocator.getServiceIntegrationAPI(), APILocator.getHostAPI());
     }
 
-    private static Comparator<ServiceIntegrationView> compareByCountAndName = Comparator
-            .comparing(ServiceIntegrationView::getConfigurationsCount).thenComparing(ServiceIntegrationView::getName);
+    private static Comparator<ServiceIntegrationView> compareByCountAndName = (o1, o2) -> {
+        final int i = Long.compare(o2.getConfigurationsCount(), o1.getConfigurationsCount());
+        if (i != 0){
+            return i;
+        }
+        return o1.getName().compareTo(o2.getName());
+    };
 
     /**
      * This will give you the whole list of service descriptors.
@@ -66,44 +77,71 @@ class ServiceIntegrationHelper {
             throws DotSecurityException, DotDataException {
         final List<ServiceIntegrationView> views = new ArrayList<>();
         final List<ServiceDescriptor> serviceDescriptors = serviceIntegrationAPI.getServiceDescriptors(user);
-        final List<Host> hosts = getHosts(user);
+        final List<Host> hosts = serviceIntegrationAPI.getSitesWithIntegrations(user);
         for (final ServiceDescriptor serviceDescriptor : serviceDescriptors) {
             final String serviceKey = serviceDescriptor.getKey();
-            final long configurationsCount = computeSitesWithConfigurations(serviceKey, hosts, user).size();
+            final long configurationsCount = serviceIntegrationAPI.filterSitesForService(serviceKey, hosts, user).size();
             views.add(new ServiceIntegrationView(serviceDescriptor, configurationsCount));
         }
         return views.stream().sorted(compareByCountAndName).collect(CollectionsUtils.toImmutableList());
     }
 
     /**
-     * This gets you a view composed of the service-key and all the hosts that have configurations
+     * This gets you a view composed of the service-key and all the hosts that have configurations. Wrapped within a Response
+     * @param request httpRequest
      * @param serviceKey unique service id for the given host.
-     * @param user Logged in user
-     * @return view
+     * @param paginationContext pagination data
+     * @param user user Logged in user
+     * @return Response
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    Optional<ServiceIntegrationView> getServiceIntegrationSiteView(final String serviceKey,
+    Response getServiceIntegrationSiteView(
+            final HttpServletRequest request,
+            final String serviceKey,
+            final PaginationContext paginationContext,
             final User user)
             throws DotSecurityException, DotDataException {
-
         final Optional<ServiceDescriptor> serviceDescriptorOptional = serviceIntegrationAPI
                 .getServiceDescriptor(serviceKey, user);
-        if (serviceDescriptorOptional.isPresent()) {
-            final ImmutableList.Builder<SiteView> hostViewBuilder = new ImmutableList.Builder<>();
-
-            final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
-            final List<Host> hosts = getHosts(user);
-            final List<Host> hostsWithConfigurations = computeSitesWithConfigurations(serviceKey, hosts, user);
-            for (final Host host : hostsWithConfigurations) {
-                hostViewBuilder.add(new SiteView(host.getIdentifier(), host.getHostname()));
-            }
-            return Optional.of(
-                    new ServiceIntegrationView(serviceDescriptor, hostsWithConfigurations.size(), hostViewBuilder.build())
+        if (!serviceDescriptorOptional.isPresent()) {
+            //Throw exception and allow the mapper do its thing.
+            throw new DoesNotExistException(
+                    String.format("No service integration was found for key `%s`. ", serviceKey)
             );
         }
-        return Optional.empty();
+
+        final OrderDirection orderDirection =
+                UtilMethods.isSet(paginationContext.getDirection()) ? OrderDirection
+                        .valueOf(paginationContext.getDirection()) : OrderDirection.ASC;
+
+        final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
+        final PaginationUtil paginationUtil = new PaginationUtil(
+                new SiteViewPaginator(serviceIntegrationAPI, hostAPI));
+        final Response page = paginationUtil
+                .getPage(request, user,
+                        paginationContext.getFilter(),
+                        paginationContext.getPage(),
+                        paginationContext.getPerPage(),
+                        paginationContext.getOrderBy(),
+                        orderDirection,
+                        ImmutableMap.of(SiteViewPaginator.SERVICE_DESCRIPTOR, serviceDescriptor),
+                        (Function<PaginatedArrayList<SiteView>, ServiceIntegrationView>) paginatedArrayList -> {
+                            final long count = countIntegratedItems(paginatedArrayList);
+                            return new ServiceIntegrationView(serviceDescriptor, count,
+                                    paginatedArrayList);
+                        });
+        return page;
     }
+
+    /**
+     * Count the number of integrated items shown.
+     * @param siteViews
+     * @return
+     */
+     private long countIntegratedItems(final List<SiteView> siteViews){
+        return siteViews.stream().filter(SiteView::isIntegrations).count();
+     }
 
     /**
      * This gives you a detailed view with all the configuration secrets for a given service-key host pair.
@@ -169,39 +207,6 @@ class ServiceIntegrationHelper {
         serviceIntegrationAPI.deleteSecrets(serviceKey, host, user);
     }
 
-    /**
-     * This will tell you all the different integrations for a given serviceKey.
-     * If the service key is used in a given host the host will come back in the resulting list.
-     * Otherwise it means no configurations exist for the given host.
-     * @param serviceKey unique service id for the given host.
-     * @param sites a list of host
-     * @param user Logged in user
-     * @return a list where the service-key is present (a Configuration exist for the given host)
-     */
-    private List<Host> computeSitesWithConfigurations(final String serviceKey, final List<Host> sites, final User user){
-        return sites.stream().filter(host -> {
-            try {
-                return serviceIntegrationAPI.hasAnySecrets(serviceKey, host, user);
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.error(ServiceIntegrationHelper.class,
-                        String.format("Error getting secret from `%s` ", serviceKey), e);
-            }
-            return false;
-        }).collect(CollectionsUtils.toImmutableList());
-    }
-
-    private List<Host> getHosts(final User user) {
-        final Set<String> hostIds = serviceIntegrationAPI.serviceKeysByHost().keySet();
-        return hostIds.stream().map(hostId -> {
-            try {
-                return hostAPI.find(hostId, user, false);
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.warn(ServiceIntegrationHelper.class,
-                  String.format("Unable to lookup site for the given id `%s`. The secret config entry is probably no longer valid.",hostId), e);
-            }
-            return null;
-        }).filter(Objects::nonNull).collect(CollectionsUtils.toImmutableList());
-    }
 
     /**
      * Save/Create a secret for the given info on the from

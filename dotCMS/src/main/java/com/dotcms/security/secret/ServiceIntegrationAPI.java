@@ -59,18 +59,23 @@ public interface ServiceIntegrationAPI {
             boolean fallbackOnSystemHost,
             Host host, User user) throws DotDataException, DotSecurityException;
 
+   /**
+    * This will tell you all the different integrations for a given serviceKey.
+    * If the service key is used in a given host the host will come back in the resulting list.
+    * Otherwise it means no configurations exist for the given host.
+    * @param serviceKey unique service id for the given host.
+    * @param sites a list of host
+    * @param user Logged in user
+    * @return a list where the service-key is present (a Configuration exist for the given host)
+    */
+    List<Host> filterSitesForService(final String serviceKey, final List<Host> sites, final User user);
+
     /**
-     * In s similar fashion as `getSecrets` does this method hits the secrets repo but it does not deal or convert the entry into a json object
-     * This only tells you if the service-key exists for a specific host.
-     * @param serviceKey
-     * @param host
+     *
      * @param user
      * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
      */
-    boolean hasAnySecrets(final String serviceKey,
-            final Host host, final User user) throws DotDataException, DotSecurityException;
+    List<Host> getSitesWithIntegrations(final User user);
 
     /**
      * Lookup for an individual secret/property then updates the single entry.
