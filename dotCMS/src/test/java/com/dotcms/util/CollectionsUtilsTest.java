@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.workflow.form.AssignCommentBean;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -18,6 +19,21 @@ import static org.junit.Assert.*;
  * @author jsanca
  */
 public class CollectionsUtilsTest extends UnitTestBase {
+
+    @Test
+    public void find() {
+
+        final List<AssignCommentBean>     arrays = Arrays.asList(new AssignCommentBean("1","1"),
+                new AssignCommentBean("2","2"), new AssignCommentBean("3","3"), new AssignCommentBean("4","4"),
+                new AssignCommentBean("5","5"), new AssignCommentBean("6","6"), new AssignCommentBean("7","7"));
+        final Optional<AssignCommentBean> match1  = CollectionsUtils.find(arrays, assignCommentBean -> assignCommentBean.getAssign().equals("6"));
+        Assert.assertTrue(match1.isPresent());
+        Assert.assertEquals("6", match1.get().getAssign());
+        Assert.assertEquals("6", match1.get().getComment());
+
+        final Optional<AssignCommentBean> match2  = CollectionsUtils.find(arrays, assignCommentBean -> assignCommentBean.getAssign().equals("8"));
+        Assert.assertFalse(match2.isPresent());
+    }
 
     @Test
     public void join_null() {

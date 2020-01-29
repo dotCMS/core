@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang3.StringUtils;
@@ -926,7 +927,27 @@ public class CollectionsUtils implements Serializable {
 	    return new ImmutableListCollector<>();
     }
 
-	private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {
+    /**
+     * Finds a element into the list base on the function comparator (receives the element and returns true if match is right)
+     * @param items {@link List}
+     * @param comparator {@link Function} to determine if it is the match or not
+     * @param <T>
+     * @return Optional, return empty if not match, otherwise the first match element
+     */
+    public static <T> Optional<T> find(final List<T> items, final Function<T, Boolean> comparator) {
+
+	    for (final T item : items) {
+
+	        if (comparator.apply(item)) {
+
+	            return Optional.ofNullable(item);
+            }
+        }
+
+	    return Optional.empty();
+    }
+
+    private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {
         @Override
         public Supplier<ImmutableList.Builder<T>> supplier() {
             return ImmutableList.Builder::new;

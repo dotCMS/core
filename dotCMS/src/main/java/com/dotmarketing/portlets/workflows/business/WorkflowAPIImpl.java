@@ -1395,7 +1395,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		final String comment = (UtilMethods.isSet(processor.getWorkflowMessage()))? processor.getWorkflowMessage()   : StringPool.BLANK;
 		final String nextAssignName = (UtilMethods.isSet(processor.getNextAssign()))? processor.getNextAssign().getName() : StringPool.BLANK;
 
-
 		try {
 
 			String description = LanguageUtil.format(processor.getUser().getLocale(), "workflow.history.description", new String[]{
@@ -1406,7 +1405,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					comment}, false);
 
 			if ( processor.getContextMap().containsKey("type") && WorkflowHistoryType.APPROVAL == processor.getContextMap().get("type")) {
-				description = "{'description':'"+ description + "', 'type':" + WorkflowHistoryType.APPROVAL.name() + "}";
+				description = "{'description':'"+ description +
+						"', 'type':'" + WorkflowHistoryType.APPROVAL.name() +
+						"', 'state':'"+  WorkflowHistoryState.NONE.name() +"' }";
 			}
 
 			history.setChangeDescription(description);

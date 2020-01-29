@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.getApproversFromHistory;
-import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.getParameterValue;
-import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.getUsersFromIds;
-
 import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
@@ -13,10 +9,13 @@ import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.dotmarketing.portlets.workflows.util.WorkflowActionletUtil.*;
 
 /**
  * Sometimes, customers would like content to be published if a specific number of people approve
@@ -171,6 +170,7 @@ public class FourEyeApproverActionlet extends WorkFlowActionlet {
                     }
                 }
             }
+
             final String[] emailsToSend = emails.toArray(new String[emails.size()]);
             processor.setWorkflowMessage(emailSubject);
             // Sending notification message

@@ -1,12 +1,5 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.model.*;
@@ -15,6 +8,8 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.Validator;
+
+import java.util.*;
 
 /**
  * Based on a list of email, userid or roles won't continue the pipeline until all necessary users approve the workflow
@@ -101,7 +96,11 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 		
 		for (final User requiredApprover : requiredApprovers) {
 			for (final WorkflowHistory history : histories) {
-				if (history.getActionId().equals(processor.getAction().getId())) {
+
+				final Map<String, Object> changeMap = history.getChangeMap();
+				if (history.getActionId().equals(processor.getAction().getId()) && // if it is the action id and it is not reset.
+						!WorkflowHistoryState.RESET.name().equals(changeMap.get("state"))) {
+
 					if (requiredApprover.getUserId().equals(history.getMadeBy())) {
 
 						hasApproved.add(requiredApprover);

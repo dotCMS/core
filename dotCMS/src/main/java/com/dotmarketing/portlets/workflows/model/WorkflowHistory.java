@@ -93,7 +93,7 @@ public class WorkflowHistory  implements Serializable, WorkflowTimelineItem
 
         // if the representation of the json, if it is  json. otherwise is gonna be description, getChangeDescription
         return ImmutableMap.of("description", null == this.changeDescription? StringPool.BLANK:this.changeDescription,
-                "type", WorkflowHistoryType.COMMENT);
+                "type", WorkflowHistoryType.COMMENT.name(), "state", WorkflowHistoryState.NONE.name());
     }
 
     public void setChangeDescription(String changeDescription) {
