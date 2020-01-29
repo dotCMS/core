@@ -43,7 +43,7 @@ export class DotPageStateService {
      */
     get(options: DotPageRenderOptions = {}): void {
         if (!options.url) {
-            options.url = this.currentState.page.pageURI;
+            options.url = this.dotRouterService.queryParams.url;
         }
 
         this.requestPage(options).subscribe((pageState: DotPageRenderState) => {

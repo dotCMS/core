@@ -80,7 +80,33 @@ describe('DotPageStateService', () => {
         service = injector.get(DotPageStateService);
 
         spyOnProperty(dotRouterService, 'queryParams', 'get').and.returnValue({
-            url: ''
+            url: '/an/url/test/form/query/params'
+        });
+    });
+
+    describe('Method: get', () => {
+        it('should get with url', () => {
+            service.get({
+                url: 'some/url/test'
+            });
+
+            expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+                {
+                    url: 'some/url/test'
+                },
+                {}
+            ]);
+        });
+
+        it('should get with url from queryParams', () => {
+            service.get();
+
+            expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+                {
+                    url: '/an/url/test/form/query/params'
+                },
+                {}
+            ]);
         });
     });
 
@@ -98,13 +124,13 @@ describe('DotPageStateService', () => {
 
         it('should reload', () => {
             service.get({
-                url: '/an/url/test'
+                url: '/an/url/test/form/query/params'
             });
             service.reload();
             expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
                 {
                     mode: 'PREVIEW_MODE',
-                    url: '/an/url/test'
+                    url: '/an/url/test/form/query/params'
                 },
                 {}
             ]);
@@ -136,7 +162,7 @@ describe('DotPageStateService', () => {
                 expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
                     {
                         mode: 'ADMIN_MODE',
-                        url: '/an/url/test'
+                        url: '/an/url/test/form/query/params'
                     },
                     {}
                 ]);
@@ -159,7 +185,7 @@ describe('DotPageStateService', () => {
                 expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
                     {
                         mode: 'PREVIEW_MODE',
-                        url: '/an/url/test'
+                        url: '/an/url/test/form/query/params'
                     },
                     {}
                 ]);
@@ -183,7 +209,7 @@ describe('DotPageStateService', () => {
                             viewAs: {
                                 device: device
                             },
-                            url: '/an/url/test'
+                            url: '/an/url/test/form/query/params'
                         },
                         {}
                     ],
@@ -201,7 +227,7 @@ describe('DotPageStateService', () => {
                         viewAs: {
                             language: 1
                         },
-                        url: '/an/url/test'
+                        url: '/an/url/test/form/query/params'
                     },
                     {}
                 ]);
@@ -223,7 +249,7 @@ describe('DotPageStateService', () => {
                         viewAs: {
                             persona: persona
                         },
-                        url: '/an/url/test'
+                        url: '/an/url/test/form/query/params'
                     },
                     {}
                 ]);
