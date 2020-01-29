@@ -172,6 +172,3 @@ Creates a div'ed login form that can be dropped in on any page to authenticate t
 		$velutil.mergeTemplate('/static/login/login_macro.vtl')
 	#end
 #end
-
-
-
