@@ -181,10 +181,12 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 	baseJsp : "/html/portlet/ext/workflows/schemes/view_schemes.jsp",
 	editJsp : "/html/portlet/ext/workflows/schemes/edit_scheme.jsp",
     importJsp : "/html/portlet/ext/workflows/schemes/import_scheme.jsp",
+	editDefaultActionsJsp : "/html/portlet/ext/workflows/schemes/edit_default_actions.jsp",
 	showArchived : false,
 	crumbTitle:"<%=LanguageUtil.get(pageContext, "Schemes")%>",
 	addEditDiv:"wfEditSchemeDia",
     importDiv:"wfImportSchemeDia",
+	editDefaultActions: "wfEditDefaultActionsDialog",
 	constructor : function() {
 
 	},
@@ -377,35 +379,6 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		showDotCMSSystemMessage(message, true);
 	},
 
-    exportScheme : function(schemeId) {
-
-        var xhrArgs = {
-            url: "/api/v1/workflow/schemes/"+schemeId+"/export",
-            timeout : 30000,
-            handleAs: "json",
-            load: function(data) {
-                 schemeAdmin.downloadFile(schemeId, data);
-            }, error : function(error) {
-                 showDotCMSSystemMessage(error, true);
-            }
-        };
-        dojo.xhrGet(xhrArgs);
-        return;
-    },
-    downloadFile : function (schemeId, data) {
-        var blob = new Blob([JSON.stringify(data.entity)], {type: 'application/json'});
-        var url = URL.createObjectURL(blob);
-
-        let a = document.createElement("a");
-        a.style = "display: none";
-        document.body.appendChild(a);
-
-        a.href = url;
-        a.download = 'scheme_'+schemeId+'.json';
-        a.click();
-        window.URL.revokeObjectURL(url);
-    },
-
     showImport : function(schemeId) {
         var myCp = dijit.byId("wfImportSchemeCp");
         if (myCp) {
@@ -484,7 +457,131 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		var errorDisplayElement = dijit.byId('importWorkflowErrors');
 		dojo.byId('importWorkflowExceptionData').innerHTML = "<ul><li>"+message+"</li></ul>";
 		errorDisplayElement.show();
-    }
+    },
+
+showEditDefaultActions : function(schemeId) {
+var myCp = dijit.byId("wfEditDefaultActions");
+if (myCp) {
+myCp.destroyRecursive(false);
+}
+var href = this.editDefaultActionsJsp;
+if (schemeId && schemeId.length > 0) {
+href = href + "?schemeId=" + schemeId;
+}
+
+myCp = new dijit.layout.ContentPane({
+id : "wfEditDefaultActions",
+parseOnLoad : true,
+})
+
+var dia = dijit.byId(this.editDefaultActions);
+if(dia){
+dia.destroyRecursive(false);
+}
+
+dia = new dijit.Dialog({
+id : this.editDefaultActions,
+title : "<%=LanguageUtil.get(pageContext, "Default-Actions")%>",
+style : "width:600px;height:560px",
+draggable : true
+});
+
+myCp.attr("href", href);
+
+myCp.placeAt(this.editDefaultActions);
+
+dia.show();
+schemeAdmin.getWorkflowActionsByScheme(schemeId);
+schemeAdmin.getCurrentDefaultActionsByScheme(schemeId);
+},
+hideEditDefaultActions : function() {
+var dialog = dijit.byId(this.editDefaultActions);
+dialog.hide();
+},
+
+fillAvailableWorkflowActions : function (actions){
+var items = new Array();
+for(var i=0; i < actions.length; i++){
+items.push({
+id: actions[i].id,
+name: actions[i].name
+});
+}
+actionData = {
+identifier: 'id',
+label: 'name',
+items:
+items
+};
+actionStore = new dojo.data.ItemFileReadStore({data:actionData});
+dijit.byId("defaultActionNew").attr('store', actionStore);
+dijit.byId("defaultActionEdit").attr('store', actionStore);
+dijit.byId("defaultActionPublish").attr('store', actionStore);
+dijit.byId("defaultActionUnpublish").attr('store', actionStore);
+dijit.byId("defaultActionArchive").attr('store', actionStore);
+dijit.byId("defaultActionUnarchive").attr('store', actionStore);
+dijit.byId("defaultActionDelete").attr('store', actionStore);
+dijit.byId("defaultActionDestroy").attr('store', actionStore);
+},
+
+//Obtains the possible default actions for the scheme
+getWorkflowActionsByScheme : function(schemeId){
+var xhrArgs = {
+url: "/api/v1/workflow/schemes/" + schemeId + "/actions",
+handleAs: "json",
+load: function(data) {
+var results = data.entity;
+schemeAdmin.fillAvailableWorkflowActions(results);
+},
+error : function(error) {
+showDotCMSSystemMessage(error, true);
+}
+};
+dojo.xhrGet(xhrArgs);
+},
+
+//Obtains the current default actions for the scheme and sets the value on the dropdown
+getCurrentDefaultActionsByScheme : function(schemeId){
+var xhrArgs = {
+url: "/api/v1/workflow/schemes/" + schemeId + "/system/actions",
+handleAs: "json",
+load: function(data) {
+var results = data.entity;
+for(var i=0; i < results.length; i++){
+switch(results[i].systemAction){
+case "NEW":
+dojo.byId("defaultActionNew").value = results[i].workflowAction.name;
+break;
+case "EDIT":
+dojo.byId("defaultActionEdit").value = results[i].workflowAction.name;
+break;
+case "PUBLISH":
+dojo.byId("defaultActionPublish").value = results[i].workflowAction.name;
+break;
+case "UNPUBLISH":
+dojo.byId("defaultActionUnpublish").value = results[i].workflowAction.name;
+break;
+case "ARCHIVE":
+dojo.byId("defaultActionArchive").value = results[i].workflowAction.name;
+break;
+case "UNARCHIVE":
+dojo.byId("defaultActionUnarchive").value = results[i].workflowAction.name;
+break;
+case "DELETE":
+dojo.byId("defaultActionDelete").value = results[i].workflowAction.name;
+break;
+case "DESTROY":
+dojo.byId("defaultActionDestroy").value = results[i].workflowAction.name;
+break;
+}
+}
+},
+error : function(error) {
+showDotCMSSystemMessage(error, true);
+}
+};
+dojo.xhrGet(xhrArgs);
+}
 
 });
 
