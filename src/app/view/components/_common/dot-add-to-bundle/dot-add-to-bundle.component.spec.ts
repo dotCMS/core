@@ -181,7 +181,7 @@ xdescribe('DotAddToBundleComponent', () => {
             ])
         );
         sessionStorage.setItem(
-            'lastBundleUsed',
+            'lastSelectedBundle',
             JSON.stringify({
                 id: '1234',
                 name: 'my bundle'

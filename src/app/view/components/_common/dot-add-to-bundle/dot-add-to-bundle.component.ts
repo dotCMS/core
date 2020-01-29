@@ -17,7 +17,7 @@ import { Dropdown } from 'primeng/primeng';
 import { mergeMap, map, tap, take, takeUntil } from 'rxjs/operators';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 
-const LAST_BUNDLE_USED = 'lastBundleUsed';
+const LAST_BUNDLE_USED = 'lastSelectedBundle';
 
 @Component({
     selector: 'dot-add-to-bundle',
