@@ -8,6 +8,9 @@ dojo.require("dotcms.dijit.AddToBundleDialog");
 dojo.require("dojox.data.QueryReadStore");
 dojo.require("dojox.data.JsonRestStore");
 dojo.require("dojo.NodeList-traverse");
+
+const LAST_BUNDLE_USED = 'lastSelectedBundle';
+
 dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
     assetIdentifier: "",
@@ -102,7 +105,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 	    	})},200);
 
     },
-    
+
     showRestrictedDialog: function (assetId, displayDateFilter) {
     	if(this.environmentStore == null) {
     		this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
@@ -122,7 +125,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         dialog.container = this;
         dialog.restricted = true;
         dialog.show();
-        
+
         var self = this;
         setTimeout(function() {
 	        self.environmentStore.fetch({
@@ -185,7 +188,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 }
             })},200);
     },
-    
+
     showWorkflowEnabledDialog:function(workflow, fireWorkflowDelegate){
 
         this.assetIdentifier = null;
@@ -281,7 +284,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
      * It didn't get renamed to avoid backwards compatibility issues
      */
 	remotePublish : function(){
-	    
+
         var dojoStyle = dojo.require("dojo.dom-style");
 
 		if((dojo.byId("whereToSend") && this.whereToSend.length === 0)) {
@@ -469,7 +472,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
     addToBundle: function () {
 
-        var lastSelectedBundle = JSON.parse(sessionStorage.getItem("lastSelectedBundle"));
+        var lastSelectedBundle = JSON.parse(sessionStorage.getItem(LAST_BUNDLE_USED));
 
         if (dijit.byId("bundleSelect").value == '') {
             showDotCMSSystemMessage(dojo.byId("bundleRequired").value);
@@ -491,8 +494,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
             bundleId = dijit.byId("bundleSelect").value;
         }
 
-        if (lastSelectedBundle == undefined || lastSelectedBundle == null || lastSelectedBundle.id == undefined) {
-            lastSelectedBundle = [];
+        if (bundleId !== undefined && bundleId !== null) {
             lastSelectedBundle = {name: bundleName, id: bundleId};
         }
 
@@ -538,7 +540,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         };
         dojo.xhrPost(xhrArgs);
 
-        sessionStorage.setItem("lastSelectedBundle",JSON.stringify(lastSelectedBundle));
+        sessionStorage.setItem(LAST_BUNDLE_USED,JSON.stringify(lastSelectedBundle));
 
     },
 
