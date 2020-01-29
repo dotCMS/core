@@ -21,6 +21,8 @@ import com.google.common.collect.ImmutableList;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.Test;
 
@@ -89,6 +91,8 @@ public class ContentletFactoryTest extends ContentletBaseTest {
             //Getting all contentlets live/working contentlets
             List<Contentlet> contentlets = contentletFactory.findAllCurrent(0, 10);
 
+            // filter out null records
+            contentlets = contentlets.stream().filter(Objects::nonNull).collect(Collectors.toList());
             //Validations
             assertTrue(contentlets != null && !contentlets.isEmpty());
             assertTrue(contentlets.size() >= 10);

@@ -22,11 +22,8 @@ public class CachedParameterDecoratorTest extends IntegrationTestBase {
     }
 
     @Test
-    public void testDecorate() throws Exception {
-
-        final String[] languageCodes = Locale.getISOLanguages();
-        final int      languageIndex = new Random().nextInt(languageCodes.length);
-        final String   languageCode  = languageCodes[languageIndex];
+    public void testDecorate() {
+        final String   languageCode  = "mylc";
 
         final Language baseLanguage  = new LanguageDataGen().languageCode(languageCode).countryCode(null).nextPersisted();
         final Language itLanguage    = new LanguageDataGen().languageCode(languageCode).countryCode("IT").nextPersisted();
