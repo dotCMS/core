@@ -122,7 +122,6 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
                 Stream<SiteView> combinedStream = Stream
                         .concat(withIntegrationsStream, withNoIntegrations);
 
-                final long combinedCount = combinedStream.count();
 
                 //if we have filter apply it.
                 if (UtilMethods.isSet(filter)) {
@@ -142,7 +141,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
                 //And then we're done and out of here.
                 final PaginatedArrayList<SiteView> paginatedArrayList = new PaginatedArrayList<>();
-                paginatedArrayList.setTotalResults(combinedCount);
+                paginatedArrayList.setTotalResults(allSites.size());
                 paginatedArrayList.addAll(siteViews);
                 return paginatedArrayList;
             }
