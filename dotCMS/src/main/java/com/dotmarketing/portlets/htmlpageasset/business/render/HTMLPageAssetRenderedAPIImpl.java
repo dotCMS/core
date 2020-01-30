@@ -390,8 +390,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             return htmlPage.getPageUrl();
         }
 
-        public String getPageUrlMapper() {
-            return urlMapInfo != null ? urlMapInfo.getUrlMapped() : htmlPage.getPageUrl();
+        public String getPageUrlMapper() throws DotDataException {
+            return urlMapInfo != null ? urlMapInfo.getUrlMapped() : htmlPage.getURI();
         }
 
         public IHTMLPage getHTMLPage() {
