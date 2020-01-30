@@ -1,16 +1,15 @@
 package com.dotmarketing.portlets.workflows.model;
 
 import com.dotcms.util.marshal.MarshalFactory;
-import com.dotcms.util.marshal.MarshalUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
+import com.liferay.util.StringPool;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.google.common.collect.ImmutableMap;
-import com.liferay.util.StringPool;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 public class WorkflowHistory  implements Serializable, WorkflowTimelineItem
 {
