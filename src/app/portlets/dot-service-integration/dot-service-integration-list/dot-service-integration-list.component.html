@@ -1,0 +1,17 @@
+<div class="dot-service-integration__container">
+    <div class="dot-service-integration__header">
+        <input
+            pInputText
+            #searchInput
+            type="text"
+            [placeholder]="messagesKey['service.integration.search.placeholder']"
+        />
+    </div>
+    <div class="dot-service-integration__body">
+        <dot-service-integration-card
+            *ngFor="let integration of serviceIntegrationsCopy"
+            [serviceIntegration]="integration"
+            (actionFired)="goToIntegration($event)"
+        ></dot-service-integration-card>
+    </div>
+</div>

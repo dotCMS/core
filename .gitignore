@@ -6,6 +6,7 @@
 /dist-lib
 /tmp
 /out-tsc
+/karma_html
 
 # dependencies
 /node_modules

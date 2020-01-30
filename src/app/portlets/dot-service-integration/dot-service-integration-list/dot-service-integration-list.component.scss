@@ -1,0 +1,36 @@
+@import "variables";
+
+:host {
+    background: $gray-bg;
+    box-shadow: $md-shadow-4;
+    display: flex;
+    height: 100%;
+    padding: $basic-padding * 3;
+}
+
+.dot-service-integration__header {
+    border-bottom: 1px solid $gray-lighter;
+    padding-left: $basic-padding * 3;
+    padding-bottom: $basic-padding * 3;
+    width: 100%;
+
+    input {
+        width: 440px;
+    }
+}
+
+.dot-service-integration__body {
+    align-content: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    padding-left: $basic-padding * 3;
+    padding-top: $basic-padding * 3;
+}
+
+.dot-service-integration__container {
+    background-color: $white;
+    box-shadow: $md-shadow-4;
+    overflow-y: auto;
+    padding-top: $basic-padding * 3;
+    width: 100%;
+}

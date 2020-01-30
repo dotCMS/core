@@ -42,6 +42,12 @@ const PORTLETS_ANGULAR = [
         loadChildren: '@portlets/dot-site-browser/dot-site-browser.module#DotSiteBrowserModule'
     },
     {
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        path: 'integration-services',
+        loadChildren: '@portlets/dot-service-integration/dot-service-integration.module#DotServiceIntegrationModule'
+    },
+    {
         path: 'pl',
         loadChildren:
             '@components/_common/pattern-library/pattern-library.module#PatternLibraryModule'

@@ -1,0 +1,123 @@
+@import "variables";
+
+:host {
+    background: $gray-bg;
+    box-shadow: $md-shadow-4;
+    display: flex;
+    height: 100%;
+    padding: $basic-padding * 3;
+}
+
+.dot-service-integration-configuration__header {
+    border-bottom: 1px solid $gray-lighter;
+    display: flex;
+
+    dot-avatar {
+        border-radius: 50%;
+        box-shadow: $md-shadow-2;
+        margin: 0 $basic-padding * 3 $basic-padding * 3 $basic-padding * 3;
+    }
+}
+
+.dot-service-integration-configuration__data {
+    font-size: $font-size-small;
+    width: 100%;
+}
+
+.dot-service-integration-configuration__service-name {
+    color: $black;
+    display: inline-block;
+    font-size: $font-size-xx-large;
+    font-weight: bold;
+}
+
+.dot-service-integration-configuration__service-key {
+    color: $gray;
+    display: inline-block;
+    font-size: $font-size-large;
+    height: 24px;
+    margin-left: $basic-padding * 2;
+    vertical-align: bottom;
+}
+
+.dot-service-integration-configuration__configurations {
+    color: $gray;
+    display: block;
+    font-size: $font-size-large;
+    margin-bottom: $basic-padding * 2;
+    margin-top: $basic-padding;
+}
+
+.dot-service-integration-configuration__description {
+    font-size: $font-size-large;
+}
+
+dot-action-button {
+    margin: 0 $basic-padding * 3 0 $basic-padding * 3;
+}
+
+.dot-service-integration-configuration__body {
+    align-content: flex-start;
+    flex-wrap: wrap;
+    padding: $basic-padding * 2 $basic-padding * 2 0;
+}
+
+.dot-service-integration-configuration__delete_all {
+    text-align: right;
+    width: 100%;
+}
+
+.dot-service-integration-configuration__item {
+    border: 1px solid $gray-light;
+    cursor: pointer;
+    display: flex;
+    height: 66px;
+    margin-right: $basic-padding * 2;
+    margin-top: $basic-padding * 2;
+    padding: $basic-padding 0;
+    width: 100%;
+
+    &:hover {
+        box-shadow: $md-shadow-5;
+    }
+
+    dot-icon-button {
+        align-self: center;
+        margin-right: $basic-padding * 2;
+    }
+}
+
+.dot-service-integration-configuration__name,
+.dot-service-integration-configuration__host-key {
+    align-self: center;
+    margin-left: $basic-padding * 2;
+}
+
+.dot-service-integration-configuration__host-key {
+    color: $gray;
+    width: 100%;
+}
+.dot-service-integration-configuration__add-configurations {
+    margin-top: 140px;
+    text-align: center;
+    width: 100%;
+}
+
+.dot-service-integration-configuration__add-configurations-title {
+    font-size: $font-size-xx-large;
+    font-weight: bold;
+}
+
+.dot-service-integration-configuration__add-configurations-description {
+    font-size: $font-size-large;
+    margin-bottom: $basic-padding * 4;
+    margin-top: $basic-padding * 3;
+}
+
+.dot-service-integration-configuration__container {
+    background-color: $white;
+    box-shadow: $md-shadow-4;
+    overflow-y: auto;
+    padding-top: $basic-padding * 3;
+    width: 100%;
+}
