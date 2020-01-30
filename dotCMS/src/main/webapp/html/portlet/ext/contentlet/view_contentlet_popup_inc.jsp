@@ -124,11 +124,7 @@ if(!hasPermissions) {
 	
 
 	function dotPreviewPage(){
-	    
-	    window.
-	    
-	    
-	    
+
 	    var editPath="/api/v1/page/render<%= editPath%>";
 	    if(editPath.indexOf("?")<0){
 	        editPath+="?"
@@ -158,28 +154,22 @@ if(!hasPermissions) {
             }
         }
         req.send();
-	    
-	    
-	    
+
 	}
 	
 	
 	var win;
 	function dotPreviewPageCallBack(data){
-	    
 
-	    
 	    win = window.open("", "dotCMS Preview", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=1024,height=800");
 
-	   
 	    var parser = new DOMParser();
 	    var doc= win.document;
 
 	    doc.open();
 	    win.document.write(data.entity.page.rendered);
 	    doc.close();
-	    
-	    
+
 	}
 	
 	   function dotPreviewFile(url){
@@ -187,9 +177,6 @@ if(!hasPermissions) {
 	        win = window.open(url, "dotCMS Preview", "toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=1024,height=800");
 
 	   }
-	
-
-	
 
 </script>
 
