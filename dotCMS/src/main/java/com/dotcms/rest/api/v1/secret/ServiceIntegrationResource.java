@@ -97,7 +97,7 @@ public class ServiceIntegrationResource {
     /**
      * Once you have a list of all the available services you can take the key and feed this endpoint to get a detailed view.
      * The Detailed view will include all sites that have a configuration for the specified service.
-     * Url example: v1/service-integrations?filter=slack&page=2&orderBy=name
+     * Url example: http://localhost:8080/api/v1/service-integrations/lol_1579927726215?filter=lol&per_page=100&orderby=name&direction=DESC
      * @param request
      * @param response
      * @param serviceKey service unique identifier

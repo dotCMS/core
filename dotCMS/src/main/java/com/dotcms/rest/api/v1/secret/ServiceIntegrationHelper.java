@@ -113,7 +113,7 @@ class ServiceIntegrationHelper {
 
         final OrderDirection orderDirection =
                 UtilMethods.isSet(paginationContext.getDirection()) ? OrderDirection
-                        .valueOf(paginationContext.getDirection()) : OrderDirection.ASC;
+                        .valueOf(paginationContext.getDirection()) : OrderDirection.DESC;
 
         final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
         final PaginationUtil paginationUtil = new PaginationUtil(

@@ -28,6 +28,8 @@ import java.util.stream.Stream;
 
 /**
  * PaginatorOrdered implementation for objects of type SiteView.
+ * This Pagination isn't very typical in the sense that items are not retrieved from a database.
+ * Sorting and filtering itself happens right here on top of the list of elements itself.
  */
 public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
@@ -44,6 +46,16 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
         this.hostAPI = hostAPI;
     }
 
+    /**
+     * if consumer of this class decides to pass ServiceDescriptor in the extraParams
+     * This will  return that. Otherwise it will still attempt to retrieve the ServiceDescriptor by looking up the serviceKey.
+     * This is just an extra validation to ensure we're gonna try to retrive items from an existing service.
+     * @param user logged in user.
+     * @param extraParams params passed o getItems Method
+     * @return Optional of ServiceDescriptor
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     private Optional<ServiceDescriptor> getServiceDescriptor(final User user,
             final Map<String, Object> extraParams)
             throws DotSecurityException, DotDataException {
@@ -59,6 +71,18 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
         return Optional.of(serviceDescriptor);
     }
 
+    /**
+     * This custom getItem implementation will extract join and apply filtering sorting and pagination.
+     * @param user user to filter
+     * @param filter extra filter parameter
+     * @param limit Number of items to return
+     * @param offset offset
+     * @param orderBy
+     * @param direction If the order is Asc or Desc
+     * @param extraParams
+     * @return
+     * @throws PaginationException
+     */
     @Override
     public PaginatedArrayList<SiteView> getItems(final User user, final String filter,
             final int limit, final int offset,
@@ -69,20 +93,27 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
                     extraParams);
             if (serviceDescriptorOptional.isPresent()) {
 
+                //Just making sure there's a descriptor to get items.
                 final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
+
+                //All the sites set.
                 final List<Host> allSites = hostAPI.findAll(user, false);
 
+                //Sites with configuration.
                 final List<Host> sitesWithIntegrations = serviceIntegrationAPI
                         .getSitesWithIntegrations(user);
 
+                //Sites with configuration - for the respective serviceKey passed.
                 final List<Host> sitesForService = serviceIntegrationAPI
                         .filterSitesForService(serviceDescriptor.getKey(), sitesWithIntegrations,
                                 user);
 
+                //Complement operation against to get sites without any configuration.
                 final Set<Host> nonConfiguredSites = Sets.difference(
                         Sets.newHashSet(allSites), Sets.newHashSet(sitesForService)
                 );
 
+                //Make them all SiteView and mark'em respective.
                 final Stream<SiteView> withIntegrationsStream = sitesForService.stream()
                         .map(site -> new SiteView(site.getIdentifier(), site.getHostname(), true));
                 final Stream<SiteView> withNoIntegrations = nonConfiguredSites.stream()
@@ -90,21 +121,28 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
                 Stream<SiteView> combinedStream = Stream
                         .concat(withIntegrationsStream, withNoIntegrations);
+
+                final long combinedCount = combinedStream.count();
+
+                //if we have filter apply it.
                 if (UtilMethods.isSet(filter)) {
                     combinedStream = combinedStream
                             .filter(siteView -> siteView.getName()
                                     .matches("(.*)" + filter + "(.*)"));
                 }
 
+                //apply pagination params.
                 combinedStream = combinedStream.skip(offset).limit(limit);
 
+                //Setup sorting
                 final Comparator<SiteView> comparator = orderByAndDirection(orderBy, direction);
 
                 final List<SiteView> siteViews = combinedStream.sorted(comparator)
                         .collect(Collectors.toList());
 
+                //And then we're done and out of here.
                 final PaginatedArrayList<SiteView> paginatedArrayList = new PaginatedArrayList<>();
-                paginatedArrayList.setTotalResults(siteViews.size());
+                paginatedArrayList.setTotalResults(combinedCount);
                 paginatedArrayList.addAll(siteViews);
                 return paginatedArrayList;
             }
@@ -115,6 +153,13 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
         }
     }
 
+    /**
+     * Given two pagination params (orderBy and direction)
+     * This will get you the proper SiteView comparator.
+     * @param orderBy
+     * @param direction
+     * @return
+     */
     private static Comparator<SiteView> orderByAndDirection(final String orderBy,
             final OrderDirection direction) {
         final Map<OrderDirection, Comparator<SiteView>> directionComparatorMap = fieldAndDirectionComparatorsMap
@@ -129,29 +174,29 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
         return hasIntegrationsDescComparator;
     }
 
-    private static Comparator<SiteView> hasIntegrationsDescComparator = (o1, o2) -> {
-        final int i = Boolean.compare(o2.isIntegrations(), o1.isIntegrations());
+    private static Comparator<SiteView> hasIntegrationsDescComparator = (a, b) -> {
+        final int i = Boolean.compare(b.isIntegrations(), a.isIntegrations());
         if (i != 0) {
             return i;
         }
-        return o1.getName().compareTo(o2.getName());
+        return a.getName().compareTo(b.getName());
     };
 
-    private static Comparator<SiteView> hasIntegrationsAscComparator = (o1, o2) -> {
-        final int i = Boolean.compare(o1.isIntegrations(), o2.isIntegrations());
+    private static Comparator<SiteView> hasIntegrationsAscComparator = (a, b) -> {
+        final int i = Boolean.compare(a.isIntegrations(), b.isIntegrations());
         if (i != 0) {
             return i;
         }
-        return o1.getName().compareTo(o2.getName());
+        return a.getName().compareTo(b.getName());
     };
 
-    private static Comparator<SiteView> nameAscComparator = (o1, o2) -> o1.getName().compareTo(o2.getName());
+    private static Comparator<SiteView> nameAscComparator = (a, b) -> a.getName().compareTo(b.getName());
 
-    private static Comparator<SiteView> nameDescComparator = (o1, o2) -> o2.getName().compareTo(o1.getName());
+    private static Comparator<SiteView> nameDescComparator = (a, b) -> b.getName().compareTo(a.getName());
 
-    private static Comparator<SiteView> idAscComparator = (o1, o2) -> o1.getId().compareTo(o2.getId());
+    private static Comparator<SiteView> idAscComparator = (a, b) -> a.getId().compareTo(b.getId());
 
-    private static Comparator<SiteView> idDescComparator = (o1, o2) -> o2.getId().compareTo(o1.getId());
+    private static Comparator<SiteView> idDescComparator = (a, b) -> b.getId().compareTo(a.getId());
 
     private static Map<String, Map<OrderDirection, Comparator<SiteView>>> fieldAndDirectionComparatorsMap = ImmutableMap
             .of(

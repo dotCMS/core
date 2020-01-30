@@ -27,7 +27,7 @@ public class PaginationContext {
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
             @DefaultValue("integrations")
             @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
-            @DefaultValue("DESC")
+            @DefaultValue("ASC")
             @QueryParam(PaginationUtil.DIRECTION) final String direction) {
         this.filter = filter;
         this.page = page;

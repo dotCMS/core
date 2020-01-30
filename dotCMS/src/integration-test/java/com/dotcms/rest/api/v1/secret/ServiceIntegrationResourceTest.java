@@ -134,6 +134,9 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         );
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        when(request.getRequestURI()).thenReturn("/baseURL");
+
         final String serviceKey = String.format("lol_%d", System.currentTimeMillis());
         final String fileName = String.format("%s.yml", serviceKey);
         try(final InputStream inputStream = createServiceDescriptorFile(fileName, serviceKey, "lola",
@@ -163,7 +166,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
             Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
 
             final Response hostIntegrationsResponse = serviceIntegrationResource
-                    .getServiceIntegrationByKey(request, response, serviceKey);
+                    .getServiceIntegrationByKey(request, response, serviceKey, paginationContext());
             Assert.assertEquals(HttpStatus.SC_OK, hostIntegrationsResponse.getStatus());
             final ResponseEntityView responseEntityView2 = (ResponseEntityView) hostIntegrationsResponse
                     .getEntity();
@@ -207,7 +210,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
 
             //Now test the entry has been removed from the list of available configurations.
             final Response hostIntegrationsResponseAfterDelete = serviceIntegrationResource
-                    .getServiceIntegrationByKey(request, response, serviceKey);
+                    .getServiceIntegrationByKey(request, response, serviceKey, paginationContext());
             Assert.assertEquals(HttpStatus.SC_OK, hostIntegrationsResponseAfterDelete.getStatus());
             final ResponseEntityView responseEntityViewAfterDelete = (ResponseEntityView) hostIntegrationsResponseAfterDelete
                     .getEntity();
@@ -216,10 +219,12 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
 
             Assert.assertEquals(0, serviceIntegrationHostViewAfterDelete.getConfigurationsCount());
             Assert.assertEquals("lola", serviceIntegrationHostViewAfterDelete.getName());
-            final List<SiteView> expectedEmptyHosts = serviceIntegrationHostViewAfterDelete
-                    .getSites();
+            final List<SiteView> expectedEmptyHosts = serviceIntegrationHostViewAfterDelete.getSites();
             Assert.assertNotNull(expectedEmptyHosts);
-            Assert.assertTrue(expectedEmptyHosts.isEmpty());
+            // Previously this test wasn't expecting any entry here
+            // But the pagination will now return only items marked to have no configurations.
+            Assert.assertEquals("None of the returned item should have configuration", 0,
+                    expectedEmptyHosts.stream().filter(SiteView::isIntegrations).count());
         }catch (Exception e){
             Logger.error(ServiceIntegrationResourceTest.class, e);
             fail();
@@ -238,6 +243,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final Host host = new SiteDataGen().nextPersisted();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getRequestURI()).thenReturn("/baseURL");
         final String serviceKey = String.format("lol_%d", System.currentTimeMillis());
         final String fileName = String.format("%s.yml", serviceKey);
         try(final InputStream inputStream = createServiceDescriptorFile(fileName, serviceKey, "lola",
@@ -270,7 +276,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
 
             //fetch and verify the secrets by service-key
             final Response serviceIntegrationByKey = serviceIntegrationResource
-                    .getServiceIntegrationByKey(request, response, serviceKey);
+                    .getServiceIntegrationByKey(request, response, serviceKey, paginationContext());
             Assert.assertEquals(HttpStatus.SC_OK, serviceIntegrationByKey.getStatus());
             final ResponseEntityView responseEntityView2 = (ResponseEntityView) serviceIntegrationByKey
                     .getEntity();
@@ -354,6 +360,9 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        when(request.getRequestURI()).thenReturn("/baseURL");
+
         final String serviceKey = String.format("lol_%d", System.currentTimeMillis());
         final String fileName = String.format("%s.yml", serviceKey);
         try (final InputStream inputStream = createServiceDescriptorFile(fileName, serviceKey,
@@ -374,7 +383,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
 
             //The Service does exist and so it does the secrets.
             final Response hostIntegrationsResponse = serviceIntegrationResource
-                    .getServiceIntegrationByKey(request, response, serviceKey);
+                    .getServiceIntegrationByKey(request, response, serviceKey, paginationContext());
             Assert.assertEquals(HttpStatus.SC_OK, hostIntegrationsResponse.getStatus());
             final ResponseEntityView responseEntityView = (ResponseEntityView) hostIntegrationsResponse
                     .getEntity();
@@ -401,7 +410,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
                     integrationViewList.stream()
                             .noneMatch(view -> serviceKey.equals(view.getName())));
             final Response responseAfterDelete = serviceIntegrationResource
-                    .getServiceIntegrationByKey(request, response, serviceKey);
+                    .getServiceIntegrationByKey(request, response, serviceKey, paginationContext());
             Assert.assertEquals(HttpStatus.SC_NOT_FOUND, responseAfterDelete.getStatus());
 
             for (final String siteId : sites) {
@@ -427,6 +436,9 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        when(request.getRequestURI()).thenReturn("/baseURL");
+
         final String serviceKey = String.format("lol_%d", System.currentTimeMillis());
         final String fileName = String.format("%s.yml", serviceKey);
         try(final InputStream inputStream = createServiceDescriptorFile(fileName, serviceKey,
@@ -452,7 +464,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
 
             //The Service does exist and so it does the secrets.
             final Response siteIntegrationsResponse = serviceIntegrationResource
-                    .getServiceIntegrationByKey(request, response, serviceKey);
+                    .getServiceIntegrationByKey(request, response, serviceKey, paginationContext());
             Assert.assertEquals(HttpStatus.SC_OK, siteIntegrationsResponse.getStatus());
             final ResponseEntityView responseEntityView = (ResponseEntityView) siteIntegrationsResponse
                     .getEntity();
@@ -501,6 +513,9 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        when(request.getRequestURI()).thenReturn("/baseURL");
+
         long time = System.currentTimeMillis();
 
         final String serviceKey1 = String.format("all_lower_case_not_too_short_prefix_%d", time);
@@ -518,7 +533,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
             final String serviceKeyCasingVariant1 = upperCaseRandom(serviceKey1, 30);
 
             final Response serviceIntegrationByKey = serviceIntegrationResource
-                    .getServiceIntegrationByKey(request, response, serviceKeyCasingVariant1);
+                    .getServiceIntegrationByKey(request, response, serviceKeyCasingVariant1, paginationContext());
             Assert.assertEquals(HttpStatus.SC_OK, serviceIntegrationByKey.getStatus());
 
             final List<String> sites = new ArrayList<>();
@@ -552,6 +567,9 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        when(request.getRequestURI()).thenReturn("/baseURL");
+
         long time = System.currentTimeMillis();
 
         final String serviceKey = String.format("all_lower_case_not_too_short_prefix_%d", time);
@@ -585,17 +603,19 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         }
     }
 
-
-
     private Host createServiceIntegrationParams(final Map<String, Param> paramMap,
             final String serviceKey, final HttpServletRequest request,
-            final HttpServletResponse response) throws DotSecurityException, DotDataException {
+            final HttpServletResponse response) {
         final Host host = new SiteDataGen().nextPersisted();
         final SecretForm secretForm = new SecretForm(serviceKey, host.getIdentifier(), paramMap);
         final Response createSecretResponse = serviceIntegrationResource
                 .createServiceIntegrationSecrets(request, response, secretForm);
         Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
         return host;
+    }
+
+    PaginationContext paginationContext(){
+       return new PaginationContext(null, 1, 100, "name", "DESC");
     }
 
 }
