@@ -162,8 +162,6 @@ if(!hasPermissions) {
 	    }
 	});
 	
-
-
 </script>
 
 
