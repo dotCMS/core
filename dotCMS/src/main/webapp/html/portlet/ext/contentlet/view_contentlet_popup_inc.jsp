@@ -52,56 +52,15 @@ try {
 catch(DotSecurityException dse) {
     hasPermissions=false;
 }
+ShortyIdAPI shorty=  APILocator.getShortyAPI();
 
 
 
 // get URLMap Preview links (this can be on one host or many hosts)
-String detailPage = structure.getDetailPage() ;
-String urlMap = null;
-String hostId="REPLACE_ME";
-List<Host> urlMappedHosts = new ArrayList<Host>(); 
-ShortyIdAPI shorty=  APILocator.getShortyAPI();
-if(detailPage!=null){
-	Identifier detailId = APILocator.getIdentifierAPI().find(detailPage);
-	if(detailId !=null && UtilMethods.isSet(detailId.getId())){
-		List<Host> testTheseHosts = new ArrayList<Host>(); 
-		// if this content is mapped on "all hosts" or to a single host
-		if("SYSTEM_HOST".equals(content.getHost())){
-			testTheseHosts.addAll(APILocator.getHostAPI().findAll(user, false));
-		}
-		else{
-			testTheseHosts.add(APILocator.getHostAPI().find(content.getHost(), user, false));
-		}
-		
-		
-		for(Host h : testTheseHosts){ 
-			if(h.isArchived() || h.isSystemHost()) continue; 
-			// does the host actually have the detail page mapped
-			Identifier hasPage = APILocator.getIdentifierAPI().find(h, detailId.getPath());
-			if(hasPage ==null || ! UtilMethods.isSet(hasPage.getId())) continue; 
-			urlMappedHosts.add(h);
-		}
-		
-		
-		urlMap = capi.getUrlMapForContentlet(content, user, false);
-		
-		if(urlMap.contains("?")){
-			urlMap+="&mainFrame=true&livePage=0&language=" + content.getLanguageId() ;
-		}
-		else{
-			urlMap+="?mainFrame=true&livePage=0&language=" + content.getLanguageId() ;
-		}
-		
-		if(urlMap.contains("host_id=")){
-			hostId=urlMap.substring(urlMap.indexOf("host_id=")+8,urlMap.indexOf("host_id=")+44);
-		}
-		else{
-			urlMap+="&host_id=" + hostId;
-		}
-	}
-}
- 
+boolean isUrlMap = (structure.getDetailPage() !=null && structure.getUrlMapPattern()!=null);
 
+
+String editPath = isUrlMap ?  capi.getUrlMapForContentlet(content, user, false) : id.getPath();
 
 
 
@@ -111,7 +70,7 @@ if(detailPage!=null){
 if(!hasPermissions) {
     %>
 <div style="padding:20px;text-align: center">
-<%=LanguageUtil.get(pageContext, "you-do-not-have-the-required-permissions") %> 
+    <%=LanguageUtil.get(pageContext, "you-do-not-have-the-required-permissions") %> 
 </div>
 <%}else {
     
@@ -128,7 +87,7 @@ if(!hasPermissions) {
 		
 	}
 	catch(Exception e){
-		Logger.error(this.getClass(), "unable to find host for contentlet"  + content.getIdentifier());
+		Logger.warn(this.getClass(), "unable to find host for contentlet"  + content.getIdentifier());
 	}
 
 
@@ -146,6 +105,7 @@ if(!hasPermissions) {
 	    toolbar: "mybutton",
 	    toolbar: false,
 	    menubar: false,
+	    statusbar:false,
 	    plugins: "autoresize",
 	    autoresize_max_height: 500,
 	    autoresize_min_height: 50,
@@ -162,6 +122,7 @@ if(!hasPermissions) {
 	    }
 	});
 	
+
 </script>
 
 
@@ -196,25 +157,24 @@ if(!hasPermissions) {
                 <%= LanguageUtil.get(pageContext, "Identifier") %>
             </th>
             <td>
-                <div><%= content.get("identifier")%><div>
+                <div><%= content.get("identifier")%></div>
             </td>
         </tr>
-        
-        <tr>
-            <th>
-                <%= LanguageUtil.get(pageContext, "url") %>
-            </th>
-            <td>
-                <%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE || structure.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET  ){ %>
-                    <div style="padding:3px;"><a style="color:#0E80CB; text-decoration: underline;" href="<%= id.getPath()%>?host_id=<%=content.getHost() %>&com.dotmarketing.htmlpage.language=<%=content.getLanguageId() %>" target="_blank"><%= id.getPath()%></a></div>
-                <%} %>
-                
-                <% if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET ){ %>
-                    <div style="padding:3px;"><a style="color:#0E80CB; text-decoration: underline;" href="/dA/<%=shorty.shortify(content.getInode()) %>/<%=id.getAssetName() %>" target="_blank">/dA/<%=shorty.shortify(content.getInode()) %>/<%=id.getAssetName() %></a></div>
-                <%} %>
-            </td>
-        </tr>
-
+        <%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE || isUrlMap || structure.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET ){ %>
+           <tr>
+               <th>
+                   <%= LanguageUtil.get(pageContext, "url") %>
+               </th>
+               <td>
+                   <%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE || isUrlMap  ){ %>
+                       <%session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, content.getHost()); %>
+                       <div style="padding:3px;"><a style="color:#0E80CB; text-decoration: underline;" target="workflowWindow" href="/dotAdmin/#/edit-page/content?url=<%= editPath%>"><%= editPath%></a></div>
+                   <%}else  if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET ){ %>
+                       <div style="padding:3px;"><a style="color:#0E80CB; text-decoration: underline;" href="#" onclick="dotPreviewFile('/dA/<%=shorty.shortify(content.getInode()) %>/fileAsset/<%=id.getAssetName() %>?mode=PREVIEW_MODE')" >/dA/<%=shorty.shortify(content.getInode()) %>/fileAsset/<%=id.getAssetName() %>?mode=PREVIEW_MODE</a></div>
+                   <%} %>
+               </td>
+           </tr>
+        <%} %>
 
 		<tr>
 			<th class="fColumn">
@@ -238,30 +198,6 @@ if(!hasPermissions) {
 	<% }%>
 	
 
-	<% if(urlMap!=null){%>
-		<tr>
-			<th class="fColumn">
-				Preview <br>
-			</th>
-			<td>
-				<div style="overflow:auto;">
-				<%urlMappedHosts = urlMappedHosts.subList(0,((urlMappedHosts.size()>10) ? 10 : urlMappedHosts.size())); %>
-					<%for(Host h : urlMappedHosts){ %>
-						<div style="width:150px;float:left;;border:1px solid silver;margin:4px;padding:10px 0;text-align:center;">
-							<%String hostUrl =urlMap.replaceAll(hostId, h.getIdentifier());  %>
-							<%if(h.getBinary("hostThumbnail") != null){%>
-								<a href="<%=hostUrl %>" target="_blank"><img src="/contentAsset/image/<%=h.getIdentifier()%>/hostThumbnail/filter/Thumbnail/thumbnail_w/75/thumbnail_h/75/"></a><br>
-							<%}else{ %>
-								<a href="<%=hostUrl %>" target="_blank"><img src="/html/images/shim.gif" width="75" height="75" ></a><br>
-							<%} %>
-							<a href="<%=hostUrl %>" target="_blank"><small><%=h.getHostname() %></small></a>
-						</div>
-		
-					<%} %>
-				</div>
-			</td>
-		</tr>
-	<%} %>
 	
 	
 	
@@ -480,11 +416,11 @@ if(!hasPermissions) {
 							<%if(UtilMethods.isImage(x)){%>
 								<%=x %>
 								<br/>
-								<a target="_blank" href="/dA/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/<%=content.getBinary(field.getVelocityVarName()).getName()%>">
-									<img src="/contentAsset/image/<%=content.getInode() %>/<%=field.getVelocityVarName() %>?filter=Thumbnail&thumbnail_w=150&thumbnail_h=150&" style="border:1px dotted silver"/>
+								<a  href="#" onclick="dotPreviewFile('/dA/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/<%=content.getBinary(field.getVelocityVarName()).getName()%>')">
+									<img src="/dA/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/300w/20q" style="border:1px dotted silver;max-width:400px"/>
 								</a>
 							<%}else{ %>
-								<a target="_blank" href="/dA/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/"><%=x %></a>
+								<a href="#" onclick="dotPreviewFile('/dA/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/150w/20q')"><%=x %></a>
 							<%} %>
 						<%}%>
 					<%}%>
