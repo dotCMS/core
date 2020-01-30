@@ -34,7 +34,7 @@ public class ResetApproversActionlet extends WorkFlowActionlet {
 		if (null == ACTIONLET_PARAMETERS) {
 			ACTIONLET_PARAMETERS = new ArrayList<>();
 			ACTIONLET_PARAMETERS
-					.add(new MultiUserReferenceParameter(PARAM_CONTENT_ACTIONS,
+					.add(new WorkflowActionletParameter(PARAM_CONTENT_ACTIONS,
 							"Optional Action ID, or Name", null,
 							false));
 		}
@@ -43,20 +43,20 @@ public class ResetApproversActionlet extends WorkFlowActionlet {
 
 	@Override
 	public String getName() {
-		return "Reset Approvers";
+		return "Reset Approvals";
 	}
 
 	@Override
 	public String getHowTo() {
 
-		return "This actionlet will reset workflow history approvers";
+		return "This actionlet will reset workflow history approvals";
 	}
 
 	private Optional<String> getWorkflowIdFromParameter (final WorkflowProcessor processor,
 														 final WorkflowActionClassParameter parameter)  {
 
 		final String value = getParameterValue(parameter);
-		if (null == value) {
+		if (null != value) {
 
 			if (!UUIDUtil.isUUID(value)) {
 
