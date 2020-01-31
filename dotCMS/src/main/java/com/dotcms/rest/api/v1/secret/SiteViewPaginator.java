@@ -10,6 +10,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -19,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,15 +37,18 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
     static final String SERVICE_DESCRIPTOR = "SERVICE_DESCRIPTOR";
     static final String SERVICE_KEY = "SERVICE_KEY";
+    static final String CONTENT_TYPE_HOST_QUERY = "+contentType:Host +working:true";
 
     private final ServiceIntegrationAPI serviceIntegrationAPI;
     private final HostAPI hostAPI;
+    private final ContentletAPI contentletAPI;
 
     @VisibleForTesting
     SiteViewPaginator(final ServiceIntegrationAPI serviceIntegrationAPI,
-            final HostAPI hostAPI) {
+            final HostAPI hostAPI, final ContentletAPI contentletAPI) {
         this.serviceIntegrationAPI = serviceIntegrationAPI;
         this.hostAPI = hostAPI;
+        this.contentletAPI = contentletAPI;
     }
 
     /**
@@ -96,8 +101,10 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
                 //Just making sure there's a descriptor to get items.
                 final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
 
+                final long totalCount = contentletAPI.indexCount(CONTENT_TYPE_HOST_QUERY, user,false);
+
                 //All the sites set.
-                final List<Host> allSites = hostAPI.findAll(user, false);
+                final List<Host> allSites = hostAPI.findAll(user, limit, offset, null,false);
 
                 //Sites with configuration.
                 final List<Host> sitesWithIntegrations = serviceIntegrationAPI
@@ -110,7 +117,8 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
                 //Complement operation against to get sites without any configuration.
                 final Set<Host> nonConfiguredSites = Sets.difference(
-                        Sets.newHashSet(allSites), Sets.newHashSet(sitesForService)
+                        //LikedHashSet seems like the best fit here. preserves order and its faster compared to TreeSet.
+                        new LinkedHashSet<>(allSites), new LinkedHashSet<>(sitesForService)
                 );
 
                 //Make them all SiteView and mark'em respective.
@@ -121,7 +129,6 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
                 Stream<SiteView> combinedStream = Stream
                         .concat(withIntegrationsStream, withNoIntegrations);
-
 
                 //if we have filter apply it.
                 if (UtilMethods.isSet(filter)) {
@@ -141,7 +148,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
                 //And then we're done and out of here.
                 final PaginatedArrayList<SiteView> paginatedArrayList = new PaginatedArrayList<>();
-                paginatedArrayList.setTotalResults(allSites.size());
+                paginatedArrayList.setTotalResults(totalCount);
                 paginatedArrayList.addAll(siteViews);
                 return paginatedArrayList;
             }
@@ -174,7 +181,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
     }
 
     private static Comparator<SiteView> hasIntegrationsDescComparator = (a, b) -> {
-        final int i = Boolean.compare(b.isIntegrations(), a.isIntegrations());
+        final int i = Boolean.compare(b.isConfigured(), a.isConfigured());
         if (i != 0) {
             return i;
         }
@@ -182,7 +189,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
     };
 
     private static Comparator<SiteView> hasIntegrationsAscComparator = (a, b) -> {
-        final int i = Boolean.compare(a.isIntegrations(), b.isIntegrations());
+        final int i = Boolean.compare(a.isConfigured(), b.isConfigured());
         if (i != 0) {
             return i;
         }
@@ -199,7 +206,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
     private static Map<String, Map<OrderDirection, Comparator<SiteView>>> fieldAndDirectionComparatorsMap = ImmutableMap
             .of(
-                    "integrations", ImmutableMap
+                    "configured", ImmutableMap
                             .of(OrderDirection.ASC, hasIntegrationsAscComparator,
                                 OrderDirection.DESC, hasIntegrationsDescComparator),
                     "name", ImmutableMap

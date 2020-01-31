@@ -221,6 +221,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         final Set<String> hostIds = serviceKeysByHost().keySet();
         return hostIds.stream().map(hostId -> {
             try {
+                //I suspect I can make this work way faster looking directly into the index.
                 return hostAPI.find(hostId, user, false);
             } catch (DotDataException | DotSecurityException e) {
                 Logger.warn(ServiceIntegrationAPIImpl.class,

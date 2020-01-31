@@ -13,7 +13,7 @@ public class SiteView {
 
     private final String id;
     private final String name;
-    private final boolean integrations;
+    private final boolean configured;
 
     @JsonInclude(Include.NON_NULL)
     private final Map<String, Secret> secrets;
@@ -26,7 +26,7 @@ public class SiteView {
     public SiteView(final String id, final String name) {
         this.id = id;
         this.name = name;
-        this.integrations = false;
+        this.configured = false;
         this.secrets = null;
     }
 
@@ -34,12 +34,12 @@ public class SiteView {
      * If we want to build a secret-less view but showing that the site has integrations.
      * @param id
      * @param name
-     * @param integrations
+     * @param configured
      */
-    public SiteView(final String id, final String name, final boolean integrations) {
+    public SiteView(final String id, final String name, final boolean configured) {
         this.id = id;
         this.name = name;
-        this.integrations = integrations;
+        this.configured = configured;
         this.secrets = null;
     }
 
@@ -53,7 +53,7 @@ public class SiteView {
             final Map<String, Secret> secrets) {
         this.id = id;
         this.name = name;
-        this.integrations = null != secrets;
+        this.configured = null != secrets;
         this.secrets = secrets;
     }
 
@@ -77,8 +77,8 @@ public class SiteView {
      * Shows secrets or not
      * @return
      */
-    public boolean isIntegrations() {
-        return integrations;
+    public boolean isConfigured() {
+        return configured;
     }
 
     /**

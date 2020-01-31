@@ -16,6 +16,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -46,16 +47,18 @@ class ServiceIntegrationHelper {
 
     private final ServiceIntegrationAPI serviceIntegrationAPI;
     private final HostAPI hostAPI;
+    private final ContentletAPI contentletAPI;
 
     @VisibleForTesting
     ServiceIntegrationHelper(
-            final ServiceIntegrationAPI serviceIntegrationAPI, final HostAPI hostAPI) {
+            final ServiceIntegrationAPI serviceIntegrationAPI, final HostAPI hostAPI, final ContentletAPI contentletAPI) {
         this.serviceIntegrationAPI = serviceIntegrationAPI;
         this.hostAPI = hostAPI;
+        this.contentletAPI = contentletAPI;
     }
 
     ServiceIntegrationHelper() {
-        this(APILocator.getServiceIntegrationAPI(), APILocator.getHostAPI());
+        this(APILocator.getServiceIntegrationAPI(), APILocator.getHostAPI(), APILocator.getContentletAPI());
     }
 
     private static Comparator<ServiceIntegrationView> compareByCountAndName = (o1, o2) -> {
@@ -117,7 +120,7 @@ class ServiceIntegrationHelper {
 
         final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
         final PaginationUtil paginationUtil = new PaginationUtil(
-                new SiteViewPaginator(serviceIntegrationAPI, hostAPI));
+                new SiteViewPaginator(serviceIntegrationAPI, hostAPI, contentletAPI));
         final Response page = paginationUtil
                 .getPage(request, user,
                         paginationContext.getFilter(),
@@ -140,7 +143,7 @@ class ServiceIntegrationHelper {
      * @return
      */
      private long countIntegratedItems(final List<SiteView> siteViews){
-        return siteViews.stream().filter(SiteView::isIntegrations).count();
+        return siteViews.stream().filter(SiteView::isConfigured).count();
      }
 
     /**

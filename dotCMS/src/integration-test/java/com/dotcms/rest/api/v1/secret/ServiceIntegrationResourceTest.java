@@ -224,7 +224,7 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
             // Previously this test wasn't expecting any entry here
             // But the pagination will now return only items marked to have no configurations.
             Assert.assertEquals("None of the returned item should have configuration", 0,
-                    expectedEmptyHosts.stream().filter(SiteView::isIntegrations).count());
+                    expectedEmptyHosts.stream().filter(SiteView::isConfigured).count());
         }catch (Exception e){
             Logger.error(ServiceIntegrationResourceTest.class, e);
             fail();
