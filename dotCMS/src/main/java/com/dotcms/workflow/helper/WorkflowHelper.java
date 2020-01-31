@@ -46,6 +46,7 @@ import org.apache.velocity.context.Context;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms;
 
 import javax.servlet.http.HttpServletRequest;
@@ -177,8 +178,8 @@ public class WorkflowHelper {
 
         for (final Aggregation aggregation : aggregations.asList()) {
 
-            if (aggregation instanceof StringTerms) {
-                StringTerms.class.cast(aggregation)
+            if (aggregation instanceof ParsedStringTerms) {
+                ((ParsedStringTerms) aggregation)
                 .getBuckets().forEach(
                     bucket -> stepCounts.put(bucket.getKeyAsString(), bucket.getDocCount())
                 );
@@ -293,6 +294,20 @@ public class WorkflowHelper {
         return bulkActions;
     }
 
+    private Optional<WorkflowAction> findActionsOn (final String actionName, final List<WorkflowAction>  workflowActions) {
+
+        if (UtilMethods.isSet(workflowActions)) {
+
+            final Optional<WorkflowAction> foundAction  =
+                    workflowActions.stream()
+                            .filter(action -> action.getName().equalsIgnoreCase(actionName)).findFirst();
+
+            return foundAction;
+        }
+
+        return Optional.empty();
+    }
+
     /**
      * Try to find an action by name
      * @param actionName {@link String}
@@ -303,21 +318,49 @@ public class WorkflowHelper {
      * @throws DotDataException
      */
     @CloseDBIfOpened
-    public String getActionIdByName(final String actionName,
+    public String getActionIdOnList(final String actionName,
                                     final Contentlet contentlet,
                                     final User user) throws DotSecurityException, DotDataException {
 
-        final List<WorkflowAction> availableActionsOnListing =
-                APILocator.getWorkflowAPI().findAvailableActionsListing(contentlet, user);
+        final WorkflowAPI workflowAPI                = APILocator.getWorkflowAPI();
+        final Optional<WorkflowStep> workflowStepOpt = workflowAPI.findCurrentStep(contentlet);
+        Optional<WorkflowScheme> schemeOpt           = Optional.empty();
+        Optional<WorkflowAction> foundAction         = Optional.empty();
+        if (workflowStepOpt.isPresent()) {
+            // 1) look for the actions on the same step
+            final WorkflowStep workflowStep = workflowStepOpt.get();
+            foundAction = this.findActionsOn(actionName, workflowAPI.findActions(workflowStep, user));
+            if (foundAction.isPresent()) {
 
-        final List<WorkflowAction> availableActionsOnEditing =
-                APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, user);
+                return foundAction.get().getId();
+            }
 
-        final Optional<WorkflowAction> foundAction =
-                Stream.concat(availableActionsOnListing.stream(), availableActionsOnEditing.stream())
-                        .filter(action -> action.getName().equalsIgnoreCase(actionName)).findFirst();
+            // 2) look for the actions on the current scheme
+            final WorkflowScheme workflowScheme = workflowAPI.findScheme(workflowStep.getSchemeId());
+            schemeOpt   = Optional.ofNullable(workflowScheme);
+            foundAction = this.findActionsOn(actionName, workflowAPI.findActions(workflowScheme, user));
+            if (foundAction.isPresent()) {
 
-        return foundAction.isPresent()?foundAction.get().getId():null;
+                return foundAction.get().getId();
+            }
+        }
+
+        // 3) look for the actions on all schemes.
+        final List<WorkflowScheme>  workflowSchemes = workflowAPI.findSchemesForContentType(contentlet.getContentType());
+        for (final WorkflowScheme scheme : workflowSchemes) {
+
+            if (schemeOpt.isPresent() && schemeOpt.get().getId().equals(scheme.getId()))  {
+                continue; // we already analized this scheme
+            }
+
+            foundAction = this.findActionsOn(actionName, workflowAPI.findActions(scheme, user));
+            if (foundAction.isPresent()) {
+
+                return foundAction.get().getId();
+            }
+        }
+
+        return null;
     }
 
     /**

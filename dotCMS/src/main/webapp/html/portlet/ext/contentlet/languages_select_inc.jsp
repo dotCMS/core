@@ -3,7 +3,7 @@
 	  buff.append("{identifier:'id',label:'label',items:[");
 
 	  String style="width:16px;height:11px;display:inline-block;vertical-align:middle;margin:3px 5px 3px 2px;";
-	  buff.append("{id:'0',value:'',lang:'All',label:'All'}");
+	  buff.append("{id:'0',value:'',lang:'"+ LanguageUtil.get(pageContext, "All") +"',label:'" + LanguageUtil.get(pageContext, "All") + "'}");
 	  for (Language lang : languages) {
 		  final String display=lang.getLanguage() + (UtilMethods.isSet(lang.getCountryCode()) ? " (" + lang.getCountryCode().trim() + ")" : "");
 		  buff.append(",{id:'"+lang.getId()+"',");

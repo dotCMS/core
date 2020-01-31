@@ -5,13 +5,14 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
+import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.WebKeys;
 
-import io.vavr.control.Try;
 
 import org.apache.velocity.exception.ResourceNotFoundException;
 
@@ -21,7 +22,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URLDecoder;
 
 public class VelocityServlet extends HttpServlet {
 
@@ -36,9 +36,7 @@ public class VelocityServlet extends HttpServlet {
     @CloseDB
     protected final void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
         VelocityRequestWrapper request = new VelocityRequestWrapper(req);
-        final String uri = URLDecoder.decode((request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE) != null)
-                ? (String) request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE)
-                : request.getRequestURI(), "UTF-8");
+        final String uri = CMSUrlUtil.getCurrentURI(request);
 
         if (uri == null) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "VelocityServlet called without running through the CMS Filter");
@@ -65,7 +63,17 @@ public class VelocityServlet extends HttpServlet {
             request.setRequestUri(uri);
             final PageMode mode = PageMode.getWithNavigateMode(request);
             try {
-                VelocityModeHandler.modeHandler(mode, request, response).serve();
+                final String pageHtml = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                        PageContextBuilder.builder()
+                                .setPageUri(uri)
+                                .setPageMode(mode)
+                                .setUser(WebAPILocator.getUserWebAPI().getLoggedInUser(request))
+                                .setPageMode(mode)
+                                .build(),
+                        request,
+                        response
+                );
+                response.getOutputStream().write(pageHtml.getBytes());
             } catch (ResourceNotFoundException rnfe) {
                 Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);

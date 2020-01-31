@@ -9,6 +9,32 @@ import org.junit.Test;
 
 public class FileAssetContainerUtilTest extends ContentletBaseTest {
 
+    @Test
+    public void test_getPathFromFullPath_wrong_host_on_full_path() throws Exception {
+
+        final String relativePath = FileAssetContainerUtil.getInstance().getPathFromFullPath("demo.dotcms.com","//global.dotcms.com/application/container/test-container");
+
+        Assert.assertNotNull(relativePath);
+        Assert.assertEquals(relativePath, "//global.dotcms.com/application/container/test-container");
+    }
+
+    @Test
+    public void test_getPathFromFullPath_right_host_on_full_path() throws Exception {
+
+        final String relativePath = FileAssetContainerUtil.getInstance().getPathFromFullPath("demo.dotcms.com","//demo.dotcms.com/application/container/test-container");
+
+        Assert.assertNotNull(relativePath);
+        Assert.assertEquals(relativePath, "/application/container/test-container");
+    }
+
+    @Test
+    public void test_getPathFromFullPath_any_host_on_relative_path() throws Exception {
+
+        final String relativePath = FileAssetContainerUtil.getInstance().getPathFromFullPath("demo.dotcms.com","/application/container/test-container");
+
+        Assert.assertNotNull(relativePath);
+        Assert.assertEquals(relativePath, "/application/container/test-container");
+    }
 
     @Test
     public void test_getHost_null_default_expected() throws Exception {

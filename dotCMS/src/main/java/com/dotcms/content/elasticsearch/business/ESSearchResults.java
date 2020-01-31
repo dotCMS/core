@@ -61,7 +61,7 @@ public class ESSearchResults implements List {
 	}
 
 	public long getTotalResults() {
-		return response.getHits().getTotalHits();
+		return response.getHits().getTotalHits().value;
 	}
 
 	public SearchHits getHits() {

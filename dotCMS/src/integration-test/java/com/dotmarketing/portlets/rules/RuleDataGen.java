@@ -30,6 +30,7 @@ public class RuleDataGen {
 
     private Rule.FireOn fireOn = Rule.FireOn.EVERY_PAGE;
     private String name = "defaultName";
+    private Host host;
 
     public RuleDataGen() {
     }
@@ -42,7 +43,7 @@ public class RuleDataGen {
 
         Rule rule = new Rule();
         rule.setName(name);
-        rule.setParent(defaultHost.getIdentifier());
+        rule.setParent(host != null ? host.getIdentifier() : defaultHost.getIdentifier());
         rule.setEnabled(true);
         rule.setFireOn(fireOn);
         return rule;
@@ -71,6 +72,11 @@ public class RuleDataGen {
 
     public RuleDataGen name(String name) {
         this.name = name;
+        return this;
+    }
+
+    public RuleDataGen host(final Host host) {
+        this.host = host;
         return this;
     }
 }

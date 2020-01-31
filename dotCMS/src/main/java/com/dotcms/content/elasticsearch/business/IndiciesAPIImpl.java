@@ -10,7 +10,11 @@ import com.dotmarketing.exception.DotDataException;
 
 public class IndiciesAPIImpl implements IndiciesAPI {
 
-    protected final IndiciesFactory ifac = FactoryLocator.getIndiciesFactory();
+    protected final IndiciesFactory ifac;
+
+    public IndiciesAPIImpl(){
+        ifac = FactoryLocator.getIndiciesFactory();
+    }
 
     @CloseDBIfOpened
     public IndiciesInfo loadIndicies() throws DotDataException {

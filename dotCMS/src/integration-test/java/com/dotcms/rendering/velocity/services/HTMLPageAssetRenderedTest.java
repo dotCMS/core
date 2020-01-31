@@ -308,7 +308,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                     .setUser(systemUser)
                     .setPageUri(pageEnglishVersion.getURI())
-                    .setPageMode(PageMode.PREVIEW_MODE)
+                    .setPageMode(PageMode.LIVE)
                     .build(),
                 mockRequest, mockResponse);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
@@ -324,7 +324,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
@@ -381,7 +381,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
@@ -397,7 +397,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
@@ -444,7 +444,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageSpanishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
@@ -459,7 +459,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageSpanishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
     }
@@ -501,7 +501,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
@@ -516,7 +516,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
     }
@@ -571,7 +571,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
@@ -587,7 +587,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
@@ -644,7 +644,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
@@ -660,7 +660,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertTrue("ESP = "+html , html.contains("content3content2Spacontent1"));
@@ -703,7 +703,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
@@ -718,7 +718,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
     }
@@ -785,7 +785,7 @@ public class HTMLPageAssetRenderedTest {
                             PageContextBuilder.builder()
                                     .setUser(systemUser)
                                     .setPageUri(pageEnglishVersion.getURI())
-                                    .setPageMode(PageMode.PREVIEW_MODE)
+                                    .setPageMode(PageMode.LIVE)
                                     .build(),
                             mockRequest, mockResponse);
             Assert.assertTrue(html, html.contains("original code"));
@@ -810,7 +810,7 @@ public class HTMLPageAssetRenderedTest {
                             PageContextBuilder.builder()
                                     .setUser(systemUser)
                                     .setPageUri(pageEnglishVersion.getURI())
-                                    .setPageMode(PageMode.PREVIEW_MODE)
+                                    .setPageMode(PageMode.LIVE)
                                     .build(),
                             mockRequest, mockResponse);
             Assert.assertTrue(html, html.contains("this has been changed"));
@@ -951,7 +951,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertTrue(html , html.contains("content4"));
@@ -962,7 +962,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(html , "content2content1");
@@ -1015,7 +1015,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(page.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals("content2content1", html);
@@ -1068,7 +1068,7 @@ public class HTMLPageAssetRenderedTest {
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(page.getURI())
-                        .setPageMode(PageMode.PREVIEW_MODE)
+                        .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals("content2content1", html);

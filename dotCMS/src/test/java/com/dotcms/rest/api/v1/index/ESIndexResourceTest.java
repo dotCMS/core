@@ -9,7 +9,7 @@ import com.dotcms.UnitTestBase;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo.Builder;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
@@ -58,12 +58,12 @@ public class ESIndexResourceTest extends UnitTestBase {
         final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
 
         final User user = new User();
-        IndiciesInfo indiciesInfo = new IndiciesInfo();
-        indiciesInfo.live = liveIndex;
-        indiciesInfo.working = workingIndex;
-        File tempFile = File.createTempFile(liveIndex, null);
+        final Builder builder = new Builder();
+        builder.setWorking(workingIndex).setLive(liveIndex);
+
+        final File tempFile = File.createTempFile(liveIndex, null);
         tempFile.deleteOnExit();
-        Map<String,String> paramsMap = new HashMap<String,String>();
+        final Map<String,String> paramsMap = new HashMap<String,String>();
         paramsMap.put("index", liveIndex);
 
         when(webResource.init(requestParams, request, httpServletResponse, true, null)).thenReturn(initDataObject);
@@ -71,11 +71,12 @@ public class ESIndexResourceTest extends UnitTestBase {
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
-        when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
+        when(indiciesAPI.loadIndicies()).thenReturn(builder.build());
         when(indexHelper.getIndexNameOrAlias(paramsMap,indexAPI)).thenReturn(liveIndex);
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", liveIndex)).thenReturn(tempFile);
 
-        ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
+        final ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper,
+                responseUtil, webResource, layoutAPI, indiciesAPI);
 
         final Response response1 = esIndexResource
                 .snapshotIndex(request, httpServletResponse, requestParams);
@@ -106,12 +107,11 @@ public class ESIndexResourceTest extends UnitTestBase {
         final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
 
         final User user = new User();
-        IndiciesInfo indiciesInfo = new IndiciesInfo();
-        indiciesInfo.live = liveIndex;
-        indiciesInfo.working = workingIndex;
-        File tempFile = File.createTempFile(liveIndex, null);
+        final Builder builder = new Builder();
+        builder.setWorking(workingIndex).setLive(liveIndex);
+        final File tempFile = File.createTempFile(liveIndex, null);
         tempFile.deleteOnExit();
-        Map<String,String> paramsMap = new HashMap<String,String>();
+        final Map<String,String> paramsMap = new HashMap<String,String>();
         paramsMap.put("index", "live");
 
         // webResource.init(params, httpServletRequest, httpServletResponse, true, null)
@@ -120,11 +120,12 @@ public class ESIndexResourceTest extends UnitTestBase {
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
-        when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
+        when(indiciesAPI.loadIndicies()).thenReturn(builder.build());
         when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn("live");
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", liveIndex)).thenReturn(tempFile);
 
-        ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
+        final ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper,
+                responseUtil, webResource, layoutAPI, indiciesAPI);
 
         final Response response1 = esIndexResource
                 .snapshotIndex(request, httpServletResponse, requestParams);
@@ -155,12 +156,11 @@ public class ESIndexResourceTest extends UnitTestBase {
         final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
 
         final User user = new User();
-        IndiciesInfo indiciesInfo = new IndiciesInfo();
-        indiciesInfo.live = liveIndex;
-        indiciesInfo.working = workingIndex;
-        File tempFile = File.createTempFile(workingIndex, null);
+        final Builder builder = new Builder();
+        builder.setWorking(workingIndex).setLive(liveIndex);
+        final File tempFile = File.createTempFile(workingIndex, null);
         tempFile.deleteOnExit();
-        Map<String,String> paramsMap = new HashMap<String,String>();
+        final Map<String,String> paramsMap = new HashMap<String,String>();
         paramsMap.put("index", workingIndex);
 
         when(webResource.init(requestParams, request, httpServletResponse, true, null)).thenReturn(initDataObject);
@@ -168,11 +168,12 @@ public class ESIndexResourceTest extends UnitTestBase {
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
-        when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
+        when(indiciesAPI.loadIndicies()).thenReturn(builder.build());
         when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(workingIndex);
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", workingIndex)).thenReturn(tempFile);
 
-        ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
+        final ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper,
+                responseUtil, webResource, layoutAPI, indiciesAPI);
 
         final Response response1 = esIndexResource
                 .snapshotIndex(request, httpServletResponse, requestParams);
@@ -203,12 +204,11 @@ public class ESIndexResourceTest extends UnitTestBase {
         final IndiciesAPI indiciesAPI = mock(IndiciesAPI.class);
 
         final User user = new User();
-        IndiciesInfo indiciesInfo = new IndiciesInfo();
-        indiciesInfo.live = liveIndex;
-        indiciesInfo.working = workingIndex;
-        File tempFile = File.createTempFile(workingIndex, null);
+        final Builder builder = new Builder();
+        builder.setWorking(workingIndex).setLive(liveIndex);
+        final File tempFile = File.createTempFile(workingIndex, null);
         tempFile.deleteOnExit();
-        Map<String,String> paramsMap = new HashMap<String,String>();
+        final Map<String,String> paramsMap = new HashMap<String,String>();
         paramsMap.put("index", "working");
 
         when(webResource.init(requestParams, request, httpServletResponse, true, null)).thenReturn(initDataObject);
@@ -216,11 +216,12 @@ public class ESIndexResourceTest extends UnitTestBase {
         when(initDataObject.getParamsMap()).thenReturn(paramsMap);
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(layoutAPI.doesUserHaveAccessToPortlet("maintenance", initDataObject.getUser())).thenReturn(true);
-        when(indiciesAPI.loadIndicies()).thenReturn(indiciesInfo);
+        when(indiciesAPI.loadIndicies()).thenReturn(builder.build());
         when(indexHelper.getIndexNameOrAlias(paramsMap, indexAPI)).thenReturn(workingIndex);
         when(indexAPI.createSnapshot(ESIndexAPI.BACKUP_REPOSITORY, "backup", workingIndex)).thenReturn(tempFile);
 
-        ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper, responseUtil, webResource, layoutAPI, indiciesAPI);
+        final ESIndexResource esIndexResource = new ESIndexResource(indexAPI, indexHelper,
+                responseUtil, webResource, layoutAPI, indiciesAPI);
 
         final Response response1 = esIndexResource
                 .snapshotIndex(request, httpServletResponse, requestParams);

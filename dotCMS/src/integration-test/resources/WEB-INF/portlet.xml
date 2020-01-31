@@ -502,6 +502,12 @@
     </portlet>
 
     <portlet>
+        <portlet-name>integration-services</portlet-name>
+        <display-name>Integration Services</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
         <portlet-name>embedded-dashboard</portlet-name>
         <display-name>Embedded Analytics Dashboard</display-name>
         <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>

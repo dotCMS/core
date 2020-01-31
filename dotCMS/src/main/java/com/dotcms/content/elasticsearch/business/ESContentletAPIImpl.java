@@ -215,6 +215,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String CHECKIN_IN_PROGRESS                      = "__checkin_in_progress__";
 
     private final ContentletIndexAPIImpl  indexAPI;
+    private ESIndexAPI            esIndexAPI;
     private final ESContentFactoryImpl  contentFactory;
     private final PermissionAPI         permissionAPI;
     private final CategoryAPI           categoryAPI;
@@ -251,6 +252,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     public ESContentletAPIImpl () {
         indexAPI = new ContentletIndexAPIImpl();
+        esIndexAPI = new ESIndexAPI();
         fieldAPI = APILocator.getFieldAPI();
         contentFactory = new ESContentFactoryImpl();
         permissionAPI = APILocator.getPermissionAPI();
@@ -933,7 +935,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         SearchHits lc = contentFactory.indexSearch(buffy.toString(), limit, offset, sortBy);
         PaginatedArrayList <ContentletSearch> list=new PaginatedArrayList<>();
-        list.setTotalResults(lc.getTotalHits());
+        list.setTotalResults(lc.getTotalHits().value);
 
         for (SearchHit sh : lc.getHits()) {
             try{
@@ -4284,6 +4286,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
+        if (!isCheckInSafe(contentRelationships, getEsIndexAPI())){
+            throw new DotContentletStateException(
+                    "Content cannot be saved at this moment. Reason: Elastic Search cluster is in read only mode.");
+        }
+
         if(cats == null) {
             cats = getExistingContentCategories(contentlet);
         }
@@ -5008,6 +5015,52 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    @VisibleForTesting
+    ESIndexAPI getEsIndexAPI() {
+        return esIndexAPI;
+    }
+
+    @VisibleForTesting
+    void setEsIndexAPI(ESIndexAPI esIndexAPI) {
+        this.esIndexAPI = esIndexAPI;
+    }
+
+    /**
+     * Method that verifies if a check in operation can be executed.
+     * It is safe to execute a checkin if write operations can be performed on the ES cluster.
+     * Otherwise, check in will be allowed only if the contentlet to be saved does not have legacy relationships
+     * @param relationships ContentletRelationships with the records to be saved
+     * @return
+     */
+    @VisibleForTesting
+    boolean isCheckInSafe(final ContentletRelationships relationships, final ESIndexAPI esIndexAPI) {
+
+        if (relationships != null && relationships.getRelationshipsRecords().size() > 0) {
+            boolean isClusterReadOnly = esIndexAPI.isClusterInReadOnlyMode();
+
+            if (isClusterReadOnly && hasLegacyRelationships(relationships)) {
+                return false;
+            }
+        }
+        return true;
+
+    }
+
+    /**
+     * Given a ContentletRelationships object, verifies if there is any legacy relationship on it
+     * @param relationships
+     * @return
+     */
+    private boolean hasLegacyRelationships(ContentletRelationships relationships) {
+        for (ContentletRelationshipRecords records : relationships
+                .getRelationshipsRecords()) {
+            if (!records.getRelationship().isRelationshipField()){
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -7038,6 +7091,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final boolean isContentletLive = contentlet.isLive();
             final boolean isContentletWorking = contentlet.isWorking();
+            final boolean isContentletDeleted = contentlet.isArchived();
 
             if (user == null) {
                 throw new DotSecurityException("A user must be specified.");
@@ -7189,7 +7243,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(isContentletWorking) {
                 versionsToMarkWorking.add(newContentlet);
             }
-
+            if (isContentletDeleted) {
+                APILocator.getVersionableAPI().setDeleted(newContentlet, true);
+            }
             if(contentlet.getInode().equals(sourceContentlet.getInode())){
                 copyContentlet = newContentlet;
             }
@@ -8131,5 +8187,4 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet;
     }
 
-    
 }
