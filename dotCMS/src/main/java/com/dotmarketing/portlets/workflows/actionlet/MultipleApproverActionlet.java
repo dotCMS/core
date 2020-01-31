@@ -2,14 +2,26 @@ package com.dotmarketing.portlets.workflows.actionlet;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.MultiEmailParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistoryState;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistoryType;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.Validator;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
  * Based on a list of email, userid or roles won't continue the pipeline until all necessary users approve the workflow
@@ -70,7 +82,8 @@ public class MultipleApproverActionlet extends WorkFlowActionlet {
 					requiredApprovers.add(user);
 				} catch (Exception e) {
 
-					Logger.error(this.getClass(), "Unable to find user with email:" + userIdToken);
+					Logger.warnAndDebug(this.getClass(), "Unable to find user with email:" + userIdToken
+							+ ", message: " + e.getMessage(), e);
 				}
 			} else {
 				try {

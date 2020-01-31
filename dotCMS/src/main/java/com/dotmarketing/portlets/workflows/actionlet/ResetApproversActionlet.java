@@ -1,11 +1,17 @@
 
 package com.dotmarketing.portlets.workflows.actionlet;
 
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.workflows.model.*;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistoryState;
+import com.dotmarketing.portlets.workflows.model.WorkflowHistoryType;
+import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -69,8 +75,8 @@ public class ResetApproversActionlet extends WorkFlowActionlet {
 
 				if (UtilMethods.isSet(workflowActions)) {
 
-					final Optional<WorkflowAction> workflowAction = CollectionsUtils.find (workflowActions,
-							action -> action.getName().equalsIgnoreCase(value));
+					final Optional<WorkflowAction> workflowAction =
+							workflowActions.stream().filter(action -> action.getName().equalsIgnoreCase(value)).findFirst();
 					if (workflowAction.isPresent()) {
 
 						return Optional.ofNullable(workflowAction.get().getId());

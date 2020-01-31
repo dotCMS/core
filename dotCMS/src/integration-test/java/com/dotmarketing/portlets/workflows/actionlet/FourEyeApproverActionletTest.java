@@ -83,7 +83,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         contentletAPI = APILocator.getContentletAPI();
         languageAPI = APILocator.getLanguageAPI();
 
-        site = new SiteDataGen().name("site"+System.currentTimeMillis()).nextPersisted();
+        site = new SiteDataGen().nextPersisted();
         // Get the test role and two users from such a role
         final Role publisherRole = TestUserUtils.getOrCreatePublisherRole(site);
         publisher1 = TestUserUtils.getChrisPublisherUser(site);
