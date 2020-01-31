@@ -71,7 +71,7 @@ public class WorkflowHistory  implements Serializable, WorkflowTimelineItem
 
     public String getChangeDescription() {
 
-        if (UtilMethods.isSet(this.changeDescription) && this.changeDescription.trim().startsWith("{")) {
+        if (UtilMethods.isSet(this.changeDescription)  && StringUtils.isJson(this.changeDescription.trim())) {
             // if it is json
             return(String) this.getChangeMap().get("description");
         }
