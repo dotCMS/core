@@ -51,7 +51,7 @@ public interface FieldFactory {
     List<Field> selectByContentTypeInDb(String id) throws DotDataException;
 
 
-    String suggestVelocityVar(String tryVar, List<Field> takenFields) throws DotDataException;
+    String suggestVelocityVar(String tryVar, List<String> takenFields) throws DotDataException;
 
 
     FieldVariable save(FieldVariable fieldVar) throws DotDataException;

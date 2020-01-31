@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
+import com.dotcms.graphql.InterfaceType;
 import com.dotcms.rendering.velocity.services.FieldLoader;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -37,6 +38,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.time.DateUtils;
 
 public class FieldFactoryImpl implements FieldFactory {
@@ -232,8 +234,13 @@ public class FieldFactoryImpl implements FieldFactory {
       }
 
       // normalize our velocityvar
+      final List<String> takenFieldVars = fieldsAlreadyAdded.stream().map(Field::variable).collect(
+              Collectors.toList());
+      // let's add GraphQL reserved field names to the taken fields vars list
+      takenFieldVars.addAll(InterfaceType.RESERVED_GRAPHQL_FIELD_NAMES);
+
       String tryVar = (throwAwayField.variable() == null)
-          ? suggestVelocityVar(throwAwayField.name(), fieldsAlreadyAdded) : throwAwayField.variable();
+          ? suggestVelocityVar(throwAwayField.name(), takenFieldVars) : throwAwayField.variable();
       builder.variable(tryVar);
     }
     builder = FieldBuilder.builder(normalizeData(builder.build()));
@@ -578,7 +585,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
 
   @Override
-public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws DotDataException {
+public String suggestVelocityVar( String tryVar, List<String> takenFieldsVars) throws DotDataException {
 
 
     String var = StringUtils.camelCaseLower(tryVar);
@@ -587,8 +594,8 @@ public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws
     if (!UtilMethods.isSet(var)) {
         tryVar= "field";
     }
-    for (Field f : takenFields) {
-        if (var.equalsIgnoreCase(f.variable())) {
+    for (String fieldVar : takenFieldsVars) {
+        if (var.equalsIgnoreCase(fieldVar)) {
             var= null;
             break;
         }
@@ -600,8 +607,8 @@ public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws
 
     for (int i = 1; i < 100000; i++) {
         var = StringUtils.camelCaseLower(tryVar) + i;
-        for (Field f : takenFields) {
-            if (var.equalsIgnoreCase(f.variable())) {
+        for (String fieldVar : takenFieldsVars) {
+            if (var.equalsIgnoreCase(fieldVar)) {
                 var = null;
                 break;
             }

@@ -23,6 +23,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.graphql.InterfaceType;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -1035,9 +1036,37 @@ public class FieldAPITest extends IntegrationTestBase {
             fieldAPI.save(variable, user);
 
             boolean anyMatch = field.fieldVariables().stream()
-                  .anyMatch((var)->var.key().equals(fieldVarKey));
+                    .anyMatch((var)->var.key().equals(fieldVarKey));
 
             Assert.assertTrue("Incorrect var key", anyMatch);
+        } finally {
+            contentTypeAPI.delete(type);
+        }
+    }
+
+    @DataProvider
+    public static Object[] dataProviderGraphQLReservedNames() {
+        return InterfaceType.RESERVED_GRAPHQL_FIELD_NAMES.toArray();
+    }
+
+    @Test
+    @UseDataProvider("dataProviderGraphQLReservedNames")
+    public void test_SaveFieldWithReservedGraphqlName_ShouldSuffixConsecutiveToVariable(
+            final String fieldName)
+            throws DotSecurityException, DotDataException {
+
+        final ContentType type = new ContentTypeDataGen().nextPersisted();
+        try {
+            Field field = FieldBuilder.builder(TextField.class)
+                    .name(fieldName)
+                    .contentTypeId(type.id())
+                    .indexed(false)
+                    .listed(false)
+                    .fixed(true)
+                    .build();
+            field = fieldAPI.save(field, user);
+
+            Assert.assertNotEquals(fieldName, field.variable());
         } finally {
             contentTypeAPI.delete(type);
         }
