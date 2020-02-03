@@ -16,7 +16,7 @@ public abstract class Conditionlet<T extends RuleComponentInstance> extends Rule
      * @deprecated Do not use this method directly, it exists only for the <em>Jackson</em>-binding
      * infrastructure
      */
-    protected Conditionlet(String id, String i18nKey, ParameterDefinition... parameterDefinitions) {
+    protected Conditionlet(String id, String i18nKey, final ParameterDefinition... parameterDefinitions) {
         super(id, i18nKey, parameterDefinitions);
     }
 

@@ -1236,6 +1236,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	@WrapInTransaction
+	public int deleteWorkflowHistoryOldVersions(final Date olderThan) throws DotDataException {
+
+		return this.workFlowFactory.deleteWorkflowHistoryOldVersions(olderThan);
+	}
+
+	@Override
+	@WrapInTransaction
 	public void saveWorkflowHistory(final WorkflowHistory history) throws DotDataException {
 
 		this.workFlowFactory.saveWorkflowHistory(history);

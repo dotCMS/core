@@ -159,12 +159,12 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
         public Map<String, ParameterDefinition> parameterDefinitions;
 
         @JsonProperty("id")
-        public void setId(@Nullable String id) {
+        public void setId(@Nullable final String id) {
             this.id = id;
         }
 
         @JsonProperty("i18nKey")
-        public void setI18nKey(@Nullable String i18nKey) {
+        public void setI18nKey(@Nullable final String i18nKey) {
             this.i18nKey = i18nKey;
         }
 

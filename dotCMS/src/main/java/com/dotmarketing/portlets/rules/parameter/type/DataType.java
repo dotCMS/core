@@ -110,12 +110,12 @@ public abstract class DataType<T> {
         Map<String, TypeConstraint> restrictions;
 
         @JsonProperty("id")
-        public void setKey(@Nullable String id) {
+        public void setKey(@Nullable final String id) {
             this.id = id;
         }
 
         @JsonProperty("errorMessageKey")
-        public void setDataType(@Nullable String errorMessageKey) {
+        public void setDataType(@Nullable final String errorMessageKey) {
             this.errorMessageKey = errorMessageKey;
         }
 
@@ -133,7 +133,7 @@ public abstract class DataType<T> {
      */
     @Deprecated
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-    static DataType fromJson(DataType.Json json) {
+    static DataType fromJson(final DataType.Json json) {
         return new DataType(json.id, json.errorMessageKey, json.restrictions) {
             @Override
             public Object convert(String from) {
