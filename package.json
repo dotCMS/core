@@ -1,6 +1,6 @@
 {
     "name": "dotcms-ui",
-    "version": "5.2.5",
+    "version": "5.2.6",
     "license": "MIT",
     "scripts": {
         "ng": "ng",
@@ -8,7 +8,7 @@
         "e2e": "ng e2e",
         "test": "ng test",
         "createpackagejson": "node -e \"var data = require('./dist/package.json');var fs = require('fs');data.version = data.version + \"-\" + new Date().getTime();var {scripts, dependencies, devDependencies, ...res} = data;fs.writeFileSync('./dist/package.json', JSON.stringify(res, null, 4));\"",
-        "publish:dev": "rm -rf dist;npm run build:prod;cp package.json ./dist/package.json;npm run createpackagejson;cd dist;npm publish",
+        "publish:dev": "rm -rf dist;npm run build:libs;npm run build:prod;cp package.json ./dist/package.json;npm run createpackagejson;cd dist;npm publish",
         "publish:doc:docms": "typedoc projects/dotcms/src/lib/ --options projects/dotcms/typedoc.json; gh-pages --dist ./dist-docs/dotcms --dest ./docs/dotcms",
         "publish:doc:docms-models": "typedoc projects/dotcms-models/src/ --options projects/dotcms-models/typedoc.json; gh-pages --dist ./dist-docs/dotcms-models --dest ./docs/dotcms-models",
         "publish:storybook": "build-storybook --config-dir .storybook --output-dir .out/design;storybook-to-ghpages --existing-output-dir=.out; rm -rf .out",
