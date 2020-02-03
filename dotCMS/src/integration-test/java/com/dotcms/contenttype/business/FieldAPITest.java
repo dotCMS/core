@@ -24,6 +24,7 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.graphql.InterfaceType;
+import com.dotcms.graphql.util.GraphQLUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -1046,7 +1047,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
     @DataProvider
     public static Object[] dataProviderGraphQLReservedNames() {
-        return InterfaceType.RESERVED_GRAPHQL_FIELD_NAMES.toArray();
+        return GraphQLUtil.getFieldReservedWords().toArray();
     }
 
     @Test

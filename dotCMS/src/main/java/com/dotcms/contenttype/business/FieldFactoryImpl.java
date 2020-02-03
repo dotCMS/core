@@ -20,7 +20,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
-import com.dotcms.graphql.InterfaceType;
+import com.dotcms.graphql.util.GraphQLUtil;
 import com.dotcms.rendering.velocity.services.FieldLoader;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -236,8 +236,6 @@ public class FieldFactoryImpl implements FieldFactory {
       // normalize our velocityvar
       final List<String> takenFieldVars = fieldsAlreadyAdded.stream().map(Field::variable).collect(
               Collectors.toList());
-      // let's add GraphQL reserved field names to the taken fields vars list
-      takenFieldVars.addAll(InterfaceType.RESERVED_GRAPHQL_FIELD_NAMES);
 
       String tryVar = (throwAwayField.variable() == null)
           ? suggestVelocityVar(throwAwayField.name(), takenFieldVars) : throwAwayField.variable();
@@ -585,8 +583,10 @@ public class FieldFactoryImpl implements FieldFactory {
 
 
   @Override
-public String suggestVelocityVar( String tryVar, List<String> takenFieldsVars) throws DotDataException {
+public String suggestVelocityVar( String tryVar, List<String> takenFieldsVariables) throws DotDataException {
 
+    // adds the GraphQL Reserved field names to the "taken fields variables" list
+    takenFieldsVariables.addAll(GraphQLUtil.getFieldReservedWords());
 
     String var = StringUtils.camelCaseLower(tryVar);
     // if we don't get a var back, we are looking at UTF-8 or worse
@@ -594,7 +594,7 @@ public String suggestVelocityVar( String tryVar, List<String> takenFieldsVars) t
     if (!UtilMethods.isSet(var)) {
         tryVar= "field";
     }
-    for (String fieldVar : takenFieldsVars) {
+    for (String fieldVar : takenFieldsVariables) {
         if (var.equalsIgnoreCase(fieldVar)) {
             var= null;
             break;
@@ -607,7 +607,7 @@ public String suggestVelocityVar( String tryVar, List<String> takenFieldsVars) t
 
     for (int i = 1; i < 100000; i++) {
         var = StringUtils.camelCaseLower(tryVar) + i;
-        for (String fieldVar : takenFieldsVars) {
+        for (String fieldVar : takenFieldsVariables) {
             if (var.equalsIgnoreCase(fieldVar)) {
                 var = null;
                 break;
