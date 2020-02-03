@@ -459,133 +459,142 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		errorDisplayElement.show();
     },
 
-showEditDefaultActions : function(schemeId) {
-var myCp = dijit.byId("wfEditDefaultActions");
-if (myCp) {
-myCp.destroyRecursive(false);
-}
-var href = this.editDefaultActionsJsp;
-if (schemeId && schemeId.length > 0) {
-href = href + "?schemeId=" + schemeId;
-}
+	createEditDefaultActions : function(schemeId) {
+		var myCp = dijit.byId("wfEditDefaultActions");
+		if (myCp) {
+			myCp.destroyRecursive(false);
+		}
+		var href = this.editDefaultActionsJsp;
+		if (schemeId && schemeId.length > 0) {
+			href = href + "?schemeId=" + schemeId;
+		}
+		myCp = new dijit.layout.ContentPane({
+			id : "wfEditDefaultActions",
+			parseOnLoad : true,
+		})
+		var dia = dijit.byId(this.editDefaultActions);
+		if(dia){
+			dia.destroyRecursive(false);
+		}
+		dia = new dijit.Dialog({
+			id : this.editDefaultActions,
+			title : "<%=LanguageUtil.get(pageContext, "Default-Actions")%>",
+			style : "width:600px;height:560px",
+			draggable : true
+		});
+		myCp.attr("href", href);
+		myCp.placeAt(this.editDefaultActions);
+		dia.show();
+		dia.hide();
+	},
 
-myCp = new dijit.layout.ContentPane({
-id : "wfEditDefaultActions",
-parseOnLoad : true,
-})
+	showEditDefaultActions : function(schemeId) {
+		var dialog = dijit.byId(this.editDefaultActions);
+		dialog.show();
+		schemeAdmin.getCurrentDefaultActionsByScheme(schemeId);
+		schemeAdmin.getWorkflowActionsByScheme(schemeId);
+	},
 
-var dia = dijit.byId(this.editDefaultActions);
-if(dia){
-dia.destroyRecursive(false);
-}
+	fillAvailableWorkflowActions : function (actions){
+		var items = new Array();
+		items.push({
+			id: "",
+			name: ""
+		});
+		for(var i=0; i < actions.length; i++){
+			items.push({
+				id: actions[i].id,
+				name: actions[i].name
+			});
+		}
+		var actionData = {
+			identifier: 'id',
+			label: 'name',
+			items: items
+		};
+		var actionStore = new dojo.data.ItemFileReadStore({data:actionData});
+		dijit.byId("defaultActionNEW").set('store', actionStore);
+		dijit.byId("defaultActionEDIT").set('store', actionStore);
+		dijit.byId("defaultActionPUBLISH").set('store', actionStore);
+		dijit.byId("defaultActionUNPUBLISH").set('store', actionStore);
+		dijit.byId("defaultActionARCHIVE").set('store', actionStore);
+		dijit.byId("defaultActionUNARCHIVE").set('store', actionStore);
+		dijit.byId("defaultActionDELETE").set('store', actionStore);
+		dijit.byId("defaultActionDESTROY").set('store', actionStore);
+	},
 
-dia = new dijit.Dialog({
-id : this.editDefaultActions,
-title : "<%=LanguageUtil.get(pageContext, "Default-Actions")%>",
-style : "width:600px;height:560px",
-draggable : true
+	//Obtains the possible default actions for the scheme
+	getWorkflowActionsByScheme : function(schemeId){
+		var xhrArgs = {
+			url: "/api/v1/workflow/schemes/" + schemeId + "/actions",
+			handleAs: "json",
+			load: function(data) {
+				var results = data.entity;
+				schemeAdmin.fillAvailableWorkflowActions(results);
+			},
+			error : function(error) {
+				showDotCMSSystemMessage(error, true);
+			}
+		};
+		dojo.xhrGet(xhrArgs);
+	},
+
+	//Obtains the current default actions for the scheme and fills the values on the dropdown
+	getCurrentDefaultActionsByScheme : function(schemeId){
+		var xhrArgs = {
+			url: "/api/v1/workflow/schemes/" + schemeId + "/system/actions",
+			handleAs: "json",
+			load: function(data) {
+				var results = data.entity;
+				for(var i=0; i < results.length; i++){
+					dojo.byId("defaultAction" + results[i].systemAction).value = results[i].workflowAction.name;
+					dijit.byId("defaultAction" + results[i].systemAction).set('data-system-action-id',results[i].identifier);
+					dijit.byId("defaultAction" + results[i].systemAction).set("value",results[i].workflowAction.id,false);
+				}
+			},
+			error : function(error) {
+				showDotCMSSystemMessage(error, true);
+			}
+		};
+		dojo.xhrGet(xhrArgs);
+	},
+
+	changeWorkflowDefaultAction : function(systemAction,schemeId){
+		var newAction = dijit.byId("defaultAction" + systemAction).getValue();
+		var systemActionId = dijit.byId("defaultAction" + systemAction).attr('data-system-action-id')
+		if(newAction === ""){
+			dojo.xhrDelete({
+				url: "/api/v1/workflow/system/actions/"+systemActionId,
+				load: function() {
+					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Default-Action-Deleted")%>");
+				}
+			});
+		}else{
+			var data = {
+				"actionId": newAction,
+				"systemAction": systemAction,
+				"schemeId": schemeId
+			};
+			dojo.xhrPut({
+				url: "/api/v1/workflow/system/actions",
+				handleAs: "json",
+				postData: dojo.toJson(data),
+				headers : {
+					'Accept' : 'application/json',
+					'Content-Type' : 'application/json;charset=utf-8',
+				},
+				load: function(data) {
+					dijit.byId("defaultAction" + systemAction).set('data-system-action-id',data.entity.identifier);
+					showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Default-Action-Updated")%>");
+				},
+				error: function(error){
+					showDotCMSSystemMessage("ERROR:" + error,true);
+				}
+			});
+		}
+	}
+
 });
-
-myCp.attr("href", href);
-
-myCp.placeAt(this.editDefaultActions);
-
-dia.show();
-schemeAdmin.getWorkflowActionsByScheme(schemeId);
-schemeAdmin.getCurrentDefaultActionsByScheme(schemeId);
-},
-hideEditDefaultActions : function() {
-var dialog = dijit.byId(this.editDefaultActions);
-dialog.hide();
-},
-
-fillAvailableWorkflowActions : function (actions){
-var items = new Array();
-for(var i=0; i < actions.length; i++){
-items.push({
-id: actions[i].id,
-name: actions[i].name
-});
-}
-actionData = {
-identifier: 'id',
-label: 'name',
-items:
-items
-};
-actionStore = new dojo.data.ItemFileReadStore({data:actionData});
-dijit.byId("defaultActionNew").attr('store', actionStore);
-dijit.byId("defaultActionEdit").attr('store', actionStore);
-dijit.byId("defaultActionPublish").attr('store', actionStore);
-dijit.byId("defaultActionUnpublish").attr('store', actionStore);
-dijit.byId("defaultActionArchive").attr('store', actionStore);
-dijit.byId("defaultActionUnarchive").attr('store', actionStore);
-dijit.byId("defaultActionDelete").attr('store', actionStore);
-dijit.byId("defaultActionDestroy").attr('store', actionStore);
-},
-
-//Obtains the possible default actions for the scheme
-getWorkflowActionsByScheme : function(schemeId){
-var xhrArgs = {
-url: "/api/v1/workflow/schemes/" + schemeId + "/actions",
-handleAs: "json",
-load: function(data) {
-var results = data.entity;
-schemeAdmin.fillAvailableWorkflowActions(results);
-},
-error : function(error) {
-showDotCMSSystemMessage(error, true);
-}
-};
-dojo.xhrGet(xhrArgs);
-},
-
-//Obtains the current default actions for the scheme and sets the value on the dropdown
-getCurrentDefaultActionsByScheme : function(schemeId){
-var xhrArgs = {
-url: "/api/v1/workflow/schemes/" + schemeId + "/system/actions",
-handleAs: "json",
-load: function(data) {
-var results = data.entity;
-for(var i=0; i < results.length; i++){
-switch(results[i].systemAction){
-case "NEW":
-dojo.byId("defaultActionNew").value = results[i].workflowAction.name;
-break;
-case "EDIT":
-dojo.byId("defaultActionEdit").value = results[i].workflowAction.name;
-break;
-case "PUBLISH":
-dojo.byId("defaultActionPublish").value = results[i].workflowAction.name;
-break;
-case "UNPUBLISH":
-dojo.byId("defaultActionUnpublish").value = results[i].workflowAction.name;
-break;
-case "ARCHIVE":
-dojo.byId("defaultActionArchive").value = results[i].workflowAction.name;
-break;
-case "UNARCHIVE":
-dojo.byId("defaultActionUnarchive").value = results[i].workflowAction.name;
-break;
-case "DELETE":
-dojo.byId("defaultActionDelete").value = results[i].workflowAction.name;
-break;
-case "DESTROY":
-dojo.byId("defaultActionDestroy").value = results[i].workflowAction.name;
-break;
-}
-}
-},
-error : function(error) {
-showDotCMSSystemMessage(error, true);
-}
-};
-dojo.xhrGet(xhrArgs);
-}
-
-});
-
-
 //
 //
 //
@@ -602,6 +611,7 @@ dojo.declare("dotcms.dijit.workflows.StepAdmin", null, {
 	schemeId: "",
 	crumbTitle:"<%=LanguageUtil.get(pageContext, "Steps")%>",
 	showViewSteps : function(schemeId) {
+		schemeAdmin.createEditDefaultActions(schemeId);
 		mainAdmin.show(this.baseJsp + "?schemeId=" + schemeId);
 
 	},
