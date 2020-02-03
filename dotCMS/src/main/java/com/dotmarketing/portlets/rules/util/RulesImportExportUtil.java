@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.rules.util;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.exception.DotDataException;
@@ -19,11 +18,11 @@ import com.liferay.portal.model.User;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -69,21 +68,14 @@ public class RulesImportExportUtil {
 		}
 	}
 
-	public void importRules(File file) throws IOException {
-
-		this.importRules(new FileReader(file));
-	}
-
-	public void importRules(final Reader reader) throws IOException {
+	public void importRules(final File file) throws IOException {
 
 		final ObjectMapper mapper = new ObjectMapper();
 		final StringWriter stringWriter = new StringWriter();
-		BufferedReader bufferedReader = null;
 		RulesImportExportObject importer = null;
 
-		try {
+		try (BufferedReader bufferedReader = Files.newBufferedReader(Paths.get(file.toURI()))) {
 
-			bufferedReader = new BufferedReader(reader);
 			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 			String str;
@@ -97,8 +89,6 @@ public class RulesImportExportUtil {
 			this.importRules(importer, APILocator.systemUser());
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);
-		} finally {
-			CloseUtils.closeQuietly(bufferedReader);
 		}
 	}
 

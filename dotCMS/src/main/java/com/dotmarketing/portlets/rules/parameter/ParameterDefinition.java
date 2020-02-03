@@ -89,17 +89,17 @@ public class ParameterDefinition<T extends DataType> {
         int priority;
 
         @JsonProperty("key")
-        public void setKey(@Nullable String key) {
+        public void setKey(@Nullable final String key) {
             this.key = key;
         }
 
         @JsonProperty("i18nBaseKey")
-        public void setI18nBaseKey(@Nullable String i18nBaseKey) {
+        public void setI18nBaseKey(@Nullable final String i18nBaseKey) {
             this.i18nBaseKey = i18nBaseKey;
         }
 
         @JsonProperty("defaultValue")
-        public void setDefaultValue(@Nullable String defaultValue) {
+        public void setDefaultValue(@Nullable final String defaultValue) {
             this.defaultValue = defaultValue;
         }
 
@@ -109,7 +109,7 @@ public class ParameterDefinition<T extends DataType> {
         }
 
         @JsonProperty("priority")
-        public void setPriority(@Nullable int priority) {
+        public void setPriority(@Nullable final int priority) {
             this.priority = priority;
         }
 
@@ -122,7 +122,7 @@ public class ParameterDefinition<T extends DataType> {
      */
     @Deprecated
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-    static ParameterDefinition fromJson(ParameterDefinition.Json json) {
+    static ParameterDefinition fromJson(final ParameterDefinition.Json json) {
         return new ParameterDefinition(json.priority, json.key, json.i18nBaseKey, json.inputType,
                 json.defaultValue);
     }

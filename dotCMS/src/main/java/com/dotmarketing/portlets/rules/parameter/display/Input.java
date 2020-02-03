@@ -75,7 +75,7 @@ public class Input<T extends DataType> {
      */
     @Deprecated
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
-    static Input fromJson(Input.Json json) {
+    static Input fromJson(final Input.Json json) {
         return new Input(json.id, json.dataType);
     }
 
