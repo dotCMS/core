@@ -38,7 +38,11 @@ public class CMSMaintenanceFactory {
 		Calendar runDate = Calendar.getInstance();
 		runDate.setTime(assetsOlderThan);
 		runDate.add(Calendar.YEAR, -2);
-		
+		runDate.set(Calendar.HOUR_OF_DAY, 0);
+		runDate.set(Calendar.MINUTE, 0);
+		runDate.set(Calendar.SECOND, 0);
+		runDate.set(Calendar.MILLISECOND, 0);
+
         try{
     		DotConnect dc = new DotConnect();
             String minIdateSQL = "select idate from inode order by idate";
@@ -82,6 +86,13 @@ public class CMSMaintenanceFactory {
 				auxCount = APILocator.getMenuLinkAPI().deleteOldVersions(runDate.getTime());
 				counter += auxCount;
 				Logger.info(CMSMaintenanceFactory.class, "Removed "+ auxCount+ " Links");
+
+				Logger.info(CMSMaintenanceFactory.class, "Removing Workflow history");
+				auxCount = APILocator.getWorkflowAPI()
+						.deleteWorkflowHistoryOldVersions(runDate.getTime());
+				counter += auxCount;
+				Logger.info(CMSMaintenanceFactory.class,
+						"Removed " + auxCount + " Workflow History records");
 	
 				Logger.info(CMSMaintenanceFactory.class, "Finished removing old asset versions, removed "+counter+" assets");
 				

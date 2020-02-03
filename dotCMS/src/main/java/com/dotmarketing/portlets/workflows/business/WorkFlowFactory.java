@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.*;
 import com.liferay.portal.model.User;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +32,11 @@ public interface WorkFlowFactory {
 	public void deleteComment(WorkflowComment comment) throws DotDataException;
 
 	public void deleteWorkflowHistory(WorkflowHistory history) throws DotDataException;
+
+	/**
+	 * Deletes the workflow history records older than the given date
+	 */
+	public int deleteWorkflowHistoryOldVersions(final Date olderThan) throws DotDataException;
 
 	/**
 	 * Deletes the workflow task
