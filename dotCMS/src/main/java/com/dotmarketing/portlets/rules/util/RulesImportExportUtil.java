@@ -72,7 +72,6 @@ public class RulesImportExportUtil {
 
 		final ObjectMapper mapper = new ObjectMapper();
 		final StringWriter stringWriter = new StringWriter();
-		RulesImportExportObject importer = null;
 
 		try (BufferedReader bufferedReader = Files.newBufferedReader(Paths.get(file.toURI()))) {
 
@@ -83,7 +82,7 @@ public class RulesImportExportUtil {
 				stringWriter.append(str);
 			}
 
-			importer = mapper.readValue
+			RulesImportExportObject importer = mapper.readValue
 					((String) stringWriter.toString(), RulesImportExportObject.class);
 
 			this.importRules(importer, APILocator.systemUser());
