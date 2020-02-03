@@ -1057,16 +1057,39 @@ public class FieldAPITest extends IntegrationTestBase {
 
         final ContentType type = new ContentTypeDataGen().nextPersisted();
         try {
-            Field field = FieldBuilder.builder(TextField.class)
+            Field field1 = FieldBuilder.builder(TextField.class)
                     .name(fieldName)
                     .contentTypeId(type.id())
                     .indexed(false)
                     .listed(false)
                     .fixed(true)
                     .build();
-            field = fieldAPI.save(field, user);
+            field1 = fieldAPI.save(field1, user);
 
-            Assert.assertNotEquals(fieldName, field.variable());
+            Assert.assertNotNull(field1);
+            Assert.assertTrue(UtilMethods.isSet(field1.variable()));
+            Assert.assertNotEquals(fieldName, field1.variable());
+
+            // let's create a new field to make sure it's getting a new variable
+
+            Field field2 = FieldBuilder.builder(TextField.class)
+                    .name(fieldName)
+                    .contentTypeId(type.id())
+                    .indexed(false)
+                    .listed(false)
+                    .fixed(true)
+                    .build();
+            field2 = fieldAPI.save(field2, user);
+
+            Assert.assertNotNull(field2);
+            Assert.assertTrue(UtilMethods.isSet(field2.variable()));
+            Assert.assertNotEquals(fieldName, field2.variable());
+
+            // let's compare the two field vars are different
+
+            Assert.assertNotEquals(field1.variable(), field2.variable());
+
+
         } finally {
             contentTypeAPI.delete(type);
         }
