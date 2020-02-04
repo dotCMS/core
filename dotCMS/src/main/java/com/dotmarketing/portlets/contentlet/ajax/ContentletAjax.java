@@ -49,6 +49,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.hostadmin.business.CopyHostContentUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -1160,6 +1161,15 @@ public class ContentletAjax {
 				Long LanguageId = con.getLanguageId();
 				searchResult.put("languageId", LanguageId.toString());
 				searchResult.put("permissions", permissionsSt.toString());
+
+				//Add mimeType
+				if(type.baseType().getType() == BaseContentType.FILEASSET.getType()){
+					searchResult.put("mimeType", APILocator.getFileAssetAPI().fromContentlet(con).getUnderlyingFileName());
+				} else if(type.baseType().getType() == BaseContentType.HTMLPAGE.getType()){
+					searchResult.put("mimeType", "application/dotpage");
+				} else {
+					searchResult.put("mimeType", "");
+				}
 			} catch (DotSecurityException e) {
 
 				Logger.debug(this, "Does not have permissions to read the content: " + searchResult, e);
