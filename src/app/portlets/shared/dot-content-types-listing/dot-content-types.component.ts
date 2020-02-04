@@ -60,6 +60,7 @@ export class DotContentTypesPortletComponent implements OnInit {
         'contenttypes.content.vanity_url',
         'contenttypes.content.variable',
         'contenttypes.content.widget',
+        'contenttypes.content.dotasset',
         'contenttypes.fieldname.entries',
         'contenttypes.fieldname.last_edit_date',
         'contenttypes.fieldname.structure.name',

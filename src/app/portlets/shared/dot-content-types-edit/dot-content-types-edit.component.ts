@@ -103,6 +103,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 'contenttypes.content.vanity_url',
                 'contenttypes.content.variable',
                 'contenttypes.content.widget',
+                'contenttypes.content.dotasset',
                 'contenttypes.form.identifier',
                 'contenttypes.dropzone.rows.add',
                 'contenttypes.dropzone.rows.tab_divider'

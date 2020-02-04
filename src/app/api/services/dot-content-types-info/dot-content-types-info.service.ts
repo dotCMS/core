@@ -24,6 +24,11 @@ export class DotContentTypesInfoService {
             label: 'fileasset'
         },
         {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableDotAssetContentType',
+            icon: 'file_copy',
+            label: 'dotasset'
+        },
+        {
             clazz: 'com.dotcms.contenttype.model.type.ImmutablePageContentType',
             icon: 'description',
             label: 'htmlpage'
@@ -67,6 +72,11 @@ export class DotContentTypesInfoService {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableFileAssetContentType',
             icon: 'fa fa-file-o',
             label: 'fileasset_old'
+        },
+        {
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableDotAssetContentType',
+            icon: 'fa fa-files-o',
+            label: 'dotasset_old'
         },
         {
             clazz: 'com.dotcms.contenttype.model.type.ImmutablePageContentType',
@@ -133,7 +143,6 @@ export class DotContentTypesInfoService {
     // tslint:disable-next-line:cyclomatic-complexity
     private getItem(type: string, prop: string): string {
         let result: any;
-
         // TODO: Remove this when set Material Design icons on NgPrime native components - BEGIN
         let oldValue = false;
         if (type.indexOf('_old') > 0) {

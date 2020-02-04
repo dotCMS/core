@@ -27,4 +27,10 @@ describe('DotContentTypesInfoService', () => {
             'com.dotcms.contenttype.model.type.ImmutablePersonaContentType'
         );
     });
+
+    it('should return a ImmutableDotAssetContentType for DotAsset', () => {
+        expect(this.iconsService.getClazz('DotAsset')).toBe(
+            'com.dotcms.contenttype.model.type.ImmutableDotAssetContentType'
+        );
+    });
 });
