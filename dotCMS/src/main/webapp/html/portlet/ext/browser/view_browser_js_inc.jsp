@@ -1513,12 +1513,12 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     function copyFolderCallback (response) {
-        if (!response) {
-            reloadContent ();
-            showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-copy-another-folder-with-the-same-name-already-exists-in-the-destination")) %>');
-        } else {
+        if(response == '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-copied")) %>'){
             BrowserAjax.getTree(null, initializeTree);
-            showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-copied")) %>');
+            showDotCMSSystemMessage(response);
+        } else {
+            reloadContent ();
+            showDotCMSErrorMessage(response);
         }
     }
 
