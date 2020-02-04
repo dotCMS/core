@@ -7,7 +7,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -27,6 +27,7 @@ import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotcms.util.IntegrationTestInitService;
@@ -68,21 +69,24 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -277,8 +281,8 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
-        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
+        String liveIndex = IndexType.LIVE.getPrefix() + "_" + timeStamp;
 
         //Get all the indices
         List<String> indices = indexAPI.listDotCMSIndices();
@@ -364,16 +368,15 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
      * @see ContentletIndexAPIImpl
      */
     @Test
-    @Ignore
     public void activateDeactivateIndex () throws Exception {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
-        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
+        String liveIndex = IndexType.LIVE.getPrefix() + "_" + timeStamp;
 
-        String oldActiveLive = indexAPI.getActiveIndexName(ContentletIndexAPI.ES_LIVE_INDEX_NAME);
-        String oldActiveWorking = indexAPI.getActiveIndexName(ContentletIndexAPI.ES_WORKING_INDEX_NAME);
+        String oldActiveLive = indexAPI.getActiveIndexName(IndexType.LIVE.getPrefix());
+        String oldActiveWorking = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
 
         //Creates the working index
         Boolean result = indexAPI.createContentIndex( workingIndex );
@@ -389,7 +392,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //***************************************************
         //Get the current indices
-        String liveActiveIndex = indexAPI.getActiveIndexName( ContentletIndexAPI.ES_LIVE_INDEX_NAME );
+        String liveActiveIndex = indexAPI.getActiveIndexName( IndexType.LIVE.getPrefix() );
 
         //Validate
         assertNotNull( liveActiveIndex );
@@ -419,7 +422,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
 
         //Verify with a proper name
         boolean isIndexName = indexAPI.isDotCMSIndexName( workingIndex );
@@ -443,8 +446,8 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //Build the index names
         String timeStamp = String.valueOf( new Date().getTime() );
-        String workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timeStamp;
-        String liveIndex = ContentletIndexAPIImpl.ES_LIVE_INDEX_NAME + "_" + timeStamp;
+        String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
+        String liveIndex = IndexType.LIVE.getPrefix() + "_" + timeStamp;
 
         //Creates the working index
         Boolean result = indexAPI.createContentIndex( workingIndex );
@@ -485,7 +488,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         try {
 
             //And add it to the index
-            testContentlet.setIndexPolicy(IndexPolicy.FORCE);
+            testContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             indexAPI.addContentToIndex( testContentlet );
 
             //We are just making time in order to let it apply the index
@@ -529,7 +532,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
      * @see ContentletIndexAPIImpl
      */
     @Test
-    @Ignore
     public void removeContentFromIndexByStructureInode () throws Exception {
 
         //Creating a test structure
@@ -591,8 +593,8 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //*****************************************************************
         //Verify if we already have and site search index, if not lets create one...
-        IndiciesAPI.IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
-        String currentSiteSearchIndex = indiciesInfo.site_search;
+        IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+        String currentSiteSearchIndex = indiciesInfo.getSiteSearch();
         String indexName = currentSiteSearchIndex;
         if ( currentSiteSearchIndex == null ) {
             indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ContentletIndexAPIImpl.timestampFormatter.format( new Date() );
@@ -649,14 +651,14 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             //Testing the stemer
             SiteSearchResults siteSearchResults = siteSearchAPI.search( indexName, "argu", 0, 100 );
             //Validations
-            assertTrue( siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
+            assertTrue( siteSearchResults.getError(), siteSearchResults.getError() == null || siteSearchResults.getError().isEmpty() );
             assertTrue( siteSearchResults.getTotalResults() > 0 );
             String highLights = siteSearchResults.getResults().get( 0 ).getHighLights()[0];
             assertTrue( highLights.contains( "<em>argue</em>" ) );
             assertTrue( highLights.contains( "<em>argued</em>" ) );
             assertTrue( highLights.contains( "<em>argues</em>" ) );
             assertTrue( highLights.contains( "<em>arguing</em>" ) );
-            //assertTrue( highLights.contains( "<em>argus</em>" ) );//Not found..., verify this....
+            assertTrue( highLights.contains( "<em>argus</em>" ) );
 
             //Testing the stemer
             siteSearchResults = siteSearchAPI.search( indexName, "cats", 0, 100 );
@@ -721,11 +723,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         } finally {
             //And finally remove the index
             contentTypeAPI.delete(new StructureTransformer(testStructure).from());
-            try {
-                contentletAPI.destroy(testContentlet, user, false);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
             siteSearchAPI.deleteFromIndex( indexName, docId );
         }
     }
@@ -962,6 +959,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //Set up a test contentlet
         Contentlet testContentlet = new Contentlet();
+        testContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
         testContentlet.setStructureInode( testStructure.getInode() );
         testContentlet.setHost( defaultHost.getIdentifier() );
         testContentlet.setLanguageId( defaultLanguage.getId() );
@@ -989,8 +987,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 Logger.error( this.getClass(), e.getMessage(), e );
                 return false;
             }
-            if ( lc.getTotalHits() > 0 ) {
-                found = true;
+            if ( lc.getTotalHits().value > 0 ) {
                 return true;
             }
             try {
@@ -1009,14 +1006,14 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         // we check the query to figure out wich indexes to hit
         String indexToHit;
-        IndiciesAPI.IndiciesInfo info;
+        IndiciesInfo info;
         try {
             info = APILocator.getIndiciesAPI().loadIndicies();
         } catch ( DotDataException ee ) {
             Logger.fatal( this, "Can't get indicies information", ee );
             return null;
         }
-        indexToHit = info.site_search;
+        indexToHit = info.getSiteSearch();
         String indexName = indexToHit;
         if ( indexName == null ) {
             indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ContentletIndexAPIImpl.timestampFormatter.format( new Date() );
@@ -1024,30 +1021,19 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             APILocator.getSiteSearchAPI().activateIndex( indexName );
         }
 
-        Client client = new ESClient().getClient();
-        SearchResponse resp;
-        try {
-            final QueryStringQueryBuilder qb = QueryBuilders.queryStringQuery( qq );
-            SearchRequestBuilder srb = client.prepareSearch();
-            srb.setQuery( qb );
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.queryStringQuery( qq ));
+        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        searchSourceBuilder.fetchSource(new String[] {"inode"}, null);
+        searchSourceBuilder.storedField("id");
+        SearchRequest searchRequest = new SearchRequest();
+        searchRequest.indices(indexName);
+        searchRequest.source(searchSourceBuilder);
 
-            srb.setIndices( indexName );
-            srb.addStoredField( "id" );
-
-            try {
-                resp = srb.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-            } catch ( SearchPhaseExecutionException e ) {
-                if ( e.getMessage().contains( "dotraw] in order to sort on" ) ) {
-                    return new SearchHits( SearchHits.EMPTY, 0, 0 );
-                } else {
-                    throw e;
-                }
-            }
-        } catch ( Exception e ) {
-            Logger.error( ESContentFactoryImpl.class, e.getMessage(), e );
-            throw new RuntimeException( e );
-        }
-        return resp.getHits();
+        final SearchResponse response = Sneaky.sneak(()->
+                RestHighLevelClientProvider
+                        .getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
+        return response.getHits();
     }
 
     public boolean wasContentRemoved ( String query ) {
@@ -1100,13 +1086,10 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         List<Language> languages = languageAPI.getLanguages();
         if (languages.size() < 5) {
-            // create 3 langauges
+            // create 3 languages
             for (int i = 0; i < 3; i++) {
-                Language newLang = new Language();
-                newLang.setCountry("x" + i);
-                newLang.setLanguage("en");
-                newLang.setCountryCode("x" + i);
-                languageAPI.saveLanguage(newLang);
+                new LanguageDataGen().country("x" + i).languageName("dummyLanguage" + i)
+                        .languageCode("en").countryCode("x" + i).nextPersisted();
             }
         }
         languages = new ArrayList<>();
@@ -1123,7 +1106,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             newCon.setLanguageId(lang.getId());
             newCon.setInode(null);
             newCon.setIdentifier(baseCon.getIdentifier());
-            newCon.setIndexPolicy(IndexPolicy.FORCE);
+            newCon.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contents.add(contentletAPI.checkin(newCon, user, false));
         }
 
@@ -1160,7 +1143,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         Map<String, ReindexEntry> entries = APILocator.getReindexQueueAPI().findContentToReindex();
 
-        final BulkRequestBuilder bulk = indexAPI.createBulkRequest();
+        final BulkRequest bulk = indexAPI.createBulkRequest();
         bulk.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
         indexAPI.appendBulkRequest(bulk, entries.values());
         indexAPI.putToIndex(bulk);
@@ -1241,7 +1224,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
             //Build the index name
             String timestamp = String.valueOf(new Date().getTime());
-            workingIndex = ContentletIndexAPIImpl.ES_WORKING_INDEX_NAME + "_" + timestamp;
+            workingIndex = new ESIndexAPI().getNameWithClusterIDPrefix(IndexType.WORKING.getPrefix() + "_" + timestamp);
 
             //Create a working index
             boolean result = indexAPI.createContentIndex(workingIndex);
@@ -1249,13 +1232,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             assertTrue(result);
 
             //verify mapping
-            final String mapping = esMappingAPI.getMapping(workingIndex, "content");
+            final String mapping = esMappingAPI.getMapping(workingIndex);
 
             //parse json mapping and validate
             assertNotNull(mapping);
 
-            final JSONObject contentJSON = (JSONObject) (new JSONObject(mapping)).get("content");
-            final JSONObject propertiesJSON = (JSONObject) contentJSON.get("properties");
+            final JSONObject propertiesJSON = (JSONObject) (new JSONObject(mapping)).get("properties");
             final JSONObject contentTypeJSON = (JSONObject) ((JSONObject) propertiesJSON
                     .get(parentContentType.variable().toLowerCase())).get("properties");
 
@@ -1294,6 +1276,26 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 ContentTypeDataGen.remove(childContentType);
             }
         }
+    }
+
+    /**
+     * Method to test: {@link ContentletIndexAPI#getIndexDocumentCount(String)}
+     * Test Case: Tries to get the document count of an active index
+     * Expected Results: Value should be more than 0
+     */
+    @Test
+    public void testGetIndexDocumentCountSuccess() throws  DotDataException {
+        assertTrue(indexAPI.getIndexDocumentCount(indexAPI.getCurrentIndex().get(0)) > 0);
+    }
+
+    /**
+     * Method to test: {@link ContentletIndexAPI#getIndexDocumentCount(String)}
+     * Test Case: Tries to get the document count of an index that does not exist
+     * Expected Results: Throws ElasticsearchStatusException
+     */
+    @Test(expected= ElasticsearchStatusException.class)
+    public void testGetIndexDocumentCountWithInvalidIndexNameFails(){
+        indexAPI.getIndexDocumentCount("invalidIndexName");
     }
 
     public static Relationship createLegacyRelationship(final ContentType parentContentType,

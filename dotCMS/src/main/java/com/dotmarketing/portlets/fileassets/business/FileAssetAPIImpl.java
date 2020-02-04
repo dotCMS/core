@@ -1,5 +1,16 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -7,6 +18,7 @@ import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.rendering.velocity.viewtools.content.FileAssetMap;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.tika.TikaUtils;
@@ -31,6 +43,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -38,17 +51,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 /**
  * This class is a bridge impl that will support the older
@@ -67,13 +69,18 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	private final IdentifierAPI identifierAPI;
 
 	public FileAssetAPIImpl() {
-
-		contAPI = APILocator.getContentletAPI();
-		perAPI = APILocator.getPermissionAPI();
-		systemEventsAPI = APILocator.getSystemEventsAPI();
-		identifierAPI   = APILocator.getIdentifierAPI();
+	    this(APILocator.getContentletAPI(),APILocator.getPermissionAPI(),APILocator.getSystemEventsAPI(),APILocator.getIdentifierAPI());
 	}
 
+   public FileAssetAPIImpl(ContentletAPI contAPI,PermissionAPI perAPI, SystemEventsAPI systemEventsAPI, IdentifierAPI identifierAPI ) {
+
+        this.contAPI = contAPI;
+        this.perAPI = perAPI;
+        this.systemEventsAPI = systemEventsAPI;
+        this.identifierAPI   = identifierAPI;
+    }
+	
+	
 	/*
 	 * This method will allow you to pass a file where the identifier is not set.  It the file exists on the set host/path
 	 * the identifier and all necessary data will be set in order to checkin as a new version of the existing file. The method will
@@ -255,7 +262,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		CacheLocator.getContentletCache().add(fileAsset);
 		return fileAsset;
 	}
-
+	
+	
 	public List<FileAsset> fromContentlets(final List<Contentlet> contentlets) {
 		final List<FileAsset> fileAssets = new ArrayList<>();
 		for (Contentlet con : contentlets) {
@@ -515,7 +523,12 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			throws DotDataException, DotSecurityException {
 		List<FileAsset> assets = null;
 		try{
-			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode() + (live?" +live:true":""), -1, 0, sortBy , user, respectFrontendRoles),
+			final StringBuffer query = new StringBuffer();
+			query.append("+baseType:" + BaseContentType.FILEASSET.getType())
+					.append(" +conFolder:" + parentFolder.getInode())
+					.append(" +conHost:" + parentFolder.getHostId())
+					.append(live?" +live:true":"");
+			assets = fromContentlets(perAPI.filterCollection(contAPI.search(query.toString(), -1, 0, sortBy , user, respectFrontendRoles),
 					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
@@ -597,7 +610,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	 */
 	public String getRelativeAssetsRootPath() {
         String path = "";
-        path = Try.of(()->Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH)).getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
+        path = Try.of(() -> Config.getStringProperty("ASSET_PATH", DEFAULT_RELATIVE_ASSET_PATH))
+                .getOrElse(DEFAULT_RELATIVE_ASSET_PATH);
         return path;
     }
 
@@ -607,13 +621,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
      * @return the root folder of where assets are stored
      */
     public String getRealAssetsRootPath() {
-        String realPath = Try.of(()->Config.getStringProperty("ASSET_REAL_PATH")).getOrNull();
-        if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator))
-            realPath = realPath + java.io.File.separator;
-        if (!UtilMethods.isSet(realPath))
-            return FileUtil.getRealPath(getRelativeAssetsRootPath());
-        else
-            return realPath;
+        return ConfigUtils.getAbsoluteAssetsRootPath();
     }
 
 	public String getRealAssetPath(String inode) {

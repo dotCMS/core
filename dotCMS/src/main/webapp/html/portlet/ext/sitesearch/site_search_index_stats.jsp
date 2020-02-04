@@ -1,31 +1,20 @@
-<%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
-<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
-<%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
-<%@page import="com.dotmarketing.util.Logger"%>
-<%@page import="com.dotmarketing.exception.DotSecurityException"%>
-<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
-<%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
-<%@page import="org.elasticsearch.action.admin.indices.stats.IndexStats"%>
-<%@page import="com.dotcms.content.elasticsearch.util.ESUtils"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
+<%@page import="com.dotcms.cluster.ClusterUtils"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
-<%@page import="com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory"%>
+<%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@page import="java.util.ArrayList"%>
-<%@page import="com.dotmarketing.business.CacheLocator"%>
-<%@page import="java.util.Map"%>
-<%@ include file="/html/common/init.jsp"%>
+<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotmarketing.util.Config"%>
-<%@page import="java.util.List"%>
+<%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="org.apache.commons.lang.StringUtils"%>
-<%@page import="com.dotcms.cluster.ClusterUtils"%>
+<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
+<%@ page import="com.dotcms.content.elasticsearch.business.IndexStats" %>
+<%@ include file="/html/common/init.jsp"%>
 
 <%
 
-List<Structure> structs = StructureFactory.getStructures();
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 ESIndexAPI esapi = APILocator.getESIndexAPI();
 IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
@@ -54,7 +43,7 @@ try {
 List<String> indices=ssapi.listIndices();
 List<String> closedIndices=ssapi.listClosedIndices();
 
-Map<String, IndexStats> indexInfo = esapi.getIndicesAndStatus();
+Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 Map<String, String> alias = esapi.getIndexAlias(indexInfo.keySet().toArray(new String[indexInfo.size()]));
 SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
 
@@ -121,7 +110,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 		<%ClusterIndexHealth health = map.get(x); %>
 		<%IndexStats status = indexInfo.get(x); %>
 
-		<%boolean active =x.equals(info.site_search);%>
+		<%boolean active =x.equals(info.getSiteSearch());%>
 		<%	Date d = null;
 			String myDate = null;
 			try{
@@ -146,11 +135,11 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			<td><%=UtilMethods.webifyString(myDate) %></td>
 
 			<td align="center">
-				<%=((status !=null && status.getTotal() !=null && status.getTotal().getDocs() != null) ? status.getTotal().getDocs().getCount(): "n/a")%>
+				<%=status !=null ? status.getDocumentCount() : "n/a"%>
 			</td>
 			<td align="center"><%=(health !=null) ? health.getNumberOfShards() : "n/a"%></td>
 			<td align="center"><%=(health !=null) ? health.getNumberOfReplicas(): "n/a"%></td>
-			<td align="center"><%=(status !=null && status.getTotal() !=null && status.getTotal().getStore() !=null) ? status.getTotal().getStore().size(): "n/a"%></td>
+			<td align="center"><%=status !=null ? status.getSize(): "n/a"%></td>
 			<td align="center"><div  style='background:<%=(health !=null) ? health.getStatus().toString(): "n/a"%>; width:20px;height:20px;'></div></td>
 		</tr>
 	<%} %>
@@ -190,7 +179,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 <%--   RIGHT CLICK MENUS --%>
 
 		<%for(String x : indices){%>
-			<%boolean active =x.equals(info.site_search);%>
+			<%boolean active =x.equals(info.getSiteSearch());%>
 
 			<%ClusterIndexHealth health = map.get(x); %>
 			<div dojoType="dijit.Menu" contextMenuForWindow="false" style="display:none;" 

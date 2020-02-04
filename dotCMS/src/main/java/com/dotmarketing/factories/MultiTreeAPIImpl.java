@@ -461,7 +461,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     @WrapInTransaction
     public void saveMultiTree(final MultiTree mTree) throws DotDataException {
-        Logger.info(this, String.format("Saving MutiTree: %s", mTree));
+        Logger.debug(this, () -> String.format("Saving MutiTree: %s", mTree));
         _reorder(mTree);
         updateHTMLPageVersionTS(mTree.getHtmlPage());
         refreshPageInCache(mTree.getHtmlPage());
@@ -587,7 +587,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     @WrapInTransaction
     public void saveMultiTrees(final String pageId, final List<MultiTree> mTrees) throws DotDataException {
-        Logger.info(this, String.format("Saving MutiTrees: pageId -> %s multiTrees-> %s", pageId, mTrees));
+        Logger.debug(this, () -> String
+                .format("Saving MutiTrees: pageId -> %s multiTrees-> %s", pageId, mTrees));
         if (mTrees == null) {
             throw new DotDataException("empty list passed in");
         }
@@ -647,7 +648,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private void _dbInsert(final MultiTree multiTree) throws DotDataException {
 
-        Logger.info(this, String.format("_dbInsert -> Saving MutiTree: %s", multiTree));
+        Logger.debug(this, () -> String.format("_dbInsert -> Saving MutiTree: %s", multiTree));
 
         new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
                 .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).addObject(multiTree.getPersonalization()).loadResult();

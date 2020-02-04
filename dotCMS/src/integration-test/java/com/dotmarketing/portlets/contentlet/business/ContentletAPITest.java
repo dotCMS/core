@@ -7058,4 +7058,27 @@ public class ContentletAPITest extends ContentletBaseTest {
         }
 
     }
+
+    @Test
+    public void test_copyContentlet_contentletArchivedShouldCopyAsArchived()
+            throws DotDataException, DotSecurityException {
+        //Create Contentlet
+        final Contentlet originalContentlet = TestDataUtils.getGenericContentContent(true, 1);
+        contentletAPI.publish(originalContentlet,user,false);
+
+        //Copy contentlet
+        final Contentlet copyContentletPublished = contentletAPI.copyContentlet(originalContentlet,user,false);
+        //Check that the copy Contentlet is published
+        assertTrue(copyContentletPublished.isLive());
+
+        //Archive original Contentlet
+        contentletAPI.unpublish(originalContentlet,user,false);
+        contentletAPI.archive(originalContentlet,user,false);
+        assertTrue(originalContentlet.isArchived());
+
+        //Copy Contentlet
+        final Contentlet copyContentletArchived = contentletAPI.copyContentlet(originalContentlet,user,false);
+        //Check that the copy Contentlet is published
+        assertTrue(copyContentletArchived.isArchived());
+    }
 }

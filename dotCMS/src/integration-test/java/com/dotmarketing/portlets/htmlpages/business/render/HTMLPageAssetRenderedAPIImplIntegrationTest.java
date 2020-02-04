@@ -56,6 +56,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         session = mock(HttpSession.class);
         when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
 
         response = mock(HttpServletResponse.class);
 
@@ -68,6 +69,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final Template template = new TemplateDataGen().nextPersisted();
 
         htmlPageAsset = createPage(systemUser, role, template);
+        when(request.getRequestURI()).thenReturn(htmlPageAsset.getURI());
     }
 
     private HTMLPageAsset createPage(final User systemUser, final Role role, final Template template)
@@ -131,6 +133,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
         assertEquals(host, pageRendered.getSite());
+        assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
 
     /**
@@ -159,6 +162,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
         assertEquals(this.host, pageRendered.getSite());
+        assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
 
     /**
@@ -189,6 +193,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
         assertEquals(this.host, pageRendered.getSite());
+        assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
 
     /**
@@ -219,6 +224,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
         assertEquals(this.host, pageRendered.getSite());
+        assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
 
     /**
@@ -247,6 +253,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
         assertEquals(this.host, pageRendered.getSite());
+        assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
 
     /**
@@ -275,6 +282,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
         assertEquals(defaultHost, pageRendered.getSite());
+        assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
 
 
@@ -305,6 +313,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         assertEquals(htmlPageAsset, pageRendered.getPageInfo().getPage());
         assertEquals(this.host, pageRendered.getSite());
+        assertEquals(htmlPageAsset.getURI(), pageRendered.getPageUrlMapper());
     }
 
     /**
@@ -340,9 +349,8 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public void shouldUseHostNameParameterAndThrowDotSecurityException() throws DotDataException, DotSecurityException {
         init();
         final PageMode pageMode = PageMode.WORKING;
-        when(session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
-        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
+        when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(host.getName());
 
         final HTMLPageAssetRenderedAPIImpl htmlPageAssetRenderedAPIImpl = new HTMLPageAssetRenderedAPIImpl();
 
@@ -352,7 +360,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
      * When The session host is set, but the user does not have permission over it
-     * Should return a right {@link PageView}
+     * Should throw a {@link DotSecurityException}
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException
@@ -363,7 +371,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final PageMode pageMode = PageMode.WORKING;
         when(session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
-        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
 
         final HTMLPageAssetRenderedAPIImpl htmlPageAssetRenderedAPIImpl = new HTMLPageAssetRenderedAPIImpl();
 
@@ -372,8 +379,8 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPIImpl#getPageRendered(PageContext, HttpServletRequest, HttpServletResponse)
-     * When The session host is set, but the user does not have permission over it
-     * Should return a right {@link PageView}
+     * When The WebKeys.CURRENT_HOST request attribute is set, but the user does not have permission over it
+     * Should throw a {@link DotSecurityException}
      * @throws DotDataException
      * @throws DotSecurityException
      * @throws InterruptedException

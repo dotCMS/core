@@ -326,7 +326,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     try {
       SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
 
-      JSONObject jo = new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("entries");
+      JSONObject jo = new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("sterms#entries");
       JSONArray ja = jo.getJSONArray("buckets");
 
       Map<String, Long> result = new HashMap<>();

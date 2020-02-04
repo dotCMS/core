@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 /**
@@ -217,7 +218,7 @@ public class ReindexThread {
 
     private void reindexWithBulkRequest(Map<String, ReindexEntry> workingRecords)
             throws DotDataException {
-        BulkRequestBuilder bulk = indexAPI.createBulkRequest();
+        BulkRequest bulk = indexAPI.createBulkRequest();
         bulk = indexAPI.appendBulkRequest(bulk, workingRecords.values());
 
         contentletsIndexed += bulk.numberOfActions();

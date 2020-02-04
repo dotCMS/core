@@ -201,18 +201,21 @@
 
 <div class="portlet-toolbar">
 
-	    <div style="float:left">
+	    <div class="schemeTitle">
 			<input type="hidden" name="cmd" value="save">
 			<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
-			<div onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');" style="float: left;" class="showPointer" >
+			<div onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');" class="showPointer" >
 			     <h2 style="border-bottom:dotted 1px gray;"><%=UtilMethods.webifyString(scheme.getName())%></h2>
 			     <!--  <%=UtilMethods.webifyString(scheme.getDescription())%> -->
 			</div>
-	        <div style="float: left;">&nbsp;
-	            <span class="showPointer" href="#" onclick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');"><i class="fa fa-pencil" aria-hidden="true"></i></span>
-	        </div>
+            <div class="showPointer" href="#" onclick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');">
+                <i class="fa fa-pencil" aria-hidden="true"></i>
+            </div>
+			<div>
+				<a class="api-link" href="/api/v1/workflow/schemes/<%=scheme.getId()%>/export" target="_blank" onclick="event.stopPropagation();">API</a>
+			</div>
 		</div>
-		<div style="float:left">
+		<div>
 			<div class="inline-form">
 				<label style="display: flex;" font-size:85%; for="filterByWhoCanUseSelect"><%=LanguageUtil.get(pageContext, "Filter-By-Who-Can-Use")%>:
 				    <input id="filterByWhoCanUseSelect"/>
@@ -223,13 +226,12 @@
 			</div>
 		</div>
 	
-		<div style="float:right">
-			<!-- ADD STEP -->
+		<div>
+
 			<button dojoType="dijit.form.Button"
-					onClick="schemeAdmin.exportScheme('<%=scheme.getId()%>');return false;" iconClass="addIcon">
-				<%=LanguageUtil.get(pageContext, "Export-Workflow-Scheme")%>
+					onClick="schemeAdmin.showEditDefaultActions('<%=scheme.getId()%>');" iconClass="addIcon">
+				<%=LanguageUtil.get(pageContext, "Default-Actions")%>
 			</button>
-		   <!-- ADD STEP -->
 		</div>
 
 </div>

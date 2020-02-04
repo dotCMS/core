@@ -148,6 +148,7 @@ public class ImageResizeUtils {
 		// save thumbnail image to OUTFILE
 		BufferedOutputStream out = new BufferedOutputStream(output);
 		ImageIO.write(bgImage, format, out);
+		bgImage.flush();
 		out.close();
 
 		Logger.debug(ImageResizeUtils.class, "Done.");
@@ -268,6 +269,7 @@ public class ImageResizeUtils {
 		// save thumbnail image to OUTFILE
 		BufferedOutputStream out = new BufferedOutputStream(output);
 		ImageIO.write(thumbImage, format, out);
+		thumbImage.flush();
 		out.close();
 		Logger.debug(ImageResizeUtils.class, "Done.");
 		

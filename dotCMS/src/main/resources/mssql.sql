@@ -2458,7 +2458,6 @@ delete from workflow_task;
 
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_language FOREIGN KEY (language_id) REFERENCES language(id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_assign FOREIGN KEY (assigned_to) REFERENCES cms_role (id);
-ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_task_asset FOREIGN KEY (webasset) REFERENCES identifier (id);
 ALTER TABLE workflow_task ADD CONSTRAINT FK_workflow_step FOREIGN KEY (status) REFERENCES workflow_step (id);
 ALTER TABLE workflow_task ADD CONSTRAINT unique_workflow_task unique (webasset,language_id);
 
@@ -2481,7 +2480,7 @@ alter table tag alter column user_id NVARCHAR(MAX);
 
 -- ****** Indicies Data Storage *******
 create table indicies (
-  index_name NVARCHAR(30) primary key,
+  index_name NVARCHAR(100) primary key,
   index_type NVARCHAR(16) not null unique
 );
 -- ****** Log Console Table *******

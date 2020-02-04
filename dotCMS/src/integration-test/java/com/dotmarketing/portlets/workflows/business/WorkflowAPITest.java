@@ -75,6 +75,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -3766,5 +3769,87 @@ public class WorkflowAPITest extends IntegrationTestBase {
         contentletAPI.checkin(out, user, false);
     }
 
+    /**
+     * Tests the {@link WorkflowAPI#deleteWorkflowHistoryOldVersions(Date)} method
+     */
+    @Test
+    public void deleteWorkflowHistoryOldVersions() throws DotDataException {
+
+        final User systemUser = APILocator.systemUser();
+        final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+
+        //Create a dummy contentlet
+        final Contentlet contentlet = TestDataUtils
+                .getGenericContentContent(true, language.getId());
+        assertNotNull(contentlet);
+
+        //Saving a dummy workflow task
+        final WorkflowTask workflowTask = workflowAPI.findTaskByContentlet(contentlet);
+        assertNotNull(workflowTask);
+
+        //Get the count of the workflow history records before the inserts
+        final int initial = workflowHistoryCount(workflowTask.getId());
+        assertEquals(0, initial);
+
+        // Saving workflow history records with a 2019 creation date
+        LocalDate date1 = LocalDate.of(2019, Month.DECEMBER, 15);
+        final Date pastDate1 = Date.from(date1.atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+        for (int i = 0; i < 5; i++) {
+            final WorkflowHistory workflowHistory = new WorkflowHistory();
+            workflowHistory.setChangeDescription("workflow history description");
+            workflowHistory.setCreationDate(pastDate1);
+            workflowHistory.setMadeBy(systemUser.getUserId());
+            workflowHistory.setWorkflowtaskId(workflowTask.getId());
+            workflowAPI.saveWorkflowHistory(workflowHistory);
+        }
+
+        // Saving workflow history records with a 2018 creation date
+        LocalDate date2 = LocalDate.of(2018, Month.DECEMBER, 15);
+        final Date pastDate2 = Date.from(date2.atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+        // Saving workflow history records
+        for (int i = 0; i < 5; i++) {
+            final WorkflowHistory workflowHistory = new WorkflowHistory();
+            workflowHistory.setChangeDescription("workflow history description");
+            workflowHistory.setCreationDate(pastDate2);
+            workflowHistory.setMadeBy(systemUser.getUserId());
+            workflowHistory.setWorkflowtaskId(workflowTask.getId());
+            workflowAPI.saveWorkflowHistory(workflowHistory);
+        }
+
+        //Get the count of the workflow history records before deleting
+        final int before = workflowHistoryCount(workflowTask.getId());
+        assertEquals(10, before);
+
+        // Now we will try to delete and validate the deletes with different dates
+        LocalDate date3 = LocalDate.of(2018, Month.DECEMBER, 16);
+        final Date pastDate3 = Date.from(date3.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        int deleted = workflowAPI.deleteWorkflowHistoryOldVersions(pastDate3);
+        assertTrue(deleted > 0);
+        final int left = workflowHistoryCount(workflowTask.getId());
+        assertEquals(5, left);
+
+        LocalDate date4 = LocalDate.of(2019, Month.DECEMBER, 16);
+        final Date pastDate4 = Date.from(date4.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        deleted = workflowAPI.deleteWorkflowHistoryOldVersions(pastDate4);
+        assertTrue(deleted > 0);
+
+        final int finalCount = workflowHistoryCount(workflowTask.getId());
+        assertEquals(0, finalCount);
+    }
+
+    private int workflowHistoryCount(final String workflowTaskId) throws DotDataException {
+
+        DotConnect dotConnect = new DotConnect();
+        //Get the count of the workflow history records before deleting.
+        String countSQL = "select count(*) as count from workflow_history where workflowtask_id = ?";
+        dotConnect.setSQL(countSQL);
+        dotConnect.addParam(workflowTaskId);
+        List<Map<String, String>> result = dotConnect.loadResults();
+
+        return Integer.parseInt(result.get(0).get("count"));
+    }
 
 }

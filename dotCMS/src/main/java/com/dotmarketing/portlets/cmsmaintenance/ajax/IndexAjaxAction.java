@@ -44,12 +44,12 @@ public class IndexAjaxAction extends AjaxAction {
 	private final ESIndexAPI indexAPI;
 
 	public IndexAjaxAction(){
-		this(ESIndexHelper.INSTANCE, APILocator.getESIndexAPI(), new WebResource());
+		this(ESIndexHelper.getInstance(), APILocator.getESIndexAPI(), new WebResource());
 	}
 
 	@VisibleForTesting
 	public IndexAjaxAction(final WebResource webResource) {
-		this(ESIndexHelper.INSTANCE, APILocator.getESIndexAPI(), webResource);
+		this(ESIndexHelper.getInstance(), APILocator.getESIndexAPI(), webResource);
 	}
 
 	@VisibleForTesting

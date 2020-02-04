@@ -275,6 +275,7 @@ public class TaskLocatorUtil {
     	ret.add(Task05190UpdateFormsWidgetCodeField.class);
 		ret.add(Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflow.class);
 		ret.add(Task05200WorkflowTaskUniqueKey.class);
+        ret.add(Task05205UpdateIndexNameLength.class);
 		return ret;
 	}
 

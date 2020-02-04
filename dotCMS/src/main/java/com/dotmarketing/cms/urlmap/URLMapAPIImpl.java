@@ -1,5 +1,6 @@
 package com.dotmarketing.cms.urlmap;
 
+import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -12,8 +13,6 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cms.urlmap.filters.URLMapFilter;
-import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.TreeSet;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.jetbrains.annotations.NotNull;
 
@@ -83,7 +81,7 @@ public class URLMapAPIImpl implements URLMapAPI {
 
             final Identifier pageUriIdentifier = this.getDetailtPageUri(structure);
 
-            return Optional.of(new URLMapInfo(contentlet, pageUriIdentifier));
+            return Optional.of(new URLMapInfo(contentlet, pageUriIdentifier, context.getUri()));
         } else {
             return Optional.empty();
         }
@@ -188,7 +186,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             final Host systemHost = this.whostAPI.findSystemHost(this.wuserAPI.getSystemUser(), true);
             return String.format("+(conhost: %s conhost: %s)", host.getIdentifier(), systemHost.getIdentifier());
         } catch (DotDataException | DotSecurityException e) {
-            Logger.error(URLMapFilter.class, e.getMessage()
+            Logger.error(URLMapAPIImpl.class, e.getMessage()
                     + " : Unable to build host in query : ", e);
             return "";
         }
@@ -227,8 +225,8 @@ public class URLMapAPIImpl implements URLMapAPI {
         Contentlet contentlet = null;
 
         final String query = this.buildContentQuery(matches, structure, hostField, context);
-        final List<ContentletSearch> contentletSearches =
-                this.contentletAPI.searchIndex(query, 2, 0,
+        final List<Contentlet> contentletSearches =
+                ContentUtils.pull(query, 0, 2,
                         (hostField!=null && hostField.isRequired()) ? "conhost, modDate" : "modDate",
                         this.wuserAPI.getSystemUser(), true);
 
@@ -236,18 +234,13 @@ public class URLMapAPIImpl implements URLMapAPI {
             int idx = 0;
             if (contentletSearches.size() == 2) {
                 // prefer session setting
-                final Contentlet second = this.contentletAPI
-                        .find(contentletSearches.get(1).getInode(),
-                                this.wuserAPI.getSystemUser(), true);
+                final Contentlet second = contentletSearches.get(1);
                 if (second.getLanguageId() == context.getLanguageId()) {
                     idx = 1;
                 }
             }
 
-            final ContentletSearch contentletSearch = contentletSearches.get(idx);
-            contentlet = this.contentletAPI
-                    .find(contentletSearch.getInode(), this.wuserAPI.getSystemUser(), true);
-
+            contentlet = contentletSearches.get(idx);
             checkContentPermission(context, contentlet);
         }
 
@@ -286,6 +279,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             query.append(this.getHostFilter(context.getHost()));
         }
 
+        query.append(" ");
         query.append(this.buildFields(structure, matches))
              .append(" +languageId:").append(context.getLanguageId());
 
@@ -298,7 +292,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         try {
             mastRegEx = CacheLocator.getContentTypeCache().getURLMasterPattern();
         } catch (DotCacheException e2) {
-            Logger.error(URLMapFilter.class, e2.getMessage(), e2);
+            Logger.error(URLMapAPIImpl.class, e2.getMessage(), e2);
         }
 
         return mastRegEx == null || patternsCache == null || patternsCache.isEmpty();

@@ -1,14 +1,17 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.CustomField;
-import com.dotcms.contenttype.model.field.FieldType;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -53,14 +56,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
-import org.elasticsearch.common.xcontent.XContentType;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -74,14 +69,19 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.FastDateFormat;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.GetMappingsRequest;
+import org.elasticsearch.client.indices.GetMappingsResponse;
+import org.elasticsearch.client.indices.PutMappingRequest;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentType;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
 import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
 import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * Implementation class for the {@link ContentMappingAPI}.
@@ -109,59 +109,45 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-    /**
-     * This method takes a mapping string, a type and puts it as the mapping
-     */
-    public boolean putMapping(final String indexName, final String type, final String mapping)
-            throws ElasticsearchException, IOException {
-
-        final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
-                .preparePutMapping().setIndices(indexName).setType(type)
-                .setSource(mapping, XContentType.JSON).execute();
-        return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
-    }
-
-    /**
-     * This method takes a mapping map, a type and puts it as the mapping
-     */
-    public boolean putMapping(final String indexName, final String type, final Map mapping)
-            throws ElasticsearchException {
-
-        final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
-                .preparePutMapping().setIndices(indexName).setType(type)
-                .setSource(mapping).execute();
-        return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
-    }
-
-    /**
-     * This method takes a mapping string, a type and puts it as the mapping
-     *
-     * @deprecated Use {@link ESMappingAPIImpl#putMapping(String, String, String)} or {@link
-     * ESMappingAPIImpl#putMapping(String, String, Map)} )}instead
-     */
-    @Deprecated
-    public boolean putMapping(final String indexName, final String type, final String mapping,
-            final String settings) throws ElasticsearchException, IOException {
-        final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
-                .preparePutMapping().setIndices(indexName).setType(type)
-                .setSource(mapping, XContentType.JSON).execute();
-        return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
-    }
-
 	/**
-	 * Gets the mapping params for an index and type
-	 * @param index
-	 * @param type
+	 * This method takes a mapping string, a type and puts it as the mapping
+	 * @param indexName
+	 * @param mapping
 	 * @return
 	 * @throws ElasticsearchException
 	 * @throws IOException
 	 */
-	public  String getMapping(String index, String type) throws ElasticsearchException, IOException{
+	public  boolean putMapping(String indexName, String mapping) throws ElasticsearchException, IOException{
 
-		return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
-				.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).getState().metaData().indices()
-				.get(index).mapping(type).source().string();
+        final PutMappingRequest request = new PutMappingRequest(
+                APILocator.getESIndexAPI().getNameWithClusterIDPrefix(indexName));
+        request.setTimeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        request.source(mapping, XContentType.JSON);
 
+        final AcknowledgedResponse putMappingResponse = RestHighLevelClientProvider.getInstance()
+                .getClient().indices()
+                .putMapping(request, RequestOptions.DEFAULT);
+
+        return putMappingResponse.isAcknowledged();
+	}
+
+
+	/**
+	 * Gets the mapping params for an index and type
+	 * @param index
+	 * @return
+	 * @throws ElasticsearchException
+	 * @throws IOException
+	 */
+	public  String getMapping(String index) throws ElasticsearchException, IOException{
+
+		final GetMappingsRequest request = new GetMappingsRequest();
+		request.indices(index);
+
+		GetMappingsResponse getMappingResponse = RestHighLevelClientProvider.getInstance().getClient()
+				.indices().getMapping(request, RequestOptions.DEFAULT);
+
+		return getMappingResponse.mappings().get(index).source().string();
 	}
 
 	@SuppressWarnings("unchecked")

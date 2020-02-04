@@ -137,7 +137,6 @@ public interface HTMLPageAssetRenderedAPI {
             final HttpServletRequest request,
             final HttpServletResponse response) throws DotSecurityException, DotDataException;
 
-
     /**
      * Return the page's default mode for edit page portlet, if user have the page's lock then return
      * {@link PageMode#EDIT_MODE}, in other case return {@link PageMode#PREVIEW_MODE}

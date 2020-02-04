@@ -5,7 +5,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.*;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -18,6 +18,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -412,13 +414,27 @@ public class CMSUrlUtil {
 	 * Search for an overridden URI by a filter and if nothing is found the URI will be read from
 	 * the request.
 	 */
-	public String getURIFromRequest(HttpServletRequest request)
-			throws UnsupportedEncodingException {
-
-		return (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request
+	public String getURIFromRequest(final HttpServletRequest request) {
+        return (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request
 				.getAttribute(CMS_FILTER_URI_OVERRIDE)
-				: URLDecoder.decode(request.getRequestURI(), "UTF-8");
+				: getRequestPath(request);
 	}
+
+    /**
+     * Returns path from request URI
+     * @param request - HttpServletRequest
+     * @return String containing the path from the request URI
+     */
+	private String getRequestPath(final HttpServletRequest request){
+        String requestPath = request.getRequestURI();
+        try {
+            final URI requestURI = new URI(requestPath);
+            requestPath = requestURI.getPath();
+        } catch (URISyntaxException e) {
+            Logger.error(this, "Couldn't get URL from request " + requestPath, e);
+        }
+        return requestPath;
+    }
 
 	/**
 	 * Verifies if the URI was overridden by a filter
@@ -515,5 +531,16 @@ public class CMSUrlUtil {
 		return (-1 != indexOf && indexOf+1 < uri.length())?
 				uri.substring(indexOf+1):
 				null;
+	}
+
+	public static String getCurrentURI(final HttpServletRequest request)  {
+		try {
+			return URLDecoder.decode((request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null)
+					? (String) request.getAttribute(CMS_FILTER_URI_OVERRIDE)
+					: request.getRequestURI(), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			Logger.debug(CMSUrlUtil.class, e.getMessage(), e);
+			throw new DotRuntimeException(e);
+		}
 	}
 }

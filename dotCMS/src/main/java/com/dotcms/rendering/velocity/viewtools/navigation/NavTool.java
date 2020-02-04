@@ -101,6 +101,8 @@ public class NavTool implements ViewTool {
                                 .findFolderByPath(ident.getParentPath(), host, systemUserParam, false)
                                 .getInode();
             } else {
+                //set hostId to systemfolder, so when looking items only brings items of the selected site
+                folder.setHostId(host.getIdentifier());
                 parentId = null;
             }
             result = new NavResult(parentId, host.getIdentifier(), folder.getInode(), languageId);

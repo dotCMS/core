@@ -6,6 +6,7 @@ version: "3.7"
 
 networks:
   db_net:
+  es_net:
 
 services:
 
@@ -17,6 +18,7 @@ services:
       WAIT_DB_FOR: 2m
     depends_on:
       - database
+      - elasticsearch
     ports:
       - "15005:5005"
     volumes:
@@ -28,7 +30,12 @@ services:
 #        target: /custom/dotsecure/license/license.dat
     networks:
       - db_net
+      - es_net
 
   database:
     networks:
       - db_net
+
+  elasticsearch:
+    networks:
+      - es_net

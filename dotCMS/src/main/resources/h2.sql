@@ -2086,7 +2086,7 @@ ALTER TABLE tag ALTER COLUMN user_id TYPE text;
 
 -- ****** Indicies Data Storage *******
 create table indicies (
-  index_name varchar(30) primary key,
+  index_name varchar(100) primary key,
   index_type varchar(16) not null unique
 );
 -- ****** Log Console Table *******

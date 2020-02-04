@@ -1,28 +1,9 @@
-<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
-<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-<%@page import="com.dotmarketing.beans.Host"%>
-<%@page import="java.net.URLEncoder"%>
-<%@page import="com.dotmarketing.quartz.ScheduledTask"%>
-<%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
-<%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
-<%@page import="com.dotmarketing.util.Logger"%>
-<%@page import="com.dotmarketing.exception.DotSecurityException"%>
-<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
-<%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
-<%@page import="org.elasticsearch.action.admin.indices.stats.IndexStats"%>
-<%@page import="com.dotcms.content.elasticsearch.util.ESUtils"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
-<%@page import="com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory"%>
-<%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
-<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@page import="java.util.ArrayList"%>
-<%@page import="com.dotmarketing.business.CacheLocator"%>
-<%@page import="java.util.Map"%>
+<%@page import="com.dotmarketing.beans.Host"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
+<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@ include file="/html/common/init.jsp"%>
-<%@page import="java.util.List"%>
 <%
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 Map<String, Object> props = new HashMap<String, Object>();
@@ -85,7 +66,7 @@ for(String x : indexHosts){
 	catch(Exception e){}
 }
 
-boolean hasDefaultIndex = APILocator.getIndiciesAPI().loadIndicies().site_search != null;
+boolean hasDefaultIndex = APILocator.getIndiciesAPI().loadIndicies().getSiteSearch() != null;
 
 
 List<Language> langs=APILocator.getLanguageAPI().getLanguages();
@@ -191,7 +172,7 @@ boolean hasPath = false;
 					<%for(String x : indexes){ %>
 						<option value="<%=alias.get(x) == null ? x:alias.get(x)%>" <%=(x.equals(indexName)||(alias.get(x)!=null && alias.get(x).equals(indexName))) ? "selected='true'": ""%>>
 						  <%=alias.get(x) == null ? x:alias.get(x) %>
-						  <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ?
+						  <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch())) ?
 						          "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %>
 						</option>
 					<%} %>

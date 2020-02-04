@@ -1,3 +1,4 @@
+<%@page import="org.apache.commons.codec.digest.DigestUtils"%>
 <%@page import="com.dotmarketing.beans.WebAsset"%>
 <%@include file="/html/portlet/ext/workflows/init.jsp"%>
 
@@ -38,6 +39,17 @@ public String getPostedby(String postedBy){
 	return "unknown";
 }
 
+public String getGravatar(String postedBy){
+
+
+    try {
+        return DigestUtils.md5Hex(APILocator.getUserAPI().loadUserById(postedBy, APILocator.systemUser(), false).getEmailAddress().toLowerCase()).toString();
+
+    } catch (Exception e) {
+        
+    }
+    return "unknown";
+}
 %>
 <%
     WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
@@ -202,18 +214,27 @@ public String getPostedby(String postedBy){
     }
 
 
-     function serveFile(doStuff,conInode,velVarNm){
-
-         if(doStuff != ''){
-         window.open('/contentAsset/' + doStuff + '/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
-         }else{
-         window.open('/contentAsset/raw-data/' + conInode + '/' + velVarNm + "?byInode=true",'fileWin','toolbar=no,resizable=yes,width=400,height=300');
-         }
-     }
-
 
 </script>
+<style>
 
+.gravitarThingy{
+
+   border-radius: 50%;
+   background-size: cover;
+   border:1px solid #eeeeee;
+   width:40px;
+   height:40px;
+   font-size: 24px;
+   text-align:center;
+   color:white;
+   font-weight: bold;
+   vertical-align: middle;
+   margin-left:auto;
+   margin-right:auto;
+
+}
+</style>
 
 
 
@@ -299,43 +320,58 @@ public String getPostedby(String postedBy){
 		
 		    <!-- START Comments -->
 		        <div id="commentsTab" dojoType="dijit.layout.ContentPane" title="Comments">
-		                <table class="listingTable">
+                    <div style="max-height:500px;overflow: auto;border-bottom:1px solid silver;padding:15px;">
+		                <table style="width:100%;padding: 0px;">
 		                    <% 
 		                        for(WorkflowTimelineItem comment : commentsHistory){ %>
-
-		                            <td style="width:200px;">
-		                                 <%=getPostedby(comment.roleId())%><br>(<%= DateUtil.prettyDateSince(comment.createdDate()) %>)
+                                  <tr>
+		                            <td style="width:50px;vertical-align: top;padding: 15px 0px 15px 0px">
+                                        <div class="gravitarThingy" style="z-index:100;background-image:url('https://www.gravatar.com/avatar/<%=getGravatar(comment.roleId()) %>?d=blank'"></div>
+                                         <div class="gravitarThingy" style="z-index:4;color:#bbbbbb;margin-top:-40px;">
+                                            <div style="margin-top:5px;">
+                                                <%=getPostedby(comment.roleId()).substring(0,1) %>
+                                            </div>
+                                         </div>
 		                            </td>
-		                             <td>
-		                               <div style="margin:5px;margin-top:0px;"><%= comment.commentDescription() %></div>
-		                             </td>
-		                            </td>
+                                     <td>
+                                        <div  style="border:1px solid silver;margin:10px 15px 14px 5px">
+                                          <div style="background: #efefef;padding:10px;"><b><%=getPostedby(comment.roleId())%></b> <%= DateUtil.prettyDateSince(comment.createdDate()) %>
+                                          
+                                          <div style="float:right;"><%=UtilMethods.dateToHTMLDate(comment.createdDate()) %> - <%=UtilMethods.dateToHTMLTime(comment.createdDate()) %></div>
+                                          
+                                          </div>
+                                          <div style="padding:15px;min-height: 70px"><%= Xss.strip(comment.commentDescription()) %></div>
+                                        </div>
+                                     </td>
 		                        </tr>
+
 		                    <% } %>
-		            
-		                    <tr>
-		                        <th colspan=2><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Comments")) %>
-		
-									<form id="commentFormlet" method="post" action="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-									 <portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" />
-									 <portlet:param name="inode" value="<%= String.valueOf(task.getInode()) %>" />
-									 </portlet:actionURL>">
-									<input type="hidden" name="referer" value="<%= referer %>">
-									<input type="hidden" name="cmd" value="add_comment">
-									
-									<textarea id="comment" name="comment" class="mceNoEditor" rows="4" cols="60"></textarea>
-									<div class="buttonRow">
-									 <button dojoType="dijit.form.Button" type="button" onClick="dojo.byId('commentFormlet').submit()">
-									 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
-									 </button>
-									</div>
-									</form>
-		       
-		
-		                        </th>
-		                    </tr>
 		                </table>
-		
+		              </div>
+                      <div style="padding:20px;max-width:1024px;border-top:0px solid silver">
+                         <div id="commentFormletShow" class="buttonRow">
+                            <button dojoType="dijit.form.Button" type="button" onClick="document.getElementById('commentFormletShow').style.display='none';document.getElementById('commentFormlet').style.display=''">
+                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
+                            </button>
+                         </div>
+                         <form style="display: none; max-width:600px;margin:auto;" id="commentFormlet" method="post" action="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
+                            <portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" />
+                            <portlet:param name="inode" value="<%= String.valueOf(task.getInode()) %>" />
+                            </portlet:actionURL>">
+                            <input type="hidden" name="referer" value="<%= referer %>">
+                            <input type="hidden" name="cmd" value="add_comment">
+                           
+                            <textarea id="comment" name="comment" class="mceNoEditor" rows="4" cols="60"></textarea>
+                          
+                               <div class="buttonRow">
+                                <button dojoType="dijit.form.Button" type="button" onClick="dojo.byId('commentFormlet').submit()">
+                                <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
+                                </button>
+                               </div>
+                            </div>
+                           </form>
+               
+                        
 		        
 		
 		
@@ -376,9 +412,9 @@ public String getPostedby(String postedBy){
 		                    <tr <%=str_style %>>
 		                        <td>
 		                            <img border="0" src="/icon?i=<%= UtilMethods.encodeURIComponent(file.getFileName()) %>"> &nbsp;
-		                            <a href="#" onclick="javascript: serveFile('','<%= file.getInode()%>','fileAsset');">
+
 		                                <%= file.getFileName() %>
-		                            </a>
+		                
 		                        </td>
 		                        <td>
 		                            <button dojoType="dijit.form.Button" type="button" class="dijitButtonDanger" style="float: right;" href="javascript:removeFile('<%= file.getInode() %>')"><%= LanguageUtil.get(pageContext, "remove") %></button>
@@ -499,19 +535,4 @@ public String getPostedby(String postedBy){
 
 <div dojoAttachPoint="fileBrowser" jsId="fileBrowser" onFileSelected="attachFileCallback" onlyFiles="true" dojoType="dotcms.dijit.FileBrowserDialog">
 </div>
-
-<form id="submitWorkflowTaskFrm" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=executeAction">
-    <input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
-    <input name="wfActionComments" id="wfActionComments" type="hidden" value="">
-    <input name="wfActionId" id="wfActionId" type="hidden" value="">
-    <input name="wfContentletId" id="wfContentletId" type="hidden" value="<%=contentlet.getInode()%>">
-
-    <!-- PUSH PUBLISHING ACTIONLET -->
-    <input name="wfPublishDate" id="wfPublishDate" type="hidden" value="">
-    <input name="wfPublishTime" id="wfPublishTime" type="hidden" value="">
-    <input name="wfExpireDate" id="wfExpireDate" type="hidden" value="">
-    <input name="wfExpireTime" id="wfExpireTime" type="hidden" value="">
-    <input name="wfNeverExpire" id="wfNeverExpire" type="hidden" value="">
-    <input name="whereToSend" id="whereToSend" type="hidden" value="">
-</form>
 </div>

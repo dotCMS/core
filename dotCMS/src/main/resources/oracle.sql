@@ -2297,7 +2297,6 @@ delete from workflow_comment;
 delete from workflowtask_files;
 delete from workflow_task;
 alter table workflow_task add constraint FK_workflow_task_language foreign key (language_id) references language(id);
-alter table workflow_task add constraint FK_workflow_task_asset foreign key (webasset) references identifier(id);
 alter table workflow_task add constraint FK_workflow_assign foreign key (assigned_to) references cms_role(id);
 alter table workflow_task add constraint FK_workflow_step foreign key (status) references workflow_step(id);
 alter table workflow_task add constraint unique_workflow_task unique (webasset,language_id);
@@ -2320,7 +2319,7 @@ create index tag_user_id_index on tag(user_id) indextype is ctxsys.context;
 
 -- ****** Indicies Data Storage *******
 create table indicies (
-  index_name varchar2(30) primary key,
+  index_name varchar2(100) primary key,
   index_type varchar2(16) not null unique
 );
   -- ****** Log Console Table *******

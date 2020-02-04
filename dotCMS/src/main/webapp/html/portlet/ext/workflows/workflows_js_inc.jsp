@@ -90,7 +90,7 @@
 	}
 
 		dojo.connect(window, "onresize", this, "resizeBrowser");
-
+		dojo.require("dotcms.dojo.push.PushHandler");
 	    dojo.declare("dotcms.dijit.contentlet.ContentAdmin", null, {
 	    	contentletIdentifier : "",
 	    	contentletInode : "",
@@ -125,88 +125,72 @@
                     return;
 	    		}
 	    		else{
-	    			dojo.byId("wfActionId").value=this.wfActionId;
 
-	    			this.executeWorkflow();
+	    			this.executeWorkflow(wfId, inode);
 	    		}
 	    	},
 	    	
-	    	executeWorkflow : function (){
-	    		
-	    		dijit.byId('savingContentDialog').show();
+	    	executeWorkflow : function (wfId, inode){
 
-				var xhrArgs = {
-					form: dojo.byId("submitWorkflowTaskFrm"),
-					handleAs: "text",
-					load: function(data) {
-						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
+				dijit.byId('savingContentDialog').show();
 
-                        var customEvent = document.createEvent("CustomEvent");
-                        customEvent.initCustomEvent("ng-event", false, false,  {
-                            name: "edit-task-executed-workflow"
-                        });
-                        document.dispatchEvent(customEvent);
-					
-					},
-					error: function(error) {
-						showDotCMSSystemMessage(error);
-						dijit.byId('savingContentDialog').hide();
-					
-					}
-				}
-				dojo.xhrPost(xhrArgs);
+				var wfActionAssign 		= "";
+				var selectedItem 		= "";
+				var wfConId 			= inode;
+				var wfActionId 			= wfId;
+				var wfActionComments 	= "";
+				var publishDate			= "";
+				var publishTime 		= "";
+				var expireDate 			= "";
+				var expireTime 			= "";
+				var neverExpire 		= "";
+				var whereToSend 		= "";
 
+				BrowserAjax.saveFileAction(selectedItem, wfActionAssign, wfActionId, wfActionComments, wfConId, publishDate,
+					publishTime, expireDate, expireTime, neverExpire, whereToSend, fileActionCallback
+				);
 	    	}
 
 	    });
 
     function saveAssignCallBack(actionId, formData) {
+		var pushPublish = formData.pushPublish;
+		var assignComment = formData.assignComment;
 
-        var assignComment = formData.assignComment;
-        var selectedItem = "";
-        var wfConId =  pushPublish.inode;
-        var comments = assignComment.comment;
-        var assignRole = assignComment.assign;
+		var selectedItem = "";
+		var wfConId =  pushPublish.inode;
+		var comments = assignComment.comment;
+		var assignRole = assignComment.assign;
 
-        var whereToSend = pushPublish.whereToSend;
-        var publishDate = pushPublish.publishDate;
-        var publishTime = pushPublish.publishTime;
-        var expireDate  = pushPublish.expireDate;
-        var expireTime  = pushPublish.expireTime;
-        var forcePush   = pushPublish.forcePush;
-        var neverExpire = pushPublish.neverExpire;
+		var whereToSend = pushPublish.whereToSend;
+		var publishDate = pushPublish.publishDate;
+		var publishTime = pushPublish.publishTime;
+		var expireDate  = pushPublish.expireDate;
+		var expireTime  = pushPublish.expireTime;
+		var forcePush   = pushPublish.forcePush;
+		var neverExpire = pushPublish.neverExpire;
 
-        dojo.byId("wfActionAssign").value = assignRole;
-        dojo.byId("wfActionComments").value = comments;
-        dojo.byId("wfActionId").value = actionId;
-
-        // BEGIN: PUSH PUBLISHING ACTIONLET
-        dojo.byId("wfPublishDate").value = publishDate;
-        dojo.byId("wfPublishTime").value = publishTime;
-        dojo.byId("wfExpireDate").value = expireDate;
-        dojo.byId("wfExpireTime").value = expireTime;
-        dojo.byId("wfNeverExpire").value = neverExpire;
-        dojo.byId("whereToSend").value = whereToSend;
-
-        var xhrArgs = {
-            form: dojo.byId("submitWorkflowTaskFrm"),
-            handleAs: "text",
-            load: function(data) {
-                showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
-
-                var customEvent = document.createEvent("CustomEvent");
-                customEvent.initCustomEvent("ng-event", false, false,  {
-                    name: "edit-task-executed-workflow"
-                });
-                document.dispatchEvent(customEvent);
-
-            },
-            error: function(error) {
-                showDotCMSSystemMessage(error);
-            }
-        }
-        dojo.xhrPost(xhrArgs);
+		BrowserAjax.saveFileAction(selectedItem, assignRole, actionId, comments, wfConId, publishDate,
+			publishTime, expireDate, expireTime, neverExpire, whereToSend, forcePush, fileActionCallback
+		);;
     }
+
+	function fileActionCallback (response) {
+		if (response.status == "success") {
+			showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
+
+			var customEvent = document.createEvent("CustomEvent");
+			customEvent.initCustomEvent("ng-event", false, false,  {
+				name: "edit-task-executed-workflow"
+			});
+			document.dispatchEvent(customEvent);
+			return;
+		}
+
+		// An error happened
+		showDotCMSErrorMessage(response.message);
+		dijit.byId('savingContentDialog').hide();
+	}
 	    
 	var contentAdmin = new dotcms.dijit.contentlet.ContentAdmin();
 

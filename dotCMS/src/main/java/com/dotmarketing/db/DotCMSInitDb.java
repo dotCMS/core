@@ -113,11 +113,14 @@ public class DotCMSInitDb {
 			String zipPath = FileUtil.getRealPath(starterSitePath);
 			starterZip = new File(zipPath); 
 		 }
-
+		
 		ImportExportUtil ieu = new ImportExportUtil();
-		if(ieu.validateZipFile(starterZip))
-			Try.run((() -> ieu.doImport(pw))).onFailure(e -> {
-							throw new DotRuntimeException(e);
-			});
+		if(ieu.validateZipFile(starterZip)){
+		    Try.run((()->ieu.doImport(pw)))
+					.onFailure(
+							e-> {throw new DotRuntimeException(e);}
+					);
+
+		}
 	}
 }
