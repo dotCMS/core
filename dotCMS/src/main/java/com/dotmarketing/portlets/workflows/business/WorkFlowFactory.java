@@ -101,6 +101,11 @@ public interface WorkFlowFactory {
 
 	public void saveComment(WorkflowComment comment) throws DotDataException;
 
+	/**
+	 * Saves or Updates (if does not exists, based on a search by id) the history
+	 * @param history {@link WorkflowHistory}
+	 * @throws DotDataException
+	 */
 	public void saveWorkflowHistory(WorkflowHistory history) throws DotDataException;
 
 	/**

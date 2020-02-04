@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.workflow.form.AssignCommentBean;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;

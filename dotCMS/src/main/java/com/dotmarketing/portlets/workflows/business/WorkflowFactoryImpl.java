@@ -2199,7 +2199,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	private void setHistoryDBParams(WorkflowHistory history, DotConnect db) {
 		db.addParam(history.getCreationDate());
 		db.addParam(history.getMadeBy());
-		db.addParam(history.getChangeDescription());
+		db.addParam(history.getRawChangeDescription());
 		db.addParam(history.getWorkflowtaskId());
 		db.addParam(history.getActionId());
 		db.addParam(history.getStepId());
