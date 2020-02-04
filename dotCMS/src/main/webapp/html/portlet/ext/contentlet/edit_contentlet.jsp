@@ -468,10 +468,11 @@
 									endDateField = f;
 									%>
 								    <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
-									<%@ include file="/html/portlet/ext/calendar/edit_event_recurrence_inc.jsp" %>
 									<%
 								}
-
+                                if (startDateField != null && endDateField != null){%>
+                                    <%@ include file="/html/portlet/ext/calendar/edit_event_recurrence_inc.jsp" %>
+                                <%}
 						} else {
 								%>
 								<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
