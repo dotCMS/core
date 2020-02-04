@@ -224,7 +224,7 @@
                     showButtons="true" 
                     intermediateChanges="true"
 					scrollOnFocus=false>
-
+                    <script type="dojo/method" event="_mouseWheeled"></script>
                   <div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height: 5px;"></div>
                   <ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height: 1em; font-size: 75%; color: gray;">
                      <li>1%</li>
@@ -312,7 +312,7 @@
                         showButtons="true"
                         intermediateChanges="true"
 						scrollOnFocus=false>
-
+                        <script type="dojo/method" event="_mouseWheeled"></script>
                     <div dojoType="dijit.form.HorizontalRule" container="bottomDecoration" count=11 style="height:5px;"></div>
                     <ol dojoType="dijit.form.HorizontalRuleLabels" container="bottomDecoration" style="height:1em;font-size:75%;color:gray;">
                         <li>0</li>
