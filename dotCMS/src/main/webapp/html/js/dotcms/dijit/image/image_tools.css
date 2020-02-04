@@ -86,7 +86,7 @@ table {font-size:inherit;font-family:Roboto,sans-serif;}
 	background:#fff;
 	padding:20px 10px;
 	border-left:1px solid silver;
-
+    overflow:auto;
 
 }
 

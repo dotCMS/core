@@ -60,6 +60,7 @@ public class VelocityServlet extends HttpServlet {
                 return;
             }
 
+            request.setRequestUri(uri);
             final PageMode mode = PageMode.getWithNavigateMode(request);
             try {
                 final String pageHtml = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
