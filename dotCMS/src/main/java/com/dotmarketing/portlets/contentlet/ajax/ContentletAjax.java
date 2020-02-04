@@ -1164,7 +1164,8 @@ public class ContentletAjax {
 
 				//Add mimeType
 				if(type.baseType().getType() == BaseContentType.FILEASSET.getType()){
-					searchResult.put("mimeType", APILocator.getFileAssetAPI().fromContentlet(con).getUnderlyingFileName());
+					searchResult.put("mimeType", APILocator.getFileAssetAPI()
+							.getMimeType(APILocator.getFileAssetAPI().fromContentlet(con).getUnderlyingFileName()));
 				} else if(type.baseType().getType() == BaseContentType.HTMLPAGE.getType()){
 					searchResult.put("mimeType", "application/dotpage");
 				} else {
