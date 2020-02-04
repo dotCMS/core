@@ -46,7 +46,7 @@ public final class NavResultHydrated extends NavResult{
             if (req != null) {
                 // We exclude the page name from the Request URI so we can check if page's parent
                 // object is the real active object
-                String reqURI = req.getRequestURI();
+                String reqURI = req.getRequestURI().replace("/api/v1/page/render", "");
                 String parentPath = reqURI.substring(0, reqURI.lastIndexOf("/"));
                 if (!parentPath.endsWith("/"))
                     // Adding a slash at the end of the path, so it avoids false positives
