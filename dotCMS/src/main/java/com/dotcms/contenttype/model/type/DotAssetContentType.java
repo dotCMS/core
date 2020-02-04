@@ -70,38 +70,6 @@ public abstract class DotAssetContentType extends ContentType implements UrlMapa
 				.build()
 			);
 
-		fields.add(
-				ImmutableConstantField.builder()
-				.name("mimeType")
-				.variable(FILEASSET_MIME_TYPE_FIELD_VAR)
-				.sortOrder(fields.size())
-				.required(false)
-				.fixed(false)
-				.readOnly(true)
-				.searchable(true)
-				.build()
-			);
-
-		fields.add(
-				ImmutableTabDividerField.builder()
-						.name("Metadata")
-						.variable("metadataTab")
-						.sortOrder(fields.size())
-						.build()
-		);
-		fields.add(
-				ImmutableKeyValueField.builder()
-						.name("Metadata")
-						.dataType(DataTypes.LONG_TEXT)
-						.variable(FILEASSET_METADATA_FIELD_VAR)
-						.required(false)
-						.fixed(false)
-						.indexed(true)
-						.readOnly(true)
-						.searchable(true)
-						.sortOrder(fields.size())
-						.build()
-		);
 
 		fields.add(
 				ImmutableTagField.builder()
