@@ -8,7 +8,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.util.PageMode;
 import org.junit.BeforeClass;
@@ -18,7 +17,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ContainerLoaderTest {
@@ -58,5 +56,7 @@ public class ContainerLoaderTest {
                 "\" data-dot-identifier=\"//" + host.getName() + container.getPath() + "\"";
 
         assertTrue(velocityCode.contains(expected));
+
+        inputStream.close();
     }
 }

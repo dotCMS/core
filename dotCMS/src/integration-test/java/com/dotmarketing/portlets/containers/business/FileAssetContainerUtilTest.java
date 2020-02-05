@@ -1,20 +1,13 @@
 package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.datagen.ContainerAsFileDataGen;
-import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.ContentletBaseTest;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.HostUtil;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Optional;
 
 public class FileAssetContainerUtilTest extends ContentletBaseTest {
 
