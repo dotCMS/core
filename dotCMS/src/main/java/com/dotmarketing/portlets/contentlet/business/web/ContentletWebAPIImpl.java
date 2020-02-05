@@ -1049,23 +1049,20 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
                 final String[] inodes = inodesSt.split(",");
 
                 final Relationship relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
+                final boolean isRelatingNewContent = isRelatingNewContent(contentletFormData,
+                        relationship);
 
-				//When you click the option Relate New Content, it adds the relwith key with the id of the contentlet that you edited at first and reltype with the relationship name.
-                //Also, it is important to verify that the reltype applies to the relationship that we are currently populating (case when there are multiple relationships). Issue:
-                //https://github.com/dotCMS/core/issues/17743
-                final boolean isRelatingNewContent =
-                        contentletFormData.containsKey("relwith") && relationship
-                                .getRelationTypeValue().equals(contentletFormData.get("reltype"));
-                final String relationHasParent =
-                        contentletFormData.get("relisparent") != null ? (String) contentletFormData
-                                .get("relisparent") : "";
-				//This boolean determines if the contentletFormData is a parent or a child
+                //This boolean determines if the contentletFormData is a parent or a child
 				//This is the proper behaviour of the boolean:
 				//if you are relating a new child should be false, because the contentletFormData is a child
 				//if you are relating a new parent should be true, because the contentletFormData is a parent
 				//if you are relating an existing child should be true, because the contentletFormData is a parent
 				//if you are relating an existing parent should be false, because the contentletFormData is a child
 				final boolean isContentletAParent = (key.contains("_P_")) ? !isRelatingNewContent : isRelatingNewContent;
+
+                final String relationHasParent =
+                        contentletFormData.get("relisparent") != null ? (String) contentletFormData
+                                .get("relisparent") : "";
 
 				if (relationshipsData == null){
 					relationshipsData = new ContentletRelationships(currentContentlet);
@@ -1095,7 +1092,22 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		return relationshipsData;
 	}
 
-	public void cancelContentEdit(String workingContentletInode,
+    /**
+     * When you click the option Relate New Content, it adds the relwith key with the id of the contentlet that you edited at first and reltype with the relationship name.
+     * Also, it is important to verify that the reltype applies to the relationship that we are currently populating (case when there are multiple relationships).
+     * View issue: https://github.com/dotCMS/core/issues/17743
+     * @param contentletFormData
+     * @param relationship
+     * @return
+     */
+    private boolean isRelatingNewContent(Map<String, Object> contentletFormData,
+            Relationship relationship) {
+
+        return contentletFormData.containsKey("relwith") && relationship
+                .getRelationTypeValue().equals(contentletFormData.get("reltype"));
+    }
+
+    public void cancelContentEdit(String workingContentletInode,
 			String currentContentletInode,User user) throws Exception {
 
 		HibernateUtil.startTransaction();
