@@ -1040,8 +1040,22 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 		for (String key : keys) {
 			if (key.startsWith("rel_") && key.endsWith("_inodes")) {
-				//When you click the option Relate New Content, it adds the relwith key with the id of the contentlet that you edited at first.
-				final boolean isRelatingNewContent =  contentletFormData.containsKey("relwith");
+
+                final String inodesSt = (String) contentletFormData.get(key);
+                if(!UtilMethods.isSet(inodesSt)){
+                    continue;
+                }
+
+                final String[] inodes = inodesSt.split(",");
+
+                final Relationship relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
+
+				//When you click the option Relate New Content, it adds the relwith key with the id of the contentlet that you edited at first and reltype with the relationship name.
+                //Also, it is important to verify that the reltype applies to the relationship that we are currently populating (case when there are multiple relationships). Issue:
+                //https://github.com/dotCMS/core/issues/17743
+                final boolean isRelatingNewContent =
+                        contentletFormData.containsKey("relwith") && relationship
+                                .getRelationTypeValue().equals(contentletFormData.get("reltype"));
                 final String relationHasParent =
                         contentletFormData.get("relisparent") != null ? (String) contentletFormData
                                 .get("relisparent") : "";
@@ -1052,13 +1066,6 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				//if you are relating an existing child should be true, because the contentletFormData is a parent
 				//if you are relating an existing parent should be false, because the contentletFormData is a child
 				final boolean isContentletAParent = (key.contains("_P_")) ? !isRelatingNewContent : isRelatingNewContent;
-				final String inodesSt = (String) contentletFormData.get(key);
-				if(!UtilMethods.isSet(inodesSt)){
-					continue;
-				}
-				final String[] inodes = inodesSt.split(",");
-
-				final Relationship relationship = APILocator.getRelationshipAPI().byInode(inodes[0]);
 
 				if (relationshipsData == null){
 					relationshipsData = new ContentletRelationships(currentContentlet);
