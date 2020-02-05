@@ -34,7 +34,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   final ContentTypeCache2 cache;
 
   
-  final static Set<String> reservedContentTypeVars = ImmutableSet.<String>builder()
+  public static final Set<String> reservedContentTypeVars = ImmutableSet.<String>builder()
                   .add("basetype")
                   .add("categories")
                   .add("conhost")
