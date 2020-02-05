@@ -1884,10 +1884,8 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	}
 
 	/***
-	 * If you try to create a CT with a reserved name, it should alter the name to avoid
-	 * conflicts. Reserved elasticsearch names: {@link ContentTypeFactoryImpl#reservedContentTypeVars }
-	 * instead of concat the next number.
-	 *
+	 * If you try to create a CT with a reserved name, it should alter the variable to avoid
+	 * conflicts. Reserved content type variables: {@link ContentTypeFactoryImpl#reservedContentTypeVars }
 	 *
 	 * @throws DotSecurityException
 	 * @throws DotDataException
