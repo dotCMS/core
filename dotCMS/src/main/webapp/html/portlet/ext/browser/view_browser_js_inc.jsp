@@ -13,15 +13,12 @@
 
 <%
 Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
-
-
     String selectedLang=String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
     if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null){
         selectedLang = (String) session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
     }
-
-
 %>
+
 <script type="text/javascript" src="/dwr/interface/HostAjax.js"></script>
 
 <script src="/html/js/scriptaculous/prototype.js" type="text/javascript"></script>
@@ -83,7 +80,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
     //Events Handlers
 
-    var myHost = '<%= (myHost != null) ? myHost.getHostname() :""%>';
+    var myHost = '<%= (myHost != null) ? myHost.getHostname() : ""%>';
     var myHostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
 
     var selectedLang = '<%= selectedLang %>';
@@ -369,7 +366,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             editLink(inode,referer);
         }
         if (inodes[inode].type == 'htmlpage') {
-        	
+
             previewHTMLPage(e.target.dataset.url || e.target.parentNode.dataset.url, inodes[inode]);
         }
         return;
@@ -1513,12 +1510,12 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     function copyFolderCallback (response) {
-        if (!response) {
-            reloadContent ();
-            showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-copy-another-folder-with-the-same-name-already-exists-in-the-destination")) %>');
-        } else {
+        if(response == '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-copied")) %>'){
             BrowserAjax.getTree(null, initializeTree);
-            showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder-copied")) %>');
+            showDotCMSSystemMessage(response);
+        } else {
+            reloadContent ();
+            showDotCMSErrorMessage(response);
         }
     }
 
@@ -1582,12 +1579,12 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     function previewHTMLPage(url, content) {
         // We can't new CustomEvent becuase it's not supported by IE11
         var customEvent = document.createEvent("CustomEvent");
-        console.log(url);
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-page",
             data: {
+                hostId: myHostId,
                 url: url,
-                content: content
+                languageId: content.languageId
             }
         });
         document.dispatchEvent(customEvent);
@@ -1910,7 +1907,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
         if(!isMultiple){
             var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-            
+
             createContentlet(loc);
         } else {
             addMultipleFile(folderInode, selected, escape(refererVar));
@@ -2460,6 +2457,4 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     var pushHandler = new dotcms.dojo.push.PushHandler('<%=LanguageUtil.get(pageContext, "Remote-Publish")%>');
-
-
 </script>

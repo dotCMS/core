@@ -12,6 +12,7 @@ steps:
       - 'GITHUB_USER_TOKEN=$_GITHUB_USER_TOKEN'
     args: ['-f', './docker/tests/integration/travis-integration-service.yml',
            '-f', './docker/tests/integration/$_DB_TYPE-docker-compose.yml',
+           '-f', './docker/tests/integration/open-distro-docker-compose.yml',
            'up',
            '--abort-on-container-exit']
 

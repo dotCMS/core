@@ -29,7 +29,7 @@ List<WorkflowAction> wfActionsAll = null;
 try{
 	wfSteps = APILocator.getWorkflowAPI().findStepsByContentlet(contentlet);
 	wfActions = APILocator.getWorkflowAPI().findAvailableActionsEditing(contentlet, user);
-	wfActionsAll= APILocator.getWorkflowAPI().findActions(wfSteps, user);
+	wfActionsAll= APILocator.getWorkflowAPI().findActions(wfSteps, user, contentlet);
 	if(null != wfSteps && !wfSteps.isEmpty() && wfSteps.size() == 1) {
 		wfStep = wfSteps.get(0);
 		scheme = APILocator.getWorkflowAPI().findScheme(wfStep.getSchemeId());
@@ -48,7 +48,13 @@ catch(Exception e){
 		}
 	}
 %>
+<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
+<% com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); %>
+
 <script>
+
+var myHostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
+
 function setMyWorkflowScheme(){
 	var schemeId=dijit.byId("select-workflow-scheme-dropdown").getValue();
    document.querySelectorAll('.content-edit-actions .schemeActionsDiv').forEach(function(ele) {
@@ -65,13 +71,14 @@ function setMyWorkflowScheme(){
 	});
 }
 
-function editPage(url, language_id) {
+function editPage(url, languageId) {
     var customEvent = document.createEvent("CustomEvent");
     customEvent.initCustomEvent("ng-event", false, false,  {
         name: 'edit-page',
 		data: {
             url,
-            language_id
+            languageId,
+            hostId: myHostId
         }
     });
     document.dispatchEvent(customEvent);

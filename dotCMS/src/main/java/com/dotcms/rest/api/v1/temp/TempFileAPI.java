@@ -212,22 +212,24 @@ public class TempFileAPI {
   /**
    * This method receives a URL and checks if starts with http or https,
    * and also makes a request to the URL and if returns 200 the URL is valid,
-   * if returns any other response an exception will be thrown
+   * if returns any other response will be false
    * @param url
-   * @return
-   * @throws IOException
+   * @return boolean if the url is valid or not
    */
-  public boolean validUrl(final String url) throws IOException {
+  public boolean validUrl(final String url) {
 
     if(!(url.toLowerCase().startsWith("http://") ||
             url.toLowerCase().startsWith("https://"))){
       Logger.error(this, "URL does not starts with http or https");
       return false;
     }
-
-    final CircuitBreakerUrl urlGetter =
-            CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url).build();
-    urlGetter.doString();
+    try {
+      final CircuitBreakerUrl urlGetter =
+              CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url).build();
+      urlGetter.doString();
+    } catch (IOException | BadRequestException e) {//If response is not 200, CircuitBreakerUrl throws BadRequestException
+      return false;
+    }
 
     return true;
   }

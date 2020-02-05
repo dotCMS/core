@@ -11,7 +11,6 @@ import com.dotcms.contenttype.model.type.*;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;

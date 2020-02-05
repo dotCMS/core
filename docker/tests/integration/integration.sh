@@ -112,6 +112,7 @@ export databaseType=${database}
 export IMAGE_BASE_NAME=${BUILD_IMAGE_TAG}
 docker-compose -f integration-service.yml \
   -f ${database}-docker-compose.yml \
+  -f open-distro-docker-compose.yml \
   up \
   --abort-on-container-exit
 
@@ -119,7 +120,7 @@ docker-compose -f integration-service.yml \
 testsReturnCode=$?
 
 # Cleaning up
-docker-compose -f integration-service.yml -f ${database}-docker-compose.yml down
+docker-compose -f integration-service.yml -f ${database}-docker-compose.yml -f open-distro-docker-compose.yml down
 
 echo
 echo -e "\e[36m==========================================================================================================================\e[0m"

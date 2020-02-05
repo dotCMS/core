@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.index;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 
 import com.dotcms.business.CloseDBIfOpened;
@@ -9,13 +8,11 @@ import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.io.ByteStreams;
-import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.ResourceResponse;
@@ -60,9 +57,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
-import org.elasticsearch.action.admin.indices.stats.IndexStats;
-import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
-import org.elasticsearch.client.Client;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
@@ -82,7 +76,7 @@ public class ESIndexResource {
 
 	public ESIndexResource(){
 		this.indexAPI = APILocator.getESIndexAPI();
-		this.indexHelper = ESIndexHelper.INSTANCE;
+		this.indexHelper = ESIndexHelper.getInstance();
 		this.responseUtil = ResponseUtil.INSTANCE;
 		this.webResource = new WebResource();
 		this.layoutAPI = APILocator.getLayoutAPI();
@@ -127,7 +121,7 @@ public class ESIndexResource {
                     index=indexName;
             }
             else if(!UtilMethods.isSet(index)) {
-                index=APILocator.getIndiciesAPI().loadIndicies().site_search;
+                index=APILocator.getIndiciesAPI().loadIndicies().getSiteSearch();
             }
         }
 
@@ -150,15 +144,25 @@ public class ESIndexResource {
         }
     }
 
+    /**
+     * @deprecated Generating a manual index backup is not recommended. Snapshot and restore operations
+     * via Elastic Search High Level Rest API should be used instead.
+     * For further details: https://www.elastic.co/guide/en/elasticsearch/reference/7.x/modules-snapshots.html
+     * @param indexName
+     * @return
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Deprecated
     public static File downloadIndex(String indexName) throws DotDataException, IOException {
 
         if(indexName.equalsIgnoreCase("live") || indexName.equalsIgnoreCase("working")){
             IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
             if(indexName.equalsIgnoreCase("live")){
-                indexName = info.live;
+                indexName = info.getLive();
             }
             if(indexName.equalsIgnoreCase("working")){
-                indexName = info.working;
+                indexName = info.getWorking();
             }
         }
 
@@ -202,93 +206,22 @@ public class ESIndexResource {
         AdminLogger.log(ESIndexResource.class, "deactivateIndex", "Index deactivated: " + indexName);
     }
 
-    public static long indexDocumentCount(String indexName) {
-
-        final Client client = new ESClient().getClient();
-        final IndicesStatsResponse indicesStatsResponse =
-            client.admin().indices().prepareStats(indexName).setStore(true).execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
-        final IndexStats indexStats = indicesStatsResponse.getIndex(indexName);
-        return (indexStats !=null && indexStats.getTotal().docs != null) ? indexStats.getTotal().docs.getCount(): 0;
+    public static long indexDocumentCount(final String indexName) {
+        return APILocator.getContentletIndexAPI().getIndexDocumentCount(indexName);
     }
 
     /**
-     * Restore index backup
-     * @param inputFile input file stream
-     * @param inputFileDetail input file details
-     * @param params optional parameters
-     * @return response status
-     * @deprecated  As of 2016-10-12, replaced by {@link #restoreSnapshotIndex(HttpServletRequest, HttpServletResponse, AsyncResponse,
-     * InputStream, FormDataContentDisposition, String)}
-     */
-    @PUT
-    @Path("/restore/{params:.*}")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response restoreIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params,
-                                 @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail) {
-        try {
-            InitDataObject init=auth(params,httpServletRequest, httpServletResponse);
-
-            String index=init.getParamsMap().get("index");
-            String alias=init.getParamsMap().get("alias");
-            final boolean clear=init.getParamsMap().containsKey("clear") ? Boolean.parseBoolean(init.getParamsMap().get("clear")) : false;
-
-            File file=File.createTempFile("restore", ".json");
-            FileUtils.copyStreamToFile(file, inputFile, null);
-
-            restoreIndex(file,alias,index,clear);
-
-        } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on restoreIndex from "+httpServletRequest.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
-        } catch (Exception de) {
-            Logger.error(this, "Error on restore index. URI: "+httpServletRequest.getRequestURI(),de);
-            return Response.serverError().build();
-        }
-
-        return Response.ok().build();
-    }
-
-    /**
-     * Download index as backup
-     * @param httpServletRequest
-     * @param params
-     * @return zip file
-     * @deprecated  As of 2016-10-12, replaced by {@link #snapshotIndex(HttpServletRequest, HttpServletResponse, String)}
-     */
-    @GET
-    @Path("/download/{params:.*}")
-    @Produces("application/zip")
-    public Response downloadIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
-
-        try {
-            InitDataObject init=auth(params,httpServletRequest,httpServletResponse);
-            String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
-            if(!UtilMethods.isSet(indexName)) return Response.status(Status.BAD_REQUEST).build();
-
-            File f=downloadIndex(indexName);
-
-            return Response.ok(f)
-                    .header("Content-Disposition", "attachment; filename="+indexName+".zip")
-                    .header("Content-Type", "application/zip").build();
-
-        } catch (DotSecurityException sec) {
-            SecurityLogger.logInfo(this.getClass(), "Access denied on downloadIndex from "+httpServletRequest.getRemoteAddr());
-            return Response.status(Status.UNAUTHORIZED).build();
-        } catch (Exception de) {
-            Logger.error(this, "Error on downloadIndex. URI: "+httpServletRequest.getRequestURI(),de);
-            return Response.serverError().build();
-        }
-    }
-
-    /**
-     * Creates a compressed (zip) index snapshot file
+     * Creates a compressed (zip) index snapshot file.
+     *
      * @param httpServletRequest request
      * @param params optional parameters, such as "alias"
      * @return
+     * @deprecated Use ES Snapshot via ES REST API instead {@see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.7/modules-snapshots.html">}.
      */
     @GET
     @Path("/snapshot/{params:.*}")
     @Produces({"application/zip", MediaType.APPLICATION_JSON})
+    @Deprecated
     public Response snapshotIndex(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
 
     	try {
@@ -304,10 +237,10 @@ public class ESIndexResource {
             if("live".equalsIgnoreCase(indexName) || "working".equalsIgnoreCase(indexName)){
                 IndiciesInfo info = this.indiciesAPI.loadIndicies();
                 if("live".equalsIgnoreCase(indexName)){
-                    indexName = info.live;
+                    indexName = info.getLive();
                 }
                 if("working".equalsIgnoreCase(indexName)){
-                    indexName = info.working;
+                    indexName = info.getWorking();
                 }
             }
 
@@ -318,7 +251,7 @@ public class ESIndexResource {
                     ByteStreams.copy(in, os);
                 } finally {
                     // clean up
-                    indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY, true);
+                    indexAPI.deleteRepository(ESIndexAPI.BACKUP_REPOSITORY, false);
                     snapshotFile.delete();
                 }
             };
@@ -337,11 +270,13 @@ public class ESIndexResource {
      * @param inputFileDetail file stream details
      * @param params optional parameters
      * @return request status
+     * @deprecated Use ES Snapshot via ES REST API instead {@see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/6.7/modules-snapshots.html">}.
      */
     @POST
     @Path("/restoresnapshot/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Deprecated
     public void restoreSnapshotIndex(@Context final HttpServletRequest httpServletRequest,
                                          @Context final HttpServletResponse httpServletResponse,
                                          @Suspended final AsyncResponse asyncResponse,

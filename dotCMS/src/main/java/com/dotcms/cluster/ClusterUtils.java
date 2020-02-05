@@ -1,6 +1,5 @@
 package com.dotcms.cluster;
 
-import com.dotcms.cluster.business.ReplicasMode;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.util.Config;
@@ -18,11 +17,6 @@ public class ClusterUtils {
 			&& LicenseUtil.getLevel()> LicenseLevel.STANDARD.level;
 	}
 
-	public static boolean isESAutoWire(){
-		return Config.getBooleanProperty("AUTOWIRE_CLUSTER_ES", true)
-			&& LicenseUtil.getLevel()> LicenseLevel.STANDARD.level;
-	}
-
 	public static boolean isReplicasSet(){
 		return UtilMethods.isSet(Config.getStringProperty("ES_INDEX_REPLICAS", null))
 			&& LicenseUtil.getLevel()> LicenseLevel.STANDARD.level;
@@ -30,6 +24,6 @@ public class ClusterUtils {
 	
 	
     public static boolean isAutoScaleConfigured() {
-        return isTransportAutoWire() || isESAutoWire();
+        return isTransportAutoWire();
     }
 }

@@ -8,7 +8,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
-import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
@@ -59,6 +59,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -69,8 +70,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.unit.TimeValue;
 import java.util.stream.Collectors;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
+
 
 /**
  * This class upgrades the old permissionsfactoryimpl to handle the storage and retrieval of bit permissions from the database
@@ -2058,8 +2062,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     })).onFailure(e -> {
       throw new DotRuntimeException(e);
     });
-    Logger.info(this.getClass(), "permission inherited: " + Try.of(()->type.substring(type.lastIndexOf(".")+1, type.length())).getOrElse(type)  + " : "  + permissionKey + " -> " +finalNewReference);
-    
+  	Logger.debug(this.getClass(), () -> "permission inherited: " + Try
+			  .of(() -> type.substring(type.lastIndexOf(".") + 1)).getOrElse(type)
+			  + " : " + permissionKey + " -> " + finalNewReference);
 	permissionCache.addToPermissionCache(permissionKey, permissionList);
     return permissionList;
 
@@ -2874,14 +2879,18 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 throw new RuntimeException(e);
             }
 
-			BulkRequestBuilder bulk=new ESClient().getClient().prepareBulk();
+			BulkRequest bulkRequest=indexAPI.createBulkRequest();
+			bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+
 			for(Contentlet cont : contentlets) {
 			    permissionCache.remove(cont.getPermissionId());
 			    cont.setIndexPolicy(IndexPolicy.DEFER);
 			    indexAPI.addContentToIndex(cont, false);
 			}
-			if(bulk.numberOfActions()>0)
-			    bulk.execute().actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS);
+			if(bulkRequest.numberOfActions()>0) {
+				Sneaky.sneak(()-> RestHighLevelClientProvider.getInstance().getClient()
+						.bulk(bulkRequest, RequestOptions.DEFAULT));
+			}
 
 			offset=offset+limit;
 		} while(contentlets.size()>0);

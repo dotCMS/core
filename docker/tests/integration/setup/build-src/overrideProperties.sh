@@ -15,6 +15,7 @@ sed -i "s,^# integrationTestFelixFolder=.*$,integrationTestFelixFolder=$felixFol
 ## ------------------
 # /build/src/core/dotCMS/src/integration-test/resources/it-dotcms-config-cluster.properties
 sed -i "s,^es.path.home=.*$,es.path.home=$dotCMSFolder/src/main/webapp/WEB-INF/elasticsearch,g" $resourcesFolder/it-dotcms-config-cluster.properties
+sed -i "s,^ES_HOSTNAME=.*$,ES_HOSTNAME=elasticsearch,g" $resourcesFolder/it-dotcms-config-cluster.properties
 
 ## ------------------
 # /build/src/core/dotCMS/src/integration-test/resources/it-dotmarketing-config.properties

@@ -57,11 +57,6 @@
 		<async-supported>true</async-supported>
 	</filter>
 	<filter>
-		<filter-name>URLMapFilter</filter-name>
-		<filter-class>com.dotmarketing.cms.urlmap.filters.URLMapFilter</filter-class>
-		<async-supported>true</async-supported>
-	</filter>
-	<filter>
 		<filter-name>CMSFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CMSFilter</filter-class>
 		<async-supported>true</async-supported>
@@ -140,11 +135,6 @@
         <filter-name>VanityURLFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-    
-	<filter-mapping>
-		<filter-name>URLMapFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
 	
 	<filter-mapping>
 		<filter-name>AutoLoginFilter</filter-name>
@@ -273,7 +263,6 @@
 		<servlet-class>com.liferay.portal.servlet.InitServlet</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
-
 	<servlet>
 		<servlet-name>MainServlet</servlet-name>
 		<servlet-class>com.liferay.portal.servlet.MainServlet</servlet-class>
@@ -428,7 +417,6 @@
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/edit/*</url-pattern>
     </servlet-mapping>
-
     
 	<servlet-mapping>
         <servlet-name>login_edit_mode</servlet-name>
@@ -623,7 +611,6 @@
 		<auth-constraint>
 		</auth-constraint>
 	</security-constraint>
-
 	<security-constraint>
 		<display-name>Secure area</display-name>
 		<web-resource-collection>

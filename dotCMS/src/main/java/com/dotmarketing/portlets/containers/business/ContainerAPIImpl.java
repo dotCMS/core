@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -49,7 +50,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	protected ContainerFactory containerFactory;
 	protected HostAPI          hostAPI;
 	protected FolderAPI        folderAPI;
-	private static final String HOST_INDICATOR     = "//";
 
 	/**
 	 * Constructor
@@ -290,17 +290,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	private Tuple2<String, Host> getContainerPathHost(final String containerIdOrPath, final User user,
                                                       final Supplier<Host> resourceHost) throws DotSecurityException, DotDataException {
 
-		final HostAPI hostAPI        = APILocator.getHostAPI();
-		final int hostIndicatorIndex = containerIdOrPath.indexOf(HOST_INDICATOR);
-		final int applicationContainerFolderStartsIndex =
-				containerIdOrPath.indexOf(Constants.CONTAINER_FOLDER_PATH);
-		final boolean hasHost = hostIndicatorIndex != -1;
-		final String hostName = hasHost?
-                containerIdOrPath.substring(hostIndicatorIndex+2, applicationContainerFolderStartsIndex):null;
-		final String path     = hasHost?containerIdOrPath.substring(applicationContainerFolderStartsIndex):containerIdOrPath;
-		final Host host 	  = hasHost?hostAPI.findByName(hostName, user, false):resourceHost.get();
-
-		return Tuple.of(path, null == host? hostAPI.findDefaultHost(user, false): host);
+		return HostUtil.splitPathHost(containerIdOrPath, user, Constants.CONTAINER_FOLDER_PATH, resourceHost);
 	}
 
     @CloseDBIfOpened
@@ -323,7 +313,16 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@Override
 	public Container getContainerByFolder(final Folder folder, final Host host, final User user, final boolean showLive) throws DotSecurityException, DotDataException {
 
-		return this.containerFactory.getContainerByFolder(host, folder, user, showLive, false);
+		final String folderHostId           = folder.getHostId();
+		final Optional<Host> currentHostOpt = HostUtil.tryToFindCurrentHost(user);
+		boolean includeHostOnPath           = false;
+
+		if (currentHostOpt.isPresent()) {
+
+			includeHostOnPath = !folderHostId.equals(currentHostOpt.get().getIdentifier());
+		}
+
+		return this.containerFactory.getContainerByFolder(host, folder, user, showLive, includeHostOnPath);
 	}
 
     /**

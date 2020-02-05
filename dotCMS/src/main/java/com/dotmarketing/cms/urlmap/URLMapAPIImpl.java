@@ -13,7 +13,6 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cms.urlmap.filters.URLMapFilter;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -82,7 +81,7 @@ public class URLMapAPIImpl implements URLMapAPI {
 
             final Identifier pageUriIdentifier = this.getDetailtPageUri(structure);
 
-            return Optional.of(new URLMapInfo(contentlet, pageUriIdentifier));
+            return Optional.of(new URLMapInfo(contentlet, pageUriIdentifier, context.getUri()));
         } else {
             return Optional.empty();
         }
@@ -187,7 +186,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             final Host systemHost = this.whostAPI.findSystemHost(this.wuserAPI.getSystemUser(), true);
             return String.format("+(conhost: %s conhost: %s)", host.getIdentifier(), systemHost.getIdentifier());
         } catch (DotDataException | DotSecurityException e) {
-            Logger.error(URLMapFilter.class, e.getMessage()
+            Logger.error(URLMapAPIImpl.class, e.getMessage()
                     + " : Unable to build host in query : ", e);
             return "";
         }
@@ -280,6 +279,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             query.append(this.getHostFilter(context.getHost()));
         }
 
+        query.append(" ");
         query.append(this.buildFields(structure, matches))
              .append(" +languageId:").append(context.getLanguageId());
 
@@ -292,7 +292,7 @@ public class URLMapAPIImpl implements URLMapAPI {
         try {
             mastRegEx = CacheLocator.getContentTypeCache().getURLMasterPattern();
         } catch (DotCacheException e2) {
-            Logger.error(URLMapFilter.class, e2.getMessage(), e2);
+            Logger.error(URLMapAPIImpl.class, e2.getMessage(), e2);
         }
 
         return mastRegEx == null || patternsCache == null || patternsCache.isEmpty();

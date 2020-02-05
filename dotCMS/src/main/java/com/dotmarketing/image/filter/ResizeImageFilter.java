@@ -58,6 +58,7 @@ public class ResizeImageFilter extends ImageFilter {
 			BufferedImageOp resampler = new ResampleOp(width, hieght, ResampleOp.FILTER_LANCZOS); // A good default filter, see class documentation for more info
 			BufferedImage output = resampler.filter(srcImage, null);
 			ImageIO.write(output, "png", resultFile);
+			output.flush();
 			return resultFile;
 
 		} catch (FileNotFoundException e) {

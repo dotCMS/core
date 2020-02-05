@@ -18,26 +18,26 @@ public class TempFileAPITest {
         IntegrationTestInitService.getInstance().init();
     }
 
-    @Test(expected = BadRequestException.class)
-    public void testValidURL_urlReturn400_throwsException() throws IOException {
+    @Test
+    public void testValidURL_urlReturn400_throwsException() {
         final String url =  "https://raw.githubusercontent.com/url/throws/400.jpg";
-        APILocator.getTempFileAPI().validUrl(url);
-    }
-
-    @Test(expected = BadRequestException.class)
-    public void testValidURL_urlReturn404_throwsException() throws IOException {
-        final String url =  "https://raw.githubusercontent.com/dotCMS/core/throws/dotCMS/404.jpg";
-        APILocator.getTempFileAPI().validUrl(url);
+        assertFalse(APILocator.getTempFileAPI().validUrl(url));
     }
 
     @Test
-    public void testValidURL_urlReturn200_returnTrue() throws IOException {
+    public void testValidURL_urlReturn404_throwsException() {
+        final String url =  "https://raw.githubusercontent.com/dotCMS/core/throws/dotCMS/404.jpg";
+        assertFalse(APILocator.getTempFileAPI().validUrl(url));
+    }
+
+    @Test
+    public void testValidURL_urlReturn200_returnTrue() {
         final String url =  "https://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif";
         assertTrue(APILocator.getTempFileAPI().validUrl(url));
     }
 
     @Test
-    public void testValidURL_noHTTP_returnFalse() throws IOException {
+    public void testValidURL_noHTTP_returnFalse() {
         final String url =  "test://raw.githubusercontent.com/dotCMS/core/master/dotCMS/src/main/webapp/html/images/skin/logo.gif";
         assertFalse(APILocator.getTempFileAPI().validUrl(url));
     }
