@@ -18,7 +18,7 @@ public enum RESTParams {
     //keeps the identifier of the related content to filter by (useful when retrieving parents given a child
     RELATED ("related"),
 	DEPTH ("depth"),
-	ALL_CATEGORIES_INFO ("allCategoriesInfo");
+	ALL_CATEGORIES_INFO ("includeCategoriesExtraInfo");
 
 	private final String  value;
 

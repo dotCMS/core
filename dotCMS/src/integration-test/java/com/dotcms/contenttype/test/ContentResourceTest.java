@@ -42,6 +42,7 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.ContentResource;
+import com.dotcms.rest.RESTParams;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -768,7 +769,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                     "/id/" + contentlet.getIdentifier()
                     + "/languageId/" + language + "/live/false/type/"
                     + (testCase.equals(JSON_RESPONSE) ? "json" : "xml")
-                    + "/allCategoriesInfo/1");
+                    + "/" + RESTParams.ALL_CATEGORIES_INFO + "/true");
 
             // Verify result
             assertEquals(Status.OK.getStatusCode(), endpointResponse.getStatus());
