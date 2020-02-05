@@ -34,7 +34,7 @@ public class ContainerLoaderTest {
      * Should: return a div with the File Comntainer's id
      */
     @Test
-    public void aaa() throws DotDataException, DotSecurityException, IOException {
+    public void shouldTakeFullContainerPathAsId() throws DotDataException, DotSecurityException, IOException {
 
         final Host host = new SiteDataGen().nextPersisted();
 
@@ -48,15 +48,14 @@ public class ContainerLoaderTest {
         final ContainerLoader containerLoader = new ContainerLoader();
 
         final VelocityResourceKey velocityResourceKey = new VelocityResourceKey(fileAssetContainer, PageMode.EDIT_MODE);
-        final InputStream inputStream = containerLoader.writeObject(velocityResourceKey);
 
-        final String velocityCode = IOUtils.toString(inputStream, String.valueOf(StandardCharsets.UTF_8));
+        try (InputStream inputStream = containerLoader.writeObject(velocityResourceKey)) {
+            final String velocityCode = IOUtils.toString(inputStream, String.valueOf(StandardCharsets.UTF_8));
 
-        final String expected = "<div data-dot-object=\"container\" data-dot-inode=\"" + container.getInode() +
-                "\" data-dot-identifier=\"//" + host.getName() + container.getPath() + "\"";
+            final String expected = "<div data-dot-object=\"container\" data-dot-inode=\"" + container.getInode() +
+                    "\" data-dot-identifier=\"//" + host.getName() + container.getPath() + "\"";
 
-        assertTrue(velocityCode.contains(expected));
-
-        inputStream.close();
+            assertTrue(velocityCode.contains(expected));
+        }
     }
 }
