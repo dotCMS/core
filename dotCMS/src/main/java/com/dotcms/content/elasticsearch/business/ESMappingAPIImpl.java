@@ -117,7 +117,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 * @throws ElasticsearchException
 	 * @throws IOException
 	 */
-	public  boolean putMapping(String indexName, String mapping) throws ElasticsearchException, IOException{
+	public  boolean putMapping(final String indexName, final String mapping) throws ElasticsearchException, IOException{
 
         final PutMappingRequest request = new PutMappingRequest(
                 APILocator.getESIndexAPI().getNameWithClusterIDPrefix(indexName));
@@ -464,201 +464,214 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	public static final FastDateFormat timeFormat = FastDateFormat.getInstance("HH:mm:ss");
 
-	protected void loadFields(Contentlet con, Map<String, Object> m) throws DotDataException {
+	protected void loadFields(final Contentlet contentlet, final Map<String, Object> contentletMap) throws DotDataException {
 
 		// https://github.com/dotCMS/dotCMS/issues/6152
-		DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols();
+		final DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols();
 		otherSymbols.setDecimalSeparator('.');
 
-		DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000", otherSymbols);
-
-		FieldAPI fAPI=APILocator.getFieldAPI();
-		final List<Field> fields = new ArrayList<>(
-				FieldsCache.getFieldsByStructureInode(con.getStructureInode()));
-
-		Structure st=con.getStructure();
+		final DecimalFormat numFormatter = new DecimalFormat("0000000000000000000.000000000000000000", otherSymbols);
+		final FieldAPI fieldAPI   = APILocator.getFieldAPI();
+		final List<Field> fields  = new ArrayList<>(
+				FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode()));
+		final Structure structure = contentlet.getStructure();
 		StringBuilder keyNameBuilder;
 		String keyName;
 		String keyNameText;
-
 		final TikaUtils tikaUtils = new TikaUtils();
 
-		for (Field f : fields) {
+		for (final Field field : fields) {
 
-			keyNameBuilder = new StringBuilder(st.getVelocityVarName()).append(".")
-					.append(f.getVelocityVarName());
+			keyNameBuilder = new StringBuilder(structure.getVelocityVarName()).append(".")
+					.append(field.getVelocityVarName());
 			keyName        = keyNameBuilder.toString();
 			keyNameText    = keyNameBuilder.append(TEXT).toString();
-			if (f.getFieldType().equals(Field.FieldType.BINARY.toString())
-					|| f.getFieldContentlet() != null && (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SYSTEM_FIELD) && !f.getFieldType().equals(Field.FieldType.TAG.toString()))) {
+			if (field.getFieldType().equals(Field.FieldType.BINARY.toString()) // todo: remove this since we are going to index the binary fields
+					|| field.getFieldContentlet() != null && (field.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SYSTEM_FIELD)
+					&& !field.getFieldType().equals(Field.FieldType.TAG.toString()))) {
+
 				continue;
 			}
-			if(!f.isIndexed()){
+
+			if(!field.isIndexed()) {
+
 				continue;
 			}
+
 			try {
-				if(fAPI.isElementConstant(f)){
-					m.put(keyName, (f.getValues() == null ? "":f.getValues()));
+				if(fieldAPI.isElementConstant(field)){
+					contentletMap.put(keyName, (field.getValues() == null ? "":field.getValues()));
 					continue;
 				}
 
-				Object valueObj = con.get(f.getVelocityVarName());
+				Object valueObj = contentlet.get(field.getVelocityVarName());
 
-				if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SECTION_DIVIDER)) {
+				if (field.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SECTION_DIVIDER)) {
 					valueObj = "";
 				}
 
-				if (!UtilMethods.isSet(valueObj) && !f.getFieldType()
+				if (!UtilMethods.isSet(valueObj) && !field.getFieldType()
 						.equals(Field.FieldType.TAG.toString())) {
-					m.put(keyName, null);
+					contentletMap.put(keyName, null);
 				}
-				else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_TIME)) {
+				else if(field.getFieldType().equals(ESMappingConstants.FIELD_TYPE_TIME)) {
 					try{
 						String timeStr=timeFormat.format(valueObj);
-						m.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
-						m.put(keyNameText, timeStr);
+						contentletMap.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
+						contentletMap.put(keyNameText, timeStr);
 					}
 					catch(Exception e){
-						m.put(keyName, null);
-						m.put(keyNameText, null);
+						contentletMap.put(keyName, null);
+						contentletMap.put(keyNameText, null);
 					}
 				}
-				else if (f.getFieldType().equals(ESMappingConstants.FIELD_ELASTIC_TYPE_DATE)) {
+				else if (field.getFieldType().equals(ESMappingConstants.FIELD_ELASTIC_TYPE_DATE)) {
 					try {
 						String dateString = dateFormat.format(valueObj);
-						m.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
-						m.put(keyNameText, dateString);
+						contentletMap.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
+						contentletMap.put(keyNameText, dateString);
 					}
 					catch(Exception ex) {
-						m.put(keyName, null);
-						m.put(keyNameText, null);
+						contentletMap.put(keyName, null);
+						contentletMap.put(keyNameText, null);
 					}
-				} else if(f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_DATE_TIME)) {
+				} else if(field.getFieldType().equals(ESMappingConstants.FIELD_TYPE_DATE_TIME)) {
 					try {
 						String datetimeString = datetimeFormat.format(valueObj);
-						m.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
-						m.put(keyNameText, datetimeString);
+						contentletMap.put(keyName, elasticSearchDateTimeFormat.format(valueObj));
+						contentletMap.put(keyNameText, datetimeString);
 					}
 					catch(Exception ex) {
-						m.put(keyName, null);
-						m.put(keyNameText, null);
+						contentletMap.put(keyName, null);
+						contentletMap.put(keyNameText, null);
 					}
-				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CATEGORY)) {
+				} else if (field.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CATEGORY)) {
 					// moved the logic to loadCategories
-				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_RELATIONSHIP)) {
+				} else if (field.getFieldType().equals(ESMappingConstants.FIELD_TYPE_RELATIONSHIP)) {
                     // loadRelationshipFields processes relationship fields
                     continue;
-                } else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || f
+                } else if (field.getFieldType().equals(ESMappingConstants.FIELD_TYPE_CHECKBOX) || field
 						.getFieldType().equals(ESMappingConstants.FIELD_TYPE_MULTI_SELECT)) {
-					if (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
-						m.put(keyName, valueObj);
-						m.put(keyNameText, valueObj.toString());
+					if (field.getFieldContentlet().startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
+						contentletMap.put(keyName, valueObj);
+						contentletMap.put(keyNameText, valueObj.toString());
 					} else {
-						m.put(keyName,
+						contentletMap.put(keyName,
 								UtilMethods.listToString(valueObj.toString()));
 					}
-				} else if (f.getFieldType().equals(ESMappingConstants.FIELD_TYPE_KEY_VALUE)){
+				} else if (field.getFieldType().equals(ESMappingConstants.FIELD_TYPE_KEY_VALUE)){
 					final boolean fileMetadata =
-							f.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD)
-									&& st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
+							field.getVelocityVarName().equals(FileAssetAPI.META_DATA_FIELD)
+									&& structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET;
 					if(LicenseUtil.getLevel()>= LicenseLevel.STANDARD.level) {
 
-						Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap((String)valueObj);
-
-						Set<String> allowedFields = new HashSet<>();
-						if(fileMetadata) {
-							// http://jira.dotmarketing.net/browse/DOTCMS-7243
-							List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(
-									f.getInode(), APILocator.getUserAPI().getSystemUser(), false);
-							for(FieldVariable fv : fieldVariables) {
-								if(fv.getKey().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
-									String[] names=fv.getValue().split(",");
-									allowedFields=new HashSet<>();
-									for(String n : names)
-										allowedFields.add(n.trim().toLowerCase());
-								}
-							}
-
-							allowedFields
-									.addAll(tikaUtils.getConfiguredMetadataFields());
-
-							tikaUtils.filterMetadataFields(keyValueMap, allowedFields);
-
-						}
-
-						final String keyValuePrefix = fileMetadata ?
-								FileAssetAPI.META_DATA_FIELD.toLowerCase() : keyName;
-						keyValueMap.forEach((k, v) -> m
-								.put(keyValuePrefix + StringPool.PERIOD + k, v));
+						this.loadKeyValueField(contentletMap, keyName, tikaUtils, field, (String) valueObj, fileMetadata);
 					}
-				} else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
+				} else if(field.getFieldType().equals(Field.FieldType.TAG.toString())) {
 
-					StringBuilder personaTags = new StringBuilder();
-					List<Tag> tagList = APILocator.getTagAPI().getTagsByInode(con.getInode());
-					if(tagList ==null || tagList.size()==0) continue;
+					if (this.loadTagsField(contentlet, contentletMap, structure, keyName)) {
 
-					final String tagDelimit = Config.getStringProperty("ES_TAG_DELIMITER_PATTERN", ",,");
-
-
-					for ( Tag t : tagList ) {
-						if(t.getTagName() ==null) continue;
-						String myTag = t.getTagName().trim();
-						if ( t.isPersona() ) {
-							personaTags.append(myTag).append(' ');
-						}
+						continue;
 					}
-
-					final List<String> tagsNames = tagList.stream().map(Tag::getTagName).collect(
-							Collectors.toList());
-
-					m.put(keyName, tagsNames);
-					m.put(ESMappingConstants.TAGS, tagsNames);
-
-					if ( Structure.STRUCTURE_TYPE_PERSONA != con.getStructure().getStructureType() ) {
-						final List<String> personaTagsNames = tagList.stream()
-								.filter(Tag::isPersona)
-								.map(Tag::getTagName)
-								.collect(Collectors.toList());
-
-						m.put(st.getVelocityVarName() + "."
-								+ ESMappingConstants.PERSONAS, personaTagsNames);
-						m.put(ESMappingConstants.PERSONAS, personaTagsNames);
-					}
-
-				} else if(f.getFieldType().equals(CUSTOM_FIELD.legacyValue())
-						&& f.getVelocityVarName().equals(PERSONA_KEY_TAG_FIELD_VAR)) {
-					m.put(PERSONA_KEY_TAG,valueObj.toString());
-					m.put(keyName, valueObj.toString());
+				} else if(field.getFieldType().equals(CUSTOM_FIELD.legacyValue())
+						&& field.getVelocityVarName().equals(PERSONA_KEY_TAG_FIELD_VAR)) {
+					contentletMap.put(PERSONA_KEY_TAG,valueObj.toString());
+					contentletMap.put(keyName, valueObj.toString());
 				} else {
-					if (f.getFieldContentlet()
+					if (field.getFieldContentlet()
 							.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_BOOLEAN)) {
-						m.put(keyName, valueObj);
-						m.put(keyNameText,valueObj.toString());
-					} else if (f.getFieldContentlet()
-							.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT) || f
+						contentletMap.put(keyName, valueObj);
+						contentletMap.put(keyNameText,valueObj.toString());
+					} else if (field.getFieldContentlet()
+							.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT) || field
 							.getFieldContentlet()
 							.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_INTEGER)) {
-						m.put(keyName, valueObj);
-						m.put(keyNameText, numFormatter.format(valueObj));
+						contentletMap.put(keyName, valueObj);
+						contentletMap.put(keyNameText, numFormatter.format(valueObj));
 					} else {
-						m.put(keyName, valueObj);
-						m.put(keyNameText, valueObj.toString());
+						contentletMap.put(keyName, valueObj);
+						contentletMap.put(keyNameText, valueObj.toString());
 					}
 				}
 
 				// Store sha256 hash for unique fields in the index
-				if (f.isUnique() && m.containsKey(keyName)) {
-					final Object uniqueValue = m.get(keyName);
-					m.put(keyName + ESUtils.SHA_256,
-							ESUtils.sha256(keyName, uniqueValue, con.getLanguageId()));
+				if (field.isUnique() && contentletMap.containsKey(keyName)) {
+					final Object uniqueValue = contentletMap.get(keyName);
+					contentletMap.put(keyName + ESUtils.SHA_256,
+							ESUtils.sha256(keyName, uniqueValue, contentlet.getLanguageId()));
 				}
-
 			} catch (Exception e) {
-				Logger.warn(ESMappingAPIImpl.class, "Error indexing field: " + f.getFieldName()
-						+ " of contentlet: " + con.getInode(), e);
+				Logger.warn(ESMappingAPIImpl.class, "Error indexing field: " + field.getFieldName()
+						+ " of contentlet: " + contentlet.getInode(), e);
 				throw new DotDataException(e.getMessage(),e);
 			}
 		}
+	}
+
+	private boolean loadTagsField(final Contentlet contentlet,
+								  final Map<String, Object> contentletMap,
+								  final Structure structure,
+								  final String keyName) throws DotDataException {
+
+		final List<Tag> tagList = APILocator.getTagAPI().getTagsByInode(contentlet.getInode());
+		if(tagList ==null || tagList.size()==0) {
+			return true;
+		}
+
+		final List<String> tagsNames = tagList.stream().map(Tag::getTagName).collect(
+				Collectors.toList());
+
+		contentletMap.put(keyName, tagsNames);
+		contentletMap.put(ESMappingConstants.TAGS, tagsNames);
+
+		if ( Structure.STRUCTURE_TYPE_PERSONA != contentlet.getStructure().getStructureType() ) {
+			final List<String> personaTagsNames = tagList.stream()
+					.filter(Tag::isPersona)
+					.map(Tag::getTagName)
+					.collect(Collectors.toList());
+
+			contentletMap.put(structure.getVelocityVarName() + "."
+					+ ESMappingConstants.PERSONAS, personaTagsNames);
+			contentletMap.put(ESMappingConstants.PERSONAS, personaTagsNames);
+		}
+
+		return false;
+	}
+
+	private void loadKeyValueField(final Map<String, Object> contentletMap,
+								   final String keyName,
+								   final TikaUtils tikaUtils,
+								   final Field field,
+								   final String valueObj,
+								   final boolean fileMetadata) throws DotDataException, DotSecurityException {
+
+		final Map<String,Object> keyValueMap = KeyValueFieldUtil.JSONValueToHashMap(valueObj);
+		Set<String> allowedFields = new HashSet<>();
+
+		if(fileMetadata) {
+			// http://jira.dotmarketing.net/browse/DOTCMS-7243
+			final List<FieldVariable> fieldVariables = APILocator.getFieldAPI().getFieldVariablesForField(
+					field.getInode(), APILocator.getUserAPI().getSystemUser(), false);
+			for(final FieldVariable fieldVariable : fieldVariables) {
+				if(fieldVariable.getKey().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
+
+					final String[] names = fieldVariable.getValue().split(",");
+					allowedFields        = new HashSet<>();
+					for(final String name : names)
+						allowedFields.add(name.trim().toLowerCase());
+				}
+			}
+
+			allowedFields
+					.addAll(tikaUtils.getConfiguredMetadataFields());
+
+			tikaUtils.filterMetadataFields(keyValueMap, allowedFields);
+		}
+
+		final String keyValuePrefix = fileMetadata ?
+				FileAssetAPI.META_DATA_FIELD.toLowerCase() : keyName;
+		keyValueMap.forEach((k, v) -> contentletMap
+				.put(keyValuePrefix + StringPool.PERIOD + k, v));
 	}
 
 	public String toJsonString(Map<String, Object> map) throws IOException{
@@ -683,7 +696,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			final List<Relationship> relationships = FactoryLocator.getRelationshipFactory()
 					.byContentType(contentlet.getContentType());
 
-			for(Relationship relationship : relationships) {
+			for(final Relationship relationship : relationships) {
 
 				final List<Contentlet> oldDocs;
 				final List<String> oldRelatedIds = new ArrayList<>();

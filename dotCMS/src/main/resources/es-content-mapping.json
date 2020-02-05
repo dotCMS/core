@@ -59,9 +59,33 @@
           {
               "keywordmapping" : {
                   "match_pattern": "regex",
-                  "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|moduser|owner",
+                  "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|moduser|owner|keywords",
                   "mapping": {
                       "type": "keyword"
+                  }
+              }
+          },
+          {
+              "metadata_length" : {
+                  "path_match": "metadata.length",
+                  "mapping": {
+                      "type": "long"
+                  }
+              }
+          },
+          {
+              "metadata_height" : {
+                  "path_match": "metadata.height",
+                  "mapping": {
+                      "type": "long"
+                  }
+              }
+          },
+          {
+              "metadata_width" : {
+                  "path_match": "metadata.width",
+                  "mapping": {
+                      "type": "long"
                   }
               }
           },
@@ -70,6 +94,16 @@
                   "path_match": "host.hostname",
                   "mapping": {
                       "type": "keyword"
+                  }
+              }
+          },
+          {
+              "metadata_content": {
+                  "match_mapping_type": "string",
+                  "mapping": {
+                      "analyzer": "my_analyzer",
+                      "store": "false",
+                      "type": "text"
                   }
               }
           },
