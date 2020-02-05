@@ -4,7 +4,6 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.formula.functions.T;
 import org.elasticsearch.common.collect.MapBuilder;
 
 import java.io.Serializable;
@@ -926,7 +925,7 @@ public class CollectionsUtils implements Serializable {
 	    return new ImmutableListCollector<>();
     }
 
-	private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {
+    private static class ImmutableListCollector<T> implements Collector<T, ImmutableList.Builder<T>, ImmutableList<T>> {
         @Override
         public Supplier<ImmutableList.Builder<T>> supplier() {
             return ImmutableList.Builder::new;

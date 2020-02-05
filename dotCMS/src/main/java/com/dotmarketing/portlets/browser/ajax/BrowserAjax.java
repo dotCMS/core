@@ -5,7 +5,6 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.viewtools.BrowserAPI;
@@ -14,7 +13,6 @@ import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -730,49 +728,60 @@ public class BrowserAjax {
      * @return Confirmation message
      * @throws Exception
      */
-    public boolean copyFolder ( String inode, String newFolder ) throws Exception {
+    public String copyFolder ( String inode, String newFolder ) throws Exception {
 
-        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser( req );
+        HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser( request );
 
         UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
         HostAPI hostAPI = APILocator.getHostAPI();
 
+		final Locale requestLocale       = request.getLocale();
+		final String successString       = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Folder-copied"));
+		final String errorTryToMoveFolderToItself       = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Folder-copied-to-itself"));
+		final String errorTryToMoveFolderToChild       = UtilMethods.escapeSingleQuotes(LanguageUtil.get(requestLocale, "Folder-copied-to-children"));
+
         //Searching for the folder to copy
         Folder folder = APILocator.getFolderAPI().find( inode, user, false );
 
-        if ( !folderAPI.exists( newFolder ) ) {
+        try {
+			if ( !folderAPI.exists( newFolder ) ) {
 
-            Host parentHost = hostAPI.find( newFolder, user, !userWebAPI.isLoggedToBackend( req ) );
+				Host parentHost = hostAPI.find( newFolder, user, !userWebAPI.isLoggedToBackend( request ) );
 
-            if ( !permissionAPI.doesUserHavePermission( folder, PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentHost, PERMISSION_WRITE, user ) ) {
-                throw new DotRuntimeException( "The user doesn't have the required permissions." );
-            }
+				if ( !permissionAPI.doesUserHavePermission( folder, PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentHost, PERMISSION_WRITE, user ) ) {
+					throw new DotRuntimeException( "The user doesn't have the required permissions." );
+				}
 
-            folderAPI.copy( folder, parentHost, user, false );
-            refreshIndex( null, parentHost, folder );
-        } else {
+				folderAPI.copy( folder, parentHost, user, false );
+				refreshIndex( null, parentHost, folder );
+			} else {
 
-            Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
+				Folder parentFolder = APILocator.getFolderAPI().find( newFolder, user, false );
 
-            if ( !permissionAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user ) ) {
-                throw new DotRuntimeException( "The user doesn't have the required permissions." );
-            }
+				if ( !permissionAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_WRITE, user ) || !permissionAPI.doesUserHavePermission( parentFolder, PERMISSION_WRITE, user ) ) {
+					throw new DotRuntimeException( "The user doesn't have the required permissions." );
+				}
 
-            if ( parentFolder.getInode().equalsIgnoreCase( folder.getInode() ) ) {
-                //Trying to move a folder over itself
-                return false;
-            }
-            if ( folderAPI.isChildFolder( parentFolder, folder ) ) {
-                //Trying to move a folder over one of its children
-                return false;
-            }
+				if ( parentFolder.getInode().equalsIgnoreCase( folder.getInode() ) ) {
+					//Trying to move a folder over itself
+					return errorTryToMoveFolderToItself;
+				}
+				if ( folderAPI.isChildFolder( parentFolder, folder ) ) {
+					//Trying to move a folder over one of its children
+					return errorTryToMoveFolderToChild;
+				}
 
-            folderAPI.copy( folder, parentFolder, user, false );
-            refreshIndex(parentFolder, null, folder );
-        }
+				folderAPI.copy( folder, parentFolder, user, false );
+				refreshIndex(parentFolder, null, folder );
+			}
+		} catch(InvalidFolderNameException e ) {
+			Logger.error(this, "Error copying folder with id:" + folder.getInode() + " into folder with id:"
+					+ newFolder + ". Error: " + e.getMessage());
+			return e.getLocalizedMessage();
+		}
 
-        return true;
+        return successString;
     }
 
     /**
@@ -799,7 +808,11 @@ public class BrowserAjax {
 
             	return errorString;
 			}
-        } catch (Exception e) {
+        } catch(InvalidFolderNameException e ) {
+			Logger.error(this, "Error moving folder with id:" + folderId + " into folder with id:"
+					+ newFolderId + ". Error: " + e.getMessage());
+			return e.getLocalizedMessage();
+		}catch (Exception e) {
         	Logger.error(this, "Error moving folder with id:" + folderId + " into folder with id:"
 					+ newFolderId + ". Error: " + e.getMessage(), e);
             return e.getLocalizedMessage();

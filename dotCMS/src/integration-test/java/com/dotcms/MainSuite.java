@@ -5,6 +5,7 @@ import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.rest.api.v1.secret.ServiceIntegrationResourceTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
@@ -224,6 +225,9 @@ import org.junit.runners.Suite.SuiteClasses;
         TestConfig.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
+        com.dotcms.security.secret.SecretsStoreKeyStoreImplTest.class,
+        com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class,
+        ServiceIntegrationResourceTest.class,
         VelocityServletIntegrationTest.class
 })
 public class MainSuite {

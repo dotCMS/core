@@ -1,18 +1,8 @@
 package com.dotmarketing.portlets.rules.util;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.List;
-
-
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.exception.DotDataException;
@@ -22,7 +12,18 @@ import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 
 /**
  * 
@@ -35,10 +36,6 @@ public class RulesImportExportUtil {
 
 	private static RulesImportExportUtil rulesImportExportUtil;
 
-	/**
-	 * 
-	 * @return
-	 */
 	public static RulesImportExportUtil getInstance() {
 		if (rulesImportExportUtil == null) {
 			synchronized ("RulesImportExportUtil.class") {
@@ -50,23 +47,11 @@ public class RulesImportExportUtil {
 		return rulesImportExportUtil;
 	}
 
-	/**
-	 * 
-	 * @return
-	 * @throws IOException
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
 	public String exportToJson() throws IOException, DotDataException, DotSecurityException {
 		ObjectMapper mapper = new ObjectMapper();
 		return mapper.writeValueAsString(buildExportObject(null));
 	}
 
-	/**
-	 * 
-	 * @param file
-	 * @throws IOException
-	 */
 	public void export(File file) throws IOException {
 
 		BufferedWriter out = null;
@@ -83,69 +68,69 @@ public class RulesImportExportUtil {
 		}
 	}
 
-	/**
-	 * 
-	 * @param file
-	 * @throws IOException
-	 */
-	public void importRules(File file) throws IOException {
+	public void importRules(final File file) throws IOException {
 
-		RulesAPI rapi = APILocator.getRulesAPI();
+		final ObjectMapper mapper = new ObjectMapper();
+		final StringWriter stringWriter = new StringWriter();
 
-		BufferedReader in = null;
-		try {
-			User user = APILocator.getUserAPI().getSystemUser();
-			FileReader fstream = new FileReader(file);
-			in = new BufferedReader(fstream);
-			ObjectMapper mapper = new ObjectMapper();
+		try (BufferedReader bufferedReader = Files.newBufferedReader(Paths.get(file.toURI()))) {
+
 			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-			StringWriter sw = new StringWriter();
+
 			String str;
-			while ((str = in.readLine()) != null) {
-				sw.append(str);
+			while ((str = bufferedReader.readLine()) != null) {
+				stringWriter.append(str);
 			}
 
-			RulesImportExportObject importer = mapper.readValue(sw.toString(), RulesImportExportObject.class);
+			RulesImportExportObject importer = mapper.readValue
+					((String) stringWriter.toString(), RulesImportExportObject.class);
+
+			this.importRules(importer, APILocator.systemUser());
+		} catch (Exception e) {
+			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);
+		}
+	}
+
+	@WrapInTransaction
+	public void importRules(final RulesImportExportObject importer,
+			final User user) throws IOException, DotDataException {
+
+		try {
+			final RulesAPI rulesAPI = APILocator.getRulesAPI();
 
 			//Saving the rules.
 			for (Rule rule : importer.getRules()) {
 				rule.setParentPermissionable(RulePermissionableUtil.findParentPermissionable(rule.getParent()));
-				rapi.saveRule(rule, user, false);
+				rulesAPI.saveRule(rule, user, false);
 
 				//Saving the Condition Groups.
 				for (ConditionGroup group : rule.getGroups()) {
-					rapi.saveConditionGroup(group, user, false);
+					rulesAPI.saveConditionGroup(group, user, false);
 					//Saving the Condition for each group.
 					for (Condition condition : group.getConditions()) {
-						rapi.saveCondition(condition, user, false);
+						rulesAPI.saveCondition(condition, user, false);
 					}
 				}
 				//Saving the Action.
 				for (RuleAction action : rule.getRuleActions()) {
-					rapi.saveRuleAction(action, user, false);
+					rulesAPI.saveRuleAction(action, user, false);
 				}
 			}
-
 		} catch (Exception e) {
 			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);
-		} finally {
-			in.close();
+			throw new DotDataException(e);
 		}
 	}
 
-	/**
-	 * 
-	 * @param parent
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public RulesImportExportObject buildExportObject(Ruleable parent) throws DotDataException, DotSecurityException {
+	@CloseDBIfOpened
+	public RulesImportExportObject buildExportObject(Ruleable parent)
+			throws DotDataException, DotSecurityException {
 
-		RulesAPI rapi = APILocator.getRulesAPI();
+		RulesAPI rulesAPI = APILocator.getRulesAPI();
 		User user = APILocator.getUserAPI().getSystemUser();
 
-		List<Rule> rules = (parent == null) ? rapi.getAllRules(user, false) : rapi.getAllRulesByParent(parent, user, false);
+		List<Rule> rules = (parent == null) ? rulesAPI.getAllRules(user, false)
+				: rulesAPI.getAllRulesByParent(parent, user, false);
 
 		RulesImportExportObject export = new RulesImportExportObject();
 		export.setRules(rules);

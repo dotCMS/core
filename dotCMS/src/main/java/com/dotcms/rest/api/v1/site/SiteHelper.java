@@ -181,6 +181,7 @@ public class SiteHelper implements Serializable {
 	public void switchSite(final HttpServletRequest req, final String hostId) {
 		final HttpSession session = req.getSession();
 
+		session.removeAttribute(WebKeys.CMS_SELECTED_HOST_ID); // we do this in order to get a properly behaviour of the SwichSiteListener
 		session.setAttribute(WebKeys.CMS_SELECTED_HOST_ID, hostId);
 		session.removeAttribute(WebKeys.CONTENTLET_LAST_SEARCH);
 	}

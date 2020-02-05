@@ -169,11 +169,18 @@ public class ContainerFinderStrategyResolver {
 
         private String getContainerPath(final String path, final String hostName) {
 
+            String pathHostName = hostName;
             int hostIndexOf     = path.indexOf(hostName);
             final int lastSlash = path.lastIndexOf(StringPool.FORWARD_SLASH);
-            hostIndexOf         = hostIndexOf > 0? hostIndexOf: path.indexOf(FileAssetContainerUtil.getInstance().getHostName(hostName));
 
-            return path.substring(hostIndexOf + hostName.length(), lastSlash);
+            if (hostIndexOf == -1) {
+
+                // there are cases where the host does not exists but the host used is the default, so we need to keep the host name in the path.
+                pathHostName = FileAssetContainerUtil.getInstance().getHostName(path);
+                hostIndexOf  = path.indexOf(pathHostName);
+            }
+
+            return path.substring(hostIndexOf + pathHostName.length(), lastSlash);
         }
 
         // /EDIT_MODE///demo.dotcms.com/application/containers/test?languageid=1/LEGACY_RELATION_TYPE.container
