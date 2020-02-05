@@ -9,6 +9,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,11 +65,11 @@ public interface ServiceIntegrationAPI {
     * If the service key is used in a given host the host will come back in the resulting list.
     * Otherwise it means no configurations exist for the given host.
     * @param serviceKey unique service id for the given host.
-    * @param sites a list of host
+    * @param siteIdentifiers a list of host identifiers
     * @param user Logged in user
     * @return a list where the service-key is present (a Configuration exist for the given host)
     */
-    List<Host> filterSitesForService(final String serviceKey, final List<Host> sites, final User user);
+    List<String> filterSitesForServiceKey(final String serviceKey, final Collection<String> siteIdentifiers, final User user);
 
     /**
      *
@@ -157,10 +158,10 @@ public interface ServiceIntegrationAPI {
 
     enum INSTANCE {
         INSTANCE;
-        private final ServiceIntegrationAPI secretsStore = loadSecretsApi();
+        private final ServiceIntegrationAPI integrationAPI = loadSecretsApi();
 
         public static ServiceIntegrationAPI get() {
-            return INSTANCE.secretsStore;
+            return INSTANCE.integrationAPI;
         }
 
         private static ServiceIntegrationAPI loadSecretsApi() {

@@ -18,12 +18,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import java.io.File;
@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -39,10 +40,15 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
+/**
+ * Bridge class that encapsulates the logic necessary to consume the serviceIntegration-API
+ * And forward to the ServiceIntegrationsResource
+ */
 class ServiceIntegrationHelper {
 
     private final ServiceIntegrationAPI serviceIntegrationAPI;
@@ -81,9 +87,10 @@ class ServiceIntegrationHelper {
         final List<ServiceIntegrationView> views = new ArrayList<>();
         final List<ServiceDescriptor> serviceDescriptors = serviceIntegrationAPI.getServiceDescriptors(user);
         final List<Host> hosts = serviceIntegrationAPI.getSitesWithIntegrations(user);
+        final List<String> hostIdentifiers = hosts.stream().map(Contentlet::getIdentifier).collect(Collectors.toList());
         for (final ServiceDescriptor serviceDescriptor : serviceDescriptors) {
             final String serviceKey = serviceDescriptor.getKey();
-            final long configurationsCount = serviceIntegrationAPI.filterSitesForService(serviceKey, hosts, user).size();
+            final long configurationsCount = serviceIntegrationAPI.filterSitesForServiceKey(serviceKey, hostIdentifiers, user).size();
             views.add(new ServiceIntegrationView(serviceDescriptor, configurationsCount));
         }
         return views.stream().sorted(compareByCountAndName).collect(CollectionsUtils.toImmutableList());
@@ -119,8 +126,11 @@ class ServiceIntegrationHelper {
                         .valueOf(paginationContext.getDirection()) : OrderDirection.DESC;
 
         final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
-        final PaginationUtil paginationUtil = new PaginationUtil(
-                new SiteViewPaginator(serviceIntegrationAPI, hostAPI, contentletAPI));
+        final Map<String,Set<String>> serviceKeysByHost = serviceIntegrationAPI.serviceKeysByHost();
+        final List<String> sitesWithConfigurations = serviceIntegrationAPI.filterSitesForServiceKey(serviceDescriptor.getKey(), serviceKeysByHost.keySet(), user);
+
+        final PaginationUtil paginationUtil = new PaginationUtil(new SiteViewPaginator(
+                () -> sitesWithConfigurations, hostAPI, contentletAPI));
         final Response page = paginationUtil
                 .getPage(request, user,
                         paginationContext.getFilter(),
@@ -128,23 +138,14 @@ class ServiceIntegrationHelper {
                         paginationContext.getPerPage(),
                         paginationContext.getOrderBy(),
                         orderDirection,
-                        ImmutableMap.of(SiteViewPaginator.SERVICE_DESCRIPTOR, serviceDescriptor),
+                        Collections.emptyMap(),
                         (Function<PaginatedArrayList<SiteView>, ServiceIntegrationView>) paginatedArrayList -> {
-                            final long count = countIntegratedItems(paginatedArrayList);
+                            final long count = sitesWithConfigurations.size();
                             return new ServiceIntegrationView(serviceDescriptor, count,
                                     paginatedArrayList);
                         });
         return page;
     }
-
-    /**
-     * Count the number of integrated items shown.
-     * @param siteViews
-     * @return
-     */
-     private long countIntegratedItems(final List<SiteView> siteViews){
-        return siteViews.stream().filter(SiteView::isConfigured).count();
-     }
 
     /**
      * This gives you a detailed view with all the configuration secrets for a given service-key host pair.
@@ -170,7 +171,7 @@ class ServiceIntegrationHelper {
             }
 
             final Optional<ServiceSecrets> optionalServiceSecrets = serviceIntegrationAPI
-                    .getSecrets(serviceKey, host, user);
+                    .getSecrets(serviceKey, true, host, user);
             if (optionalServiceSecrets.isPresent()) {
                 final ServiceSecrets serviceSecrets = protectHiddenSecrets(
                         optionalServiceSecrets.get());

@@ -29,6 +29,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -42,6 +43,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
+ * This API serves as the bridge between the secrets safe repository
+ * and the structured of the service defined via
  *
  */
 public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
@@ -55,7 +58,6 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     private final LayoutAPI layoutAPI;
     private final HostAPI hostAPI;
     private final SecretsStore secretsStore;
-
 
     private final ObjectMapper jsonMapper = new ObjectMapper()
             //.enable(SerializationFeature.INDENT_OUTPUT)
@@ -87,16 +89,26 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     /**
-     *
+     * One single method takes care of building the internal-key
      */
     private String internalKey(final String serviceKey, final Host host) {
+        return internalKey(serviceKey, host == null ? null : host.getIdentifier());
+    }
+
+    /**
+     *
+      * @param serviceKey
+     * @param hostIdentifier
+     * @return
+     */
+    private String internalKey(final String serviceKey, final String hostIdentifier) {
         // if Empty ServiceKey is passed everything will be set under systemHostIdentifier:dotCMSGlobalService
         //Otherwise the internal Key will look like:
         // `5e096068-edce-4a7d-afb1-95f30a4fa80e:serviceKeyNameXYZ` where the first portion is the hostId
         final String key = UtilMethods.isSet(serviceKey) ? serviceKey : DOT_GLOBAL_SERVICE;
-        final String hostIdentifier =
-                (null == host) ? APILocator.systemHost().getIdentifier() : host.getIdentifier();
-        return hostIdentifier + HOST_SECRET_KEY_SEPARATOR + key.toLowerCase();
+        final String identifier =
+                (null == hostIdentifier) ? APILocator.systemHost().getIdentifier() : hostIdentifier;
+        return identifier + HOST_SECRET_KEY_SEPARATOR + key.toLowerCase();
     }
 
     @VisibleForTesting
@@ -109,7 +121,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     public ServiceIntegrationAPIImpl() {
-        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI() ,SecretsStore.INSTANCE.get());
+        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(), SecretsStore.INSTANCE.get());
     }
 
     private boolean userDoesNotHaveAccess(final User user) throws DotDataException {
@@ -141,6 +153,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                 .collect(Collectors.groupingBy(strings -> strings[0],
                         Collectors.mapping(strings -> strings[1], Collectors.toSet())));
     }
+
     @Override
     public Optional<ServiceSecrets> getSecrets(final String serviceKey,
             final Host host, final User user) throws DotDataException, DotSecurityException {
@@ -179,20 +192,20 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
      * In s similar fashion as `getSecrets` does this method hits the secrets repo but it does not deal or convert the entry into a json object
      * This only tells you if the service-key exists for a specific host.
      * @param serviceKey
-     * @param host
+     * @param hostIdentifier
      * @param user
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
     private boolean hasAnySecrets(final String serviceKey,
-            final Host host, final User user) throws DotDataException, DotSecurityException {
+            final String hostIdentifier, final User user) throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid secret access attempt on `%s` performed by user with id `%s` and host `%s` ",
-                    serviceKey, user.getUserId(), host.getIdentifier()));
+                    serviceKey, user.getUserId(), hostIdentifier));
         }
-        return secretsStore.containsKey(internalKey(serviceKey, host));
+        return secretsStore.containsKey(internalKey(serviceKey, hostIdentifier));
     }
 
     /**
@@ -200,10 +213,10 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
      * @param user
      * @return
      */
-    public List<Host> filterSitesForService(final String serviceKey, final List<Host> sites, final User user){
-        return sites.stream().filter(host -> {
+    public List<String> filterSitesForServiceKey(final String serviceKey, final Collection<String> siteIdentifiers, final User user){
+        return siteIdentifiers.stream().filter(id -> {
             try {
-                return hasAnySecrets(serviceKey, host, user);
+                return hasAnySecrets(serviceKey, id, user);
             } catch (DotDataException | DotSecurityException e) {
                 Logger.error(ServiceIntegrationAPIImpl.class,
                         String.format("Error getting secret from `%s` ", serviceKey), e);
@@ -221,7 +234,6 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         final Set<String> hostIds = serviceKeysByHost().keySet();
         return hostIds.stream().map(hostId -> {
             try {
-                //I suspect I can make this work way faster looking directly into the index.
                 return hostAPI.find(hostId, user, false);
             } catch (DotDataException | DotSecurityException e) {
                 Logger.warn(ServiceIntegrationAPIImpl.class,
@@ -238,8 +250,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     public void deleteSecret(final String serviceKey, final Set<String> propOrSecretName,
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
-        final Optional<ServiceSecrets> secretsForService = getSecrets(serviceKey, host,
-                user);
+        final Optional<ServiceSecrets> secretsForService = getSecrets(serviceKey, host, user);
         if (secretsForService.isPresent()) {
             final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
             final ServiceSecrets serviceSecrets = secretsForService.get();
@@ -262,8 +273,8 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     public void saveSecret(final String serviceKey, final Tuple2<String, Secret> keyAndSecret,
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
-        final Optional<ServiceSecrets> secretsForService = getSecrets(serviceKey, host,
-                user);
+
+        final Optional<ServiceSecrets> secretsForService = getSecrets(serviceKey, host, user);
         if (secretsForService.isPresent()) {
             //The secret already exists and wee need to update one specific entry they rest should be copy as they are
             final ServiceSecrets serviceSecrets = secretsForService.get();
@@ -318,19 +329,20 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     @Override
     public List<ServiceDescriptor> getServiceDescriptors(User user)
             throws DotDataException, DotSecurityException {
-        return getServiceDescriptorsMeta(user).stream()
-                .map(ServiceDescriptorMeta::getServiceDescriptor)
-                .collect(Collectors.toList());
-    }
 
-    private List<ServiceDescriptorMeta> getServiceDescriptorsMeta(final User user)
-            throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid attempt to get all available service descriptors performed by user with id `%s`.",
                     user.getUserId()));
         }
 
+        return getServiceDescriptorsMeta().stream()
+                .map(ServiceDescriptorMeta::getServiceDescriptor)
+                .collect(Collectors.toList());
+    }
+
+    private List<ServiceDescriptorMeta> getServiceDescriptorsMeta()
+            throws DotDataException {
             List<ServiceDescriptorMeta> serviceDescriptors = (List<ServiceDescriptorMeta>) CacheLocator
                     .getCacheAdministrator().getNoThrow(
                             DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
@@ -351,15 +363,15 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
             return serviceDescriptors;
     }
 
-    private Map<String, ServiceDescriptorMeta> getServiceDescriptorMap(User user)
-            throws DotSecurityException, DotDataException {
+    private Map<String, ServiceDescriptorMeta> getServiceDescriptorMap()
+            throws DotDataException {
 
         Map<String, ServiceDescriptorMeta> descriptorsByServiceKey = (Map<String, ServiceDescriptorMeta>) CacheLocator
                 .getCacheAdministrator().getNoThrow(
                         DESCRIPTORS_MAPPED_BY_SERVICE_KEY, DESCRIPTORS_CACHE_GROUP);
         if (!UtilMethods.isSet(descriptorsByServiceKey)) {
             synchronized (ServiceIntegrationAPIImpl.class) {
-                descriptorsByServiceKey = getServiceDescriptorsMeta(user).stream().collect(
+                descriptorsByServiceKey = getServiceDescriptorsMeta().stream().collect(
                         Collectors.toMap(serviceDescriptorMeta -> serviceDescriptorMeta
                                         .getServiceDescriptor().getKey().toLowerCase(), Function.identity(),
                                 (serviceDescriptor, serviceDescriptor2) -> serviceDescriptor));
@@ -376,8 +388,15 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     public Optional<ServiceDescriptor> getServiceDescriptor(final String serviceKey,
             final User user)
             throws DotDataException, DotSecurityException {
+
+        if (userDoesNotHaveAccess(user)) {
+            throw new DotSecurityException(String.format(
+                    "Invalid attempt to get all available service descriptors performed by user with id `%s`.",
+                    user.getUserId()));
+        }
+
         final String serviceKeyLC = serviceKey.toLowerCase();
-        final ServiceDescriptorMeta serviceDescriptorMeta = getServiceDescriptorMap(user)
+        final ServiceDescriptorMeta serviceDescriptorMeta = getServiceDescriptorMap()
                 .get(serviceKeyLC);
         return null == serviceDescriptorMeta ? Optional.empty()
                 : Optional.of(serviceDescriptorMeta.getServiceDescriptor());
@@ -405,7 +424,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                 .readValue(inputStream, ServiceDescriptor.class);
 
         if (validateServiceDescriptor(serviceDescriptor)
-                && validateServiceDescriptorUniqueName(serviceDescriptor, user)) {
+                && validateServiceDescriptorUniqueName(serviceDescriptor)) {
 
             final String serviceKey = serviceDescriptor.getKey();
             final File incomingFile = new File(basePath, String.format("%s.yml", serviceKey));
@@ -431,7 +450,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                     user.getUserId()));
         }
         final String serviceKeyLC = serviceKey.toLowerCase();
-        final ServiceDescriptorMeta serviceDescriptorMeta = getServiceDescriptorMap(user).get(serviceKeyLC);
+        final ServiceDescriptorMeta serviceDescriptorMeta = getServiceDescriptorMap().get(serviceKeyLC);
         if (null == serviceDescriptorMeta) {
             throw new DoesNotExistException(String.format("The requested descriptor `%s` does not exist.",serviceKey));
         }else{
@@ -588,11 +607,10 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
 
    }
 
-    private boolean validateServiceDescriptorUniqueName(final ServiceDescriptor serviceDescriptor,
-            final User user)
-            throws DotDataException, DotSecurityException {
+    private boolean validateServiceDescriptorUniqueName(final ServiceDescriptor serviceDescriptor)
+            throws DotDataException {
 
-        if (getServiceDescriptorMap(user).containsKey(serviceDescriptor.getKey())) {
+        if (getServiceDescriptorMap().containsKey(serviceDescriptor.getKey())) {
             throw new DotDataException(
                     String.format("There's a service already registered under key `%s`.",
                             serviceDescriptor.getKey()));

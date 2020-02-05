@@ -1,12 +1,11 @@
 package com.dotcms.rest.api.v1.secret;
 
 import com.dotcms.rest.api.v1.secret.view.SiteView;
-import com.dotcms.security.secret.ServiceDescriptor;
-import com.dotcms.security.secret.ServiceIntegrationAPI;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.PaginatorOrdered;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -16,17 +15,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * PaginatorOrdered implementation for objects of type SiteView.
@@ -35,45 +32,19 @@ import java.util.stream.Stream;
  */
 public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
-    static final String SERVICE_DESCRIPTOR = "SERVICE_DESCRIPTOR";
-    static final String SERVICE_KEY = "SERVICE_KEY";
-    static final String CONTENT_TYPE_HOST_QUERY = "+contentType:Host +working:true";
+    private static final String CONTENT_TYPE_HOST_QUERY = "+contentType:Host +working:true ";
+    private static final String CONTENT_TYPE_HOST_WITH_TITLE_QUERY = "+contentType:Host +working:true +title:*%s*";
 
-    private final ServiceIntegrationAPI serviceIntegrationAPI;
+    private Supplier<List<String>> configuredSitesSupplier;
     private final HostAPI hostAPI;
     private final ContentletAPI contentletAPI;
 
     @VisibleForTesting
-    SiteViewPaginator(final ServiceIntegrationAPI serviceIntegrationAPI,
+    SiteViewPaginator(final Supplier<List<String>> configuredSitesSupplier,
             final HostAPI hostAPI, final ContentletAPI contentletAPI) {
-        this.serviceIntegrationAPI = serviceIntegrationAPI;
+        this.configuredSitesSupplier = configuredSitesSupplier;
         this.hostAPI = hostAPI;
         this.contentletAPI = contentletAPI;
-    }
-
-    /**
-     * if consumer of this class decides to pass ServiceDescriptor in the extraParams
-     * This will  return that. Otherwise it will still attempt to retrieve the ServiceDescriptor by looking up the serviceKey.
-     * This is just an extra validation to ensure we're gonna try to retrive items from an existing service.
-     * @param user logged in user.
-     * @param extraParams params passed o getItems Method
-     * @return Optional of ServiceDescriptor
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    private Optional<ServiceDescriptor> getServiceDescriptor(final User user,
-            final Map<String, Object> extraParams)
-            throws DotSecurityException, DotDataException {
-        ServiceDescriptor serviceDescriptor = (ServiceDescriptor) extraParams
-                .get(SERVICE_DESCRIPTOR);
-        if (null == serviceDescriptor) {
-            final String serviceKey = (String) extraParams.get(SERVICE_KEY);
-            if (UtilMethods.isSet(serviceKey)) {
-                return serviceIntegrationAPI.getServiceDescriptor(serviceKey, user);
-            }
-            return Optional.empty();
-        }
-        return Optional.of(serviceDescriptor);
     }
 
     /**
@@ -94,65 +65,43 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
             final String orderBy, final OrderDirection direction,
             final Map<String, Object> extraParams) throws PaginationException {
         try {
-            final Optional<ServiceDescriptor> serviceDescriptorOptional = getServiceDescriptor(user,
-                    extraParams);
-            if (serviceDescriptorOptional.isPresent()) {
+            //get all sites. Even though this comes from the index. it is permissions driven.
+            final List<String> allSitesIdentifiers = getHostIdentifiers(user, filter);
 
-                //Just making sure there's a descriptor to get items.
-                final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
+            final long totalCount = allSitesIdentifiers.size();
 
-                final long totalCount = contentletAPI.indexCount(CONTENT_TYPE_HOST_QUERY, user,false);
+            //This values are feed from the outside through the serviceIntegrationAPI.
+            final List<String> sitesWithConfigurations = configuredSitesSupplier.get();
+            final LinkedHashSet<String> allSites = new LinkedHashSet<>(allSitesIdentifiers);
 
-                //All the sites set.
-                final List<Host> allSites = hostAPI.findAll(user, limit, offset, null,false);
+            //By doing this we remove from the configured-sites collection whatever sites didn't match the search.
+            //If it isn't part of the search results also discard from the configured sites we intent to show.
+            final LinkedHashSet<String> configuredSites = sitesWithConfigurations.stream()
+                    .filter(allSites::contains)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
 
-                //Sites with configuration.
-                final List<Host> sitesWithIntegrations = serviceIntegrationAPI
-                        .getSitesWithIntegrations(user);
+            final List<String> finalList = join(configuredSites, allSitesIdentifiers).stream()
+                    .skip(offset).limit(limit).collect(Collectors.toList());
 
-                //Sites with configuration - for the respective serviceKey passed.
-                final List<Host> sitesForService = serviceIntegrationAPI
-                        .filterSitesForService(serviceDescriptor.getKey(), sitesWithIntegrations,
-                                user);
-
-                //Complement operation against to get sites without any configuration.
-                final Set<Host> nonConfiguredSites = Sets.difference(
-                        //LikedHashSet seems like the best fit here. preserves order and its faster compared to TreeSet.
-                        new LinkedHashSet<>(allSites), new LinkedHashSet<>(sitesForService)
-                );
-
-                //Make them all SiteView and mark'em respective.
-                final Stream<SiteView> withIntegrationsStream = sitesForService.stream()
-                        .map(site -> new SiteView(site.getIdentifier(), site.getHostname(), true));
-                final Stream<SiteView> withNoIntegrations = nonConfiguredSites.stream()
-                        .map(site -> new SiteView(site.getIdentifier(), site.getHostname(), false));
-
-                Stream<SiteView> combinedStream = Stream
-                        .concat(withIntegrationsStream, withNoIntegrations);
-
-                //if we have filter apply it.
-                if (UtilMethods.isSet(filter)) {
-                    combinedStream = combinedStream
-                            .filter(siteView -> siteView.getName()
-                                    .matches("(.*)" + filter + "(.*)"));
+            //And finally load from db and map into the desired view.
+            final List<SiteView> siteViews = finalList.stream().map(id -> {
+                try {
+                    return hostAPI.find(id, user, false);
+                } catch (DotDataException | DotSecurityException e) {
+                    Logger.error(SiteViewPaginator.class, e);
                 }
+                return null;
+            }).filter(Objects::nonNull).map(host -> {
+                final boolean configured = configuredSites.contains(host.getIdentifier());
+                return new SiteView(host.getIdentifier(), host.getName(), configured);
+            }).collect(Collectors.toList());
 
-                //apply pagination params.
-                combinedStream = combinedStream.skip(offset).limit(limit);
+            //And then we're done and out of here.
+            final PaginatedArrayList<SiteView> paginatedArrayList = new PaginatedArrayList<>();
+            paginatedArrayList.setTotalResults(totalCount);
+            paginatedArrayList.addAll(siteViews);
+            return paginatedArrayList;
 
-                //Setup sorting
-                final Comparator<SiteView> comparator = orderByAndDirection(orderBy, direction);
-
-                final List<SiteView> siteViews = combinedStream.sorted(comparator)
-                        .collect(Collectors.toList());
-
-                //And then we're done and out of here.
-                final PaginatedArrayList<SiteView> paginatedArrayList = new PaginatedArrayList<>();
-                paginatedArrayList.setTotalResults(totalCount);
-                paginatedArrayList.addAll(siteViews);
-                return paginatedArrayList;
-            }
-            return new PaginatedArrayList<>();
         } catch (Exception e) {
             Logger.error(SiteViewPaginator.class, e.getMessage(), e);
             throw new DotRuntimeException(e);
@@ -160,61 +109,57 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
     }
 
     /**
-     * Given two pagination params (orderBy and direction)
-     * This will get you the proper SiteView comparator.
-     * @param orderBy
-     * @param direction
-     * @return
+     * This join method expects two collections of host identifiers.
+     * First-one the Set coming from the serviceIntegrations-API containing all the sites with configurations.
+     * Second-one a List with all the sites coming from querying the index.
+     * Meaning this list is expected to come filtered and sorted.
+     * The resulting list will have all the configured items first and then he rest of the entries.
+     * Additionally to that SYSTEM_HOST is always expected to appear first if it ever existed on the allSites list.
+     * (Cuz it could have been removed from applying filtering).
+     * @param configuredSites sites with configurations coming from service Integration API.
+     * @param allSites all-sites sorted and filtered loaded from ES
+     * @return a brand new List ordered.
      */
-    private static Comparator<SiteView> orderByAndDirection(final String orderBy,
-            final OrderDirection direction) {
-        final Map<OrderDirection, Comparator<SiteView>> directionComparatorMap = fieldAndDirectionComparatorsMap
-                .get(orderBy.toLowerCase());
-        if (null != directionComparatorMap) {
-            Comparator<SiteView> comparator = directionComparatorMap.get(direction);
-            if (null != comparator) {
-                return comparator;
+    private List<String> join(final Set<String> configuredSites, final List<String> allSites) {
+        final String systemHostId = Host.SYSTEM_HOST.toLowerCase();
+        final List<String> newList = new LinkedList<>();
+        boolean systemHostFound = false;
+        int index = 0;
+        for (final String siteIdentifier : allSites) {
+            if (!siteIdentifier.equals(systemHostId)) {
+                if (configuredSites.contains(siteIdentifier)) {
+                    newList.add(index++, siteIdentifier);
+                } else {
+                    newList.add(siteIdentifier);
+                }
+            } else {
+                systemHostFound = true;
             }
         }
-        //Default comparator
-        return hasIntegrationsDescComparator;
+        if (systemHostFound) {
+            newList.add(0, systemHostId);
+        }
+        return newList;
     }
 
-    private static Comparator<SiteView> hasIntegrationsDescComparator = (a, b) -> {
-        final int i = Boolean.compare(b.isConfigured(), a.isConfigured());
-        if (i != 0) {
-            return i;
-        }
-        return a.getName().compareTo(b.getName());
-    };
-
-    private static Comparator<SiteView> hasIntegrationsAscComparator = (a, b) -> {
-        final int i = Boolean.compare(a.isConfigured(), b.isConfigured());
-        if (i != 0) {
-            return i;
-        }
-        return a.getName().compareTo(b.getName());
-    };
-
-    private static Comparator<SiteView> nameAscComparator = (a, b) -> a.getName().compareTo(b.getName());
-
-    private static Comparator<SiteView> nameDescComparator = (a, b) -> b.getName().compareTo(a.getName());
-
-    private static Comparator<SiteView> idAscComparator = (a, b) -> a.getId().compareTo(b.getId());
-
-    private static Comparator<SiteView> idDescComparator = (a, b) -> b.getId().compareTo(a.getId());
-
-    private static Map<String, Map<OrderDirection, Comparator<SiteView>>> fieldAndDirectionComparatorsMap = ImmutableMap
-            .of(
-                    "configured", ImmutableMap
-                            .of(OrderDirection.ASC, hasIntegrationsAscComparator,
-                                OrderDirection.DESC, hasIntegrationsDescComparator),
-                    "name", ImmutableMap
-                            .of(OrderDirection.ASC, nameAscComparator,
-                                OrderDirection.DESC, nameDescComparator),
-                    "id", ImmutableMap
-                            .of(OrderDirection.ASC, idAscComparator,
-                                OrderDirection.DESC, idDescComparator)
-            );
+    /**
+     * Load all identifiers from index
+     * internally this includes permissions into the query.
+     * The results are returned by default in order Ascendant.
+     * This is very important cause any comparator applied must respect that.
+     * @param user
+     * @param filter
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private List<String> getHostIdentifiers(final User user, final String filter)
+            throws DotDataException, DotSecurityException {
+        //get all sites. This is permissions driven.
+        final String query = UtilMethods.isSet(filter) ? String.format(CONTENT_TYPE_HOST_WITH_TITLE_QUERY, filter) : CONTENT_TYPE_HOST_QUERY;
+        //This returns a list with all the hosts
+        final List<ContentletSearch> allSitesIdentifiers = contentletAPI.searchIndex(query, 0, 0, "title", user, false);
+        return allSitesIdentifiers.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toList());
+    }
 
 }
