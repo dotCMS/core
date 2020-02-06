@@ -138,6 +138,43 @@ public class TikaUtils {
         return generateMetaData(contentlet, false);
     }
 
+    /**
+     * Verifies if the Contentlet is a File asset in order to parse it and generate a metadata
+     * file for it, <strong>this operation also implies a save operation to the Contentlet
+     * in order to save the parsed metadata info</strong>.
+     *
+     * @param contentlet Content parse in order to extract the metadata info
+     * @return True if a metadata file was generated.
+     */
+    public Map<String, Object> generateMetaDataForce(final Contentlet contentlet, final File binaryField, final Set<String> metadataFields)
+            throws DotSecurityException, DotDataException {
+
+        return this.generateMetaData(contentlet, binaryField, metadataFields, true);
+    }
+
+    /**
+     * Verifies if the Contentlet is a File asset in order to parse it and generate a metadata
+     * file for it, <strong>this operation also implies a save operation to the Contentlet
+     * in order to save the parsed metadata info</strong>.
+     *
+     * @param contentlet Content parse in order to extract the metadata info
+     * @return True if a metadata file was generated.
+     */
+    public Map<String, Object> generateMetaData(final Contentlet contentlet, final File binaryField, final Set<String> metadataFields)
+            throws DotSecurityException, DotDataException {
+
+        return this.generateMetaData(contentlet, binaryField, metadataFields, false);
+    }
+
+    @CloseDBIfOpened
+    private Map<String, Object>  generateMetaData(final Contentlet contentlet, final File binaryField,
+                                                 final Set<String> metadataFields, final boolean force)
+            throws DotSecurityException, DotDataException {
+
+        // todo: check if the info is on the file system
+        // otherwise generate it and saves in the file system
+        return Collections.emptyMap();
+    }
 
     /**
      * Verifies if the Contentlet is a File asset in order to parse it and generate a metadata

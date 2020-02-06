@@ -59,36 +59,22 @@
           {
               "keywordmapping" : {
                   "match_pattern": "regex",
-                  "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|moduser|owner|keywords",
+                  "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|moduser|owner|metadata.contenttype|metadata.keywords",
                   "mapping": {
                       "type": "keyword"
                   }
               }
           },
           {
-              "metadata_length" : {
-                  "path_match": "metadata.length",
+              "longmapping" : {
+                  "match_pattern": "regex",
+                  "match": "metadata.length|metadata.height|metadata.width",
                   "mapping": {
                       "type": "long"
                   }
               }
           },
-          {
-              "metadata_height" : {
-                  "path_match": "metadata.height",
-                  "mapping": {
-                      "type": "long"
-                  }
-              }
-          },
-          {
-              "metadata_width" : {
-                  "path_match": "metadata.width",
-                  "mapping": {
-                      "type": "long"
-                  }
-              }
-          },
+
           {
               "hostname" : {
                   "path_match": "host.hostname",

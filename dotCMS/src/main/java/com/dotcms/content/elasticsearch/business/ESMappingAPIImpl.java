@@ -11,6 +11,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -62,11 +63,13 @@ import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
@@ -292,29 +295,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			}
 
 			if (contentlet.getContentType().baseType().getType() == BaseContentType.FILEASSET.getType()) {
-                //Verify if it is enabled the option to regenerate missing metadata files on reindex
-                boolean regenerateMissingMetadata = Config
-                        .getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
-                /*
-                Verify if it is enabled the option to always regenerate metadata files on reindex,
-                enabling this could affect greatly the performance of a reindex process.
-                 */
-                final boolean alwaysRegenerateMetadata = Config
-                        .getBooleanProperty("always.regenerate.metadata.on.reindex", false);
-                if (contentlet.isLive() || contentlet.isWorking()) {
-                    if (alwaysRegenerateMetadata) {
-                        new TikaUtils().generateMetaData(contentlet, true);
-                    } else if (regenerateMissingMetadata) {
-                        new TikaUtils().generateMetaData(contentlet);
-                    }
-                }
-				// see if we have content metadata
-				final File contentMeta = APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
-				if(contentMeta.exists() && contentMeta.length()>0) {
-					final String contentData=APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
-					mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", contentData);
-					sw.append(contentData).append(' ');
-				}
+				this.generateFileAssetMetadata(contentlet, sw, mlowered);
+			}
+
+			final Optional<Field> binaryField = this.findFirstBinaryFieldIndexable(contentlet);
+			if (binaryField.isPresent()) {
+
+				this.generateBinaryMetadata(contentlet, sw, mlowered, binaryField.get());
 			}
 			//The url is now stored under the identifier for html pages, so we need to index that also.
 			if (contentlet.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
@@ -332,7 +319,98 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-    /**
+	private void generateBinaryMetadata(final Contentlet contentlet,
+										final StringWriter stringWriter,
+										final Map<String, Object> mapLowered,
+										final Field field) throws Exception {
+
+		//Verify if it is enabled the option to regenerate missing metadata files on reindex
+		final boolean regenerateMissingMetadata = Config
+				.getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
+                /*
+                Verify if it is enabled the option to always regenerate metadata files on reindex,
+                enabling this could affect greatly the performance of a reindex process.
+                 */
+		final boolean alwaysRegenerateMetadata = Config
+				.getBooleanProperty("always.regenerate.metadata.on.reindex", false);
+
+		Map<String, Object> metadataMap = null;
+
+		if (contentlet.isLive() || contentlet.isWorking()) {
+
+			final Optional<com.dotcms.contenttype.model.field.FieldVariable> customIndexMetaDataFieldsOpt =
+					FactoryLocator.getFieldFactory().byFieldVariableKey(field.getIdentifier(), BinaryField.INDEX_METADATA_FIELDS);
+			final TikaUtils tikaUtils = new TikaUtils();
+
+			final Set<String> metadataFields = customIndexMetaDataFieldsOpt.isPresent()?
+					new HashSet<>(Arrays.asList(customIndexMetaDataFieldsOpt.get().value().split(StringPool.COMMA))):
+					tikaUtils.getConfiguredMetadataFields();
+
+			final File binaryField = contentlet.getBinary(field.getVelocityVarName());
+			if (null != binaryField && binaryField.exists() && binaryField.canRead()) {
+
+				if (alwaysRegenerateMetadata) {
+					metadataMap = new TikaUtils().generateMetaDataForce(contentlet, binaryField, metadataFields);
+				} else if (regenerateMissingMetadata) {
+					metadataMap = new TikaUtils().generateMetaData(contentlet, binaryField, metadataFields);
+				}
+			}
+
+			// see if we have content metadata
+			if(null != metadataMap) {
+
+				for (final String metadataKey : metadataFields) {
+
+					final Object metadataValue = metadataMap.get(metadataKey);
+					mapLowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey, metadataValue);
+					stringWriter.append(metadataValue.toString()).append(' ');
+				}
+			}
+		}
+	}
+
+	private Optional<Field> findFirstBinaryFieldIndexable(final Contentlet contentlet) {
+
+		final List<Field> fields  = new ArrayList<>(
+				FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode()));
+
+		return fields.stream().filter(Field::isIndexed)
+				.filter(field -> field.getFieldType().equals(Field.FieldType.BINARY.toString()))
+				.findFirst();
+	}
+
+	private void generateFileAssetMetadata(final Contentlet contentlet,
+										   final StringWriter stringWriter,
+										   final Map<String, Object> mapLowered) throws Exception {
+
+		//Verify if it is enabled the option to regenerate missing metadata files on reindex
+		final boolean regenerateMissingMetadata = Config
+				.getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
+                /*
+                Verify if it is enabled the option to always regenerate metadata files on reindex,
+                enabling this could affect greatly the performance of a reindex process.
+                 */
+		final boolean alwaysRegenerateMetadata = Config
+				.getBooleanProperty("always.regenerate.metadata.on.reindex", false);
+
+		if (contentlet.isLive() || contentlet.isWorking()) {
+			if (alwaysRegenerateMetadata) {
+				new TikaUtils().generateMetaData(contentlet, true);
+			} else if (regenerateMissingMetadata) {
+				new TikaUtils().generateMetaData(contentlet);
+			}
+		}
+		// see if we have content metadata
+		final File contentMeta = APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
+		if(contentMeta.exists() && contentMeta.length() > 0) {
+
+			final String contentData = APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
+			mapLowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", contentData);
+			stringWriter.append(contentData).append(' ');
+		}
+	}
+
+	/**
      * Adds the current workflow task to the contentlet in order to be reindexed.
      * 
      * @param contentlet {@link Contentlet}
