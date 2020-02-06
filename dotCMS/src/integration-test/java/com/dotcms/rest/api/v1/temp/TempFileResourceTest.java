@@ -125,7 +125,7 @@ public class TempFileResourceTest {
         final MultiPart multipartEntity = new FormDataMultiPart()
                 .bodyPart(filePart1);
 
-        final Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1,
+        final Response jsonResponse = resource.uploadTempResourceMulti(request, response, "-1",
                 (FormDataMultiPart) multipartEntity);
 
         final Map<String, List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
@@ -160,7 +160,7 @@ public class TempFileResourceTest {
                 .bodyPart(filePart1)
                 .bodyPart(filePart2);
 
-        final Response jsonResponse = resource.uploadTempResourceMulti(mockRequest(), response, -1,
+        final Response jsonResponse = resource.uploadTempResourceMulti(mockRequest(), response, "-1",
                 (FormDataMultiPart) multipartEntity);
         assertNotNull(jsonResponse);
 
@@ -247,12 +247,12 @@ public class TempFileResourceTest {
 
         final MultiPart multipartEntity = new FormDataMultiPart()
                 .bodyPart(filePart1);
-        Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1,
+        Response jsonResponse = resource.uploadTempResourceMulti(request, response, "-1",
                 (FormDataMultiPart) multipartEntity);
         assertEquals(Status.UNAUTHORIZED.getStatusCode(), jsonResponse.getStatus());
 
         Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
-        jsonResponse = resource.uploadTempResourceMulti(request, response, -1,
+        jsonResponse = resource.uploadTempResourceMulti(request, response, "-1",
                 (FormDataMultiPart) multipartEntity);
         final Map<String, List<DotTempFile>> dotTempFiles = (Map) jsonResponse.getEntity();
         final DotTempFile dotTempFile = dotTempFiles.get("tempFiles").get(0);
@@ -287,7 +287,7 @@ public class TempFileResourceTest {
         final MultiPart multipartEntity = new FormDataMultiPart().bodyPart(
                 new StreamDataBodyPart(testFile.getName(), new FileInputStream(testFile)));
 
-        Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1,
+        Response jsonResponse = resource.uploadTempResourceMulti(request, response, "-1",
                 (FormDataMultiPart) multipartEntity);
         assertTrue("User can upload temp file larger than TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS",
                 jsonResponse.getStatus() == 200);
@@ -320,7 +320,7 @@ public class TempFileResourceTest {
         final MultiPart multipartEntity = new FormDataMultiPart().bodyPart(
                 new StreamDataBodyPart(testFile.getName(), new FileInputStream(testFile)));
 
-        Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1,
+        Response jsonResponse = resource.uploadTempResourceMulti(request, response, "-1",
                 (FormDataMultiPart) multipartEntity);
         assertTrue(
                 "Anon User cannot upload temp file larger than TEMP_RESOURCE_MAX_FILE_SIZE_ANONYMOUS" + jsonResponse.getStatus(),
@@ -350,7 +350,7 @@ public class TempFileResourceTest {
          * so that is our max
          */
         Config.setProperty(TempFileAPI.TEMP_RESOURCE_MAX_FILE_SIZE, testFile.length() - 10);
-        Response jsonResponse = resource.uploadTempResourceMulti(request, response, -1,
+        Response jsonResponse = resource.uploadTempResourceMulti(request, response, "-1",
                 (FormDataMultiPart) multipartEntity);
         assertTrue("anon user cannot upload >TEMP_RESOURCE_MAX_FILE_SIZE " + jsonResponse.getStatus(),
                 jsonResponse.getStatus() == 400);
@@ -446,7 +446,7 @@ public class TempFileResourceTest {
             final MultiPart multipartEntity = new FormDataMultiPart()
                     .bodyPart(filePart1);
 
-            final Response jsonResponse = resource.uploadTempResourceMulti(request, response, 0,
+            final Response jsonResponse = resource.uploadTempResourceMulti(request, response, "0",
                     (FormDataMultiPart) multipartEntity);
 
             assertEquals(Status.NOT_FOUND.getStatusCode(), jsonResponse.getStatus());
