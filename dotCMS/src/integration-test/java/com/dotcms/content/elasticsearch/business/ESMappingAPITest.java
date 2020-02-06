@@ -19,8 +19,11 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -33,14 +36,21 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+
+import java.io.File;
 import java.util.ArrayList;
 import java.io.StringWriter;
 import java.util.Collections;
@@ -56,6 +66,9 @@ import org.junit.Test;
  */
 public class ESMappingAPITest {
 
+    private static final String TEMP_FILE = "tempFile";
+    public static final String TXT = "txt";
+    public static final String DOT_TXT = ".txt";
     private static ContentletAPI contentletAPI;
     private static ContentTypeAPI contentTypeAPI;
     private static FieldAPI fieldAPI;
@@ -63,6 +76,7 @@ public class ESMappingAPITest {
     private static Language language;
     private static RelationshipAPI relationshipAPI;
     private static UserAPI userAPI;
+    private static FolderAPI folderAPI;
     private static User user;
 
     @BeforeClass
@@ -75,12 +89,51 @@ public class ESMappingAPITest {
         contentTypeAPI = APILocator.getContentTypeAPI(user);
         contentletAPI = APILocator.getContentletAPI();
         fieldAPI = APILocator.getContentTypeFieldAPI();
+        folderAPI = APILocator.getFolderAPI();
         languageAPI = APILocator.getLanguageAPI();
         language = languageAPI.getDefaultLanguage();
         relationshipAPI = APILocator.getRelationshipAPI();
     }
 
     @Test
+    public void test_toMap_fileasset_txt_shouldSuccess() throws Exception {
+
+        final ESMappingAPIImpl esMappingAPI    = new ESMappingAPIImpl();
+        final Host host = APILocator.getHostAPI().findDefaultHost(user, false);
+        final String rootFolderName = String.format("lolFolder-%d", System.currentTimeMillis());
+        final Folder root1 = folderAPI.createFolders(rootFolderName, host, user, false);
+        final FileAsset fileAsset = new FileAsset();
+        final ImmutableFileAssetContentType.Builder builder = ImmutableFileAssetContentType.builder();
+        builder.name("Test").variable("testfa");
+        final ContentType fileAssetContentType = contentTypeAPI.find("FileAsset");
+        final String fileName1 = TEMP_FILE + System.currentTimeMillis();
+        final File tempFile1 = File.createTempFile(fileName1, TXT);
+        final String anyContent = "LOL!";
+        FileUtil.write(tempFile1, anyContent);
+        final String fileNameField1 = fileName1 + DOT_TXT;
+        final String title1 = "Contentlet-1";
+
+        fileAsset.setContentType(fileAssetContentType);
+        fileAsset.setFolder(root1.getInode());
+        fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, tempFile1);
+        fileAsset.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, root1.getInode());
+        fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, title1);
+        fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileNameField1);
+        fileAsset.setIndexPolicy(IndexPolicy.FORCE);
+
+        // Create a piece of content for the default host
+        final Map<String,Object>  contentletMap = esMappingAPI.toMap(APILocator.getContentletAPI().checkin(fileAsset, user, false));
+
+        assertNotNull(contentletMap);
+        assertEquals(fileNameField1.toLowerCase(), contentletMap.get("fileasset.filename"));
+        assertEquals("fileasset", contentletMap.get("structurename"));
+        assertEquals("text/plain; charset=iso-8859-1", contentletMap.get("metadata.contenttype"));
+        assertEquals("4", contentletMap.get("metadata.filesize"));
+        assertTrue( contentletMap.get("metadata.content").toString().contains("lol!"));
+
+    }
+
+        @Test
     public void testLoadRelationshipFields_whenUsingLegacyRelationships_shouldSuccess()
             throws DotDataException, DotSecurityException {
 

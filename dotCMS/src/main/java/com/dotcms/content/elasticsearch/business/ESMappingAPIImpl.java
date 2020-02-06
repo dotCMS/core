@@ -139,23 +139,23 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 * @throws ElasticsearchException
 	 * @throws IOException
 	 */
-	public  String getMapping(String index) throws ElasticsearchException, IOException{
+	public  String getMapping(final String index) throws ElasticsearchException, IOException{
 
 		final GetMappingsRequest request = new GetMappingsRequest();
 		request.indices(index);
 
-		GetMappingsResponse getMappingResponse = RestHighLevelClientProvider.getInstance().getClient()
+		final GetMappingsResponse getMappingResponse = RestHighLevelClientProvider.getInstance().getClient()
 				.indices().getMapping(request, RequestOptions.DEFAULT);
 
 		return getMappingResponse.mappings().get(index).source().string();
 	}
 
 	@SuppressWarnings("unchecked")
-	public String toJson(Contentlet con) throws DotMappingException {
+	public String toJson(final Contentlet contentlet) throws DotMappingException {
 
 		try {
-			Map<String,Object> m = toMap(con);
-			return mapper.writeValueAsString(m);
+			final Map<String,Object> contentletMap = toMap(contentlet);
+			return mapper.writeValueAsString(contentletMap);
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotMappingException(e.getMessage(), e);
@@ -309,7 +309,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     }
                 }
 				// see if we have content metadata
-				File contentMeta=APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
+				final File contentMeta = APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
 				if(contentMeta.exists() && contentMeta.length()>0) {
 					final String contentData=APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
 					mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", contentData);
