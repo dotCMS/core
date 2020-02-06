@@ -127,7 +127,7 @@ class ServiceIntegrationHelper {
 
         final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
         final Map<String,Set<String>> serviceKeysByHost = serviceIntegrationAPI.serviceKeysByHost();
-        final List<String> sitesWithConfigurations = serviceIntegrationAPI.filterSitesForServiceKey(serviceDescriptor.getKey(), serviceKeysByHost.keySet(), user);
+        final Set<String> sitesWithConfigurations = serviceIntegrationAPI.filterSitesForServiceKey(serviceDescriptor.getKey(), serviceKeysByHost.keySet(), user);
 
         final PaginationUtil paginationUtil = new PaginationUtil(new SiteViewPaginator(
                 () -> sitesWithConfigurations, hostAPI, contentletAPI));

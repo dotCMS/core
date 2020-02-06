@@ -35,12 +35,12 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
     private static final String CONTENT_TYPE_HOST_QUERY = "+contentType:Host +working:true ";
     private static final String CONTENT_TYPE_HOST_WITH_TITLE_QUERY = "+contentType:Host +working:true +title:*%s*";
 
-    private Supplier<List<String>> configuredSitesSupplier;
+    private Supplier<Set<String>> configuredSitesSupplier;
     private final HostAPI hostAPI;
     private final ContentletAPI contentletAPI;
 
     @VisibleForTesting
-    SiteViewPaginator(final Supplier<List<String>> configuredSitesSupplier,
+    public SiteViewPaginator(final Supplier<Set<String>> configuredSitesSupplier,
             final HostAPI hostAPI, final ContentletAPI contentletAPI) {
         this.configuredSitesSupplier = configuredSitesSupplier;
         this.hostAPI = hostAPI;
@@ -53,10 +53,10 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
      * @param filter extra filter parameter
      * @param limit Number of items to return
      * @param offset offset
-     * @param orderBy
-     * @param direction If the order is Asc or Desc
-     * @param extraParams
-     * @return
+     * @param orderBy This param is ignored.
+     * @param direction This param is ignored.
+     * @param extraParams This param is ignored.
+     * @return SiteView pageItems.
      * @throws PaginationException
      */
     @Override
@@ -71,7 +71,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
             final long totalCount = allSitesIdentifiers.size();
 
             //This values are feed from the outside through the serviceIntegrationAPI.
-            final List<String> sitesWithConfigurations = configuredSitesSupplier.get();
+            final Set<String> sitesWithConfigurations = configuredSitesSupplier.get();
             final LinkedHashSet<String> allSites = new LinkedHashSet<>(allSitesIdentifiers);
 
             //By doing this we remove from the configured-sites collection whatever sites didn't match the search.
@@ -121,12 +121,11 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
      * @return a brand new List ordered.
      */
     private List<String> join(final Set<String> configuredSites, final List<String> allSites) {
-        final String systemHostId = Host.SYSTEM_HOST.toLowerCase();
         final List<String> newList = new LinkedList<>();
         boolean systemHostFound = false;
         int index = 0;
         for (final String siteIdentifier : allSites) {
-            if (!siteIdentifier.equals(systemHostId)) {
+            if (!siteIdentifier.equalsIgnoreCase(Host.SYSTEM_HOST)) {
                 if (configuredSites.contains(siteIdentifier)) {
                     newList.add(index++, siteIdentifier);
                 } else {
@@ -137,18 +136,19 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
             }
         }
         if (systemHostFound) {
-            newList.add(0, systemHostId);
+            newList.add(0, Host.SYSTEM_HOST);
         }
         return newList;
     }
 
     /**
-     * Load all identifiers from index
+     * Load all host identifiers from index
      * internally this includes permissions into the query.
-     * The results are returned by default in order Ascendant.
+     * So it is very performant.
+     * The results are returned by default in order Ascendant order by site name (internally content-title).
      * This is very important cause any comparator applied must respect that.
-     * @param user
-     * @param filter
+     * @param user logged-in user
+     * @param filter a string to match against the title.
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
@@ -156,10 +156,14 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
     private List<String> getHostIdentifiers(final User user, final String filter)
             throws DotDataException, DotSecurityException {
         //get all sites. This is permissions driven.
-        final String query = UtilMethods.isSet(filter) ? String.format(CONTENT_TYPE_HOST_WITH_TITLE_QUERY, filter) : CONTENT_TYPE_HOST_QUERY;
+        final String query = UtilMethods.isSet(filter) ? String
+                .format(CONTENT_TYPE_HOST_WITH_TITLE_QUERY, filter) : CONTENT_TYPE_HOST_QUERY;
         //This returns a list with all the hosts
-        final List<ContentletSearch> allSitesIdentifiers = contentletAPI.searchIndex(query, 0, 0, "title", user, false);
-        return allSitesIdentifiers.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toList());
+        final List<ContentletSearch> allSitesIdentifiers = contentletAPI
+                .searchIndex(query, 0, 0, "title", user, false);
+        return allSitesIdentifiers.stream().filter(Objects::nonNull)
+                .map(ContentletSearch::getIdentifier)
+                .filter(Objects::nonNull).collect(Collectors.toList());
     }
 
 }

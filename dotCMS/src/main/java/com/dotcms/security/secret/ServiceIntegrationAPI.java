@@ -69,7 +69,7 @@ public interface ServiceIntegrationAPI {
     * @param user Logged in user
     * @return a list where the service-key is present (a Configuration exist for the given host)
     */
-    List<String> filterSitesForServiceKey(final String serviceKey, final Collection<String> siteIdentifiers, final User user);
+    Set<String> filterSitesForServiceKey(final String serviceKey, final Collection<String> siteIdentifiers, final User user);
 
     /**
      *

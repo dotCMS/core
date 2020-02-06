@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -213,7 +214,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
      * @param user
      * @return
      */
-    public List<String> filterSitesForServiceKey(final String serviceKey, final Collection<String> siteIdentifiers, final User user){
+    public Set<String> filterSitesForServiceKey(final String serviceKey, final Collection<String> siteIdentifiers, final User user){
         return siteIdentifiers.stream().filter(id -> {
             try {
                 return hasAnySecrets(serviceKey, id, user);
@@ -222,7 +223,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                         String.format("Error getting secret from `%s` ", serviceKey), e);
             }
             return false;
-        }).collect(CollectionsUtils.toImmutableList());
+        }).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /**
