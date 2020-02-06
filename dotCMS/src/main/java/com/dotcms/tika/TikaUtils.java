@@ -173,6 +173,45 @@ public class TikaUtils {
 
         // todo: check if the info is on the file system
         // otherwise generate it and saves in the file system
+
+        //See if we have content metadata file
+        final File contentMeta = APILocator.getFileAssetAPI()
+                .getContentMetadataFile(contentlet.getInode());
+
+        /*
+        If we want to force the parse of the file and the generation of the metadata file
+        we need to delete the existing one first.
+         */
+        if (force && contentMeta.exists()) {
+            try {
+                contentMeta.delete();
+            } catch (Exception e) {
+                Logger.error(this.getClass(),
+                        String.format("Unable to delete existing metadata file [%s] [%s]",
+                                contentMeta.getAbsolutePath(), e.getMessage()), e);
+            }
+        }
+
+        //If the metadata file does not exist we need to parse and get the metadata for the file
+        if (!contentMeta.exists()) {
+
+            if (binaryField != null) {
+
+                //Parse the metadata from this file
+                final Map<String, String> metaData = getMetaDataMap(contentlet.getInode(),
+                        binaryField);
+                if (null != metaData) {
+                    final String metadataJson = new GsonBuilder().
+                            disableHtmlEscaping().create().toJson(metaData);
+                    //Save the parsed metadata to the contentlet
+                    // todo: save the json on the filesystem
+                }
+            }
+        } else {
+
+            // todo:take the map from the file system
+        }
+
         return Collections.emptyMap();
     }
 
