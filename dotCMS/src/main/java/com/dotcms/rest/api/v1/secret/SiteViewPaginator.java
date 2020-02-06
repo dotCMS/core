@@ -70,7 +70,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
             final long totalCount = allSitesIdentifiers.size();
 
-            //This values are feed from the outside through the serviceIntegrationAPI.
+            //This values are fed from the outside through the serviceIntegrationAPI.
             final Set<String> sitesWithConfigurations = configuredSitesSupplier.get();
             final LinkedHashSet<String> allSites = new LinkedHashSet<>(allSitesIdentifiers);
 
