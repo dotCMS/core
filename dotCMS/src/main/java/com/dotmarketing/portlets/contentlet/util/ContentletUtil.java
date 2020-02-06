@@ -23,7 +23,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -118,15 +117,38 @@ public class ContentletUtil {
 	 * @throws DotDataException
 	 * @throws IOException 
      */
-	public static Map<String, Object> getContentPrintableMap(User user, Contentlet contentlet) throws DotDataException, IOException {
+	public static Map<String, Object> getContentPrintableMap(
+			final User user, final Contentlet contentlet)
+			throws DotDataException, IOException {
+		return getContentPrintableMap(user, contentlet, false);
+	}
+
+	/**
+	 * Returns a {@link Map} that includes original content's map entries and also special entries for string
+	 * representation of the values of binary and category field. It also set the tags to the contentlet's map for them
+	 * to be included in the resulting map. This map can be used to return a string representation of the given content
+	 * (e.g. REST, ES portlet)
+	 *
+	 * @param user User from Front End with permission to read Special Fields.
+	 * @param sourceContentlet the contentlet to generate the printable map from
+	 * @param allCategoriesInfo {@code "true"} to return all fields for
+	 * the categories associated to the content (key, name, description),{@code "false"}
+	 * to return only categories names.
+	 *
+	 * @return Contentlet with the values in place.
+	 *
+	 * @throws DotDataException
+	 * @throws IOException
+	 */
+	public static Map<String, Object> getContentPrintableMap(
+			final User user, final Contentlet sourceContentlet, final boolean allCategoriesInfo)
+			throws DotDataException, IOException {
+
 		Map<String, Object> m = new HashMap<>();
 
-		contentlet.setTags();
-		contentlet = ContentHelper.getInstance().hydrateContentlet(contentlet);
+		sourceContentlet.setTags();
+		final Contentlet contentlet = ContentHelper.getInstance().hydrateContentlet(sourceContentlet);
 		m.putAll(contentlet.getMap());
-
-
-
 
 		ContentType type=contentlet.getContentType();
 		m.put("contentType", type.variable());
@@ -142,9 +164,7 @@ public class ContentletUtil {
 			} else if(f instanceof CategoryField) {
 
 				List<Category> cats = null;
-				
 				try {
-
 					cats = APILocator.getCategoryAPI().getParents(contentlet, user, true);
 				} catch (Exception e) {
 					Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", contentlet.getInode()));
@@ -152,23 +172,29 @@ public class ContentletUtil {
 
 				if(cats!=null && !cats.isEmpty()) {
 					try {
-
 						final Category parentCategory        = APILocator.getCategoryAPI().find(f.values(), user, true);
 						final List<Category> childCategories = new ArrayList<>();
 
 						if(parentCategory != null) {
 							for (Category category : cats) {
-
 								if (APILocator.getCategoryAPI().isParent(category, parentCategory, user,true)) {
-
 									childCategories.add(category);
 								}
 							}
 						}
 
 						if (!childCategories.isEmpty()){
-							String catsStr = childCategories.stream().map(Category::getCategoryName).collect(Collectors.joining(", "));
-							m.put(f.variable(), catsStr);
+							Object categoriesValue;
+							if (allCategoriesInfo) {
+								categoriesValue = childCategories.stream()
+										.map(Category::getMap)
+										.collect(Collectors.toList());
+							} else {
+								categoriesValue = childCategories.stream()
+										.map(Category::getCategoryName)
+										.collect(Collectors.joining(", "));
+							}
+							m.put(f.variable(), categoriesValue);
 						}
 					} catch (DotSecurityException e) {
 						Logger.error(ContentletUtil.class, String.format("Unable to get the Categories for given contentlet with inode= %s", contentlet.getInode()));
