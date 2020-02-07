@@ -17,22 +17,32 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Predicate;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import com.google.gson.stream.JsonWriter;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.felix.framework.OSGIUtil;
 
@@ -171,48 +181,122 @@ public class TikaUtils {
                                                  final Set<String> metadataFields, final boolean force)
             throws DotSecurityException, DotDataException {
 
-        // todo: check if the info is on the file system
-        // otherwise generate it and saves in the file system
-
         //See if we have content metadata file
-        final File contentMeta = APILocator.getFileAssetAPI()
-                .getContentMetadataFile(contentlet.getInode());
+        Map<String, Object> metaDataMap = Collections.emptyMap();
+        final File contentMetaFile      = APILocator.getFileAssetAPI().
+                getContentMetadataFile(contentlet.getInode());
 
         /*
         If we want to force the parse of the file and the generation of the metadata file
         we need to delete the existing one first.
          */
-        if (force && contentMeta.exists()) {
+        if (force && contentMetaFile.exists()) {
             try {
-                contentMeta.delete();
+                contentMetaFile.delete();
             } catch (Exception e) {
                 Logger.error(this.getClass(),
                         String.format("Unable to delete existing metadata file [%s] [%s]",
-                                contentMeta.getAbsolutePath(), e.getMessage()), e);
+                                contentMetaFile.getAbsolutePath(), e.getMessage()), e);
             }
         }
 
         //If the metadata file does not exist we need to parse and get the metadata for the file
-        if (!contentMeta.exists()) {
+        if (!contentMetaFile.exists()) {
 
             if (binaryField != null) {
 
                 //Parse the metadata from this file
-                final Map<String, String> metaData = getMetaDataMap(contentlet.getInode(),
-                        binaryField);
-                if (null != metaData) {
-                    final String metadataJson = new GsonBuilder().
-                            disableHtmlEscaping().create().toJson(metaData);
-                    //Save the parsed metadata to the contentlet
-                    // todo: save the json on the filesystem
-                }
+                metaDataMap =
+                        this.getForcedMetaDataMap(binaryField, metadataFields,
+                                Config.getIntProperty("binaryfield.metadata.content.maxlength", 1024));
+
+                this.writeCompressJsonMetadataFile (contentMetaFile,
+                        UtilMethods.isSet(metaDataMap)?metaDataMap:Collections.emptyMap());
             }
         } else {
 
-            // todo:take the map from the file system
+            metaDataMap = this.readCompressedJsonMetadataFile (contentMetaFile);
         }
 
-        return Collections.emptyMap();
+        return metaDataMap;
+    }
+
+    private InputStream createInputStream(final Path path) throws IOException {
+
+        // compressor config
+        final String compressor = Config
+                .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+
+        switch (compressor) {
+
+            case "gzip":
+                return new GZIPInputStream(Files.newInputStream(path));
+            case "bzip2":
+                return new BZip2CompressorInputStream(Files.newInputStream(path));
+            default:
+                return Files.newInputStream(path);
+        }
+    }
+
+    private OutputStream createOutputStream(final Path path) throws IOException {
+
+        // compressor config
+        final String compressor = Config
+                .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+
+        switch (compressor) {
+
+            case "gzip":
+                return new GZIPOutputStream(Files.newOutputStream(path));
+            case "bzip2":
+                return new BZip2CompressorOutputStream(Files.newOutputStream(path));
+            default:
+                return Files.newOutputStream(path);
+        }
+    }
+
+    private Map<String, Object> readCompressedJsonMetadataFile(final File contentMetaFile) {
+
+        InputStream inputStream = null;
+        Map<String, Object> objectMap = Collections.emptyMap();
+        try {
+
+            inputStream = this.createInputStream(contentMetaFile.toPath());
+            objectMap   = new GsonBuilder().disableHtmlEscaping().
+                    create().fromJson(new InputStreamReader(inputStream), Map.class);
+
+            Logger.info(this, "Metadata read from: " + contentMetaFile);
+        } catch (IOException e) {
+
+            Logger.error(this, e.getMessage(), e);
+        } finally {
+
+            IOUtils.closeQuietly(inputStream);
+        }
+
+        return objectMap;
+    }
+
+    private void writeCompressJsonMetadataFile(final File contentMetaFile, final Map<?, Object> objectMap) {
+
+        OutputStream out = null;
+
+        try {
+
+            this.prepareMetaDataFile(contentMetaFile);
+            out = this.createOutputStream(contentMetaFile.toPath());
+            new GsonBuilder().
+                    disableHtmlEscaping().create().toJson(objectMap, new OutputStreamWriter(out));
+
+            out.flush();
+            Logger.info(this, "Metadata wrote on: " + contentMetaFile);
+        } catch (IOException e) {
+
+            Logger.error(this, e.getMessage(), e);
+        } finally {
+
+            IOUtils.closeQuietly(out);
+        }
     }
 
     /**
@@ -273,6 +357,60 @@ public class TikaUtils {
         }
 
         return false;
+    }
+
+    /**
+     * Similar as {@link #getMetaDataMap(String, File, boolean)} but includes the metadata fields to filter from the tika collection
+     * and the max length of the binary file to parse.
+     * Also, it is not storing anything on the file system as the reference method {@link #getMetaDataMap(String, File, boolean)}
+     * This one does everything on memory, means forceMemory is always true and the file system cache has to be performed on upper layers
+     */
+    private Map<String, Object> getForcedMetaDataMap(final File binFile,
+                                               final Set<String> metadataFields,
+                                               final int maxLength) {
+
+        if (!osgiInitialized) {
+            Logger.error(this.getClass(),
+                    "Unable to get file Meta Data, OSGI Framework not initialized");
+            return Collections.emptyMap();
+        }
+
+        final Map<String, Object> metaMap = new TreeMap<>();
+        this.tikaService.setMaxStringLength(maxLength);
+
+        try (InputStream stream = Files.newInputStream(binFile.toPath())) {
+            // no worry about the limit and less time to process.
+            final String content = this.tikaService.parseToString(stream);
+
+            //Creating the meta data map to use by our content
+            metaMap.putAll(this.buildMetaDataMap());
+            metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
+        } catch (IOException ioExc) {
+            if (this.isZeroByteFileException(ioExc.getCause())) {
+                logWarning(binFile, ioExc.getCause());
+            } else {
+                final String errorMessage = String
+                        .format("Error Reading Tika parsed Stream for file [%s] [%s] ",
+                                binFile.getAbsolutePath(),
+                                UtilMethods.isSet(ioExc.getMessage()) ? ioExc.getMessage()
+                                        : ioExc.getCause().getMessage());
+                Logger.warn(this.getClass(), errorMessage);
+                Logger.debug(this.getClass(), errorMessage, ioExc);
+            }
+        } catch (Throwable e) {
+
+            if (this.isZeroByteFileException(e)) {
+                logWarning(binFile, e);
+            } else {
+                logError(binFile, e);
+            }
+        } finally {
+            metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length())); // todo: this should be a long and another key
+        }
+
+        this.filterMetadataFields(metaMap, metadataFields);
+
+        return metaMap;
     }
 
     /**

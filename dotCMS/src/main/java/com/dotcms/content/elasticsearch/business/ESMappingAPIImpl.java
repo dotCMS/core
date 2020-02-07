@@ -1,16 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -57,6 +52,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.FastDateFormat;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.GetMappingsRequest;
+import org.elasticsearch.client.indices.GetMappingsResponse;
+import org.elasticsearch.client.indices.PutMappingRequest;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentType;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -72,19 +78,14 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.indices.GetMappingsRequest;
-import org.elasticsearch.client.indices.GetMappingsResponse;
-import org.elasticsearch.client.indices.PutMappingRequest;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentType;
+
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
 import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
 import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * Implementation class for the {@link ContentMappingAPI}.
@@ -327,10 +328,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		//Verify if it is enabled the option to regenerate missing metadata files on reindex
 		final boolean regenerateMissingMetadata = Config
 				.getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
-                /*
-                Verify if it is enabled the option to always regenerate metadata files on reindex,
-                enabling this could affect greatly the performance of a reindex process.
-                 */
+
+		/*
+		Verify if it is enabled the option to always regenerate metadata files on reindex,
+		enabling this could affect greatly the performance of a reindex process.
+		 */
 		final boolean alwaysRegenerateMetadata = Config
 				.getBooleanProperty("always.regenerate.metadata.on.reindex", false);
 
@@ -344,15 +346,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			final Set<String> metadataFields = customIndexMetaDataFieldsOpt.isPresent()?
 					new HashSet<>(Arrays.asList(customIndexMetaDataFieldsOpt.get().value().split(StringPool.COMMA))):
-					tikaUtils.getConfiguredMetadataFields();
+					tikaUtils.getConfiguredMetadataFields();  // gets the metadata fields to filter from the tika metadata
 
 			final File binaryField = contentlet.getBinary(field.getVelocityVarName());
 			if (null != binaryField && binaryField.exists() && binaryField.canRead()) {
 
 				if (alwaysRegenerateMetadata) {
-					metadataMap = new TikaUtils().generateMetaDataForce(contentlet, binaryField, metadataFields);
+					metadataMap = tikaUtils.generateMetaDataForce(contentlet, binaryField, metadataFields);
 				} else if (regenerateMissingMetadata) {
-					metadataMap = new TikaUtils().generateMetaData(contentlet, binaryField, metadataFields);
+					metadataMap = tikaUtils.generateMetaData(contentlet, binaryField, metadataFields);
 				}
 			}
 
@@ -363,7 +365,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 					final Object metadataValue = metadataMap.get(metadataKey);
 					mapLowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey, metadataValue);
-					stringWriter.append(metadataValue.toString()).append(' ');
+					if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
+						stringWriter.append(metadataValue.toString()).append(' ');
+					}
 				}
 			}
 		}
