@@ -57,7 +57,7 @@ public class SiteViewPaginatorUnitTest {
                 when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
             } else {
                 final String name = String.format("%s%d",alphabet[i++],time);
-                System.out.println(name);
+                //System.out.println(name);
                 host = mockSite(identifier, name);
             }
             when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
