@@ -47,7 +47,7 @@ public class SiteViewPaginatorUnitTest {
         //System.out.println("Sites with integrations: ");
         sitesWithIntegrations.forEach(System.out::println);
         final HostAPI hostAPI = mock(HostAPI.class);
-        long time = System.currentTimeMillis();
+        final long time = System.currentTimeMillis();
         int i = 0;
         //System.out.println("Site names: ");
         for(final String identifier:allSites){
@@ -56,7 +56,7 @@ public class SiteViewPaginatorUnitTest {
                 host = mockSite(identifier, "System Host");
                 when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
             } else {
-                final String name = alphabet[i++] + "" +  time;
+                final String name = String.format("%s%d",alphabet[i++],time);
                 System.out.println(name);
                 host = mockSite(identifier, name);
             }
@@ -103,7 +103,7 @@ public class SiteViewPaginatorUnitTest {
                host = mockSite(identifier, name);
                when(hostAPI.find(eq(identifier),any(User.class), anyBoolean())).thenReturn(host);
             } else {
-               name = alphabet[i++] + "" +  time;
+               name = String.format("%s%d",alphabet[i++],time);
                host = mockSite(identifier, name);
             }
             //System.out.println(identifier + ":" + name);
@@ -151,11 +151,16 @@ public class SiteViewPaginatorUnitTest {
         final PaginatedArrayList<SiteView> itemsPageMixed = paginator
                 .getItems(user, null, limit, 0, null, null, Collections.emptyMap());
 
-        final List<String> pageNamesConfiguredItemsPage = itemsPage2.stream().filter(SiteView::isConfigured).map(SiteView::getName).collect(Collectors.toList());
-        Assert.assertTrue(Ordering.<String> natural().isOrdered(pageNamesConfiguredItemsPage));
+        final List<String> pageNamesConfiguredItemsPage = itemsPageMixed.stream()
+                .filter(siteView -> !Host.SYSTEM_HOST.equals(siteView.getId()))
+                .filter(SiteView::isConfigured).map(SiteView::getName).collect(Collectors.toList());
+        Assert.assertTrue(Ordering.<String>natural().isOrdered(pageNamesConfiguredItemsPage));
 
-        final List<String> pageNamesNonConfiguredItemsPage = itemsPage2.stream().filter(siteView -> !siteView.isConfigured()).map(SiteView::getName).collect(Collectors.toList());
-        Assert.assertTrue(Ordering.<String> natural().isOrdered(pageNamesNonConfiguredItemsPage));
+        final List<String> pageNamesNonConfiguredItemsPage = itemsPageMixed.stream()
+                .filter(siteView -> !Host.SYSTEM_HOST.equals(siteView.getId()))
+                .filter(siteView -> !siteView.isConfigured()).map(SiteView::getName)
+                .collect(Collectors.toList());
+        Assert.assertTrue(Ordering.<String>natural().isOrdered(pageNamesNonConfiguredItemsPage));
 
     }
 
@@ -177,7 +182,7 @@ public class SiteViewPaginatorUnitTest {
         return adminUser;
     }
 
-    private List<String> mockAllSitesIdentifiers(int allSitesNumber){
+    private List<String> mockAllSitesIdentifiers(final int allSitesNumber){
         final List<String> allSites = new LinkedList<>();
         allSites.add(0, Host.SYSTEM_HOST);
         for(int i=0; i<= allSitesNumber; i++){

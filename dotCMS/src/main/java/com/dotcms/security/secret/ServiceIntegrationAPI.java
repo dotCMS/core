@@ -72,13 +72,6 @@ public interface ServiceIntegrationAPI {
     Set<String> filterSitesForServiceKey(final String serviceKey, final Collection<String> siteIdentifiers, final User user);
 
     /**
-     *
-     * @param user
-     * @return
-     */
-    List<Host> getSitesWithIntegrations(final User user);
-
-    /**
      * Lookup for an individual secret/property then updates the single entry.
      * @param serviceKey Service unique id.
      * @param keyAndSecret Tuple value Pair with the definition of the secret and name.

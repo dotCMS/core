@@ -35,7 +35,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
     private static final String CONTENT_TYPE_HOST_QUERY = "+contentType:Host +working:true ";
     private static final String CONTENT_TYPE_HOST_WITH_TITLE_QUERY = "+contentType:Host +working:true +title:*%s*";
 
-    private Supplier<Set<String>> configuredSitesSupplier;
+    private final Supplier<Set<String>> configuredSitesSupplier;
     private final HostAPI hostAPI;
     private final ContentletAPI contentletAPI;
 

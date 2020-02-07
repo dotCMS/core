@@ -1,6 +1,5 @@
 package com.dotcms.security.secret;
 
-import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -36,7 +35,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -97,8 +95,10 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     /**
-     *
-      * @param serviceKey
+     * Given a service key and an identifier this builds an internal key composed by the two values concatenated
+     * And lowercased.
+     * Like `5e096068-edce-4a7d-afb1-95f30a4fa80e:serviceKeyNameXYZ`
+     * @param serviceKey
      * @param hostIdentifier
      * @return
      */
@@ -224,24 +224,6 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
             }
             return false;
         }).collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    /**
-     * {@inheritDoc}
-     * @param user
-     * @return
-     */
-    public List<Host> getSitesWithIntegrations(final User user) {
-        final Set<String> hostIds = serviceKeysByHost().keySet();
-        return hostIds.stream().map(hostId -> {
-            try {
-                return hostAPI.find(hostId, user, false);
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.warn(ServiceIntegrationAPIImpl.class,
-                        String.format("Unable to lookup site for the given id `%s`. The secret config entry is probably no longer valid.",hostId), e);
-            }
-            return null;
-        }).filter(Objects::nonNull).collect(CollectionsUtils.toImmutableList());
     }
 
     /**

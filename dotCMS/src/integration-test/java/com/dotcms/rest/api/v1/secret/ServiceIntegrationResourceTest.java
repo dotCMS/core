@@ -618,8 +618,8 @@ public class ServiceIntegrationResourceTest extends IntegrationTestBase {
         final long timeMark = System.currentTimeMillis();
         final List<Host> hosts= new ArrayList<>();
         final char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
-        for(char chr :alphabet) {
-           hosts.add(new SiteDataGen().name(chr + "" + timeMark).nextPersisted());
+        for(final char chr :alphabet) {
+           hosts.add(new SiteDataGen().name( String.format("%s,%d",chr, timeMark )).nextPersisted());
         }
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);

@@ -18,7 +18,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -40,7 +39,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
@@ -68,9 +66,9 @@ class ServiceIntegrationHelper {
     }
 
     private static Comparator<ServiceIntegrationView> compareByCountAndName = (o1, o2) -> {
-        final int i = Long.compare(o2.getConfigurationsCount(), o1.getConfigurationsCount());
-        if (i != 0){
-            return i;
+        final int compare = Long.compare(o2.getConfigurationsCount(), o1.getConfigurationsCount());
+        if (compare != 0){
+            return compare;
         }
         return o1.getName().compareTo(o2.getName());
     };
@@ -86,8 +84,7 @@ class ServiceIntegrationHelper {
             throws DotSecurityException, DotDataException {
         final List<ServiceIntegrationView> views = new ArrayList<>();
         final List<ServiceDescriptor> serviceDescriptors = serviceIntegrationAPI.getServiceDescriptors(user);
-        final List<Host> hosts = serviceIntegrationAPI.getSitesWithIntegrations(user);
-        final List<String> hostIdentifiers = hosts.stream().map(Contentlet::getIdentifier).collect(Collectors.toList());
+        final Set<String> hostIdentifiers = serviceIntegrationAPI.serviceKeysByHost().keySet();
         for (final ServiceDescriptor serviceDescriptor : serviceDescriptors) {
             final String serviceKey = serviceDescriptor.getKey();
             final long configurationsCount = serviceIntegrationAPI.filterSitesForServiceKey(serviceKey, hostIdentifiers, user).size();
@@ -131,7 +128,7 @@ class ServiceIntegrationHelper {
 
         final PaginationUtil paginationUtil = new PaginationUtil(new SiteViewPaginator(
                 () -> sitesWithConfigurations, hostAPI, contentletAPI));
-        final Response page = paginationUtil
+        return paginationUtil
                 .getPage(request, user,
                         paginationContext.getFilter(),
                         paginationContext.getPage(),
@@ -144,7 +141,6 @@ class ServiceIntegrationHelper {
                             return new ServiceIntegrationView(serviceDescriptor, count,
                                     paginatedArrayList);
                         });
-        return page;
     }
 
     /**
