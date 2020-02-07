@@ -277,20 +277,20 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 					filter(field -> field.variable().equals(TITTLE_KEY)).findAny();
 
 
-			if (fieldWithTitleFound.isPresent() && map.get(TITTLE_KEY)!=null) {
-				return map.get(TITTLE_KEY).toString();
-			} else if(!fieldWithTitleFound.isPresent()) {
+			if (fieldWithTitleFound.isPresent()) {
+				return map.get(TITTLE_KEY)!=null?map.get(TITTLE_KEY).toString():null;
+			} else {
 				// if there is no field with 'title' variable, let's look for variables starting with 'title'
 				Optional<com.dotcms.contenttype.model.field.Field> fieldWithSuspectTitleFound =
 						this.getContentType().fields().stream()
 								.filter(field -> UtilMethods.isSet(field.variable())
 										&& field.variable().startsWith(TITTLE_KEY)).findAny();
 
-				if (fieldWithSuspectTitleFound.isPresent()
-						&& map.get(fieldWithSuspectTitleFound.get().variable())!=null) {
-					return map.get(fieldWithSuspectTitleFound.get().variable()).toString();
+				if (fieldWithSuspectTitleFound.isPresent()) {
+					return map.get(fieldWithSuspectTitleFound.get().variable())!=null
+							?map.get(fieldWithSuspectTitleFound.get().variable()).toString()
+							:null;
 				}
-
 			}
 
 			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
