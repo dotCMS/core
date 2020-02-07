@@ -203,7 +203,7 @@ public class SiteViewPaginatorUnitTest {
         return new HashSet<>(sitesWithIntegrations);
     }
 
-    private List<ContentletSearch> mockSearchResults(List<String> allSites){
+    private List<ContentletSearch> mockSearchResults(final List<String> allSites){
         final List<ContentletSearch> mocks = new ArrayList<>(allSites.size());
         for (final String identifier : allSites) {
             final ContentletSearch search = mock(ContentletSearch.class);
