@@ -202,6 +202,7 @@
                             dwr.util.addRows("results_table", [ headers ] , funcs, { escapeHtml: false });
                             document.getElementById("nextDiv").style.display = "none";
                             document.getElementById("previousDiv").style.display = "none";
+                            fillCardView(data) // TODO: need to clean the selected view
                             showMatchingResults (0,0,0,0);
                             fillQuery (counters);
                             dijit.byId("searchButton").attr("disabled", false);
