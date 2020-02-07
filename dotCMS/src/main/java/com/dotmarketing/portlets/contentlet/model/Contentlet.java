@@ -273,20 +273,24 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	try {
 
     		//Verifies if the content type has defined a title field
-			Optional<com.dotcms.contenttype.model.field.Field> fieldFound = this.getContentType().fields().stream().
-					filter(field -> UtilMethods.isSet(field.variable()) && field.variable().startsWith(TITTLE_KEY)).findAny();
+			Optional<com.dotcms.contenttype.model.field.Field> fieldWithTitleFound = this.getContentType().fields().stream().
+					filter(field -> field.variable().equals(TITTLE_KEY)).findAny();
 
 
-			if (fieldFound.isPresent()) {
-				// let's try to get a field with var `title`. if not found, then the variable of the field found above, if not null.
-				String title = null;
+			if (fieldWithTitleFound.isPresent() && map.get(TITTLE_KEY)!=null) {
+				return map.get(TITTLE_KEY).toString();
+			} else if(!fieldWithTitleFound.isPresent()) {
+				// if there is no field with 'title' variable, let's look for variables starting with 'title'
+				Optional<com.dotcms.contenttype.model.field.Field> fieldWithSuspectTitleFound =
+						this.getContentType().fields().stream()
+								.filter(field -> UtilMethods.isSet(field.variable())
+										&& field.variable().startsWith(TITTLE_KEY)).findAny();
 
-				if(map.get(TITTLE_KEY)!=null) {
-					title = map.get(TITTLE_KEY).toString();
-				} else if(map.get(fieldFound.get().variable())!= null) {
-					title = map.get(fieldFound.get().variable()).toString();
+				if (fieldWithSuspectTitleFound.isPresent()
+						&& map.get(fieldWithSuspectTitleFound.get().variable())!=null) {
+					return map.get(fieldWithSuspectTitleFound.get().variable()).toString();
 				}
-				return title;
+
 			}
 
 			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
