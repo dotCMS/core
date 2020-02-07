@@ -139,43 +139,43 @@ THIS FILE AND ITS INCLUDES
 
   <style>
     :root {
-        --color-background: #3a3847;
-        --color-main: #c336e5;
-        --color-main_mod: #d369ec;
-        --color-main_rgb: 195, 54, 229;
-        --color-sec: #54428e;
-        --color-sec_rgb: 84, 66, 142;
-        --color-white: #fff;
-        --color-white_rgb: 255, 255, 255;
-​
-        /* Basics */
-        --border-radius: 2px;
-        --basic-padding: 8px;
-        --basic-padding-2: 16px;
-        --basic-padding-3: 24px;
-​
-        /* Typography */
-        --font-size-xx-large: 24px;
-        --font-size-x-large: 18px;
-        --font-size-large: 16px;
-        --font-size-medium: 14px;
-        --font-size-small: 12px;
-        --font-size-x-small: 10px;
-        --font-weight-semi-bold: 500;
-​
-        --body-text: Roboto, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
-        --body-font-size-base: --font-size-medium;
-        --body-font-color: --black;
-​
-        /* MD */
-        --md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-        --md-shadow-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-        --md-shadow-3: 0 10px 24px 0 rgba(0, 0, 0, 0.2);
-        --md-shadow-4: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
-        --md-shadow-5: 0 10px 20px 0 rgba(0, 0, 0, 0.15);
-​
-        /* ANIMATION */
-        --basic-speed: 150ms;
+      --color-background: #3a3847;
+      --color-main: #c336e5;
+      --color-main_mod: #d369ec;
+      --color-main_rgb: 195, 54, 229;
+      --color-sec: #54428e;
+      --color-sec_rgb: 84, 66, 142;
+      --color-white: #fff;
+      --color-white_rgb: 255, 255, 255;
+
+      /* Basics */
+      --border-radius: 2px;
+      --basic-padding: 8px;
+      --basic-padding-2: 16px;
+      --basic-padding-3: 24px;
+
+      /* Typography */
+      --font-size-xx-large: 24px;
+      --font-size-x-large: 18px;
+      --font-size-large: 16px;
+      --font-size-medium: 14px;
+      --font-size-small: 12px;
+      --font-size-x-small: 10px;
+      --font-weight-semi-bold: 500;
+
+      --body-text: Roboto, 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
+      --body-font-size-base: --font-size-medium;
+      --body-font-color: --black;
+
+      /* MD */
+      --md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+      --md-shadow-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+      --md-shadow-3: 0 10px 24px 0 rgba(0, 0, 0, 0.2);
+      --md-shadow-4: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+      --md-shadow-5: 0 10px 20px 0 rgba(0, 0, 0, 0.15);
+
+      /* ANIMATION */
+      --basic-speed: 150ms;
     }
   </style>
 

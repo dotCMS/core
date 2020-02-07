@@ -176,20 +176,18 @@
 
 
         function fillResults(data) {
-
-
             var counters = data[0];
             var hasNext = counters["hasNext"];
             var hasPrevious = counters["hasPrevious"];
             var total = counters["total"];
             var begin = counters["begin"];
             var end = counters["end"];
-    		var totalPages = counters["totalPages"];
+        		var totalPages = counters["totalPages"];
 
             headers = data[1];
 
             for (var i = 3; i < data.length; i++) {
-                    data[i - 3] = data[i];
+                data[i - 3] = data[i];
             }
             data.length = data.length - 3;
 
@@ -213,7 +211,8 @@
                     return;
             }
 
-            fillResultsTable (headers, data);
+            // fillResultsTable (headers, data);
+            fillCardView(data)
             showMatchingResults (total,begin,end,totalPages);
             fillQuery (counters);
 
@@ -1303,22 +1302,36 @@
 
         var currentPage;
         function doSearch (page, sortBy) {
-            if (page) {
-                currentPage = page;
-            } else {
-                page = currentPage
-            }
-			// Wait for the "HostFolderFilteringSelect" widget to end the values updating process before proceeding with the search, if necessary.
-			if (dijit.byId('FolderHostSelector') && dijit.byId('FolderHostSelector').attr('updatingSelectedValue')) {
-			        setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
-			} else {
-				if(dijit.byId('structure_inode')){
-				    debouncedSearch(page, sortBy);
-				}
-				else{
-				    setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
-				}
-			}
+          if (page) {
+              currentPage = page;
+          } else {
+              page = currentPage;
+          }
+          // Wait for the "HostFolderFilteringSelect" widget to end the values updating process before proceeding with the search, if necessary.
+          if (
+              dijit.byId('FolderHostSelector') &&
+              dijit
+                  .byId('FolderHostSelector')
+                  .attr('updatingSelectedValue')
+          ) {
+              setTimeout(
+                  'doSearch (' + page + ", '" + sortBy + "');",
+                  250
+              );
+          } else {
+              if (dijit.byId('structure_inode')) {
+                  debouncedSearch(page, sortBy);
+              } else {
+                  setTimeout(
+                      'doSearch (' +
+                          page +
+                          ", '" +
+                          sortBy +
+                          "');",
+                      250
+                  );
+              }
+          }
         }
 
 
@@ -1673,6 +1686,30 @@
         users to ONLY do a "Remove", not a "Push" or "Push & Remove". */
         function remotePublish(objId, referrer, isArchived) {
             pushHandler.showDialog(objId, false, isArchived);
+        }
+
+        function fillCardView(data) {
+          const content = data.map(i => {
+            return {
+              data: {
+                ...i,
+                title: i.__title__ // Why not `title` coming?
+              },
+              actions: {}
+            }
+          })
+
+          let viewCard = document.querySelector('dot-card-view');
+
+          if (!viewCard) {
+            viewCard = document.createElement('dot-card-view');
+            viewCard.style.padding = '0 1rem';
+            dojo.byId('metaMatchingResultsDiv').appendChild(viewCard);
+          }
+
+          viewCard.items = content;
+
+          
         }
 
         function fillResultsTable (headers, data) {
