@@ -375,15 +375,13 @@ public class BinaryExporterServlet extends HttpServlet {
         inputFile = APILocator.getTempFileAPI().getTempFile(req, shorty.longId).get().file;
       }
       
-      final String[] val = params.get("filter");
-      if(val!=null && val[0].contains("Quality")) {
+
+      if(params.get("quality_q")!=null) {
       	final UserAgent userAgent = new UserAgent(req.getHeader("user-agent"));
         if(userAgent.getBrowser() == Browser.SAFARI || userAgent.getOperatingSystem().getGroup() == OperatingSystem.IOS){
-          params.put("filter", new String[] {val[0].replace("Quality","Jpeg")});
           params.put("jpeg_q", params.get("quality_q"));
           params.put("jpeg_p",  new String[] {"1"});
         }else {
-          params.put("filter", new String[] {val[0].replace("Quality","WebP")});
           params.put("webp_q", params.get("quality_q"));
         }
       }
