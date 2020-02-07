@@ -274,11 +274,19 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
     		//Verifies if the content type has defined a title field
 			Optional<com.dotcms.contenttype.model.field.Field> fieldFound = this.getContentType().fields().stream().
-					filter(field -> field.variable().equals(TITTLE_KEY)).findAny();
+					filter(field -> UtilMethods.isSet(field.variable()) && field.variable().startsWith(TITTLE_KEY)).findAny();
 
 
 			if (fieldFound.isPresent()) {
-				return map.get(TITTLE_KEY)!=null?map.get(TITTLE_KEY).toString():null;
+				// let's try to get a field with var `title`. if not found, then the variable of the field found above, if not null.
+				String title = null;
+
+				if(map.get(TITTLE_KEY)!=null) {
+					title = map.get(TITTLE_KEY).toString();
+				} else if(map.get(fieldFound.get().variable())!= null) {
+					title = map.get(fieldFound.get().variable()).toString();
+				}
+				return title;
 			}
 
 			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
