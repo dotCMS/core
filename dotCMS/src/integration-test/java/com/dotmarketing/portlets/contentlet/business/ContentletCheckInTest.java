@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
@@ -68,7 +69,7 @@ public class ContentletCheckInTest extends ContentletBaseTest{
       Contentlet con = new ContentletDataGen(contentType.id()).nextWithSampleTextValues();
       Contentlet newCon = contentletAPI.checkin(con, null, true);
       assertTrue("we saved a contentlet anonymously", newCon.getIdentifier()!=null);
-      assertTrue("the contentlet title was saved", newCon.getTitle().equals(con.getTitle()));
+      assertTrue("the contentlet title was saved", UtilMethods.isSet(newCon.getTitle()));
      
       assertTrue("contentlet is not live", newCon.isWorking() && !newCon.hasLiveVersion());
       
