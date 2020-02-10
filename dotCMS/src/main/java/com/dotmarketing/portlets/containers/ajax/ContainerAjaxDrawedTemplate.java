@@ -89,7 +89,7 @@ public class ContainerAjaxDrawedTemplate extends ContainerAjax {
                 contMap.put("source", container.getSource().toString());
                 if (container instanceof FileAssetContainer) {
 
-                    contMap.put("path", FileAssetContainer.class.cast(container).getFullPath());
+                    contMap.put("path", FileAssetContainer.class.cast(container).getPath());
                 }
 
 //                StringBuffer containerCode = new StringBuffer( cont.getCode() );

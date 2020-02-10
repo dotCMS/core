@@ -368,7 +368,7 @@ public class PageRenderUtil implements Serializable {
 
     private boolean needParseContainerPrefix(final Container container, final String uniqueId) {
         final String containerIdOrPath = (container instanceof FileAssetContainer) ?
-                ((FileAssetContainer) container).getFullPath() : container.getIdentifier();
+                ((FileAssetContainer) container).getPath() : container.getIdentifier();
 
         return !ParseContainer.isParserContainerUUID(uniqueId) &&
                     (templateLayout == null || !templateLayout.existsContainer(containerIdOrPath, uniqueId));
