@@ -1708,7 +1708,11 @@
             dojo.byId('metaMatchingResultsDiv').appendChild(viewCard);
           }
 
-          viewCard.items = content;
+          viewCard.items = [];
+          setTimeout(() => {
+            viewCard.items = content;
+
+          }, 0)
 
           
         }
