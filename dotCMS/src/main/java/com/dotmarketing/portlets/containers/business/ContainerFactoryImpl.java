@@ -182,16 +182,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
     public Container getWorkingContainerByFolderPath(final String path, final Host host, final User user,
                                                      final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 
-		final String folderHostId           = host.getIdentifier();
-		final Optional<Host> currentHostOpt = HostUtil.tryToFindCurrentHost(user);
-		boolean includeHostOnPath           = false;
-
-		if (currentHostOpt.isPresent()) {
-
-			includeHostOnPath = !folderHostId.equals(currentHostOpt.get().getIdentifier());
-		}
-
-        return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, true), user,false);
+        return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,false);
     }
 
 
@@ -569,7 +560,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 * @param host {@link Host}
 	 * @param user {@link User}
 	 * @param subFolders {@link List}
-	 * @param includeHostOnPath {@link Boolean} true if you want to  include the host on the container path
 	 * @return List of Containers
 	 * @throws DotDataException
 	 */
