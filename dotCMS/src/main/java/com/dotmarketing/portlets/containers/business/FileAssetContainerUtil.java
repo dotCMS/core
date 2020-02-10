@@ -359,7 +359,7 @@ public class FileAssetContainerUtil {
      */
     public String getFullPath(final FileAssetContainer container) throws DotSecurityException, DotDataException {
         final Host host = APILocator.getHostAPI().findParentHost(container, APILocator.systemUser(), false);
-        return buildPath(host, container.getRelativePath(), true);
+        return buildPath(host, container.getPath(), true);
     }
 
     private String buildPath(final Host host, final String containerPath, final boolean includeHostOnPath) {
