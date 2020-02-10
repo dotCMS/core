@@ -175,7 +175,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	public Container getLiveContainerByFolderPath(final String path, final Host host, final User user,
 												  final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 
-		return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, true), user,true);
+		return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,true);
 	}
 
     @Override
