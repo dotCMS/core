@@ -1737,7 +1737,6 @@
 			const contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(data.identifier, data.inode, data.languageId);
 			const wfActionMapList = JSON.parse(data["wfActionMapList"]);
 
-
 			if ((live || working) && (read=="1") && (!deleted)) {
 				if(structure_id == '<%=calendarEventSt.getInode() %>'){
 					actions.push({ label: write === '1' ? '<%=LanguageUtil.get(pageContext, "Edit") %>' : '<%=LanguageUtil.get(pageContext, "View") %>',
@@ -1749,7 +1748,6 @@
 					});
 				}
 			}
-
 			for (var k = 0; k < wfActionMapList.length; k++) {
 				var name = wfActionMapList[k].name;
 				var id = wfActionMapList[k].id;
@@ -1786,6 +1784,8 @@
 					});
 				}
 			}
+
+			return actions;
 		}
 
         function fillResultsTable (headers, data) {
@@ -2014,7 +2014,6 @@
                         popupMenu += popupMenuItems + "</div>";
                         popupMenu2 += popupMenuItems + "</div>";
                 }
-
                 popupMenusDiv.innerHTML = popupMenu + popupMenu2;
 
 
