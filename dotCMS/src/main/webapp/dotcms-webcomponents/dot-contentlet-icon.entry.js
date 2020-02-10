@@ -1,6 +1,6 @@
 import { r as registerInstance, h } from './core-bb6a6489.js';
-import './lit-element-803ec539.js';
-import './mwc-icon-32c74959.js';
+import './lit-element-aeb3818e.js';
+import './mwc-icon-0d1aac57.js';
 
 const legacyIconMap = {
     page: 'insert_drive_file',
