@@ -298,6 +298,10 @@ dependencies {
     compile group: 'net.jodah', name: 'failsafe', version:'1.0.4'
 
     compile group: 'redis.clients', name: 'jedis', version:'2.7.3'
+    compile group: 'io.lettuce', name: 'lettuce-core', version:'5.2.1.RELEASE'
+    compile group: 'de.ruedigermoeller', name: 'fst', version:'2.56'
+
+    
     compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_2'
     compile group: 'org.openjdk.jmh', name: 'jmh-core', version:'0.1'
