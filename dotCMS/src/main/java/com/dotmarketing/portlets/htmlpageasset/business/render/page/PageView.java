@@ -126,7 +126,7 @@ public class PageView implements Serializable {
 
             if (containerRaw.getContainer() instanceof FileAssetContainer) {
 
-                final String path = FileAssetContainer.class.cast(containerRaw.getContainer()).getPath();
+                final String path = FileAssetContainer.class.cast(containerRaw.getContainer()).getFullPath();
                 containerRawMap.put(path, containerRaw);
             } else {
 

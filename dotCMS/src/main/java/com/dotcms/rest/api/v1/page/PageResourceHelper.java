@@ -283,7 +283,7 @@ public class PageResourceHelper implements Serializable {
         final Container foundContainer = APILocator.getContainerAPI()
                 .getWorkingContainerById(containerId, userAPI.getSystemUser(), false);
         if (foundContainer instanceof FileAssetContainer) {
-            containerPath = FileAssetContainer.class.cast(foundContainer).getPath();
+            containerPath = FileAssetContainer.class.cast(foundContainer).getFullPath();
         }
 
         if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {

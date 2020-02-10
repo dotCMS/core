@@ -95,7 +95,7 @@ public class ContainerAjax {
 					contMap.put("source", container.getSource().toString());
 					if (container instanceof FileAssetContainer) {
 
-						contMap.put("path", FileAssetContainer.class.cast(container).getPath());
+						contMap.put("path", FileAssetContainer.class.cast(container).getFullPath());
 					}
 
 					list.add(contMap);

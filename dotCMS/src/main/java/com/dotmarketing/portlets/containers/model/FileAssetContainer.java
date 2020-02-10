@@ -112,16 +112,16 @@ public class FileAssetContainer extends Container {
         return APILocator.getVersionableAPI().hasLiveVersion(toContentlet());
     }
 
-    public String getPath() {
+    public String getFullPath() {
         try {
             return FileAssetContainerUtil.getInstance().getFullPath(this);
         } catch (DotSecurityException | DotDataException e) {
             Logger.debug(FileAssetContainer.class, e.getMessage());
-            return getRelativePath();
+            return getPath();
         }
     }
 
-    public String getRelativePath() {
+    public String getPath() {
         return path;
     }
 
