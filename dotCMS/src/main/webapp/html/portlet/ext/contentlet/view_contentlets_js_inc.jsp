@@ -12,6 +12,7 @@
 
 <script language="JavaScript"><!--
 
+
 <%boolean canReindex= APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
 
 <%Structure calendarEventSt = APILocator.getStructureAPI().findByVarName("calendarEvent", APILocator.getUserAPI().getSystemUser());%>
@@ -21,6 +22,13 @@
         dojo.require("dijit.form.MultiSelect");
         dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
         dojo.require("dojo.aspect");
+
+        const DOTCMS_DATAVIEW_MODE = 'dotcms.dataview.mode';
+        var state = {
+          data: [],
+          view: localStorage.getItem(DOTCMS_DATAVIEW_MODE) || 'card',
+          headers: []
+        }
 
         var radiobuttonsIds = new Array();
         var checkboxesIds = new Array();
@@ -212,8 +220,18 @@
                     return;
             }
 
-            // fillResultsTable (headers, data);
-            fillCardView(data)
+            state = {
+              ...state,
+              data: data,
+              headers: headers
+            }
+
+            if (state.view === 'list') {
+              fillResultsTable (headers, data);
+            } else {
+              fillCardView(data)
+            }
+
             showMatchingResults (total,begin,end,totalPages);
             fillQuery (counters);
 
@@ -1688,6 +1706,20 @@
         function remotePublish(objId, referrer, isArchived) {
             pushHandler.showDialog(objId, false, isArchived);
         }
+
+        function changeView(view) {
+          localStorage.setItem(DOTCMS_DATAVIEW_MODE, view)
+          state.view = view;
+          if (state.view === 'list') {
+            document.querySelector('dot-card-view').items = [];
+            fillResultsTable(state.headers, state.data)
+          } else {
+            document.getElementById("results_table").innerHTML = '';
+            fillCardView(state.data)
+          }
+        }
+
+ 
 
         function fillCardView(data) {
           const content = data.map(i => {
