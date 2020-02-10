@@ -8,7 +8,6 @@ import com.dotcms.security.secret.Secret;
 import com.dotcms.security.secret.ServiceDescriptor;
 import com.dotcms.security.secret.ServiceIntegrationAPI;
 import com.dotcms.security.secret.ServiceSecrets;
-import com.dotcms.security.secret.Type;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
@@ -325,14 +324,10 @@ class ServiceIntegrationHelper {
         for (final Entry<String, Param> incomingParamEntry : incomingParams.entrySet()) {
             final String incomingParamName = incomingParamEntry.getKey();
             final Param describedParam = serviceDescriptorParams.get(incomingParamName);
-            final Param incomingParam = incomingParamEntry.getValue();
-
             if(serviceDescriptor.isAllowExtraParameters() && null == describedParam){
                //if the param isn't found in our description but the allow extra params flag is true we're ok
-               //Validate type..
                continue;
             }
-
             //If the flag isn't true. Then we must reject the unknown param.
             if(null == describedParam) {
                 throw new IllegalArgumentException(String.format(
@@ -340,25 +335,12 @@ class ServiceIntegrationHelper {
                         incomingParamName));
             }
 
+            final Param incomingParam = incomingParamEntry.getValue();
             //We revise the incoming param against the definition loaded from the yml.
             if(describedParam.isRequired() && UtilMethods.isNotSet(incomingParam.getValue())){
                throw new IllegalArgumentException(
                String.format("Params named `%s` is marked as required in the descriptor but does not have any value.", incomingParamName));
             }
-
-
-
-            if(Type.BOOL.equals(describedParam.getType())){
-                if(UtilMethods.isSet(incomingParam.getValue())){
-                    if(!("true".equalsIgnoreCase(incomingParam.getValue()) || "false".equalsIgnoreCase(incomingParam.getValue()))){
-                        throw new IllegalArgumentException(String.format(
-                                "Params named `%s`  can doesn't have a valid boolean value.",
-                                incomingParamName));
-                    }
-                }
-            }
-
-
         }
     }
 
