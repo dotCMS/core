@@ -148,7 +148,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
                 + "}";
 
         final Response endpointResponse = esContentResourcePortlet
-                .search(request, response, jsonQuery, testCase.depth, testCase.live);
+                .search(request, response, jsonQuery, testCase.depth, testCase.live,false);
 
         assertEquals(testCase.statusCode, endpointResponse.getStatus());
 
