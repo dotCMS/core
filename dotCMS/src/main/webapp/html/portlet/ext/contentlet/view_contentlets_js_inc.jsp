@@ -1696,7 +1696,7 @@
                 ...i,
                 title: i.__title__ // Why not `title` coming?
               },
-              actions: {}
+              actions: fillActions(i)
             }
           })
 
@@ -1712,6 +1712,77 @@
 
           
         }
+
+		function fillActions(data) {
+			let actions = []
+
+			const live = data["live"] == "true";
+			const working = data["working"] == "true";
+			const deleted = data["deleted"] == "true";
+			const locked = data["locked"] == "true";
+			const liveSt = live ? "1" : "0";
+			const workingSt = working ? "1" : "0";
+			const permissions = data["permissions"];
+			const read = userHasReadPermission(data, userId) ? "1" : "0";
+			const write = userHasWritePermission(data, userId) ? "1" : "0";
+			const publish = userHasPublishPermission(data, userId) ? "1" : "0";
+			const contentStructureType = data["contentStructureType"];
+			const structure_id = data["structureInode"];
+			const hasLiveVersion = data["hasLiveVersion"];
+
+			const contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(data.identifier, data.inode, data.languageId);
+			const wfActionMapList = JSON.parse(data["wfActionMapList"]);
+
+
+			if ((live || working) && (read=="1") && (!deleted)) {
+				if(structure_id == '<%=calendarEventSt.getInode() %>'){
+					actions.push({ label: write === '1' ? '<%=LanguageUtil.get(pageContext, "Edit") %>' : '<%=LanguageUtil.get(pageContext, "View") %>',
+						action: () => { editEvent(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write)}
+					});
+				} else {
+					actions.push({ label: write === '1' ? '<%=LanguageUtil.get(pageContext, "Edit") %>' : '<%=LanguageUtil.get(pageContext, "View") %>',
+						action: () => { editContentlet(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write)}
+					});
+				}
+			}
+
+			for (var k = 0; k < wfActionMapList.length; k++) {
+				var name = wfActionMapList[k].name;
+				var id = wfActionMapList[k].id;
+				var assignable = wfActionMapList[k].assignable;
+
+				var commentable = wfActionMapList[k].commentable;
+				var icon = wfActionMapList[k].icon;
+				var requiresCheckout = wfActionMapList[k].requiresCheckout;
+				var wfActionNameStr = wfActionMapList[k].wfActionNameStr;
+				var hasPushPublishActionlet = wfActionMapList[k].hasPushPublishActionlet;
+
+				actions.push({ label: wfActionNameStr,
+					action: () => { contentAdmin.executeWfAction(id, assignable, commentable, hasPushPublishActionlet, data.inode)}
+				});
+			}
+
+			if (enterprise && sendingEndpoints ) {
+				actions.push({ label: '<%=LanguageUtil.get(pageContext, "Remote-Publish") %>',
+					action: () => { remotePublish(data.inode, '<%= referer %>', deleted )}
+				});
+				actions.push({ label: '<%=LanguageUtil.get(pageContext, "Add-To-Bundle") %>',
+					action: () => { addToBundle(data.inode, '<%= referer %>')}
+				});
+			}
+
+			if (locked && (write=="1")){
+				if(structure_id == '<%=calendarEventSt.getInode() %>') {
+					actions.push({ label: '<%=LanguageUtil.get(pageContext, "Unlock") %>',
+						action: () => { unlockEvent(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write)}
+					});
+				}else{
+					actions.push({ label: '<%=LanguageUtil.get(pageContext, "Unlock") %>',
+						action: () => { _unlockAsset(data.inode)}
+					});
+				}
+			}
+		}
 
         function fillResultsTable (headers, data) {
                 headerLength = headers.length;
