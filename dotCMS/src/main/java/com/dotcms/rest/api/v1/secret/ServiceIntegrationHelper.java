@@ -8,6 +8,7 @@ import com.dotcms.security.secret.Secret;
 import com.dotcms.security.secret.ServiceDescriptor;
 import com.dotcms.security.secret.ServiceIntegrationAPI;
 import com.dotcms.security.secret.ServiceSecrets;
+import com.dotcms.security.secret.Type;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
@@ -220,15 +221,15 @@ class ServiceIntegrationHelper {
 
         final String serviceKey = form.getKey();
         if (!UtilMethods.isSet(serviceKey)) {
-            throw new DotDataException("Required param serviceKey isn't set.");
+            throw new IllegalArgumentException("Required param serviceKey isn't set.");
         }
         final String siteId = form.getSiteId();
         if (!UtilMethods.isSet(siteId)) {
-            throw new DotDataException("Required Param siteId isn't set.");
+            throw new IllegalArgumentException("Required Param siteId isn't set.");
         }
         final Host host = hostAPI.find(siteId, user, false);
         if(null == host) {
-            throw new DotDataException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
+            throw new IllegalArgumentException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
         }
         final Optional<ServiceDescriptor> optionalServiceDescriptor = serviceIntegrationAPI
                 .getServiceDescriptor(serviceKey, user);
@@ -237,7 +238,7 @@ class ServiceIntegrationHelper {
         }
         final Map<String, Param> params = form.getParams();
         if(!UtilMethods.isSet(params)){
-            throw new DotDataException("Required Params aren't set.");
+            throw new IllegalArgumentException("Required Params aren't set.");
         }
         final ServiceDescriptor serviceDescriptor = optionalServiceDescriptor.get();
         validateIncomingParams(params, serviceDescriptor);
@@ -324,10 +325,14 @@ class ServiceIntegrationHelper {
         for (final Entry<String, Param> incomingParamEntry : incomingParams.entrySet()) {
             final String incomingParamName = incomingParamEntry.getKey();
             final Param describedParam = serviceDescriptorParams.get(incomingParamName);
+            final Param incomingParam = incomingParamEntry.getValue();
+
             if(serviceDescriptor.isAllowExtraParameters() && null == describedParam){
                //if the param isn't found in our description but the allow extra params flag is true we're ok
+               //Validate type..
                continue;
             }
+
             //If the flag isn't true. Then we must reject the unknown param.
             if(null == describedParam) {
                 throw new IllegalArgumentException(String.format(
@@ -335,12 +340,25 @@ class ServiceIntegrationHelper {
                         incomingParamName));
             }
 
-            final Param incomingParam = incomingParamEntry.getValue();
             //We revise the incoming param against the definition loaded from the yml.
             if(describedParam.isRequired() && UtilMethods.isNotSet(incomingParam.getValue())){
                throw new IllegalArgumentException(
                String.format("Params named `%s` is marked as required in the descriptor but does not have any value.", incomingParamName));
             }
+
+
+
+            if(Type.BOOL.equals(describedParam.getType())){
+                if(UtilMethods.isSet(incomingParam.getValue())){
+                    if(!("true".equalsIgnoreCase(incomingParam.getValue()) || "false".equalsIgnoreCase(incomingParam.getValue()))){
+                        throw new IllegalArgumentException(String.format(
+                                "Params named `%s`  can doesn't have a valid boolean value.",
+                                incomingParamName));
+                    }
+                }
+            }
+
+
         }
     }
 
@@ -380,20 +398,24 @@ class ServiceIntegrationHelper {
      * @throws IOException
      * @throws DotDataException
      */
-    void createServiceIntegration(final FormDataMultiPart multipart, final User user)
+    List<ServiceIntegrationView> createServiceIntegration(final FormDataMultiPart multipart, final User user)
             throws IOException, DotDataException {
         final List<File> files = new MultiPartUtils().getBinariesFromMultipart(multipart);
         if(!UtilMethods.isSet(files)){
             throw new DotDataException("Unable to extract any files from multi-part request.");
         }
+        List<ServiceIntegrationView> serviceIntegrationViews = new ArrayList<>(files.size());
         for (final File file : files) {
-            //TODO: verify file length and kit it back if exceeds a max
             try(final InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))){
-                serviceIntegrationAPI.createServiceDescriptor(inputStream, user);
+                final ServiceDescriptor serviceDescriptor = serviceIntegrationAPI
+                        .createServiceDescriptor(inputStream, user);
+                serviceIntegrationViews.add(new ServiceIntegrationView(serviceDescriptor,0L));
             }catch (Exception e){
                Logger.error(ServiceIntegrationHelper.class, e);
+               throw new DotDataException(e);
             }
         }
+        return serviceIntegrationViews;
     }
 
     /**
