@@ -9,6 +9,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,18 +60,16 @@ public interface ServiceIntegrationAPI {
             boolean fallbackOnSystemHost,
             Host host, User user) throws DotDataException, DotSecurityException;
 
-    /**
-     * In s similar fashion as `getSecrets` does this method hits the secrets repo but it does not deal or convert the entry into a json object
-     * This only tells you if the service-key exists for a specific host.
-     * @param serviceKey
-     * @param host
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    boolean hasAnySecrets(final String serviceKey,
-            final Host host, final User user) throws DotDataException, DotSecurityException;
+   /**
+    * This will tell you all the different integrations for a given serviceKey.
+    * If the service key is used in a given host the host will come back in the resulting list.
+    * Otherwise it means no configurations exist for the given host.
+    * @param serviceKey unique service id for the given host.
+    * @param siteIdentifiers a list of host identifiers
+    * @param user Logged in user
+    * @return a list where the service-key is present (a Configuration exist for the given host)
+    */
+    Set<String> filterSitesForServiceKey(final String serviceKey, final Collection<String> siteIdentifiers, final User user);
 
     /**
      * Lookup for an individual secret/property then updates the single entry.
@@ -153,10 +152,10 @@ public interface ServiceIntegrationAPI {
 
     enum INSTANCE {
         INSTANCE;
-        private final ServiceIntegrationAPI secretsStore = loadSecretsApi();
+        private final ServiceIntegrationAPI integrationAPI = loadSecretsApi();
 
         public static ServiceIntegrationAPI get() {
-            return INSTANCE.secretsStore;
+            return INSTANCE.integrationAPI;
         }
 
         private static ServiceIntegrationAPI loadSecretsApi() {
