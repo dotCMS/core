@@ -32,7 +32,7 @@ public class FileAssetContainerUtilTest extends ContentletBaseTest {
 
         final String fullPath = FileAssetContainerUtil.getInstance().getFullPath(container);
 
-        final String expected = "//" + host.getHostname() + (container).getPath();
+        final String expected = "//" + host.getHostname() + (container).getRelativePath();
 
         Assert.assertEquals(expected, fullPath);
     }
