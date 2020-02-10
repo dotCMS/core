@@ -63,6 +63,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -273,12 +274,21 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	try {
 
     		//Verifies if the content type has defined a title field
-			Optional<com.dotcms.contenttype.model.field.Field> fieldFound = this.getContentType().fields().stream().
+			Optional<com.dotcms.contenttype.model.field.Field> fieldWithTitleFound = this.getContentType().fields().stream().
 					filter(field -> field.variable().equals(TITTLE_KEY)).findAny();
 
 
-			if (fieldFound.isPresent()) {
+			if (fieldWithTitleFound.isPresent()) {
 				return map.get(TITTLE_KEY)!=null?map.get(TITTLE_KEY).toString():null;
+			} else {
+				Optional<com.dotcms.contenttype.model.field.Field>
+						fieldWithSuspectTitleFound = getFieldWithVarStartingWithTitleWord();
+
+				if (fieldWithSuspectTitleFound.isPresent()) {
+					return map.get(fieldWithSuspectTitleFound.get().variable())!=null
+							?map.get(fieldWithSuspectTitleFound.get().variable()).toString()
+							:null;
+				}
 			}
 
 			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
@@ -291,7 +301,19 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 	}
 
-    @Override
+	/**
+	 * Looks for a field whose variable starts with "title" and if found returns it
+	 * @return the first field found whose variable starts with "title", if any
+	 */
+
+	@NotNull
+	private Optional<com.dotcms.contenttype.model.field.Field> getFieldWithVarStartingWithTitleWord() {
+		return this.getContentType().fields().stream()
+				.filter(field -> UtilMethods.isSet(field.variable())
+						&& field.variable().startsWith(TITTLE_KEY)).findAny();
+	}
+
+	@Override
     public String getVersionId() {
     	return getIdentifier();
     }

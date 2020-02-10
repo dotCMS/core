@@ -1,28 +1,5 @@
 package com.dotcms.rest.api.v1.temp;
 
-import com.dotmarketing.util.UtilMethods;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.glassfish.jersey.media.multipart.BodyPart;
-import org.glassfish.jersey.media.multipart.ContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import org.glassfish.jersey.server.JSONP;
-
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -33,10 +10,25 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-
 import io.vavr.control.Try;
+import org.glassfish.jersey.media.multipart.BodyPart;
+import org.glassfish.jersey.media.multipart.ContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.server.JSONP;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 @Path("/v1/temp")
 public class TempFileResource {
@@ -64,10 +56,11 @@ public class TempFileResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public final Response uploadTempResourceMulti(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, 
-            @DefaultValue("-1") @QueryParam(MAX_FILE_LENGTH_PARAM) final long maxFileLength, 
+            @DefaultValue("-1") @QueryParam(MAX_FILE_LENGTH_PARAM) final String maxFileLengthString, // this is being used later
             final FormDataMultiPart body) {
 
         try {
+
             verifyTempResourceEnabled();
 
             final boolean allowAnonToUseTempFiles = Config
@@ -101,7 +94,8 @@ public class TempFileResource {
                 if (fileName == null || fileName.startsWith(".") || fileName.contains("/.")) {
                     continue;
                 }
-                tempFiles.add(tempApi.createTempFile(fileName, request, in));
+
+                tempFiles.add(this.tempApi.createTempFile(fileName, request, in));
             }
 
             return Response.ok(ImmutableMap.of("tempFiles", tempFiles)).build();

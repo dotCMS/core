@@ -144,14 +144,14 @@
 
 		//Function used to render language id
 		function <%= relationJsName %>_lang(o) {
-			var contentletLangCode = '<%= langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
-            var currentLanguageIndex = getCurrentLanguageIndex(o);
-			var lang = '';
-			var result = '';
-            var anchorValue = "";
-            var imgLangName = '';
+			if (o != null  && dijit.byId("langcombo")) {
+			    var contentletLangCode = '<%= langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
+                var currentLanguageIndex = getCurrentLanguageIndex(o);
+                var lang = '';
+                var result = '';
+                var anchorValue = "";
+                var imgLangName = '';
 
-			if (o != null) {
                 result = '<div class="relationLanguageFlag" id="' + o.id + '"><div value="' + currentLanguageIndex + '" data-dojo-type="dijit/form/Select">';
 
 				for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
@@ -456,11 +456,13 @@
             var langTD = document.createElement("td");
             row.appendChild(langTD);
             // displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
-			<%if(langs.size() > 1) {%>	
-			    langTD.style.whiteSpace="nowrap";
-                langTD.style.textAlign = 'right';
-				langTD.innerHTML = <%= relationJsName %>_lang(item);
-                setTimeout(function () { dojo.parser.parse(item.id); }, 0);
+			<%if(langs.size() > 1) {%>
+			    if(dijit.byId("langcombo")){
+                    langTD.style.whiteSpace="nowrap";
+                    langTD.style.textAlign = 'right';
+                    langTD.innerHTML = <%= relationJsName %>_lang(item);
+                    setTimeout(function () { dojo.parser.parse(item.id); }, 0);
+                }
 			<%}%>
 		    
 			// displays the publish/unpublish/archive status of the content only.
