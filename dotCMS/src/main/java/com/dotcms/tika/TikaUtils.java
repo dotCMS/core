@@ -15,6 +15,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -42,6 +43,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import com.google.gson.stream.JsonWriter;
+import com.liferay.util.FileUtil;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.felix.framework.OSGIUtil;
@@ -50,6 +52,7 @@ public class TikaUtils {
 
     private static final int SIZE = 1024;
     private static final int DEFAULT_META_DATA_MAX_SIZE = 5;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private TikaProxyService tikaService;
     private Boolean osgiInitialized;
@@ -221,57 +224,22 @@ public class TikaUtils {
         return metaDataMap;
     }
 
-    private InputStream createInputStream(final Path path) throws IOException {
 
-        // compressor config
-        final String compressor = Config
-                .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
-
-        switch (compressor) {
-
-            case "gzip":
-                return new GZIPInputStream(Files.newInputStream(path));
-            case "bzip2":
-                return new BZip2CompressorInputStream(Files.newInputStream(path));
-            default:
-                return Files.newInputStream(path);
-        }
-    }
-
-    private OutputStream createOutputStream(final Path path) throws IOException {
-
-        // compressor config
-        final String compressor = Config
-                .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
-
-        switch (compressor) {
-
-            case "gzip":
-                return new GZIPOutputStream(Files.newOutputStream(path));
-            case "bzip2":
-                return new BZip2CompressorOutputStream(Files.newOutputStream(path));
-            default:
-                return Files.newOutputStream(path);
-        }
-    }
 
     private Map<String, Object> readCompressedJsonMetadataFile(final File contentMetaFile) {
 
-        InputStream inputStream = null;
         Map<String, Object> objectMap = Collections.emptyMap();
-        try {
+        // compressor config
+        final String compressor = Config
+                .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
 
-            inputStream = this.createInputStream(contentMetaFile.toPath());
-            objectMap   = new GsonBuilder().disableHtmlEscaping().
-                    create().fromJson(new InputStreamReader(inputStream), Map.class);
+        try (InputStream inputStream = FileUtil.createInputStream(contentMetaFile.toPath(), compressor)) {
 
+            objectMap   = objectMapper.readValue(inputStream, Map.class);
             Logger.info(this, "Metadata read from: " + contentMetaFile);
         } catch (IOException e) {
 
             Logger.error(this, e.getMessage(), e);
-        } finally {
-
-            IOUtils.closeQuietly(inputStream);
         }
 
         return objectMap;
@@ -283,10 +251,13 @@ public class TikaUtils {
 
         try {
 
+            // compressor config
+            final String compressor = Config
+                    .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+
             this.prepareMetaDataFile(contentMetaFile);
-            out = this.createOutputStream(contentMetaFile.toPath());
-            new GsonBuilder().
-                    disableHtmlEscaping().create().toJson(objectMap, new OutputStreamWriter(out));
+            out = FileUtil.createOutputStream(contentMetaFile.toPath(), compressor);
+            objectMapper.writeValue(out, objectMap);
 
             out.flush();
             Logger.info(this, "Metadata wrote on: " + contentMetaFile);
