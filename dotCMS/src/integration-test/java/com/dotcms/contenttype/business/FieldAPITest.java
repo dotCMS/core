@@ -23,8 +23,6 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.graphql.InterfaceType;
-import com.dotcms.graphql.util.GraphQLUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -1037,60 +1035,9 @@ public class FieldAPITest extends IntegrationTestBase {
             fieldAPI.save(variable, user);
 
             boolean anyMatch = field.fieldVariables().stream()
-                    .anyMatch((var)->var.key().equals(fieldVarKey));
+                  .anyMatch((var)->var.key().equals(fieldVarKey));
 
             Assert.assertTrue("Incorrect var key", anyMatch);
-        } finally {
-            contentTypeAPI.delete(type);
-        }
-    }
-
-    @DataProvider
-    public static Object[] dataProviderGraphQLReservedNames() {
-        return GraphQLUtil.getFieldReservedWords().toArray();
-    }
-
-    @Test
-    @UseDataProvider("dataProviderGraphQLReservedNames")
-    public void test_SaveFieldWithReservedGraphqlName_ShouldSuffixConsecutiveToVariable(
-            final String fieldName)
-            throws DotSecurityException, DotDataException {
-
-        final ContentType type = new ContentTypeDataGen().nextPersisted();
-        try {
-            Field field1 = FieldBuilder.builder(TextField.class)
-                    .name(fieldName)
-                    .contentTypeId(type.id())
-                    .indexed(false)
-                    .listed(false)
-                    .fixed(true)
-                    .build();
-            field1 = fieldAPI.save(field1, user);
-
-            Assert.assertNotNull(field1);
-            Assert.assertTrue(UtilMethods.isSet(field1.variable()));
-            Assert.assertNotEquals(fieldName, field1.variable());
-
-            // let's create a new field to make sure it's getting a new variable
-
-            Field field2 = FieldBuilder.builder(TextField.class)
-                    .name(fieldName)
-                    .contentTypeId(type.id())
-                    .indexed(false)
-                    .listed(false)
-                    .fixed(true)
-                    .build();
-            field2 = fieldAPI.save(field2, user);
-
-            Assert.assertNotNull(field2);
-            Assert.assertTrue(UtilMethods.isSet(field2.variable()));
-            Assert.assertNotEquals(fieldName, field2.variable());
-
-            // let's compare the two field vars are different
-
-            Assert.assertNotEquals(field1.variable(), field2.variable());
-
-
         } finally {
             contentTypeAPI.delete(type);
         }

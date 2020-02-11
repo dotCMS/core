@@ -50,16 +50,8 @@ public interface FieldFactory {
 
     List<Field> selectByContentTypeInDb(String id) throws DotDataException;
 
-    /**
-     * Given an initial variable to try, it returns a version of it that sticks to the naming
-     * conventions for field variable names and avoiding using the names in the provided list.
-     * @param tryVar the initial variable to try
-     * @param takenFieldsVariables a list of field variable names to avoid using
-     * @return
-     * @throws DotDataException
-     */
 
-    String suggestVelocityVar(String tryVar, List<String> takenFieldsVariables) throws DotDataException;
+    String suggestVelocityVar(String tryVar, List<Field> takenFields) throws DotDataException;
 
 
     FieldVariable save(FieldVariable fieldVar) throws DotDataException;

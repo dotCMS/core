@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -504,8 +503,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 				// make sure variables work
 
 				String suggestion = fieldFactory.suggestVelocityVar(field.name(), ImmutableList.of());
-				String suggestion2 = fieldFactory.suggestVelocityVar(field.variable(),
-						testFields.stream().map(Field::variable).collect(Collectors.toList()));
+				String suggestion2 = fieldFactory.suggestVelocityVar(field.variable(), testFields);
 				try {
 					assertThat("we are not munging up existing vars", field.variable().equals(
 							fieldFactory.suggestVelocityVar(field.variable(), ImmutableList.of())));
@@ -526,8 +524,7 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
 		testFields = new ArrayList<>();
 		for (String key : testingNames.keySet()) {
-			String suggest = fieldFactory.suggestVelocityVar(key,
-					testFields.stream().map(Field::variable).collect(Collectors.toList()));
+			String suggest = fieldFactory.suggestVelocityVar(key, testFields);
 			
 
 			
@@ -563,10 +560,11 @@ public class FieldFactoryImplTest extends ContentTypeBaseTest {
 
         List<Field> testFields = new ArrayList<>();
         for (String key : testingNames) {
-            String suggest = fieldFactory.suggestVelocityVar(key, testFields
-					.stream().map(Field::variable).collect(Collectors.toList()));
+            String suggest = fieldFactory.suggestVelocityVar(key, testFields);
             
             assertThat("variable " + key + " " + " returned an a generic fieldVar:" + suggest , suggest.startsWith(FieldFactory.GENERIC_FIELD_VAR));
+
+
 
             testFields.add(ImmutableTextField.builder()
                 .name(key)
