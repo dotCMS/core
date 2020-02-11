@@ -330,7 +330,7 @@
 
                  for (let i=0; i<data.contentlets.length;++i) {
                      let entity = data.contentlets[i];
-                     dataItems.items[i] = { label: entity.title, id: entity.identifier, searchMe : entity.title + " " + entity.identifier + " " + entity.inode };
+                     dataItems.items[i] = { label: entity.title, id: (entity.identifier + " " + entity.inode), searchMe : entity.title + " " + entity.identifier + " " + entity.inode };
                  }
                  
                  dojoRelationshipsStore = new dojo.data.ItemFileReadStore({
