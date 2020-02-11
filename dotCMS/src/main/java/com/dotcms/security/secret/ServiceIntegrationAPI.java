@@ -134,8 +134,9 @@ public interface ServiceIntegrationAPI {
      * @throws IOException
      * @throws DotDataException
      * @throws DotSecurityException
+     * @return
      */
-    void createServiceDescriptor(final InputStream inputStream,
+    ServiceDescriptor createServiceDescriptor(final InputStream inputStream,
             User user) throws IOException, DotDataException, DotSecurityException;
 
     /**

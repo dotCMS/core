@@ -331,7 +331,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @Override
-    public void createServiceDescriptor(final InputStream inputStream,
+    public ServiceDescriptor createServiceDescriptor(final InputStream inputStream,
             final User user) throws IOException, DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
@@ -366,6 +366,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
 
             invalidateCache();
         }
+        return serviceDescriptor;
     }
 
     @Override
