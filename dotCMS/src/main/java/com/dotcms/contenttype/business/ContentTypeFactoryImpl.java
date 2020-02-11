@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.*;
+import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang.time.DateUtils;
 
 import java.util.*;
@@ -32,6 +33,56 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   final ContentTypeSql contentTypeSql;
   final ContentTypeCache2 cache;
 
+  
+  public static final Set<String> reservedContentTypeVars = ImmutableSet.<String>builder()
+                  .add("basetype")
+                  .add("categories")
+                  .add("conhost")
+                  .add("conhost")
+                  .add("conhostname")
+                  .add("contenttype")
+                  .add("deleted")
+                  .add("expdate")
+                  .add("host")
+                  .add("identifier")
+                  .add("inode")
+                  .add("languageid")
+                  .add("live")
+                  .add("locked")
+                  .add("metadata")
+                  .add("moddate")
+                  .add("moduser")
+                  .add("originalstartdate")
+                  .add("owner")
+                  .add("ownercanpublish")
+                  .add("ownercanread")
+                  .add("ownercanwrite")
+                  .add("parentpath")
+                  .add("path")
+                  .add("permissions")
+                  .add("pubdate")
+                  .add("recurrenceend")
+                  .add("recurrencestart")
+                  .add("shortid")
+                  .add("shortinode")
+                  .add("structurename")
+                  .add("structuretype")
+                  .add("tags")
+                  .add("title")
+                  .add("type")
+                  .add("urlmap")
+                  .add("versionts")
+                  .add("wfassign")
+                  .add("wfcreatedby")
+                  .add("wfcurrentstepname")
+                  .add("wfmoddate")
+                  .add("wfscheme")
+                  .add("wfstep")
+                  .add("working")
+                  .build();
+  
+  
+  
   public ContentTypeFactoryImpl() {
     this.contentTypeSql = ContentTypeSql.getInstance();
     this.cache = CacheLocator.getContentTypeCache2();
@@ -243,7 +294,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     for (int i = 1; i < 100000; i++) {
       dc.setSQL(this.contentTypeSql.SELECT_COUNT_VAR);
       dc.addParam(varName.toLowerCase());
-      if (dc.getInt("test") == 0) {
+      if (dc.getInt("test") == 0 && !reservedContentTypeVars.contains(varName.toLowerCase())) {
         return varName;
       }
       varName = suggestedVarName + i;
@@ -315,7 +366,10 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     ContentType retType = builder.build();
-
+    if(reservedContentTypeVars.contains(retType.variable().toLowerCase())){
+        Logger.warn(this, "Invalid content type variable - reserved var name: " + retType.variable().toLowerCase());
+        throw new IllegalArgumentException("Invalid content type variable - reserved var name: " + retType.variable().toLowerCase());
+    }
     if (oldContentType == null) {
     	dbInodeInsert(retType);
     	dbInsert(retType);

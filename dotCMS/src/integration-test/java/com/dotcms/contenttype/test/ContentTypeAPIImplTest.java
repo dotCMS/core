@@ -9,6 +9,7 @@ import static org.junit.Assert.fail;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
+import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -57,6 +58,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.util.ConfigTestHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -1875,6 +1877,43 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			}
 		}
 	}
-     
-     
+
+	@DataProvider
+	public static Object[] getReservedContentTypeVars() {
+		return ContentTypeFactoryImpl.reservedContentTypeVars.toArray();
+	}
+
+	/***
+	 * If you try to create a CT with a reserved name, it should alter the variable to avoid
+	 * conflicts. Reserved content type variables: {@link ContentTypeFactoryImpl#reservedContentTypeVars }
+	 *
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	@Test
+	@UseDataProvider("getReservedContentTypeVars")
+	public void testSaveContentTypeWithReservedVar_ShouldUseDifferentVar(final String reservedVar)
+			throws DotSecurityException, DotDataException {
+
+		// Skipping "host" case since it is also a forbidden content type name but will throw exception. com.dotcms.contenttype.business.ContentTypeAPI.reservedStructureNames
+		if(reservedVar.equalsIgnoreCase("host")) return;
+
+		ContentType type = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name(reservedVar)
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertNotEquals(reservedVar, type.variable());
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+		}
+	}
 }
