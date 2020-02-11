@@ -352,9 +352,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			if (null != binaryField && binaryField.exists() && binaryField.canRead()) {
 
 				if (alwaysRegenerateMetadata) {
-					metadataMap = tikaUtils.generateMetaDataForce(contentlet, binaryField, metadataFields);
+					metadataMap = tikaUtils.generateMetaDataForce(contentlet, binaryField, field.getVelocityVarName(), metadataFields);
 				} else if (regenerateMissingMetadata) {
-					metadataMap = tikaUtils.generateMetaData(contentlet, binaryField, metadataFields);
+					metadataMap = tikaUtils.generateMetaData(contentlet, binaryField, field.getVelocityVarName(), metadataFields);
 				}
 			}
 
@@ -364,7 +364,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				for (final String metadataKey : metadataFields) {
 
 					final Object metadataValue = metadataMap.get(metadataKey);
-					mapLowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey, metadataValue);
+					mapLowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey.toLowerCase(), metadataValue);
 					if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
 						stringWriter.append(metadataValue.toString()).append(' ');
 					}

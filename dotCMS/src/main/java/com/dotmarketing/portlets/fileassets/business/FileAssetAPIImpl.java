@@ -648,11 +648,21 @@ public class FileAssetAPIImpl implements FileAssetAPI {
     }
 
     @Override
-    public File getContentMetadataFile(String inode) {
+    public File getContentMetadataFile(final String inode) {
         return new File(getRealAssetsRootPath()+File.separator+
                 inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+inode+File.separator+
                 "metaData"+File.separator+"content");
     }
+
+	@Override
+	public File getContentMetadataFile(final String inode, final String fileName) {
+
+		return null == fileName?
+				this.getContentMetadataFile(inode):
+				new File(getRealAssetsRootPath()+File.separator+
+				inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+inode+File.separator+
+				fileName);
+	}
 
     @Override
     public String getContentMetadataAsString(File metadataFile) throws Exception {

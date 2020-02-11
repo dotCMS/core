@@ -159,10 +159,10 @@ public class TikaUtils {
      * @param contentlet Content parse in order to extract the metadata info
      * @return True if a metadata file was generated.
      */
-    public Map<String, Object> generateMetaDataForce(final Contentlet contentlet, final File binaryField, final Set<String> metadataFields)
-            throws DotSecurityException, DotDataException {
+    public Map<String, Object> generateMetaDataForce(final Contentlet contentlet, final File binaryField,
+                                                     final String fieldVariableName, final Set<String> metadataFields) {
 
-        return this.generateMetaData(contentlet, binaryField, metadataFields, true);
+        return this.generateMetaData(contentlet, binaryField, fieldVariableName, metadataFields, true);
     }
 
     /**
@@ -173,21 +173,21 @@ public class TikaUtils {
      * @param contentlet Content parse in order to extract the metadata info
      * @return True if a metadata file was generated.
      */
-    public Map<String, Object> generateMetaData(final Contentlet contentlet, final File binaryField, final Set<String> metadataFields)
-            throws DotSecurityException, DotDataException {
+    public Map<String, Object> generateMetaData(final Contentlet contentlet, final File binaryField,
+                                                final String fieldVariableName, final Set<String> metadataFields) {
 
-        return this.generateMetaData(contentlet, binaryField, metadataFields, false);
+        return this.generateMetaData(contentlet, binaryField, fieldVariableName, metadataFields, false);
     }
 
     @CloseDBIfOpened
-    private Map<String, Object>  generateMetaData(final Contentlet contentlet, final File binaryField,
-                                                 final Set<String> metadataFields, final boolean force)
-            throws DotSecurityException, DotDataException {
+    private Map<String, Object>  generateMetaData(final Contentlet contentlet, final File binaryField, final String fieldVariableName,
+                                                 final Set<String> metadataFields, final boolean force) {
 
         //See if we have content metadata file
         Map<String, Object> metaDataMap = Collections.emptyMap();
-        final File contentMetaFile      = APILocator.getFileAssetAPI().
-                getContentMetadataFile(contentlet.getInode());
+        final String fileName           = fieldVariableName + "-metadata.json";
+        final File contentMetaFile      = APILocator.getFileAssetAPI(). // creates something like /1/2/12421124-15652532-235325-12312/fileAsset-metadata.json
+                getContentMetadataFile(contentlet.getInode(), fileName);
 
         /*
         If we want to force the parse of the file and the generation of the metadata file
@@ -208,10 +208,11 @@ public class TikaUtils {
 
             if (binaryField != null) {
 
+                final int maxLength = Config.getIntProperty("META_DATA_MAX_SIZE",
+                        DEFAULT_META_DATA_MAX_SIZE) * SIZE;
                 //Parse the metadata from this file
                 metaDataMap =
-                        this.getForcedMetaDataMap(binaryField, metadataFields,
-                                Config.getIntProperty("binaryfield.metadata.content.maxlength", 1024));
+                        this.getForcedMetaDataMap(binaryField, metadataFields, maxLength);
 
                 this.writeCompressJsonMetadataFile (contentMetaFile,
                         UtilMethods.isSet(metaDataMap)?metaDataMap:Collections.emptyMap());
@@ -247,16 +248,17 @@ public class TikaUtils {
 
     private void writeCompressJsonMetadataFile(final File contentMetaFile, final Map<?, Object> objectMap) {
 
-        OutputStream out = null;
+        // compressor config
+        final String compressor = Config
+                .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
 
-        try {
+        if (!contentMetaFile.getParentFile().exists()) {
 
-            // compressor config
-            final String compressor = Config
-                    .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+            contentMetaFile.getParentFile().mkdirs();
+        }
 
-            this.prepareMetaDataFile(contentMetaFile);
-            out = FileUtil.createOutputStream(contentMetaFile.toPath(), compressor);
+        try (OutputStream out = FileUtil.createOutputStream(contentMetaFile.toPath(), compressor)){
+
             objectMapper.writeValue(out, objectMap);
 
             out.flush();
@@ -264,9 +266,6 @@ public class TikaUtils {
         } catch (IOException e) {
 
             Logger.error(this, e.getMessage(), e);
-        } finally {
-
-            IOUtils.closeQuietly(out);
         }
     }
 
@@ -628,7 +627,7 @@ public class TikaUtils {
     /**
      * Creates the metadata file where the parsed info will be stored
      */
-    private void prepareMetaDataFile(File contentMetadataFile) throws IOException {
+    private void prepareMetaDataFile(final File contentMetadataFile) throws IOException {
 
         if (!contentMetadataFile.exists()) {
             //Create the file if does not exist

@@ -284,6 +284,15 @@ public interface FileAssetAPI {
 	 * @return
 	 */
 	File getContentMetadataFile(String inode);
+
+	/**
+	 * constructs the file path for content metadata assetpath/inode(0)/inode(1)/inode/{fileName}
+	 *
+	 * @param inode    {@link String } content inode
+	 * @param fileName {@link String}  fileName for the metadata
+	 * @return File
+	 */
+	File getContentMetadataFile(String inode, String fileName);
 	
 	/**
 	 * Takes the content metadata file and loads its content in a string.
