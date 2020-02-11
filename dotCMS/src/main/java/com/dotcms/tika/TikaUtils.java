@@ -376,7 +376,7 @@ public class TikaUtils {
                 logError(binFile, e);
             }
         } finally {
-            metaMap.put(FileAssetAPI.SIZE_FIELD, String.valueOf(binFile.length())); // todo: this should be a long and another key
+            metaMap.put("length", binFile.length());
         }
 
         this.filterMetadataFields(metaMap, metadataFields);
