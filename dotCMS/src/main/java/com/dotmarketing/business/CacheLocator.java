@@ -96,16 +96,17 @@ public class CacheLocator extends Locator<CacheIndex>{
 
 		String clazz = Config.getStringProperty("cache.locator.class", ChainableCacheAdministratorImpl.class.getCanonicalName());
 		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
+		String cTransClass = null;
 		try{
 			adminCache = new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance());
 
-			String cTransClass = Config.getStringProperty("CACHE_INVALIDATION_TRANSPORT_CLASS","com.dotmarketing.business.jgroups.JGroupsCacheTransport");
+			cTransClass = Config.getStringProperty("CACHE_INVALIDATION_TRANSPORT_CLASS","com.dotmarketing.business.jgroups.JGroupsCacheTransport");
 			CacheTransport cTrans = (CacheTransport)Class.forName(cTransClass).newInstance();
 			adminCache.setTransport(cTrans);
 
 		}
 		catch(Exception e){
-			Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + clazz, e);
+			Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + cTransClass, e);
 		}
 
 		instance = new CacheLocator();

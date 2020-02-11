@@ -298,8 +298,24 @@ dependencies {
     compile group: 'net.jodah', name: 'failsafe', version:'1.0.4'
 
     compile group: 'redis.clients', name: 'jedis', version:'2.7.3'
-    compile group: 'io.lettuce', name: 'lettuce-core', version:'5.2.1.RELEASE'
-    compile group: 'de.ruedigermoeller', name: 'fst', version:'2.56'
+    
+    compile ( group: 'io.lettuce', name: 'lettuce-core', version:'5.2.1.RELEASE'){
+        exclude(module: 'commons-pool2')
+        exclude(module: 'spring-beans')
+        exclude(module: 'spring-context')
+        exclude(module: 'spring-framework')
+        exclude(module: 'rxjava')
+        exclude(module: 'brave')
+        exclude(module: 'cdi-api')
+        exclude(module: 'javax.inject')
+        exclude(module: 'HdrHistogram')
+        exclude(module: 'LatencyUtils')
+    }
+    
+    
+    
+    
+    compile (group: 'com.esotericsoftware', name: 'kryo', version:'5.0.0-RC4')
 
     
     compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'

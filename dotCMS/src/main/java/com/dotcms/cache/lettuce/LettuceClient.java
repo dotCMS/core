@@ -15,28 +15,51 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.codec.CompressionCodec;
 import io.lettuce.core.masterreplica.MasterReplica;
 import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection;
+import io.lettuce.core.resource.ClientResources;
+import io.lettuce.core.resource.DefaultClientResources;
 import io.lettuce.core.support.ConnectionPoolSupport;
-import io.vavr.Function0;
 import io.vavr.control.Try;
 
-public class LettuceClient {
-    private final List<RedisURI> redisUris = Arrays.asList(Config.getStringArrayProperty("redis.connection.uris", new String[0]))
-                    .stream().map(u -> RedisURI.create(u)).collect(Collectors.toList());
+public enum LettuceClient {
 
-    private int timeout = Config.getIntProperty("redis.server.timeout.ms", 10000);
 
-    private final GenericObjectPool<StatefulRedisMasterReplicaConnection<String, Object>> pool;
 
-    private LettuceClient() {
+    INSTANCE;
+
+    private final List<RedisURI> redisUris =
+                    Arrays.asList(Config.getStringArrayProperty("redis.connection.uris", new String[] {"redis://oboxturbo"}))
+                                    .stream().map(u -> RedisURI.create(u)).collect(Collectors.toList());
+
+    private final int timeout = Config.getIntProperty("redis.server.timeout.ms", 10000);
+
+    private final GenericObjectPool<StatefulRedisConnection<String, Object>> pool;
+
+    LettuceClient() {
+        pool = buildPool();
+    }
+
+    // Static getter
+    public static LettuceClient getInstance() {
+        return INSTANCE;
+    }
+
+    StatefulRedisConnection<String, Object> get() {
+        return Try.of(() -> pool.borrowObject()).getOrElseThrow(e -> new DotRuntimeException(e));
+
+    }
+
+    private GenericObjectPool<StatefulRedisConnection<String, Object>> buildPool() {
+
         GenericObjectPoolConfig config = new GenericObjectPoolConfig();
         config.setMinIdle(2);
         config.setMaxIdle(5);
         config.setMaxTotal(20);
 
 
-        pool = ConnectionPoolSupport.createGenericObjectPool(() -> {
-            RedisClient lettuceClient = RedisClient.create();
-            
+        return ConnectionPoolSupport.createGenericObjectPool(() -> {
+            ClientResources sharedResources = DefaultClientResources.create();
+            RedisClient lettuceClient = RedisClient.create(sharedResources);
+
             StatefulRedisMasterReplicaConnection<String, Object> connection = MasterReplica.connect(lettuceClient,
                             CompressionCodec.valueCompressor(new DotObjectCodec(), CompressionCodec.CompressionType.GZIP),
                             redisUris);
@@ -47,14 +70,8 @@ public class LettuceClient {
             return connection;
         }, config, true);
 
-    }
-    
-    public static Function0<LettuceClient> getInstance = Function0.of(LettuceClient::new).memoized();
-
-
-    StatefulRedisConnection<String, Object> get() {
-
-        return Try.of(() -> pool.borrowObject()).getOrElseThrow(e -> new DotRuntimeException(e));
 
     }
 }
+
+

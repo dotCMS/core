@@ -2,14 +2,14 @@ package com.dotcms.cache.lettuce;
 
 import java.io.Closeable;
 import java.io.IOException;
-import io.lettuce.core.masterreplica.StatefulRedisMasterReplicaConnection;
+import io.lettuce.core.api.StatefulRedisConnection;
 
 public class RedisConnection implements Closeable {
 
     
-    StatefulRedisMasterReplicaConnection<String,Object> connection;
+    StatefulRedisConnection<String,Object> connection;
     
-    RedisConnection()
+
     
     @Override
     public void close() throws IOException {

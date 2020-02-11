@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -9,7 +10,7 @@ import java.util.Objects;
  * @see com.google.common.collect.Table
  * @author jsanca
  */
-public class PersonalizedContentlet {
+public class PersonalizedContentlet implements Serializable {
 
     private final String contentletId;
     private final String personalization;
