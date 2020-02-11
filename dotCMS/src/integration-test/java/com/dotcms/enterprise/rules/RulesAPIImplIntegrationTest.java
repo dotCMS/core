@@ -110,7 +110,7 @@ public class RulesAPIImplIntegrationTest {
      */
     @Test
     public void testDeleteRuleShouldPass() throws DotSecurityException, DotDataException {
-        long currentTime = System.currentTimeMillis();
+        final long currentTime = System.currentTimeMillis();
         final Rule rule  = new RuleDataGen().name("testDeleteRule" + currentTime).nextPersisted();
         final RuleAction ruleAction = new RuleActionDataGen().ruleId(rule.getId()).nextPersisted();
         final ConditionGroup conditionGroup = new ConditionGroupDataGen().ruleId(rule.getId()).nextPersisted();
@@ -139,7 +139,7 @@ public class RulesAPIImplIntegrationTest {
      */
     @Test
     public void testDeleteRuleShouldNotFailWhenCacheIsDirty() throws DotSecurityException, DotDataException {
-        long currentTime = System.currentTimeMillis();
+        final long currentTime = System.currentTimeMillis();
 
         //creates rule
         final Rule rule  = new RuleDataGen().name("testDeleteRule" + currentTime).nextPersisted();
