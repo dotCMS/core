@@ -631,33 +631,40 @@ public class GraphqlAPITest extends IntegrationTestBase {
 
     }
 
-    @Test
-    public void testGetSchema_GivenNoEELicense_EnterpriseTypesShouldNotBeAvailableInSchema() throws Exception{
+    @DataProvider
+    public static List<Object> dataProviderEEContentTypes() throws Exception {
+        // data provider needs stuff to get initialized because of API access
+        IntegrationTestInitService.getInstance().init();
 
         // filter only Enterprise content types
-        List<ContentType> eeTypes = APILocator
+        final List<ContentType> eeTypes = APILocator
                 .getContentTypeAPI(APILocator.systemUser()).findAll().stream()
                 .filter((type)->type instanceof EnterpriseType).collect(Collectors.toList());
 
-        List<Tuple2<String, BaseContentType>> eeTypesList = eeTypes.stream().map((type)->
-                        new Tuple2<>("my"+type.variable(), type.baseType())).collect(Collectors.toList());
+        // returns a List of Tuple (typeName, baseType)
+        return eeTypes.stream().map((type)->
+                new Tuple2<>("my"+type.variable(), type.baseType())
+        ).collect(Collectors.toList());
+    }
 
-        for (Tuple2<String, BaseContentType> testCase : eeTypesList) {
-            ContentType customType = null;
+    @Test
+    @UseDataProvider("dataProviderEEContentTypes")
+    public void testGetSchema_GivenNoEELicense_EnterpriseTypesShouldNotBeAvailableInSchema(
+            final Tuple2<String, BaseContentType> testCase) throws Exception{
+        ContentType customType = null;
 
-            try {
-                // create custom persona type. 1=typeName, 2=BaseType
-                customType = createType(testCase._1,
-                        testCase._2);
+        try {
+            // create custom persona type. 1=typeName, 2=BaseType
+            customType = createType(testCase._1,
+                    testCase._2);
 
-                runNoLicense(() -> {
-                    final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
-                    assertNull(schema.getType(testCase._1));
-                });
-            } finally {
-                if(customType!=null) {
-                    APILocator.getContentTypeAPI(APILocator.systemUser()).delete(customType);
-                }
+            runNoLicense(() -> {
+                final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+                assertNull(schema.getType(testCase._1));
+            });
+        } finally {
+            if(customType!=null) {
+                APILocator.getContentTypeAPI(APILocator.systemUser()).delete(customType);
             }
         }
     }
