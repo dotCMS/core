@@ -12,6 +12,7 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
@@ -67,15 +68,12 @@ public class PushNowActionlet extends WorkFlowActionlet {
         final List<String> identifiers = new ArrayList<>();
         final String environments = params.get(PARAM_ENVIRONMENT).getValue();
         try {
-            final Contentlet contentlet = processor.getContentlet();
-            final boolean forcePush = ("true".equals(params.get(PARAM_FORCE_PUSH).getValue())) ? Boolean.TRUE : Boolean.FALSE;
+            final boolean forcePush = "true".equals(params.get(PARAM_FORCE_PUSH).getValue()) ? Boolean.TRUE : Boolean.FALSE;
             if (!UtilMethods.isSet(environments)) {
                 Logger.error(this, "There are no Push Publishing environments set to send the bundle.");
             }
             final String[] whereToSend = environments.split(ENVIRONMENT_DELIMITER);
             final List<Environment> envsToSendTo = new ArrayList<>();
-            final List<Environment> permissionedEnv = new ArrayList<>();
-            final List<Environment> finalEnvs = new ArrayList<>();
             // Lists of Environments to push to
             for (String environmentName : whereToSend) {
                 if (UtilMethods.isSet(environmentName)) {
@@ -94,8 +92,9 @@ public class PushNowActionlet extends WorkFlowActionlet {
             // make sure the user has permissions to push
             final boolean isAdmin = APILocator.getUserAPI().isCMSAdmin(processor.getUser());
             final List<Role> roleList = APILocator.getRoleAPI().loadRolesForUser(processor.getUser().getUserId(),true);
+            final List<Environment> permissionedEnv = new ArrayList<>();
             if (isAdmin) {
-                List<Environment> environmentList = APILocator.getEnvironmentAPI().findEnvironmentsWithServers();
+                final List<Environment> environmentList = APILocator.getEnvironmentAPI().findEnvironmentsWithServers();
                 for (final Environment e : environmentList) {
                     permissionedEnv.add(e);
                 }
@@ -104,11 +103,12 @@ public class PushNowActionlet extends WorkFlowActionlet {
                     try {
                         permissionedEnv.addAll(APILocator.getEnvironmentAPI().findEnvironmentsByRole(role.getId()));
                     } catch (final Exception e) {
-                        Logger.error(this, String.format("An error occurred when verifying Role '%s' [%s]: %s", role
+                        Logger.warn(this, String.format("An error occurred when verifying Role '%s' [%s]: %s", role
                                 .getName(), role.getId(), e.getMessage()));
                     }
                 }
             }
+            final List<Environment> finalEnvs = new ArrayList<>();
             for (final Environment environment : envsToSendTo) {
                 if (permissionedEnv.contains(environment)) {
                     finalEnvs.add(environment);
@@ -116,6 +116,7 @@ public class PushNowActionlet extends WorkFlowActionlet {
             }
             // Publish now
             final Date publishDate = new Date();
+            final Contentlet contentlet = processor.getContentlet();
             identifiers.add(contentlet.getIdentifier());
             final Bundle bundle = new Bundle(null, publishDate, null, processor.getUser().getUserId(), forcePush);
             APILocator.getBundleAPI().saveBundle(bundle, finalEnvs);
