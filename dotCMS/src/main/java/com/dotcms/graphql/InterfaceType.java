@@ -78,9 +78,9 @@ public enum InterfaceType {
     public static final String KEY_VALUE_INTERFACE_NAME = "KeyValueBaseType";
     public static final String FORM_INTERFACE_NAME = "FormBaseType";
 
-    static {
+    private static final Map<String, TypeFetcher> contentFields = new HashMap<>();
 
-        final Map<String, TypeFetcher> contentFields = new HashMap<>();
+    static {
         contentFields.put(MOD_DATE, new TypeFetcher(GraphQLString));
         contentFields.put(TITLE, new TypeFetcher(GraphQLString));
         contentFields.put(TITLE_IMAGE_KEY, new TypeFetcher(CustomFieldType.BINARY.getType(), new TitleImageFieldDataFetcher()));
@@ -155,5 +155,9 @@ public enum InterfaceType {
         }
 
         return type;
+    }
+
+    public static Map<String, TypeFetcher> getContentletInheritedFields() {
+        return contentFields;
     }
 }

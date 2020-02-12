@@ -238,6 +238,11 @@ public class FieldFactoryImpl implements FieldFactory {
       final List<String> takenFieldVars = fieldsAlreadyAdded.stream().map(Field::variable).collect(
               Collectors.toList());
 
+      // check if the field variable is compatible with GraphQL
+      if(!GraphQLUtil.isVariableGraphQLCompatible(throwAwayField)) {
+          takenFieldVars.add(throwAwayField.name());
+      }
+
       String tryVar = (throwAwayField.variable() == null)
           ? suggestVelocityVar(throwAwayField.name(), takenFieldVars) : throwAwayField.variable();
       builder.variable(tryVar);
@@ -588,7 +593,7 @@ public String suggestVelocityVar( String tryVar, List<String> takenFieldsVariabl
 
     // adds the GraphQL Reserved field names to the "taken fields variables" list
     final List<String> forbiddenFieldVariables = new ArrayList<>(takenFieldsVariables);
-    forbiddenFieldVariables.addAll(GraphQLUtil.getFieldReservedWords());
+//    forbiddenFieldVariables.addAll(GraphQLUtil.getFieldReservedWords());
 
     String var = StringUtils.camelCaseLower(tryVar);
     // if we don't get a var back, we are looking at UTF-8 or worse

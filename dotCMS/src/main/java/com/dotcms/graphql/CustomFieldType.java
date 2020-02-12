@@ -3,6 +3,8 @@ package com.dotcms.graphql;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 
+import graphql.schema.GraphQLType;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -108,5 +110,9 @@ public enum CustomFieldType {
 
     public GraphQLObjectType getType() {
         return customFieldTypes.get(this.name());
+    }
+
+    public static Collection<GraphQLObjectType> getCustomFieldTypes() {
+        return customFieldTypes.values();
     }
 }
