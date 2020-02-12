@@ -229,7 +229,7 @@
               headers: headers
             }
 
-            if (state.view === 'list') {
+            if (state.view === 'List') {
               fillResultsTable (headers, data);
             } else {
               fillCardView(data)
