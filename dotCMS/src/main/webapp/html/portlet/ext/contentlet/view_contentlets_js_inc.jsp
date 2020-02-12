@@ -1170,10 +1170,14 @@
 
         function getSelectedInodesFromCardView() {
           let viewCard = document.querySelector('dot-card-view');
-          const value = viewCard.getAttribute('value');
-          if (value) {
-            return viewCard.getAttribute('value').split(',');
+
+          if (viewCard) {
+            const value = viewCard.getAttribute('value');
+            if (value) {
+                return viewCard.getAttribute('value').split(',');
+            }
           }
+
           return [];
         }
 
