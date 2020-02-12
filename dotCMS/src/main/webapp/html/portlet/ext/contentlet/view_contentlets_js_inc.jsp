@@ -176,17 +176,17 @@
 		});
 
 
-		function setSwitch(){
-			var dotSwitch = document.querySelector('dot-switch');
-			dotSwitch.options = [{label: 'Grid', icon: 'grid_on'}, {label: 'List', icon: 'format_list_bulleted'}];
-			dotSwitch.addEventListener('selected', function (event) {
+		function setDotSelectButton(){
+			var dotSelectButton = document.querySelector('dot-select-button');
+			dotSelectButton.options = [{label: 'Grid', icon: 'grid_on'}, {label: 'List', icon: 'format_list_bulleted'}];
+			dotSelectButton.addEventListener('selected', function (event) {
 					changeView(event.detail.label);
 			}, false);
 		}
 
 
         function fillResults(data) {
-			setSwitch();
+			setDotSelectButton();
             var counters = data[0];
             var hasNext = counters["hasNext"];
             var hasPrevious = counters["hasPrevious"];
