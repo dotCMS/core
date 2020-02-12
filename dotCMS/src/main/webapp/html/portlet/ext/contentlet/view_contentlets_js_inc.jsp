@@ -1807,21 +1807,12 @@
 					});
 				}
 			}
-			for (var k = 0; k < wfActionMapList.length; k++) {
-				var name = wfActionMapList[k].name;
-				var id = wfActionMapList[k].id;
-				var assignable = wfActionMapList[k].assignable;
 
-				var commentable = wfActionMapList[k].commentable;
-				var icon = wfActionMapList[k].icon;
-				var requiresCheckout = wfActionMapList[k].requiresCheckout;
-				var wfActionNameStr = wfActionMapList[k].wfActionNameStr;
-				var hasPushPublishActionlet = wfActionMapList[k].hasPushPublishActionlet;
-
-				actions.push({ label: wfActionNameStr,
-					action: () => { contentAdmin.executeWfAction(id, assignable, commentable, hasPushPublishActionlet, data.inode)}
+			wfActionMapList.map((wfAction) => {
+				actions.push({ label: wfAction.name,
+					action: () => { contentAdmin.executeWfAction(wfAction.id, wfAction.assignable.toString(), wfAction.commentable.toString(), wfAction.hasPushPublishActionlet.toString(), data.inode)}
 				});
-			}
+			});
 
 			if (enterprise && sendingEndpoints ) {
 				actions.push({ label: '<%=LanguageUtil.get(pageContext, "Remote-Publish") %>',
@@ -2605,6 +2596,7 @@
 
 
     	executeWfAction: function(wfId, assignable, commentable, hasPushPublishActionlet, inode ){
+			debugger;
             this.wfActionId = wfId;
     		if(assignable == "true" || commentable == "true" || hasPushPublishActionlet == "true" ){
 
