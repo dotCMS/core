@@ -35,6 +35,7 @@ export class DotNavigationComponent implements OnInit {
 
         if (!$event.originalEvent.ctrlKey && !$event.originalEvent.metaKey) {
             this.dotNavigationService.reloadCurrentPortlet($event.data.id);
+            this.iframeOverlayService.hide();
         }
     }
 

@@ -149,12 +149,15 @@ describe('DotNavigationComponent', () => {
 
     describe('itemClick event', () => {
         let stopProp;
+        let iframeOverlayService: IframeOverlayService;
 
         beforeEach(() => {
             stopProp = jasmine.createSpy('stopProp');
+            iframeOverlayService = de.injector.get(IframeOverlayService);
+            spyOn(iframeOverlayService, 'hide');
         });
 
-        it('should reload portlet', () => {
+        it('should reload portlet and hide overlay', () => {
             navItem.triggerEventHandler('itemClick', {
                 originalEvent: {
                     stopPropagation: stopProp,
@@ -166,6 +169,7 @@ describe('DotNavigationComponent', () => {
 
             expect(stopProp).toHaveBeenCalledTimes(1);
             expect(dotNavigationService.reloadCurrentPortlet).toHaveBeenCalledWith('123');
+            expect(iframeOverlayService.hide).toHaveBeenCalledTimes(1);
         });
 
         it('should NOT reload portlet', () => {
