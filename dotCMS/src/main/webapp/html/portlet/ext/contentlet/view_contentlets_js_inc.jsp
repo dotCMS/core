@@ -180,10 +180,17 @@
 		});
 
 
-
+		function setSwitch(){
+			var dotSwitch = document.querySelector('dot-switch');
+			dotSwitch.options = [{label: 'Grid', icon: 'grid_on'}, {label: 'List', icon: 'format_list_bulleted'}];
+			dotSwitch.addEventListener('selected', function (event) {
+					changeView(event.detail.label);
+			}, false);
+		}
 
 
         function fillResults(data) {
+			setSwitch();
             var counters = data[0];
             var hasNext = counters["hasNext"];
             var hasPrevious = counters["hasPrevious"];
@@ -193,14 +200,12 @@
         		var totalPages = counters["totalPages"];
 
             headers = data[1];
-
             for (var i = 3; i < data.length; i++) {
                 data[i - 3] = data[i];
             }
             data.length = data.length - 3;
 
             dwr.util.removeAllRows("results_table");
-
             var funcs = new Array ();
             if (data.length <= 0) {
                     if (1 < totalPages) {
@@ -771,7 +776,6 @@
       }
 
         }
-
 
 		function updateSelectedStructAux(){
 			structureInode = dijit.byId('selectedStructAux').value;
@@ -1710,7 +1714,7 @@
         function changeView(view) {
           localStorage.setItem(DOTCMS_DATAVIEW_MODE, view)
           state.view = view;
-          if (state.view === 'list') {
+          if (state.view === 'List') {
             document.querySelector('dot-card-view').items = [];
             fillResultsTable(state.headers, state.data)
           } else {

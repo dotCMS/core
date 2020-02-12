@@ -756,8 +756,7 @@
                             <button id="bulkAvailableActions" dojoType="dijit.form.Button" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
                                 <%= LanguageUtil.get(pageContext, "Available-actions")%>
                             </button>
-                            <button type="button" onclick="changeView('grid')">grid</button>
-                            <button type="button" onclick="changeView('list')">list</button>
+                            <dot-switch />
                         </div>
                         <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
                         <div class="portlet-toolbar__actions-primary">
