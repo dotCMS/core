@@ -708,7 +708,7 @@
 	                    	  }
                          },
                          onChange : function(value){
-                        	 document.getElementById("${relationSearchField}Field").value=this.getValue();
+                        	 document.getElementById("${relationSearchField}Field").value=this.getValue().split(' ')[0];
                         	 doSearch(null, "<%=orderBy%>");
                          }
                          

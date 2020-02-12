@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -91,11 +92,12 @@ public class ContentletFactoryTest extends ContentletBaseTest {
             //Getting all contentlets live/working contentlets
             List<Contentlet> contentlets = contentletFactory.findAllCurrent(0, 10);
 
-            // filter out null records
-            contentlets = contentlets.stream().filter(Objects::nonNull).collect(Collectors.toList());
             //Validations
-            assertTrue(contentlets != null && !contentlets.isEmpty());
+            assertFalse(contentlets.isEmpty());
             assertTrue(contentlets.size() >= 10);
+
+            // filter out null records because it might contain some
+            contentlets = contentlets.stream().filter(Objects::nonNull).collect(Collectors.toList());
 
             //Search for one of the objects we found
             String inode = contentlets.get(0).getInode();

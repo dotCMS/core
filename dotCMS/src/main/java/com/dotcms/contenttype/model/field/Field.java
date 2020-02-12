@@ -272,4 +272,14 @@ public abstract class Field implements FieldIf, Serializable {
     String legacyName = LegacyFieldTypes.getLegacyName(this.getClass());
     return legacyName.substring(0, 1).toUpperCase() + legacyName.substring(1);
   }
+
+  /**
+   * Returns a collection of variable keys that the Field should respect
+   * @return List of String (property names)
+   */
+  @JsonIgnore
+  @Value.Default
+  public List<String> fieldVariableKeys() {
+    return Collections.emptyList();
+  }
 }
