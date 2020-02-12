@@ -3,10 +3,7 @@ package com.dotcms.contenttype.model.type;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
-import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
-import com.dotcms.contenttype.model.field.ImmutableTabDividerField;
 import com.dotcms.contenttype.model.field.ImmutableTagField;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -30,11 +27,9 @@ import java.util.List;
  */
 public abstract class DotAssetContentType extends ContentType implements UrlMapable, Expireable {
 
-	public static final String FILEASSET_FILEASSET_FIELD_VAR      = "asset";
-	public static final String FILEASSET_MIME_TYPE_FIELD_VAR      = "mimeType";
-	public static final String FILEASSET_SITE_OR_FOLDER_FIELD_VAR = "hostFolder";
-	public static final String FILEASSET_METADATA_FIELD_VAR       = "metaData";
-	public static final String FILEASSET_TAGS_FIELD_VAR           = "tags";
+	public static final String ASSET_FIELD_VAR 			= "asset";
+	public static final String SITE_OR_FOLDER_FIELD_VAR = "hostFolder";
+	public static final String TAGS_FIELD_VAR  			= "tags";
 
 
 	@Override
@@ -50,7 +45,7 @@ public abstract class DotAssetContentType extends ContentType implements UrlMapa
 				ImmutableHostFolderField.builder()
 						.name("Site or Folder")
 						.dataType(DataTypes.SYSTEM)
-						.variable(FILEASSET_SITE_OR_FOLDER_FIELD_VAR)
+						.variable(SITE_OR_FOLDER_FIELD_VAR)
 						.sortOrder(fields.size())
 						.required(false)
 						.fixed(false)
@@ -62,11 +57,13 @@ public abstract class DotAssetContentType extends ContentType implements UrlMapa
 		fields.add(
 				ImmutableBinaryField.builder()
 				.name("Binary Asset")
-				.variable(FILEASSET_FILEASSET_FIELD_VAR)
+				.variable(ASSET_FIELD_VAR)
 				.sortOrder(fields.size())
 				.fixed(true)
 				.required(true)
 				.readOnly(false)
+				.searchable(true)
+				.indexed(true)
 				.build()
 			);
 
@@ -74,7 +71,7 @@ public abstract class DotAssetContentType extends ContentType implements UrlMapa
 		fields.add(
 				ImmutableTagField.builder()
 						.name("Tags")
-						.variable(FILEASSET_TAGS_FIELD_VAR)
+						.variable(TAGS_FIELD_VAR)
 						.dataType(DataTypes.SYSTEM)
 						.sortOrder(fields.size())
 						.required(false)
