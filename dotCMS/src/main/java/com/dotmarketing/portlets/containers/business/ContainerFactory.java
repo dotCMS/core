@@ -76,12 +76,11 @@ public interface ContainerFactory {
 	 * @param folder {@link Folder}
 	 * @param user   {@link User}
 	 * @param showLive {@link Boolean}
-	 * @param includeHostOnPath {@link Boolean} true if wants to include the host on the container path
 	 * @return Container
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive, final boolean includeHostOnPath) throws DotSecurityException, DotDataException;
+	Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Get working container by folder path

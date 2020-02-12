@@ -207,15 +207,11 @@ public class FileAssetContainerUtil {
      * @param containerFolder {@link Folder} this folder represents the container
      * @param assets {@link List} of {@link FileAsset} has all meta info such as container.vtl, preloop.vtl, postloop.vtl and all content types.
      * @param showLive {@link Boolean} true if only want published assets
-     * @param includeHostOnPath {@link Boolean} true if want to include the host on the {@link Container}.path,
-     *                                         this is usually needed when a resource of host A, wants to use a container from host B, the path inside the {@link FileAssetContainer}
-     *                                         must include the host, otherwise will be relative
-     * @return Container
+    * @return Container
      * @throws DotDataException
      */
     public Container fromAssets(final Host host, final Folder containerFolder,
-                                final List<FileAsset> assets, final boolean showLive,
-                                final boolean includeHostOnPath) throws DotDataException {
+                                final List<FileAsset> assets, final boolean showLive) throws DotDataException {
 
         final ImmutableList.Builder<FileAsset> containerStructures =
                 new ImmutableList.Builder<>();
@@ -269,7 +265,7 @@ public class FileAssetContainerUtil {
         }
 
         this.setContainerData(host, containerFolder, metaInfoFileAsset, containerStructures.build(), container,
-                preLoop, postLoop, preLoopAsset, postLoopAsset, containerMetaInfo.get(), includeHostOnPath, codeScript);
+                preLoop, postLoop, preLoopAsset, postLoopAsset, containerMetaInfo.get(), codeScript);
 
         return container;
     }
@@ -315,7 +311,6 @@ public class FileAssetContainerUtil {
                                   final Optional<FileAsset> preLoopAsset,
                                   final Optional<FileAsset> postLoopAsset,
                                   final String containerMetaInfo,
-                                  final boolean includeHostOnPath,
                                   final Optional<String> codeScript) {
 
         container.setIdentifier (metaInfoFileAsset.getIdentifier());
@@ -330,7 +325,7 @@ public class FileAssetContainerUtil {
         container.setMaxContentlets(DEFAULT_MAX_CONTENTLETS);
         container.setLanguage(metaInfoFileAsset.getLanguageId());
         container.setFriendlyName((String)metaInfoFileAsset.getMap().getOrDefault(DESCRIPTION, container.getTitle()));
-        container.setPath(this.buildPath(host, containerFolder, includeHostOnPath));
+        container.setPath(this.buildPath(host, containerFolder));
 
         preLoop.ifPresent (value -> container.setPreLoop (value));
         postLoop.ifPresent(value -> container.setPostLoop(value));
@@ -342,31 +337,8 @@ public class FileAssetContainerUtil {
         codeScript.ifPresent(script -> container.setCode(script));
     }
 
-    private String buildPath(final Host host, final Folder containerFolder, final boolean includeHostOnPath) {
-
-        return buildPath(host, containerFolder.getPath(), includeHostOnPath);
-    }
-
-    /**
-     * Return the full path for a {@link FileAssetContainer}, with the follow sintax:
-     *
-     * //[host name]/[File Container path]
-     *
-     * @param container
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    public String getFullPath(final FileAssetContainer container) throws DotSecurityException, DotDataException {
-        final Host host = APILocator.getHostAPI().findParentHost(container, APILocator.systemUser(), false);
-        return buildPath(host, container.getPath(), true);
-    }
-
-    private String buildPath(final Host host, final String containerPath, final boolean includeHostOnPath) {
-
-        return includeHostOnPath?
-                builder(HOST_INDICATOR, host.getHostname(), containerPath).toString() :
-                containerPath;
+    private String buildPath(final Host host, final Folder containerFolder) {
+        return builder(HOST_INDICATOR, host.getHostname(), containerFolder.getPath()).toString();
     }
 
     private boolean isContainerMetaInfo(final FileAsset fileAsset, final boolean showLive) {
