@@ -84,11 +84,8 @@
 
         var unCheckedInodes = "";
         function updateUnCheckedList(inode,checkId){
-
 	        if(document.getElementById("fullCommand").value == "true"){
-
 	            if(!document.getElementById(checkId).checked){
-
 	                    unCheckedInodes = document.getElementById('allUncheckedContentsInodes').value;
 
 	                    if(unCheckedInodes == "")
@@ -98,8 +95,7 @@
 
 	            }else{
 	                    unCheckedInodes = unCheckedInodes.replace(inode,"-");
-	            }
-
+              }
 	            document.getElementById('allUncheckedContentsInodes').value = unCheckedInodes;
 	        }
         }
@@ -277,7 +273,7 @@
 
 
 
-        function titleCell (data,text, x) {
+        function titleCell (data,text, x, checked) {
 
                 text = shortenString(text, 100);
 
@@ -316,7 +312,7 @@
 					ref+=  "'" + inode + "'" + "," + "'" +  checkId + "'" +  ");\" ";
 
 					if((document.getElementById("fullCommand").value == "true")
-							&& (unCheckedInodes.indexOf(inode) == -1)){
+							&& (unCheckedInodes.indexOf(inode) == -1) || checked){
 						ref+=  "checked = \"checked\" ";
 					}
 					ref+=  ">";
@@ -1160,8 +1156,17 @@
              }
         }
 
-        function getSelectedInodes () {
+        function getSelectedInodes() {
+            const inodes = state.view === 'list' ? getSelectedInodesFromList() : getSelectedInodesFromCardView();
+            return inodes;
+        }
 
+        function getSelectedInodesFromCardView() {
+          let viewCard = document.querySelector('dot-card-view');
+          return viewCard.getAttribute('value').split(',');
+        }
+
+        function getSelectedInodesFromList() {
             var selectedInodes;
             if ( document.getElementById("fullCommand").value == "true" ) {
 
@@ -1711,17 +1716,17 @@
           localStorage.setItem(DOTCMS_DATAVIEW_MODE, view)
           state.view = view;
           if (state.view === 'list') {
+            const selectedInodes = getSelectedInodesFromCardView();
             document.querySelector('dot-card-view').items = [];
-            fillResultsTable(state.headers, state.data)
+            fillResultsTable(state.headers, state.data, selectedInodes);
           } else {
+            const selectedInodes = getSelectedInodesFromList();
             document.getElementById("results_table").innerHTML = '';
-            fillCardView(state.data)
+            fillCardView(state.data, selectedInodes)
           }
         }
 
- 
-
-        function fillCardView(data) {
+        function fillCardView(data, value) {
           const content = data.map(i => {
             return {
               data: {
@@ -1737,16 +1742,23 @@
           if (!viewCard) {
             viewCard = document.createElement('dot-card-view');
             viewCard.style.padding = '0 1rem';
+            viewCard.addEventListener('selected', (e) => {
+                if (e.detail.length) {
+                    enableBulkAvailableActionsButton();
+                } else {
+                    disableBulkAvailableActionsButton();
+                }
+            })
             dojo.byId('metaMatchingResultsDiv').appendChild(viewCard);
           }
 
           viewCard.items = [];
           setTimeout(() => {
+            if (value) {
+              viewCard.value = value.join(',');
+            }
             viewCard.items = content;
-
           }, 0)
-
-          
         }
 
 		function fillActions(data) {
@@ -1820,7 +1832,7 @@
 			return actions;
 		}
 
-        function fillResultsTable (headers, data) {
+        function fillResultsTable (headers, data, selectedInodes) {
                 headerLength = headers.length;
                 var table = document.getElementById("results_table");
 
@@ -1936,7 +1948,8 @@
                                         cell = row.insertCell (row.cells.length);
                                         cell.setAttribute("align","left");
 									}
-                                    var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
+                                    var checked = selectedInodes && selectedInodes.length ? selectedInodes.includes(cellData.inode) : false;
+                                    var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i, checked);
                                 }
                                 else{
                                     var value = cellData[header["fieldVelocityVarName"]];
@@ -2471,16 +2484,21 @@
 
         for(i = 0;i< cbArray.length ;i++){
             if (cbArray[i].checked) {
-                dijit.byId('bulkAvailableActions').setAttribute("disabled", false);
+                enableBulkAvailableActionsButton()
                 return;
             }
         }
 
         // nothing selected
+        disableBulkAvailableActionsButton();
+    }
+
+    function enableBulkAvailableActionsButton() {
+        dijit.byId('bulkAvailableActions').setAttribute("disabled", false);
+    }
+
+    function disableBulkAvailableActionsButton() {
         dijit.byId('bulkAvailableActions').setAttribute("disabled", true);
-
-
-
     }
 
 
