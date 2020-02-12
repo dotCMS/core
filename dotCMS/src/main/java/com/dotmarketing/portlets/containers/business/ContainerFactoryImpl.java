@@ -175,37 +175,19 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	public Container getLiveContainerByFolderPath(final String path, final Host host, final User user,
 												  final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 
-		final String folderHostId           = host.getIdentifier();
-		final Optional<Host> currentHostOpt = HostUtil.tryToFindCurrentHost(user);
-		boolean includeHostOnPath           = false;
-
-		if (currentHostOpt.isPresent()) {
-
-			includeHostOnPath = !folderHostId.equals(currentHostOpt.get().getIdentifier());
-		}
-
-		return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,true, includeHostOnPath);
+		return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,true);
 	}
 
     @Override
     public Container getWorkingContainerByFolderPath(final String path, final Host host, final User user,
                                                      final boolean respectFrontEndPermissions) throws DotSecurityException, DotDataException {
 
-		final String folderHostId           = host.getIdentifier();
-		final Optional<Host> currentHostOpt = HostUtil.tryToFindCurrentHost(user);
-		boolean includeHostOnPath           = false;
-
-		if (currentHostOpt.isPresent()) {
-
-			includeHostOnPath = !folderHostId.equals(currentHostOpt.get().getIdentifier());
-		}
-
-        return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,false, includeHostOnPath);
+        return this.getContainerByFolder(host, this.folderAPI.findFolderByPath(path, host, user, respectFrontEndPermissions), user,false);
     }
 
 
     @Override
-	public Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive, final boolean includeHostOnPath) throws DotSecurityException, DotDataException {
+	public Container getContainerByFolder(final Host host, final Folder folder, final User user, final boolean showLive) throws DotSecurityException, DotDataException {
 
         if (!this.isValidContainerPath (folder)) {
 
@@ -232,7 +214,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
                 if(container==null) {
 
                     container = FileAssetContainerUtil.getInstance().fromAssets (host, folder,
-							this.findContainerAssets(folder, user, showLive), showLive, includeHostOnPath);
+							this.findContainerAssets(folder, user, showLive), showLive);
                     if(container != null && container.getInode() != null) {
                         containerCache.add(container);
                     }
@@ -414,7 +396,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 			final Host host     			 = this.hostAPI.find(hostId, user, false);
 			final List<Folder> subFolders    = this.findContainersAssetsByHost(host, user, includeArchived);
-			List<Container> containers = this.getFolderContainers(host, user, subFolders, false);
+			List<Container> containers = this.getFolderContainers(host, user, subFolders);
 
 			if (contentTypeId.isPresent() && UtilMethods.isSet(contentTypeId.get())) {
 
@@ -496,7 +478,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	private List<Container> findHostContainers(final Host host, final User user, final boolean includeHostOnPath) throws DotDataException, DotSecurityException {
 
 		final List<Folder> subFolders = this.findContainersAssetsByHost(host, user, false);
-		return this.getFolderContainers(host, user, subFolders, includeHostOnPath);
+		return this.getFolderContainers(host, user, subFolders);
 	}
 
 	/**
@@ -578,12 +560,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 * @param host {@link Host}
 	 * @param user {@link User}
 	 * @param subFolders {@link List}
-	 * @param includeHostOnPath {@link Boolean} true if you want to  include the host on the container path
 	 * @return List of Containers
 	 * @throws DotDataException
 	 */
 	private List<Container> getFolderContainers(final Host host, final User user,
-												final List<Folder> subFolders, final boolean includeHostOnPath) throws DotDataException {
+												final List<Folder> subFolders) throws DotDataException {
 
 		final List<Container> containers = new ArrayList<>();
 		for (final Folder subFolder : subFolders) {
@@ -591,8 +572,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			try {
 
 			    final User      userFinal = null != user? user: APILocator.systemUser();
-				final Container container = this.getContainerByFolder(null != host? host:APILocator.getHostAPI().find(subFolder.getHostId(), user, includeHostOnPath),
-						subFolder, userFinal, false, includeHostOnPath);
+				final Container container = this.getContainerByFolder(null != host? host:APILocator.getHostAPI().find(subFolder.getHostId(), user, true),
+						subFolder, userFinal, false);
 				containers.add(container);
 			} catch (DotSecurityException e) {
 
@@ -766,7 +747,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 							includeHostOnPath = !folderHostId.equals(currentHostOpt.get().getIdentifier());
 						}
 						try {
-							final Container container = this.getContainerByFolder(host, folder, APILocator.systemUser(), false, includeHostOnPath);
+							final Container container = this.getContainerByFolder(host, folder, APILocator.systemUser(), false);
 
 							if (null != container) {
 
