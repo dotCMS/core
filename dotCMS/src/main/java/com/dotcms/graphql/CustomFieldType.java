@@ -1,19 +1,18 @@
 package com.dotcms.graphql;
 
-import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
-import com.dotcms.graphql.util.TypeUtil;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLLong;
 import static graphql.Scalars.GraphQLString;
+
+import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
+import com.dotcms.graphql.util.TypeUtil;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public enum CustomFieldType {
     BINARY,
@@ -108,5 +107,9 @@ public enum CustomFieldType {
 
     public GraphQLObjectType getType() {
         return customFieldTypes.get(this.name());
+    }
+
+    public static Collection<GraphQLObjectType> getCustomFieldTypes() {
+        return customFieldTypes.values();
     }
 }
