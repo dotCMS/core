@@ -8,11 +8,6 @@ import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
  * This upgrade task associated the system workflow to DotAsset Content Type.
  *

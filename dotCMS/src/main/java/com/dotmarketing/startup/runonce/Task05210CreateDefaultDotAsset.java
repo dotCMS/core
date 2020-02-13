@@ -63,41 +63,41 @@ public class Task05210CreateDefaultDotAsset implements StartupTask {
 
     private void addDotAssetFields() throws DotDataException {
 
-        final DotConnect dc = new DotConnect();
+        final DotConnect dotConnect = new DotConnect();
         final List<Map<String, Object>> requiredFields = getDotAssetVariableFields();
-        int i = 0;
+        int counter = 0;
         for (final Map<String, Object> field : requiredFields) {
             // Insert into Inode table the reference to the field
-            dc.setSQL(INSERT_INODE_QUERY);
-            dc.addParam(DOTASSET_VARIABLE_FIELD_INODES[i]);
-            dc.addParam(StringPool.BLANK);
-            dc.addParam(new Date());
-            dc.addParam("field");
-            dc.loadResult();
+            dotConnect.setSQL(INSERT_INODE_QUERY);
+            dotConnect.addParam(DOTASSET_VARIABLE_FIELD_INODES[counter]);
+            dotConnect.addParam(StringPool.BLANK);
+            dotConnect.addParam(new Date());
+            dotConnect.addParam("field");
+            dotConnect.loadResult();
             // Insert into Field table
-            dc.setSQL(INSERT_FIELD_QUERY);
-            dc.addParam(DOTASSET_VARIABLE_FIELD_INODES[i]);
-            dc.addParam(field.get("structureInode"));
-            dc.addParam(field.get("fieldName"));
-            dc.addParam(field.get("fieldType"));
-            dc.addParam(field.get("fieldRelationType"));
-            dc.addParam(field.get("fieldContentlet"));
-            dc.addParam(field.get("isRequired"));
-            dc.addParam(field.get("isIndexed"));
-            dc.addParam(field.get("isListed"));
-            dc.addParam(field.get("velocityVarName"));
-            dc.addParam(field.get("sortOrder"));
-            dc.addParam(field.get("values"));
-            dc.addParam(field.get("regexCheck"));
-            dc.addParam(field.get("hint"));
-            dc.addParam(field.get("defaultValue"));
-            dc.addParam(field.get("isFixed"));
-            dc.addParam(field.get("isReadOnly"));
-            dc.addParam(field.get("isSearchable"));
-            dc.addParam(field.get("isUnique"));
-            dc.addParam(new Date());
-            dc.loadResult();
-            i++;
+            dotConnect.setSQL(INSERT_FIELD_QUERY);
+            dotConnect.addParam(DOTASSET_VARIABLE_FIELD_INODES[counter]);
+            dotConnect.addParam(field.get("structureInode"));
+            dotConnect.addParam(field.get("fieldName"));
+            dotConnect.addParam(field.get("fieldType"));
+            dotConnect.addParam(field.get("fieldRelationType"));
+            dotConnect.addParam(field.get("fieldContentlet"));
+            dotConnect.addParam(field.get("isRequired"));
+            dotConnect.addParam(field.get("isIndexed"));
+            dotConnect.addParam(field.get("isListed"));
+            dotConnect.addParam(field.get("velocityVarName"));
+            dotConnect.addParam(field.get("sortOrder"));
+            dotConnect.addParam(field.get("values"));
+            dotConnect.addParam(field.get("regexCheck"));
+            dotConnect.addParam(field.get("hint"));
+            dotConnect.addParam(field.get("defaultValue"));
+            dotConnect.addParam(field.get("isFixed"));
+            dotConnect.addParam(field.get("isReadOnly"));
+            dotConnect.addParam(field.get("isSearchable"));
+            dotConnect.addParam(field.get("isUnique"));
+            dotConnect.addParam(new Date());
+            dotConnect.loadResult();
+            counter++;
         }
     }
 
@@ -186,10 +186,11 @@ public class Task05210CreateDefaultDotAsset implements StartupTask {
      * @param unique
      * @return The data required by a field.
      */
-    private Map<String, Object> setFieldElements(String fieldName, String fieldType, String fieldRelationType,
-                    String fieldContentlet, boolean required, boolean listed, boolean indexed, String velocityVarName,
-                    int sortOrder, String values, String checkRegex, String hint, String defaultValue, boolean fixed,
-                    boolean readOnly, boolean searchable, boolean unique) {
+    private Map<String, Object> setFieldElements(final String fieldName, final String fieldType, final String fieldRelationType,
+                                                 final String fieldContentlet, final boolean required, final boolean listed,
+                                                 final boolean indexed, final String velocityVarName,
+                                                 final int sortOrder, final String values, final String checkRegex, final String hint,
+                                                 final String defaultValue, final boolean fixed, final boolean readOnly, final boolean searchable, final boolean unique) {
         return map("structureInode", DOTASSET_VARIABLE_INODE, "fieldName", fieldName, "fieldType", fieldType, "fieldRelationType",
                         fieldRelationType, "fieldContentlet", fieldContentlet, "isRequired", required, "isIndexed", indexed,
                         "isListed", listed, "velocityVarName", velocityVarName, "sortOrder", sortOrder, "values", values,
