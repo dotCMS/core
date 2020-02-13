@@ -1,6 +1,7 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.contenttype.model.field.FieldTypeResource;
+import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResource;
 import com.dotcms.rest.RulesEnginePortlet;
 import com.dotcms.rest.TagResource;
 import com.dotcms.rest.api.v1.authentication.ApiTokenResource;
@@ -161,6 +162,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 					REST_CLASSES.add(UpgradeTaskResource.class);
 
 					REST_CLASSES.add(ServiceIntegrationResource.class);
+					REST_CLASSES.add(PushPublishFilterResource.class);
 				}
 			}
 		}

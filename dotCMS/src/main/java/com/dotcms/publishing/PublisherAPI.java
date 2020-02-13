@@ -1,6 +1,8 @@
 package com.dotcms.publishing;
 
-import java.util.Map;
+import com.dotmarketing.exception.DotDataException;
+import com.liferay.portal.model.User;
+import java.util.List;
 
 public interface PublisherAPI {
 
@@ -47,5 +49,7 @@ public interface PublisherAPI {
      * @param filterDescriptor
      */
     void addFilter(final String key, final FilterDescriptor filterDescriptor);
+
+    List<FilterDescriptor> getFiltersByRole(final User user) throws DotDataException;
 
 }

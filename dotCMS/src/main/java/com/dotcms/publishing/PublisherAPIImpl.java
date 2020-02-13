@@ -9,14 +9,20 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.system.event.local.type.staticpublish.StaticPublishEndEvent;
 import com.dotcms.system.event.local.type.staticpublish.StaticPublishStartEvent;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import sun.rmi.runtime.Log;
 
 public class PublisherAPIImpl implements PublisherAPI {
 
@@ -149,6 +155,27 @@ public class PublisherAPIImpl implements PublisherAPI {
     @Override
     public void addFilter(final String key, final FilterDescriptor filterDescriptor) {
         this.loadedFilters.put(key,filterDescriptor);
+    }
+
+    @Override
+    public List<FilterDescriptor> getFiltersByRole(final User user) throws DotDataException {
+        if(APILocator.getUserAPI().isCMSAdmin(user)){
+            return new ArrayList<>(this.loadedFilters.values());
+        }
+        final List<Role> roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), true);
+        Logger.info(this,"User Roles: " + roles.toString());
+        final List<FilterDescriptor> filters = new ArrayList<>();
+        for(final Map.Entry<String,FilterDescriptor> filterDescriptorMap : this.loadedFilters.entrySet()){
+            final String filterRoles = filterDescriptorMap.getValue().getRoles();
+            Logger.info(PublisherAPI.class,"File: " +filterDescriptorMap.getKey() + " Roles: " + filterRoles );
+            for(final Role role : roles){
+                if(UtilMethods.isSet(role.getRoleKey()) && filterRoles.contains(role.getRoleKey())){
+                    filters.add(filterDescriptorMap.getValue());
+                }
+            }
+        }
+
+        return filters;
     }
 
 }
