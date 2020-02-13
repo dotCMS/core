@@ -748,7 +748,7 @@ public class GraphqlAPITest extends IntegrationTestBase {
         }
     }
 
-    private Field createField(final ContentType contentType, final String fieldVarName, final Class<? extends Field> fieldType,
+    public static Field createField(final ContentType contentType, final String fieldVarName, final Class<? extends Field> fieldType,
             final boolean fieldRequired) {
         try {
             final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();

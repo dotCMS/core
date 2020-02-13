@@ -1,6 +1,22 @@
 package com.dotcms.contenttype.business;
 
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.BASE_TYPE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CONTENT_TYPE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.IDENTIFIER;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.INODE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.LIVE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.MOD_DATE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.TITLE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.URL_MAP;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.WORKING;
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.FOLDER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.LOCKED_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.OWNER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY;
 import static org.junit.Assert.assertEquals;
@@ -15,7 +31,13 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableCategoryField;
+import com.dotcms.contenttype.model.field.ImmutableDateField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -23,8 +45,6 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.graphql.InterfaceType;
-import com.dotcms.graphql.util.GraphQLUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -44,6 +64,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.List;
 import org.junit.Assert;
@@ -1045,55 +1066,262 @@ public class FieldAPITest extends IntegrationTestBase {
         }
     }
 
-    @DataProvider
+
+    @DataProvider(format = "%m: %p[0]")
     public static Object[] dataProviderGraphQLReservedNames() {
-        return GraphQLUtil.getFieldReservedWords().toArray();
+
+        final GraphQLFieldNameCompatibilityTestCase caseModDateIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseModDateIncompatible.fieldName = MOD_DATE;
+        caseModDateIncompatible.fieldType = ImmutableBinaryField.class;
+        caseModDateIncompatible.shouldCreateNewVariable = true;
+        caseModDateIncompatible.testCaseName = "caseModDateIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseModDateCompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseModDateCompatible.fieldName = MOD_DATE;
+        caseModDateCompatible.fieldType = ImmutableDateField.class;
+        caseModDateCompatible.shouldCreateNewVariable = false;
+        caseModDateCompatible.testCaseName = "caseModDateCompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseTitleIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseTitleIncompatible.fieldName = TITLE;
+        caseTitleIncompatible.fieldType = ImmutableCategoryField.class;
+        caseTitleIncompatible.shouldCreateNewVariable = true;
+        caseTitleIncompatible.testCaseName = "caseTitleIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseTitleCompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseTitleCompatible.fieldName = TITLE;
+        caseTitleCompatible.fieldType = ImmutableTextField.class;
+        caseTitleCompatible.shouldCreateNewVariable = false;
+        caseTitleCompatible.testCaseName = "caseTitleCompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseTitleImageIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseTitleImageIncompatible.fieldName = TITLE_IMAGE_KEY;
+        caseTitleImageIncompatible.fieldType = ImmutableHostFolderField.class;
+        caseTitleImageIncompatible.shouldCreateNewVariable = true;
+        caseTitleImageIncompatible.testCaseName = "caseTitleImageIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseTitleImageCompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseTitleImageCompatible.fieldName = TITLE_IMAGE_KEY;
+        caseTitleImageCompatible.fieldType = ImmutableBinaryField.class;
+        caseTitleImageCompatible.shouldCreateNewVariable = false;
+
+        final GraphQLFieldNameCompatibilityTestCase caseContentTypeIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseContentTypeIncompatible.fieldName = CONTENT_TYPE;
+        caseContentTypeIncompatible.fieldType = ImmutableHostFolderField.class;
+        caseContentTypeIncompatible.shouldCreateNewVariable = true;
+        caseContentTypeIncompatible.testCaseName = "caseContentTypeIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseContentTypeCompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseContentTypeCompatible.fieldName = CONTENT_TYPE;
+        caseContentTypeCompatible.fieldType = ImmutableTextField.class;
+        caseContentTypeCompatible.shouldCreateNewVariable = false;
+        caseContentTypeCompatible.testCaseName = "caseContentTypeCompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseBaseTypeIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseBaseTypeIncompatible.fieldName = BASE_TYPE;
+        caseBaseTypeIncompatible.fieldType = ImmutableKeyValueField.class;
+        caseBaseTypeIncompatible.shouldCreateNewVariable = true;
+        caseBaseTypeIncompatible.testCaseName = "caseBaseTypeIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseBaseTypeCompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseBaseTypeCompatible.fieldName = BASE_TYPE;
+        caseBaseTypeCompatible.fieldType = ImmutableTextField.class;
+        caseBaseTypeCompatible.shouldCreateNewVariable = false;
+        caseBaseTypeCompatible.testCaseName = "caseBaseTypeCompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseLiveIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseLiveIncompatible.fieldName = LIVE;
+        caseLiveIncompatible.fieldType = ImmutableCategoryField.class;
+        caseLiveIncompatible.shouldCreateNewVariable = true;
+        caseLiveIncompatible.testCaseName = "caseLiveIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseLiveCompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseLiveCompatible.fieldName = LIVE;
+        caseLiveCompatible.fieldType = ImmutableTextField.class;
+        caseLiveCompatible.shouldCreateNewVariable = false;
+        caseLiveCompatible.testCaseName = "caseLiveCompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseWorkingIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseWorkingIncompatible.fieldName = WORKING;
+        caseWorkingIncompatible.fieldType = ImmutableCategoryField.class;
+        caseWorkingIncompatible.shouldCreateNewVariable = true;
+        caseWorkingIncompatible.testCaseName = "caseWorkingIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseWorkingCompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseWorkingCompatible.fieldName = WORKING;
+        caseWorkingCompatible.fieldType = ImmutableTextField.class;
+        caseWorkingCompatible.shouldCreateNewVariable = false;
+        caseWorkingCompatible.testCaseName = "caseWorkingCompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseArchivedIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseArchivedIncompatible.fieldName = ARCHIVED_KEY;
+        caseArchivedIncompatible.fieldType = ImmutableCategoryField.class;
+        caseArchivedIncompatible.shouldCreateNewVariable = true;
+        caseArchivedIncompatible.testCaseName = "caseArchivedIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseArchivedCompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseArchivedCompatible.fieldName = ARCHIVED_KEY;
+        caseArchivedCompatible.fieldType = ImmutableTextField.class;
+        caseArchivedCompatible.shouldCreateNewVariable = false;
+        caseArchivedCompatible.testCaseName = "caseArchivedCompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseLockedIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseLockedIncompatible.fieldName = LOCKED_KEY;
+        caseLockedIncompatible.fieldType = ImmutableCategoryField.class;
+        caseLockedIncompatible.shouldCreateNewVariable = true;
+        caseLockedIncompatible.testCaseName = "caseLockedIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseLockedCompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseLockedCompatible.fieldName = LOCKED_KEY;
+        caseLockedCompatible.fieldType = ImmutableTextField.class;
+        caseLockedCompatible.shouldCreateNewVariable = false;
+        caseLockedCompatible.testCaseName = "caseLockedCompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseConLanguageIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseConLanguageIncompatible.fieldName = "conLanguage";
+        caseConLanguageIncompatible.fieldType = ImmutableCategoryField.class;
+        caseConLanguageIncompatible.shouldCreateNewVariable = true;
+        caseConLanguageIncompatible.testCaseName = "caseConLanguageIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseIdentifierIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseIdentifierIncompatible.fieldName = IDENTIFIER;
+        caseIdentifierIncompatible.fieldType = ImmutableCategoryField.class;
+        caseIdentifierIncompatible.shouldCreateNewVariable = true;
+        caseIdentifierIncompatible.testCaseName = "caseIdentifierIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseIdentifierCompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseIdentifierCompatible.fieldName = IDENTIFIER;
+        caseIdentifierCompatible.fieldType = ImmutableTextField.class;
+        caseIdentifierCompatible.shouldCreateNewVariable = false;
+        caseIdentifierCompatible.testCaseName = "caseIdentifierCompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseInodeIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseInodeIncompatible.fieldName = INODE;
+        caseInodeIncompatible.fieldType = ImmutableCategoryField.class;
+        caseInodeIncompatible.shouldCreateNewVariable = true;
+        caseInodeIncompatible.testCaseName = "caseInodeIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseInodeCompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseInodeCompatible.fieldName = INODE;
+        caseInodeCompatible.fieldType = ImmutableTextField.class;
+        caseInodeCompatible.shouldCreateNewVariable = false;
+        caseInodeCompatible.testCaseName = "caseInodeCompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseHostIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseHostIncompatible.fieldName = HOST_KEY;
+        caseHostIncompatible.fieldType = ImmutableCategoryField.class;
+        caseHostIncompatible.shouldCreateNewVariable = true;
+        caseHostIncompatible.testCaseName = "caseHostIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseFolderIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseFolderIncompatible.fieldName = FOLDER_KEY;
+        caseFolderIncompatible.fieldType = ImmutableCategoryField.class;
+        caseFolderIncompatible.shouldCreateNewVariable = true;
+        caseFolderIncompatible.testCaseName = "caseFolderIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseUrlMapIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseUrlMapIncompatible.fieldName = URL_MAP;
+        caseUrlMapIncompatible.fieldType = ImmutableCategoryField.class;
+        caseUrlMapIncompatible.shouldCreateNewVariable = true;
+        caseUrlMapIncompatible.testCaseName = "caseUrlMapIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseUrlMapCompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseUrlMapCompatible.fieldName = URL_MAP;
+        caseUrlMapCompatible.fieldType = ImmutableTextField.class;
+        caseUrlMapCompatible.shouldCreateNewVariable = false;
+        caseUrlMapCompatible.testCaseName = "caseUrlMapCompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseOwnerIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseOwnerIncompatible.fieldName = OWNER_KEY;
+        caseOwnerIncompatible.fieldType = ImmutableCategoryField.class;
+        caseOwnerIncompatible.shouldCreateNewVariable = true;
+        caseOwnerIncompatible.testCaseName = "caseOwnerIncompatible";
+
+        final GraphQLFieldNameCompatibilityTestCase caseModUserIncompatible = new GraphQLFieldNameCompatibilityTestCase();
+        caseModUserIncompatible.fieldName = MOD_USER_KEY;
+        caseModUserIncompatible.fieldType = ImmutableCategoryField.class;
+        caseModUserIncompatible.shouldCreateNewVariable = true;
+        caseModUserIncompatible.testCaseName = "caseModUserIncompatible";
+
+        return new GraphQLFieldNameCompatibilityTestCase[] {
+                caseModDateIncompatible,
+                caseModDateCompatible,
+                caseTitleCompatible,
+                caseTitleIncompatible,
+                caseTitleImageIncompatible,
+                caseTitleImageCompatible,
+                caseContentTypeIncompatible,
+                caseContentTypeCompatible,
+                caseBaseTypeIncompatible,
+                caseBaseTypeCompatible,
+                caseLiveIncompatible,
+                caseLiveCompatible,
+                caseWorkingCompatible,
+                caseArchivedCompatible,
+                caseLockedCompatible,
+                caseIdentifierIncompatible,
+                caseIdentifierCompatible,
+                caseInodeIncompatible,
+                caseInodeCompatible,
+                caseHostIncompatible,
+                caseFolderIncompatible,
+                caseUrlMapIncompatible,
+                caseUrlMapCompatible,
+                caseOwnerIncompatible,
+                caseModUserIncompatible
+        };
     }
 
     @Test
     @UseDataProvider("dataProviderGraphQLReservedNames")
-    public void test_SaveFieldWithReservedGraphqlName_ShouldSuffixConsecutiveToVariable(
-            final String fieldName)
+    public void test_SaveFieldVariableNameCompatibilityWithGraphQL(
+            final GraphQLFieldNameCompatibilityTestCase testCase)
             throws DotSecurityException, DotDataException {
 
         final ContentType type = new ContentTypeDataGen().nextPersisted();
         try {
-            Field field1 = FieldBuilder.builder(TextField.class)
-                    .name(fieldName)
-                    .contentTypeId(type.id())
-                    .indexed(false)
-                    .listed(false)
-                    .fixed(true)
-                    .build();
-            field1 = fieldAPI.save(field1, user);
+            final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+            final Field field = createField(contentType, testCase.fieldName,
+                    testCase.fieldType);
 
-            Assert.assertNotNull(field1);
-            Assert.assertTrue(UtilMethods.isSet(field1.variable()));
-            Assert.assertNotEquals(fieldName, field1.variable());
-
-            // let's create a new field to make sure it's getting a new variable
-
-            Field field2 = FieldBuilder.builder(TextField.class)
-                    .name(fieldName)
-                    .contentTypeId(type.id())
-                    .indexed(false)
-                    .listed(false)
-                    .fixed(true)
-                    .build();
-            field2 = fieldAPI.save(field2, user);
-
-            Assert.assertNotNull(field2);
-            Assert.assertTrue(UtilMethods.isSet(field2.variable()));
-            Assert.assertNotEquals(fieldName, field2.variable());
-
-            // let's compare the two field vars are different
-
-            Assert.assertNotEquals(field1.variable(), field2.variable());
-
-
+            if(testCase.shouldCreateNewVariable) {
+                Assert.assertNotEquals(testCase.fieldName, field.variable());
+            } else  {
+                Assert.assertEquals(testCase.fieldName, field.variable());
+            }
         } finally {
             contentTypeAPI.delete(type);
         }
+    }
+
+    static class GraphQLFieldNameCompatibilityTestCase {
+        String fieldName;
+        private Class<? extends Field> fieldType;
+        boolean shouldCreateNewVariable = true;
+        String testCaseName;
+
+        @Override
+        public String toString() {
+            return testCaseName;
+        }
+    }
+
+    public static Field createField(final ContentType contentType, final String fieldName,
+            final Class<? extends Field> fieldType) {
+        try {
+            final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+            final FieldBuilder fieldBuilder = getFieldBuilder(fieldType);
+            final Field field =  fieldBuilder.contentTypeId(contentType.id())
+                    .name(fieldName).build();
+            return fieldAPI.save(field, APILocator.systemUser());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static FieldBuilder getFieldBuilder(final Class<? extends Field> fieldType)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        return (FieldBuilder) fieldType.getMethod("builder").invoke(null);
     }
 
 
