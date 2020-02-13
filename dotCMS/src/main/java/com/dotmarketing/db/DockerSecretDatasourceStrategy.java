@@ -40,7 +40,7 @@ public class DockerSecretDatasourceStrategy implements DotDatasourceStrategy {
 
             final HikariConfig config = new HikariConfig();
 
-            config.setPoolName(dockerSecretsMap.getOrDefault("connection.db.name", Constants.DATABASE_DEFAULT_DATASOURCE));
+            config.setPoolName(dockerSecretsMap.getOrDefault("connection.pool.name", Constants.DATABASE_DEFAULT_DATASOURCE));
             config.setDriverClassName(dockerSecretsMap.getOrDefault("connection.db.driver", "org.postgresql.Driver"));
             config.setJdbcUrl(dockerSecretsMap.getOrDefault("connection.db.base.url", "jdbc:postgresql://localhost/dotcms"));
             config.setUsername(dockerSecretsMap.get("connection.db.username"));

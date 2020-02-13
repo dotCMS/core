@@ -49,7 +49,7 @@ public class DockerSecretsUtil {
         try {
             final List<String> lines = Files.readAllLines(secretsFile.toPath(), Charset.defaultCharset());
             for (String line : lines) {
-                int index = line.indexOf("=");
+                final int index = line.indexOf("=");
                 if (index < 0) {
                     throw new DotRuntimeException(
                             "Invalid secrets in file at [" + secretsFile.toPath() + "]");
@@ -84,7 +84,12 @@ public class DockerSecretsUtil {
         for (final File file : secretFiles) {
             try {
                 final String secret = new String(Files.readAllBytes(file.toPath()));
-                secrets.put(file.getName(), secret);
+                final int index = secret.indexOf("=");
+                if (index > 0){
+                    secrets.put(file.getName(), secret.substring(index + 1));
+                } else {
+                    secrets.put(file.getName(), secret);
+                }
             } catch (IOException e) {
                 throw new DotRuntimeException(
                         "Unable to load secret from file [" + file.getName() + "]", e);

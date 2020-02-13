@@ -51,7 +51,7 @@ public class DBPropertiesDatasourceStrategy implements DotDatasourceStrategy {
 
             final HikariConfig config = new HikariConfig();
 
-            config.setPoolName(properties.getString("connection.db.name", Constants.DATABASE_DEFAULT_DATASOURCE));
+            config.setPoolName(properties.getString("connection.pool.name", Constants.DATABASE_DEFAULT_DATASOURCE));
             config.setDriverClassName(properties.getString("connection.db.driver"));
             config.setJdbcUrl(properties.getString("connection.db.base.url"));
             config.setUsername(properties.getString("connection.db.username"));
