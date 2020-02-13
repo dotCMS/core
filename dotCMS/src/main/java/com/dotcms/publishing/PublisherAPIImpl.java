@@ -15,11 +15,15 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PublisherAPIImpl implements PublisherAPI {
 
     private final PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
     private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+    private Map<String,FilterDescriptor> loadedFilters = new ConcurrentHashMap<>();
+
 
     @Override
     public PublishStatus publish ( PublisherConfig config ) throws DotPublishingException {
@@ -140,6 +144,11 @@ public class PublisherAPIImpl implements PublisherAPI {
         }
 
         return status;
+    }
+
+    @Override
+    public void addFilter(final String key, final FilterDescriptor filterDescriptor) {
+        this.loadedFilters.put(key,filterDescriptor);
     }
 
 }
