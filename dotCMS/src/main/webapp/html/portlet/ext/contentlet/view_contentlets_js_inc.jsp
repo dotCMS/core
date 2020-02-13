@@ -1763,7 +1763,10 @@
                 } else {
                     disableBulkAvailableActionsButton();
                 }
-            })
+            });
+			viewCard.addEventListener('onCardClick', (e) => {
+				openEditModal(e.detail);
+			});
             dojo.byId('metaMatchingResultsDiv').appendChild(viewCard);
           }
 
@@ -1774,7 +1777,20 @@
             }
             viewCard.items = content;
           }, 0)
-        }
+        };
+
+		function openEditModal(data){
+			var inode = data.inode;
+			var liveSt = data.live === "true" ? "1" : "0";
+			var workingSt = data.working === "true" ? "1" : "0";
+			var write = userHasWritePermission (data, userId) ? "1" : "0";
+
+			if (data.structureInode == '<%=calendarEventSt.getInode() %>') {
+				editEvent(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write);
+			}else{
+				editContentlet(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write);
+			}
+		};
 
 		function fillActions(data) {
 			let actions = []
