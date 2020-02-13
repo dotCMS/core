@@ -10,6 +10,7 @@ import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
+import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
 import com.dotmarketing.util.TestConfig;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -220,6 +221,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.startup.runalways.Task00001LoadSchemaIntegrationTest.class,
         com.dotmarketing.startup.runonce.Task05200WorkflowTaskUniqueKeyTest.class,
         Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class,
+        Task05210CreateDefaultDotAssetTest.class,
         CleanUpFieldReferencesJobTest.class,
         ESContentletAPIImplTest.class,
         CachedParameterDecoratorTest.class,

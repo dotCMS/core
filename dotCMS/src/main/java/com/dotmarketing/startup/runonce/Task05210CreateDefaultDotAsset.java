@@ -44,7 +44,7 @@ public class Task05210CreateDefaultDotAsset implements StartupTask {
                     "INSERT INTO structure (inode, name, description, structuretype, system, fixed, velocity_var_name, host, "
                                     + "folder, mod_date, default_structure) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    private static final String[] DOTASSET_VARIABLE_FIELD_INODES = {
+    public static final String[] DOTASSET_VARIABLE_FIELD_INODES = {
             "06d5ecb5-5334-3cb7-a883-f029d12e6a0b", // Asset
             "d8719d24-df37-3a20-9442-75fb423cef7e", // hostFolder
             "d8720d13-df48-4b29-9331-75fa314def7e" // tags
