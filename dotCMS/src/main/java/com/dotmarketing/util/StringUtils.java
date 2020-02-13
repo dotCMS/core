@@ -322,8 +322,8 @@ public class StringUtils {
     private static final Pattern quotedLiteral = Pattern.compile("(?:^|\\s)*['\"]([a-zA-Z0-9-_]+)['\"](?:$|\\s)*", Pattern.MULTILINE);
 
     /**
-     * This method is useful to isolate quoted literals hence `my-literal` or `this` or `12345abc` or `1se34s-23r45-eE8u76-223df`
-     * Anything enclosed within single quotes containing an alphanumeric char or dash will be matched.
+     * This method is useful to isolate quoted literals hence `my-literal` or `12345abc` or `1se34s-23r45-eE8u76-223df` or even "this"
+     * Anything enclosed within quotes (single and double) containing an alphanumeric char or dash will be matched.
      * if the enclosed text has a blank it is not considered a literal.
      * Meaning that neither `1234 456` nor `abc def`  will no be matched.
      * @param input a multiline string
