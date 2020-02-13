@@ -3,17 +3,11 @@ package com.dotcms.graphql.util;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.graphql.InterfaceType;
 import com.dotmarketing.business.APILocator;
+import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLType;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 public class GraphQLUtil {
-
-    public static Set<String> getFieldReservedWords() {
-        return InterfaceType.RESERVED_GRAPHQL_FIELD_NAMES;
-    }
 
     public static boolean isVariableGraphQLCompatible(final Field field) {
         // first let's check if there's an inherited field with the same variable
@@ -38,6 +32,8 @@ public class GraphQLUtil {
     }
 
     private static boolean isCustomFieldType(final GraphQLType type) {
-        return APILocator.getGraphqlAPI().getCustomFieldTypes().contains(type);
+           return  type instanceof GraphQLList ? APILocator.getGraphqlAPI().getCustomFieldTypes()
+                   .contains(((GraphQLList) type).getWrappedType())
+                   : APILocator.getGraphqlAPI().getCustomFieldTypes().contains(type);
     }
 }

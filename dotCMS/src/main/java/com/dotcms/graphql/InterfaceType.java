@@ -65,7 +65,7 @@ public enum InterfaceType {
         this.baseContentType = baseContentType;
     }
 
-    public static Set<String> RESERVED_GRAPHQL_FIELD_NAMES = new HashSet<>();
+    public static Set<String> CONTENT_INTERFACE_FIELDS = new HashSet<>();
 
     private static Map<String, GraphQLInterfaceType> interfaceTypes = new HashMap<>();
 
@@ -99,7 +99,7 @@ public enum InterfaceType {
         contentFields.put(OWNER_KEY, new TypeFetcher(CustomFieldType.USER.getType(), new UserDataFetcher()));
         contentFields.put(MOD_USER_KEY, new TypeFetcher(CustomFieldType.USER.getType(), new UserDataFetcher()));
 
-        RESERVED_GRAPHQL_FIELD_NAMES.addAll(contentFields.keySet());
+        CONTENT_INTERFACE_FIELDS.addAll(contentFields.keySet());
 
         interfaceTypes.put("CONTENTLET", createInterfaceType("Contentlet", contentFields, new ContentResolver()));
 
