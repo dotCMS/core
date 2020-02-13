@@ -60,8 +60,10 @@ public class DockerSecretDatasourceStrategy implements DotDatasourceStrategy {
             config.setLeakDetectionThreshold(Integer.parseInt(dockerSecretsMap
                     .getOrDefault("connection.db.leak.detection.threshold", "60000")));
 
-            config.setTransactionIsolation(
-                    dockerSecretsMap.get("connection.db.default.transaction.isolation"));
+            if (dockerSecretsMap.get("connection.db.default.transaction.isolation") != null) {
+                config.setTransactionIsolation(
+                        dockerSecretsMap.get("connection.db.default.transaction.isolation"));
+            }
 
             dockerSecretsMap.clear();
             return new HikariDataSource(config);
