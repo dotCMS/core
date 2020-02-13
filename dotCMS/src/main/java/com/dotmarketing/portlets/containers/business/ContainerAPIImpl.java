@@ -322,7 +322,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			includeHostOnPath = !folderHostId.equals(currentHostOpt.get().getIdentifier());
 		}
 
-		return this.containerFactory.getContainerByFolder(host, folder, user, showLive);
+		return this.containerFactory.getContainerByFolder(host, folder, user, showLive, includeHostOnPath);
 	}
 
     /**
