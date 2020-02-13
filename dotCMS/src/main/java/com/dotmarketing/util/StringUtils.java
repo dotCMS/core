@@ -319,7 +319,7 @@ public class StringUtils {
       
     }
 
-    private static final Pattern singleQuotedLiteral = Pattern.compile("(?:^|\\s)*'([a-zA-Z0-9-_]+)'(?:$|\\s)*", Pattern.MULTILINE);
+    private static final Pattern quotedLiteral = Pattern.compile("(?:^|\\s)*['\"]([a-zA-Z0-9-_]+)['\"](?:$|\\s)*", Pattern.MULTILINE);
 
     /**
      * This method is useful to isolate quoted literals hence `my-literal` or `this` or `12345abc` or `1se34s-23r45-eE8u76-223df`
@@ -329,9 +329,9 @@ public class StringUtils {
      * @param input a multiline string
      * @return list of matches found.
      */
-    public static List<String> singleQuotedLiteral(final String input) {
+    public static List<String> quotedLiteral(final String input) {
         final List<String> strings = new ArrayList<>();
-        final Matcher matcher = singleQuotedLiteral.matcher(input);
+        final Matcher matcher = quotedLiteral.matcher(input);
         while (matcher.find()) {
             strings.add(matcher.group(1));
         }

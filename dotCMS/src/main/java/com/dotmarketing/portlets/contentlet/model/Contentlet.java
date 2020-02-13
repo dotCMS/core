@@ -1494,6 +1494,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void cleanup(){
 	    getMap().remove(IS_COPY_CONTENTLET);
 	    getMap().remove(CONTENTLET_ASSET_NAME_COPY);
+	    getMap().remove(TEMPLATE_MAPPINGS);
 		getWritableNullProperties().clear();
 	}
 
