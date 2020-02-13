@@ -593,7 +593,6 @@ public String suggestVelocityVar( String tryVar, List<String> takenFieldsVariabl
 
     // adds the GraphQL Reserved field names to the "taken fields variables" list
     final List<String> forbiddenFieldVariables = new ArrayList<>(takenFieldsVariables);
-//    forbiddenFieldVariables.addAll(GraphQLUtil.getFieldReservedWords());
 
     String var = StringUtils.camelCaseLower(tryVar);
     // if we don't get a var back, we are looking at UTF-8 or worse

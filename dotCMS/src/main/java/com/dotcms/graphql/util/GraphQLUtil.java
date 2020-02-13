@@ -15,11 +15,11 @@ public class GraphQLUtil {
             // now let's check if the graphql types are compatible
 
             // get inherited field's graphql type
-            GraphQLType inheritedFieldGraphQLType = InterfaceType.getContentletInheritedFields()
+            final GraphQLType inheritedFieldGraphQLType = InterfaceType.getContentletInheritedFields()
                     .get(field.name()).getType();
 
             // get new field's type
-            GraphQLType fieldGraphQLType = APILocator.getGraphqlAPI()
+            final GraphQLType fieldGraphQLType = APILocator.getGraphqlAPI()
                     .getGraphqlTypeForFieldClass(field.type(), field);
 
             // if at least one of them is a custom type, they need to be equal to be compatible
