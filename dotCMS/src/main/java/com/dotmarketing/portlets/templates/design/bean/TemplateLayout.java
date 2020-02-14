@@ -18,10 +18,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -182,10 +180,16 @@ public class TemplateLayout implements Serializable {
         }
     }
 
-    public boolean existsContainer(final String identifier, final String uuid){
+    public boolean existsContainer(final String identifier, final String uuid) {
+        final String relativePath =
+                FileAssetContainerUtil.getInstance().isFolderAssetContainerId(identifier) ?
+                        FileAssetContainerUtil.getInstance().removeRelativePath(identifier) : null;
+
         return this.getContainers().stream()
                 .anyMatch(containerUUID ->
-                        containerUUID.getIdentifier().equals(identifier) && isTheSameUUID(containerUUID.getUUID(), uuid)
+                        (containerUUID.getIdentifier().equals(identifier) ||
+                                (relativePath != null && relativePath.equals(containerUUID.getIdentifier()))
+                                && isTheSameUUID(containerUUID.getUUID(), uuid))
                 );
     }
 
