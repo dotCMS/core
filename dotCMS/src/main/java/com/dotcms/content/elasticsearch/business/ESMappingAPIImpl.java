@@ -185,7 +185,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			final Identifier contentIdentifier = APILocator.getIdentifierAPI().find(contentlet);
 			final ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(contentIdentifier.getId(), contentlet.getLanguageId());
-			final ContentType contentType = CacheLocator.getContentTypeCache2().byVarOrInode(contentlet.getContentTypeId());
+			final ContentType contentType = contentlet.getContentType();
 			final Folder contentFolder = APILocator.getFolderAPI().findFolderByPath(contentIdentifier.getParentPath(), contentIdentifier.getHostId(), systemUser, false);
 			final Host contentSite = APILocator.getHostAPI().find(contentIdentifier.getHostId(), systemUser, false);
 
