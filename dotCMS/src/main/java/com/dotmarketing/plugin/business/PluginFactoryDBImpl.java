@@ -21,7 +21,13 @@ import com.dotmarketing.util.UtilMethods;
  */
 public class PluginFactoryDBImpl extends PluginFactory {
 
-	private PluginCache cache = CacheLocator.getPluginCache();
+	private PluginCache cache() {
+	    return CacheLocator.getPluginCache();
+	}
+	
+	
+	
+	
 	
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.plugin.business.PluginFactory#delete(com.dotmarketing.plugin.model.Plugin)
@@ -35,8 +41,8 @@ public class PluginFactoryDBImpl extends PluginFactory {
 		dc.setSQL("delete from plugin where id = ?");
 		dc.addParam(plugin.getId());
 		dc.getResult();
-		cache.removePlugin(plugin.getId());
-		cache.clearPropertyCache();
+		cache().removePlugin(plugin.getId());
+		cache().clearPropertyCache();
 	}
 	
 	@Override
@@ -45,7 +51,7 @@ public class PluginFactoryDBImpl extends PluginFactory {
 		dc.setSQL("delete from plugin_property where plugin_id = ?");
 		dc.addParam(pluginId);
 		dc.getResult();
-		cache.clearPropertyCache();
+		cache().clearPropertyCache();
 	}
 
 	/* (non-Javadoc)
@@ -53,7 +59,7 @@ public class PluginFactoryDBImpl extends PluginFactory {
 	 */
 	@Override
 	protected Plugin loadPlugin(String id) throws DotDataException{
-		Plugin plugin = cache.get(id);
+		Plugin plugin = cache().get(id);
 		if(plugin != null){
 			return plugin;
 		}
@@ -61,8 +67,8 @@ public class PluginFactoryDBImpl extends PluginFactory {
 		try {
 			plugin = (Plugin)hu.load(id);
 			if(plugin != null && UtilMethods.isSet(plugin.getId())){
-				cache.removePlugin(plugin.getId());
-				cache.add(plugin);
+			    cache().removePlugin(plugin.getId());
+			    cache().add(plugin);
 			}
 			return plugin;
 		} catch (DotHibernateException e) {
@@ -81,8 +87,8 @@ public class PluginFactoryDBImpl extends PluginFactory {
 			hu.setQuery("from Plugin");
 			List<Plugin> plugins =  (List<Plugin>)hu.list();
 			for (Plugin plugin : plugins) {
-				cache.removePlugin(plugin.getId());
-				cache.add(plugin);
+			    cache().removePlugin(plugin.getId());
+			    cache().add(plugin);
 			}
 			return plugins;
 		} catch (DotHibernateException e) {
@@ -96,7 +102,7 @@ public class PluginFactoryDBImpl extends PluginFactory {
 	 */
 	@Override
 	protected PluginProperty loadProperty(String pluginId, String key) throws DotDataException {
-		PluginProperty pluginProp = cache.getProperty(pluginId, key);
+		PluginProperty pluginProp = cache().getProperty(pluginId, key);
 		if(pluginProp != null){
 			return pluginProp;
 		}
@@ -106,7 +112,7 @@ public class PluginFactoryDBImpl extends PluginFactory {
 		hu.setParam(key);
 		pluginProp = (PluginProperty)hu.load();
 		if(pluginProp != null && UtilMethods.isSet(pluginProp.getPluginId())){
-			cache.addProperty(pluginProp);
+		    cache().addProperty(pluginProp);
 		}
 		return pluginProp;
 	}
@@ -118,8 +124,8 @@ public class PluginFactoryDBImpl extends PluginFactory {
 	protected void save(Plugin plugin) throws DotDataException {
 		HibernateUtil.saveOrUpdate(plugin);
 		if(UtilMethods.isSet(plugin.getId())){
-			cache.removePlugin(plugin.getId());
-			cache.add(plugin);
+		    cache().removePlugin(plugin.getId());
+		    cache().add(plugin);
 		}
 	}
 
@@ -130,8 +136,8 @@ public class PluginFactoryDBImpl extends PluginFactory {
 	protected void saveProperty(PluginProperty pluginProperty) throws DotDataException {
 		HibernateUtil.saveOrUpdate(pluginProperty);
 		if(UtilMethods.isSet(pluginProperty.getPluginId()) && UtilMethods.isSet(pluginProperty.getPropkey())){
-			cache.removePluginProperty(pluginProperty);
-			cache.addProperty(pluginProperty);
+		    cache().removePluginProperty(pluginProperty);
+		    cache().addProperty(pluginProperty);
 		}
 	}
 
