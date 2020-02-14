@@ -21,6 +21,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.common.annotations.VisibleForTesting;
 import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.ScanArgs;
@@ -98,9 +99,17 @@ public class LettuceCache extends CacheProvider {
     public boolean isDistributed() {
         return true;
     }
-
-
-    private String loadPrefix() {
+    
+    
+    /**
+     * all key values that are put into redis are prefixed by a random key.
+     * When a flushall is called, this key is cycled, which basically invalidates
+     * all cached entries.  The prefix key is stored in redis itself so multiple 
+     * servers in the cluster can read it.  When the key is cycled, we send a
+     * CYCLE_KEY event to cluster to refresh the key across cluster 
+     */
+    @VisibleForTesting
+    String loadPrefix() {
         long key = prefixKey.get();
         if(key==0) {
             prefixKey.set(setIfUnset(System.currentTimeMillis()));
@@ -109,7 +118,8 @@ public class LettuceCache extends CacheProvider {
         return String.valueOf(prefixKey.get());
     }
     
-    private long cycleKey() {
+    @VisibleForTesting
+    long cycleKey() {
         long newKey = System.currentTimeMillis();
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
             conn.sync().set(LETTUCE_PREFIX_KEY, newKey);
@@ -125,7 +135,7 @@ public class LettuceCache extends CacheProvider {
 
     }
     
-    
+    @VisibleForTesting
     private long setIfUnset(long newKey) {
 
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
@@ -142,13 +152,15 @@ public class LettuceCache extends CacheProvider {
      * @param key
      * @return
      */
-    private String cacheKey(String group, String key) {
-        return new String( loadPrefix() + 
-                        ((group != null) ? group : "") 
-                        + ((key != null) ? key : ""));
+    @VisibleForTesting
+    String cacheKey(String group, String key) {
+        return loadPrefix() + 
+                (group != null && key!=null ? "." + group + "." + key : (group!=null) ? "." + group + "." : "." );
     }
-    private String cacheKey(String group) {
-        return new String( loadPrefix() +  (group != null ? group : "")) ;
+    
+    @VisibleForTesting
+    String cacheKey(String group) {
+        return cacheKey(group, null);
     }
     
     @Override
@@ -174,20 +186,16 @@ public class LettuceCache extends CacheProvider {
         }
         final String cacheKey = cacheKey(group, key);
 
-        if (cannotCacheCache.getIfPresent(cacheKey.toString()) != null) {
-            Logger.debug(this, "Returning because object is in cannot cache cache - Redis: group [" + group + "] - key [" + key
-                            + "].");
-            return;
-        }
 
         // Check if we must exclude this record from this cache
         if (exclude(cacheKey)) {
             return;
         }
+        
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
             conn.async().sadd(LETTUCE_GROUP_KEY, group);
 
-            conn.async().set(cacheKey.toString(), content);
+            conn.async().set(cacheKey, content);
         }
         
     }
@@ -292,10 +300,39 @@ public class LettuceCache extends CacheProvider {
         
             
     }
-
     @Override
-    public Set<String> getKeys(final String prefix) {
+    public Set<String> getKeys(final String group) {
+        final String prefix = cacheKey(group) +  "*";
+        KeyScanCursor<String> scanCursor = null;
+        RedisFuture<KeyScanCursor<String>> future = null;
+        Set<String> keys = new HashSet<String>();
+        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+            do {
+                if (scanCursor == null) {
+                    future = conn.async().scan(ScanArgs.Builder.matches(prefix).limit(keyBatching));
+                } else {
+                    future = conn.async().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatching));
+                }
 
+                try {
+                    scanCursor = future.get();
+                } catch (Exception e) {
+                    return null;
+                }
+                keys.addAll(scanCursor.getKeys());
+
+            } while (!scanCursor.isFinished());
+        }
+
+        return keys;
+
+
+    }
+    
+
+    @VisibleForTesting
+    Set<String> getAllKeys() {
+        final String prefix = cacheKey(null) +  "*";
         KeyScanCursor<String> scanCursor = null;
         RedisFuture<KeyScanCursor<String>> future = null;
         Set<String> keys = new HashSet<String>();
