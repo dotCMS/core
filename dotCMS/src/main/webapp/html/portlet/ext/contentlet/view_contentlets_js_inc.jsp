@@ -186,7 +186,6 @@
 
 
         function fillResults(data) {
-			setDotSelectButton();
             var counters = data[0];
             var hasNext = counters["hasNext"];
             var hasPrevious = counters["hasPrevious"];
@@ -2320,7 +2319,7 @@
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><dot-select-button style=\"margin-right:8px\" ></dot-select-button><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
                         var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
                         var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
                         if (num > 0 && structureInode != "catchall") {
@@ -2341,6 +2340,7 @@
 
                         div.innerHTML = strbuff;
                         div.style.display = "";
+						setDotSelectButton();
 
                         //Bottom Matching Results
                         var div = document.getElementById("matchingResultsBottomDiv")
