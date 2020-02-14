@@ -18,9 +18,13 @@ import static com.dotcms.util.CollectionsUtils.list;
 public abstract class BinaryField extends Field {
 
 	/**
+	 * Constant for limit which type of files are allowed on the field.
+	 * Field Variable is called accept since that is the name of the
+	 * html attribute to specify what file types the user can pick.
+	 *
 	 * Supports things such as application/pdf or application/*
 	 */
-	public static final String ALLOWED_FILE_TYPES = "allowedFileTypes";
+	public static final String ALLOWED_FILE_TYPES = "accept";
 
 	/**
 	 * Supports things such as 100 (100 bytes) 1kb (1024 bytes) 1mb (1024 kb) 1gb (1024 mb)

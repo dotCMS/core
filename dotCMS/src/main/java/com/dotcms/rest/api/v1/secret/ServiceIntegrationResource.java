@@ -217,8 +217,9 @@ public class ServiceIntegrationResource {
                             .init();
 
             final User user = initData.getUser();
-            helper.createServiceIntegration(multipart, user);
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            final List<ServiceIntegrationView> serviceIntegrations = helper
+                    .createServiceIntegration(multipart, user);
+            return Response.ok(new ResponseEntityView(serviceIntegrations)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),"Exception saving/creating a service integration ", e);
