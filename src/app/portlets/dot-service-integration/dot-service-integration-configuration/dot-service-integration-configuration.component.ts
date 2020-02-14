@@ -28,6 +28,7 @@ export class DotServiceIntegrationConfigurationComponent implements OnInit {
     disabledLoadDataButton: boolean;
     paginationPerPage = 10;
     totalRecords: number;
+    showMore: boolean;
 
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
