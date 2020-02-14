@@ -137,7 +137,7 @@ public class FileAssetContainerUtil {
             tmp = tmp.replaceAll(HOST_INDICATOR, "");
             tmp = tmp.substring(0, tmp.indexOf(CONTAINER_FOLDER_PATH));
             final String finalString = tmp;
-            Logger.warn(FileAssetContainerUtil.class,
+            Logger.debug(FileAssetContainerUtil.class,
                     () -> String.format(" extracted hostName `%s`", finalString));
 
             return (UtilMethods.isSet(tmp) ? tmp : null);
