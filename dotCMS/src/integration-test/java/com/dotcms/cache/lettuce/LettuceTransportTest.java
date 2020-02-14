@@ -1,11 +1,14 @@
 package com.dotcms.cache.lettuce;
 
+import static org.junit.Assert.assertTrue;
 import java.util.Map;
-import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.ChainableCacheAdministratorImpl;
+import com.dotmarketing.business.DotCacheAdministrator;
 
 public class LettuceTransportTest {
 
@@ -16,13 +19,20 @@ public class LettuceTransportTest {
 
     @BeforeClass
     public static void startup() throws Exception {
+        IntegrationTestInitService.getInstance().init();
         transport1.init();
         transport2.init();
         transport3.init();
-        Thread.sleep(3000);
 
+        
     }
 
+    
+    
+    /**
+     * The the servers getting info messages?
+     * @throws Exception
+     */
     @Test
     public void test_servers_can_hear_each_other() throws Exception {
 
@@ -53,7 +63,11 @@ public class LettuceTransportTest {
 
     }
 
-
+    /**
+     * Are all servers responding to a ping?
+     * 
+     * @throws Exception
+     */
     @Test
     public void test_cluster_ping() throws Exception {
 
@@ -75,15 +89,17 @@ public class LettuceTransportTest {
 
     }
 
-
+    /**
+     * Are all servers responding to the cluster?
+     * 
+     * @throws Exception
+     */
     @Test
     public void test_validate_cache_in_cluster() throws Exception {
 
-
-
         long start = System.currentTimeMillis();
 
-        // send a ping
+        // we expect 3 servers
         Map<String, Boolean> map = transport1.validateCacheInCluster("0", 3, 5);
 
         long took = System.currentTimeMillis() - start;
@@ -97,6 +113,111 @@ public class LettuceTransportTest {
 
     }
 
+    /**
+     * this tests sending cache invalidations
+     * including sending multiple invalidations in a single message
+     * @throws Exception
+     */
+    
+    @Test
+    public void test_cache_invalidations() throws Exception {
+
+        
+        DotCacheAdministrator cache = new ChainableCacheAdministratorImpl(transport1);
+        cache.initProviders();
+        cache.flushAll();
+        
+        boolean works = false;
+        int i=0;
+        
+        while(!works && ++i<20) {
+            works = transport2.messagesIn.stream().anyMatch(m -> m.type == MessageType.INVALIDATE && m.message.equals("0:" + DotCacheAdministrator.ROOT_GOUP));
+            Thread.sleep(100);
+        }
+        assertTrue("transport 2 got the invalidations", works);
+        
+        works = false; i=0;
+        while(!works && ++i<20) {
+            works =  (transport3.messagesIn.stream().anyMatch(m -> m.type == MessageType.INVALIDATE && m.message.equals("0:" + DotCacheAdministrator.ROOT_GOUP)));
+            Thread.sleep(100);
+        }
+        assertTrue("transport 2 got the invalidations", works);
+        
+
+        
+        cache.flushGroup(CacheLocator.getIdentifierCache().getPrimaryGroup());
+        cache.flushGroup(CacheLocator.getIdentifierCache().get404Group());
+        cache.remove("testestKey","testsetGoup"); 
+        
+
+        
+        works = false; i=0;
+        while(!works && ++i<20) {
+            works =  (transport2.messagesIn.stream().anyMatch(m -> m.type == MessageType.INVALIDATE && m.message.equalsIgnoreCase("0:" + CacheLocator.getIdentifierCache().getPrimaryGroup())));
+            Thread.sleep(100);
+        }
+        assertTrue("transport 2 got the invalidations", works);
+        
+        
+        works = false; i=0;
+        while(!works && ++i<20) {
+            works =  (transport3.messagesIn.stream().anyMatch(m -> m.type == MessageType.INVALIDATE && m.message.equalsIgnoreCase("0:" + CacheLocator.getIdentifierCache().getPrimaryGroup())));
+            Thread.sleep(100);
+        }
+        assertTrue("transport 3 got the invalidations", works);
+     
+        works = false; i=0;
+        while(!works && ++i<20) {
+            works =  (transport2.messagesIn.stream().anyMatch(m -> m.type == MessageType.INVALIDATE && m.message.equalsIgnoreCase("0:" + CacheLocator.getIdentifierCache().get404Group())));
+            Thread.sleep(100);
+        }
+        assertTrue("transport2 got the invalidations", works);
+        
+        
+        works = false; i=0;
+        while(!works && ++i<20) {
+            works =  (transport3.messagesIn.stream().anyMatch(m -> m.type == MessageType.INVALIDATE && m.message.equalsIgnoreCase("0:" + CacheLocator.getIdentifierCache().get404Group())));
+            Thread.sleep(100);
+        }
+        
+        assertTrue("transport3 got the invalidations", works);
+       
+
+
+
+    }
+
+    /**
+     * Are all servers responding to the cluster?
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void test_flush_all() throws Exception {
+
+        long start = System.currentTimeMillis();
+
+        // we expect 3 servers
+        Map<String, Boolean> map = transport1.validateCacheInCluster("0", 3, 5);
+
+        long took = System.currentTimeMillis() - start;
+        assert (took < 2000);
+
+        assert (map.containsKey("server-1"));
+        assert (map.containsKey("server-2"));
+        assert (map.containsKey("server-3"));
+
+
+
+    }
+
+    
+    
+    
+    
+    
+    
+    
     @AfterClass
     public static void shutdown() throws Exception {
         transport1.shutdown();

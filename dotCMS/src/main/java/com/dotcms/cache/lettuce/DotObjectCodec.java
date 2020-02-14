@@ -9,6 +9,12 @@ import java.nio.charset.Charset;
 import com.dotmarketing.exception.DotRuntimeException;
 import io.lettuce.core.codec.RedisCodec;
 
+/**
+ * This method is used by Lettuce Redis Driver
+ * to wrap and serialize objects being put to redis
+ * @author will
+ *
+ */
 public class DotObjectCodec implements RedisCodec<String, Object> {
     private Charset charset = Charset.forName("UTF-8");
 
@@ -25,7 +31,7 @@ public class DotObjectCodec implements RedisCodec<String, Object> {
 
         try (ObjectInputStream in =  new ObjectInputStream(new ByteArrayInputStream(bytes.array()))){
         
-        return in.readObject();
+            return in.readObject();
         }catch(Exception e) {
             throw new DotRuntimeException(e);
         }

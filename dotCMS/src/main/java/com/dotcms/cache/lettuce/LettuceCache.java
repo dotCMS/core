@@ -3,9 +3,16 @@ package com.dotcms.cache.lettuce;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
@@ -17,8 +24,9 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.ScanArgs;
+import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.api.StatefulRedisConnection;
-import io.vavr.Tuple2;
+import io.vavr.control.Try;
 
 
 public class LettuceCache extends CacheProvider {
@@ -31,12 +39,47 @@ public class LettuceCache extends CacheProvider {
     public LettuceCache() {
         this(LettuceClient.getInstance());
     }
+    
+    private final AtomicBoolean allowGets = new AtomicBoolean(true);
+    
+    private static Timer timer;
+    
+    private final static String LETTUCE_GROUP_KEY="LETTUCE_GROUP_KEY";
+    private final static String LETTUCE_PREFIX_KEY="LETTUCE_PREFIX_KEY";
+    
+    private final static boolean LETTUCE_PAUSE_GETS_ON_REMOVE =  Config.getBooleanProperty("redis.server.pause.gets.on.remove", false);
+    
+    
+    final TimerTask timerTask() {
+        return new TimerTask() {
+            @Override
+            public void run() {
+                Logger.info(this.getClass(), "\tLETTUCE GETS ALLOWED");
+                allowGets.set(true);
+            }
+        };
+    }
+    
+    
+    private void resetGetTimer() {
+        if(!LETTUCE_PAUSE_GETS_ON_REMOVE) {
+            return;
+        }
+        allowGets.set(false);
+        Try.run(()->timer.cancel());
 
+        Timer timerNew = new Timer();
+        timerNew.schedule(timerTask(), Config.getIntProperty("redis.server.pause.gets.timer.ms", 5000));
+        timer = timerNew;
+    }
+    
+    
+    
     private static final long serialVersionUID = -855583393078878276L;
-    private int keyBatching = Config.getIntProperty("redis.server.key.batch.size", 5000);
+    private int keyBatching = Config.getIntProperty("redis.server.key.batch.size", 1000);
     private boolean isInitialized = false;
+    final static AtomicLong prefixKey=new AtomicLong(0);
 
-    private final static String CACHE_GROUP_KEY="CACHE_GROUP_KEY";
     // Global Map of contents that could not be added to this cache
     private static Cache<String, String> cannotCacheCache =
                     Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(10, TimeUnit.MINUTES).build();
@@ -57,6 +100,40 @@ public class LettuceCache extends CacheProvider {
     }
 
 
+    private String loadPrefix() {
+        long key = prefixKey.get();
+        if(key==0) {
+            prefixKey.set(setIfUnset(System.currentTimeMillis()));
+        }
+
+        return String.valueOf(prefixKey.get());
+    }
+    
+    private long cycleKey() {
+        long newKey = System.currentTimeMillis();
+        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+            conn.sync().set(LETTUCE_PREFIX_KEY, newKey);
+        }
+        prefixKey.set(newKey);
+        
+        LettuceTransport transport = Try.of(()->(LettuceTransport) CacheLocator.getCacheAdministrator().getTransport()).getOrNull();
+        if(transport!=null) {
+            transport.send(MessageType.CYCLE_KEY, String.valueOf(newKey));
+        }
+        
+        return newKey ;
+
+    }
+    
+    
+    private long setIfUnset(long newKey) {
+
+        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+            return conn.sync().setnx(LETTUCE_PREFIX_KEY, newKey) ? newKey : (Long) conn.sync().get(LETTUCE_PREFIX_KEY);
+        }
+
+    }
+
 
     /**
      * returns a cache key
@@ -65,10 +142,15 @@ public class LettuceCache extends CacheProvider {
      * @param key
      * @return
      */
-    private Tuple2<String, String> cacheKey(String group, String key) {
-        return new Tuple2<String, String>((group != null) ? group.toLowerCase() : null, (key != null) ? key.toLowerCase() : null);
+    private String cacheKey(String group, String key) {
+        return new String( loadPrefix() + 
+                        ((group != null) ? group : "") 
+                        + ((key != null) ? key : ""));
     }
-
+    private String cacheKey(String group) {
+        return new String( loadPrefix() +  (group != null ? group : "")) ;
+    }
+    
     @Override
     public void init() {
         Logger.info(this.getClass(), "*** Initializing [" + getName() + "].");
@@ -90,7 +172,7 @@ public class LettuceCache extends CacheProvider {
         if (key == null || group == null) {
             return;
         }
-        final Tuple2<String, String> cacheKey = cacheKey(group, key);
+        final String cacheKey = cacheKey(group, key);
 
         if (cannotCacheCache.getIfPresent(cacheKey.toString()) != null) {
             Logger.debug(this, "Returning because object is in cannot cache cache - Redis: group [" + group + "] - key [" + key
@@ -103,7 +185,7 @@ public class LettuceCache extends CacheProvider {
             return;
         }
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
-            conn.async().sadd(CACHE_GROUP_KEY, group);
+            conn.async().sadd(LETTUCE_GROUP_KEY, group);
 
             conn.async().set(cacheKey.toString(), content);
         }
@@ -113,10 +195,10 @@ public class LettuceCache extends CacheProvider {
     @Override
     public Object get(String group, String key) {
 
-        if (key == null || group == null) {
+        if (key == null || group == null || ! allowGets.get()) {
             return null;
         }
-        final Tuple2<String, String> cacheKey = cacheKey(group, key);
+        final String cacheKey = cacheKey(group, key);
 
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
             return conn.sync().get(cacheKey.toString());
@@ -125,14 +207,32 @@ public class LettuceCache extends CacheProvider {
 
     }
 
+    /**
+     * removes cache keys async and resets the get timer that 
+     * reenables get functions
+     * @param keys
+     */
+    private void remove(String ... keys) {
+        if(keys.length==0) {
+            return;
+        }
+        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+            conn.async().unlink(keys);
+        }
+        resetGetTimer();
+    }
+    
+    
+    
+    
     @Override
     public void remove(final String group, final String key) {
 
-        final Tuple2<String, String> cacheKey = cacheKey(group, key);
+        final String cacheKey = cacheKey(group, key);
 
-        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
-            conn.sync().unlink(cacheKey.toString());
-        }
+        this.remove(new String[] {cacheKey.toString()});
+
+
     }
 
     @Override
@@ -141,34 +241,70 @@ public class LettuceCache extends CacheProvider {
         if (UtilMethods.isEmpty(group)) {
             return;
         }
-
-
+        String prefix = cacheKey(group)+"*";
         // Getting all the keys for the given groups
-        getKeys(group).forEach(k -> remove(k));
-
-
+        CacheWiper wiper = new CacheWiper(prefix);
+        wiper.setName("CacheWiper prefix:" + prefix);
+        wiper.start();
 
     }
+    
+    class CacheWiper extends Thread {
 
+
+        public CacheWiper(String prefix) {
+            this.prefix = prefix;
+        }
+
+        final String prefix;
+
+        @Override
+        public void run() {
+            KeyScanCursor<String> scanCursor = null;
+            Set<String> keys = new HashSet<String>();
+            try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+                do {
+                    if (scanCursor == null) {
+                        scanCursor = conn.sync().scan(ScanArgs.Builder.matches(prefix).limit(keyBatching));
+                    } else {
+                        scanCursor = conn.sync().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatching));
+                    }
+                    remove(scanCursor.getKeys().toArray(new String[0]));
+
+
+                } while (!scanCursor.isFinished());
+            }
+
+        }
+    };
+    
     @Override
     public void removeAll() {
-        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
-            conn.sync().flushall();
-        }
+        
+
+            final String prefix = cacheKey("*");
+            cycleKey();
+            // Getting all the keys for the given groups
+            CacheWiper wiper = new CacheWiper(prefix);
+            wiper.setName("CacheWiper prefix:" + prefix);
+            wiper.start();
+            
+        
+            
     }
 
     @Override
-    public Set<String> getKeys(String group) {
-        group = group != null ? group.toLowerCase() : "";
+    public Set<String> getKeys(final String prefix) {
+
         KeyScanCursor<String> scanCursor = null;
         RedisFuture<KeyScanCursor<String>> future = null;
         Set<String> keys = new HashSet<String>();
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
             do {
                 if (scanCursor == null) {
-                    future = conn.async().scan(ScanArgs.Builder.matches("(" + group + ",").limit(keyBatching));
+                    future = conn.async().scan(ScanArgs.Builder.matches(prefix).limit(keyBatching));
                 } else {
-                    future = conn.async().scan(scanCursor, ScanArgs.Builder.matches(group).limit(keyBatching));
+                    future = conn.async().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatching));
                 }
 
                 try {
@@ -186,10 +322,33 @@ public class LettuceCache extends CacheProvider {
 
     }
 
+    private long keyCount(String group) {
+        
+        final String prefix = cacheKey(group)+"*";
+        
+        final String script = "return #redis.pcall('keys', '" + prefix + "')";
+        
+        Object j= null;
+        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+            j= conn.sync().eval(script,ScriptOutputType.INTEGER, "0");
+        }
+        
+        return (Long)j;
+        
+        
+        
+        
+        
+    }
+    
+    
+    
+    
+    
     @Override
     public Set<String> getGroups() {
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
-            return conn.sync().smembers(CACHE_GROUP_KEY).stream().map(k->k.toString()).collect(Collectors.toSet());
+            return conn.sync().smembers(LETTUCE_GROUP_KEY).stream().map(k->k.toString()).collect(Collectors.toSet());
         }
     }
 
@@ -199,30 +358,30 @@ public class LettuceCache extends CacheProvider {
         CacheProviderStats ret = new CacheProviderStats(providerStats, getName());
         String memoryStats = null;
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
-            memoryStats = conn.sync().info("memory");
+            memoryStats = conn.sync().info();
         }
 
         // Read the total memory usage
-        int memoryUsage = -1;
-        String memoryUsageString = getRedisProperty(memoryStats, "used_memory");
-        if (memoryUsageString != null) {
-            memoryUsage = Integer.valueOf(memoryUsageString);
+        
+        Map<String,String> redis = getRedisProperties(memoryStats);
+
+        for(Map.Entry<String, String> entry : redis.entrySet()) {
+            CacheStats stats = new CacheStats();
+            stats.addStat(CacheStats.REGION, "redis: " + entry.getKey());
+            stats.addStat(CacheStats.REGION_SIZE, entry.getValue());
+            ret.addStatRecord(stats);
         }
+
         NumberFormat nf = DecimalFormat.getInstance();
         // Getting the list of groups
         Set<String> currentGroups = getGroups();
 
+        
         for (String group : currentGroups) {
             CacheStats stats = new CacheStats();
-            stats.addStat(CacheStats.REGION, group);
-            stats.addStat(CacheStats.REGION_SIZE, nf.format(getKeys(group).size()));
-            stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, nf.format(memoryUsage));
-            /*
-             * Show the complete memory usage just one time, the cache stats page needs improvements
-             * (html/portlet/ext/cmsmaintenance/cachestats_guava.jsp), that page was not created in caches that
-             * does not rely on groups
-             */
-            memoryUsage = 0;
+            stats.addStat(CacheStats.REGION, "dotCMS: " + group);
+            stats.addStat(CacheStats.REGION_SIZE, nf.format(keyCount(group)));
+
             ret.addStatRecord(stats);
         }
 
@@ -246,40 +405,26 @@ public class LettuceCache extends CacheProvider {
      * @param property
      * @return
      */
-    private String getRedisProperty(String redisReport, String property) {
+    private Map<String,String> getRedisProperties(String redisReport) {
 
-        String value = null;
+        Map<String,String> map = new LinkedHashMap<>();
 
         String[] readLines = redisReport.split("\r\n");
         for (String readLine : readLines) {
 
-            String[] lineValues = readLine.split(":");
+            String[] lineValues = readLine.split(":",2);
 
             // First check if it is a property or a header
             if (lineValues.length > 1) {
 
-                String currentProperty = lineValues[0];
-                String currentValue = lineValues[1];
-
-                if (currentProperty.equals(property)) {
-                    // Found it
-                    value = currentValue;
-                    break;
-                }
+                map.put(lineValues[0], lineValues[1]);
+                
             }
         }
 
-        return value;
+        return map;
     }
 
-    /**
-     * Resets the Map of cache records that could be added to this cache
-     */
-    private void resetCannotCacheCache() {
-        cannotCacheCache = Caffeine.newBuilder().maximumSize(1000).expireAfterWrite(10, TimeUnit.MINUTES)
-                        // .softValues()
-                        .build();
-    }
 
 
     /**
@@ -290,11 +435,11 @@ public class LettuceCache extends CacheProvider {
      * @param key
      * @return
      */
-    private boolean exclude(Tuple2<String, String> key) {
+    private boolean exclude(String key) {
 
         boolean exclude = false;
 
-        if (key._1.equals(ONLY_MEMORY_GROUP)) {
+        if (key.equals(ONLY_MEMORY_GROUP)) {
             exclude = true;
 
             cannotCacheCache.put(key.toString(), key.toString());
