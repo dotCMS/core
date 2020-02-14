@@ -32,7 +32,7 @@ class ActivatedRouteMock {
         queryParams: {
             hello: 'world'
         }
-    }
+    };
 }
 
 describe('DotRouterService', () => {
@@ -65,24 +65,23 @@ describe('DotRouterService', () => {
 
     it('should get queryParams from Router', () => {
         spyOn(router, 'getCurrentNavigation').and.returnValue({
-                finalUrl: {
-                    queryParams: {
-                        hola: 'mundo'
-                    }
+            finalUrl: {
+                queryParams: {
+                    hola: 'mundo'
                 }
-        })
+            }
+        });
         expect(service.queryParams).toEqual({
             hola: 'mundo'
         });
     });
 
     it('should get queryParams from ActivatedRoute', () => {
-        spyOn(router, 'getCurrentNavigation').and.returnValue(null)
+        spyOn(router, 'getCurrentNavigation').and.returnValue(null);
         expect(service.queryParams).toEqual({
             hello: 'world'
         });
     });
-
 
     it('should go to main', () => {
         service.goToMain();
@@ -131,6 +130,16 @@ describe('DotRouterService', () => {
     it('should go to edit workflow task', () => {
         service.goToEditTask('123');
         expect(router.navigate).toHaveBeenCalledWith(['/c/workflow/123']);
+    });
+
+    it('should go to create integration service', () => {
+        service.goToIntegrationService('123', { configured: false, name: 'test', id: '1' });
+        expect(router.navigate).toHaveBeenCalledWith(['/integration-services/123/create/1']);
+    });
+
+    it('should go to edit integration service', () => {
+        service.goToIntegrationService('123', { configured: true, name: 'test', id: '1' });
+        expect(router.navigate).toHaveBeenCalledWith(['/integration-services/123/edit/1']);
     });
 
     it('should return true if a portlet is jsp', () => {

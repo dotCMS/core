@@ -47,6 +47,8 @@ export class DotServiceIntegrationListComponent implements OnInit, OnDestroy {
             .subscribe((keyboardEvent: Event) => {
                 this.filterIntegrations(keyboardEvent.target['value']);
             });
+
+        this.searchInput.nativeElement.focus();
     }
 
     ngOnDestroy(): void {
@@ -67,7 +69,7 @@ export class DotServiceIntegrationListComponent implements OnInit, OnDestroy {
     private filterIntegrations(searchCriteria?: string): void {
         this.serviceIntegrationsCopy = this.serviceIntegrations.filter(
             (integration: DotServiceIntegration) =>
-                integration.name.toUpperCase().startsWith(searchCriteria.toUpperCase())
+                integration.name.toUpperCase().search(searchCriteria.toUpperCase()) >= 0
         );
     }
 }

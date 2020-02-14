@@ -29,6 +29,7 @@ export class MockDotRouterService {
     gotoPortlet = jasmine
         .createSpy('gotoPortlet')
         .and.callFake(() => new Promise((resolve) => resolve(true)));
+    goToIntegrationService = jasmine.createSpy('goToIntegrationService');
     goToSiteBrowser = jasmine.createSpy('goToSiteBrowser');
     isCurrentPortletCustom = jasmine.createSpy('isCurrentPortletCustom');
     isJSPPortlet = jasmine.createSpy('isJSPPortlet');

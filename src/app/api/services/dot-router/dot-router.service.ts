@@ -3,6 +3,7 @@ import { Router, ActivatedRoute, Params } from '@angular/router';
 
 import { PortletNav } from '@models/navigation';
 import { Subject } from 'rxjs';
+import { DotServiceIntegrationSites } from '@shared/models/dot-service-integration/dot-service-integration.model';
 
 @Injectable()
 export class DotRouterService {
@@ -99,6 +100,21 @@ export class DotRouterService {
 
     goToURL(url: string): void {
         this.router.navigate([url]);
+    }
+
+    /**
+     * Redirects to create/edit configuration site page
+     *
+     * @param string integrationKey
+     * @param DotServiceIntegrationSites site
+     * @memberof DotRouterService
+     */
+    goToIntegrationService(integrationKey: string, site: DotServiceIntegrationSites) {
+        const route =
+            site && site.configured
+                ? `/integration-services/${integrationKey}/edit/${site.id}`
+                : `/integration-services/${integrationKey}/create/${site.id}`;
+        this.router.navigate([route]);
     }
 
     isPublicUrl(url: string): boolean {

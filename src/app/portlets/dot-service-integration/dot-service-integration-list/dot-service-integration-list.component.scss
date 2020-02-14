@@ -9,7 +9,7 @@
 }
 
 .dot-service-integration__header {
-    border-bottom: 1px solid $gray-lighter;
+    border-bottom: 1px solid $gray-light;
     padding-left: $basic-padding * 3;
     padding-bottom: $basic-padding * 3;
     width: 100%;
@@ -20,11 +20,10 @@
 }
 
 .dot-service-integration__body {
-    align-content: flex-start;
-    display: flex;
-    flex-wrap: wrap;
-    padding-left: $basic-padding * 3;
-    padding-top: $basic-padding * 3;
+    display: grid;
+    grid-gap: $basic-padding * 3;
+    grid-template-columns: repeat(auto-fill, minmax(328px, 1fr));
+    padding: $basic-padding * 3;
 }
 
 .dot-service-integration__container {

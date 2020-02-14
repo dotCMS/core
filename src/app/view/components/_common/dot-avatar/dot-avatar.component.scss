@@ -8,6 +8,7 @@
 .avatar__img {
     border-radius: 50%;
     display: block;
+    object-fit: scale-down;
 }
 
 .avatar__placeholder {

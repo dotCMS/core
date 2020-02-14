@@ -8,6 +8,7 @@ export interface DotServiceIntegration {
 }
 
 export interface DotServiceIntegrationSites {
+    configured: boolean;
     id: string;
     name: string;
 }
