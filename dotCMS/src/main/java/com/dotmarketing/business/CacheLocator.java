@@ -12,6 +12,7 @@ import com.dotcms.contenttype.business.ContentTypeCache2;
 import com.dotcms.contenttype.business.ContentTypeCache2Impl;
 import com.dotcms.csspreproc.CSSCache;
 import com.dotcms.csspreproc.CSSCacheImpl;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.notifications.business.NewNotificationCache;
 import com.dotcms.notifications.business.NewNotificationCacheImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
@@ -21,7 +22,9 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
+import com.dotcms.repackage.com.google.common.base.Optional;
 import com.dotmarketing.business.cache.transport.CacheTransport;
+import com.dotmarketing.business.jgroups.NullTransport;
 import com.dotmarketing.business.portal.PortletCache;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
@@ -66,6 +69,8 @@ import com.dotmarketing.tag.business.TagInodeCacheImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.annotations.VisibleForTesting;
+import io.vavr.control.Try;
 
 
 
@@ -83,34 +88,18 @@ public class CacheLocator extends Locator<CacheIndex>{
 
 
 	private static CacheLocator instance;
-	private static DotCacheAdministrator adminCache;
+	private final DotCacheAdministrator adminCache;
+    private final CacheTransport transport;
 
-	private CacheLocator() {
-		super();
-	}
 
-	public synchronized static void init(){
+	private CacheLocator(){
+	    super();
 		long start = System.currentTimeMillis();
-		if(instance != null)
-			return;
-
-		String clazz = Config.getStringProperty("cache.locator.class", ChainableCacheAdministratorImpl.class.getCanonicalName());
-		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
-		String cTransClass = null;
-		try{
-			adminCache = new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance());
-
-			cTransClass = Config.getStringProperty("CACHE_INVALIDATION_TRANSPORT_CLASS","com.dotmarketing.business.jgroups.JGroupsCacheTransport");
-			CacheTransport cTrans = (CacheTransport)Class.forName(cTransClass).newInstance();
-			adminCache.setTransport(cTrans);
-
-		}
-		catch(Exception e){
-			Logger.fatal(CacheLocator.class, "Unable to load Cache Admin:" + cTransClass, e);
-		}
-
-		instance = new CacheLocator();
-
+		transport = loadCacheTransport();
+		adminCache = loadCacheAdministrator();
+        adminCache.initProviders();
+        
+        System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_CACHE, String.valueOf(System.currentTimeMillis() - start));
 		/*
 		Initializing the Cache Providers:
 
@@ -118,9 +107,48 @@ public class CacheLocator extends Locator<CacheIndex>{
 		 license level, and the license level needs an already created instance of the CacheLocator
 		 to work.
 		 */
-		adminCache.initProviders();
-		System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_CACHE, String.valueOf(System.currentTimeMillis() - start));
+        instance=this;
+
 	}
+	
+	@VisibleForTesting
+    public CacheLocator(DotCacheAdministrator cacheAdministrator, CacheTransport transport) {
+        super();
+        long start = System.currentTimeMillis();
+        this.transport = transport;
+        this.adminCache = cacheAdministrator;
+        this.adminCache.initProviders();
+
+        System.setProperty(WebKeys.DOTCMS_STARTUP_TIME_CACHE, String.valueOf(System.currentTimeMillis() - start));
+        /*
+         * Initializing the Cache Providers:
+         * 
+         * It needs to be initialized in a different call as the providers depend on the license level, and
+         * the license level needs an already created instance of the CacheLocator to work.
+         */
+
+        instance = this;
+    }
+	
+	
+	
+	
+	private CacheTransport loadCacheTransport(){
+	    CacheTransport nullTransport = new NullTransport();
+        String cTransClass = Config.getStringProperty("CACHE_INVALIDATION_TRANSPORT_CLASS","com.dotmarketing.business.jgroups.JGroupsCacheTransport");
+        return LicenseUtil.getLevel()<300 
+                        ? nullTransport 
+                        : Try.of(()-> (CacheTransport)Class.forName(cTransClass).newInstance()).onFailure(e->Logger.warnAndDebug(CacheLocator.class, e)).getOrElse(nullTransport);
+
+	    
+	}
+   private DotCacheAdministrator loadCacheAdministrator(){
+       String clazz = Config.getStringProperty("cache.locator.class", ChainableCacheAdministratorImpl.class.getCanonicalName());
+       
+       Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
+       return Try.of(()->new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance())).getOrElseThrow(e->new DotRuntimeException(e));
+    }
+	
 
 	public static SystemCache getSystemCache() {
 		return (SystemCache)getInstance(CacheIndex.System);
@@ -298,19 +326,34 @@ public class CacheLocator extends Locator<CacheIndex>{
 	 * @return
 	 */
 	public static DotCacheAdministrator getCacheAdministrator(){
-		return adminCache;
+		return getInstance().adminCache;
 	}
+	
 
+   public static CacheTransport getCacheTransport(){
+       return getInstance().transport;
+   }
+   
+    private static CacheLocator getInstance() {
+        if (instance == null) {
+            synchronized (CacheLocator.class) {
+                instance = instance!=null ? instance : new CacheLocator();
+            }
+            if (instance == null) {
+                Logger.fatal(CacheLocator.class, "CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
+                throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
+            }
+        }
+        return instance;
+    }
+	
+    public static void init(){
+        CacheLocator.getInstance();
+    }
+	
 	private static Object getInstance(CacheIndex index) {
-		if(instance == null){
-			init();
-			if(instance == null){
-				Logger.fatal(CacheLocator.class, "CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
-				throw new DotRuntimeException("CACHE IS NOT INITIALIZED : THIS SHOULD NEVER HAPPEN");
-			}
-		}
 
-		Object serviceRef = instance.getServiceInstance(index);
+		Object serviceRef = getInstance().getServiceInstance(index);
 
 		Logger.debug(CacheLocator.class, instance.audit(index));
 

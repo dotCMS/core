@@ -110,11 +110,6 @@ class CommitListenerCacheWrapper implements DotCacheAdministrator {
     }
 
     @Override
-    public void setTransport(CacheTransport transport) {
-        dotcache.setTransport(transport);
-    }
-
-    @Override
     public void invalidateCacheMesageFromCluster(String message) {
         dotcache.invalidateCacheMesageFromCluster(message);
     }
