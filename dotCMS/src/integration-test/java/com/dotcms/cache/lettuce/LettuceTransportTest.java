@@ -123,7 +123,7 @@ public class LettuceTransportTest {
     public void test_cache_invalidations() throws Exception {
 
         
-        DotCacheAdministrator cache = new ChainableCacheAdministratorImpl(transport1);
+        DotCacheAdministrator cache = new CacheLocator(new ChainableCacheAdministratorImpl(), transport1).getCacheAdministrator();
         cache.initProviders();
         cache.flushAll();
         

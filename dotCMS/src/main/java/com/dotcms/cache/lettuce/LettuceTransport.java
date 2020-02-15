@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import com.dotcms.cluster.bean.Server;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -22,8 +23,10 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.struts.MultiMessageResources;
 import io.lettuce.core.Consumer;
@@ -62,8 +65,8 @@ public class LettuceTransport implements CacheTransport {
 
 
 
-    private final String STREAMS_KEY;
-
+    private String FINAL_STREAMS_KEY;
+    private static final String TEMP_STREAM="topic:temp";
     final AtomicBoolean isInitialized = new AtomicBoolean(false);
 
     private final AtomicLong receivedMessages = new AtomicLong(0);
@@ -79,42 +82,51 @@ public class LettuceTransport implements CacheTransport {
     private final boolean testing;
     private final static String CACHE_ATTACHED_TO_CACHE = "CACHE_ATTACHED_TO_CACHE";
     private final long REDIS_THREAD_SLEEP =
-                    Try.of(() -> Config.getLongProperty("redis.lettucecache.readwrite.thread.sleep", 100l)).getOrElse(100l);
+                    Try.of(() -> Config.getLongProperty("redis.lettucetransport.readwrite.thread.sleep", 100l)).getOrElse(100l);
 
     @VisibleForTesting
     LettuceTransport(LettuceClient client, String serverId, String clusterId, boolean testing) {
         lettuce = client;
         this.serverId = serverId;
         this.testing = testing;
-        this.STREAMS_KEY = "topic:" + clusterId;
+        FINAL_STREAMS_KEY = clusterId !=null ? "topic:" + clusterId : TEMP_STREAM;
         this.messagesIn = (this.testing) ? Collections.synchronizedList(new ArrayList<>()) : null;
         this.messagesOut = (this.testing) ? Collections.synchronizedList(new ArrayList<>()) : null;
         this.queue = new LinkedBlockingQueue<>();
+        if(!testing && LicenseUtil.getLevel()<300) {
+            throw new DotRuntimeException("Reverting to NullTransport");
+        }
     }
 
     @VisibleForTesting
     LettuceTransport(LettuceClient client, String serverId, String clusterId) {
         this(client, serverId, clusterId, true);
-
     }
 
     public LettuceTransport() {
-        this(LettuceClient.getInstance(), APILocator.getServerAPI().readServerId(), ClusterFactory.getClusterId(), false);
+        this(LettuceClient.getInstance(), APILocator.getServerAPI().readServerId(), null, false);
     }
 
+    public String streamsKey() {
+        if (FINAL_STREAMS_KEY == TEMP_STREAM && System.getProperty(WebKeys.DOTCMS_STARTED_UP) != null) {
+            FINAL_STREAMS_KEY = "topic:" + ClusterFactory.getClusterId();
+        }
+        return FINAL_STREAMS_KEY;
 
+    }
+    
+    
     @Override
     public void init(Server localServer) throws CacheTransportException {
         if (!LicenseManager.getInstance().isEnterprise()) {
             return;
         }
         init();
-
     }
 
 
     void init() throws CacheTransportException {
-        Logger.info(this, "LettuceTransport " + serverId + " joining cache " + this.STREAMS_KEY);
+        Logger.info(this, "LettuceTransport " + serverId + " joining cache " + streamsKey());
 
         registerStream();
         isInitialized.set(true);
@@ -127,7 +139,7 @@ public class LettuceTransport implements CacheTransport {
      */
     void registerStream() {
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
-            conn.sync().xgroupCreate(XReadArgs.StreamOffset.from(STREAMS_KEY, "$"), serverId,
+            conn.sync().xgroupCreate(XReadArgs.StreamOffset.from(streamsKey(), "$"), serverId,
                             XGroupCreateArgs.Builder.mkstream());
 
         } catch (RedisBusyException redisBusyException) {
@@ -196,12 +208,11 @@ public class LettuceTransport implements CacheTransport {
 
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
             List<StreamMessage<String, Object>> messages = conn.sync().xreadgroup(Consumer.from(serverId, serverId),
-                            XReadArgs.StreamOffset.lastConsumed(STREAMS_KEY));
+                            XReadArgs.StreamOffset.lastConsumed(streamsKey()));
             // ACK Attack
-            messages.forEach(m -> conn.sync().xack(STREAMS_KEY, serverId, m.getId()));
+            messages.forEach(m -> conn.sync().xack(streamsKey(), serverId, m.getId()));
             receivedMessages.addAndGet(messages.size());
             for (final StreamMessage<String, Object> messageIn : messages) {
-
                 List<Message> bodyMessages =
                                 messageIn.getBody().entrySet().stream().map(e -> new Message(e.getValue(), e.getKey()))
                                                 .filter(m -> !m.serverId.equals(serverId)).collect(Collectors.toList());
@@ -325,7 +336,7 @@ public class LettuceTransport implements CacheTransport {
                 strList.add(m.type.name());
             });
 
-            conn.sync().xadd(STREAMS_KEY, strList.toArray());
+            conn.sync().xadd(streamsKey(), strList.toArray());
         }
         sentMessages.addAndGet(messages.size());
     }
@@ -421,7 +432,7 @@ public class LettuceTransport implements CacheTransport {
         if (isInitialized.get()) {
             Logger.info(this.getClass(), "Removing Server:" + serverId + " from cache cluster");
             try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
-                conn.sync().xgroupDestroy(STREAMS_KEY, serverId);
+                conn.sync().xgroupDestroy(streamsKey(), serverId);
             }
             isInitialized.set(false);
             messagesIn.clear();
@@ -439,10 +450,13 @@ public class LettuceTransport implements CacheTransport {
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
 
             Logger.info(this.getClass(), "REDIS INFO ------------");
-            String[] infos = conn.sync().info().split(System.getProperty("line.separator"));
+            String[] infos = conn.sync().info().split("\r\n|\n|\r");
             for (String info : infos) {
                 Logger.info(this.getClass(), "  " + info);
-                infoMap.put(info.split(":")[0], info.split(":", 2)[1]);
+                String[] splitter = info.split(":",2);
+                if(splitter.length>1) {
+                infoMap.put(splitter[0], splitter[1]);
+                }
             }
 
 
@@ -450,7 +464,7 @@ public class LettuceTransport implements CacheTransport {
             return new CacheTransportInfo() {
                 @Override
                 public String getClusterName() {
-                    return STREAMS_KEY;
+                    return "redis:" + streamsKey();
                 }
 
                 @Override
@@ -472,23 +486,23 @@ public class LettuceTransport implements CacheTransport {
 
                 @Override
                 public int getNumberOfNodes() {
-                    return Try.of(() -> Integer.parseInt(infoMap.get("connected_clients"))).getOrElse(-1);
+                    return Try.of(() -> Integer.parseInt(infoMap.get("connected_slaves")) +1).getOrElse(-1);
                 }
 
 
                 @Override
                 public long getReceivedBytes() {
-                    return Try.of(() -> Integer.parseInt(infoMap.get("tcp_port"))).getOrElse(-1);
+                    return Try.of(() -> Long.parseLong(infoMap.get("total_net_input_bytes"))).getOrElse(-1l);
                 }
 
                 @Override
                 public long getReceivedMessages() {
-                    return receivedMessages.get();
+                    return Try.of(() -> Long.parseLong(infoMap.get("total_commands_processed"))).getOrElse(-1l);
                 }
 
                 @Override
                 public long getSentBytes() {
-                    return -1l;
+                    return Try.of(() -> Long.parseLong(infoMap.get("total_net_output_bytes"))).getOrElse(-1l);
                 }
 
                 @Override

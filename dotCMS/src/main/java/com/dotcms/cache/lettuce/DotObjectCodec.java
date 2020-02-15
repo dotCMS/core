@@ -27,15 +27,12 @@ public class DotObjectCodec implements RedisCodec<String, Object> {
 
     @Override
     public Object decodeValue(ByteBuffer bytes) {
-
-
         try (ObjectInputStream in =  new ObjectInputStream(new ByteArrayInputStream(bytes.array()))){
         
             return in.readObject();
         }catch(Exception e) {
             throw new DotRuntimeException(e);
         }
-
     }
 
     @Override
@@ -45,8 +42,6 @@ public class DotObjectCodec implements RedisCodec<String, Object> {
 
     @Override
     public ByteBuffer encodeValue(Object value) {
-
-
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();ObjectOutputStream output = new ObjectOutputStream(baos)) {
             output.writeObject(value);
             output.flush();
@@ -54,8 +49,5 @@ public class DotObjectCodec implements RedisCodec<String, Object> {
         }catch(Exception e) {
             throw new DotRuntimeException(e);
         }
-
-
-
     }
 }

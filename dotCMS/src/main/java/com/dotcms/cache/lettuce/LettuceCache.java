@@ -23,6 +23,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import io.lettuce.core.KeyScanCursor;
+import io.lettuce.core.RedisCommandTimeoutException;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.ScanArgs;
 import io.lettuce.core.ScriptOutputType;
@@ -193,9 +194,9 @@ public class LettuceCache extends CacheProvider {
         }
         
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
-            conn.async().sadd(LETTUCE_GROUP_KEY, group);
+            conn.sync().sadd(LETTUCE_GROUP_KEY, group);
 
-            conn.async().set(cacheKey, content);
+            conn.sync().set(cacheKey, content);
         }
         
     }
@@ -210,7 +211,11 @@ public class LettuceCache extends CacheProvider {
 
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
             return conn.sync().get(cacheKey.toString());
+        }catch(RedisCommandTimeoutException rce) {
+            Logger.warn(this.getClass(), "redis timout getting group:" + group + ", key:" + key);
+            Logger.warnAndDebug(this.getClass(), rce);
         }
+        return null;
 
 
     }
@@ -225,7 +230,7 @@ public class LettuceCache extends CacheProvider {
             return;
         }
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
-            conn.async().unlink(keys);
+            conn.sync().unlink(keys);
         }
         resetGetTimer();
     }
@@ -304,21 +309,17 @@ public class LettuceCache extends CacheProvider {
     public Set<String> getKeys(final String group) {
         final String prefix = cacheKey(group) +  "*";
         KeyScanCursor<String> scanCursor = null;
-        RedisFuture<KeyScanCursor<String>> future = null;
+
         Set<String> keys = new HashSet<String>();
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
             do {
                 if (scanCursor == null) {
-                    future = conn.async().scan(ScanArgs.Builder.matches(prefix).limit(keyBatching));
+                    scanCursor = conn.sync().scan(ScanArgs.Builder.matches(prefix).limit(keyBatching));
                 } else {
-                    future = conn.async().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatching));
+                    scanCursor = conn.sync().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatching));
                 }
 
-                try {
-                    scanCursor = future.get();
-                } catch (Exception e) {
-                    return null;
-                }
+
                 keys.addAll(scanCursor.getKeys());
 
             } while (!scanCursor.isFinished());
@@ -334,21 +335,16 @@ public class LettuceCache extends CacheProvider {
     Set<String> getAllKeys() {
         final String prefix = cacheKey(null) +  "*";
         KeyScanCursor<String> scanCursor = null;
-        RedisFuture<KeyScanCursor<String>> future = null;
         Set<String> keys = new HashSet<String>();
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
             do {
                 if (scanCursor == null) {
-                    future = conn.async().scan(ScanArgs.Builder.matches(prefix).limit(keyBatching));
+                    scanCursor = conn.sync().scan(ScanArgs.Builder.matches(prefix).limit(keyBatching));
                 } else {
-                    future = conn.async().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatching));
+                    scanCursor = conn.sync().scan(scanCursor, ScanArgs.Builder.matches(prefix).limit(keyBatching));
                 }
 
-                try {
-                    scanCursor = future.get();
-                } catch (Exception e) {
-                    return null;
-                }
+ 
                 keys.addAll(scanCursor.getKeys());
 
             } while (!scanCursor.isFinished());
