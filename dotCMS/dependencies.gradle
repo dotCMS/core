@@ -310,13 +310,9 @@ dependencies {
         exclude(module: 'javax.inject')
         exclude(module: 'HdrHistogram')
         exclude(module: 'LatencyUtils')
+        exclude(module: 'io.netty')
     }
-    
-    
-    
-    
-    compile (group: 'com.esotericsoftware', name: 'kryo', version:'5.0.0-RC4')
-
+    compile group: 'io.netty', name: 'netty-all', version: '4.1.45.Final'   
     
     compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_2'
