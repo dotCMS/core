@@ -1,6 +1,7 @@
 package com.dotcms.cache.lettuce;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -448,7 +449,7 @@ public class LettuceTransport implements CacheTransport {
     public CacheTransportInfo getInfo() {
         final Map<String, String> infoMap = new HashMap<>();
         try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
-
+            String[] urls  = Config.getStringArrayProperty("redis.lettuceclient.uris", new String[] {"redis://localhost"});
             Logger.info(this.getClass(), "REDIS INFO ------------");
             String[] infos = conn.sync().info().split("\r\n|\n|\r");
             for (String info : infos) {
@@ -469,8 +470,8 @@ public class LettuceTransport implements CacheTransport {
 
                 @Override
                 public String getAddress() {
-                    return infoMap.get("redis:" + infoMap.get("role") + " " + infoMap.get("redis_version") + " "
-                                    + infoMap.get("redis_mode") + " " + infoMap.get("redis_mode"));
+                    return "redis:" + infoMap.get("redis_version") + " " + infoMap.get("redis_mode") + " "
+                                    + infoMap.get("role") ;
                 }
 
                 @Override
