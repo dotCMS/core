@@ -8,7 +8,9 @@ import static org.junit.Assert.fail;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -43,6 +45,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
@@ -56,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.felix.framework.OSGIUtil;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -319,4 +323,138 @@ public class PublisherAPITest extends IntegrationTestBase {
         return file -> !file.getAbsolutePath().endsWith("bundle.xml");
     }
 
+
+    @Test
+    public void test_addFilter(){
+        final Map<String,Object> filtersMap =
+                ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("filterTestAPI.yml","Filter Test Title",filtersMap,true,"Reviewer,dotcms.org.2789");
+
+        publisherAPI.addFilter(filterDescriptor);
+
+        final Map<String,FilterDescriptor> filterDescriptorMap = APILocator.getPublisherAPI().getFilterMap();
+        Logger.info(this,filterDescriptorMap.toString());
+        Assert.assertFalse(filterDescriptorMap.isEmpty());
+        Assert.assertTrue(filterDescriptorMap.containsKey(filterDescriptor.getKey()));
+    }
+
+    @Test
+    public void test_getFiltersByRole_CMSAdmin() throws DotDataException {
+        final Map<String,Object> filtersMap1 =
+                ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
+        final FilterDescriptor filterDescriptor1 =
+                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,true,"Reviewer,dotcms.org.2789");
+
+        final Map<String,Object> filtersMap2 =
+                ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
+        final FilterDescriptor filterDescriptor2 =
+                new FilterDescriptor("filterTest2.yml","Filter Test Title 2",filtersMap2,true,"Reviewer");
+
+        publisherAPI.addFilter(filterDescriptor1);
+        publisherAPI.addFilter(filterDescriptor2);
+
+        final User newUser = new UserDataGen().nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), newUser);
+
+        final List<FilterDescriptor> filterDescriptors = publisherAPI.getFiltersByRole(newUser);
+        Logger.info(this,filterDescriptors.toString());
+        Assert.assertFalse(filterDescriptors.isEmpty());
+        Assert.assertTrue(filterDescriptors.contains(filterDescriptor1));
+        Assert.assertTrue(filterDescriptors.contains(filterDescriptor2));
+    }
+
+    /***
+     * This test gets the filters that the user has access.
+     * This test the userId of the new User is set into possible roles in the Filter
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void test_getFiltersByRole_nonCMSAdmin_userId() throws DotDataException {
+        final User newUser = new UserDataGen().nextPersisted();
+
+        final Map<String,Object> filtersMap1 =
+                ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
+        final FilterDescriptor filterDescriptor1 =
+                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,true,"Reviewer," + newUser.getUserId());
+
+        final Map<String,Object> filtersMap2 =
+                ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
+        final FilterDescriptor filterDescriptor2 =
+                new FilterDescriptor("filterTest2.yml","Filter Test Title 2",filtersMap2,true,"Reviewer");
+
+        publisherAPI.addFilter(filterDescriptor1);
+        publisherAPI.addFilter(filterDescriptor2);
+
+        final List<FilterDescriptor> filterDescriptors = publisherAPI.getFiltersByRole(newUser);
+        Logger.info(this,filterDescriptors.toString());
+        Assert.assertFalse(filterDescriptors.isEmpty());
+        Assert.assertTrue(filterDescriptors.contains(filterDescriptor1));
+        Assert.assertFalse(filterDescriptors.contains(filterDescriptor2));
+    }
+
+    /***
+     * This test gets the filters that the user has access.
+     * This test creates 3 Roles and 5 users with the following Hierarchy:
+     * Role A (user A)
+     *  |_____ Role B (user B)
+     *           |_____ Role C (user C and user D)
+     *
+     * On the roles field is set the Role B and the userId of user C.
+     *
+     * Since Role Hierarchy is respected this is the expected result:
+     * User A - Have Access to the Filter
+     * User B - Have Access to the Filter
+     * User C - Have Access to the Filter
+     * User D - Do not have access to the Filter
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void test_getFiltersByRole_nonCMSAdmin_RoleHierarchy() throws DotDataException {
+        final User userA = new UserDataGen().nextPersisted();
+        final User userB = new UserDataGen().nextPersisted();
+        final User userC = new UserDataGen().nextPersisted();
+        final User userD = new UserDataGen().nextPersisted();
+
+        final Role roleA = new RoleDataGen().nextPersisted();
+        final Role roleB = new RoleDataGen().parent(roleA.getId()).nextPersisted();
+        final Role roleC = new RoleDataGen().parent(roleB.getId()).nextPersisted();
+
+        APILocator.getRoleAPI().addRoleToUser(roleA,userA);
+        APILocator.getRoleAPI().addRoleToUser(roleB,userB);
+        APILocator.getRoleAPI().addRoleToUser(roleC,userC);
+        APILocator.getRoleAPI().addRoleToUser(roleC,userD);
+
+        final Map<String,Object> filtersMap1 =
+                ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
+        final FilterDescriptor filterDescriptor1 =
+                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,true,roleB.getRoleKey()+','+userC.getUserId());
+
+        publisherAPI.addFilter(filterDescriptor1);
+
+        //User A
+        List<FilterDescriptor> filterDescriptors = publisherAPI.getFiltersByRole(userA);
+        Logger.info(this,filterDescriptors.toString());
+        Assert.assertFalse(filterDescriptors.isEmpty());
+        Assert.assertTrue(filterDescriptors.contains(filterDescriptor1));
+
+        //User B
+        filterDescriptors = publisherAPI.getFiltersByRole(userB);
+        Logger.info(this,filterDescriptors.toString());
+        Assert.assertFalse(filterDescriptors.isEmpty());
+        Assert.assertTrue(filterDescriptors.contains(filterDescriptor1));
+
+        //User C
+        filterDescriptors = publisherAPI.getFiltersByRole(userC);
+        Logger.info(this,filterDescriptors.toString());
+        Assert.assertFalse(filterDescriptors.isEmpty());
+        Assert.assertTrue(filterDescriptors.contains(filterDescriptor1));
+
+        //User D
+        filterDescriptors = publisherAPI.getFiltersByRole(userD);
+        Logger.info(this,filterDescriptors.toString());
+        Assert.assertTrue(filterDescriptors.isEmpty());
+    }
 }

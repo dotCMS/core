@@ -153,8 +153,8 @@ public class PublisherAPIImpl implements PublisherAPI {
     }
 
     @Override
-    public void addFilter(final String key, final FilterDescriptor filterDescriptor) {
-        this.loadedFilters.put(key,filterDescriptor);
+    public void addFilter(final FilterDescriptor filterDescriptor) {
+        this.loadedFilters.put(filterDescriptor.getKey(),filterDescriptor);
     }
 
     @Override
@@ -176,6 +176,11 @@ public class PublisherAPIImpl implements PublisherAPI {
         }
 
         return filters;
+    }
+
+    @Override
+    public Map<String, FilterDescriptor> getFilterMap() {
+        return this.loadedFilters;
     }
 
 }

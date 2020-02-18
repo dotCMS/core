@@ -22,6 +22,7 @@ public class PushPublishFiltersInitializer implements DotInitializer {
         final File basePath = new File(filtersDirectory);
         if (!basePath.exists()) {
             basePath.mkdir();
+            //copiar archivos desde resources
         }
         Logger.info(PushPublishFiltersInitializer.class, " ymlFiles are set under:  " + filtersDirectory);
         Stream<Path> pathStream = null;
@@ -33,11 +34,11 @@ public class PushPublishFiltersInitializer implements DotInitializer {
         }
     }
 
-    private void loadFilter(final Path path){
+    protected void loadFilter(final Path path){
         final String fileName = path.getFileName().toString();
         Logger.info(PushPublishFiltersInitializer.class, " ymlFileName:  " + fileName);
         final FilterDescriptor filterDescriptor = YamlUtil.parse(path,FilterDescriptor.class);
         Logger.info(PushPublishFiltersInitializer.class, filterDescriptor.toString());
-        APILocator.getPublisherAPI().addFilter(filterDescriptor.getKey(),filterDescriptor);
+        APILocator.getPublisherAPI().addFilter(filterDescriptor);
     }
 }
