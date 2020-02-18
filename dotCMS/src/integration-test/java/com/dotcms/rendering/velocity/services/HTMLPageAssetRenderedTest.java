@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.services;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
@@ -13,6 +14,7 @@ import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.unittest.TestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -23,6 +25,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -50,20 +53,18 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.liferay.util.StringPool;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.junit.*;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import com.dotcms.visitor.domain.Visitor;
 
+@RunWith(DataProviderRunner.class)
 public class HTMLPageAssetRenderedTest {
 
     private static String contentGenericId;
-    private static String containerId;
-    private static Template template;
-    private static Container container;
     private static User systemUser;
     private static final String contentFallbackProperty = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
     private static final String pageFallbackProperty = "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE";
@@ -79,10 +80,72 @@ public class HTMLPageAssetRenderedTest {
     private static Persona persona;
     private static Visitor visitor;
 
-    @BeforeClass
-    public static void prepare() throws Exception {
+    @DataProvider
+    public static Object[][] cases() throws Exception {
+        if (systemUser == null) {
+            prepare();
+        }
 
-        IntegrationTestInitService.getInstance().init();
+        final Container container = createContainer();
+        final Template templateContainer = createTemplate(container.getIdentifier());
+
+        final Container fileContainer = createFileContainer();
+        final Template templateFileContainer = createTemplate(container.getIdentifier());
+
+        return new Object[][] {
+                { container, templateContainer },
+                { fileContainer, templateFileContainer}
+        };
+    }
+
+    private static Template createTemplate(final String containerId) throws DotSecurityException, WebAssetException, DotDataException {
+        final Template template = new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
+                .withContainer(containerId,UUID).nextPersisted();
+        PublishFactory.publishAsset(template, systemUser, false, false);
+        return template;
+    }
+
+    private static Container createContainer() throws DotSecurityException, DotDataException, WebAssetException {
+         Container container = new Container();
+        final String containerName = "containerHTMLPageRenderedTest" + System.currentTimeMillis();
+
+        container.setFriendlyName(containerName);
+        container.setTitle(containerName);
+        container.setOwner(systemUser.getUserId());
+        container.setMaxContentlets(5);
+
+        final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        final ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(contentGenericId);
+        cs.setCode("$!{body}");
+        csList.add(cs);
+
+        container = APILocator.getContainerAPI().save(container, csList, site, systemUser, false);
+        PublishFactory.publishAsset(container, systemUser, false, false);
+
+        return container;
+    }
+
+
+    private static Container createFileContainer() throws DotSecurityException, DotDataException, WebAssetException {
+
+        final String containerName = "containerHTMLPageRenderedTest" + System.currentTimeMillis();
+        Container container = new ContainerAsFileDataGen().folderName(containerName).nextPersisted();
+
+        final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        final ContainerStructure cs = new ContainerStructure();
+        cs.setStructureId(contentGenericId);
+        cs.setCode("$!{body}");
+        csList.add(cs);
+
+        container = APILocator.getContainerAPI().save(container, csList, site, systemUser, false);
+        PublishFactory.publishAsset(container, systemUser, false, false);
+
+        return container;
+    }
+
+    public static void prepare() throws Exception {
+        APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
         systemUser = APILocator.systemUser();
         contentletAPI = APILocator.getContentletAPI();
         createTestPage();
@@ -110,31 +173,6 @@ public class HTMLPageAssetRenderedTest {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
         final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
         contentGenericId = contentGenericType.id();
-
-        /**
-         * Create new container
-         */
-        container = new Container();
-        final String containerName = "containerHTMLPageRenderedTest" + System.currentTimeMillis();
-
-        container.setFriendlyName(containerName);
-        container.setTitle(containerName);
-        container.setOwner(systemUser.getUserId());
-        container.setMaxContentlets(5);
-
-        final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
-        final ContainerStructure cs = new ContainerStructure();
-        cs.setStructureId(contentGenericType.id());
-        cs.setCode("$!{body}");
-        csList.add(cs);
-        container = APILocator.getContainerAPI().save(container, csList, site, systemUser, false);
-        PublishFactory.publishAsset(container, systemUser, false, false);
-        containerId = container.getIdentifier();
-
-        //Create a Template
-        template = new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
-                .withContainer(containerId,UUID).nextPersisted();
-        PublishFactory.publishAsset(template, systemUser, false, false);
 
         //Create Contentlet in English
         final Contentlet contentlet1 = new ContentletDataGen(contentGenericId)
@@ -217,7 +255,7 @@ public class HTMLPageAssetRenderedTest {
     }
 
 
-    private void    createMultiTree(final String pageId) throws DotSecurityException, DotDataException {
+    private void   createMultiTree(final String pageId, final String containerId) throws DotSecurityException, DotDataException {
 
         MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0),UUID,0);
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
@@ -246,17 +284,6 @@ public class HTMLPageAssetRenderedTest {
             APILocator.getFolderAPI().delete(folder,systemUser,false);
         }
 
-        if(template != null){
-            APILocator.getTemplateAPI().delete(template,systemUser,false);
-        }
-
-        if(container != null){
-            APILocator.getContainerAPI().delete(container,systemUser,false);
-        }
-
-
-
-
         for(final String contentletId : contentletsIds){
             final Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(contentletId);
             if(null == contentlet){
@@ -271,6 +298,17 @@ public class HTMLPageAssetRenderedTest {
 
     }
 
+    public static void restore(final Container container, final Template template) throws Exception{
+
+        if(template != null){
+            APILocator.getTemplateAPI().delete(template,systemUser,false);
+        }
+
+        if(container != null){
+            APILocator.getContainerAPI().delete(container,systemUser,false);
+        }
+    }
+
     /**
      * ContentFallback False
      * PageFallback True
@@ -282,7 +320,8 @@ public class HTMLPageAssetRenderedTest {
      *
      */
     @Test
-    public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
+    @UseDataProvider("cases")
+    public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3(final Container container, final Template template) throws Exception{
 
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
@@ -295,7 +334,7 @@ public class HTMLPageAssetRenderedTest {
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
         addAnonymousPermissions(pageEnglishVersion);
 
-        createMultiTree(pageEnglishVersion.getIdentifier());
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -341,7 +380,9 @@ public class HTMLPageAssetRenderedTest {
      *
      */
     @Test
-    public void ContentFallbackFalse_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
+    @UseDataProvider("cases")
+    public void ContentFallbackFalse_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3(final Container container, final Template template) throws Exception{
+
 
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
@@ -368,7 +409,7 @@ public class HTMLPageAssetRenderedTest {
         contentletAPI.publish(pageSpanishVersion,systemUser,false);
         addAnonymousPermissions(pageSpanishVersion);
 
-        createMultiTree(pageEnglishVersion.getIdentifier());
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -416,7 +457,8 @@ public class HTMLPageAssetRenderedTest {
      * @throws Exception
      */
     @Test (expected = HTMLPageAssetNotFoundException.class)
-    public void ContentFallbackFalse_PageFallbackTrue_PageSpanish_ViewEnglish404_ViewSpanishContent2And3() throws Exception{
+    @UseDataProvider("cases")
+    public void ContentFallbackFalse_PageFallbackTrue_PageSpanish_ViewEnglish404_ViewSpanishContent2And3(final Container container, final Template template) throws Exception{
 
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
@@ -431,7 +473,7 @@ public class HTMLPageAssetRenderedTest {
         contentletAPI.publish(pageSpanishVersion, systemUser, false);
         addAnonymousPermissions(pageSpanishVersion);
 
-        createMultiTree(pageSpanishVersion.getIdentifier());
+        createMultiTree(pageSpanishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -475,7 +517,8 @@ public class HTMLPageAssetRenderedTest {
      *
      */
     @Test (expected = HTMLPageAssetNotFoundException.class)
-    public void ContentFallbackFalse_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404() throws Exception{
+    @UseDataProvider("cases")
+    public void ContentFallbackFalse_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404(final Container container, final Template template) throws Exception{
 
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,false);
@@ -488,7 +531,7 @@ public class HTMLPageAssetRenderedTest {
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
         addAnonymousPermissions(pageEnglishVersion);
 
-        createMultiTree(pageEnglishVersion.getIdentifier());
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -532,7 +575,8 @@ public class HTMLPageAssetRenderedTest {
      *
      */
     @Test
-    public void ContentFallbackFalse_PageFallbackFalse_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3() throws Exception{
+    @UseDataProvider("cases")
+    public void ContentFallbackFalse_PageFallbackFalse_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3(final Container container, final Template template) throws Exception{
 
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,false);
@@ -558,7 +602,7 @@ public class HTMLPageAssetRenderedTest {
         contentletAPI.publish(pageSpanishVersion,systemUser,false);
         addAnonymousPermissions(pageSpanishVersion);
 
-        createMultiTree(pageEnglishVersion.getIdentifier());
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -604,7 +648,8 @@ public class HTMLPageAssetRenderedTest {
      *
      */
     @Test
-    public void ContentFallbackTrue_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent1And2And3() throws Exception{
+    @UseDataProvider("cases")
+    public void ContentFallbackTrue_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent1And2And3(final Container container, final Template template) throws Exception{
 
         Config.setProperty(contentFallbackProperty,true);
         Config.setProperty(pageFallbackProperty,true);
@@ -631,7 +676,7 @@ public class HTMLPageAssetRenderedTest {
         contentletAPI.publish(pageSpanishVersion,systemUser,false);
         addAnonymousPermissions(pageSpanishVersion);
 
-        createMultiTree(pageEnglishVersion.getIdentifier());
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -677,7 +722,8 @@ public class HTMLPageAssetRenderedTest {
      *
      */
     @Test (expected = HTMLPageAssetNotFoundException.class)
-    public void ContentFallbackTrue_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404() throws Exception{
+    @UseDataProvider("cases")
+    public void ContentFallbackTrue_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404(final Container container, final Template template) throws Exception{
 
         Config.setProperty(contentFallbackProperty,true);
         Config.setProperty(pageFallbackProperty,false);
@@ -690,7 +736,7 @@ public class HTMLPageAssetRenderedTest {
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
         addAnonymousPermissions(pageEnglishVersion);
 
-        createMultiTree(pageEnglishVersion.getIdentifier());
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -731,7 +777,8 @@ public class HTMLPageAssetRenderedTest {
      * @throws Exception
      */
     @Test
-    public void constantField_notUpdatedCache_whenChanged() throws Exception{
+    @UseDataProvider("cases")
+    public void constantField_notUpdatedCache_whenChanged(final Container container, final Template template) throws Exception{
 
         ContentType contentType = ContentTypeBuilder
                 .builder(BaseContentType.WIDGET.immutableClass())
@@ -768,7 +815,7 @@ public class HTMLPageAssetRenderedTest {
             contentletAPI.publish(pageEnglishVersion, systemUser, false);
             addAnonymousPermissions(pageEnglishVersion);
 
-            MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), containerId,
+            MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(),
                     contentlet.getIdentifier(), UUID, 0);
             APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
@@ -826,10 +873,11 @@ public class HTMLPageAssetRenderedTest {
      *
      */
     @Test
-    public void containerArchived_PageShouldResolve() throws Exception {
+    @UseDataProvider("cases")
+    public void containerArchived_PageShouldResolve(final Container testCaseContainer, final Template template) throws Exception {
 
         final Container container = APILocator.getContainerAPI()
-                .getWorkingContainerById(containerId, systemUser, false);
+                .getWorkingContainerById(testCaseContainer.getIdentifier(), systemUser, false);
 
         try {
             final String pageName = "testPageContainer-" + System.currentTimeMillis();
@@ -845,7 +893,7 @@ public class HTMLPageAssetRenderedTest {
             contentletAPI.publish(pageEnglishVersion, systemUser, false);
             addAnonymousPermissions(pageEnglishVersion);
 
-            createMultiTree(pageEnglishVersion.getIdentifier());
+            createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
             HttpServletRequest mockRequest = new MockSessionRequest(
                     new MockAttributeRequest(new MockHttpRequest("localhost", "/").request())
@@ -920,7 +968,8 @@ public class HTMLPageAssetRenderedTest {
      * @throws Exception
      */
     @Test
-    public void shouldReturnPageHTMLForPersona() throws Exception{
+    @UseDataProvider("cases")
+    public void shouldReturnPageHTMLForPersona(final Container container, final Template template) throws Exception{
 
         final String pageName = "test5Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
@@ -930,7 +979,7 @@ public class HTMLPageAssetRenderedTest {
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
         addAnonymousPermissions(pageEnglishVersion);
 
-        createMultiTree(pageEnglishVersion.getIdentifier());
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -976,7 +1025,10 @@ public class HTMLPageAssetRenderedTest {
      * @throws Exception
      */
     @Test
-    public void shouldReturnPageHTMLForLegacyUUID() throws Exception {
+    @UseDataProvider("cases")
+    public void shouldReturnPageHTMLForLegacyUUID(final Container container, final Template templateTestCase) throws Exception {
+
+        final String containerId = container.getIdentifier();
         //Create a Template
         final Template template = new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
                 .withContainer(containerId, ContainerUUID.UUID_LEGACY_VALUE).nextPersisted();
@@ -1029,7 +1081,10 @@ public class HTMLPageAssetRenderedTest {
      * @throws Exception
      */
     @Test
-    public void shouldReturnPageHTMLForLegacyUUIDAndMultiTree() throws Exception {
+    @UseDataProvider("cases")
+    public void shouldReturnPageHTMLForLegacyUUIDAndMultiTree(final Container container, final Template templateTestCase) throws Exception {
+        final String containerId = container.getIdentifier();
+
         //Create a Template
         final Template template = new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
                 .withContainer(containerId, ContainerUUID.UUID_LEGACY_VALUE).nextPersisted();
@@ -1082,7 +1137,8 @@ public class HTMLPageAssetRenderedTest {
      * @throws Exception
      */
     @Test
-    public void shouldReturnParserContainerUUID() throws Exception {
+    @UseDataProvider("cases")
+    public void shouldReturnParserContainerUUID(final Container container, final Template template) throws Exception {
 
         final String pageName = "test5Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
@@ -1092,7 +1148,7 @@ public class HTMLPageAssetRenderedTest {
         contentletAPI.publish(pageEnglishVersion, systemUser, false);
         addAnonymousPermissions(pageEnglishVersion);
 
-        createMultiTree(pageEnglishVersion.getIdentifier());
+        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
