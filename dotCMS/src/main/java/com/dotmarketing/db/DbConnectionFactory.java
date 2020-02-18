@@ -1,6 +1,8 @@
 
 package com.dotmarketing.db;
 
+import static com.dotmarketing.util.Constants.DATABASE_DEFAULT_DATASOURCE;
+
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -67,7 +69,7 @@ public class DbConnectionFactory {
             getConnection().setAutoCommit(autoCommit);
         } catch (SQLException e) {
             Logger.error(DbConnectionFactory.class,
-                    "---------- DBConnectionFactory: error setting the autocommit " + Constants.DATABASE_DEFAULT_DATASOURCE,
+                    "---------- DBConnectionFactory: error setting the autocommit " + DATABASE_DEFAULT_DATASOURCE,
                     e);
         }
     } // setAutoCommit.
@@ -126,6 +128,16 @@ public class DbConnectionFactory {
                         defaultDataSource = TomcatDatasourceStrategy.getInstance().getDatasource();
                         Logger.info(DbConnectionFactory.class, "Datasource loaded from context.xml");
                     }
+
+                    try {
+                        Context context = new InitialContext();
+                        context.bind(DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
+                        Logger.info(DbConnectionFactory.class, "---------- DBConnectionFactory:Added datasource to JNDI context ---------------");
+                    } catch (NamingException e) {
+                        Logger.error(DbConnectionFactory.class,
+                                "---------- DBConnectionFactory: Error setting datasource in JNDI context ---------------", e);
+                        throw new DotRuntimeException(e.toString());
+                    }
                 }
             }
         }
@@ -179,15 +191,15 @@ public class DbConnectionFactory {
                 connectionsHolder.set(connectionsList);
             }
 
-            connection = connectionsList.get(Constants.DATABASE_DEFAULT_DATASOURCE);
+            connection = connectionsList.get(DATABASE_DEFAULT_DATASOURCE);
 
             if (connection == null || connection.isClosed()) {
                 DataSource db = getDataSource();
                 connection = db.getConnection();
-                connectionsList.put(Constants.DATABASE_DEFAULT_DATASOURCE, connection);
+                connectionsList.put(DATABASE_DEFAULT_DATASOURCE, connection);
                 Logger.debug(DbConnectionFactory.class,
                     "Connection opened for thread " + Thread.currentThread().getId() + "-" +
-                        Constants.DATABASE_DEFAULT_DATASOURCE);
+                        DATABASE_DEFAULT_DATASOURCE);
             }
 
             // _dbType would only be null until the getDbType was called, then it is static
@@ -216,7 +228,7 @@ public class DbConnectionFactory {
 
         if (connectionsMap != null && connectionsMap.size() > 0) {
             final Connection connection =
-                    connectionsMap.get(Constants.DATABASE_DEFAULT_DATASOURCE);
+                    connectionsMap.get(DATABASE_DEFAULT_DATASOURCE);
             try {
                 isCreated = (connection != null && !connection.isClosed());
             } catch (SQLException e) {
@@ -237,7 +249,7 @@ public class DbConnectionFactory {
         if (connectionsList == null || connectionsList.size() == 0) {
             return false;
         }
-        Connection connection = connectionsList.get(Constants.DATABASE_DEFAULT_DATASOURCE);
+        Connection connection = connectionsList.get(DATABASE_DEFAULT_DATASOURCE);
 
         try {
             if (connection == null || connection.isClosed()) {

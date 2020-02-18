@@ -31,8 +31,7 @@ public class SystemEnvDatasourceStrategy implements DotDatasourceStrategy {
 
             final HikariConfig config = new HikariConfig();
 
-            config.setPoolName(System.getenv("connection.pool.name") != null ? System
-                    .getenv("connection.pool.name") : Constants.DATABASE_DEFAULT_DATASOURCE);
+            config.setPoolName(Constants.DATABASE_DEFAULT_DATASOURCE);
 
             config.setDriverClassName(System.getenv("connection.db.driver") != null ? System
                     .getenv("connection.db.driver") : "org.postgresql.Driver");

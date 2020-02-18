@@ -1,5 +1,7 @@
 package com.dotmarketing.startup.runalways;
 
+import static com.dotmarketing.util.Constants.DATABASE_DEFAULT_DATASOURCE;
+
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -10,6 +12,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 
 public class Task00030ClusterInitialize implements StartupTask {
 
@@ -23,7 +26,17 @@ public class Task00030ClusterInitialize implements StartupTask {
 
     	Connection con = null;
 		try {
-			con = DbConnectionFactory.getDataSource().getConnection();
+		    DataSource dataSource = DbConnectionFactory.getDataSource(DATABASE_DEFAULT_DATASOURCE);
+		    if (dataSource == null){
+                Logger.error(Task00030ClusterInitialize.class,"Task00030ClusterInitialize did not run as Datasource has not been initialized");
+                return false;
+            }
+			con = dataSource.getConnection();
+
+		    if (con == null){
+                Logger.error(Task00030ClusterInitialize.class,"Task00030ClusterInitialize did not run as Connection could not be found");
+                return false;
+            }
 		} catch (SQLException e1) {
 			Logger.error(Task00030ClusterInitialize.class,e1.getMessage(),e1);
 			return false;
