@@ -52,21 +52,21 @@ public class DBPropertiesDatasourceStrategy implements DotDatasourceStrategy {
             final HikariConfig config = new HikariConfig();
 
             config.setPoolName(Constants.DATABASE_DEFAULT_DATASOURCE);
-            config.setDriverClassName(properties.getString("connection.db.driver"));
-            config.setJdbcUrl(properties.getString("connection.db.base.url"));
-            config.setUsername(properties.getString("connection.db.username"));
-            config.setPassword(properties.getString("connection.db.password"));
-            config.setMaximumPoolSize(properties.getInt("connection.db.max.total", 60));
-            config.setIdleTimeout(properties.getInt("connection.db.max.idle", 10) * 1000);
-            config.setMaxLifetime(properties.getInt("connection.db.max.wait", 60000));
-            config.setConnectionTestQuery(properties.getString("connection.db.validation.query"));
+            config.setDriverClassName(properties.getString("connection_db_driver"));
+            config.setJdbcUrl(properties.getString("connection_db_base_url"));
+            config.setUsername(properties.getString("connection_db_username"));
+            config.setPassword(properties.getString("connection_db_password"));
+            config.setMaximumPoolSize(properties.getInt("connection_db_max_total", 60));
+            config.setIdleTimeout(properties.getInt("connection_db_max_idle", 10) * 1000);
+            config.setMaxLifetime(properties.getInt("connection_db_max_wait", 60000));
+            config.setConnectionTestQuery(properties.getString("connection_db_validation_query"));
 
             // This property controls the amount of time that a connection can be out of the pool before a message
             // is logged indicating a possible connection leak. A value of 0 means leak detection is disabled.
             // Lowest acceptable value for enabling leak detection is 2000 (2 seconds). Default: 0
-            config.setLeakDetectionThreshold(properties.getInt("connection.db.leak.detection.threshold", 60000));
+            config.setLeakDetectionThreshold(properties.getInt("connection_db_leak_detection_threshold", 60000));
 
-            config.setTransactionIsolation(properties.getString("connection.db.default.transaction.isolation"));
+            config.setTransactionIsolation(properties.getString("connection_db_default_transaction_isolation"));
 
             properties.clear();
             return new HikariDataSource(config);

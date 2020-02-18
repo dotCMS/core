@@ -116,7 +116,7 @@ public class DbConnectionFactory {
                     if (DBPropertiesDatasourceStrategy.getInstance().existsDBPropertiesFile()) {
                         defaultDataSource = DBPropertiesDatasourceStrategy.getInstance().getDatasource();
                         Logger.info(DbConnectionFactory.class, "Datasource loaded from db.properties file");
-                    } else if (System.getenv("DOTCMS_DB_NAME") != null) {
+                    } else if (System.getenv("connection_db_base_url") != null) {
                         defaultDataSource = SystemEnvDatasourceStrategy.getInstance().getDatasource();
                         Logger.info(DbConnectionFactory.class, "Datasource loaded from system environment");
                     } else {
@@ -133,7 +133,7 @@ public class DbConnectionFactory {
                         Context context = new InitialContext();
                         context.createSubcontext("jdbc");
                         context.bind(DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
-                        Logger.info(DbConnectionFactory.class, "---------- DBConnectionFactory:Added datasource to JNDI context ---------------");
+                        Logger.info(DbConnectionFactory.class, "---------- DBConnectionFactory:Datasource added to JNDI context ---------------");
                     } catch (NamingException e) {
                         Logger.error(DbConnectionFactory.class,
                                 "---------- DBConnectionFactory: Error setting datasource in JNDI context ---------------", e);
