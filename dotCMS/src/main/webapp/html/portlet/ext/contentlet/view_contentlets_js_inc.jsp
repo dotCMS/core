@@ -211,7 +211,8 @@
                             dwr.util.addRows("results_table", [ headers ] , funcs, { escapeHtml: false });
                             document.getElementById("nextDiv").style.display = "none";
                             document.getElementById("previousDiv").style.display = "none";
-                            fillCardView(data) // TODO: need to clean the selected view
+                            fillCardView(data)
+                            fillResultsTable (headers, data);
                             showMatchingResults (0,0,0,0);
                             fillQuery (counters);
                             dijit.byId("searchButton").attr("disabled", false);
@@ -227,11 +228,8 @@
               headers: headers
             }
 
-            if (state.view === 'List') {
-              fillResultsTable (headers, data);
-            } else {
-              fillCardView(data)
-            }
+            fillResultsTable(headers, data);
+            fillCardView(data)
 
             showMatchingResults (total,begin,end,totalPages);
             fillQuery (counters);
@@ -278,7 +276,7 @@
 
 
 
-        function titleCell (data,text, x, checked) {
+        function titleCell (data,text, x) {
 
                 text = shortenString(text, 100);
 
@@ -317,7 +315,7 @@
 					ref+=  "'" + inode + "'" + "," + "'" +  checkId + "'" +  ");\" ";
 
 					if((document.getElementById("fullCommand").value == "true")
-							&& (unCheckedInodes.indexOf(inode) == -1) || checked){
+							&& (unCheckedInodes.indexOf(inode) == -1)){
 						ref+=  "checked = \"checked\" ";
 					}
 					ref+=  ">";
@@ -1729,30 +1727,44 @@
           localStorage.setItem(DOTCMS_DATAVIEW_MODE, view)
           state.view = view;
 
-          const card = document.querySelector('dot-card-view');
+          let card = document.querySelector('dot-card-view');
           const list = document.getElementById("results_table");
 
           if (state.view === 'List') {
             const selectedInodes = getSelectedInodesFromCardView();
 
             if (!list.innerHTML.length) {
-                fillResultsTable(state.headers, state.data, selectedInodes);
+                fillResultsTable(state.headers, state.data);
             }
+
+            const checkboxes = document.querySelectorAll('[name="publishInode"]')
+            checkboxes.forEach((item, i) => {
+                dijit.byId('checkbox' + i).setValue(selectedInodes.includes(item.value));
+            })
+
             card.style.display = 'none';
             list.style.display = 'block';
 
           } else {
-            const selectedInodes = getSelectedInodesFromList();
 
-            if (!card.items.length) {
-                fillCardView(state.data, selectedInodes)
+            // After append the dot-card-view we have to wait to get the HTML node
+            if (!card) {
+                fillCardView(state.data)
+                setTimeout(() => {
+                    card = document.querySelector('dot-card-view');
+                }, 0);
             }
-            card.style.display = 'grid';
-            list.style.display = 'none';
+
+            setTimeout(() => {
+                card.style.display = 'grid';
+                card.value = getSelectedInodesFromList().join(',');
+                list.style.display = 'none';
+            }, 0);
+
           }
         }
 
-        function fillCardView(data, value) {
+        function fillCardView(data) {
           const content = data.map(i => {
             return {
               data: {
@@ -1783,9 +1795,6 @@
 
           viewCard.items = [];
           setTimeout(() => {
-            if (value) {
-              viewCard.value = value.join(',');
-            }
             viewCard.items = content;
           }, 0)
         };
@@ -1865,7 +1874,7 @@
 			return actions;
 		}
 
-        function fillResultsTable (headers, data, selectedInodes) {
+        function fillResultsTable(headers, data) {
                 headerLength = headers.length;
                 var table = document.getElementById("results_table");
 
@@ -1981,8 +1990,7 @@
                                         cell = row.insertCell (row.cells.length);
                                         cell.setAttribute("align","left");
 									}
-                                    var checked = selectedInodes && selectedInodes.length ? selectedInodes.includes(cellData.inode) : false;
-                                    var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i, checked);
+                                    var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
                                 }
                                 else{
                                     var value = cellData[header["fieldVelocityVarName"]];
