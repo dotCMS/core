@@ -593,8 +593,7 @@
 	}
 
 	function editContentlet (objId, userId, referer, live, working, write) {
-        if (clickTimeOut) { clearTimeout(clickTimeOut); }
-        clickTimeOut = setTimeout(function() {
+        if (!clickTimeOut) {  
             var customEvent = document.createEvent("CustomEvent");
             customEvent.initCustomEvent("ng-event", false, false,  {
                 name: "edit-contentlet",
@@ -603,7 +602,11 @@
                 }
             });
             document.dispatchEvent(customEvent);
-        }, 500);
+
+            clickTimeOut = setTimeout(function() {
+                clickTimeOut = null;
+            }, 1000);
+        }
 	}
 
 	function publishContentlet (objId, userId, referer, live, working, write, contentStructureType, structure_id) {
