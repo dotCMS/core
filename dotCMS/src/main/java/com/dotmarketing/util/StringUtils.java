@@ -7,6 +7,7 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.liferay.util.StringPool;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class StringUtils {
@@ -316,7 +318,25 @@ public class StringUtils {
       return FileUtil.sanitizeFileName(fileName);
       
     }
-    
+
+    private static final Pattern quotedLiteral = Pattern.compile("(?:^|\\s)*['\"]([a-zA-Z0-9-_]+)['\"](?:$|\\s)*", Pattern.MULTILINE);
+
+    /**
+     * This method is useful to isolate quoted literals hence `my-literal` or `12345abc` or `1se34s-23r45-eE8u76-223df` or even "this"
+     * Anything enclosed within quotes (single and double) containing an alphanumeric char or dash will be matched.
+     * if the enclosed text has a blank it is not considered a literal.
+     * Meaning that neither `1234 456` nor `abc def`  will no be matched.
+     * @param input a multiline string
+     * @return list of matches found.
+     */
+    public static List<String> quotedLiteral(final String input) {
+        final List<String> strings = new ArrayList<>();
+        final Matcher matcher = quotedLiteral.matcher(input);
+        while (matcher.find()) {
+            strings.add(matcher.group(1));
+        }
+        return strings;
+    }
     
     
 }
