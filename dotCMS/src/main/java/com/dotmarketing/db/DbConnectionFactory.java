@@ -131,7 +131,8 @@ public class DbConnectionFactory {
 
                     try {
                         Context context = new InitialContext();
-                        context.bind(DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
+                        //context.createSubcontext("jdbc");
+                        context.bind("java:" + DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
                         Logger.info(DbConnectionFactory.class, "---------- DBConnectionFactory:Added datasource to JNDI context ---------------");
                     } catch (NamingException e) {
                         Logger.error(DbConnectionFactory.class,
