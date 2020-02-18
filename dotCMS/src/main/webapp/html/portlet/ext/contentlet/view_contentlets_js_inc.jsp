@@ -177,10 +177,9 @@
 
 
 		function setDotSelectButton(){
-			var dotSelectButton = document.querySelector('dot-select-button');
-			dotSelectButton.options = [{label: 'Grid', icon: 'grid_on'}, {label: 'List', icon: 'format_list_bulleted'}];
+			var dotSelectButton = document.querySelector('dot-data-view-button');
 			dotSelectButton.addEventListener('selected', function (event) {
-					changeView(event.detail.label);
+                changeView(event.detail.label);
 			}, false);
 		}
 
@@ -2319,7 +2318,7 @@
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><dot-select-button style=\"margin-right:8px\" ></dot-select-button><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><dot-data-view-button style=\"margin-right:32px\" value=\""+ state.view +"\"></dot-data-view-button><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
                         var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
                         var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
                         if (num > 0 && structureInode != "catchall") {
