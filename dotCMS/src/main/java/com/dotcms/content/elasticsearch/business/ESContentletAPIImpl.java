@@ -7167,7 +7167,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @WrapInTransaction
     @Override
     public Contentlet copyContentlet(final Contentlet sourceContentlet, final Host host, final Folder folder, final User user, final String copySuffix, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-        //
+        
         final Map<String, HTMLPageAssetAPI.TemplateContainersReMap> templateMappings = (Map<String, TemplateContainersReMap>) sourceContentlet.get(Contentlet.TEMPLATE_MAPPINGS);
         Contentlet copyContentlet = new Contentlet();
         String newIdentifier = StringPool.BLANK;
