@@ -1728,14 +1728,27 @@
         function changeView(view) {
           localStorage.setItem(DOTCMS_DATAVIEW_MODE, view)
           state.view = view;
+
+          const card = document.querySelector('dot-card-view');
+          const list = document.getElementById("results_table");
+
           if (state.view === 'List') {
             const selectedInodes = getSelectedInodesFromCardView();
-            document.querySelector('dot-card-view').items = [];
-            fillResultsTable(state.headers, state.data, selectedInodes);
+
+            if (!list.innerHTML.length) {
+                fillResultsTable(state.headers, state.data, selectedInodes);
+            }
+            card.style.display = 'none';
+            list.style.display = 'block';
+
           } else {
             const selectedInodes = getSelectedInodesFromList();
-            document.getElementById("results_table").innerHTML = '';
-            fillCardView(state.data, selectedInodes)
+
+            if (!card.items.length) {
+                fillCardView(state.data, selectedInodes)
+            }
+            card.style.display = 'grid';
+            list.style.display = 'none';
           }
         }
 
