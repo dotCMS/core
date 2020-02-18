@@ -13,6 +13,7 @@ import com.dotcms.contenttype.business.ContentTypeCache2Impl;
 import com.dotcms.csspreproc.CSSCache;
 import com.dotcms.csspreproc.CSSCacheImpl;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.notifications.business.NewNotificationCache;
 import com.dotcms.notifications.business.NewNotificationCacheImpl;
 import com.dotcms.publisher.assets.business.PushedAssetsCache;
@@ -89,13 +90,13 @@ public class CacheLocator extends Locator<CacheIndex>{
 
 	private static CacheLocator instance;
 	private final DotCacheAdministrator adminCache;
-    private final CacheTransport transport;
-
+    private CacheTransport eeTransport;
+    private final CacheTransport nullTransport= new NullTransport();
 
 	private CacheLocator(){
 	    super();
 		long start = System.currentTimeMillis();
-		transport = loadCacheTransport();
+		eeTransport = loadCacheTransport();
 		adminCache = loadCacheAdministrator();
         adminCache.initProviders();
         
@@ -115,7 +116,7 @@ public class CacheLocator extends Locator<CacheIndex>{
     public CacheLocator(DotCacheAdministrator cacheAdministrator, CacheTransport transport) {
         super();
         long start = System.currentTimeMillis();
-        this.transport = transport;
+        this.eeTransport = transport;
         this.adminCache = cacheAdministrator;
         this.adminCache.initProviders();
 
@@ -134,11 +135,8 @@ public class CacheLocator extends Locator<CacheIndex>{
 	
 	
 	private CacheTransport loadCacheTransport(){
-	    CacheTransport nullTransport = new NullTransport();
         String cTransClass = Config.getStringProperty("CACHE_INVALIDATION_TRANSPORT_CLASS","com.dotmarketing.business.jgroups.JGroupsCacheTransport");
-        return LicenseUtil.getLevel()<300 
-                        ? nullTransport 
-                        : Try.of(()-> (CacheTransport)Class.forName(cTransClass).newInstance()).onFailure(e->Logger.warnAndDebug(CacheLocator.class, e)).getOrElse(nullTransport);
+        return Try.of(()-> (CacheTransport)Class.forName(cTransClass).newInstance()).onFailure(e->Logger.warnAndDebug(CacheLocator.class, e)).getOrElse(nullTransport);
 
 	    
 	}
@@ -331,7 +329,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 	
 
    public static CacheTransport getCacheTransport(){
-       return getInstance().transport;
+       return LicenseManager.getInstance().getLevel() > 200  ? getInstance().eeTransport :getInstance().nullTransport;
    }
    
     private static CacheLocator getInstance() {

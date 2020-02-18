@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import com.dotcms.cluster.bean.Server;
-import com.dotcms.enterprise.LicenseUtil;
+
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -94,8 +94,8 @@ public class LettuceTransport implements CacheTransport {
         this.messagesIn = (this.testing) ? Collections.synchronizedList(new ArrayList<>()) : null;
         this.messagesOut = (this.testing) ? Collections.synchronizedList(new ArrayList<>()) : null;
         this.queue = new LinkedBlockingQueue<>();
-        if(!testing && LicenseUtil.getLevel()<300) {
-            throw new DotRuntimeException("Reverting to NullTransport");
+        if(!testing && LicenseManager.getInstance().getLevel()<300) {
+            //throw new DotRuntimeException("Reverting to NullTransport");
         }
     }
 
@@ -120,7 +120,7 @@ public class LettuceTransport implements CacheTransport {
     @Override
     public void init(Server localServer) throws CacheTransportException {
         if (!LicenseManager.getInstance().isEnterprise()) {
-            return;
+            //return;
         }
         init();
     }
@@ -337,7 +337,7 @@ public class LettuceTransport implements CacheTransport {
                 strList.add(m.type.name());
             });
 
-            conn.sync().xadd(streamsKey(), strList.toArray());
+            conn.async().xadd(streamsKey(), strList.toArray());
         }
         sentMessages.addAndGet(messages.size());
     }
