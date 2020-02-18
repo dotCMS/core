@@ -22,9 +22,11 @@ import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -36,6 +38,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -45,12 +49,29 @@ import org.glassfish.jersey.server.JSONP;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Path("/v1/contenttype")
@@ -303,6 +324,23 @@ public class ContentTypeResource implements Serializable {
 		}
 	}
 
+	@GET
+	@Path("/match")
+	@JSONP
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public Response findMatchContentType(
+			@QueryParam("mimeType") final String mimeType,
+			@Context final HttpServletRequest req,
+			@Context final HttpServletResponse res)
+			throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
+		final User user 		  = initData.getUser();
+		final Host currentHost    = WebAPILocator.getHostWebAPI().getCurrentHost(req);
+		final Optional<ContentType> dotAssetTypeOpt = APILocator.getDotAssetAPI().tryMatch(mimeType, currentHost, user);
+		return dotAssetTypeOpt.isPresent()?Response.ok(new ResponseEntityView(dotAssetTypeOpt.get())).build():Response.status(404).build();
+	}
 
 	@GET
 	@Path("/id/{idOrVar}")
@@ -379,6 +417,8 @@ public class ContentTypeResource implements Serializable {
 
 		return response;
 	} // getTypes.
+
+
 
 	/**
 	 * Return a list of {@link ContentType}, entity response syntax:.
