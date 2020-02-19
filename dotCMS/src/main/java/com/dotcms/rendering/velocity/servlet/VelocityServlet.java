@@ -46,66 +46,67 @@ public class VelocityServlet extends HttpServlet {
                             + Constants.CMS_FILTER_URI_OVERRIDE);
             return;
         }
-
+        final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
         final boolean comeFromSomeWhere = request.getHeader("referer") != null;
 
-        if (APILocator.getLoginServiceAPI().isLoggedIn(request) && !comeFromSomeWhere){
+        if (user!=null && user.hasConsoleAccess() && !comeFromSomeWhere){
             goToEditPage(uri,request, response);
-        } else {
+            return;
+        } 
 
-            if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level) ||
-                    (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < LicenseLevel.PRIME.level) ||
-                    (!LicenseUtil.isASAllowed())) {
-                Logger.error(this, "Enterprise License is required");
+        if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level)
+                        || (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < LicenseLevel.PRIME.level)
+                        || (!LicenseUtil.isASAllowed())) {
+            Logger.error(this, "Enterprise License is required");
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        
+        request.setRequestUri(uri);
+        final PageMode mode = PageMode.getWithNavigateMode(request);
+        try {
+            final String pageHtml = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setPageUri(uri)
+                            .setPageMode(mode)
+                            .setUser(WebAPILocator.getUserWebAPI().getLoggedInUser(request))
+                            .setPageMode(mode)
+                            .build(),
+                    request,
+                    response
+            );
+            response.getOutputStream().write(pageHtml.getBytes());
+        } catch (ResourceNotFoundException rnfe) {
+            Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+        } catch (DotSecurityException dse) {
+            Logger.warnAndDebug(this.getClass(), dse.getMessage(),dse);
+            if(!response.isCommitted()) {
+
+                if(user==null || APILocator.getUserAPI().getAnonymousUserNoThrow().equals(user)) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }else {
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                    return;
+                }
+            }
+        } catch (HTMLPageAssetNotFoundException hpnfe) {
+            if(!response.isCommitted()) {
+                Logger.warnAndDebug(this.getClass(), hpnfe.getMessage(),hpnfe);
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
-
-            request.setRequestUri(uri);
-            final PageMode mode = PageMode.getWithNavigateMode(request);
-            try {
-                final String pageHtml = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
-                        PageContextBuilder.builder()
-                                .setPageUri(uri)
-                                .setPageMode(mode)
-                                .setUser(WebAPILocator.getUserWebAPI().getLoggedInUser(request))
-                                .setPageMode(mode)
-                                .build(),
-                        request,
-                        response
-                );
-                response.getOutputStream().write(pageHtml.getBytes());
-            } catch (ResourceNotFoundException rnfe) {
-                Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
-                response.sendError(HttpServletResponse.SC_NOT_FOUND);
-            } catch (DotSecurityException dse) {
-                Logger.warnAndDebug(this.getClass(), dse.getMessage(),dse);
-                if(!response.isCommitted()) {
-                    User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
-                    if(user==null || APILocator.getUserAPI().getAnonymousUserNoThrow().equals(user)) {
-                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                        return;
-                    }else {
-                        response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                        return;
-                    }
-                }
-            } catch (HTMLPageAssetNotFoundException hpnfe) {
-                if(!response.isCommitted()) {
-                    Logger.warnAndDebug(this.getClass(), hpnfe.getMessage(),hpnfe);
-                    response.sendError(HttpServletResponse.SC_NOT_FOUND);
-                    return;
-                }
-            } catch (java.lang.IllegalStateException state) {
-                Logger.debug(this, "IllegalStateException" + state.toString());
-                // Eat this, client disconnect noise
-            } catch (Exception e) {
-                if(!response.isCommitted()) {
-                    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
-                }
-                Logger.warnAndDebug(this.getClass(), e.getMessage(),e);
+        } catch (java.lang.IllegalStateException state) {
+            Logger.debug(this, "IllegalStateException" + state.toString());
+            // Eat this, client disconnect noise
+        } catch (Exception e) {
+            if(!response.isCommitted()) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
             }
+            Logger.warnAndDebug(this.getClass(), e.getMessage(),e);
         }
+        
     }
 
     @Override
