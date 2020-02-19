@@ -69,7 +69,7 @@ public class VelocityServlet extends HttpServlet {
                     PageContextBuilder.builder()
                             .setPageUri(uri)
                             .setPageMode(mode)
-                            .setUser(WebAPILocator.getUserWebAPI().getLoggedInUser(request))
+                            .setUser(user)
                             .setPageMode(mode)
                             .build(),
                     request,
