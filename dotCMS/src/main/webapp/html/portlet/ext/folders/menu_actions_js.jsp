@@ -11,8 +11,6 @@
 	var previousRedFolder = '';
 	var previousOpenFolder = '';
 
-    var clickTimeOut;
-
 	var foldersIcons	= new Array();
 	foldersIcons[0] = "<%=COMMON_IMG%>/trees/root.gif";
 //	foldersIcons[1] = "<%=COMMON_IMG%>/trees/spacer.gif";
@@ -593,17 +591,14 @@
 	}
 
 	function editContentlet (objId, userId, referer, live, working, write) {
-        if (clickTimeOut) { clearTimeout(clickTimeOut); }
-        clickTimeOut = setTimeout(function() {
-            var customEvent = document.createEvent("CustomEvent");
-            customEvent.initCustomEvent("ng-event", false, false,  {
-                name: "edit-contentlet",
-                data: {
-                    inode: objId
-                }
-            });
-            document.dispatchEvent(customEvent);
-        }, 500);
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-contentlet",
+            data: {
+                inode: objId
+            }
+        });
+        document.dispatchEvent(customEvent);
 	}
 
 	function publishContentlet (objId, userId, referer, live, working, write, contentStructureType, structure_id) {
