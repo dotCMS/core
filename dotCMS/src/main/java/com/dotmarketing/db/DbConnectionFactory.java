@@ -6,7 +6,6 @@ import static com.dotmarketing.util.Constants.DATABASE_DEFAULT_DATASOURCE;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -130,10 +129,14 @@ public class DbConnectionFactory {
                     }
 
                     try {
-                        Context context = new InitialContext();
-                        context.createSubcontext("jdbc");
-                        context.bind(DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
-                        Logger.info(DbConnectionFactory.class, "---------- DBConnectionFactory:Datasource added to JNDI context ---------------");
+                        //Adds datasource to JNDI if needed
+                        if (Config.getBooleanProperty("ADD_DATASOURCE_TO_JNDI", false)) {
+                            final Context context = new InitialContext();
+                            context.createSubcontext("jdbc");
+                            context.bind(DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
+                            Logger.info(DbConnectionFactory.class,
+                                    "---------- DBConnectionFactory:Datasource added to JNDI context ---------------");
+                        }
                     } catch (Exception e) {
                         Logger.error(DbConnectionFactory.class,
                                 "---------- DBConnectionFactory: Error setting datasource in JNDI context ---------------", e);
