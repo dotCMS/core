@@ -7,13 +7,14 @@ import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-
-
+import com.liferay.portal.model.User;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import javax.servlet.ServletConfig;
@@ -77,6 +78,24 @@ public class VelocityServlet extends HttpServlet {
             } catch (ResourceNotFoundException rnfe) {
                 Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            } catch (DotSecurityException dse) {
+                Logger.warnAndDebug(this.getClass(), dse.getMessage(),dse);
+                if(!response.isCommitted()) {
+                    User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+                    if(user==null || APILocator.getUserAPI().getAnonymousUserNoThrow().equals(user)) {
+                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                        return;
+                    }else {
+                        response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                        return;
+                    }
+                }
+            } catch (HTMLPageAssetNotFoundException hpnfe) {
+                if(!response.isCommitted()) {
+                    Logger.warnAndDebug(this.getClass(), hpnfe.getMessage(),hpnfe);
+                    response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                    return;
+                }
             } catch (java.lang.IllegalStateException state) {
                 Logger.debug(this, "IllegalStateException" + state.toString());
                 // Eat this, client disconnect noise
