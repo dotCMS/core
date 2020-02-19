@@ -175,13 +175,40 @@
 			t.start();
 		});
 
+        function getViewCardEl() {
+            return document.querySelector('dot-card-view');
+        }
+
+        function getListEl() {
+            return document.getElementById('results_table')
+        }
+
+
+        function getSelectButton() {
+            return document.querySelector('dot-data-view-button')
+        }
 
 		function setDotSelectButton(){
-			var dotSelectButton = document.querySelector('dot-data-view-button');
+			var dotSelectButton = getSelectButton();
 			dotSelectButton.addEventListener('selected', function (event) {
-                changeView(event.detail.label);
+                changeView(event.detail);
 			}, false);
 		}
+
+        function printData(data, headers) {
+            fillResultsTable(headers, data);
+            fillCardView(data)
+            const card = getViewCardEl();
+            const list = getListEl();;
+
+            if (state.view === 'list') {
+                list.style.display = ''
+                card.display = 'none'
+            } else {
+                list.style.display = 'none'
+                card.display = ''
+            }
+        }
 
 
         function fillResults(data) {
@@ -191,8 +218,7 @@
             var total = counters["total"];
             var begin = counters["begin"];
             var end = counters["end"];
-        		var totalPages = counters["totalPages"];
-
+            var totalPages = counters["totalPages"];
             headers = data[1];
 
             for (var i = 3; i < data.length; i++) {
@@ -211,12 +237,13 @@
                             dwr.util.addRows("results_table", [ headers ] , funcs, { escapeHtml: false });
                             document.getElementById("nextDiv").style.display = "none";
                             document.getElementById("previousDiv").style.display = "none";
-                            fillCardView(data)
-                            fillResultsTable (headers, data);
-                            showMatchingResults (0,0,0,0);
+                            state = {
+                                ...state,
+                                data: []
+                            };
+                            showMatchingResults(0,0,0,0);
                             fillQuery (counters);
                             dijit.byId("searchButton").attr("disabled", false);
-                            //dijit.byId("clearButton").setAttribute("disabled", false);
                     }
 
                     return;
@@ -228,10 +255,12 @@
               headers: headers
             }
 
-            fillResultsTable(headers, data);
-            fillCardView(data)
-
-            showMatchingResults (total,begin,end,totalPages);
+            const selectButton = getSelectButton();
+            if (selectButton) {
+                selectButton.style.display = '';
+            }
+            printData(data, headers);
+            showMatchingResults(total, begin, end, totalPages);
             fillQuery (counters);
 
 
@@ -1165,7 +1194,7 @@
         }
 
         function getSelectedInodesFromCardView() {
-          let viewCard = document.querySelector('dot-card-view');
+          let viewCard = getViewCardEl();
 
           if (viewCard) {
             const value = viewCard.getAttribute('value');
@@ -1727,10 +1756,10 @@
           localStorage.setItem(DOTCMS_DATAVIEW_MODE, view)
           state.view = view;
 
-          let card = document.querySelector('dot-card-view');
-          const list = document.getElementById("results_table");
+          let card = getViewCardEl();
+          const list = getListEl();
 
-          if (state.view === 'List') {
+          if (state.view === 'list') {
             const selectedInodes = getSelectedInodesFromCardView();
 
             if (!list.innerHTML.length) {
@@ -1743,7 +1772,7 @@
             })
 
             card.style.display = 'none';
-            list.style.display = 'block';
+            list.style.display = '';
 
           } else {
 
@@ -1751,12 +1780,12 @@
             if (!card) {
                 fillCardView(state.data)
                 setTimeout(() => {
-                    card = document.querySelector('dot-card-view');
+                    card = getViewCardEl();
                 }, 0);
             }
 
             setTimeout(() => {
-                card.style.display = 'grid';
+                card.style.display = '';
                 card.value = getSelectedInodesFromList().join(',');
                 list.style.display = 'none';
             }, 0);
@@ -1775,11 +1804,12 @@
             }
           })
 
-          let viewCard = document.querySelector('dot-card-view');
+          let viewCard = getViewCardEl();
 
           if (!viewCard) {
             viewCard = document.createElement('dot-card-view');
             viewCard.style.padding = '0 1rem';
+            viewCard.style.fontSize = '16px';
             viewCard.addEventListener('selected', (e) => {
                 if (e.detail.length) {
                     enableBulkAvailableActionsButton();
@@ -1876,7 +1906,7 @@
 
         function fillResultsTable(headers, data) {
                 headerLength = headers.length;
-                var table = document.getElementById("results_table");
+                var table = getListEl();
 
                 //Filling Headers
                 var row = table.insertRow(table.rows.length);
@@ -2337,9 +2367,23 @@
 
                     eval("totalContents=" + num + ";");
 
+                    let dataViewButton = '';
+                    if (state.data.length) {
+                        dataViewButton = "<dot-data-view-button style=\"margin-right:32px\" value=\""+ state.view +"\"></dot-data-view-button>"
+                    } else {
+                        const viewCard = getViewCardEl();
+                        if (viewCard) {
+                            viewCard.items = [];
+
+                        }
+
+                        const list = getListEl();
+                        list.style.display = '';
+                    }
+
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><dot-data-view-button style=\"margin-right:32px\" value=\""+ state.view +"\"></dot-data-view-button><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div>" + dataViewButton + "<div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
                         var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
                         var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
                         if (num > 0 && structureInode != "catchall") {
@@ -2360,7 +2404,10 @@
 
                         div.innerHTML = strbuff;
                         div.style.display = "";
-						setDotSelectButton();
+
+                        if (state.data.length) {
+                            setDotSelectButton();
+                        }
 
                         //Bottom Matching Results
                         var div = document.getElementById("matchingResultsBottomDiv")
