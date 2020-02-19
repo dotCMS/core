@@ -2367,10 +2367,9 @@
 
                     eval("totalContents=" + num + ";");
 
-                    let dataViewButton = '';
-                    if (state.data.length) {
-                        dataViewButton = "<dot-data-view-button style=\"margin-right:32px\" value=\""+ state.view +"\"></dot-data-view-button>"
-                    } else {
+                    let showDataViewButton = '';
+                    if (!totalPages) {
+                        showDataViewButton = '; opacity: 0'
                         const viewCard = getViewCardEl();
                         if (viewCard) {
                             viewCard.items = [];
@@ -2380,6 +2379,8 @@
                         const list = getListEl();
                         list.style.display = '';
                     }
+
+                    let dataViewButton = "<dot-data-view-button style=\"margin-right:32px" + showDataViewButton +"\" value=\""+ state.view +"\"></dot-data-view-button>";
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
@@ -2405,7 +2406,7 @@
                         div.innerHTML = strbuff;
                         div.style.display = "";
 
-                        if (state.data.length) {
+                        if (totalPages) {
                             setDotSelectButton();
                         }
 
