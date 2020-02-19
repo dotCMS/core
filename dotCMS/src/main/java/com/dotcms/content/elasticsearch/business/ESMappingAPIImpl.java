@@ -739,8 +739,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 					final String[] names = fieldVariable.getValue().split(",");
 					allowedFields        = new HashSet<>();
-					for(final String name : names)
+					for(final String name : names) {
 						allowedFields.add(name.trim().toLowerCase());
+					}
 				}
 			}
 

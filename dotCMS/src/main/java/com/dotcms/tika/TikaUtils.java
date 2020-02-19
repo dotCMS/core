@@ -18,19 +18,18 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.liferay.util.FileUtil;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.felix.framework.OSGIUtil;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,14 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
-import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import com.google.gson.stream.JsonWriter;
-import com.liferay.util.FileUtil;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.apache.felix.framework.OSGIUtil;
 
 public class TikaUtils {
 
@@ -364,8 +356,7 @@ public class TikaUtils {
                                 binFile.getAbsolutePath(),
                                 UtilMethods.isSet(ioExc.getMessage()) ? ioExc.getMessage()
                                         : ioExc.getCause().getMessage());
-                Logger.warn(this.getClass(), errorMessage);
-                Logger.debug(this.getClass(), errorMessage, ioExc);
+                Logger.warnAndDebug(this.getClass(), ioExc);
             }
         } catch (Throwable e) {
 
