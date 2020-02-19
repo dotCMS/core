@@ -1,7 +1,7 @@
 package com.dotmarketing.db;
 
-import com.dotcms.repackage.com.zaxxer.hikari.HikariConfig;
-import com.dotcms.repackage.com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
