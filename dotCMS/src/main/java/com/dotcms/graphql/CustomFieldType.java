@@ -57,7 +57,7 @@ public enum CustomFieldType {
         categoryTypeFields.put("keywords", GraphQLString);
         categoryTypeFields.put("velocityVar", GraphQLString);
         customFieldTypes.put("CATEGORY", TypeUtil.createObjectType("Category", categoryTypeFields,
-            new FieldDataFetcher()));
+            new MapFieldPropertiesDataFetcher()));
 
         final Map<String, GraphQLOutputType> siteTypeFields = new HashMap<>();
         siteTypeFields.put("hostId", GraphQLString);
