@@ -1,13 +1,24 @@
 package com.dotcms.graphql;
 
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_DESCRIPTION_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_METADATA_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SHOW_ON_MENU_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SORT_ORDER_FIELD_VAR;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLID;
 import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLLong;
 import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLList.list;
 
+import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
+import com.dotcms.graphql.datafetcher.FieldDataFetcher;
+import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
+import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import java.util.Collection;
@@ -22,7 +33,8 @@ public enum CustomFieldType {
     SITE_OR_FOLDER,
     KEY_VALUE,
     LANGUAGE,
-    USER;
+    USER,
+    FILEASSET;
 
     private static Map<String, GraphQLObjectType> customFieldTypes = new HashMap<>();
 
@@ -45,7 +57,7 @@ public enum CustomFieldType {
         categoryTypeFields.put("keywords", GraphQLString);
         categoryTypeFields.put("velocityVar", GraphQLString);
         customFieldTypes.put("CATEGORY", TypeUtil.createObjectType("Category", categoryTypeFields,
-            new MapFieldPropertiesDataFetcher()));
+            new FieldDataFetcher()));
 
         final Map<String, GraphQLOutputType> siteTypeFields = new HashMap<>();
         siteTypeFields.put("hostId", GraphQLString);
@@ -103,6 +115,17 @@ public enum CustomFieldType {
         userTypeFields.put("lastName", GraphQLString);
         userTypeFields.put("email", GraphQLString);
         customFieldTypes.put("USER", TypeUtil.createObjectType("User", userTypeFields, null));
+
+        final Map<String, TypeFetcher> fileAssetTypeFields = new HashMap<>();
+        fileAssetTypeFields.put(FILEASSET_FILE_NAME_FIELD_VAR, new TypeFetcher(GraphQLString, new FieldDataFetcher()));
+        fileAssetTypeFields.put(FILEASSET_DESCRIPTION_FIELD_VAR, new TypeFetcher(GraphQLString, new FieldDataFetcher()));
+        fileAssetTypeFields.put(FILEASSET_FILEASSET_FIELD_VAR,
+                new TypeFetcher(CustomFieldType.BINARY.getType(),new BinaryFieldDataFetcher()));
+        fileAssetTypeFields.put(FILEASSET_METADATA_FIELD_VAR,
+                new TypeFetcher(list(CustomFieldType.KEY_VALUE.getType()), new KeyValueFieldDataFetcher()));
+        fileAssetTypeFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString), new FieldDataFetcher()));
+        fileAssetTypeFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt, new FieldDataFetcher()));
+        customFieldTypes.put("FILEASSET", TypeUtil.createObjectType("Fileasset", fileAssetTypeFields));
     }
 
     public GraphQLObjectType getType() {
