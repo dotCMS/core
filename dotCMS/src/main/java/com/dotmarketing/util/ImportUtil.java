@@ -178,7 +178,7 @@ public class ImportUtil {
         List<Field> uniqueFields = new ArrayList<Field>();
 
         //Initializing variables
-        int lines = 0;
+        int lines = 1;
         int errors = 0;
         int lineNumber = 0;
 
@@ -786,8 +786,7 @@ public class ImportUtil {
                     }
                 } else if (new LegacyFieldTransformer(field).from().typeName().equals(BinaryField.class.getName())){
                     if(UtilMethods.isSet(value) && !APILocator.getTempFileAPI().validUrl(value)){
-                        throw new BadRequestException(
-                                "Line #" + lineNumber + "URL does not start http or https.");
+                        throw new DotRuntimeException("Line #" + lineNumber + " contains errors, URL is malformed or Response is not 200");
                     }
                 }else if(field.getFieldType().equals(Field.FieldType.IMAGE.toString()) || field.getFieldType().equals(Field.FieldType.FILE.toString())) {
                     String filePath = value;
@@ -1476,7 +1475,7 @@ public class ImportUtil {
                 }
             }
         } catch (Exception e) {
-            Logger.error(ImportUtil.class,e.getMessage(),e);
+            Logger.warn(ImportUtil.class,e.getMessage());
             throw new DotRuntimeException(e.getMessage(),e);
         }
     }

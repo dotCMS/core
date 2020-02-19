@@ -496,6 +496,30 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	@Override
+	public int deleteWorkflowHistoryOldVersions(final Date olderThan) throws DotDataException {
+
+		DotConnect dotConnect = new DotConnect();
+
+		//Get the count of the workflow history records before deleting.
+		String countSQL = "select count(*) as count from workflow_history";
+		dotConnect.setSQL(countSQL);
+		List<Map<String, String>> result = dotConnect.loadResults();
+		final int before = Integer.parseInt(result.get(0).get("count"));
+
+		// Delete the records using a given date
+		dotConnect.setSQL("delete from workflow_history where creation_date < ?");
+		dotConnect.addParam(olderThan);
+		dotConnect.loadResult();
+
+		//Get the count of the workflow history records after deleting.
+		dotConnect.setSQL(countSQL);
+		result = dotConnect.loadResults();
+		final int after = Integer.parseInt(result.get(0).get("count"));
+
+		return before - after;
+	}
+
+	@Override
 	public void deleteWorkflowTaskByContentletIdAnyLanguage(final String webAsset) throws DotDataException {
 
 		final DotConnect db = new DotConnect();
@@ -2175,7 +2199,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	private void setHistoryDBParams(WorkflowHistory history, DotConnect db) {
 		db.addParam(history.getCreationDate());
 		db.addParam(history.getMadeBy());
-		db.addParam(history.getChangeDescription());
+		db.addParam(history.getRawChangeDescription());
 		db.addParam(history.getWorkflowtaskId());
 		db.addParam(history.getActionId());
 		db.addParam(history.getStepId());

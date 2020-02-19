@@ -632,8 +632,10 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			Logger.debug(this, ()-> "Deleting the language by id: " + id);
 			rowsAffected = new DotConnect().executeUpdate(DELETE_FROM_LANGUAGE_WHERE_ID, id);
 		} catch (DotDataException e) {
-			if(e.getMessage().contains("fk_contentlet_version_info_lang")
-					|| e.getMessage().contains("fk_con_lang_ver_info_lang")) {
+		    final String message  =e.getMessage().toLowerCase();
+			if(message.contains("fk_contentlet_version_info_lang")
+					|| message.contains("fk_con_lang_ver_info_lang")
+					|| message.contains("fk_contentlet_lang")) {
 				final String errorMsg = Sneaky.sneak(()->LanguageUtil.get("message.language.content"));
 				throw new DotStateException(errorMsg, e);
 			} else {

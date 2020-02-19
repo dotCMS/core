@@ -183,7 +183,13 @@ public class FileAssetContainerUtil {
         return identifier.getId();
     }
 
-    private String getPathFromFullPath(final String hostname, final String fullPath) {
+    /**
+     * Remove the hostname from the fullPath (if it has the host) (must be not null)
+     * @param hostname {@link String} host name to remove (must be not null)
+     * @param fullPath {@link String} full path, could be relative or full (if full, the host will be removed)
+     * @return returns the relative path
+     */
+    public String getPathFromFullPath(final String hostname, final String fullPath) {
 
         final int indexOf = fullPath.indexOf(hostname);
 
@@ -338,9 +344,29 @@ public class FileAssetContainerUtil {
 
     private String buildPath(final Host host, final Folder containerFolder, final boolean includeHostOnPath) {
 
+        return buildPath(host, containerFolder.getPath(), includeHostOnPath);
+    }
+
+    /**
+     * Return the full path for a {@link FileAssetContainer}, with the follow sintax:
+     *
+     * //[host name]/[File Container path]
+     *
+     * @param container
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public String getFullPath(final FileAssetContainer container) throws DotSecurityException, DotDataException {
+        final Host host = APILocator.getHostAPI().findParentHost(container, APILocator.systemUser(), false);
+        return buildPath(host, container.getPath(), true);
+    }
+
+    private String buildPath(final Host host, final String containerPath, final boolean includeHostOnPath) {
+
         return includeHostOnPath?
-                builder(HOST_INDICATOR, host.getHostname(), containerFolder.getPath()).toString():
-                containerFolder.getPath();
+                builder(HOST_INDICATOR, host.getHostname(), containerPath).toString() :
+                containerPath;
     }
 
     private boolean isContainerMetaInfo(final FileAsset fileAsset, final boolean showLive) {

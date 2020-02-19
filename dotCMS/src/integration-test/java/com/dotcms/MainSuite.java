@@ -5,6 +5,8 @@ import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.rest.api.v1.secret.ServiceIntegrationResourceTest;
+import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
@@ -185,6 +187,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.LayoutAPITest.class,
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
         com.dotmarketing.business.PermissionAPITest.class,
+        com.dotmarketing.servlets.BinaryExporterServletTest.class,
         com.dotmarketing.servlets.ShortyServletAndTitleImageTest.class,
         com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,
         com.dotmarketing.common.reindex.ReindexThreadTest.class,
@@ -199,6 +202,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.db.DbConnectionFactoryUtilTest.class,
         com.dotmarketing.db.HibernateUtilTest.class,
         com.dotmarketing.quartz.job.BinaryCleanupJobTest.class,
+        FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
         com.dotcms.osgi.OSGIUtilTest.class,
         com.dotmarketing.fixTasks.FixTask00085FixEmptyParentPathOnIdentifierTest.class,
@@ -222,6 +226,9 @@ import org.junit.runners.Suite.SuiteClasses;
         TestConfig.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
+        com.dotcms.security.secret.SecretsStoreKeyStoreImplTest.class,
+        com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class,
+        ServiceIntegrationResourceTest.class,
         VelocityServletIntegrationTest.class
 })
 public class MainSuite {

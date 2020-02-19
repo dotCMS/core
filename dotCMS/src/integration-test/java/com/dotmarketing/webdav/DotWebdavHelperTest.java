@@ -1,5 +1,7 @@
 package com.dotmarketing.webdav;
 
+import static com.dotcms.unittest.TestUtil.upperCaseRandom;
+
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -12,7 +14,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.util.FileUtil;
 import java.io.IOException;
-import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -87,32 +88,6 @@ public class DotWebdavHelperTest {
         final String fileResourcePath2 = upperCaseRandom(path,10);
         Assert.assertNotEquals(fileResourcePath1,fileResourcePath2);
         Assert.assertTrue(helper.isSameResourceURL(fileResourcePath1,fileResourcePath2, file.getName()));
-    }
-
-    private static String upperCaseRandom(final String input, final int n) {
-        final int length = input.length();
-        final StringBuilder output = new StringBuilder(input);
-        final boolean[] alreadyChecked = new boolean[length];
-        final Random random = new Random();
-
-        for (int i = 0, checks = 0; i < n && checks < length; i++) {
-            // Pick a place
-            final int position = random.nextInt(length);
-
-            // Check if lowercase alpha
-            if (!alreadyChecked[position]) {
-                if (Character.isLowerCase(output.charAt(position))) {
-                    output.setCharAt(position, Character.toUpperCase(output.charAt(position)));
-                } else {
-                    i--;
-                }
-                checks++;
-                alreadyChecked[position] = true;
-            } else {
-                i--;
-            }
-        }
-        return output.toString();
     }
 
 }

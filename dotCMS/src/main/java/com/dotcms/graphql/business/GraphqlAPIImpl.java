@@ -69,6 +69,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -346,5 +347,15 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             ? relationship.getChildStructureInode() : relationship.getParentStructureInode();
 
         return APILocator.getContentTypeAPI(user).find(relatedContentTypeId);
+    }
+
+    @Override
+    public Map<Class<? extends Field>, GraphQLOutputType> getFieldTypesWithCustomGraphQLTypes() {
+        return fieldClassGraphqlTypeMap;
+    }
+
+    @Override
+    public Collection<GraphQLObjectType> getCustomFieldTypes() {
+        return CustomFieldType.getCustomFieldTypes();
     }
 }

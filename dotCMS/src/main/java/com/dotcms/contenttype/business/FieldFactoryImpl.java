@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
+import com.dotcms.graphql.util.GraphQLUtil;
 import com.dotcms.rendering.velocity.services.FieldLoader;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -28,6 +29,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -37,6 +39,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.time.DateUtils;
 
 public class FieldFactoryImpl implements FieldFactory {
@@ -232,8 +235,16 @@ public class FieldFactoryImpl implements FieldFactory {
       }
 
       // normalize our velocityvar
+      final List<String> takenFieldVars = fieldsAlreadyAdded.stream().map(Field::variable).collect(
+              Collectors.toList());
+
+      // check if the field variable is compatible with GraphQL
+      if(!GraphQLUtil.isVariableGraphQLCompatible(throwAwayField)) {
+          takenFieldVars.add(throwAwayField.name());
+      }
+
       String tryVar = (throwAwayField.variable() == null)
-          ? suggestVelocityVar(throwAwayField.name(), fieldsAlreadyAdded) : throwAwayField.variable();
+          ? suggestVelocityVar(throwAwayField.name(), takenFieldVars) : throwAwayField.variable();
       builder.variable(tryVar);
     }
     builder = FieldBuilder.builder(normalizeData(builder.build()));
@@ -578,8 +589,10 @@ public class FieldFactoryImpl implements FieldFactory {
 
 
   @Override
-public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws DotDataException {
+public String suggestVelocityVar( String tryVar, List<String> takenFieldsVariables) throws DotDataException {
 
+    // adds the GraphQL Reserved field names to the "taken fields variables" list
+    final List<String> forbiddenFieldVariables = new ArrayList<>(takenFieldsVariables);
 
     String var = StringUtils.camelCaseLower(tryVar);
     // if we don't get a var back, we are looking at UTF-8 or worse
@@ -587,8 +600,8 @@ public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws
     if (!UtilMethods.isSet(var)) {
         tryVar= "field";
     }
-    for (Field f : takenFields) {
-        if (var.equalsIgnoreCase(f.variable())) {
+    for (String fieldVar : forbiddenFieldVariables) {
+        if (var.equalsIgnoreCase(fieldVar)) {
             var= null;
             break;
         }
@@ -600,8 +613,8 @@ public String suggestVelocityVar( String tryVar, List<Field> takenFields) throws
 
     for (int i = 1; i < 100000; i++) {
         var = StringUtils.camelCaseLower(tryVar) + i;
-        for (Field f : takenFields) {
-            if (var.equalsIgnoreCase(f.variable())) {
+        for (String fieldVar : forbiddenFieldVariables) {
+            if (var.equalsIgnoreCase(fieldVar)) {
                 var = null;
                 break;
             }

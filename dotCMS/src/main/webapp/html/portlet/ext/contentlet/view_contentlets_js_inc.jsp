@@ -121,7 +121,7 @@
 		        },
 		        duration: 500
 		    }).play();
-			dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "Hide") %>";
+			dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "hide") %>";
 			dojo.cookie("ShAdDi", end, { });
 		}
 
@@ -134,7 +134,7 @@
 			// resize
 			if("0px" == showing || 0 ==showing){
 				dojo.cookie("ShAdDi", "0", { });
-				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "Hide") %>";
+				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "hide") %>";
 				resizeAdvancedSearch();
 			// hide
 			}else{
@@ -147,7 +147,7 @@
 			        duration: 500
 			    }).play();
 				dojo.cookie("ShAdDi", 0, { });
-				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "Advanced") %>";
+				dojo.byId("toggleDivText").innerHTML="<%= LanguageUtil.get(pageContext, "advanced") %>";
 			}
 		}
 
@@ -708,7 +708,7 @@
 	                    	  }
                          },
                          onChange : function(value){
-                        	 document.getElementById("${relationSearchField}Field").value=this.getValue();
+                        	 document.getElementById("${relationSearchField}Field").value=this.getValue().split(' ')[0];
                         	 doSearch(null, "<%=orderBy%>");
                          }
                          

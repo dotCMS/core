@@ -486,7 +486,7 @@ dependencies {
     compile 'net.jodah:failsafe:1.1.1'
     compile 'com.rainerhahnekamp:sneakythrow:1.1.0'
 
-    compile ('org.elasticsearch.client:elasticsearch-rest-high-level-client:7.2.0') {
+    compile ('org.elasticsearch.client:elasticsearch-rest-high-level-client:7.3.2') {
         exclude(group: 'org.apache.logging.log4j')
         exclude(group: 'com.fasterxml.jackson.core')
     }

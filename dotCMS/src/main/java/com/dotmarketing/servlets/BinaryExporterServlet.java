@@ -170,7 +170,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		String exporterPath = uriPieces[1];
 		String uuid = uriPieces[2];
 
-		Map<String, String[]> params = new HashMap<>();
+		Map<String, String[]> params = new LinkedHashMap<>();
 		params.putAll(req.getParameterMap());
 		// only set uri params if they are not set in the query string - meaning
 		// the query string will override the uri params.
@@ -180,7 +180,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				params.put(x, uriParams.get(x));
 			}
 		}
-		params = sortByKey(params);
+
 		boolean byInode = params.containsKey("byInode");
 
 		ServletOutputStream out = null;
@@ -259,6 +259,8 @@ public class BinaryExporterServlet extends HttpServlet {
 						} catch(DotSecurityException e) {
 							if (!mode.respectAnonPerms) {
 								content = getContentletLiveVersion(assetInode, user, lang);
+							} else {
+								throw e;
 							}
 						}
 					}
@@ -641,7 +643,9 @@ public class BinaryExporterServlet extends HttpServlet {
 				    req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN);
 					resp.sendError(HttpServletResponse.SC_FORBIDDEN);
 				}else{
-				    req.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, req.getAttribute("javax.servlet.forward.request_uri"));
+					final String requestUri = (String) req.getAttribute("javax.servlet.forward.request_uri");
+					Logger.debug(this, "Setting redirect after login to requested uri: " + requestUri);
+				    req.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, requestUri);
 					resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
 				}
 			  }
@@ -682,28 +686,12 @@ public class BinaryExporterServlet extends HttpServlet {
 		return content;
 	}
 
-	@SuppressWarnings("unchecked")
-	private Map sortByKey(Map map) {
-		List list = new LinkedList(map.entrySet());
-		Collections.sort(list, new Comparator() {
-			public int compare(Object o1, Object o2) {
-				return ((Comparable) ((Map.Entry) (o1)).getKey()).compareTo(((Map.Entry) (o2)).getKey());
-			}
-		});
-		// logger.info(list);
-		Map result = new LinkedHashMap();
-		for (Iterator it = list.iterator(); it.hasNext();) {
-			Map.Entry entry = (Map.Entry) it.next();
-			result.put(entry.getKey(), entry.getValue());
-		}
-		return result;
-	}
 
 	private Map<String,String[]> getURIParams(HttpServletRequest request){
 		String url = request.getRequestURI().toString();
 		url = (url.startsWith("/")) ? url.substring(1, url.length()) : url;
 		String p[] = url.split("/");
-		Map<String, String[]> map = new HashMap<>();
+		Map<String, String[]> map = new LinkedHashMap<>();
 
 		String key =null;
 		for(String x : p){

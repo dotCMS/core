@@ -12160,6 +12160,24 @@ Resize Handle
   padding: 0 8px;
 }
 
+.api-link {
+  align-items: center;
+  border-radius: 2px;
+  border: solid 1px var(--color-sec);
+  color: var(--color-sec);
+  display: inline-flex;
+  line-height: 1em;
+  padding: 2px 6px 2px 4px;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background-color 150ms ease,color 150ms ease;
+}
+
+.api-link:hover {
+  background-color: var(--color-sec);
+  color: #fff;
+}
+
 #cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions, .job-scheduler__host-list-actions, .license-manager__listing-action {
   text-align: center;
   width: 65px;
