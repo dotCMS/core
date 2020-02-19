@@ -15,6 +15,8 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilde
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
+import io.vavr.control.Try;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import javax.servlet.ServletConfig;
@@ -36,9 +38,14 @@ public class VelocityServlet extends HttpServlet {
     @Override
     @CloseDB
     protected final void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
-        VelocityRequestWrapper request = new VelocityRequestWrapper(req);
+        final VelocityRequestWrapper request = new VelocityRequestWrapper(req);
         final String uri = CMSUrlUtil.getCurrentURI(request);
-
+        final boolean comeFromSomeWhere = request.getHeader("referer") != null;
+        final User frontEndUser = Try.of(()->WebAPILocator.getUserWebAPI().getLoggedInFrontendUser(request)).getOrNull();
+        request.setRequestUri(uri);
+        final PageMode mode = PageMode.getWithNavigateMode(request);
+        
+        // if you are hitting the servlet without running through the other filters
         if (uri == null) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "VelocityServlet called without running through the CMS Filter");
             Logger.error(this.getClass(),
@@ -46,14 +53,14 @@ public class VelocityServlet extends HttpServlet {
                             + Constants.CMS_FILTER_URI_OVERRIDE);
             return;
         }
-        final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
-        final boolean comeFromSomeWhere = request.getHeader("referer") != null;
-
-        if (user!=null && user.hasConsoleAccess() && !comeFromSomeWhere){
+        
+        // if you are a backend user, redirect you to the page edit screen
+        if (PortalUtil.getUser(request)!=null && PortalUtil.getUser(request).hasConsoleAccess() && !comeFromSomeWhere){
             goToEditPage(uri,request, response);
             return;
         } 
-
+        
+        // if you are not running ee
         if ((DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < LicenseLevel.PROFESSIONAL.level)
                         || (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < LicenseLevel.PRIME.level)
                         || (!LicenseUtil.isASAllowed())) {
@@ -62,14 +69,14 @@ public class VelocityServlet extends HttpServlet {
             return;
         }
         
-        request.setRequestUri(uri);
-        final PageMode mode = PageMode.getWithNavigateMode(request);
+        
+        // try to get the page
         try {
             final String pageHtml = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                     PageContextBuilder.builder()
                             .setPageUri(uri)
                             .setPageMode(mode)
-                            .setUser(user)
+                            .setUser(frontEndUser)
                             .setPageMode(mode)
                             .build(),
                     request,
@@ -77,13 +84,12 @@ public class VelocityServlet extends HttpServlet {
             );
             response.getOutputStream().write(pageHtml.getBytes());
         } catch (ResourceNotFoundException rnfe) {
-            Logger.error(this, "ResourceNotFoundException" + rnfe.toString(), rnfe);
+            Logger.warnAndDebug(this.getClass(), "ResourceNotFoundException" + rnfe.toString(), rnfe);
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         } catch (DotSecurityException dse) {
             Logger.warnAndDebug(this.getClass(), dse.getMessage(),dse);
             if(!response.isCommitted()) {
-
-                if(user==null || APILocator.getUserAPI().getAnonymousUserNoThrow().equals(user)) {
+                if(frontEndUser==null || APILocator.getUserAPI().getAnonymousUserNoThrow().equals(frontEndUser)) {
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                     return;
                 }else {
@@ -92,19 +98,20 @@ public class VelocityServlet extends HttpServlet {
                 }
             }
         } catch (HTMLPageAssetNotFoundException hpnfe) {
+            Logger.warnAndDebug(this.getClass(), hpnfe.getMessage(),hpnfe);
             if(!response.isCommitted()) {
-                Logger.warnAndDebug(this.getClass(), hpnfe.getMessage(),hpnfe);
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
-        } catch (java.lang.IllegalStateException state) {
-            Logger.debug(this, "IllegalStateException" + state.toString());
+        } catch (IllegalStateException state) {
             // Eat this, client disconnect noise
+            Logger.debug(this, ()-> "IllegalStateException" + state.toString());
         } catch (Exception e) {
+            Logger.warnAndDebug(this.getClass(), e.getMessage(),e);
             if(!response.isCommitted()) {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");
             }
-            Logger.warnAndDebug(this.getClass(), e.getMessage(),e);
+            
         }
         
     }
