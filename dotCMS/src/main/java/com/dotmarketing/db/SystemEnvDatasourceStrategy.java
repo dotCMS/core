@@ -74,7 +74,6 @@ public class SystemEnvDatasourceStrategy implements DotDatasourceStrategy {
                             + " from System Environment. Reason: " + e.getMessage(),
                     e);
             if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
-                e.printStackTrace();
                 System.exit(1);
             }
 

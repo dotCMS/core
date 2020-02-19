@@ -18,7 +18,7 @@ import org.apache.commons.configuration.PropertiesConfiguration;
  */
 public class DBPropertiesDatasourceStrategy implements DotDatasourceStrategy {
 
-    private final String DB_PROPERTIES_FILE_NAME = "db.properties";
+    private static final String DB_PROPERTIES_FILE_NAME = "db.properties";
 
     private DBPropertiesDatasourceStrategy(){}
 
@@ -36,7 +36,7 @@ public class DBPropertiesDatasourceStrategy implements DotDatasourceStrategy {
      */
     public boolean existsDBPropertiesFile() {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        final URL resourceURL = loader.getResource("db.properties");
+        final URL resourceURL = loader.getResource(DB_PROPERTIES_FILE_NAME);
         return resourceURL!=null && new File(resourceURL.getPath()).exists();
     }
 
@@ -76,7 +76,6 @@ public class DBPropertiesDatasourceStrategy implements DotDatasourceStrategy {
                             + " from db.properties file",
                     e);
             if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
-                e.printStackTrace();
                 System.exit(1);
             }
 

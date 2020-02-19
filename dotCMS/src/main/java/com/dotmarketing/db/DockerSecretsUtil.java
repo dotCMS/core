@@ -20,8 +20,12 @@ public class DockerSecretsUtil {
 
     private static final String SECRETS_DIR = "/run/secrets/";
 
+    private DockerSecretsUtil(){
+
+    }
+
     public static Map<String, String> load() throws DotRuntimeException {
-        File secretsDir = new File(SECRETS_DIR);
+        final File secretsDir = new File(SECRETS_DIR);
         return load(secretsDir);
     }
 
@@ -39,7 +43,7 @@ public class DockerSecretsUtil {
     public static Map<String, String> loadFromFile(final File secretsFile)
             throws DotRuntimeException {
 
-        if (!secretsFile.exists()) {
+        if (!secretsFile.canRead()) {
             throw new DotRuntimeException(
                     "Unable to read secrets from file at [" + secretsFile.toPath() + "]");
         }
@@ -48,8 +52,8 @@ public class DockerSecretsUtil {
 
         try {
             final List<String> lines = Files.readAllLines(secretsFile.toPath(), Charset.defaultCharset());
-            for (String line : lines) {
-                final int index = line.indexOf("=");
+            for (final String line : lines) {
+                final int index = line.indexOf('=');
                 if (index < 0) {
                     throw new DotRuntimeException(
                             "Invalid secrets in file at [" + secretsFile.toPath() + "]");
@@ -84,7 +88,7 @@ public class DockerSecretsUtil {
         for (final File file : secretFiles) {
             try {
                 final String secret = new String(Files.readAllBytes(file.toPath()));
-                final int index = secret.indexOf("=");
+                final int index = secret.indexOf('=');
                 if (index > 0){
                     secrets.put(file.getName(), secret.substring(index + 1));
                 } else {

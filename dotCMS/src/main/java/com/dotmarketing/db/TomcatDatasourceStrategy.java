@@ -38,7 +38,6 @@ public class TomcatDatasourceStrategy implements DotDatasourceStrategy {
                     "---------- Error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE + " from context.xml",
                     e);
             if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
-                e.printStackTrace();
                 System.exit(1);
             }
 

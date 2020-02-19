@@ -137,7 +137,7 @@ public class DbConnectionFactory {
                             Logger.info(DbConnectionFactory.class,
                                     "---------- DBConnectionFactory:Datasource added to JNDI context ---------------");
                         }
-                    } catch (Exception e) {
+                    } catch (NamingException e) {
                         Logger.error(DbConnectionFactory.class,
                                 "---------- DBConnectionFactory: Error setting datasource in JNDI context ---------------", e);
                         throw new DotRuntimeException(e.toString());
