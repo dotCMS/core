@@ -16,20 +16,33 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.FileUtil;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> {
 
+    private class ContentTypeContent {
+        private ContentType contentType;
+        private String content;
+
+        public ContentTypeContent(ContentType contentType, String content) {
+            this.contentType = contentType;
+            this.content = content;
+        }
+
+        public ContentType getContentType() {
+            return contentType;
+        }
+
+        public String getContent() {
+            return content;
+        }
+    }
+
     private Host host;
     private String folderName = "/large-column" + System.currentTimeMillis();
-    private List<ContentType> contentTypes = new ArrayList<>(ImmutableSet.of(
-            TestDataUtils.getDocumentLikeContentType(),
-            TestDataUtils.getProductLikeContentType(),
-            TestDataUtils.getNewsLikeContentType()
-    ));
+    private List<ContentTypeContent> contentTypes = new ArrayList<>();
+
     private String metaDataCode =
             "$dotJSON.put(\"title\", \"Test Container\")\n" +
                     "$dotJSON.put(\"max_contentlets\", 25)\n" +
@@ -57,9 +70,8 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
         return this;
     }
 
-    public ContainerAsFileDataGen contentTypes(final ContentType... contentTypes) {
-        this.contentTypes.clear();
-        this.contentTypes.addAll(Arrays.asList(contentTypes));
+    public ContainerAsFileDataGen contentType(final ContentType contentType, final String content) {
+        this.contentTypes.add(new ContentTypeContent(contentType,  content));
         return this;
     }
 
@@ -69,7 +81,9 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
     }
 
     public List<ContentType> getContentTypes() {
-        return ImmutableList.copyOf(contentTypes);
+        return contentTypes.stream()
+                .map(contentTypeContent -> contentTypeContent.getContentType())
+                .collect(Collectors.toList());
     }
 
     public FileAsset getMetaData() {
@@ -86,13 +100,21 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
         structures.clear();
         try {
             final Folder containerFolder = createFileAsContainerFolderIfNeeded();
-            for (final ContentType contentType : contentTypes) {
+
+            if (contentTypes.isEmpty()) {
+                contentTypes = getDefaultContentTypes();
+            }
+
+            for (final ContentTypeContent contentTypeContent : contentTypes) {
+                final ContentType contentType = contentTypeContent.getContentType();
                 final String contentTypeName = contentType.variable();
                 final java.io.File file = java.io.File.createTempFile(contentTypeName, ".vtl");
-                FileUtil.write(file, "lol");
+                FileUtil.write(file, contentTypeContent.getContent());
                 final Contentlet structure = new FileAssetDataGen(containerFolder, file)
                         .setProperty("title", contentTypeName)
-                        .setProperty("fileName", contentTypeName + ".vtl").nextPersisted();
+                        .setProperty("fileName", contentTypeName + ".vtl")
+                        .host(host)
+                        .nextPersisted();
                 structures.add(APILocator.getFileAssetAPI().fromContentlet(structure));
             }
 
@@ -152,7 +174,7 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
     private synchronized Folder createFileAsContainerFolderIfNeeded()
             throws DotDataException, DotSecurityException {
         creatApplicationContainerFolderIfNeeded();
-        String fullPath = Constants.CONTAINER_FOLDER_PATH + folderName;
+        String fullPath = Constants.CONTAINER_FOLDER_PATH + "/" + folderName;
         fullPath = !fullPath.endsWith("/") ? fullPath + "/" : fullPath;
 
         Folder folder = APILocator.getFolderAPI()
@@ -164,4 +186,11 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
         return folder;
     }
 
+    private List<ContentTypeContent> getDefaultContentTypes(){
+        return new ArrayList<>(ImmutableSet.of(
+                new ContentTypeContent(TestDataUtils.getDocumentLikeContentType(), "lol"),
+                new ContentTypeContent(TestDataUtils.getProductLikeContentType(), "lol"),
+                new ContentTypeContent(TestDataUtils.getNewsLikeContentType(), "lol")
+        ));
+    }
 }

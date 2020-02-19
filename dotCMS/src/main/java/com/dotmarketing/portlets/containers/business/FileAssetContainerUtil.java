@@ -196,7 +196,7 @@ public class FileAssetContainerUtil {
         return -1 != indexOf? fullPath.substring(indexOf + hostname.length()): fullPath;
     }
 
-    public String removeRelativePath(final String fullPath) {
+    public String getPathFromFullPath(final String fullPath) {
         final String hostName = this.getHostName(fullPath);
 
         return this.getPathFromFullPath(hostName, fullPath);

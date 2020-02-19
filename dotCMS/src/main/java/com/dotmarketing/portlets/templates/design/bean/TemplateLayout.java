@@ -183,7 +183,7 @@ public class TemplateLayout implements Serializable {
     public boolean existsContainer(final String identifier, final String uuid) {
         final String relativePath =
                 FileAssetContainerUtil.getInstance().isFolderAssetContainerId(identifier) ?
-                        FileAssetContainerUtil.getInstance().removeRelativePath(identifier) : null;
+                        FileAssetContainerUtil.getInstance().getPathFromFullPath(identifier) : null;
 
         return this.getContainers().stream()
                 .anyMatch(containerUUID ->
