@@ -1,10 +1,18 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import java.io.IOException;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import com.dotcms.business.CloseDB;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.UserWebAPIImpl;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotSecurityException;
@@ -16,15 +24,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-import io.vavr.control.Try;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 public class VelocityServlet extends HttpServlet {
 
@@ -41,7 +40,7 @@ public class VelocityServlet extends HttpServlet {
         final VelocityRequestWrapper request = new VelocityRequestWrapper(req);
         final String uri = CMSUrlUtil.getCurrentURI(request);
         final boolean comeFromSomeWhere = request.getHeader("referer") != null;
-        final User frontEndUser = Try.of(()->WebAPILocator.getUserWebAPI().getLoggedInFrontendUser(request)).getOrNull();
+        final User frontEndUser = ((UserWebAPIImpl) WebAPILocator.getUserWebAPI()).getLoggedInFrontendUser(request);
         request.setRequestUri(uri);
         final PageMode mode = PageMode.getWithNavigateMode(request);
         
