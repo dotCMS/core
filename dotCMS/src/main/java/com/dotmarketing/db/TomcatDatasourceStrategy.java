@@ -3,11 +3,11 @@ package com.dotmarketing.db;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.JNDIUtil;
 import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 /**
@@ -27,19 +27,16 @@ public class TomcatDatasourceStrategy implements DotDatasourceStrategy {
     }
 
     @Override
-    public DataSource getDatasource() {
+    public DataSource apply() {
         try {
             final InitialContext ctx = new InitialContext();
             final HikariConfig config = new HikariConfig();
             config.setDataSource((DataSource) JNDIUtil.lookup(ctx, Constants.DATABASE_DEFAULT_DATASOURCE));
             return new HikariDataSource(config);
-        } catch (Throwable e) {
+        } catch (NamingException e) {
             Logger.error(TomcatDatasourceStrategy.class,
                     "---------- Error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE + " from context.xml",
                     e);
-            if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
-                System.exit(1);
-            }
 
             throw new DotRuntimeException(e.toString());
         }

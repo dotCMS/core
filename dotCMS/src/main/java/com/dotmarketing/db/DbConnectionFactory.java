@@ -6,6 +6,7 @@ import static com.dotmarketing.util.Constants.DATABASE_DEFAULT_DATASOURCE;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
@@ -112,34 +113,17 @@ public class DbConnectionFactory {
             synchronized (DbConnectionFactory.class) {
 
                 if (null == defaultDataSource) {
-                    if (DBPropertiesDatasourceStrategy.getInstance().existsDBPropertiesFile()) {
-                        defaultDataSource = DBPropertiesDatasourceStrategy.getInstance().getDatasource();
-                        Logger.info(DbConnectionFactory.class, "Datasource loaded from db.properties file");
-                    } else if (System.getenv("connection_db_base_url") != null) {
-                        defaultDataSource = SystemEnvDatasourceStrategy.getInstance().getDatasource();
-                        Logger.info(DbConnectionFactory.class, "Datasource loaded from system environment");
-                    } else {
-                        defaultDataSource = DockerSecretDatasourceStrategy.getInstance().getDatasource();
-                        Logger.info(DbConnectionFactory.class, "Datasource loaded from Docker Secret");
-                    }
-
-                    if (null == defaultDataSource){
-                        defaultDataSource = TomcatDatasourceStrategy.getInstance().getDatasource();
-                        Logger.info(DbConnectionFactory.class, "Datasource loaded from context.xml");
-                    }
-
                     try {
-                        //Adds datasource to JNDI if needed
-                        if (Config.getBooleanProperty("ADD_DATASOURCE_TO_JNDI", false)) {
-                            final Context context = new InitialContext();
-                            context.createSubcontext("jdbc");
-                            context.bind(DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
-                            Logger.info(DbConnectionFactory.class,
-                                    "---------- DBConnectionFactory:Datasource added to JNDI context ---------------");
-                        }
-                    } catch (NamingException e) {
+                        loadDatasource();
+                        addDatasourceToJNDI();
+                    } catch (Throwable e) {
                         Logger.error(DbConnectionFactory.class,
-                                "---------- DBConnectionFactory: Error setting datasource in JNDI context ---------------", e);
+                                "---------- DBConnectionFactory: error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE,
+                                e);
+                        if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
+                            System.exit(1);
+                        }
+
                         throw new DotRuntimeException(e.toString());
                     }
                 }
@@ -147,6 +131,78 @@ public class DbConnectionFactory {
         }
 
         return defaultDataSource;
+    }
+
+    /**
+     * Method that loads a datasource from a custom implementation if <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b>
+     * property is defined. Otherwise, the datasource is initialized using any of these implementations (respecting order):<br>
+     * 1. A db.properties file in WEB-INF/classes implemented by {@link DBPropertiesDatasourceStrategy}<br>
+     * 2. Configuration is taken from environment variables implemented by {@link SystemEnvDatasourceStrategy}<br>
+     * 3. Getting Docker Secrets if set. Implementation: {@link DockerSecretDatasourceStrategy}<br>
+     * 4. A context.xml file in META-INF. Implementation: {@link TomcatDatasourceStrategy}
+     *
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     * @throws ClassNotFoundException
+     */
+    private static void loadDatasource()
+            throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        final String providerClassName = Config
+                .getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", null);
+
+        if (null == providerClassName) {
+            if (DBPropertiesDatasourceStrategy.getInstance()
+                    .existsDBPropertiesFile()) {
+                defaultDataSource = DBPropertiesDatasourceStrategy.getInstance()
+                        .apply();
+                Logger.info(DbConnectionFactory.class,
+                        "Datasource loaded from db.properties file");
+            } else if (System.getenv("connection_db_base_url") != null) {
+                defaultDataSource = SystemEnvDatasourceStrategy.getInstance()
+                        .apply();
+                Logger.info(DbConnectionFactory.class,
+                        "Datasource loaded from system environment");
+            } else {
+                defaultDataSource = DockerSecretDatasourceStrategy.getInstance()
+                        .apply();
+                Logger.info(DbConnectionFactory.class,
+                        "Datasource loaded from Docker Secret");
+            }
+
+            if (null == defaultDataSource) {
+                defaultDataSource = TomcatDatasourceStrategy.getInstance()
+                        .apply();
+                Logger.info(DbConnectionFactory.class,
+                        "Datasource loaded from context.xml");
+            }
+        } else {
+            DotDatasourceStrategy customStrategy = ((Class<DotDatasourceStrategy>) Class
+                    .forName(providerClassName)).newInstance();
+            defaultDataSource = customStrategy.apply();
+
+            Logger.info(DbConnectionFactory.class,
+                    "Datasource loaded using custom class " + providerClassName);
+        }
+    }
+
+    /**
+     * Saves a datasource in JNDI in case <b>ADD_DATASOURCE_TO_JNDI</b> is set to true.
+     * By default, <b>ADD_DATASOURCE_TO_JNDI</b> is set to false
+     */
+    private static void addDatasourceToJNDI() {
+        try {
+            if (Config.getBooleanProperty("ADD_DATASOURCE_TO_JNDI", false)) {
+                final Context context = new InitialContext();
+                context.createSubcontext("jdbc");
+                context.bind(DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
+                Logger.info(DbConnectionFactory.class,
+                        "---------- DBConnectionFactory:Datasource added to JNDI context ---------------");
+            }
+        } catch (NamingException e) {
+            Logger.error(DbConnectionFactory.class,
+                    "---------- DBConnectionFactory: Error setting datasource in JNDI context ---------------", e);
+            throw new DotRuntimeException(e.toString());
+        }
     }
 
 

@@ -3,7 +3,6 @@ package com.dotmarketing.db;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import java.io.File;
@@ -41,7 +40,7 @@ public class DBPropertiesDatasourceStrategy implements DotDatasourceStrategy {
     }
 
     @Override
-    public DataSource getDatasource() {
+    public DataSource apply() {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
         loader.getResourceAsStream(DB_PROPERTIES_FILE_NAME);
 
@@ -75,9 +74,6 @@ public class DBPropertiesDatasourceStrategy implements DotDatasourceStrategy {
                     "---------- Error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE
                             + " from db.properties file",
                     e);
-            if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
-                System.exit(1);
-            }
 
             throw new DotRuntimeException(e.toString());
         }
