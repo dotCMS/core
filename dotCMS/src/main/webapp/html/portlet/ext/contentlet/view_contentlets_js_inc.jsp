@@ -1825,6 +1825,7 @@
 
           viewCard.items = [];
           setTimeout(() => {
+              console.log(content);
             viewCard.items = content;
           }, 0)
         };
