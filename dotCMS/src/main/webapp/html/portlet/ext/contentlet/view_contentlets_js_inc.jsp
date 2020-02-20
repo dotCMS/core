@@ -1825,7 +1825,6 @@
 
           viewCard.items = [];
           setTimeout(() => {
-              console.log(content);
             viewCard.items = content;
           }, 0)
         };
@@ -2681,7 +2680,6 @@
 
 
     	executeWfAction: function(wfId, assignable, commentable, hasPushPublishActionlet, inode ){
-			debugger;
             this.wfActionId = wfId;
     		if(assignable == "true" || commentable == "true" || hasPushPublishActionlet == "true" ){
 
