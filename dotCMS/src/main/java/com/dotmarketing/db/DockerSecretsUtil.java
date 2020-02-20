@@ -16,7 +16,7 @@ import java.util.Map;
  * and modified to our needs (License type: Apache 2.0)
  * @author github.com/carsdotcom
  */
-public class DockerSecretsUtil {
+public final class DockerSecretsUtil {
 
     private static final String SECRETS_DIR = "/run/secrets/";
 
@@ -73,7 +73,7 @@ public class DockerSecretsUtil {
 
     public static Map<String, String> load(final File secretsDir) throws DotRuntimeException {
 
-        if (!secretsDir.exists()) {
+        if (!secretsDir.canRead()) {
             throw new DotRuntimeException("Unable to find any secrets under [" + SECRETS_DIR + "]");
         }
 
@@ -87,13 +87,7 @@ public class DockerSecretsUtil {
 
         for (final File file : secretFiles) {
             try {
-                final String secret = new String(Files.readAllBytes(file.toPath()));
-                final int index = secret.indexOf('=');
-                if (index > 0){
-                    secrets.put(file.getName(), secret.substring(index + 1));
-                } else {
-                    secrets.put(file.getName(), secret);
-                }
+                secrets.put(file.getName(), new String(Files.readAllBytes(file.toPath())));
             } catch (IOException e) {
                 throw new DotRuntimeException(
                         "Unable to load secret from file [" + file.getName() + "]", e);
