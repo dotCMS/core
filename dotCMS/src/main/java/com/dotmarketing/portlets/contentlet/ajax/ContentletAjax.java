@@ -1165,8 +1165,10 @@ public class ContentletAjax {
 				// End Workflow Actions
 
 				//searchResult.put("structureName", st.getVelocityVarName());
-				Long LanguageId = con.getLanguageId();
-				searchResult.put("languageId", LanguageId.toString());
+				Long languageId = con.getLanguageId();
+				searchResult.put("languageId", languageId.toString());
+				final Language language = APILocator.getLanguageAPI().getLanguage(languageId);
+				searchResult.put("language", language.getCountryCode() + '_' + language.getLanguageCode());
 				searchResult.put("permissions", permissionsSt.toString());
 
 				//Add mimeType
