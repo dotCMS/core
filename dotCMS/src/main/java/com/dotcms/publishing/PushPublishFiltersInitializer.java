@@ -8,7 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.stream.Stream;
+import java.nio.file.Paths;
 
 /**
  * Path of the yaml files: /assets/server/publishing-filters/
@@ -18,17 +18,35 @@ public class PushPublishFiltersInitializer implements DotInitializer {
     @Override
     public void init() {
 
-        final String filtersDirectory = APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server" + File.separator + "publishing-filters" + File.separator;
-        final File basePath = new File(filtersDirectory);
-        if (!basePath.exists()) {
-            basePath.mkdir();
-            //copiar archivos desde resources
-        }
-        Logger.info(PushPublishFiltersInitializer.class, " ymlFiles are set under:  " + filtersDirectory);
-        Stream<Path> pathStream = null;
         try {
-            pathStream = Files.list(basePath.toPath());
-            pathStream.forEach(this::loadFilter);
+            //Path where the YAML files are stored
+            final String filtersDirectoryString =
+                    APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server"
+                            + File.separator + "publishing-filters" + File.separator;
+            final File basePath = new File(filtersDirectoryString);
+            if (!basePath.exists()) {
+                basePath.mkdir();
+                //If the directory does not exists, copy the YAML files that are ship with
+                //dotcms to the created directory
+                final String systemFiltersDirectory = "com" + File.separator + "dotcms" +
+                        File.separator + "publishing-filters" + File.separator;
+                final String systemFiltersPathString = Thread.currentThread()
+                        .getContextClassLoader().getResource(systemFiltersDirectory).getPath();
+                final File systemFilters = new File(systemFiltersPathString);
+                Files.list(systemFilters.toPath()).forEach(filter -> {
+                    try {
+                        Files.copy(filter,
+                                Paths.get(filtersDirectoryString + filter.getFileName()));
+                    } catch (IOException e) {
+                        Logger.error(this, e.getMessage(), e);
+                    }
+                });
+                Logger.debug(PushPublishFiltersInitializer.class, " dotcms filters files copied");
+            }
+            Logger.info(PushPublishFiltersInitializer.class, " ymlFiles are set under:  " + filtersDirectoryString);
+            //For each YAML file under the directory,
+            // read it and load the Filter to the PublisherAPI.loadedFilters
+            Files.list(basePath.toPath()).forEach(this::loadFilter);
         } catch (IOException e) {
             Logger.error(this, e.getMessage(), e);
         }
