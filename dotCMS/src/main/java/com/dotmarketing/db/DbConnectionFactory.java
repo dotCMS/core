@@ -115,7 +115,7 @@ public class DbConnectionFactory {
                 if (null == defaultDataSource) {
                     try {
                         loadDatasource();
-                        addDatasourceToJNDI();
+                        addDatasourceToJNDIIfNeeded();
                     } catch (Throwable e) {
                         Logger.error(DbConnectionFactory.class,
                                 "---------- DBConnectionFactory: error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE,
@@ -189,7 +189,7 @@ public class DbConnectionFactory {
      * Saves a datasource in JNDI in case <b>ADD_DATASOURCE_TO_JNDI</b> is set to true.
      * By default, <b>ADD_DATASOURCE_TO_JNDI</b> is set to false
      */
-    private static void addDatasourceToJNDI() {
+    private static void addDatasourceToJNDIIfNeeded() {
         try {
             if (Config.getBooleanProperty("ADD_DATASOURCE_TO_JNDI", false)) {
                 final Context context = new InitialContext();
