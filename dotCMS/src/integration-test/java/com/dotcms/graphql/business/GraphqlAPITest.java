@@ -762,12 +762,12 @@ public class GraphqlAPITest extends IntegrationTestBase {
     }
 
     private boolean areFileassetFieldsPresent(final GraphQLObjectType objectType) {
-        List<String> fileAssetFields = list(FILEASSET_FILE_NAME_FIELD_VAR,
+        final List<String> fileAssetFields = list(FILEASSET_FILE_NAME_FIELD_VAR,
                 FILEASSET_DESCRIPTION_FIELD_VAR, FILEASSET_FILEASSET_FIELD_VAR,
                 FILEASSET_METADATA_FIELD_VAR, FILEASSET_SHOW_ON_MENU_FIELD_VAR,
                 FILEASSET_SORT_ORDER_FIELD_VAR);
-        return objectType.getFieldDefinitions().stream().allMatch((fieldDefinition ->
-                fileAssetFields.contains(fieldDefinition.getName())));
+        return objectType.getFieldDefinitions().stream().allMatch(fieldDefinition ->
+                fileAssetFields.contains(fieldDefinition.getName()));
     }
 
     private ContentType createAndSaveSimpleContentType(final String name) throws DotSecurityException, DotDataException {
