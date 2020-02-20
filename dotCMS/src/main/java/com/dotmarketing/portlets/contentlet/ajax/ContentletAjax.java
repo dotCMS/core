@@ -1131,9 +1131,16 @@ public class ContentletAjax {
 				searchResult.put("working", working.toString());
 				Boolean live = con.isLive();
 				searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
+
 				searchResult.put("hasLiveVersion", "false");
-				if (!con.isLive() && con.isWorking() && !con.isArchived()) {
-					if (APILocator.getVersionableAPI().hasLiveVersion(con)) {
+
+				final boolean hasLiveVersion = APILocator.getVersionableAPI().hasLiveVersion(con);
+				if (live && hasLiveVersion) {
+
+					searchResult.put("hasLiveVersion", "true");
+				}
+				if (!live && working && !con.isArchived()) {
+					if (hasLiveVersion) {
 						searchResult.put("hasLiveVersion", "true");
 						searchResult.put("allowUnpublishOfLiveVersion", "true");
 						searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
