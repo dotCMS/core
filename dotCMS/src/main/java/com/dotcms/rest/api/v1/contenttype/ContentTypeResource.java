@@ -325,24 +325,6 @@ public class ContentTypeResource implements Serializable {
 	}
 
 	@GET
-	@Path("/match")
-	@JSONP
-	@NoCache
-	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-	public Response findMatchContentType(
-			@QueryParam("mimeType") final String mimeType,
-			@Context final HttpServletRequest req,
-			@Context final HttpServletResponse res)
-			throws DotDataException, DotSecurityException, PortalException, SystemException {
-
-		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
-		final User user 		  = initData.getUser();
-		final Host currentHost    = WebAPILocator.getHostWebAPI().getCurrentHost(req);
-		final Optional<ContentType> dotAssetTypeOpt = APILocator.getDotAssetAPI().tryMatch(mimeType, currentHost, user);
-		return dotAssetTypeOpt.isPresent()?Response.ok(new ResponseEntityView(dotAssetTypeOpt.get())).build():Response.status(404).build();
-	}
-
-	@GET
 	@Path("/id/{idOrVar}")
 	@JSONP
 	@NoCache

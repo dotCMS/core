@@ -71,7 +71,7 @@ public class DotAssetAPIImpl implements DotAssetAPI {
     }
 
     private Optional<ContentType> findDotAssetContentType(final String mimeType,
-                                                          final Map<String, ContentType>[] mimeTypeMappingArray) {
+                                                          final Map<String, ContentType>... mimeTypeMappingArray) {
 
         for (final Map<String, ContentType> mimeTypeContentTypeMap : mimeTypeMappingArray) {
 

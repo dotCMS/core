@@ -4,7 +4,6 @@ import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.util.StringUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 
 import javax.activation.MimeType;
