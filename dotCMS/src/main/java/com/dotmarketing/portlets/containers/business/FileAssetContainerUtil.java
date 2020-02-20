@@ -344,29 +344,9 @@ public class FileAssetContainerUtil {
 
     private String buildPath(final Host host, final Folder containerFolder, final boolean includeHostOnPath) {
 
-        return buildPath(host, containerFolder.getPath(), includeHostOnPath);
-    }
-
-    /**
-     * Return the full path for a {@link FileAssetContainer}, with the follow sintax:
-     *
-     * //[host name]/[File Container path]
-     *
-     * @param container
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
-    public String getFullPath(final FileAssetContainer container) throws DotSecurityException, DotDataException {
-        final Host host = APILocator.getHostAPI().findParentHost(container, APILocator.systemUser(), false);
-        return buildPath(host, container.getPath(), true);
-    }
-
-    private String buildPath(final Host host, final String containerPath, final boolean includeHostOnPath) {
-
         return includeHostOnPath?
-                builder(HOST_INDICATOR, host.getHostname(), containerPath).toString() :
-                containerPath;
+                builder(HOST_INDICATOR, host.getHostname(), containerFolder.getPath()).toString():
+                containerFolder.getPath();
     }
 
     private boolean isContainerMetaInfo(final FileAsset fileAsset, final boolean showLive) {

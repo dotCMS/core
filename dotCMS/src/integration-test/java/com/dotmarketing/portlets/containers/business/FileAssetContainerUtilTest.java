@@ -1,41 +1,13 @@
 package com.dotmarketing.portlets.containers.business;
 
-import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.ContentletBaseTest;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class FileAssetContainerUtilTest extends ContentletBaseTest {
-
-    /**
-     * Method to Test: {@link FileAssetContainerUtil#getFullPath(FileAssetContainer)}
-     * When: Create a new {@link FileAssetContainer}
-     * should: return the full path
-     *
-     * @throws Exception
-     */
-    @Test
-    public void testGetFullPathMethod() throws Exception {
-
-        final Host host = new SiteDataGen().nextPersisted();
-
-        final FileAssetContainer fileAssetContainer = new ContainerAsFileDataGen()
-                .host(host)
-                .nextPersisted();
-
-        final FileAssetContainer container = (FileAssetContainer) APILocator.getContainerAPI()
-                .find(fileAssetContainer.getInode(), APILocator.systemUser(), true);
-
-        final String fullPath = FileAssetContainerUtil.getInstance().getFullPath(container);
-
-        final String expected = "//" + host.getHostname() + (container).getPath();
-
-        Assert.assertEquals(expected, fullPath);
-    }
 
     @Test
     public void test_getPathFromFullPath_wrong_host_on_full_path() throws Exception {

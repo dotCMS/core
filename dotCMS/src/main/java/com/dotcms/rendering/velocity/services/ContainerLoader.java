@@ -150,10 +150,10 @@ public class ContainerLoader implements DotLoader {
         velocityResourceCache.remove(identifierKey);
     }
 
-    private String getDataDotIdentifier (final Container container) throws DotDataException, DotSecurityException {
+    private String getDataDotIdentifier (final Container container) {
 
-        return container instanceof FileAssetContainer ?
-                FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container) :
+        return container instanceof FileAssetContainer?
+                FileAssetContainer.class.cast(container).getPath():
                 container.getIdentifier();
     }
 
