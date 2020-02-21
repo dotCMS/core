@@ -69,6 +69,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -90,8 +91,8 @@ public class GraphqlAPIImpl implements GraphqlAPI {
         // custom type mappings
         this.fieldClassGraphqlTypeMap.put(BinaryField.class, CustomFieldType.BINARY.getType());
         this.fieldClassGraphqlTypeMap.put(CategoryField.class, list(CustomFieldType.CATEGORY.getType()));
-        this.fieldClassGraphqlTypeMap.put(ImageField.class, InterfaceType.FILEASSET.getType());
-        this.fieldClassGraphqlTypeMap.put(FileField.class, InterfaceType.FILEASSET.getType());
+        this.fieldClassGraphqlTypeMap.put(ImageField.class, CustomFieldType.FILEASSET.getType());
+        this.fieldClassGraphqlTypeMap.put(FileField.class, CustomFieldType.FILEASSET.getType());
         this.fieldClassGraphqlTypeMap.put(KeyValueField.class, list(CustomFieldType.KEY_VALUE.getType()));
         this.fieldClassGraphqlTypeMap.put(CheckboxField.class, list(GraphQLString));
         this.fieldClassGraphqlTypeMap.put(MultiSelectField.class, list(GraphQLString));
@@ -346,5 +347,15 @@ public class GraphqlAPIImpl implements GraphqlAPI {
             ? relationship.getChildStructureInode() : relationship.getParentStructureInode();
 
         return APILocator.getContentTypeAPI(user).find(relatedContentTypeId);
+    }
+
+    @Override
+    public Map<Class<? extends Field>, GraphQLOutputType> getFieldTypesWithCustomGraphQLTypes() {
+        return fieldClassGraphqlTypeMap;
+    }
+
+    @Override
+    public Collection<GraphQLObjectType> getCustomFieldTypes() {
+        return CustomFieldType.getCustomFieldTypes();
     }
 }

@@ -259,6 +259,8 @@ public class BinaryExporterServlet extends HttpServlet {
 						} catch(DotSecurityException e) {
 							if (!mode.respectAnonPerms) {
 								content = getContentletLiveVersion(assetInode, user, lang);
+							} else {
+								throw e;
 							}
 						}
 					}
@@ -639,7 +641,9 @@ public class BinaryExporterServlet extends HttpServlet {
 				    req.getSession().removeAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN);
 					resp.sendError(HttpServletResponse.SC_FORBIDDEN);
 				}else{
-				    req.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, req.getAttribute("javax.servlet.forward.request_uri"));
+					final String requestUri = (String) req.getAttribute("javax.servlet.forward.request_uri");
+					Logger.debug(this, "Setting redirect after login to requested uri: " + requestUri);
+				    req.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, requestUri);
 					resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
 				}
 			  }
