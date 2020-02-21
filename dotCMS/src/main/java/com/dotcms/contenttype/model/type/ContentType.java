@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
         @Type(value = WidgetContentType.class),
         @Type(value = VanityUrlContentType.class),
         @Type(value = KeyValueContentType.class),
+        @Type(value = DotAssetContentType.class)
 })
 public abstract class ContentType implements Serializable, Permissionable, ContentTypeIf {
 
