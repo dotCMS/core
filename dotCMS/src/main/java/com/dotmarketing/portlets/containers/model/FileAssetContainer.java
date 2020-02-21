@@ -6,10 +6,8 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.Collections;
@@ -111,7 +109,6 @@ public class FileAssetContainer extends Container {
     public boolean hasLiveVersion() throws DotStateException, DotDataException {
         return APILocator.getVersionableAPI().hasLiveVersion(toContentlet());
     }
-
 
     public String getPath() {
         return path;

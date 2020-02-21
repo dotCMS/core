@@ -489,13 +489,11 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 	},
 
 	showEditDefaultActions : function(schemeId) {
-		var dialog = dijit.byId(this.editDefaultActions);
-		dialog.show();
-		schemeAdmin.getCurrentDefaultActionsByScheme(schemeId);
 		schemeAdmin.getWorkflowActionsByScheme(schemeId);
 	},
 
-	fillAvailableWorkflowActions : function (actions){
+	fillAvailableWorkflowActions : function (schemeId, actions){
+
 		var items = new Array();
 		items.push({
 			id: "",
@@ -521,6 +519,16 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		dijit.byId("defaultActionUNARCHIVE").set('store', actionStore);
 		dijit.byId("defaultActionDELETE").set('store', actionStore);
 		dijit.byId("defaultActionDESTROY").set('store', actionStore);
+
+		/*
+		Now we load the available actions into the dropdowns we can display the modal
+		and set the already stored actions for each default action.
+		*/
+		//Showing the default actions dialog
+		schemeAdmin.showDefaultActionsDialog();
+
+		//Setting the stored action for each default action dropdown
+		schemeAdmin.getCurrentDefaultActionsByScheme(schemeId);
 	},
 
 	//Obtains the possible default actions for the scheme
@@ -530,13 +538,19 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 			handleAs: "json",
 			load: function(data) {
 				var results = data.entity;
-				schemeAdmin.fillAvailableWorkflowActions(results);
+				schemeAdmin.fillAvailableWorkflowActions(schemeId, results);
 			},
 			error : function(error) {
 				showDotCMSSystemMessage(error, true);
 			}
 		};
 		dojo.xhrGet(xhrArgs);
+	},
+
+	//Show the default actions modal
+	showDefaultActionsDialog : function(){
+		var dialog = dijit.byId(this.editDefaultActions);
+		dialog.show();
 	},
 
 	//Obtains the current default actions for the scheme and fills the values on the dropdown

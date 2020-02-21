@@ -153,7 +153,7 @@ public class ContainerLoader implements DotLoader {
     private String getDataDotIdentifier (final Container container) throws DotDataException, DotSecurityException {
 
         return container instanceof FileAssetContainer ?
-                ((FileAssetContainer) container).getPath() :
+                FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container) :
                 container.getIdentifier();
     }
 
