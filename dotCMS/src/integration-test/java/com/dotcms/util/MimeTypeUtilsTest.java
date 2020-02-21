@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -123,6 +124,23 @@ public class MimeTypeUtilsTest extends UnitTestBase {
         match = MimeTypeUtils.match("aplication/pdf", "image/png");
 
         Assert.assertFalse("aplication/pdf must not match with image/png", match);
+    }
+
+    @Test
+    public void test_match_MimeType_unknown() throws IOException {
+
+        boolean match = MimeTypeUtils.match("text/x-asm", FileAsset.UNKNOWN_MIME_TYPE);
+
+        Assert.assertFalse("text/x-asm must match with text/x-asm", match);
+
+        match = MimeTypeUtils.match("text/*", FileAsset.UNKNOWN_MIME_TYPE);
+
+        Assert.assertFalse("text/css must match with text/css", match);
+
+        match = MimeTypeUtils.match("*/*", FileAsset.UNKNOWN_MIME_TYPE);
+
+        Assert.assertTrue("text/csv must match with text/csv", match);
+
     }
 
     @Test

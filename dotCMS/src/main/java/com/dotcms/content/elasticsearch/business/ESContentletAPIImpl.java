@@ -107,6 +107,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -4128,28 +4129,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     private void checkOrSetContentType(final Contentlet contentletIn, final User user) {
 
+        final Optional<BaseContentType> baseTypeOpt = contentletIn.getBaseType();
         if (contentletIn.isNew() && null == contentletIn.getContentType() &&
-                contentletIn.getMap().containsKey(Contentlet.BASE_TYPE_KEY)) {
+                baseTypeOpt.isPresent()) {
 
-            final BaseContentType baseContentType = BaseContentType.getBaseContentType(
-                    (String) contentletIn.getMap().get(Contentlet.BASE_TYPE_KEY));
-            if (null != baseContentType) {
+            final BaseContentType baseContentType = baseTypeOpt.get();
+            final Optional<BaseTypeToContentTypeStrategy>  typeStrategy =
+                    this.baseTypeToContentTypeStrategyResolver.get(baseContentType);
 
-                final Optional<BaseTypeToContentTypeStrategy>  typeStrategy =
-                        this.baseTypeToContentTypeStrategyResolver.get(baseContentType);
+            if (typeStrategy.isPresent()) {
 
-                if (typeStrategy.isPresent()) {
+                final Host host = Try.of(()->APILocator.getHostAPI().find(
+                        contentletIn.getHost(), user, false)).getOrNull();
+                if (null != host) {
+                    final Optional<ContentType> contentTypeOpt = typeStrategy.get().apply(baseContentType,
+                            CollectionsUtils.map("user", user, "host", host,
+                                    "contentletMap", contentletIn.getMap()));
 
-                    final Host host = Try.of(()->APILocator.getHostAPI().find(
-                            contentletIn.getHost(), user, false)).getOrNull();
-                    if (null != host) {
-                        final Optional<ContentType> contentTypeOpt = typeStrategy.get().apply(baseContentType,
-                                CollectionsUtils.map("user", user, "host", host,
-                                        "contentletMap", contentletIn.getMap()));
-
-                        if (contentTypeOpt.isPresent()) {
-                            contentletIn.setContentType(contentTypeOpt.get());
-                        }
+                    if (contentTypeOpt.isPresent()) {
+                        contentletIn.setContentType(contentTypeOpt.get());
                     }
                 }
             }
@@ -6363,9 +6361,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     if (BinaryField.ALLOWED_FILE_TYPES.equalsIgnoreCase(keyField)) {
 
-                        final String binaryMimeType   = MimeTypeUtils.getMimeType(binary);
+                        final String binaryMimeType   = APILocator.getFileAssetAPI().getMimeType(binary);
                         final String allowedFileTypes = fieldVariable.value();
-                        if (UtilMethods.isSet(allowedFileTypes) && UtilMethods.isSet(binaryMimeType)) {
+                        if (UtilMethods.isSet(allowedFileTypes) && UtilMethods.isSet(binaryMimeType) &&
+                                !FileAsset.UNKNOWN_MIME_TYPE.equals(binaryMimeType)) {
 
                             boolean allowed = false;
                             final MimeType fileMimeType = Sneaky.sneak(() -> new MimeType(binaryMimeType));

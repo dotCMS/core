@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.dotcms.tika.TikaUtils;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -39,6 +40,10 @@ public class MimeTypeUtils {
                 } catch(Exception e) {
                     Logger.warn(MimeTypeUtils.class, e.getMessage() +  e.getStackTrace()[0]);
                 }
+
+                if(!UtilMethods.isSet(mimeType)) {
+                    mimeType = FileAsset.UNKNOWN_MIME_TYPE;
+                }
             }
         }
 
@@ -56,6 +61,13 @@ public class MimeTypeUtils {
         if (ACCEPT_ALL.equals(mimeType1)) {
             return true;
         }
+
+        if (FileAsset.UNKNOWN_MIME_TYPE.equals(mimeType1) ||
+                FileAsset.UNKNOWN_MIME_TYPE.equals(mimeType2)) {
+
+            return false;
+        }
+
         final MimeType mimeTypeObj1 = Sneaky.sneak(() -> new MimeType(mimeType1));
         final MimeType mimeTypeObj2 = Sneaky.sneak(() -> new MimeType(mimeType2));
         return mimeTypeObj1.match(mimeTypeObj2);
