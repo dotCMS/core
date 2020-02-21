@@ -11,6 +11,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.JNDIUtil;
+import com.liferay.util.StringUtil;
 import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
 import io.vavr.control.Try;
 import java.sql.Connection;
@@ -150,7 +151,7 @@ public class DbConnectionFactory {
         final String providerClassName = Config
                 .getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", null);
 
-        if (null == providerClassName) {
+        if (!UtilMethods.isSet(providerClassName)) {
             if (DBPropertiesDatasourceStrategy.getInstance()
                     .existsDBPropertiesFile()) {
                 defaultDataSource = DBPropertiesDatasourceStrategy.getInstance()
