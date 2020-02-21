@@ -67,7 +67,7 @@ public class VelocityServlet extends HttpServlet {
         }
         
         // if you are a backend user, redirect you to the page edit screen
-        if (user.hasConsoleAccess() && !comeFromSomeWhere){
+        if (user!=null && user.hasConsoleAccess() && !comeFromSomeWhere){
             goToEditPage(uri,request, response);
             return;
         } 
