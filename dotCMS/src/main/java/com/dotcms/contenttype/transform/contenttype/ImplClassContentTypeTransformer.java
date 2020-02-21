@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ImmutableDotAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFormContentType;
 import com.dotcms.contenttype.model.type.ImmutableKeyValueContentType;
@@ -67,6 +68,8 @@ public class ImplClassContentTypeTransformer implements ContentTypeTransformer{
 				return ImmutableVanityUrlContentType.builder().from(type).build();
 			case KEY_VALUE:
 				return ImmutableKeyValueContentType.builder().from(type).build();
+			case DOTASSET:
+				return ImmutableDotAssetContentType.builder().from(type).build();
 			default:
 				throw new DotStateException("Invalid content type.");
 		}
