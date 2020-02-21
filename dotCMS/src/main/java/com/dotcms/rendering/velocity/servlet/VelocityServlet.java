@@ -28,6 +28,11 @@ import com.liferay.portal.util.PortalUtil;
 public class VelocityServlet extends HttpServlet {
 
 
+    
+    private UserWebAPIImpl userApi = (UserWebAPIImpl) WebAPILocator.getUserWebAPI();
+    
+    
+    
     /**
      * 
      */
@@ -40,7 +45,15 @@ public class VelocityServlet extends HttpServlet {
         final VelocityRequestWrapper request = new VelocityRequestWrapper(req);
         final String uri = CMSUrlUtil.getCurrentURI(request);
         final boolean comeFromSomeWhere = request.getHeader("referer") != null;
-        final User frontEndUser = ((UserWebAPIImpl) WebAPILocator.getUserWebAPI()).getLoggedInFrontendUser(request);
+        
+
+        
+        final User user = (userApi.getLoggedInUser(request)!=null) 
+                        ? userApi.getLoggedInUser(request) 
+                        : userApi.getLoggedInFrontendUser(request) !=null
+                           ? userApi.getLoggedInFrontendUser(request)
+                           : userApi.getAnonymousUserNoThrow();
+        
         request.setRequestUri(uri);
         final PageMode mode = PageMode.getWithNavigateMode(request);
         
@@ -54,7 +67,7 @@ public class VelocityServlet extends HttpServlet {
         }
         
         // if you are a backend user, redirect you to the page edit screen
-        if (PortalUtil.getUser(request)!=null && PortalUtil.getUser(request).hasConsoleAccess() && !comeFromSomeWhere){
+        if (user.hasConsoleAccess() && !comeFromSomeWhere){
             goToEditPage(uri,request, response);
             return;
         } 
@@ -75,7 +88,7 @@ public class VelocityServlet extends HttpServlet {
                     PageContextBuilder.builder()
                             .setPageUri(uri)
                             .setPageMode(mode)
-                            .setUser(frontEndUser)
+                            .setUser(user)
                             .setPageMode(mode)
                             .build(),
                     request,
@@ -88,7 +101,7 @@ public class VelocityServlet extends HttpServlet {
         } catch (DotSecurityException dse) {
             Logger.warnAndDebug(this.getClass(), dse.getMessage(),dse);
             if(!response.isCommitted()) {
-                if(frontEndUser==null || APILocator.getUserAPI().getAnonymousUserNoThrow().equals(frontEndUser)) {
+                if(user==null || APILocator.getUserAPI().getAnonymousUserNoThrow().equals(user)) {
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
                     return;
                 }else {
