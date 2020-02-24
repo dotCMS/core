@@ -311,7 +311,7 @@ public class ShortyServlet extends HttpServlet {
       }
   }
 
-  private void addImagePath(final int weight,
+  private void addImagePath(final int width,
                             final int height,
                             final int quality,
                             final boolean jpeg,
@@ -322,30 +322,23 @@ public class ShortyServlet extends HttpServlet {
                             final Optional<FocalPoint> focalPoint,
                             final int cropWidth,
                             final int cropHeight ) {
-      if(isImage) {
+        if (isImage) {
 
-          pathBuilder.append("/filter/");
-          pathBuilder.append(weight+height > 0? "Resize,"      : StringPool.BLANK);
-          if(quality>0) {
-            pathBuilder.append("Quality/quality_q/" + quality);
-          }else {
-            pathBuilder.append(jpeg ? "Jpeg/jpeg_q/75"            : StringPool.BLANK);
-            pathBuilder.append(webp ? "WebP/webp_q/75"        : StringPool.BLANK);
-            pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1"        : StringPool.BLANK);
-          }
-          pathBuilder.append(weight > 0? "/resize_w/" + weight : StringPool.BLANK);
-          pathBuilder.append(height > 0? "/resize_h/" + height : StringPool.BLANK);
-          if(focalPoint.isPresent()) {
-              pathBuilder.append("/fp/" + focalPoint.get());
-          }
-          if(cropWidth>0) {
-              pathBuilder.append("/crop_w/" + cropWidth);
-          }
-          if(cropHeight>0) {
-              pathBuilder.append("/crop_h/" + cropHeight);
-          }
-          
-      }
+            if (quality > 0) {
+                pathBuilder.append("/quality_q/" + quality);
+            } else {
+                pathBuilder.append(jpeg ? "/jpeg_q/75" : StringPool.BLANK);
+                pathBuilder.append(webp ? "/webp_q/75" : StringPool.BLANK);
+                pathBuilder.append(jpeg && jpegp ? "/jpeg_p/1" : StringPool.BLANK);
+            }
+
+            pathBuilder.append(focalPoint.isPresent() ? "/fp/" + focalPoint.get() : StringPool.BLANK);
+            pathBuilder.append(cropWidth > 0 ? "/crop_w/" + cropWidth : StringPool.BLANK);
+            pathBuilder.append(cropHeight > 0 ? "/crop_h/" + cropHeight : StringPool.BLANK);
+
+            pathBuilder.append(width > 0 ? "/resize_w/" + width : StringPool.BLANK);
+            pathBuilder.append(height > 0 ? "/resize_h/" + height : StringPool.BLANK);
+        }
   }
 
   private void addHeaders(final HttpServletResponse response, final boolean live) {
