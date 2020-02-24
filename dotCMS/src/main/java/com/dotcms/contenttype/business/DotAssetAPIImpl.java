@@ -30,7 +30,7 @@ public class DotAssetAPIImpl implements DotAssetAPI {
     @Override
     public Optional<ContentType> tryMatch(final File file,final  Host currentHost,final  User user) throws DotDataException, DotSecurityException {
 
-        return this.tryMatch(MimeTypeUtils.getMimeType(file), currentHost, user);
+        return this.tryMatch(APILocator.getFileAssetAPI().getMimeType(file), currentHost, user);
     }
 
     @Override
