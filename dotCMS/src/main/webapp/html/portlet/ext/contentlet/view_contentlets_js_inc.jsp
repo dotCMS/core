@@ -26,7 +26,7 @@
         const DOTCMS_DATAVIEW_MODE = 'dotcms.dataview.mode';
         var state = {
           data: [],
-          view: localStorage.getItem(DOTCMS_DATAVIEW_MODE) || 'card',
+          view: localStorage.getItem(DOTCMS_DATAVIEW_MODE) || 'list',
           headers: []
         }
 
