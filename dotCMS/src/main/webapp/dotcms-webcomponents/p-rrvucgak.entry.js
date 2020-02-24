@@ -1,1 +1,0 @@
-import{r as t,h as o}from"./p-276a5fbc.js";const e=class{constructor(o){t(this,o)}render(){return o("dot-select-button",{value:this.value,options:[{label:"Card",icon:"grid_on"},{label:"List",icon:"format_list_bulleted"}]})}static get style(){return""}};export{e as dot_data_view_button};
