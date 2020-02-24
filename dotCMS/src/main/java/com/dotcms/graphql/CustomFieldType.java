@@ -17,6 +17,7 @@ import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
+import com.dotcms.graphql.datafetcher.MultiValueFieldDataFetcher;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import graphql.schema.GraphQLObjectType;
@@ -123,7 +124,7 @@ public enum CustomFieldType {
                 new TypeFetcher(CustomFieldType.BINARY.getType(),new BinaryFieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_METADATA_FIELD_VAR,
                 new TypeFetcher(list(CustomFieldType.KEY_VALUE.getType()), new KeyValueFieldDataFetcher()));
-        fileAssetTypeFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString), new FieldDataFetcher()));
+        fileAssetTypeFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString), new MultiValueFieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt, new FieldDataFetcher()));
         customFieldTypes.put("FILEASSET", TypeUtil.createObjectType("Fileasset", fileAssetTypeFields));
     }
