@@ -2,14 +2,14 @@
     "content": {
         "date_detection": true,
         "dynamic_date_formats": [
-            "yyyy-MM-dd'T'HH:mm:ss||MMM d, yyyy hh:mm:ss aaa||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            "yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
         ],
         "dynamic_templates": [
             {
                 "template_1": {
                     "match": "*_dotraw",
                     "mapping": {
-                        "type":  "keyword",
+                        "type": "keyword",
                         "ignore_above": 8191
                     }
                 }
@@ -34,7 +34,8 @@
                 "geomapping": {
                     "match": "*latlon",
                     "mapping": {
-                        "type": "geo_point"
+                        "type": "geo_point",
+                        "ignore_malformed": true
                     }
                 }
             },
@@ -42,7 +43,8 @@
                 "geomapping_2": {
                     "match": "*latlong",
                     "mapping": {
-                        "type": "geo_point"
+                        "type": "geo_point",
+                        "ignore_malformed": true
                     }
                 }
             },
@@ -56,16 +58,25 @@
                 }
             },
             {
-                "keywordmapping" : {
+                "keywordmapping": {
                     "match_pattern": "regex",
-                    "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|moduser|owner",
+                    "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|moduser|owner|metadata.contenttype|metadata.keywords",
                     "mapping": {
                         "type": "keyword"
                     }
                 }
             },
             {
-                "hostname" : {
+                "longmapping": {
+                    "match_pattern": "regex",
+                    "match": "metadata.length|metadata.height|metadata.width",
+                    "mapping": {
+                        "type": "long"
+                    }
+                }
+            },
+            {
+                "hostname": {
                     "path_match": "host.hostname",
                     "mapping": {
                         "type": "keyword"
