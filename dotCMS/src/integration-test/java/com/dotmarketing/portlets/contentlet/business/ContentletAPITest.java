@@ -23,6 +23,7 @@ import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
@@ -156,6 +157,45 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class ContentletAPITest extends ContentletBaseTest {
+
+    @Test
+    public void testDotAsset_Checkin () throws DotDataException, DotSecurityException, IOException {
+
+        // 1) creates a dotasset for test
+        final String variable = "testDotAsset" + System.currentTimeMillis();
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        ContentType dotAssetContentType     = contentTypeAPI
+                .save(ContentTypeBuilder.builder(DotAssetContentType.class).folder(FolderAPI.SYSTEM_FOLDER)
+                .host(Host.SYSTEM_HOST).name(variable)
+                .owner(user.getUserId()).build());
+        final Map<String, com.dotcms.contenttype.model.field.Field> fieldMap = dotAssetContentType.fieldMap();
+        com.dotcms.contenttype.model.field.Field binaryField           = fieldMap.get(DotAssetContentType.ASSET_FIELD_VAR);
+        final FieldVariable allowFileTypes = ImmutableFieldVariable.builder().key(BinaryField.ALLOWED_FILE_TYPES)
+                .value("application/*, text/*").fieldId(binaryField.id()).build();
+        binaryField.constructFieldVariables(Arrays.asList(allowFileTypes));
+
+        dotAssetContentType = contentTypeAPI.save(dotAssetContentType);
+        binaryField = fieldAPI.save(binaryField, user);
+        fieldAPI.save(allowFileTypes, user);
+
+        final File tempTestFile = File
+                .createTempFile("fileTest_" + new Date().getTime(), ".txt");
+        FileUtils.writeStringToFile(tempTestFile, "Test hi this a test longer than ten characters");
+
+        Contentlet dotAssetContentlet = new Contentlet();
+        dotAssetContentlet.setLanguageId(languageAPI.getDefaultLanguage().getId());
+        dotAssetContentlet.setModUser(user.getUserId());
+        dotAssetContentlet.setHost(APILocator.systemHost().getIdentifier());
+        dotAssetContentlet.setStringProperty(Contentlet.BASE_TYPE_KEY, BaseContentType.DOTASSET.getAlternateName());
+        dotAssetContentlet.setBinary(binaryField, tempTestFile);
+        dotAssetContentlet.setIndexPolicy(IndexPolicy.FORCE);
+        dotAssetContentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        dotAssetContentlet = contentletAPI.checkin(dotAssetContentlet, user, false);
+
+        assertNotNull(dotAssetContentlet);
+        assertEquals("The Content Type should be: " + variable,
+                dotAssetContentType.variable(), dotAssetContentlet.getContentType().variable());
+    }
 
     @Test
     public void testCheckinDefaultActionsSkipBySettingActionId () throws DotDataException, DotSecurityException {
