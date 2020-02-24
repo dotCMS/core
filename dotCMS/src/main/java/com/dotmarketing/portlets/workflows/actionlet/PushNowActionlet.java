@@ -60,6 +60,7 @@ public class PushNowActionlet extends WorkFlowActionlet {
             if (envrions == null) {
                 Logger.error(this.getClass(), "There are no environments set to push to");
             }
+            final String filterKey = params.get("filter").getValue();//TODO: We need to implement the select to the push now dialog
 
             String[] whereToSend = envrions.split(",");
 
@@ -117,7 +118,7 @@ public class PushNowActionlet extends WorkFlowActionlet {
             List<String> identifiers = new ArrayList<String>();
             identifiers.add(ref.getIdentifier());
 
-            Bundle bundle = new Bundle(null, publishDate, null, processor.getUser().getUserId(), forcePush);
+            Bundle bundle = new Bundle(null, publishDate, null, processor.getUser().getUserId(), forcePush,filterKey);
             APILocator.getBundleAPI().saveBundle(bundle, finalEnvs);
 
             publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, processor.getUser());
