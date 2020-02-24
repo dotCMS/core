@@ -1,6 +1,8 @@
 package com.dotmarketing.db;
 
 import com.dotmarketing.util.Constants;
+import com.google.common.annotations.VisibleForTesting;
+import com.liferay.util.SystemEnvironmentProperties;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.util.Map;
@@ -12,15 +14,27 @@ import javax.sql.DataSource;
  * Otherwise, they will be read from <b>/run/secrets/</b> path
  * @author nollymar
  */
-public class DockerSecretDatasourceStrategy implements DotDatasourceStrategy {
+public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
 
-    private DockerSecretDatasourceStrategy(){}
 
-    private static class SingletonHelper{
-        private static final DockerSecretDatasourceStrategy INSTANCE = new DockerSecretDatasourceStrategy();
+    private static SystemEnvironmentProperties systemEnvironmentProperties;
+
+    private DockerSecretDataSourceStrategy(){
+        systemEnvironmentProperties = new SystemEnvironmentProperties();
     }
 
-    public static DockerSecretDatasourceStrategy getInstance(){
+    @VisibleForTesting
+    DockerSecretDataSourceStrategy(final SystemEnvironmentProperties systemEnvironmentProperties){
+        this.systemEnvironmentProperties = systemEnvironmentProperties;
+    }
+
+
+
+    private static class SingletonHelper{
+        private static final DockerSecretDataSourceStrategy INSTANCE = new DockerSecretDataSourceStrategy();
+    }
+
+    public static DockerSecretDataSourceStrategy getInstance(){
         return SingletonHelper.INSTANCE;
     }
 
@@ -29,13 +43,21 @@ public class DockerSecretDatasourceStrategy implements DotDatasourceStrategy {
 
         Map<String, String> dockerSecretsMap;
 
-        if (System.getenv("DOCKER_SECRET_FILE_PATH") != null) {
+        if (systemEnvironmentProperties.getVariable("DOCKER_SECRET_FILE_PATH") != null) {
             dockerSecretsMap = DockerSecretsUtil
-                    .loadFromFile(System.getenv("DOCKER_SECRET_FILE_PATH"));
+                    .loadFromFile(systemEnvironmentProperties.getVariable("DOCKER_SECRET_FILE_PATH"));
         } else {
             dockerSecretsMap = DockerSecretsUtil.load();
         }
 
+        final HikariConfig config = getHikariConfig(dockerSecretsMap);
+
+        dockerSecretsMap.clear();
+        return new HikariDataSource(config);
+    }
+
+    @VisibleForTesting
+    HikariConfig getHikariConfig(final Map<String, String> dockerSecretsMap) {
         final HikariConfig config = new HikariConfig();
 
         config.setPoolName(Constants.DATABASE_DEFAULT_DATASOURCE);
@@ -58,12 +80,8 @@ public class DockerSecretDatasourceStrategy implements DotDatasourceStrategy {
         config.setLeakDetectionThreshold(Integer.parseInt(dockerSecretsMap
                 .getOrDefault("connection_db_leak_detection_threshold", "60000")));
 
-        if (dockerSecretsMap.get("connection_db_default_transaction_isolation") != null) {
-            config.setTransactionIsolation(
+        config.setTransactionIsolation(
                     dockerSecretsMap.get("connection_db_default_transaction_isolation"));
-        }
-
-        dockerSecretsMap.clear();
-        return new HikariDataSource(config);
+        return config;
     }
 }

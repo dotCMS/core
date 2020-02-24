@@ -11,7 +11,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.JNDIUtil;
-import com.liferay.util.StringUtil;
 import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
 import io.vavr.control.Try;
 import java.sql.Connection;
@@ -137,10 +136,10 @@ public class DbConnectionFactory {
     /**
      * Method that loads a datasource from a custom implementation if <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b>
      * property is defined. Otherwise, the datasource is initialized using any of these implementations (respecting order):<br>
-     * 1. A db.properties file in WEB-INF/classes implemented by {@link DBPropertiesDatasourceStrategy}<br>
-     * 2. Configuration is taken from environment variables implemented by {@link SystemEnvDatasourceStrategy}<br>
-     * 3. Getting Docker Secrets if set. Implementation: {@link DockerSecretDatasourceStrategy}<br>
-     * 4. A context.xml file in META-INF. Implementation: {@link TomcatDatasourceStrategy}
+     * 1. A db.properties file in WEB-INF/classes implemented by {@link DBPropertiesDataSourceStrategy}<br>
+     * 2. Configuration is taken from environment variables implemented by {@link SystemEnvDataSourceStrategy}<br>
+     * 3. Getting Docker Secrets if set. Implementation: {@link DockerSecretDataSourceStrategy}<br>
+     * 4. A context.xml file in META-INF. Implementation: {@link TomcatDataSourceStrategy}
      *
      * @throws InstantiationException
      * @throws IllegalAccessException
@@ -152,32 +151,32 @@ public class DbConnectionFactory {
                 .getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", null);
 
         if (!UtilMethods.isSet(providerClassName)) {
-            if (DBPropertiesDatasourceStrategy.getInstance()
+            if (DBPropertiesDataSourceStrategy.getInstance()
                     .existsDBPropertiesFile()) {
-                defaultDataSource = DBPropertiesDatasourceStrategy.getInstance()
+                defaultDataSource = DBPropertiesDataSourceStrategy.getInstance()
                         .apply();
                 Logger.info(DbConnectionFactory.class,
                         "Datasource loaded from db.properties file");
             } else if (System.getenv("connection_db_base_url") != null) {
-                defaultDataSource = SystemEnvDatasourceStrategy.getInstance()
+                defaultDataSource = SystemEnvDataSourceStrategy.getInstance()
                         .apply();
                 Logger.info(DbConnectionFactory.class,
                         "Datasource loaded from system environment");
             } else {
-                defaultDataSource = DockerSecretDatasourceStrategy.getInstance()
+                defaultDataSource = DockerSecretDataSourceStrategy.getInstance()
                         .apply();
                 Logger.info(DbConnectionFactory.class,
                         "Datasource loaded from Docker Secret");
             }
 
             if (null == defaultDataSource) {
-                defaultDataSource = TomcatDatasourceStrategy.getInstance()
+                defaultDataSource = TomcatDataSourceStrategy.getInstance()
                         .apply();
                 Logger.info(DbConnectionFactory.class,
                         "Datasource loaded from context.xml");
             }
         } else {
-            DotDatasourceStrategy customStrategy = ((Class<DotDatasourceStrategy>) Class
+            DotDataSourceStrategy customStrategy = ((Class<DotDataSourceStrategy>) Class
                     .forName(providerClassName)).newInstance();
             defaultDataSource = customStrategy.apply();
 

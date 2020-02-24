@@ -14,15 +14,15 @@ import javax.sql.DataSource;
  * Singleton class that obtains a datasource from a <b>context.xml</b> file
  * @author nollymar
  */
-public class TomcatDatasourceStrategy implements DotDatasourceStrategy {
+public class TomcatDataSourceStrategy implements DotDataSourceStrategy {
 
-    private TomcatDatasourceStrategy(){}
+    private TomcatDataSourceStrategy(){}
 
     private static class SingletonHelper{
-        private static TomcatDatasourceStrategy INSTANCE = new TomcatDatasourceStrategy();
+        private static TomcatDataSourceStrategy INSTANCE = new TomcatDataSourceStrategy();
     }
 
-    public static TomcatDatasourceStrategy getInstance(){
+    public static TomcatDataSourceStrategy getInstance(){
         return SingletonHelper.INSTANCE;
     }
 
@@ -34,7 +34,7 @@ public class TomcatDatasourceStrategy implements DotDatasourceStrategy {
             config.setDataSource((DataSource) JNDIUtil.lookup(ctx, Constants.DATABASE_DEFAULT_DATASOURCE));
             return new HikariDataSource(config);
         } catch (NamingException e) {
-            Logger.error(TomcatDatasourceStrategy.class,
+            Logger.error(TomcatDataSourceStrategy.class,
                     "---------- Error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE + " from context.xml",
                     e);
 
