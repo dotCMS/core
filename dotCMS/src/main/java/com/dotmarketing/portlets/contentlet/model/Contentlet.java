@@ -1533,6 +1533,33 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
+	 * Get the optional contentlet Base Content Type
+	 * 1) first look up on the contentlet properties
+	 * 2) otherwise tries to look for based on the content type (if set)
+	 *
+	 * returns empty if can not determine any content type
+	 *
+	 * @return the contentlet Base Content Type
+	 */
+	@JsonIgnore
+	public Optional<BaseContentType> getBaseType() {
+
+		if (this.map.containsKey(Contentlet.BASE_TYPE_KEY)) {
+
+			return Optional.ofNullable(BaseContentType.getBaseContentType(
+					(String) this.map.get(Contentlet.BASE_TYPE_KEY)));
+		}
+
+		final ContentType contentletContentType = this.getContentType();
+		if (null != contentletContentType) {
+
+			return Optional.ofNullable(contentletContentType.baseType());
+		}
+
+		return Optional.empty();
+	}
+
+	/**
 	 * Get the contentlet Content Type
 	 *
 	 * @return the contentlet Content Type
