@@ -18,15 +18,16 @@ import java.util.stream.Collectors;
  */
 public enum BaseContentType {
 
-	ANY(0, ContentType.class),
-	CONTENT(1, SimpleContentType.class),
-	WIDGET(2, WidgetContentType.class),
-	FORM(3, FormContentType.class),
-	FILEASSET(4, FileAssetContentType.class, "File"),
-	HTMLPAGE(5, PageContentType.class, "Page"),
-	PERSONA(6, PersonaContentType.class),
+	ANY(0,        ContentType.class),
+	CONTENT(1,    SimpleContentType.class),
+	WIDGET(2,     WidgetContentType.class),
+	FORM(3,       FormContentType.class),
+	FILEASSET(4,  FileAssetContentType.class, "File"),
+	HTMLPAGE(5,   PageContentType.class, "Page"),
+	PERSONA(6,    PersonaContentType.class),
 	VANITY_URL(7, VanityUrlContentType.class, "VanityURL"),
-	KEY_VALUE(8, KeyValueContentType.class, "KeyValue");
+	KEY_VALUE(8,  KeyValueContentType.class, "KeyValue"),
+	DOTASSET(9,   DotAssetContentType.class, "DotAsset");
 
 
 	final int type;
@@ -105,7 +106,7 @@ public enum BaseContentType {
     }
 
     private static boolean isAnAlternateName(final BaseContentType type, final String name) {
-	return UtilMethods.isSet(type.alternateName) && type.alternateName.equalsIgnoreCase(name);
+		return UtilMethods.isSet(type.alternateName) && type.alternateName.equalsIgnoreCase(name);
     }
 
 	/**
