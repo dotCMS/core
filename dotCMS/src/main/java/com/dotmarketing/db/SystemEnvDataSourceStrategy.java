@@ -1,5 +1,16 @@
 package com.dotmarketing.db;
 
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_BASE_URL;
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION;
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_DRIVER;
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_LEAK_DETECTION_THRESHOLD;
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_MAX_IDLE;
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_MAX_TOTAL;
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_MAX_WAIT;
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_PASSWORD;
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_USERNAME;
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_VALIDATION_QUERY;
+
 import com.dotmarketing.util.Constants;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.SystemEnvironmentProperties;
@@ -9,7 +20,7 @@ import javax.sql.DataSource;
 
 
 /**
- * Singleton class that provides a datasource reading properties from system environment
+ * Singleton class that provides a DataSource reading properties from system environment
  * @author nollymar
  */
 public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
@@ -41,50 +52,50 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
         config.setPoolName(Constants.DATABASE_DEFAULT_DATASOURCE);
 
         config.setDriverClassName(
-                systemEnvironmentProperties.getVariable("connection_db_driver") != null
-                        ? systemEnvironmentProperties.getVariable("connection_db_driver")
+                systemEnvironmentProperties.getVariable(CONNECTION_DB_DRIVER) != null
+                        ? systemEnvironmentProperties.getVariable(CONNECTION_DB_DRIVER)
                         : "org.postgresql.Driver");
 
-        config.setJdbcUrl(systemEnvironmentProperties.getVariable("connection_db_base_url") != null
-                ? systemEnvironmentProperties.getVariable("connection_db_base_url")
+        config.setJdbcUrl(systemEnvironmentProperties.getVariable(CONNECTION_DB_BASE_URL) != null
+                ? systemEnvironmentProperties.getVariable(CONNECTION_DB_BASE_URL)
                 : "jdbc:postgresql://localhost/dotcms");
 
-        config.setUsername(systemEnvironmentProperties.getVariable("connection_db_username"));
+        config.setUsername(systemEnvironmentProperties.getVariable(CONNECTION_DB_USERNAME));
 
-        config.setPassword(systemEnvironmentProperties.getVariable("connection_db_password"));
+        config.setPassword(systemEnvironmentProperties.getVariable(CONNECTION_DB_PASSWORD));
 
         config.setMaximumPoolSize(Integer.parseInt(
-                systemEnvironmentProperties.getVariable("connection_db_max_total") != null
-                        ? systemEnvironmentProperties.getVariable("connection_db_max_total")
+                systemEnvironmentProperties.getVariable(CONNECTION_DB_MAX_TOTAL) != null
+                        ? systemEnvironmentProperties.getVariable(CONNECTION_DB_MAX_TOTAL)
                         : "60"));
 
         config.setIdleTimeout(
                 Integer.parseInt(
-                        systemEnvironmentProperties.getVariable("connection_db_max_idle") != null
-                                ? systemEnvironmentProperties.getVariable("connection_db_max_idle")
+                        systemEnvironmentProperties.getVariable(CONNECTION_DB_MAX_IDLE) != null
+                                ? systemEnvironmentProperties.getVariable(CONNECTION_DB_MAX_IDLE)
                                 : "10")
                         * 1000);
 
         config.setMaxLifetime(Integer.parseInt(
-                systemEnvironmentProperties.getVariable("connection_db_max_wait") != null
-                        ? systemEnvironmentProperties.getVariable("connection_db_max_wait")
+                systemEnvironmentProperties.getVariable(CONNECTION_DB_MAX_WAIT) != null
+                        ? systemEnvironmentProperties.getVariable(CONNECTION_DB_MAX_WAIT)
                         : "60000"));
 
         config.setConnectionTestQuery(
-                systemEnvironmentProperties.getVariable("connection_db_validation_query") != null
-                        ? systemEnvironmentProperties.getVariable("connection_db_validation_query")
+                systemEnvironmentProperties.getVariable(CONNECTION_DB_VALIDATION_QUERY) != null
+                        ? systemEnvironmentProperties.getVariable(CONNECTION_DB_VALIDATION_QUERY)
                         : "SELECT 1");
 
         // This property controls the amount of time that a connection can be out of the pool before a message
         // is logged indicating a possible connection leak. A value of 0 means leak detection is disabled.
         // Lowest acceptable value for enabling leak detection is 2000 (2 seconds). Default: 0
         config.setLeakDetectionThreshold(Integer.parseInt(
-                systemEnvironmentProperties.getVariable("connection_db_leak_detection_threshold")
+                systemEnvironmentProperties.getVariable(CONNECTION_DB_LEAK_DETECTION_THRESHOLD)
                         != null ? systemEnvironmentProperties
-                        .getVariable("connection_db_leak_detection_threshold") : "60000"));
+                        .getVariable(CONNECTION_DB_LEAK_DETECTION_THRESHOLD) : "60000"));
 
         config.setTransactionIsolation(systemEnvironmentProperties
-                .getVariable("connection_db_default_transaction_isolation"));
+                .getVariable(CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION));
 
         return new HikariDataSource(config);
     }

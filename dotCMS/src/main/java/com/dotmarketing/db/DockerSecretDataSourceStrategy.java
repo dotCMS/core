@@ -1,10 +1,14 @@
 package com.dotmarketing.db;
 
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_MAX_WAIT;
+import static com.dotmarketing.db.DataSourceStrategyProvider.CONNECTION_DB_PASSWORD;
+
 import com.dotmarketing.util.Constants;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.SystemEnvironmentProperties;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.io.File;
 import java.util.Map;
 import javax.sql.DataSource;
 
@@ -16,8 +20,9 @@ import javax.sql.DataSource;
  */
 public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
 
-
     private static SystemEnvironmentProperties systemEnvironmentProperties;
+
+    public static final String DOCKER_SECRET_FILE_PATH_PROPERTY = "DOCKER_SECRET_FILE_PATH";
 
     private DockerSecretDataSourceStrategy(){
         systemEnvironmentProperties = new SystemEnvironmentProperties();
@@ -29,7 +34,6 @@ public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
     }
 
 
-
     private static class SingletonHelper{
         private static final DockerSecretDataSourceStrategy INSTANCE = new DockerSecretDataSourceStrategy();
     }
@@ -38,14 +42,21 @@ public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
         return SingletonHelper.INSTANCE;
     }
 
+    public boolean dockerSecretPathExists(){
+
+        final File secretsDir = new File(DockerSecretsUtil.SECRETS_DIR);
+        return systemEnvironmentProperties.getVariable(DOCKER_SECRET_FILE_PATH_PROPERTY) != null
+                || (secretsDir.exists() && secretsDir.canRead());
+    }
+
     @Override
     public DataSource apply() {
 
         Map<String, String> dockerSecretsMap;
 
-        if (systemEnvironmentProperties.getVariable("DOCKER_SECRET_FILE_PATH") != null) {
+        if (systemEnvironmentProperties.getVariable(DOCKER_SECRET_FILE_PATH_PROPERTY) != null) {
             dockerSecretsMap = DockerSecretsUtil
-                    .loadFromFile(systemEnvironmentProperties.getVariable("DOCKER_SECRET_FILE_PATH"));
+                    .loadFromFile(systemEnvironmentProperties.getVariable(DOCKER_SECRET_FILE_PATH_PROPERTY));
         } else {
             dockerSecretsMap = DockerSecretsUtil.load();
         }
@@ -61,27 +72,32 @@ public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
         final HikariConfig config = new HikariConfig();
 
         config.setPoolName(Constants.DATABASE_DEFAULT_DATASOURCE);
-        config.setDriverClassName(dockerSecretsMap.getOrDefault("connection_db_driver", "org.postgresql.Driver"));
-        config.setJdbcUrl(dockerSecretsMap.getOrDefault("connection_db_base_url", "jdbc:postgresql://localhost/dotcms"));
-        config.setUsername(dockerSecretsMap.get("connection_db_username"));
-        config.setPassword(dockerSecretsMap.get("connection_db_password"));
+        config.setDriverClassName(dockerSecretsMap.getOrDefault(
+                DataSourceStrategyProvider.CONNECTION_DB_DRIVER, "org.postgresql.Driver"));
+        config.setJdbcUrl(dockerSecretsMap.getOrDefault(
+                DataSourceStrategyProvider.CONNECTION_DB_BASE_URL, "jdbc:postgresql://localhost/dotcms"));
+        config.setUsername(dockerSecretsMap.get(DataSourceStrategyProvider.CONNECTION_DB_USERNAME));
+        config.setPassword(dockerSecretsMap.get(CONNECTION_DB_PASSWORD));
         config.setMaximumPoolSize(Integer.parseInt(
-                dockerSecretsMap.getOrDefault("connection_db_max_total", "60")));
+                dockerSecretsMap.getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_MAX_TOTAL, "60")));
         config.setIdleTimeout(
-                Integer.parseInt(dockerSecretsMap.getOrDefault("connection_db_max_idle", "10"))
+                Integer.parseInt(dockerSecretsMap.getOrDefault(
+                        DataSourceStrategyProvider.CONNECTION_DB_MAX_IDLE, "10"))
                         * 1000);
         config.setMaxLifetime(Integer.parseInt(
-                dockerSecretsMap.getOrDefault("connection_db_max_wait", "60000")));
-        config.setConnectionTestQuery(dockerSecretsMap.getOrDefault("connection_db_validation_query", "SELECT 1"));
+                dockerSecretsMap.getOrDefault(CONNECTION_DB_MAX_WAIT, "60000")));
+        config.setConnectionTestQuery(dockerSecretsMap.getOrDefault(
+                DataSourceStrategyProvider.CONNECTION_DB_VALIDATION_QUERY, "SELECT 1"));
 
         // This property controls the amount of time that a connection can be out of the pool before a message
         // is logged indicating a possible connection leak. A value of 0 means leak detection is disabled.
         // Lowest acceptable value for enabling leak detection is 2000 (2 seconds). Default: 0
         config.setLeakDetectionThreshold(Integer.parseInt(dockerSecretsMap
-                .getOrDefault("connection_db_leak_detection_threshold", "60000")));
+                .getOrDefault(DataSourceStrategyProvider.CONNECTION_DB_LEAK_DETECTION_THRESHOLD, "60000")));
 
         config.setTransactionIsolation(
-                    dockerSecretsMap.get("connection_db_default_transaction_isolation"));
+                    dockerSecretsMap.get(
+                            DataSourceStrategyProvider.CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION));
         return config;
     }
 }

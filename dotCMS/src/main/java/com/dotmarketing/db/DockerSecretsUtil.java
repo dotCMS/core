@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public final class DockerSecretsUtil {
 
-    private static final String SECRETS_DIR = "/run/secrets/";
+    public static final String SECRETS_DIR = "/run/secrets/";
 
     private DockerSecretsUtil(){
 
@@ -43,7 +43,7 @@ public final class DockerSecretsUtil {
     public static Map<String, String> loadFromFile(final File secretsFile)
             throws DotRuntimeException {
 
-        if (!secretsFile.canRead()) {
+        if (!secretsFile.exists() || !secretsFile.canRead()) {
             throw new DotRuntimeException(
                     "Unable to read secrets from file at [" + secretsFile.toPath() + "]");
         }
@@ -73,7 +73,7 @@ public final class DockerSecretsUtil {
 
     public static Map<String, String> load(final File secretsDir) throws DotRuntimeException {
 
-        if (!secretsDir.canRead()) {
+        if (!secretsDir.exists() || !secretsDir.canRead()) {
             throw new DotRuntimeException("Unable to find any secrets under [" + SECRETS_DIR + "]");
         }
 
