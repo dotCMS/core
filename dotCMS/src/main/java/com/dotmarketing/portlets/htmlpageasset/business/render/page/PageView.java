@@ -1,12 +1,18 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.io.Serializable;
@@ -124,13 +130,27 @@ public class PageView implements Serializable {
 
         containers.stream().forEach(containerRaw -> {
 
-            if (containerRaw.getContainer() instanceof FileAssetContainer) {
+            final Container container = containerRaw.getContainer();
 
-                final String path = FileAssetContainer.class.cast(containerRaw.getContainer()).getPath();
-                containerRawMap.put(path, containerRaw);
+            if (container instanceof FileAssetContainer) {
+                try {
+                    final Host host = APILocator.getHostAPI().findParentHost(container, APILocator.systemUser(), false);
+
+                    String path = null;
+
+                    if (host == null || this.site.getIdentifier().equals(host.getIdentifier())) {
+                        path = FileAssetContainer.class.cast(container).getPath();
+                    } else {
+                        path = FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container);
+                    }
+
+                    containerRawMap.put(path, containerRaw);
+                } catch (DotDataException | DotSecurityException e) {
+                    Logger.debug(PageView.class, e.getMessage());
+                }
             } else {
 
-                final String identifier = containerRaw.getContainer().getIdentifier();
+                final String identifier = container.getIdentifier();
                 containerRawMap.put(identifier, containerRaw);
             }
         });

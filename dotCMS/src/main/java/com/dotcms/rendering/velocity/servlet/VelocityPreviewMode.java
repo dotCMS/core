@@ -11,6 +11,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
@@ -63,7 +64,7 @@ public class VelocityPreviewMode extends VelocityModeHandler {
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
 
-        new PageRenderUtil(htmlPage, user, PageMode.PREVIEW_MODE).addAll(context);
+        new PageRenderUtil((HTMLPageAsset) htmlPage, user, PageMode.PREVIEW_MODE).addAll(context);
         context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user, mode, host, context));
 
         request.setAttribute("velocityContext", context);

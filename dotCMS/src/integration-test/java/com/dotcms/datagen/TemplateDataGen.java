@@ -9,6 +9,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -167,6 +169,16 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         return this;
     }
 
+    public TemplateDataGen withContainer(final Container container, final String UUID) {
+        if (container instanceof FileAssetContainer) {
+            this.withContainer(((FileAssetContainer) container).getPath(), UUID);
+        } else {
+            this.withContainer(container.getIdentifier(), UUID);
+        }
+
+        return this;
+    }
+
     public TemplateDataGen withContainer(final String containerId) {
         final Set<String> containerIds = containers.stream()
                 .map(map -> map.get("containerId"))
@@ -200,6 +212,11 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
      */
     public TemplateDataGen clearContainers() {
         containers.clear();
+        return this;
+    }
+
+    public TemplateDataGen theme(final Contentlet theme) {
+        this.theme = theme.getFolder();
         return this;
     }
 

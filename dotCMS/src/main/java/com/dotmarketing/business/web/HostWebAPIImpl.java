@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.business.web;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
@@ -51,6 +52,11 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 	  
 	  
 	}
+
+    public Host getCurrentHost() throws DotDataException, DotSecurityException {
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        return this.getCurrentHost(request);
+    }
 
     @CloseDBIfOpened
     public Host getCurrentHost(final HttpServletRequest request)

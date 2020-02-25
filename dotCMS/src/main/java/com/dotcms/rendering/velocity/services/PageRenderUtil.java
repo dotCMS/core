@@ -27,10 +27,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.PersonalizedContentlet;
-import com.dotmarketing.portlets.containers.business.ContainerExceptionNotifier;
-import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
-import com.dotmarketing.portlets.containers.business.LiveContainerFinderByIdOrPathStrategyResolver;
-import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
+import com.dotmarketing.portlets.containers.business.*;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -38,6 +35,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.IPersona;
@@ -81,7 +79,7 @@ public class PageRenderUtil implements Serializable {
     private final TagAPI        tagAPI        = APILocator.getTagAPI();
     private final PersonaAPI    personaAPI    = APILocator.getPersonaAPI();
 
-    final IHTMLPage htmlPage;
+    final HTMLPageAsset htmlPage;
     final User user;
     final Map<String, Object> contextMap; // this is the velocity runtime context
     final PageMode mode;
@@ -95,12 +93,13 @@ public class PageRenderUtil implements Serializable {
 
 
     public PageRenderUtil(
-            final IHTMLPage htmlPage,
+            final HTMLPageAsset htmlPage,
             final User user,
             final PageMode mode,
             final long languageId,
             final Host site) throws DotSecurityException, DotDataException {
 
+        this.site = null == site? APILocator.getHostAPI().findDefaultHost(user, mode.respectAnonPerms):site;
         this.pageFoundTags = Lists.newArrayList();
         this.htmlPage = htmlPage;
         this.user = user;
@@ -111,12 +110,11 @@ public class PageRenderUtil implements Serializable {
         this.templateLayout = template != null && template.isDrawed() ? DotTemplateTool.themeLayout(template.getInode()) : null;
         this.contextMap = populateContext();
         this.containersRaw = populateContainers();
-        this.site = null == site? APILocator.getHostAPI().findDefaultHost(user, mode.respectAnonPerms):site;
     }
 
-    public PageRenderUtil(final IHTMLPage htmlPage, final User user, final PageMode mode)
+    public PageRenderUtil(final HTMLPageAsset htmlPage, final User user, final PageMode mode)
             throws DotSecurityException, DotDataException {
-        this(htmlPage,user, mode, htmlPage.getLanguageId(), null);
+        this(htmlPage,user, mode, htmlPage.getLanguageId(), APILocator.getHostAPI().find(htmlPage.getHost(), user, false));
     }
 
     private Map<String, Object> populateContext() throws DotDataException, DotSecurityException {
@@ -367,8 +365,24 @@ public class PageRenderUtil implements Serializable {
     }
 
     private boolean needParseContainerPrefix(final Container container, final String uniqueId) {
-        final String containerIdOrPath = (container instanceof FileAssetContainer) ?
-                ((FileAssetContainer) container).getPath() : container.getIdentifier();
+        String containerIdOrPath = null;
+
+        if (FileAssetContainerUtil.getInstance().isFileAssetContainer(container)) {
+            final Host host;
+            try {
+                host = APILocator.getHostAPI().findParentHost(container, APILocator.systemUser(), false);
+
+                containerIdOrPath = this.site.getIdentifier().equals(host.getIdentifier()) ?
+                        ((FileAssetContainer) container).getPath() :
+                        FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container);
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.debug(PageRenderUtil.class, e.getMessage());
+                containerIdOrPath = container.getIdentifier();
+            }
+
+        } else {
+            containerIdOrPath = container.getIdentifier();
+        }
 
         return !ParseContainer.isParserContainerUUID(uniqueId) &&
                     (templateLayout == null || !templateLayout.existsContainer(containerIdOrPath, uniqueId));

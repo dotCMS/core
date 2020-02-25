@@ -1,5 +1,6 @@
 package com.dotcms.datagen;
 
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.templates.design.bean.*;
 
 import java.util.ArrayList;

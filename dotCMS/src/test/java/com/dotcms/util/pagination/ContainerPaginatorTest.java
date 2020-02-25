@@ -5,11 +5,14 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.business.ContainerFactory;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
@@ -43,11 +46,15 @@ public class ContainerPaginatorTest {
 
         final ContainerPaginator containerPaginator = new ContainerPaginator( containerAPI );
 
-        final PaginatedArrayList<Container> containers = containerPaginator.getItems(user, filter, limit, offset, orderby,
+        final PaginatedArrayList<ContainerView> containersViews = containerPaginator.getItems(user, filter, limit, offset, orderby,
                 OrderDirection.ASC, map(ContainerPaginator.HOST_PARAMETER_ID, hostId));
 
+        final List<Container> containers = containersViews.stream()
+                .map(containerView -> containerView.getContainer())
+                .collect(Collectors.toList());
+
         assertEquals(containersExpected, containers);
-        assertEquals(containers.getTotalResults(), totalRecords);
+        assertEquals(containersViews.getTotalResults(), totalRecords);
     }
 
     //@Test
@@ -71,9 +78,13 @@ public class ContainerPaginatorTest {
 
         final ContainerPaginator containerPaginator = new ContainerPaginator( containerAPI );
 
-        final PaginatedArrayList<Container> containers = containerPaginator.getItems(user, filter, limit, offset, orderby, null, map());
+        final PaginatedArrayList<ContainerView> containersViews = containerPaginator.getItems(user, filter, limit, offset, orderby, null, map());
+
+        final List<Container> containers = containersViews.stream()
+                .map(containerView -> containerView.getContainer())
+                .collect(Collectors.toList());
 
         assertEquals(containersExpected, containers);
-        assertEquals(containers.getTotalResults(), totalRecords);
+        assertEquals(containersViews.getTotalResults(), totalRecords);
     }
 }
