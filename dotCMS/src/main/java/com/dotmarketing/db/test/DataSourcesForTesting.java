@@ -15,6 +15,10 @@ import com.dotmarketing.business.DotStateException;
 import com.dotcms.rendering.velocity.viewtools.XmlTool;
 import com.liferay.util.FileUtil;
 
+/**
+ * @deprecated This class is not being used
+ */
+@Deprecated
 public class DataSourcesForTesting {
 
    final File contextFile;
