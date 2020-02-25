@@ -15,8 +15,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.liferay.util.FileUtil;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.felix.framework.OSGIUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,15 +36,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.zip.GZIPOutputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.apache.felix.framework.OSGIUtil;
 
 public class TikaUtils {
 
     private static final int SIZE = 1024;
     private static final int DEFAULT_META_DATA_MAX_SIZE = 5;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private TikaProxyService tikaService;
     private Boolean osgiInitialized;
@@ -138,6 +143,123 @@ public class TikaUtils {
         return generateMetaData(contentlet, false);
     }
 
+    /**
+     * Verifies if the Contentlet is a File asset in order to parse it and generate a metadata
+     * file for it, <strong>this operation also implies a save operation to the Contentlet
+     * in order to save the parsed metadata info</strong>.
+     *
+     * @param contentlet Content parse in order to extract the metadata info
+     * @return True if a metadata file was generated.
+     */
+    public Map<String, Object> generateMetaDataForce(final Contentlet contentlet, final File binaryField,
+                                                     final String fieldVariableName, final Set<String> metadataFields) {
+
+        return this.generateMetaData(contentlet, binaryField, fieldVariableName, metadataFields, true);
+    }
+
+    /**
+     * Verifies if the Contentlet is a File asset in order to parse it and generate a metadata
+     * file for it, <strong>this operation also implies a save operation to the Contentlet
+     * in order to save the parsed metadata info</strong>.
+     *
+     * @param contentlet Content parse in order to extract the metadata info
+     * @return True if a metadata file was generated.
+     */
+    public Map<String, Object> generateMetaData(final Contentlet contentlet, final File binaryField,
+                                                final String fieldVariableName, final Set<String> metadataFields) {
+
+        return this.generateMetaData(contentlet, binaryField, fieldVariableName, metadataFields, false);
+    }
+
+    @CloseDBIfOpened
+    private Map<String, Object>  generateMetaData(final Contentlet contentlet, final File binaryField, final String fieldVariableName,
+                                                 final Set<String> metadataFields, final boolean force) {
+
+        //See if we have content metadata file
+        Map<String, Object> metaDataMap = Collections.emptyMap();
+        final String fileName           = fieldVariableName + "-metadata.json";
+        final File contentMetaFile      = APILocator.getFileAssetAPI(). // creates something like /1/2/12421124-15652532-235325-12312/fileAsset-metadata.json
+                getContentMetadataFile(contentlet.getInode(), fileName);
+
+        /*
+        If we want to force the parse of the file and the generation of the metadata file
+        we need to delete the existing one first.
+         */
+        if (force && contentMetaFile.exists()) {
+            try {
+                contentMetaFile.delete();
+            } catch (Exception e) {
+                Logger.error(this.getClass(),
+                        String.format("Unable to delete existing metadata file [%s] [%s]",
+                                contentMetaFile.getAbsolutePath(), e.getMessage()), e);
+            }
+        }
+
+        //If the metadata file does not exist we need to parse and get the metadata for the file
+        if (!contentMetaFile.exists()) {
+
+            if (binaryField != null) {
+
+                final int maxLength = Config.getIntProperty("META_DATA_MAX_SIZE",
+                        DEFAULT_META_DATA_MAX_SIZE) * SIZE;
+                //Parse the metadata from this file
+                metaDataMap =
+                        this.getForcedMetaDataMap(binaryField, metadataFields, maxLength);
+
+                this.writeCompressJsonMetadataFile (contentMetaFile,
+                        UtilMethods.isSet(metaDataMap)?metaDataMap:Collections.emptyMap());
+            }
+        } else {
+
+            metaDataMap = this.readCompressedJsonMetadataFile (contentMetaFile);
+        }
+
+        return metaDataMap;
+    }
+
+
+
+    private Map<String, Object> readCompressedJsonMetadataFile(final File contentMetaFile) {
+
+        Map<String, Object> objectMap = Collections.emptyMap();
+        // compressor config
+        final String compressor = Config
+                .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+
+        try (InputStream inputStream = FileUtil.createInputStream(contentMetaFile.toPath(), compressor)) {
+
+            objectMap   = objectMapper.readValue(inputStream, Map.class);
+            Logger.info(this, "Metadata read from: " + contentMetaFile);
+        } catch (IOException e) {
+
+            Logger.error(this, e.getMessage(), e);
+        }
+
+        return objectMap;
+    }
+
+    private void writeCompressJsonMetadataFile(final File contentMetaFile, final Map<?, Object> objectMap) {
+
+        // compressor config
+        final String compressor = Config
+                .getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+
+        if (!contentMetaFile.getParentFile().exists()) {
+
+            contentMetaFile.getParentFile().mkdirs();
+        }
+
+        try (OutputStream out = FileUtil.createOutputStream(contentMetaFile.toPath(), compressor)){
+
+            objectMapper.writeValue(out, objectMap);
+
+            out.flush();
+            Logger.info(this, "Metadata wrote on: " + contentMetaFile);
+        } catch (IOException e) {
+
+            Logger.error(this, e.getMessage(), e);
+        }
+    }
 
     /**
      * Verifies if the Contentlet is a File asset in order to parse it and generate a metadata
@@ -197,6 +319,59 @@ public class TikaUtils {
         }
 
         return false;
+    }
+
+    /**
+     * Similar as {@link #getMetaDataMap(String, File, boolean)} but includes the metadata fields to filter from the tika collection
+     * and the max length of the binary file to parse.
+     * Also, it is not storing anything on the file system as the reference method {@link #getMetaDataMap(String, File, boolean)}
+     * This one does everything on memory, means forceMemory is always true and the file system cache has to be performed on upper layers
+     */
+    private Map<String, Object> getForcedMetaDataMap(final File binFile,
+                                               final Set<String> metadataFields,
+                                               final int maxLength) {
+
+        if (!osgiInitialized) {
+            Logger.error(this.getClass(),
+                    "Unable to get file Meta Data, OSGI Framework not initialized");
+            return Collections.emptyMap();
+        }
+
+        final Map<String, Object> metaMap = new TreeMap<>();
+        this.tikaService.setMaxStringLength(maxLength);
+
+        try (InputStream stream = Files.newInputStream(binFile.toPath())) {
+            // no worry about the limit and less time to process.
+            final String content = this.tikaService.parseToString(stream);
+
+            //Creating the meta data map to use by our content
+            metaMap.putAll(this.buildMetaDataMap());
+            metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
+        } catch (IOException ioExc) {
+            if (this.isZeroByteFileException(ioExc.getCause())) {
+                logWarning(binFile, ioExc.getCause());
+            } else {
+                final String errorMessage = String
+                        .format("Error Reading Tika parsed Stream for file [%s] [%s] ",
+                                binFile.getAbsolutePath(),
+                                UtilMethods.isSet(ioExc.getMessage()) ? ioExc.getMessage()
+                                        : ioExc.getCause().getMessage());
+                Logger.warnAndDebug(this.getClass(), ioExc);
+            }
+        } catch (Throwable e) {
+
+            if (this.isZeroByteFileException(e)) {
+                logWarning(binFile, e);
+            } else {
+                logError(binFile, e);
+            }
+        } finally {
+            metaMap.put("length", binFile.length());
+        }
+
+        this.filterMetadataFields(metaMap, metadataFields);
+
+        return metaMap;
     }
 
     /**
@@ -443,7 +618,7 @@ public class TikaUtils {
     /**
      * Creates the metadata file where the parsed info will be stored
      */
-    private void prepareMetaDataFile(File contentMetadataFile) throws IOException {
+    private void prepareMetaDataFile(final File contentMetadataFile) throws IOException {
 
         if (!contentMetadataFile.exists()) {
             //Create the file if does not exist
