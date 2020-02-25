@@ -31,6 +31,12 @@ public interface HostWebAPI extends HostAPI {
 	
 	public Host getCurrentHost(HttpServletRequest req) throws DotDataException, DotSecurityException, PortalException, SystemException;
 
+	/**
+	 * Return the current host using the current request
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	public Host getCurrentHost() throws DotDataException, DotSecurityException;
 
 	/**

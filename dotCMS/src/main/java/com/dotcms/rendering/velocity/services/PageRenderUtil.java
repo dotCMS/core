@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -74,7 +75,7 @@ public class PageRenderUtil implements Serializable {
     private final TagAPI        tagAPI        = APILocator.getTagAPI();
     private final PersonaAPI    personaAPI    = APILocator.getPersonaAPI();
 
-    final HTMLPageAsset htmlPage;
+    final IHTMLPage htmlPage;
     final User user;
     final Map<String, Object> contextMap; // this is the velocity runtime context
     final PageMode mode;
@@ -88,7 +89,7 @@ public class PageRenderUtil implements Serializable {
 
 
     public PageRenderUtil(
-            final HTMLPageAsset htmlPage,
+            final IHTMLPage htmlPage,
             final User user,
             final PageMode mode,
             final long languageId,
@@ -363,24 +364,28 @@ public class PageRenderUtil implements Serializable {
         String containerIdOrPath = null;
 
         if (FileAssetContainerUtil.getInstance().isFileAssetContainer(container)) {
-            final Host host;
-            try {
-                host = APILocator.getHostAPI().findParentHost(container, APILocator.systemUser(), false);
-
-                containerIdOrPath = this.site.getIdentifier().equals(host.getIdentifier()) ?
-                        ((FileAssetContainer) container).getPath() :
-                        FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container);
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.debug(PageRenderUtil.class, e.getMessage());
-                containerIdOrPath = container.getIdentifier();
-            }
-
+            containerIdOrPath = getRelativePathFromSite((FileAssetContainer) container);
         } else {
             containerIdOrPath = container.getIdentifier();
         }
 
         return !ParseContainer.isParserContainerUUID(uniqueId) &&
                     (templateLayout == null || !templateLayout.existsContainer(containerIdOrPath, uniqueId));
+    }
+
+    /**
+     * If the container's Host is equals to {@link PageRenderUtil#site} then return the relative path, but if the Host
+     * are different then it return the full path.
+     *
+     * @param container
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private String getRelativePathFromSite(final FileAssetContainer container)  {
+        return this.site.getIdentifier().equals(container.getHost().getIdentifier()) ?
+                container.getPath() :
+                FileAssetContainerUtil.getInstance().getFullPath(container);
     }
 
     @Nullable

@@ -152,7 +152,6 @@ public class TemplatePathStrategyResolver {
             }
         }
 
-        @NotNull
         private String getContainerResourceFromRelativePath(
                 final RenderParams params,
                 final String path,
@@ -163,7 +162,6 @@ public class TemplatePathStrategyResolver {
                     path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
         }
 
-        @NotNull
         private String getContainerResourcePathFromFullPath(
                 final RenderParams params,
                 final String path,

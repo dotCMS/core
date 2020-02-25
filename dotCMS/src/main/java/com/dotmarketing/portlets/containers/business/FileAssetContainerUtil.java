@@ -174,11 +174,11 @@ public class FileAssetContainerUtil {
                 host = WebAPILocator.getHostWebAPI()
                         .getCurrentHost(HttpServletRequestThreadLocal.INSTANCE.getRequest());
             } catch (DotSecurityException | PortalException | SystemException e) {
-                Logger.debug(FileAssetContainerUtil.class, e.getMessage());
+                Logger.warnAndDebug(FileAssetContainerUtil.class, e);
                 try {
                     host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
                 } catch (DotDataException | DotSecurityException ex) {
-                    Logger.debug(FileAssetContainerUtil.class, e.getMessage());
+                    Logger.warnAndDebug(FileAssetContainerUtil.class, e);
                     host = APILocator.systemHost();
                 }
             }
@@ -291,7 +291,7 @@ public class FileAssetContainerUtil {
         }
 
         this.setContainerData(host, containerFolder, metaInfoFileAsset, containerStructures.build(), container,
-                preLoop, postLoop, preLoopAsset, postLoopAsset, containerMetaInfo.get(), includeHostOnPath, codeScript);
+                preLoop, postLoop, preLoopAsset, postLoopAsset, containerMetaInfo.get(), codeScript);
 
         return container;
     }
@@ -337,7 +337,6 @@ public class FileAssetContainerUtil {
                                   final Optional<FileAsset> preLoopAsset,
                                   final Optional<FileAsset> postLoopAsset,
                                   final String containerMetaInfo,
-                                  final boolean includeHostOnPath,
                                   final Optional<String> codeScript) {
 
         container.setIdentifier (metaInfoFileAsset.getIdentifier());
@@ -353,6 +352,7 @@ public class FileAssetContainerUtil {
         container.setLanguage(metaInfoFileAsset.getLanguageId());
         container.setFriendlyName((String)metaInfoFileAsset.getMap().getOrDefault(DESCRIPTION, container.getTitle()));
         container.setPath(this.buildPath(host, containerFolder, false));
+        container.setHost(host);
 
         preLoop.ifPresent (value -> container.setPreLoop (value));
         postLoop.ifPresent(value -> container.setPostLoop(value));
@@ -500,13 +500,7 @@ public class FileAssetContainerUtil {
      * @throws DotDataException
      */
     public String getFullPath(final FileAssetContainer container) {
-        try{
-            final Host host = APILocator.getHostAPI().findParentHost(container, APILocator.systemUser(), false);
-            return builder(HOST_INDICATOR, host.getHostname(), container.getPath()).toString();
-        } catch (DotSecurityException | DotDataException e) {
-            Logger.error(ContainerLoader.class, e.getMessage());
-            throw new DotRuntimeException(e);
-        }
+        return builder(HOST_INDICATOR, container.getHost().getHostname(), container.getPath()).toString();
     }
 
 }

@@ -133,21 +133,18 @@ public class PageView implements Serializable {
             final Container container = containerRaw.getContainer();
 
             if (container instanceof FileAssetContainer) {
-                try {
-                    final Host host = APILocator.getHostAPI().findParentHost(container, APILocator.systemUser(), false);
 
-                    String path = null;
+                final Host host = ((FileAssetContainer) container).getHost();
 
-                    if (host == null || this.site.getIdentifier().equals(host.getIdentifier())) {
-                        path = FileAssetContainer.class.cast(container).getPath();
-                    } else {
-                        path = FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container);
-                    }
+                String path = null;
 
-                    containerRawMap.put(path, containerRaw);
-                } catch (DotDataException | DotSecurityException e) {
-                    Logger.debug(PageView.class, e.getMessage());
+                if (host == null || this.site.getIdentifier().equals(host.getIdentifier())) {
+                    path = FileAssetContainer.class.cast(container).getPath();
+                } else {
+                    path = FileAssetContainerUtil.getInstance().getFullPath((FileAssetContainer) container);
                 }
+
+                containerRawMap.put(path, containerRaw);
             } else {
 
                 final String identifier = container.getIdentifier();

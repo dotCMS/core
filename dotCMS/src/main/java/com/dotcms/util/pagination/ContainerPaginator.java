@@ -15,7 +15,6 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -102,7 +101,6 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
      * @param allContainers
      * @return
      */
-    @NotNull
     private PaginatedArrayList<Container> sortByTypeAndHost(
             final OrderDirection direction,
             final PaginatedArrayList<Container> allContainers) {
