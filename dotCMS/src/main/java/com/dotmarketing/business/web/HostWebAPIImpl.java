@@ -55,6 +55,11 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
     public Host getCurrentHost() throws DotDataException, DotSecurityException {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+
+        if (request == null) {
+            return APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), true);
+        }
+
         return this.getCurrentHost(request);
     }
 

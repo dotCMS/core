@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.containers.model;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -17,7 +18,7 @@ import java.util.Objects;
  */
 public class ContainerViewSerializer extends JsonSerializer<ContainerView> {
 
-    static final ObjectMapper MAPPER = new ObjectMapper();
+    static final ObjectMapper MAPPER = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     private Map<Object, Object> asMap(final Object object)  {
         final ObjectWriter objectWriter = MAPPER.writer().withDefaultPrettyPrinter();
