@@ -23,22 +23,8 @@ import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-<<<<<<< HEAD
-import com.dotcms.datagen.ContainerDataGen;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FileAssetDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.HTMLPageDataGen;
-import com.dotcms.datagen.PersonaDataGen;
-import com.dotcms.datagen.StructureDataGen;
-import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestWorkflowUtils;
-=======
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.datagen.*;
->>>>>>> 4d7aaf9b3... dotCMS/core#17992 Auto-Assign Type when a dotAsset is uploaded
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockInternalRequest;
 import com.dotcms.mock.response.BaseResponse;
