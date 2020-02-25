@@ -64,6 +64,7 @@ public abstract class DotAssetContentType extends ContentType implements UrlMapa
 				.readOnly(false)
 				.searchable(true)
 				.indexed(true)
+				.listed(true) // show the name of the file on the content search
 				.build()
 			);
 
