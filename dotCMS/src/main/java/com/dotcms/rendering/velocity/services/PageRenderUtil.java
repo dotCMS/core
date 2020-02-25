@@ -7,13 +7,11 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.ibm.icu.text.SimpleDateFormat;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -36,7 +34,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -56,12 +53,10 @@ import org.apache.velocity.context.Context;
 import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.*;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.dotmarketing.business.PermissionAPI.*;
 

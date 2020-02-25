@@ -12,8 +12,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
  */
 @JsonSerialize(using = ContainerViewSerializer.class)
 public class ContainerView {
-    private Container container;
-    private Host host;
+    private final Container container;
+    private final Host host;
 
     public ContainerView(final Container container, final Host host) {
         this.container = container;

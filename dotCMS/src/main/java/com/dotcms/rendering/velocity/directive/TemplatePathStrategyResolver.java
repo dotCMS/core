@@ -153,14 +153,22 @@ public class TemplatePathStrategyResolver {
         }
 
         @NotNull
-        private String getContainerResourceFromRelativePath(RenderParams params, String path, String uid) {
+        private String getContainerResourceFromRelativePath(
+                final RenderParams params,
+                final String path,
+                final String uid) {
+
             return builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH, HOST_INDICATOR,
                     params.currentHost.getHostname(), path.startsWith(FORWARD_SLASH)? StringPool.BLANK:FORWARD_SLASH,
                     path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
         }
 
         @NotNull
-        private String getContainerResourcePathFromFullPath(RenderParams params, String path, String uid) {
+        private String getContainerResourcePathFromFullPath(
+                final RenderParams params,
+                final String path,
+                final String uid) {
+
             return builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH,
                 path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
         }

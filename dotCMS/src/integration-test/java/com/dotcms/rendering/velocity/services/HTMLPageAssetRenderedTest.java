@@ -26,7 +26,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
-import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -61,7 +60,6 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.jetbrains.annotations.NotNull;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -810,7 +808,7 @@ public class HTMLPageAssetRenderedTest {
             contentletAPI.publish(pageEnglishVersion, systemUser, false);
             addAnonymousPermissions(pageEnglishVersion);
 
-            MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(),
+            final MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(),
                     contentlet.getIdentifier(), UUID, 0);
             APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
@@ -1002,7 +1000,7 @@ public class HTMLPageAssetRenderedTest {
         Assert.assertEquals(html , "content2content1");
     }
 
-    private HttpSession createHttpSession(HttpServletRequest mockRequest) {
+    private HttpSession createHttpSession(final HttpServletRequest mockRequest) {
         final HttpSession session = mock(HttpSession.class);
         Mockito.when(mockRequest.getSession()).thenReturn(session);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
@@ -1261,7 +1259,7 @@ public class HTMLPageAssetRenderedTest {
                 .next();
 
         final Contentlet contentlet = new ThemeDataGen().nextPersisted();
-        Template template = new TemplateDataGen()
+        final Template template = new TemplateDataGen()
                 .title("PageContextBuilderTemplate"+System.currentTimeMillis())
                 .host(site)
                 .drawedBody(templateLayout)

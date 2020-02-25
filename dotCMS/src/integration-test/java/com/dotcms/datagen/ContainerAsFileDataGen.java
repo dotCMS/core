@@ -28,7 +28,7 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
         private ContentType contentType;
         private String content;
 
-        public ContentTypeContent(ContentType contentType, String content) {
+        public ContentTypeContent(final ContentType contentType, final String content) {
             this.contentType = contentType;
             this.content = content;
         }
