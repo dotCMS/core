@@ -22,6 +22,13 @@ public class TomcatDatasourceStrategyTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Method to test: {@link TomcatDataSourceStrategy#apply()}
+     * Test case: Happy path to get a DataSource using a context.xml file. The DataSource is obtained
+     * using JNDI lookup
+     * Expected result: A valid HikariDataSource should be returned
+     * @throws SQLException
+     */
     @Test
     public void testApply() throws SQLException {
         final DataSource dataSource = TomcatDataSourceStrategy.getInstance().apply();

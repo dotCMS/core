@@ -28,6 +28,13 @@ public class SystemEnvDataSourceStrategyTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Method to test: {@link SystemEnvDataSourceStrategy#apply()}
+     * Test case: Happy path to get a DataSource using system environment variables
+     * Expected result: A valid HikariDataSource should be returned
+     * @throws SQLException
+     * @throws NamingException
+     */
     @Test
     public void testApply() throws SQLException, NamingException {
         final Map<String, String> properties = new HashMap<>();

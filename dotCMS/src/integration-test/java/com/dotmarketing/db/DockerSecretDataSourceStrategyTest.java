@@ -35,6 +35,14 @@ public class DockerSecretDataSourceStrategyTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Method to test: {@link DockerSecretDataSourceStrategy#apply()}
+     * Test case: Happy path to get a DataSource using a docker secrets file
+     * Expected result: A valid HikariDataSource should be returned
+     * @throws SQLException
+     * @throws IOException
+     * @throws NamingException
+     */
     @Test
     public void testApply() throws SQLException, IOException, NamingException {
         final HikariDataSource testDatasource = (HikariDataSource) TestInitialContext.getInstance()
@@ -60,6 +68,11 @@ public class DockerSecretDataSourceStrategyTest {
         assertNotNull(dataSource.getConnection());
     }
 
+    /**
+     * Method to test: {@link DockerSecretDataSourceStrategy#getHikariConfig(Map)}
+     * Test case: Tests that all values in the config object are set correctly
+     * Expected result: Success
+     */
     @Test
     public void testGetHikariConfig(){
         final Map<String, String> dockerSecretsMap = new HashMap<>();
