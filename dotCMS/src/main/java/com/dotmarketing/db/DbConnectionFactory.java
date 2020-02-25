@@ -114,7 +114,7 @@ public class DbConnectionFactory {
 
                 if (null == defaultDataSource) {
                     try {
-                        loadDatasource();
+                        defaultDataSource = DataSourceStrategyProvider.getInstance().get();
                         addDatasourceToJNDIIfNeeded();
                     } catch (Throwable e) {
                         Logger.error(DbConnectionFactory.class,
@@ -131,58 +131,6 @@ public class DbConnectionFactory {
         }
 
         return defaultDataSource;
-    }
-
-    /**
-     * Method that loads a datasource from a custom implementation if <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b>
-     * property is defined. Otherwise, the datasource is initialized using any of these implementations (respecting order):<br>
-     * 1. A db.properties file in WEB-INF/classes implemented by {@link DBPropertiesDataSourceStrategy}<br>
-     * 2. Configuration is taken from environment variables implemented by {@link SystemEnvDataSourceStrategy}<br>
-     * 3. Getting Docker Secrets if set. Implementation: {@link DockerSecretDataSourceStrategy}<br>
-     * 4. A context.xml file in META-INF. Implementation: {@link TomcatDataSourceStrategy}
-     *
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     * @throws ClassNotFoundException
-     */
-    private static void loadDatasource()
-            throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-        final String providerClassName = Config
-                .getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", null);
-
-        if (!UtilMethods.isSet(providerClassName)) {
-            if (DBPropertiesDataSourceStrategy.getInstance()
-                    .existsDBPropertiesFile()) {
-                defaultDataSource = DBPropertiesDataSourceStrategy.getInstance()
-                        .apply();
-                Logger.info(DbConnectionFactory.class,
-                        "Datasource loaded from db.properties file");
-            } else if (System.getenv("connection_db_base_url") != null) {
-                defaultDataSource = SystemEnvDataSourceStrategy.getInstance()
-                        .apply();
-                Logger.info(DbConnectionFactory.class,
-                        "Datasource loaded from system environment");
-            } else {
-                defaultDataSource = DockerSecretDataSourceStrategy.getInstance()
-                        .apply();
-                Logger.info(DbConnectionFactory.class,
-                        "Datasource loaded from Docker Secret");
-            }
-
-            if (null == defaultDataSource) {
-                defaultDataSource = TomcatDataSourceStrategy.getInstance()
-                        .apply();
-                Logger.info(DbConnectionFactory.class,
-                        "Datasource loaded from context.xml");
-            }
-        } else {
-            DotDataSourceStrategy customStrategy = ((Class<DotDataSourceStrategy>) Class
-                    .forName(providerClassName)).newInstance();
-            defaultDataSource = customStrategy.apply();
-
-            Logger.info(DbConnectionFactory.class,
-                    "Datasource loaded using custom class " + providerClassName);
-        }
     }
 
     /**
