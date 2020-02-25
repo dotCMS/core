@@ -174,7 +174,7 @@ public class PublisherAPITest extends IntegrationTestBase {
 
             /* Push publish the folder. */
             // Set up Bundle.
-            bundle = new Bundle(null, new Date(), null, adminUser.getUserId(), false);
+            bundle = new Bundle(null, new Date(), null, adminUser.getUserId(), false,"");
             bundleAPI.saveBundle(bundle, Lists.newArrayList(environment));
 
             // Set up PublishAuditHistory.

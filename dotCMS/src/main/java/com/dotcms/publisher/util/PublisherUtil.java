@@ -101,6 +101,7 @@ public class PublisherUtil {
 		b.setOwner(UtilMethods.isSet(row.get("owner"))?row.get("owner").toString():"");
 		b.setForcePush(UtilMethods.isSet(row.get("force_push")) && DbConnectionFactory
 				.isDBTrue(row.get("force_push").toString()));
+		b.setFilterKey(UtilMethods.isSet(row.get("filter_key")) ? row.get("filter_key").toString() : "");
 		return b;
 	}
 

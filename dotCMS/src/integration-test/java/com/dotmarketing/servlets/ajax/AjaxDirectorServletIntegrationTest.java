@@ -157,7 +157,7 @@ public class AjaxDirectorServletIntegrationTest {
                 + "    \"iWantTo\":\"publish\",\n"
                 + "    \"whoToSend\":\""+environmentIdsString+"\",\n"
                 + "    \"forcePush\":false\n"
-                + "}");
+                + "}");//TODO: need to add filter property
 
         remotePublishAjaxActionPushBundle.setRequestURI("/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle");
 
