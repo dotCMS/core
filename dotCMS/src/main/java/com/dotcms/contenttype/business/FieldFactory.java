@@ -34,6 +34,15 @@ public interface FieldFactory {
      */
     List<FieldVariable> byFieldVariableKey(String key) throws DotDataException;
 
+    /**
+     * Searches for a field variable whose key match the parameter
+     * @param fieldId {@link String}
+     * @param key {@link String}
+     * @return FieldVariable
+     * @throws DotDataException
+     */
+    Optional<FieldVariable>  byFieldVariableKey(String fieldId, String key) throws DotDataException;
+
     void delete(Field field) throws DotDataException;
 
     List<Field> byContentTypeId(String id) throws DotDataException;
