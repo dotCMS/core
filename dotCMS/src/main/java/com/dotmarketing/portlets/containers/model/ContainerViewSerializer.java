@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * {@link JsonSerializer} of {@link ContainerView}
+ */
 public class ContainerViewSerializer extends JsonSerializer<ContainerView> {
 
     static final ObjectMapper MAPPER = new ObjectMapper();

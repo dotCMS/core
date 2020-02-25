@@ -1,17 +1,15 @@
 package com.dotmarketing.portlets.containers.model;
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.exception.DotRuntimeException;
+
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
-import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageViewSerializer;
-import com.fasterxml.jackson.databind.ObjectWriter;
+
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import java.io.CharArrayReader;
-import java.io.IOException;
-import java.util.Map;
-import java.util.Objects;
 
+/**
+ * It is a {@link Container} for UI, it make sure to return the container relative path from {@link ContainerView#host}
+ */
 @JsonSerialize(using = ContainerViewSerializer.class)
 public class ContainerView {
     private Container container;
@@ -22,6 +20,13 @@ public class ContainerView {
         this.host = host;
     }
 
+    /**
+     * If {@link ContainerView#container} is a {@link FileAssetContainer} then return the Container relative oath
+     * if the container is into {@link ContainerView#host} otherwise ir return the absolute path.
+     * If the container is not a {@link FileAssetContainer} then return null.
+     *
+     * @return
+     */
     public String getPath(){
         if (FileAssetContainerUtil.getInstance().isFileAssetContainer(container)) {
             final FileAssetContainer fileAssetContainer = (FileAssetContainer) container;
