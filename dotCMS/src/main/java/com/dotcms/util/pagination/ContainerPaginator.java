@@ -5,6 +5,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -35,14 +36,17 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
     public static final String HOST_PARAMETER_ID = "host";
 
     private final ContainerAPI containerAPI;
+    private final HostWebAPI hostWebAPI;
 
     public ContainerPaginator() {
         containerAPI = APILocator.getContainerAPI();
+        hostWebAPI = WebAPILocator.getHostWebAPI();
     }
 
     @VisibleForTesting
-    public ContainerPaginator(final ContainerAPI containerAPI) {
+    public ContainerPaginator(final ContainerAPI containerAPI, final HostWebAPI hostWebAPI) {
         this.containerAPI = containerAPI;
+        this.hostWebAPI = hostWebAPI;
     }
 
     @Override
@@ -80,7 +84,7 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
 
     private PaginatedArrayList<ContainerView> createContainerView(
             final PaginatedArrayList<Container> allContainers) throws DotDataException, DotSecurityException {
-        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
+        final Host currentHost = hostWebAPI.getCurrentHost();
 
         final PaginatedArrayList containerViews = new PaginatedArrayList();
         containerViews.setTotalResults(allContainers.getTotalResults());

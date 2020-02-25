@@ -1,5 +1,7 @@
 package com.dotcms.util.pagination;
 
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
@@ -36,6 +38,9 @@ public class ContainerPaginatorTest {
         final int limit = 10;
         final String orderby = "title";
 
+        final Host host = mock(Host.class);
+        when(host.getIdentifier()).thenReturn(hostId);
+
         final PaginatedArrayList<Container> containersExpected = new PaginatedArrayList<>();
         containersExpected.setTotalResults(totalRecords);
 
@@ -44,7 +49,10 @@ public class ContainerPaginatorTest {
         when(containerAPI.findContainers(user, false, params, hostId,
                 null, null, null, offset, limit, "title asc")).thenReturn(containersExpected);
 
-        final ContainerPaginator containerPaginator = new ContainerPaginator( containerAPI );
+        final HostWebAPI hostWebAPI = mock(HostWebAPI.class);
+        when(hostWebAPI.getCurrentHost()).thenReturn(host);
+
+        final ContainerPaginator containerPaginator = new ContainerPaginator( containerAPI, hostWebAPI);
 
         final PaginatedArrayList<ContainerView> containersViews = containerPaginator.getItems(user, filter, limit, offset, orderby,
                 OrderDirection.ASC, map(ContainerPaginator.HOST_PARAMETER_ID, hostId));
@@ -68,6 +76,9 @@ public class ContainerPaginatorTest {
         final int limit = 10;
         final String orderby = "title";
 
+        final Host host = mock(Host.class);
+        when(host.getIdentifier()).thenReturn(hostId);
+
         final PaginatedArrayList<Container> containersExpected = new PaginatedArrayList<>();
         containersExpected.setTotalResults(totalRecords);
 
@@ -76,7 +87,10 @@ public class ContainerPaginatorTest {
         when(containerAPI.findContainers(user, false, params, hostId,
                 null, null, null, offset, limit, "title")).thenReturn(containersExpected);
 
-        final ContainerPaginator containerPaginator = new ContainerPaginator( containerAPI );
+        final HostWebAPI hostWebAPI = mock(HostWebAPI.class);
+        when(hostWebAPI.getCurrentHost()).thenReturn(host);
+
+        final ContainerPaginator containerPaginator = new ContainerPaginator( containerAPI, hostWebAPI);
 
         final PaginatedArrayList<ContainerView> containersViews = containerPaginator.getItems(user, filter, limit, offset, orderby, null, map());
 
