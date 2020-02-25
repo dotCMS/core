@@ -35,8 +35,10 @@ public class PublicEncryptionFactory {
         try {
 
             final Company company = PublicCompanyFactory.getDefaultCompany();
-            Logger.info(PublicEncryptionFactory.class, ()-> "c:" + company);
+            Logger.info(PublicEncryptionFactory.class, ()-> "c:" + company.getCompanyId());
             final Key key = company.getKeyObj();
+            Logger.info(PublicEncryptionFactory.class, ()-> "key:" + key);
+            Logger.info(PublicEncryptionFactory.class, ()-> "string:" + string);
             return Encryptor.encrypt(key, string);
         } catch(EncryptorException e) {
 
