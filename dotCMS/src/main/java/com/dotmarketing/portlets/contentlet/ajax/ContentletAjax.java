@@ -1059,6 +1059,7 @@ public class ContentletAjax {
 						fieldValue = ident.getAssetName();
 					}
 
+					// when a content type is selected and the field is listed and binary, instead of displaying the path, must display just the name
 					if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && field.isListed() && field.getFieldType().equals(
 							Field.FieldType.BINARY.toString())) {
 
