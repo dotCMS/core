@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContext;
 import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -247,8 +248,8 @@ public class HTMLPageAssetRenderedTest {
         //Create Contentlet in Spanish
         final Contentlet contentlet3 = new ContentletDataGen(contentGenericType.id())
                 .languageId(spanishLanguage.getId())
-                .setProperty("title", "content3")
-                .setProperty("body", "content3")
+                .setProperty("title", "content3Spa")
+                .setProperty("body", "content3Spa")
                 .nextPersisted();
 
         contentlet3.setIndexPolicy(IndexPolicy.WAIT_FOR);
@@ -325,18 +326,17 @@ public class HTMLPageAssetRenderedTest {
     }
 
     /**
-     * ContentFallback False
-     * PageFallback True
-     *
-     * Page English
-     *
-     * English -> 1 & 2
-     * Spanish -> 2 & 3
-     *
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true
+     *       And the page have version just in ENG
+     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
+     * Should: If the page is requests in ENG version it should be render with content1 and content2
+     *         If the page is requests in ESP version it should be render with content3 and content2 (both in ESP version)
      */
     @Test
     @UseDataProvider("cases")
-    public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3(final Container container, final Template template) throws Exception{
+    public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3(
+            final Container container, final Template template) throws Exception{
 
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
@@ -346,6 +346,7 @@ public class HTMLPageAssetRenderedTest {
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
+        //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
@@ -362,6 +363,7 @@ public class HTMLPageAssetRenderedTest {
                 mockRequest, mockResponse);
         Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
 
+        //request page ESP version
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
                 .request();
@@ -376,7 +378,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
+        Assert.assertTrue("ESP = "+html , html.contains("content3Spacontent2Spa"));
     }
 
     @NotNull
@@ -396,14 +398,12 @@ public class HTMLPageAssetRenderedTest {
     }
 
     /**
-     * ContentFallback False
-     * PageFallback True
-     *
-     * Page English & Spanish
-     *
-     * English -> 1 & 2
-     * Spanish -> 2 & 3
-     *
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true
+     *       And the page have version in ENG and ESP
+     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
+     * Should: If the page is requests in ENG version it should be render with content1 and content2
+     *         If the page is requests in ESP version it should be render with content3 and content2 (both in ESP version)
      */
     @Test
     @UseDataProvider("cases")
@@ -461,22 +461,18 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
+        Assert.assertTrue("ESP = "+html , html.contains("content3Spacontent2Spa"));
 
     }
 
     /**
-     * ContentFallback False
-     * PageFallback True
-     *
-     * Page Spanish
-     *
-     * English -> 404
-     * Spanish -> 2 & 3
-     *
-     * @throws Exception
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true
+     *       And the page have version in ESP
+     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
+     * Should: If the page is requests in ENG version it should be thrown a {@link HTMLPageAssetNotFoundException}
+     *         If the page is requests in ESP version it should be render with content3 and content2 (both in ESP version)
      */
-    @Test (expected = HTMLPageAssetNotFoundException.class)
     @UseDataProvider("cases")
     public void ContentFallbackFalse_PageFallbackTrue_PageSpanish_ViewEnglish404_ViewSpanishContent2And3(final Container container, final Template template) throws Exception{
 
@@ -502,7 +498,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
+        Assert.assertTrue("ESP = "+html , html.contains("content3Spacontent2Spa"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -510,26 +506,30 @@ public class HTMLPageAssetRenderedTest {
         Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
-                PageContextBuilder.builder()
-                        .setUser(systemUser)
-                        .setPageUri(pageSpanishVersion.getURI())
-                        .setPageMode(PageMode.LIVE)
-                        .build(),
-                mockRequest, mockResponse);
+
+        try {
+            APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setUser(systemUser)
+                            .setPageUri(pageSpanishVersion.getURI())
+                            .setPageMode(PageMode.LIVE)
+                            .build(),
+                    mockRequest, mockResponse);
+
+            throw new AssertionError("HTMLPageAssetNotFoundException expected");
+        }catch(HTMLPageAssetNotFoundException e) {
+            //expected
+        }
     }
 
     /**
-     * ContentFallback False
-     * PageFallback False
-     *
-     * Page English
-     *
-     * English -> 1 & 2
-     * Spanish -> 404
-     *
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to false
+     *       And the page have version in ENG
+     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
+     * Should: If the page is requests in ENG version it should be render with content1 and content2
+     *         If the page is requests in ESP version it should be thrown a {@link HTMLPageAssetNotFoundException}
      */
-    @Test (expected = HTMLPageAssetNotFoundException.class)
     @UseDataProvider("cases")
     public void ContentFallbackFalse_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404(final Container container, final Template template) throws Exception{
 
@@ -563,24 +563,28 @@ public class HTMLPageAssetRenderedTest {
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+
+        try {
+            APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
                         .setUser(systemUser)
                         .setPageUri(pageEnglishVersion.getURI())
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
+            throw new AssertionError("HTMLPageAssetNotFoundException expected");
+        }catch(HTMLPageAssetNotFoundException e) {
+            //expected
+        }
     }
 
     /**
-     * ContentFallback False
-     * PageFallback False
-     *
-     * Page English & Spanish
-     *
-     * English -> 1 & 2
-     * Spanish -> 2 & 3
-     *
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to false
+     *       And the page have version in ENG and ESP
+     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
+     * Should: If the page is requests in ENG version it should be render with content1 and content2
+     *         If the page is requests in ESP version it should be render with content3 and content2 (both in ESP version)
      */
     @Test
     @UseDataProvider("cases")
@@ -637,18 +641,16 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spa"));
+        Assert.assertTrue("ESP = "+html , html.contains("content3Spacontent2Spa"));
     }
 
     /**
-     * ContentFallback True
-     * PageFallback True
-     *
-     * Page English & Spanish
-     *
-     * English -> 1 & 2
-     * Spanish -> 1 & 2 & 3
-     *
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to true and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true
+     *       And the page have version in ENG and ESP
+     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
+     * Should: If the page is requests in ENG version it should be render with content1 and content2
+     *         If the page is requests in ESP version it should be render with content1 (ENG version), content3 and content2 (both in ESP version)
      */
     @Test
     @UseDataProvider("cases")
@@ -706,20 +708,17 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ESP = "+html , html.contains("content3content2Spacontent1"));
+        Assert.assertTrue("ESP = "+html , html.contains("content3Spacontent2Spacontent1"));
     }
 
     /**
-     * ContentFallback True
-     * PageFallback False
-     *
-     * Page English
-     *
-     * English -> 1 & 2
-     * Spanish -> 404
-     *
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to true and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to false
+     *       And the page have version just in ENG
+     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
+     * Should: If the page is requests in ENG version it should be render with content1 and content2
+     *         If the page is requests in ESP version it should be thrown a {@link HTMLPageAssetNotFoundException}
      */
-    @Test (expected = HTMLPageAssetNotFoundException.class)
     @UseDataProvider("cases")
     public void ContentFallbackTrue_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404(final Container container, final Template template) throws Exception{
 
@@ -753,13 +752,20 @@ public class HTMLPageAssetRenderedTest {
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
-        APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
-                PageContextBuilder.builder()
-                        .setUser(systemUser)
-                        .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.LIVE)
-                        .build(),
-                mockRequest, mockResponse);
+
+        try{
+            APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setUser(systemUser)
+                            .setPageUri(pageEnglishVersion.getURI())
+                            .setPageMode(PageMode.LIVE)
+                            .build(),
+                    mockRequest, mockResponse);
+
+            throw new AssertionError("HTMLPageAssetNotFoundException expected");
+        }catch(HTMLPageAssetNotFoundException e) {
+            //expected
+        }
     }
 
     /**
