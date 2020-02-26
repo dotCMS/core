@@ -1168,7 +1168,7 @@ public class HTMLPageAssetRenderedTest {
 
     /**
      * Method to test: {@link com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * Given Scenario: Create a page with File Container liked with relative path in the template
+     * Given Scenario: Create a page with File Container linked with relative path in the template
      * ExpectedResult: should work
      *
      * @throws Exception
