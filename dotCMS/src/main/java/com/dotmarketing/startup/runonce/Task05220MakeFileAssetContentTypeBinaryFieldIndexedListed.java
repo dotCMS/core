@@ -29,7 +29,7 @@ public class Task05220MakeFileAssetContentTypeBinaryFieldIndexedListed implement
                 // update the binary fields of the file assets, in order to be indexed, listed and searchable.
                 final String contentTypeInode = (String) fileAssetRow.get("inode");
                 new DotConnect().setSQL(
-                        "update field set indexed = ?, listed=?,searchable=? where structure_inode = ? and field_type = 'com.dotcms.contenttype.model.field.BinaryField' ")
+                        "update field set indexed = ?, listed=?, searchable=? where structure_inode = ? and field_type = 'com.dotcms.contenttype.model.field.BinaryField' ")
                         .addParam(true).addParam(true).addParam(true).addParam(contentTypeInode).loadResult();
             }
         }
