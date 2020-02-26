@@ -351,12 +351,8 @@ public class TikaUtils {
             if (this.isZeroByteFileException(ioExc.getCause())) {
                 logWarning(binFile, ioExc.getCause());
             } else {
-                final String errorMessage = String
-                        .format("Error Reading Tika parsed Stream for file [%s] [%s] ",
-                                binFile.getAbsolutePath(),
-                                UtilMethods.isSet(ioExc.getMessage()) ? ioExc.getMessage()
-                                        : ioExc.getCause().getMessage());
-                Logger.warnAndDebug(this.getClass(), ioExc);
+
+                this.parseFallbackAsPlainText(binFile, metaMap, ioExc);
             }
         } catch (Throwable e) {
 
@@ -366,12 +362,36 @@ public class TikaUtils {
                 logError(binFile, e);
             }
         } finally {
+            metaMap.put(FileAssetAPI.SIZE_FIELD, binFile.length());
             metaMap.put("length", binFile.length());
         }
 
         this.filterMetadataFields(metaMap, metadataFields);
 
         return metaMap;
+    }
+
+    private void parseFallbackAsPlainText(final File binFile, final Map<String, Object> metaMap, final IOException ioExc) {
+        try {
+            //On error lets try a fallback operation
+            final String errorMessage = String
+                    .format("Error Reading Tika parsed Stream for file [%s] [%s] ",
+                            binFile.getAbsolutePath(),
+                            UtilMethods.isSet(ioExc.getMessage()) ? ioExc.getMessage()
+                                    : ioExc.getCause().getMessage());
+            Logger.warnAndDebug(this.getClass(), errorMessage, ioExc);
+
+            try (InputStream stream = Files.newInputStream(binFile.toPath())) {
+                //Parse the content as plain text in order to avoid validation errors
+                final String content = this.tikaService.parseToStringAsPlainText(stream);
+
+                //Creating the meta data map to use by our content
+                metaMap.putAll(this.buildMetaDataMap());
+                metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
+            }
+        } catch (Exception e) {
+            logError(binFile, e);
+        }
     }
 
     /**
