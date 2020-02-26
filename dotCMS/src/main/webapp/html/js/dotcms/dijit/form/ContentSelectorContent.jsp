@@ -1,17 +1,12 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <form dojoAttachPoint="search_form" onsubmit="return false;" id="searchForm" class="related-content-form">
-<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" dojoAttachPoint="borderContainer" class="related-content-container">
-	
-
         <!-- START Left Column -->
-        <div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" class="portlet-sidebar-wrapper">
+        <div dojoType="dijit.layout.ContentPane" class="portlet-sidebar-wrapper">
             <div class="portlet-sidebar">
                 <input type="hidden" name="hostField" dojoAttachPoint="hostField" value=""/>
                 <input type="hidden" name="folderField" dojoAttachPoint="folderField" value=""/>
                 <input type="hidden" name="structure_inode" dojoAttachPoint="structure_inode" value="strInode">
                 <div class="sideMenuWrapper">
-                    
-                    
                     <div dojoAttachPoint="structures_select"></div>
                     <div dojoAttachPoint="search_languages_table"></div>
                     <div dojoAttachPoint="search_fields_table"></div>
@@ -32,9 +27,8 @@
                 </div>
             </div>
         </div>
-
 	   <!-- START Right Column -->
-        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-main-wrapper">
+        <div dojoType="dijit.layout.ContentPane" class="portlet-main-wrapper">
 		   <div dojoAttachPoint="contentWrapper">
 		       <div class="portlet-toolbar">
 		           <div dojoAttachPoint="matchingResultsDiv" class="portlet-toolbar__matching-results" style="visibility: hidden"><%= LanguageUtil.get(pageContext, "Results") %></div>
@@ -57,12 +51,8 @@
 		           <button dojoType="dijit.form.Button" class="bg" dojoAttachEvent='onClick:_nextPage' iconClass="nextIcon"><%= LanguageUtil.get(pageContext, "Next") %></button>
 		       </div>
 		   </div>
-	
 	    </div>
-
-</div>
     </form>
-
 
 <!-- Dynamic Variables/Language specific content from request/session/context -->
 <div style="display: none;">
