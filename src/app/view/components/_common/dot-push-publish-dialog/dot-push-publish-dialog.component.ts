@@ -6,8 +6,8 @@ import { SelectItem } from 'primeng/primeng';
 import { DotMessageService } from '@services/dot-messages-service';
 import { LoggerService } from 'dotcms-js';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { takeUntil, map } from 'rxjs/operators';
-import { combineLatest, Observable } from 'rxjs';
+import { takeUntil, map, catchError } from 'rxjs/operators';
+import { combineLatest, Observable, of } from 'rxjs';
 import { Subject } from 'rxjs';
 import {
     DotPushPublishFiltersService,
@@ -67,7 +67,9 @@ export class DotPushPublishContentTypesDialogComponent implements OnInit, OnDest
             'contenttypes.content.push_publish.publish_date_errormsg',
             'contenttypes.content.push_publish.expire_date_errormsg'
         ]);
-        const filterOptions$ = this.dotPushPublishFiltersService.get();
+        const filterOptions$ = this.dotPushPublishFiltersService
+            .get()
+            .pipe(catchError(() => of([])));
 
         combineLatest(messages$, filterOptions$)
             .pipe(takeUntil(this.destroy$))

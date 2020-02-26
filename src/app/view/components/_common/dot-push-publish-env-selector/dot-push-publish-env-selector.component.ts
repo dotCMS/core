@@ -25,7 +25,7 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
     selectedEnvironmentIds: string[] = [];
     messages: {
         [key: string]: string;
-    };
+    } = {};
 
     value: string[];
 
