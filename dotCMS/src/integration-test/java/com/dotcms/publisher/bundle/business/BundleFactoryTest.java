@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -46,6 +47,7 @@ public class BundleFactoryTest {
         bundle.setForcePush(false);
         bundle.setOwner(userId);
         bundle.setPublishDate(publishDate);
+        bundle.setFilterKey(null);
         APILocator.getBundleAPI().saveBundle(bundle);
 
         return uuid;
@@ -211,5 +213,37 @@ public class BundleFactoryTest {
         assertTrue(publisherAPI.getQueueElementsByBundleId(bundleid).isEmpty());
 
         bundleFactory.deleteBundle(bundleid);
+    }
+
+    @Test
+    public void test_insertBundleWithFilterKey() throws DotDataException {
+        final String uuid = UUIDGenerator.generateUuid();
+        Bundle bundle = new Bundle();
+        bundle.setId(uuid);
+        bundle.setName("testBundle"+System.currentTimeMillis());
+        bundle.setForcePush(false);
+        bundle.setOwner(adminUser.getUserId());
+        bundle.setPublishDate(new Date());
+        bundle.setFilterKey("testFilter");
+        APILocator.getBundleAPI().saveBundle(bundle);
+
+        bundle = APILocator.getBundleAPI().getBundleById(uuid);
+        assertEquals("testFilter",bundle.getFilterKey());
+    }
+
+    @Test
+    public void test_insertBundleWithoutFilterKey() throws DotDataException {
+        final String uuid = UUIDGenerator.generateUuid();
+        Bundle bundle = new Bundle();
+        bundle.setId(uuid);
+        bundle.setName("testBundle"+System.currentTimeMillis());
+        bundle.setForcePush(false);
+        bundle.setOwner(adminUser.getUserId());
+        bundle.setPublishDate(new Date());
+        bundle.setFilterKey(null);
+        APILocator.getBundleAPI().saveBundle(bundle);
+
+        bundle = APILocator.getBundleAPI().getBundleById(uuid);
+        assertTrue(bundle.getFilterKey().isEmpty());
     }
 }

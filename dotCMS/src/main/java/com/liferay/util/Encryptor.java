@@ -142,9 +142,6 @@ public class Encryptor {
 
 
 			Cipher cipher = Cipher.getInstance(key.getAlgorithm());
-			Logger.info(Encryptor.class,"Cipher: " + cipher);
-			Logger.info(Encryptor.class,"Encrypt mode: " + Cipher.ENCRYPT_MODE);
-			Logger.info(Encryptor.class,"key: " + key);
 			cipher.init(Cipher.ENCRYPT_MODE, key);
 
 			byte[] decryptedBytes = plainText.getBytes(ENCODING);

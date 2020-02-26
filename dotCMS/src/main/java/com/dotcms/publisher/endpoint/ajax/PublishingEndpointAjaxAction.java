@@ -126,7 +126,6 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
         	endpoint.setAddress(request.getParameter("address"));
         	endpoint.setPort(request.getParameter("port"));
         	endpoint.setProtocol(request.getParameter("protocol"));
-        	Logger.info(this, "AUTH_KEY: " + request.getParameter("authKey"));
         	endpoint.setAuthKey(new StringBuilder(PublicEncryptionFactory.encryptString(request.getParameter("authKey"))));
         	endpoint.setEnabled(null!=request.getParameter("enabled"));
         	String sending = request.getParameter("sending");

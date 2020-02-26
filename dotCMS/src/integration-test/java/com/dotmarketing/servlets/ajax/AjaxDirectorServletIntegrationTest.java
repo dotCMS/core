@@ -13,6 +13,7 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
@@ -20,10 +21,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
+import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.API;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -35,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.servlet.ServletException;
@@ -148,6 +152,13 @@ public class AjaxDirectorServletIntegrationTest {
             }
         });
 
+        //Create new filter to send in the URL
+        final Map<String,Object> filtersMap1 =
+                ImmutableMap.of("dependencies",true,"relationships",true);
+        final FilterDescriptor filterDescriptor1 =
+                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,false, APILocator.systemUser().getUserId());
+        APILocator.getPublisherAPI().addFilter(filterDescriptor1);
+
         remotePublishAjaxActionPushBundle.setRequestJSON("{\n"
                 + "    \"assetIdentifier\": \""+bundleId+"\",\n"
                 + "    \"remotePublishDate\":\""+publishDateString+"\",\n"
@@ -156,8 +167,8 @@ public class AjaxDirectorServletIntegrationTest {
                 + "    \"remotePublishExpireTime\":\"10-00\",\n"
                 + "    \"iWantTo\":\"publish\",\n"
                 + "    \"whoToSend\":\""+environmentIdsString+"\",\n"
-                + "    \"forcePush\":false\n"
-                + "}");//TODO: need to add filter property
+                + "    \"filterKey\":\""+ filterDescriptor1.getKey() +"\n"
+                + "}");
 
         remotePublishAjaxActionPushBundle.setRequestURI("/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle");
 

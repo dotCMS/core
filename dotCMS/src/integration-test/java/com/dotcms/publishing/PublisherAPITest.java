@@ -329,7 +329,7 @@ public class PublisherAPITest extends IntegrationTestBase {
         final Map<String,Object> filtersMap =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
         final FilterDescriptor filterDescriptor =
-                new FilterDescriptor("filterTestAPI.yml","Filter Test Title",filtersMap,true,"Reviewer,dotcms.org.2789");
+                new FilterDescriptor("filterTestAPI.yml","Filter Test Title",filtersMap,false,"Reviewer,dotcms.org.2789");
 
         publisherAPI.addFilter(filterDescriptor);
 
@@ -344,12 +344,12 @@ public class PublisherAPITest extends IntegrationTestBase {
         final Map<String,Object> filtersMap1 =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
         final FilterDescriptor filterDescriptor1 =
-                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,true,"Reviewer,dotcms.org.2789");
+                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,false,"Reviewer,dotcms.org.2789");
 
         final Map<String,Object> filtersMap2 =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
         final FilterDescriptor filterDescriptor2 =
-                new FilterDescriptor("filterTest2.yml","Filter Test Title 2",filtersMap2,true,"Reviewer");
+                new FilterDescriptor("filterTest2.yml","Filter Test Title 2",filtersMap2,false,"Reviewer");
 
         publisherAPI.addFilter(filterDescriptor1);
         publisherAPI.addFilter(filterDescriptor2);
@@ -377,12 +377,12 @@ public class PublisherAPITest extends IntegrationTestBase {
         final Map<String,Object> filtersMap1 =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
         final FilterDescriptor filterDescriptor1 =
-                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,true,"Reviewer," + newUser.getUserId());
+                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,false,"Reviewer," + newUser.getUserId());
 
         final Map<String,Object> filtersMap2 =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
         final FilterDescriptor filterDescriptor2 =
-                new FilterDescriptor("filterTest2.yml","Filter Test Title 2",filtersMap2,true,"Reviewer");
+                new FilterDescriptor("filterTest2.yml","Filter Test Title 2",filtersMap2,false,"Reviewer");
 
         publisherAPI.addFilter(filterDescriptor1);
         publisherAPI.addFilter(filterDescriptor2);
@@ -430,7 +430,7 @@ public class PublisherAPITest extends IntegrationTestBase {
         final Map<String,Object> filtersMap1 =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
         final FilterDescriptor filterDescriptor1 =
-                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,true,roleB.getRoleKey()+','+userC.getUserId());
+                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,false,roleB.getRoleKey()+','+userC.getUserId());
 
         publisherAPI.addFilter(filterDescriptor1);
 
