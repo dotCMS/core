@@ -9,6 +9,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import com.dotcms.business.CloseDB;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -1022,12 +1023,13 @@ public class ContentletAjax {
 				ContentType type = con.getContentType();
 				searchResult.put("typeVariable", type.variable());
 				searchResult.put("baseType",type.baseType().name());
-				for (String fieldContentlet : fieldsMapping.keySet()) {
+				for (final String fieldContentlet : fieldsMapping.keySet()) {
 					String fieldValue = null;
 					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
 						fieldValue = (con.getMap().get(fieldContentlet)).toString();
 					}
-					Field field = (Field) fieldsMapping.get(fieldContentlet);
+
+					final Field field = fieldsMapping.get(fieldContentlet);
 					if (UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE.toString()) ||
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
@@ -1055,6 +1057,12 @@ public class ContentletAjax {
 							UtilMethods.isSet(ident) &&
 							UtilMethods.isSet(ident.getAssetName())) {
 						fieldValue = ident.getAssetName();
+					}
+
+					if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && field.isListed() && field.getFieldType().equals(
+							Field.FieldType.BINARY.toString())) {
+
+						searchResult.put(fieldContentlet+"_title_", con.getBinary(fieldContentlet).getName());
 					}
 
 					searchResult.put(fieldContentlet, fieldValue);

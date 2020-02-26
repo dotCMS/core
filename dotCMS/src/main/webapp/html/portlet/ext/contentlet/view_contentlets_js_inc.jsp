@@ -1791,10 +1791,18 @@
                                         cell = row.insertCell (row.cells.length);
                                         cell.setAttribute("align","left");
 									}
-                                    var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
+
+                                    let fieldVarName  = header["fieldVelocityVarName"];
+                                    let fieldVarTitle = cellData[fieldVarName + "_title_"];
+                                    fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
+                                    var value         = titleCell(cellData,fieldVarTitle, i);
                                 }
                                 else{
-                                    var value = cellData[header["fieldVelocityVarName"]];
+
+                                    let fieldVarName  = header["fieldVelocityVarName"];
+                                    let fieldVarTitle = cellData[fieldVarName + "_title_"];
+                                    fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
+                                    var value         = fieldVarTitle;
                                 }
                                 if (value != null){
                                 	cell.innerHTML = value;
