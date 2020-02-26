@@ -95,7 +95,12 @@ public class PageRenderUtil implements Serializable {
             final long languageId,
             final Host site) throws DotSecurityException, DotDataException {
 
-        this.site = null == site? APILocator.getHostAPI().findDefaultHost(user, mode.respectAnonPerms):site;
+        if (site == null) {
+            this.site = APILocator.getHostAPI().findDefaultHost(user, mode.respectAnonPerms);
+        } else {
+            this.site = site;
+        }
+
         this.pageFoundTags = Lists.newArrayList();
         this.htmlPage = htmlPage;
         this.user = user;
