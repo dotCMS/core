@@ -52,11 +52,11 @@ public class PushNowActionlet extends WorkFlowActionlet {
     private static final String PARAM_ENVIRONMENT = "environment";
     private static final String PARAM_FORCE_PUSH = "force";
 
-    private PublisherAPI publisherAPI = PublisherAPI.getInstance();
-    private EnvironmentAPI environmentAPI = APILocator.getEnvironmentAPI();
-    private BundleAPI bundleAPI = APILocator.getBundleAPI();
-    private UserAPI userAPI = APILocator.getUserAPI();
-    private RoleAPI roleAPI = APILocator.getRoleAPI();
+    private final PublisherAPI publisherAPI = PublisherAPI.getInstance();
+    private final EnvironmentAPI environmentAPI = APILocator.getEnvironmentAPI();
+    private final BundleAPI bundleAPI = APILocator.getBundleAPI();
+    private final UserAPI userAPI = APILocator.getUserAPI();
+    private final RoleAPI roleAPI = APILocator.getRoleAPI();
 
     @Override
     public List<WorkflowActionletParameter> getParameters() {
@@ -84,7 +84,6 @@ public class PushNowActionlet extends WorkFlowActionlet {
         final User user = processor.getUser();
         final String environments = params.get(PARAM_ENVIRONMENT).getValue();
         try {
-            final boolean forcePush = "true".equals(params.get(PARAM_FORCE_PUSH).getValue()) ? Boolean.TRUE : Boolean.FALSE;
             if (!UtilMethods.isSet(environments)) {
                 Logger.error(this, "There are no Push Publishing environments set to send the bundle.");
             }
@@ -133,6 +132,7 @@ public class PushNowActionlet extends WorkFlowActionlet {
             // Push Publish now
             final Date publishDate = new Date();
             identifiers.add(contentlet.getIdentifier());
+            final boolean forcePush = "true".equals(params.get(PARAM_FORCE_PUSH).getValue()) ? Boolean.TRUE : Boolean.FALSE;
             final Bundle bundle = new Bundle(null, publishDate, null, user.getUserId(), forcePush);
             this.bundleAPI.saveBundle(bundle, finalEnvs);
             this.publisherAPI.addContentsToPublish(identifiers, bundle.getId(), publishDate, user);
