@@ -752,7 +752,7 @@
                     <!-- START Listing Results -->
                     <input type="hidden" name="referer" value="<%=referer%>">
                     <input type="hidden" name="cmd" value="prepublish">
-                    <div class="portlet-toolbar">
+                    <div class="portlet-toolbar" style="height: 48px">
                         <div class="portlet-toolbar__actions-secondary">
                             <button id="bulkAvailableActions" dojoType="dijit.form.Button" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
                                 <%= LanguageUtil.get(pageContext, "Available-actions")%>
