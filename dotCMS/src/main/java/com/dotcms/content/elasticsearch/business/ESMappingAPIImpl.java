@@ -299,6 +299,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			if (binaryField.isPresent()) {
 
 				this.generateBinaryMetadata(contentlet, sw, mlowered, binaryField.get());
+
+				if (BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())) {
+					// see if we have content metadata
+					final File contentMeta = APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
+					if (contentMeta.exists() && contentMeta.length() > 0) {
+						final String contentData = APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
+						mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", contentData);
+					}
+				}
 			}
 			//The url is now stored under the identifier for html pages, so we need to index that also.
 			if (contentlet.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
