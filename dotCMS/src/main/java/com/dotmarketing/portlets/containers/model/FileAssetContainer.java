@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.containers.model;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -29,7 +30,7 @@ public class FileAssetContainer extends Container {
     private transient final Contentlet contentlet = new Contentlet();
 
     private long languageId;
-
+    private Host host;
     private String path;
 
     public FileAssetContainer() {
@@ -132,5 +133,13 @@ public class FileAssetContainer extends Container {
 
     public long getLanguageId() {
         return languageId;
+    }
+
+    public void setHost(final Host host) {
+        this.host = host;
+    }
+
+    public Host getHost() {
+        return host;
     }
 }
