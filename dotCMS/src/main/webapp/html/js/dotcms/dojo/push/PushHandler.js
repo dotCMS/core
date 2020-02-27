@@ -83,27 +83,19 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         	removeOnly = displayRemoveOnly;
         }
 
+
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "push-publish-dialog",
+            data: {
+                assetIdentifier: assetId,
+                dateFilter: dateFilter,
+                removeOnly: removeOnly,
+                isBundle: this.isBundle
+            }
+        });
+        document.dispatchEvent(customEvent);
         this.assetIdentifier = assetId;
-        dialog = new dotcms.dijit.RemotePublisherDialog();
-        dialog.title = this.title;
-        dialog.dateFilter = dateFilter;
-        dialog.removeOnly = removeOnly;
-        dialog.container = this;
-        dialog.show();
-
-        var self = this;
-        setTimeout(function() {
-	        self.environmentStore.fetch({
-	    		onComplete:function(items,request) {
-                    //Pre-select the environment only if there is one single instance.
-                    items = items.filter(item => item.id != '0');
-                    if(items.length === 1) {
-                        self.addToWhereToSend(items[0].id, items[0].name);
-                        self.refreshWhereToSend();
-                    }
-	    		}
-	    	})},200);
-
     },
 
     showRestrictedDialog: function (assetId, displayDateFilter) {
