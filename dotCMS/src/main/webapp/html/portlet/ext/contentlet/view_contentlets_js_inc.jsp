@@ -1823,10 +1823,7 @@
             dojo.byId('metaMatchingResultsDiv').appendChild(viewCard);
           }
 
-          viewCard.items = [];
-          setTimeout(() => {
-            viewCard.items = content;
-          }, 0)
+          viewCard.items = content;
         };
 
 		function openEditModal(data){
