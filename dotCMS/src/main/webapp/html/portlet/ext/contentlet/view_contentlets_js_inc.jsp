@@ -12,6 +12,7 @@
 
 <script language="JavaScript"><!--
 
+
 <%boolean canReindex= APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
 
 <%Structure calendarEventSt = APILocator.getStructureAPI().findByVarName("calendarEvent", APILocator.getUserAPI().getSystemUser());%>
@@ -21,6 +22,13 @@
         dojo.require("dijit.form.MultiSelect");
         dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
         dojo.require("dojo.aspect");
+
+        const DOTCMS_DATAVIEW_MODE = 'dotcms.dataview.mode';
+        var state = {
+          data: [],
+          view: localStorage.getItem(DOTCMS_DATAVIEW_MODE) || 'list',
+          headers: []
+        }
 
         var radiobuttonsIds = new Array();
         var checkboxesIds = new Array();
@@ -76,11 +84,8 @@
 
         var unCheckedInodes = "";
         function updateUnCheckedList(inode,checkId){
-
 	        if(document.getElementById("fullCommand").value == "true"){
-
 	            if(!document.getElementById(checkId).checked){
-
 	                    unCheckedInodes = document.getElementById('allUncheckedContentsInodes').value;
 
 	                    if(unCheckedInodes == "")
@@ -90,8 +95,7 @@
 
 	            }else{
 	                    unCheckedInodes = unCheckedInodes.replace(inode,"-");
-	            }
-
+              }
 	            document.getElementById('allUncheckedContentsInodes').value = unCheckedInodes;
 	        }
         }
@@ -171,25 +175,54 @@
 			t.start();
 		});
 
+        function getViewCardEl() {
+            return document.querySelector('dot-card-view');
+        }
+
+        function getListEl() {
+            return document.getElementById('results_table')
+        }
 
 
+        function getSelectButton() {
+            return document.querySelector('dot-data-view-button')
+        }
+
+		function setDotSelectButton(){
+			var dotSelectButton = getSelectButton();
+			dotSelectButton.addEventListener('selected', function (event) {
+                changeView(event.detail);
+			}, false);
+		}
+
+        function printData(data, headers) {
+            fillResultsTable(headers, data);
+            fillCardView(data)
+            const card = getViewCardEl();
+            const list = getListEl();;
+
+            if (state.view === 'list') {
+                list.style.display = ''
+                card.display = 'none'
+            } else {
+                list.style.display = 'none'
+                card.display = ''
+            }
+        }
 
 
         function fillResults(data) {
-
-
             var counters = data[0];
             var hasNext = counters["hasNext"];
             var hasPrevious = counters["hasPrevious"];
             var total = counters["total"];
             var begin = counters["begin"];
             var end = counters["end"];
-    		var totalPages = counters["totalPages"];
-
+            var totalPages = counters["totalPages"];
             headers = data[1];
 
             for (var i = 3; i < data.length; i++) {
-                    data[i - 3] = data[i];
+                data[i - 3] = data[i];
             }
             data.length = data.length - 3;
 
@@ -204,17 +237,30 @@
                             dwr.util.addRows("results_table", [ headers ] , funcs, { escapeHtml: false });
                             document.getElementById("nextDiv").style.display = "none";
                             document.getElementById("previousDiv").style.display = "none";
-                            showMatchingResults (0,0,0,0);
+                            state = {
+                                ...state,
+                                data: []
+                            };
+                            showMatchingResults(0,0,0,0);
                             fillQuery (counters);
                             dijit.byId("searchButton").attr("disabled", false);
-                            //dijit.byId("clearButton").setAttribute("disabled", false);
                     }
 
                     return;
             }
 
-            fillResultsTable (headers, data);
-            showMatchingResults (total,begin,end,totalPages);
+            state = {
+              ...state,
+              data: data,
+              headers: headers
+            }
+
+            const selectButton = getSelectButton();
+            if (selectButton) {
+                selectButton.style.display = '';
+            }
+            printData(data, headers);
+            showMatchingResults(total, begin, end, totalPages);
             fillQuery (counters);
 
 
@@ -1142,8 +1188,25 @@
              }
         }
 
-        function getSelectedInodes () {
+        function getSelectedInodes() {
+            const inodes = state.view === 'list' ? getSelectedInodesFromList() : getSelectedInodesFromCardView();
+            return inodes;
+        }
 
+        function getSelectedInodesFromCardView() {
+          let viewCard = getViewCardEl();
+
+          if (viewCard) {
+            const value = viewCard.getAttribute('value');
+            if (value) {
+                return viewCard.getAttribute('value').split(',');
+            }
+          }
+
+          return [];
+        }
+
+        function getSelectedInodesFromList() {
             var selectedInodes;
             if ( document.getElementById("fullCommand").value == "true" ) {
 
@@ -1303,22 +1366,36 @@
 
         var currentPage;
         function doSearch (page, sortBy) {
-            if (page) {
-                currentPage = page;
-            } else {
-                page = currentPage
-            }
-			// Wait for the "HostFolderFilteringSelect" widget to end the values updating process before proceeding with the search, if necessary.
-			if (dijit.byId('FolderHostSelector') && dijit.byId('FolderHostSelector').attr('updatingSelectedValue')) {
-			        setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
-			} else {
-				if(dijit.byId('structure_inode')){
-				    debouncedSearch(page, sortBy);
-				}
-				else{
-				    setTimeout("doSearch (" + page + ", '" + sortBy + "');", 250);
-				}
-			}
+          if (page) {
+              currentPage = page;
+          } else {
+              page = currentPage;
+          }
+          // Wait for the "HostFolderFilteringSelect" widget to end the values updating process before proceeding with the search, if necessary.
+          if (
+              dijit.byId('FolderHostSelector') &&
+              dijit
+                  .byId('FolderHostSelector')
+                  .attr('updatingSelectedValue')
+          ) {
+              setTimeout(
+                  'doSearch (' + page + ", '" + sortBy + "');",
+                  250
+              );
+          } else {
+              if (dijit.byId('structure_inode')) {
+                  debouncedSearch(page, sortBy);
+              } else {
+                  setTimeout(
+                      'doSearch (' +
+                          page +
+                          ", '" +
+                          sortBy +
+                          "');",
+                      250
+                  );
+              }
+          }
         }
 
 
@@ -1675,9 +1752,161 @@
             pushHandler.showDialog(objId, false, isArchived);
         }
 
-        function fillResultsTable (headers, data) {
+        function changeView(view) {
+          localStorage.setItem(DOTCMS_DATAVIEW_MODE, view)
+          state.view = view;
+
+          let card = getViewCardEl();
+          const list = getListEl();
+
+          if (state.view === 'list') {
+            const selectedInodes = getSelectedInodesFromCardView();
+
+            if (!list.innerHTML.length) {
+                fillResultsTable(state.headers, state.data);
+            }
+
+            const checkboxes = document.querySelectorAll('[name="publishInode"]')
+            checkboxes.forEach((item, i) => {
+                dijit.byId('checkbox' + i).setValue(selectedInodes.includes(item.value));
+            })
+
+            card.style.display = 'none';
+            list.style.display = '';
+
+          } else {
+
+            // After append the dot-card-view we have to wait to get the HTML node
+            if (!card) {
+                fillCardView(state.data)
+                setTimeout(() => {
+                    card = getViewCardEl();
+                }, 0);
+            }
+
+            setTimeout(() => {
+                card.style.display = '';
+                card.value = getSelectedInodesFromList().join(',');
+                list.style.display = 'none';
+            }, 0);
+
+          }
+        }
+
+        function fillCardView(data) {
+          const content = data.map(i => {
+            return {
+              data: {
+                ...i,
+                title: i.__title__ // Why not `title` coming?
+              },
+              actions: fillActions(i)
+            }
+          })
+
+          let viewCard = getViewCardEl();
+
+          if (!viewCard) {
+            viewCard = document.createElement('dot-card-view');
+            viewCard.style.padding = '0 1rem';
+            viewCard.style.fontSize = '16px';
+            viewCard.addEventListener('selected', (e) => {
+                if (e.detail.length) {
+                    enableBulkAvailableActionsButton();
+                } else {
+                    disableBulkAvailableActionsButton();
+                }
+            });
+			viewCard.addEventListener('onCardClick', (e) => {
+				openEditModal(e.detail);
+			});
+            dojo.byId('metaMatchingResultsDiv').appendChild(viewCard);
+          }
+
+          viewCard.items = [];
+          setTimeout(() => {
+            viewCard.items = content;
+          }, 0)
+        };
+
+		function openEditModal(data){
+			var inode = data.inode;
+			var liveSt = data.live === "true" ? "1" : "0";
+			var workingSt = data.working === "true" ? "1" : "0";
+			var write = userHasWritePermission (data, userId) ? "1" : "0";
+
+			if (data.structureInode == '<%=calendarEventSt.getInode() %>') {
+				editEvent(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write);
+			}else{
+				editContentlet(inode, '<%=user.getUserId()%>', '<%= referer %>', liveSt, workingSt, write);
+			}
+		};
+
+		function fillActions(data) {
+			let actions = []
+
+			const live = data["live"] == "true";
+			const working = data["working"] == "true";
+			const deleted = data["deleted"] == "true";
+			const locked = data["locked"] == "true";
+			const liveSt = live ? "1" : "0";
+			const workingSt = working ? "1" : "0";
+			const permissions = data["permissions"];
+			const read = userHasReadPermission(data, userId) ? "1" : "0";
+			const write = userHasWritePermission(data, userId) ? "1" : "0";
+			const publish = userHasPublishPermission(data, userId) ? "1" : "0";
+			const contentStructureType = data["contentStructureType"];
+			const structure_id = data["structureInode"];
+			const hasLiveVersion = data["hasLiveVersion"];
+
+			const contentAdmin = new dotcms.dijit.contentlet.ContentAdmin(data.identifier, data.inode, data.languageId);
+			const wfActionMapList = JSON.parse(data["wfActionMapList"]);
+
+			if ((live || working) && (read=="1") && (!deleted)) {
+				if(structure_id == '<%=calendarEventSt.getInode() %>'){
+					actions.push({ label: write === '1' ? '<%=LanguageUtil.get(pageContext, "Edit") %>' : '<%=LanguageUtil.get(pageContext, "View") %>',
+						action: () => { editEvent(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write)}
+					});
+				} else {
+					actions.push({ label: write === '1' ? '<%=LanguageUtil.get(pageContext, "Edit") %>' : '<%=LanguageUtil.get(pageContext, "View") %>',
+						action: () => { editContentlet(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write)}
+					});
+				}
+			}
+
+			wfActionMapList.map((wfAction) => {
+				actions.push({ label: wfAction.name,
+					action: () => { contentAdmin.executeWfAction(wfAction.id, wfAction.assignable.toString(), wfAction.commentable.toString(), wfAction.hasPushPublishActionlet.toString(), data.inode)}
+				});
+			});
+
+			if (enterprise && sendingEndpoints ) {
+				actions.push({ label: '<%=LanguageUtil.get(pageContext, "Remote-Publish") %>',
+					action: () => { remotePublish(data.inode, '<%= referer %>', deleted )}
+				});
+				actions.push({ label: '<%=LanguageUtil.get(pageContext, "Add-To-Bundle") %>',
+					action: () => { addToBundle(data.inode, '<%= referer %>')}
+				});
+			}
+
+			if (locked && (write=="1")){
+				if(structure_id == '<%=calendarEventSt.getInode() %>') {
+					actions.push({ label: '<%=LanguageUtil.get(pageContext, "Unlock") %>',
+						action: () => { unlockEvent(data.inode, '<%= user.getUserId() %>', '<%= referer %>', liveSt, workingSt, write)}
+					});
+				}else{
+					actions.push({ label: '<%=LanguageUtil.get(pageContext, "Unlock") %>',
+						action: () => { _unlockAsset(data.inode)}
+					});
+				}
+			}
+
+			return actions;
+		}
+
+        function fillResultsTable(headers, data) {
                 headerLength = headers.length;
-                var table = document.getElementById("results_table");
+                var table = getListEl();
 
                 //Filling Headers
                 var row = table.insertRow(table.rows.length);
@@ -1901,7 +2130,6 @@
                         popupMenu += popupMenuItems + "</div>";
                         popupMenu2 += popupMenuItems + "</div>";
                 }
-
                 popupMenusDiv.innerHTML = popupMenu + popupMenu2;
 
 
@@ -2139,9 +2367,24 @@
 
                     eval("totalContents=" + num + ";");
 
+                    let showDataViewButton = '';
+                    if (!totalPages) {
+                        showDataViewButton = '; opacity: 0'
+                        const viewCard = getViewCardEl();
+                        if (viewCard) {
+                            viewCard.items = [];
+
+                        }
+
+                        const list = getListEl();
+                        list.style.display = '';
+                    }
+
+                    let dataViewButton = "<dot-data-view-button style=\"margin-right:32px" + showDataViewButton +"\" value=\""+ state.view +"\"></dot-data-view-button>";
+
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
+                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div>" + dataViewButton + "<div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
                         var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
                         var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
                         if (num > 0 && structureInode != "catchall") {
@@ -2162,6 +2405,10 @@
 
                         div.innerHTML = strbuff;
                         div.style.display = "";
+
+                        if (totalPages) {
+                            setDotSelectButton();
+                        }
 
                         //Bottom Matching Results
                         var div = document.getElementById("matchingResultsBottomDiv")
@@ -2327,16 +2574,21 @@
 
         for(i = 0;i< cbArray.length ;i++){
             if (cbArray[i].checked) {
-                dijit.byId('bulkAvailableActions').setAttribute("disabled", false);
+                enableBulkAvailableActionsButton()
                 return;
             }
         }
 
         // nothing selected
+        disableBulkAvailableActionsButton();
+    }
+
+    function enableBulkAvailableActionsButton() {
+        dijit.byId('bulkAvailableActions').setAttribute("disabled", false);
+    }
+
+    function disableBulkAvailableActionsButton() {
         dijit.byId('bulkAvailableActions').setAttribute("disabled", true);
-
-
-
     }
 
 

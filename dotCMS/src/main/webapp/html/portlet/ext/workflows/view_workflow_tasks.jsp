@@ -396,7 +396,7 @@
 		});
 	}
 
-	function getSelectedInodes() {
+	function getTaskSelectedInodes() {
 		var ids = [];
 		dojo.query(".taskCheckBox").forEach(function (node) {
 			let check = dijit.byNode(node);
@@ -438,7 +438,7 @@
 	}
 
 	function fireAction(actionId, popupData) {
-		let selectedInodes = getSelectedInodes();
+		let selectedInodes = getTaskSelectedInodes();
 		if(!selectedInodes){
 			return;
 		}
