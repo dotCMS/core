@@ -11,4 +11,5 @@ export interface PushPublishData {
     expiredatetime: string;
     environment: string[];
     forcePush: boolean;
+    filterKey: string;
 }
