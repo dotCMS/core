@@ -1,5 +1,6 @@
 package com.dotmarketing.db;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -16,7 +17,8 @@ import javax.sql.DataSource;
  */
 public class TomcatDataSourceStrategy implements DotDataSourceStrategy {
 
-    private TomcatDataSourceStrategy(){}
+    @VisibleForTesting
+    TomcatDataSourceStrategy(){}
 
     private static class SingletonHelper{
         private static TomcatDataSourceStrategy INSTANCE = new TomcatDataSourceStrategy();

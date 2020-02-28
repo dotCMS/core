@@ -24,7 +24,8 @@ public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
 
     public static final String DOCKER_SECRET_FILE_PATH_PROPERTY = "DOCKER_SECRET_FILE_PATH";
 
-    private DockerSecretDataSourceStrategy(){
+    @VisibleForTesting
+    DockerSecretDataSourceStrategy(){
         systemEnvironmentProperties = new SystemEnvironmentProperties();
     }
 
