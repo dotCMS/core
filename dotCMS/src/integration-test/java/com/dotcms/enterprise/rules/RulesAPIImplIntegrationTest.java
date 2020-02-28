@@ -247,6 +247,7 @@ public class RulesAPIImplIntegrationTest {
         readPermission.setInode(host.getPermissionId());
         readPermission.setRoleId(role.getId());
         readPermission.setPermission(PermissionAPI.PERMISSION_READ);
+        readPermission.setType(Rule.class.getName());
         permissions.add(readPermission);
 
         if (notAddPublishPermission) {
@@ -259,6 +260,12 @@ public class RulesAPIImplIntegrationTest {
             permissions.add(publishPermission);
         }
 
+        final Permission hostReadPermission = new Permission();
+        hostReadPermission.setInode(host.getPermissionId());
+        hostReadPermission.setRoleId(role.getId());
+        hostReadPermission.setPermission(PermissionAPI.PERMISSION_USE);
+        permissions.add(hostReadPermission);
+            
         APILocator.getPermissionAPI().save(permissions, host, systemUser, false);
     }
 }
