@@ -1790,6 +1790,12 @@ public class WorkflowResource {
 
         final ContentTypeAPI contentTypeAPI      = APILocator.getContentTypeAPI(APILocator.systemUser());
         final String         contentTypeInode    = this.getContentTypeInode(contentMap, user, binaryFiles);
+
+        if (!UtilMethods.isSet(contentTypeInode)) {
+
+            throw new BadRequestException("The content type or base type, is not set or is invalid");
+        }
+
         final List<Field>    fields              = contentTypeAPI.find(contentTypeInode).fields();
         final List<String>   binaryFields        = argBinaryFields.size() > 0?
                 new ArrayList<>(argBinaryFields) : this.getBinaryFields (fields, contentMap, binaryFiles.size());
