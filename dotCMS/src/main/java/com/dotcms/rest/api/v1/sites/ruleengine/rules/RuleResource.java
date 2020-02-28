@@ -80,7 +80,7 @@ public class RuleResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Map<String, RestRule> list(
-            @Context HttpServletRequest request,
+            @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("siteId") String siteId) throws DotSecurityException, DotDataException {
 
@@ -216,7 +216,10 @@ public class RuleResource {
         return webResource.init(request, response, true).getUser();
     }
 
-    private List<RestRule> getRulesInternal(User user, Ruleable host) throws DotSecurityException, DotDataException {
+    private List<RestRule> getRulesInternal(
+            final User user,
+            final Ruleable host) throws DotSecurityException, DotDataException {
+
         List<RestRule> restRules = new ArrayList<>();
 
         List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, false);

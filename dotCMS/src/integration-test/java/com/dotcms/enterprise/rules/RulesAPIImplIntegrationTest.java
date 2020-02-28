@@ -94,7 +94,7 @@ public class RulesAPIImplIntegrationTest {
         final Role role = new RoleDataGen().nextPersisted();
         final User user = new UserDataGen().roles(role).nextPersisted();
         final Host host = new SiteDataGen().nextPersisted();
-        final Rule rule1 = new RuleDataGen().host(host).nextPersisted();
+        new RuleDataGen().host(host).nextPersisted();
 
         rulesAPI.getAllRulesByParent(host, user, false);
     }
@@ -265,7 +265,7 @@ public class RulesAPIImplIntegrationTest {
         hostReadPermission.setRoleId(role.getId());
         hostReadPermission.setPermission(PermissionAPI.PERMISSION_USE);
         permissions.add(hostReadPermission);
-            
+
         APILocator.getPermissionAPI().save(permissions, host, systemUser, false);
     }
 }
