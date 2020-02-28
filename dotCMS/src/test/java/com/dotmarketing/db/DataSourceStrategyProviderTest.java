@@ -27,18 +27,21 @@ public class DataSourceStrategyProviderTest {
                 "DBProperties",
                 "SystemEnv",
                 "DockerSecret",
-                "Tomcat"
+                "Tomcat",
+                "CustomProvider"
         };
     }
 
     /**
      * Method to test: {@link DataSourceStrategyProvider#get()}
-     * Test case: Verify this order is respected when DataSource credentials are obtained when a custom
-     * provider is not set:
-     *            2. db.properties file
-     *            3. System environment variables
-     *            4. Docker secrets
-     *            5. context.xml
+     * Test case: Verify this order is respected when DataSource credentials are obtained:
+     * <ul>
+     *            <li>Custom provider</li>
+     *            <li>db.properties file</li>
+     *            <li>System environment variables</li>
+     *            <li>Docker secrets</li>
+     *            <li>context.xml</li>
+     * </ul>
      *
      * Expected result: A DataSource is returned using the right provider
      * @param testCase
@@ -84,6 +87,10 @@ public class DataSourceStrategyProviderTest {
             Mockito.when(dockerSecretStrategy.dockerSecretPathExists()).thenReturn(false);
         }
 
+        if (testCase.equals("CustomProvider")){
+            Mockito.when(provider.getCustomDataSourceProvider()).thenReturn("DummyProvider");
+        }
+
         Mockito.when(dbStrategy.apply()).thenReturn(dummyDatasource);
         Mockito.when(systemEnvStrategy.apply()).thenReturn(dummyDatasource);
         Mockito.when(dockerSecretStrategy.apply()).thenReturn(dummyDatasource);
@@ -99,30 +106,84 @@ public class DataSourceStrategyProviderTest {
         Mockito.verify(dbStrategy, Mockito.times(testCase.equals("DBProperties")? 1: 0)).apply();
         Mockito.verify(systemEnvStrategy, Mockito.times(testCase.equals("SystemEnv")? 1: 0)).apply();
         Mockito.verify(dockerSecretStrategy, Mockito.times(testCase.equals("DockerSecret")? 1: 0)).apply();
-        Mockito.verify(tomcatDataSourceStrategy, Mockito.times(testCase.equals("Tomcat")? 1: 0)).apply();
+        Mockito.verify(tomcatDataSourceStrategy, Mockito.times(
+                (testCase.equals("Tomcat") | testCase.equals("CustomProvider")) ? 1 : 0)).apply();
 
     }
 
+
     /**
      * Method to test: {@link DataSourceStrategyProvider#get()}
-     * Test case: When a custom provider class is set, the DataSourceStrategyProvider should try to use it
-     * instead of the others providers
-     * Expected result: An exception should be thrown as the custom provider class does not exist
+     * Test case: Use {@link TomcatDataSourceStrategy} provider when any of these strategies fails
+     * <ul>
+     *            <li>Custom provider</li>
+     *            <li>db.properties file</li>
+     *            <li>System environment variables</li>
+     *            <li>Docker secrets</li>
+     *            <li>context.xml</li>
+     * </ul>
+     *
+     * Expected result: A DataSource is initialized using the {@link TomcatDataSourceStrategy} provider
+     * @param testCase
      * @throws IllegalAccessException
      * @throws InstantiationException
      * @throws ClassNotFoundException
      */
-    @Test(expected=ClassNotFoundException.class)
-    public void testGetUsingCustomProvider()
+    @UseDataProvider("testCases")
+    @Test
+    public void testGetFallback(final String testCase)
             throws IllegalAccessException, InstantiationException, ClassNotFoundException {
 
         final DataSourceStrategyProvider provider = Mockito.spy(DataSourceStrategyProvider.class);
+        final SystemEnvironmentProperties properties = Mockito.spy(SystemEnvironmentProperties.class);
+        final DBPropertiesDataSourceStrategy dbStrategy = Mockito.spy(DBPropertiesDataSourceStrategy.class);
+        final SystemEnvDataSourceStrategy systemEnvStrategy = Mockito.spy(SystemEnvDataSourceStrategy.class);
+        final DockerSecretDataSourceStrategy dockerSecretStrategy = Mockito.spy(DockerSecretDataSourceStrategy.class);
+        final TomcatDataSourceStrategy tomcatDataSourceStrategy = Mockito.mock(TomcatDataSourceStrategy.class);
 
-        Mockito.when(provider.getCustomDataSourceProvider()).thenReturn("DummyProvider");
+        final HikariDataSource dummyDatasource = new HikariDataSource();
+
+        Mockito.when(provider.getSystemEnvironmentProperties()).thenReturn(properties);
+        Mockito.when(provider.getDBPropertiesInstance()).thenReturn(dbStrategy);
+        Mockito.when(provider.getSystemEnvDataSourceInstance()).thenReturn(systemEnvStrategy);
+        Mockito.when(provider.getDockerSecretDataSourceInstance()).thenReturn(dockerSecretStrategy);
+        Mockito.when(provider.getTomcatDataSourceInstance()).thenReturn(tomcatDataSourceStrategy);
+
+        if (testCase.equals("DBProperties")) {
+            Mockito.when(dbStrategy.existsDBPropertiesFile()).thenReturn(true);
+        } else {
+            Mockito.when(dbStrategy.existsDBPropertiesFile()).thenReturn(false);
+        }
+
+        if (testCase.equals("SystemEnv")){
+            Mockito.when(properties.getVariable("connection_db_base_url")).thenReturn("dummy_url");
+        } else {
+            Mockito.when(properties.getVariable("connection_db_base_url")).thenReturn(null);
+        }
+
+        if (testCase.equals("DockerSecret")) {
+            Mockito.when(dockerSecretStrategy.dockerSecretPathExists()).thenReturn(true);
+        } else {
+            Mockito.when(dockerSecretStrategy.dockerSecretPathExists()).thenReturn(false);
+        }
+
+        if (testCase.equals("CustomProvider")){
+            Mockito.when(provider.getCustomDataSourceProvider()).thenReturn("DummyProvider");
+        }
+
+        Mockito.when(tomcatDataSourceStrategy.apply()).thenReturn(dummyDatasource);
 
         //Gets the provider strategy
-        provider.get();
-    }
+        DataSource result = provider.get();
 
+        assertNotNull(result);
+        assertEquals(dummyDatasource, result);
+
+        Mockito.verify(dbStrategy, Mockito.times(testCase.equals("DBProperties")? 1: 0)).apply();
+        Mockito.verify(systemEnvStrategy, Mockito.times(testCase.equals("SystemEnv")? 1: 0)).apply();
+        Mockito.verify(dockerSecretStrategy, Mockito.times(testCase.equals("DockerSecret")? 1: 0)).apply();
+        Mockito.verify(tomcatDataSourceStrategy, Mockito.times(1)).apply();
+
+    }
 
 }

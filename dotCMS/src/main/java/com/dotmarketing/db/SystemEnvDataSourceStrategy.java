@@ -32,7 +32,8 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
         this.systemEnvironmentProperties = systemEnvironmentProperties;
     }
 
-    private SystemEnvDataSourceStrategy(){
+    @VisibleForTesting
+    SystemEnvDataSourceStrategy(){
         systemEnvironmentProperties = new SystemEnvironmentProperties();
     }
 
