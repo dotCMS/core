@@ -5,9 +5,10 @@ import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publishing.job.SiteSearchJobImplTest;
+import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rest.api.v1.secret.ServiceIntegrationResourceTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
-import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.util.TestConfig;
@@ -229,7 +230,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.security.secret.SecretsStoreKeyStoreImplTest.class,
         com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class,
         ServiceIntegrationResourceTest.class,
-        VelocityServletIntegrationTest.class
+        VelocityServletIntegrationTest.class,
+        SiteSearchJobImplTest.class
 })
 public class MainSuite {
 

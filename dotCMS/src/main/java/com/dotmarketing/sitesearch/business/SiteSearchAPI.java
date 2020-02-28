@@ -24,11 +24,15 @@ public interface SiteSearchAPI {
 
 	List<String> listIndices();
 
+    boolean isDefaultIndex(String indexName) throws DotDataException;
+
 	void activateIndex(String indexName) throws DotDataException;
 
 	void deactivateIndex(String indexName) throws DotDataException, IOException;
 
 	boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticsearchException, IOException;
+
+	boolean setAlias(String indexName, final String alias);
 
 	List<ScheduledTask> getTasks() throws SchedulerException;
 
