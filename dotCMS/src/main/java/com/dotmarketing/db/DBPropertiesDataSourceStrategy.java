@@ -64,7 +64,7 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
                 throw new FileNotFoundException("DB properties file not found");
             }
 
-            properties.load(new FileInputStream(propertiesFile));
+            properties.load(new FileInputStream(getPropertiesFile()));
 
             final HikariConfig config = getHikariConfig(properties);
 
@@ -78,6 +78,11 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
 
             throw new DotRuntimeException(e.toString());
         }
+    }
+
+    @VisibleForTesting
+    File getPropertiesFile() {
+        return propertiesFile;
     }
 
     @VisibleForTesting

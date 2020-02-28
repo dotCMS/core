@@ -151,6 +151,7 @@ public class DataSourceStrategyProviderTest {
 
         if (testCase.equals("DBProperties")) {
             Mockito.when(dbStrategy.existsDBPropertiesFile()).thenReturn(true);
+            Mockito.when(dbStrategy.getPropertiesFile()).thenReturn(null);
         } else {
             Mockito.when(dbStrategy.existsDBPropertiesFile()).thenReturn(false);
         }
