@@ -1,5 +1,5 @@
 key:                      Intelligent.yml
-title:                    Push Everything Respecting Push History
+title:                    Send Everything Respecting Push History
 default:                  true
 roles:                    dotcms.org.2789,Reviewer
 filters:

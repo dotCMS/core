@@ -1,5 +1,5 @@
 key:                      ShallowPush.yml
-title:                    Pushes Object No Dependencies
+title:                    Send Content No Dependencies
 default:                  false
 roles:                    dotcms.org.2789,Reviewer
 filters:

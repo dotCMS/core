@@ -1,5 +1,5 @@
 key:                      ForcePush.yml
-title:                    Push Everything
+title:                    Send Everything
 default:                  false
 roles:                    dotcms.org.2789,Reviewer
 filters:

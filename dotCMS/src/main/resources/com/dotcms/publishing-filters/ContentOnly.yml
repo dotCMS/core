@@ -1,5 +1,5 @@
 key:                      ContentOnly.yml
-title:                    Pushes Content and Relationships
+title:                    Send Content and Relationships
 default:                  false
 roles:                    dotcms.org.2789,Reviewer
 filters:
@@ -8,5 +8,5 @@ filters:
        excludeDependencyClasses: [ list of classes that should never be pushed as dependencies]
        excludeClasses:           [ list of classes that should never be pushed]
        forcePush:                false
-       dependencies:             true
+       dependencies:             false
        relationships:            true

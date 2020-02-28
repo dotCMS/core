@@ -1,5 +1,5 @@
 key:                      WebContentOnly.yml
-title:                    Pushes Folders, Content, Rules. No Roles,WF, ContentTypes or Host.
+title:                    Send Folders, Content, Rules. No Roles, WF, ContentTypes or Host.
 default:                  false
 roles:                    dotcms.org.2789,Reviewer
 filters:
