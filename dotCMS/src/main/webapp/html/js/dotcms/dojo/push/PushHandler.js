@@ -86,7 +86,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
 
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
-            name: "push-publish-dialog",
+            name: "push-publish",
             data: {
                 assetIdentifier: assetId,
                 dateFilter: dateFilter,
