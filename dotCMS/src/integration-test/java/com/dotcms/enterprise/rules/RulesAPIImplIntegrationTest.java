@@ -7,10 +7,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.RuleDataGen;
@@ -28,7 +25,9 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import static org.jgroups.util.Util.assertFalse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -50,6 +49,74 @@ public class RulesAPIImplIntegrationTest {
         systemUser = APILocator.getUserAPI().getSystemUser();
         rulesCache = CacheLocator.getRulesCache();
         rulesAPI   = APILocator.getRulesAPI();
+    }
+
+    /**
+     * Method to Test: {@link RulesAPIImpl#getAllRulesByParent(Ruleable, User, boolean)}
+     * When: User with permission try to get all the rules from host
+     * Should: Return all the rules from the host
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void shouldGetRules() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Rule rule1 = new RuleDataGen().host(host).nextPersisted();
+        final Rule rule2 = new RuleDataGen().host(host).nextPersisted();
+
+        final Host anotherHost = new SiteDataGen().nextPersisted();
+        final Rule rule3 = new RuleDataGen().host(anotherHost).nextPersisted();
+
+        this.addPermission(role, host, false);
+        final List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, false);
+
+        assertEquals(2, rules.size());
+
+        final List<String> rulesId = rules.stream().map(rule -> rule.getId()).collect(Collectors.toList());
+        assertTrue(rulesId.contains(rule1.getId()));
+        assertTrue(rulesId.contains(rule2.getId()));
+        assertFalse(rulesId.contains(rule3.getId()));
+    }
+
+    /**
+     * Method to Test: {@link RulesAPIImpl#getAllRulesByParent(Ruleable, User, boolean)}
+     * When: User without permission try to get all the rules from host
+     * Should: Throw a {@link DotSecurityException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test (expected = DotSecurityException.class)
+    public void shouldThrowDotSecurityException() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        new RuleDataGen().host(host).nextPersisted();
+
+        rulesAPI.getAllRulesByParent(host, user, false);
+    }
+
+    /**
+     * Method to Test: {@link RulesAPIImpl#getAllRulesByParent(Ruleable, User, boolean)}
+     * When: The parent host does not have any rules
+     * Should: Return a empty list
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void shouldReturnEmptyList() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        this.addPermission(role, host, false);
+        final List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, false);
+
+        assertTrue( rules.isEmpty());
     }
 
     /**
@@ -180,6 +247,7 @@ public class RulesAPIImplIntegrationTest {
         readPermission.setInode(host.getPermissionId());
         readPermission.setRoleId(role.getId());
         readPermission.setPermission(PermissionAPI.PERMISSION_READ);
+        readPermission.setType(Rule.class.getName());
         permissions.add(readPermission);
 
         if (notAddPublishPermission) {
@@ -191,6 +259,12 @@ public class RulesAPIImplIntegrationTest {
 
             permissions.add(publishPermission);
         }
+
+        final Permission hostReadPermission = new Permission();
+        hostReadPermission.setInode(host.getPermissionId());
+        hostReadPermission.setRoleId(role.getId());
+        hostReadPermission.setPermission(PermissionAPI.PERMISSION_USE);
+        permissions.add(hostReadPermission);
 
         APILocator.getPermissionAPI().save(permissions, host, systemUser, false);
     }
