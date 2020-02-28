@@ -49,6 +49,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
+import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.hostadmin.business.CopyHostContentUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -1130,9 +1131,16 @@ public class ContentletAjax {
 				searchResult.put("working", working.toString());
 				Boolean live = con.isLive();
 				searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
+
 				searchResult.put("hasLiveVersion", "false");
-				if (!con.isLive() && con.isWorking() && !con.isArchived()) {
-					if (APILocator.getVersionableAPI().hasLiveVersion(con)) {
+
+				final boolean hasLiveVersion = APILocator.getVersionableAPI().hasLiveVersion(con);
+				if (live && hasLiveVersion) {
+
+					searchResult.put("hasLiveVersion", "true");
+				}
+				if (!live && working && !con.isArchived()) {
+					if (hasLiveVersion) {
 						searchResult.put("hasLiveVersion", "true");
 						searchResult.put("allowUnpublishOfLiveVersion", "true");
 						searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
@@ -1157,9 +1165,23 @@ public class ContentletAjax {
 				// End Workflow Actions
 
 				//searchResult.put("structureName", st.getVelocityVarName());
-				Long LanguageId = con.getLanguageId();
-				searchResult.put("languageId", LanguageId.toString());
+				Long languageId = con.getLanguageId();
+				searchResult.put("languageId", languageId.toString());
+				final Language language = APILocator.getLanguageAPI().getLanguage(languageId);
+				searchResult.put("language", language.getCountryCode() + '_' + language.getLanguageCode());
 				searchResult.put("permissions", permissionsSt.toString());
+
+				//Add mimeType
+				if(type.baseType().getType() == BaseContentType.FILEASSET.getType()){
+					searchResult.put("mimeType", APILocator.getFileAssetAPI()
+							.getMimeType(APILocator.getFileAssetAPI().fromContentlet(con).getUnderlyingFileName()));
+				} else if(type.baseType().getType() == BaseContentType.HTMLPAGE.getType()){
+					searchResult.put("mimeType", "application/dotpage");
+				} else {
+					searchResult.put("mimeType", "");
+				}
+				final String icon = spanClass.startsWith("uknIcon") ? spanClass.replaceAll("uknIcon","").trim() : spanClass;
+				searchResult.put("__icon__",icon);
 			} catch (DotSecurityException e) {
 
 				Logger.debug(this, "Does not have permissions to read the content: " + searchResult, e);

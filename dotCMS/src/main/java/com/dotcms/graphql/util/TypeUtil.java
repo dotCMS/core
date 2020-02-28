@@ -32,6 +32,23 @@ public class TypeUtil {
         return builder.build();
     }
 
+    public static GraphQLObjectType createObjectType(final String typeName,
+            final Map<String, TypeFetcher> fieldsTypesAndFetchers) {
+        final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(typeName);
+
+        fieldsTypesAndFetchers.keySet().forEach((key)->{
+            builder.field(newFieldDefinition()
+                    .name(key)
+                    .type(fieldsTypesAndFetchers.get(key).getType())
+                    .dataFetcher(fieldsTypesAndFetchers.get(key).getDataFetcher()!=null
+                            ?fieldsTypesAndFetchers.get(key).getDataFetcher()
+                            :new PropertyDataFetcher<String>(key))
+            );
+        });
+
+        return builder.build();
+    }
+
     public static GraphQLInterfaceType createInterfaceType(final String typeName,
                                                            final Map<String, TypeFetcher> fieldsTypesAndFetchers,
                                                            final TypeResolver typeResolver) {

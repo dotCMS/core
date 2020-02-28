@@ -20,6 +20,7 @@ import com.liferay.util.StringPool;
 import java.util.List;
 import java.util.Optional;
 import org.apache.velocity.context.Context;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Subscribe Strategies and get the strategy for a set of arguments if applies
@@ -137,31 +138,37 @@ public class TemplatePathStrategyResolver {
         }
 
         private String getPath(final RenderParams params, final String path, final String uid) {
-
-
-            final Host host     = params.currentHost;
-            String templatePath = path;
-
-
             try {
-
-                templatePath =(!templatePath.startsWith(HOST_INDICATOR))?
-                        builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH, HOST_INDICATOR,
-                            this.getHost(host).getHostname(), path.startsWith(FORWARD_SLASH)? StringPool.BLANK:FORWARD_SLASH,
-                            path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString():
-
-                        builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH,
-                            path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
+                return FileAssetContainerUtil.getInstance().isFullPath(path) ?
+                        getContainerResourcePathFromFullPath(params, path, uid) :
+                        getContainerResourceFromRelativePath(params, path, uid);
             } catch (Exception e) {
 
-                Logger.warn(this.getClass(), " - unable to resolve " + templatePath + " getting this: "+ e.getMessage() );
+                Logger.warn(this.getClass(), " - unable to resolve " + path + " getting this: "+ e.getMessage() );
                 if(e.getStackTrace().length>0) {
                     Logger.warn(this.getClass(), " - at " + e.getStackTrace()[0]);
                 }
                 throw new DotStateException(e);
             }
+        }
 
-            return templatePath;
+        private String getContainerResourceFromRelativePath(
+                final RenderParams params,
+                final String path,
+                final String uid) {
+
+            return builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH, HOST_INDICATOR,
+                    params.currentHost.getHostname(), path.startsWith(FORWARD_SLASH)? StringPool.BLANK:FORWARD_SLASH,
+                    path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
+        }
+
+        private String getContainerResourcePathFromFullPath(
+                final RenderParams params,
+                final String path,
+                final String uid) {
+
+            return builder(FORWARD_SLASH, params.mode.name(), FORWARD_SLASH,
+                path, FORWARD_SLASH, uid, PERIOD, VelocityType.CONTAINER.fileExtension).toString();
         }
 
         private Host getHost(final Host host) {

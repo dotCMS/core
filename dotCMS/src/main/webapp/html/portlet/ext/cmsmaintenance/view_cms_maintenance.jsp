@@ -447,10 +447,6 @@ function doDownloadIndex(indexName){
 
 }
 
-function doSnapshotIndex(indexName){
-	  window.location="/api/v1/esindex/snapshot/index/" + indexName;
-}
-
 function doReindex(){
 	var shards;
 
@@ -650,32 +646,6 @@ function doRestoreIndex() {
 	}
 }
 
-function doRestoreIndexSnapshot(evt){
-	if(!document.getElementById("restoreSnapshotUploader").value) {
-	    showDotCMSErrorMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "no.snapshot.selected"))%>");
-	}
-	else{
-		let formData = new FormData();
-	  let oReq = new XMLHttpRequest();
-	  dijit.byId('uploadSnapshotSubmit').set('disabled',true);
-	  dojo.query('#uploadSnapshotProgress').style({display:"block"});
-		formData.append('file',document.getElementById("restoreSnapshotUploader").files[0]);
-		oReq.onreadystatechange = function(){
-			if (oReq.readyState === 4) {
-		     var msgJson = JSON.parse(oReq.response)
-			 if (oReq.status === 200) {
-		      	 showDotCMSErrorMessage(msgJson.message,true);
-		     } else {
-		     	 showDotCMSErrorMessage(msgJson.message);
-		     }
-		     restoreSnapshotUploadCompleted();
-		  }
-		}
-	   oReq.open('POST','/api/v1/esindex/restoresnapshot/',true);
-	   oReq.send(formData);
-	}
-}
-
 function restoreUploadCompleted() {
 	hideRestoreIndex();
 }
@@ -756,45 +726,6 @@ function shardCreating(){
        }
     };
     dojo.xhrPost(xhrArgs);
-}
-
-function updateReplicas(indexName,currentNum){
-
-	var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Update-Replicas-Index"))%> for index:\n\n" + indexName, currentNum);
-
-	if(!number){
-		return;
-	}
-
-
-	var replicas = parseInt(number);
-	if(currentNum != replicas){
-
-		var xhrArgs = {
-
-				url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/updateReplicas/indexName/" + indexName + "/replicas/" + replicas,
-
-				handleAs: "text",
-				handle : function(dataOrError, ioArgs) {
-					if (dojo.isString(dataOrError)) {
-						if (dataOrError.indexOf("FAILURE") == 0) {
-							showDotCMSSystemMessage(dataOrError, true);
-						} else {
-							showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Replicas-Updated"))%>", true);
-							refreshIndexStats();
-						}
-					} else {
-						showDotCMSSystemMessage("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Request-Failed"))%>", true);
-					}
-				}
-			};
-			dojo.xhrPost(xhrArgs);
-
-	}
-
-
-
-
 }
 
 function dohighlight(id) {

@@ -17,6 +17,7 @@ import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.Optional;
 
 /**
  * 
@@ -30,6 +31,14 @@ public interface HostWebAPI extends HostAPI {
 	public Host getCurrentHost(ActionRequest req) throws DotDataException, DotSecurityException, PortalException, SystemException;
 	
 	public Host getCurrentHost(HttpServletRequest req) throws DotDataException, DotSecurityException, PortalException, SystemException;
+
+	/**
+	 * Return the current host using the current request
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public Host getCurrentHost() throws DotDataException, DotSecurityException;
 
 	/**
 	 * Return the current Host taking the host id or name from any of the follow source:
