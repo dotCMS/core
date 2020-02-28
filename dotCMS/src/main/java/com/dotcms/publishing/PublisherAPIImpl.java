@@ -183,4 +183,9 @@ public class PublisherAPIImpl implements PublisherAPI {
         return this.loadedFilters;
     }
 
+    @Override
+    public FilterDescriptor getFilterDescriptorByKey(final String filterKey) {
+        return this.loadedFilters.get(filterKey);
+    }
+
 }

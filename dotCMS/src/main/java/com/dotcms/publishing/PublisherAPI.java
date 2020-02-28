@@ -53,4 +53,6 @@ public interface PublisherAPI {
     List<FilterDescriptor> getFiltersByRole(final User user) throws DotDataException;
 
     Map<String, FilterDescriptor> getFilterMap();
+
+    FilterDescriptor getFilterDescriptorByKey(final String filterKey);
 }

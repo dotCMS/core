@@ -7,7 +7,6 @@ filters:
        excludeQuery:             (lucene query that added content is checked against to exclude)
        excludeDependencyClasses: [ list of classes that should never be pushed as dependencies]
        excludeClasses:           [ list of classes that should never be pushed]
-       incremental:              true|false . (basically, force push - should the push history be consulted when        
-                                          pushing?  Defaults to true)
-       dependencies:             true|false, defaults to true
-       relationships:            true|false, defaults to true
+       forcePush:                true
+       dependencies:             true
+       relationships:            true
