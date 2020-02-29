@@ -24,6 +24,12 @@ public interface SiteSearchAPI {
 
 	List<String> listIndices();
 
+	/**
+	 * This basically tells you if the index passed as parameter is the default site search index or not
+	 * @param indexName
+	 * @return
+	 * @throws DotDataException
+	 */
     boolean isDefaultIndex(String indexName) throws DotDataException;
 
 	void activateIndex(String indexName) throws DotDataException;
