@@ -244,6 +244,8 @@ public class BrowserAPI {
 						folderMap.put("name", folder.getName());
 						folderMap.put("description", folder.getTitle());
 						folderMap.put("extension", "folder");
+						folderMap.put("hasTitleImage","");
+						folderMap.put("__icon__","folderIcon");
 						returnList.add(folderMap);
 					}
 				}
@@ -306,7 +308,7 @@ public class BrowserAPI {
 					pageMap.put("name", page.getPageUrl());
 					pageMap.put("description", page.getFriendlyName());
 					pageMap.put("extension", "page");
-					pageMap.put("isContentlet", page instanceof Contentlet);
+					pageMap.put("isContentlet", isContentlet);
 					
 					if(wfdata!=null ) {
     		            pageMap.put("wfActionMapList", wfdata.wfActionMapList);
@@ -330,6 +332,8 @@ public class BrowserAPI {
 
                     pageMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(page));
 					pageMap.put("statusIcons", UtilHTML.getStatusIcons(page));
+					pageMap.put("hasTitleImage",String.valueOf(((Contentlet)page).getTitleImage().isPresent()));
+					pageMap.put("__icon__", "pageIcon");
 					returnList.add(pageMap);
 				}
 			}
@@ -449,6 +453,8 @@ public class BrowserAPI {
 
             fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(file));
 			fileMap.put("statusIcons", UtilHTML.getStatusIcons(file));
+			fileMap.put("hasTitleImage",String.valueOf(contentlet.getTitleImage().isPresent()));
+			fileMap.put("__icon__", UtilMethods.getFileExtension( ident.getURI()) + "Icon");
 			returnList.add(fileMap);
 		}
 
@@ -490,6 +496,8 @@ public class BrowserAPI {
 					linkMap.put("extension", "link");
                     linkMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(link));
 					linkMap.put("statusIcons", UtilHTML.getStatusIcons(link));
+					linkMap.put("hasTitleImage","");
+					linkMap.put("__icon__","linkIcon");
                     returnList.add(linkMap);
 				}
 

@@ -295,14 +295,19 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				}
 			}
 
-			if (contentlet.getContentType().baseType().getType() == BaseContentType.FILEASSET.getType()) {
-				this.generateFileAssetMetadata(contentlet, sw, mlowered);
-			}
-
 			final Optional<Field> binaryField = this.findFirstBinaryFieldIndexable(contentlet);
 			if (binaryField.isPresent()) {
 
 				this.generateBinaryMetadata(contentlet, sw, mlowered, binaryField.get());
+
+				if (BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType())) {
+					// see if we have content metadata
+					final File contentMeta = APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
+					if (contentMeta.exists() && contentMeta.length() > 0) {
+						final String contentData = APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
+						mlowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", contentData);
+					}
+				}
 			}
 			//The url is now stored under the identifier for html pages, so we need to index that also.
 			if (contentlet.getContentType().baseType().getType() == BaseContentType.HTMLPAGE.getType()) {
@@ -364,9 +369,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				for (final String metadataKey : metadataFields) {
 
 					final Object metadataValue = metadataMap.get(metadataKey);
-					mapLowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey.toLowerCase(), metadataValue);
-					if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
-						stringWriter.append(metadataValue.toString()).append(' ');
+					if (null != metadataValue) {
+						mapLowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + metadataKey.toLowerCase(), metadataValue);
+						if (metadataKey.contains(FileAssetAPI.CONTENT_FIELD)) {
+							stringWriter.append(metadataValue.toString()).append(' ');
+						}
 					}
 				}
 			}
@@ -383,36 +390,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				.findFirst();
 	}
 
-	private void generateFileAssetMetadata(final Contentlet contentlet,
-										   final StringWriter stringWriter,
-										   final Map<String, Object> mapLowered) throws Exception {
-
-		//Verify if it is enabled the option to regenerate missing metadata files on reindex
-		final boolean regenerateMissingMetadata = Config
-				.getBooleanProperty("regenerate.missing.metadata.on.reindex", true);
-                /*
-                Verify if it is enabled the option to always regenerate metadata files on reindex,
-                enabling this could affect greatly the performance of a reindex process.
-                 */
-		final boolean alwaysRegenerateMetadata = Config
-				.getBooleanProperty("always.regenerate.metadata.on.reindex", false);
-
-		if (contentlet.isLive() || contentlet.isWorking()) {
-			if (alwaysRegenerateMetadata) {
-				new TikaUtils().generateMetaData(contentlet, true);
-			} else if (regenerateMissingMetadata) {
-				new TikaUtils().generateMetaData(contentlet);
-			}
-		}
-		// see if we have content metadata
-		final File contentMeta = APILocator.getFileAssetAPI().getContentMetadataFile(contentlet.getInode());
-		if(contentMeta.exists() && contentMeta.length() > 0) {
-
-			final String contentData = APILocator.getFileAssetAPI().getContentMetadataAsString(contentMeta);
-			mapLowered.put(FileAssetAPI.META_DATA_FIELD.toLowerCase() + StringPool.PERIOD + "content", contentData);
-			stringWriter.append(contentData).append(' ');
-		}
-	}
 
 	/**
      * Adds the current workflow task to the contentlet in order to be reindexed.

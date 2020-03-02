@@ -12,7 +12,9 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.db.HibernateUtil;
@@ -77,11 +79,15 @@ public class RuleResource {
     @Path("/rules")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Map<String, RestRule> list(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId) {
+    public Map<String, RestRule> list(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("siteId") String siteId) throws DotSecurityException, DotDataException {
+
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request, response);
-        Ruleable proxy =  getParent(siteId, user);
-        List<RestRule> restRules = getRulesInternal(user, proxy);
+        final Host host = APILocator.getHostAPI().find(siteId, user, false);
+        final List<RestRule> restRules = getRulesInternal(user, host);
         Map<String, RestRule> hash = Maps.newHashMapWithExpectedSize(restRules.size());
         for (RestRule restRule : restRules) {
             hash.put(restRule.key, restRule);
@@ -103,7 +109,6 @@ public class RuleResource {
     public RestRule self(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request, response);
-        Ruleable proxy =  getParent(siteId, user);
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         return getRuleInternal(ruleId, user);
     }
@@ -117,7 +122,6 @@ public class RuleResource {
     @POST
     @JSONP
     @Path("/rules")
-    
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("siteId") String siteId, RestRule restRule) {
@@ -150,7 +154,6 @@ public class RuleResource {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request, response);
-        Ruleable proxy =  getParent(siteId, user); // forces check that host exists. This should be handled by rulesAPI?
 
         updateRuleInternal(user, new RestRule.Builder().from(restRule).key(ruleId).build());
 
@@ -213,26 +216,22 @@ public class RuleResource {
         return webResource.init(request, response, true).getUser();
     }
 
-    private List<RestRule> getRulesInternal(User user, Ruleable host) {
-        try {
-            List<RestRule> restRules = new ArrayList<>();
+    private List<RestRule> getRulesInternal(
+            final User user,
+            final Ruleable host) throws DotSecurityException, DotDataException {
 
-            List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, false);
-            for (Rule rule : rules) {
-                try{
-                    restRules.add(ruleTransform.appToRest(rule, user));
-                } catch (Exception transEx) {
-                    String ruleName = UtilMethods.isSet(rule.getName()) ? rule.getName() : "N/A";
-                    Logger.error(this, "Error parsing Rule named: " + ruleName + " to ReST: " + transEx.getMessage());
-                }
+        List<RestRule> restRules = new ArrayList<>();
+
+        List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, false);
+        for (Rule rule : rules) {
+            try{
+                restRules.add(ruleTransform.appToRest(rule, user));
+            } catch (Exception transEx) {
+                String ruleName = UtilMethods.isSet(rule.getName()) ? rule.getName() : "N/A";
+                Logger.error(this, "Error parsing Rule named: " + ruleName + " to ReST: " + transEx.getMessage());
             }
-            return restRules;
-
-        } catch (DotDataException e) {
-            throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e, e.getMessage());
         }
+        return restRules;
     }
 
     private RestRule getRuleInternal(String ruleId, User user) {

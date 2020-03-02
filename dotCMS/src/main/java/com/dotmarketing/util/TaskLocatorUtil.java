@@ -278,6 +278,7 @@ public class TaskLocatorUtil {
         ret.add(Task05205UpdateIndexNameLength.class);
 		ret.add(Task05210CreateDefaultDotAsset.class);
 		ret.add(Task05215AddSystemWorkflowToDotAssetContentType.class);
+		ret.add(Task05220MakeFileAssetContentTypeBinaryFieldIndexedListed.class);
 		return ret;
 	}
 
