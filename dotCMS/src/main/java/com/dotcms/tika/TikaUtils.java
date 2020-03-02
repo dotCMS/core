@@ -1,6 +1,7 @@
 package com.dotcms.tika;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.osgi.OSGIConstants;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -19,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.felix.framework.OSGIUtil;
 
@@ -214,9 +216,23 @@ public class TikaUtils {
             metaDataMap = this.readCompressedJsonMetadataFile (contentMetaFile);
         }
 
+        if (BaseContentType.FILEASSET.equals(contentlet.getContentType().baseType()) &&
+                    UtilMethods.isSet(metaDataMap)) {
+
+            this.saveMetadataOnFileAsset(contentlet, metaDataMap);
+        }
+
         return metaDataMap;
     }
 
+    @WrapInTransaction
+    private void saveMetadataOnFileAsset(final Contentlet contentlet, final Map<String, Object> metaDataMap) {
+
+        final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+        contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaDataMap));
+        //Save the parsed metadata to the contentlet
+        Try.of(()->FactoryLocator.getContentletFactory().save(contentlet));
+    }
 
 
     private Map<String, Object> readCompressedJsonMetadataFile(final File contentMetaFile) {
@@ -351,12 +367,8 @@ public class TikaUtils {
             if (this.isZeroByteFileException(ioExc.getCause())) {
                 logWarning(binFile, ioExc.getCause());
             } else {
-                final String errorMessage = String
-                        .format("Error Reading Tika parsed Stream for file [%s] [%s] ",
-                                binFile.getAbsolutePath(),
-                                UtilMethods.isSet(ioExc.getMessage()) ? ioExc.getMessage()
-                                        : ioExc.getCause().getMessage());
-                Logger.warnAndDebug(this.getClass(), ioExc);
+
+                this.parseFallbackAsPlainText(binFile, metaMap, ioExc);
             }
         } catch (Throwable e) {
 
@@ -366,12 +378,36 @@ public class TikaUtils {
                 logError(binFile, e);
             }
         } finally {
+            metaMap.put(FileAssetAPI.SIZE_FIELD, binFile.length());
             metaMap.put("length", binFile.length());
         }
 
         this.filterMetadataFields(metaMap, metadataFields);
 
         return metaMap;
+    }
+
+    private void parseFallbackAsPlainText(final File binFile, final Map<String, Object> metaMap, final IOException ioExc) {
+        try {
+            //On error lets try a fallback operation
+            final String errorMessage = String
+                    .format("Error Reading Tika parsed Stream for file [%s] [%s] ",
+                            binFile.getAbsolutePath(),
+                            UtilMethods.isSet(ioExc.getMessage()) ? ioExc.getMessage()
+                                    : ioExc.getCause().getMessage());
+            Logger.warnAndDebug(this.getClass(), errorMessage, ioExc);
+
+            try (InputStream stream = Files.newInputStream(binFile.toPath())) {
+                //Parse the content as plain text in order to avoid validation errors
+                final String content = this.tikaService.parseToStringAsPlainText(stream);
+
+                //Creating the meta data map to use by our content
+                metaMap.putAll(this.buildMetaDataMap());
+                metaMap.put(FileAssetAPI.CONTENT_FIELD, content);
+            }
+        } catch (Exception e) {
+            logError(binFile, e);
+        }
     }
 
     /**
