@@ -888,14 +888,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			RulesImportExportUtil.getInstance().export(file);
 
 			final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
-
-			file = new File(backupTempFilePath + "/index_working.json");
-			new ESIndexAPI().backupIndex(info.getWorking(), file);
-
-
-			file = new File(backupTempFilePath + "/index_live.json");
-			new ESIndexAPI().backupIndex(info.getLive(), file);
-
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 		}
