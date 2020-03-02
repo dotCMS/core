@@ -9,6 +9,21 @@ import java.util.Date;
 
 public class TestMediaCreator {
 
+    public static File lookupMOV ()  {
+
+        return new File(ConfigTestHelper.getPathToTestResource("images/testmovie.mov"));
+    }
+
+    public static File lookupPNG ()  {
+
+        return new File(ConfigTestHelper.getPathToTestResource("images/test.png"));
+    }
+
+    public static File lookupJPG ()  {
+
+        return new File(ConfigTestHelper.getPathToTestResource("images/test.jpg"));
+    }
+
     public static File createPNG () throws IOException  {
 
         final File tempImageTestFile = File

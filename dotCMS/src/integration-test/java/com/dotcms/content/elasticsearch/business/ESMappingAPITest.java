@@ -112,8 +112,9 @@ public class ESMappingAPITest {
         final Folder root1 = folderAPI.createFolders(rootFolderName, host, user, false);
         final FileAsset fileAsset = new FileAsset();
         final ImmutableFileAssetContentType.Builder builder = ImmutableFileAssetContentType.builder();
-        builder.name("Test").variable("testfa");
-        final ContentType fileAssetContentType = contentTypeAPI.find("FileAsset");
+        final String contentTypeVariable = "testfa"+System.currentTimeMillis();
+        builder.name("Test").variable(contentTypeVariable);
+        final ContentType fileAssetContentType = builder.build(); //contentTypeAPI.find("FileAsset");
         final String fileName1 = TEMP_FILE + System.currentTimeMillis();
         final File tempFile1 = File.createTempFile(fileName1, TXT);
         final String anyContent = "LOL!";
@@ -121,7 +122,7 @@ public class ESMappingAPITest {
         final String fileNameField1 = fileName1 + DOT_TXT;
         final String title1 = "Contentlet-1";
 
-        fileAsset.setContentType(fileAssetContentType);
+        fileAsset.setContentType(contentTypeAPI.save(fileAssetContentType));
         fileAsset.setFolder(root1.getInode());
         fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, tempFile1);
         fileAsset.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, root1.getInode());
@@ -133,10 +134,10 @@ public class ESMappingAPITest {
         final Map<String,Object>  contentletMap = esMappingAPI.toMap(APILocator.getContentletAPI().checkin(fileAsset, user, false));
 
         assertNotNull(contentletMap);
-        assertEquals(fileNameField1.toLowerCase(), contentletMap.get("fileasset.filename"));
-        assertEquals("fileasset", contentletMap.get("structurename"));
-        assertEquals("text/plain; charset=iso-8859-1", contentletMap.get("metadata.contenttype"));
-        assertEquals("4", contentletMap.get("metadata.filesize"));
+        assertEquals(fileNameField1.toLowerCase(), contentletMap.get(contentTypeVariable + ".filename"));
+        assertEquals(contentTypeVariable, contentletMap.get("structurename"));
+        assertEquals("text/plain; charset=iso-8859-1", contentletMap.get("metadata.contenttype").toString().toLowerCase());
+        assertEquals(4, contentletMap.get("metadata.filesize"));
         assertTrue( contentletMap.get("metadata.content").toString().contains("lol!"));
 
     }

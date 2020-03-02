@@ -29,7 +29,8 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
         propertiesFile = file;
     }
 
-    private DBPropertiesDataSourceStrategy(){
+    @VisibleForTesting
+    DBPropertiesDataSourceStrategy(){
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
         final URL resourceURL = loader.getResource(DB_PROPERTIES_FILE_NAME);
         if (resourceURL!=null){
@@ -63,7 +64,7 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
                 throw new FileNotFoundException("DB properties file not found");
             }
 
-            properties.load(new FileInputStream(propertiesFile));
+            properties.load(new FileInputStream(getPropertiesFile()));
 
             final HikariConfig config = getHikariConfig(properties);
 
@@ -77,6 +78,11 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
 
             throw new DotRuntimeException(e.toString());
         }
+    }
+
+    @VisibleForTesting
+    File getPropertiesFile() {
+        return propertiesFile;
     }
 
     @VisibleForTesting
