@@ -258,7 +258,7 @@ public class SiteSearchJobImpl {
             //But we only activate the new index when the old one was the default.
             //Or there wasn't any previous index.
             //it must be done on the last round of our loop.
-            boolean switchIndex = !incremental && !listIterator.hasNext();
+            final boolean switchIndex = !incremental && !listIterator.hasNext();
             config.setSwitchIndexWhenDone(switchIndex);
             publisherAPI.publish(config, status);
         }
@@ -341,10 +341,10 @@ public class SiteSearchJobImpl {
 
     static class IndexMetaData {
 
-        private String indexName;
-        private boolean defaultIndex;
-        private String alias;
-        private boolean empty;
+        private final String indexName;
+        private final boolean defaultIndex;
+        private final String alias;
+        private final boolean empty;
 
         IndexMetaData(final String indexName,final boolean defaultIndex,final String alias,final boolean empty) {
             this.indexName = indexName;
