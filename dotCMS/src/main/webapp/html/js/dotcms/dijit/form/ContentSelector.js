@@ -59,7 +59,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	templatePath: dojo.moduleUrl("dotcms", isNg ? "dijit/form/ContentSelectorNoDialog.jsp" : "dijit/form/ContentSelector.jsp"),
     selectButtonTemplate: '<button id="{buttonInode}" dojoType="dijit.form.Button">{selectButtonLabel}</button>',
-	checkBoxTemplate: '<input value="{buttonInode}" class="contentCheckbox" dojoType="dijit.form.CheckBox"></input>',
+	checkBoxTemplate: '<input value="{buttonInode}" class="contentCheckbox" onClick="event.stopPropagation()" dojoType="dijit.form.CheckBox"></input>',
 	widgetsInTemplate: true,
 	title: '',
 	structureInode: '',
@@ -827,7 +827,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
             var cellData = data[i];
 			var row = table.insertRow(table.rows.length);
 			row.id="rowId" +i;
-			row.className="selectMeRowInIframe";
+            row.className="selectMeRowInIframe";
 
 			// Select button functionality
 			var selected =  function(scope,content) {
@@ -836,14 +836,21 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
                 } else {
                     scope._onContentSelected(content);
                 }
-			};
-			if(this.multiple=='false') {
+            };
+
+            if(this.multiple=='false') {
 				var asset = cellData
 				var selectRow = dojo.byId("rowId" +i);
 				if(selectRow.onclick==undefined){
 					selectRow.onclick = dojo.hitch(this, selected, this, asset);
 				}
-			}
+			} else { // Multiselect Check
+                row.onclick=dojo.hitch(this,
+                    function(i) {
+                        var checkbox = dijit.getEnclosingWidget(query('input[type="checkbox"]', 'rowId' + i)[0]);
+                        checkbox.setValue(!checkbox.getValue());
+                    }, i);
+            }
 
             var cell = row.insertCell (row.cells.length);
             var iconName = this._getIconName(cellData['__type__']);
