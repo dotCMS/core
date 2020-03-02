@@ -11,6 +11,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { SiteService, LoginService } from 'dotcms-js';
 import { DotIframeEventsHandler } from './services/iframe-events-handler.service';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
 
 describe('IframePortletLegacyComponent', () => {
     let comp: IframePortletLegacyComponent;
@@ -28,6 +29,7 @@ describe('IframePortletLegacyComponent', () => {
             providers: [
                 DotContentTypeService,
                 DotIframeEventsHandler,
+                DotPushPublishDialogService,
                 DotMenuService,
                 LoginService,
                 SiteService,

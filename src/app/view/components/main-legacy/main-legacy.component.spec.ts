@@ -49,6 +49,13 @@ class MockDotMessageDisplayComponent {
 class MockDotLargeMessageDisplayComponent {
 }
 
+@Component({
+    selector: 'dot-push-publish-dialog',
+    template: ''
+})
+class MockDotPushPublishDialogComponent {
+}
+
 describe('MainComponentLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
     let de: DebugElement;
@@ -73,7 +80,8 @@ describe('MainComponentLegacyComponent', () => {
                 MockDotMainNavComponent,
                 MockDotToolbarComponent,
                 MockDotMessageDisplayComponent,
-                MockDotLargeMessageDisplayComponent
+                MockDotLargeMessageDisplayComponent,
+                MockDotPushPublishDialogComponent
             ]
         }).compileComponents();
     }));
@@ -92,6 +100,7 @@ describe('MainComponentLegacyComponent', () => {
         expect(de.query(By.css('dot-toolbar')) !== null).toBe(true);
         expect(de.query(By.css('dot-main-nav')) !== null).toBe(true);
         expect(de.query(By.css('router-outlet')) !== null).toBe(true);
+        expect(de.query(By.css('dot-push-publish-dialog')) !== null).toBe(true);
     });
 
     it('should have messages components', () => {

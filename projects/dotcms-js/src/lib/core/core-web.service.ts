@@ -67,7 +67,12 @@ export class CoreWebService {
 
         return this._http.request(request).pipe(
             map((resp: Response) => {
-                return hasContent(resp) ? resp.json() : resp;
+                // some endpoints have empty body.
+                try {
+                    return resp.json();
+                } catch (error) {
+                    return resp;
+                }
             }),
             catchError(
                 (response: Response, _original: Observable<any>): Observable<any> => {

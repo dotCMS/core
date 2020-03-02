@@ -66,7 +66,6 @@ import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 import { DotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotRelationshipsModule } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
-import { DotPushPublishContentTypesDialogModule } from '@components/_common/dot-push-publish-dialog';
 import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotContentTypesInfoService } from '@services/dot-content-types-info';
@@ -131,7 +130,6 @@ import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
         DotMaxlengthModule,
         DotMenuModule,
         DotPageSelectorModule,
-        DotPushPublishContentTypesDialogModule,
         DotRelationshipsModule,
         DotTextareaContentModule,
         DotWorkflowsActionsSelectorFieldModule,

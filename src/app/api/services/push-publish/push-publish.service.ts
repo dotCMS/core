@@ -8,6 +8,7 @@ import { AjaxActionResponseView } from '@models/ajax-action-response/ajax-action
 import { PushPublishData } from '@models/push-publish-data/push-publish-data';
 import * as moment from 'moment';
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
+import { DotCurrentUser } from '@models/dot-current-user/dot-current-user';
 
 /**
  * Provide method to push publish to content types
@@ -22,7 +23,10 @@ export class PushPublishService {
         TODO: I had to do this because this line concat'api/' into the URL
         https://github.com/dotCMS/dotcms-js/blob/master/src/core/core-web.service.ts#L169
     */
-    private publishUrl = `${this._apiRoot.baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
+    private publishUrl = `${this._apiRoot
+        .baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
+    private publishBundleURL = `${this._apiRoot
+        .baseUrl}DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle`;
 
     constructor(
         public _apiRoot: ApiRoot,
@@ -37,7 +41,7 @@ export class PushPublishService {
      */
     getEnvironments(): Observable<DotEnvironment[]> {
         return this.currentUser.getCurrentUser().pipe(
-            mergeMap((user) => {
+            mergeMap((user: DotCurrentUser) => {
                 return this.coreWebService.requestView({
                     method: RequestMethod.Get,
                     url: `${this.pushEnvironementsUrl}/${user.roleId}/name=0`
@@ -45,7 +49,7 @@ export class PushPublishService {
             }),
             pluck('bodyJsonObject'),
             mergeMap((environments: DotEnvironment[]) => environments),
-            filter((environment) => environment.name !== ''),
+            filter((environment: DotEnvironment) => environment.name !== ''),
             toArray()
         );
     }
@@ -59,7 +63,8 @@ export class PushPublishService {
      */
     pushPublishContent(
         assetIdentifier: string,
-        pushPublishData: PushPublishData
+        pushPublishData: PushPublishData,
+        isBundle: boolean
     ): Observable<AjaxActionResponseView> {
         this._lastEnvironmentPushed = pushPublishData.environment;
         return this.coreWebService.request({
@@ -68,7 +73,7 @@ export class PushPublishService {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             method: RequestMethod.Post,
-            url: this.publishUrl
+            url: isBundle ? this.publishBundleURL : this.publishUrl
         });
     }
 

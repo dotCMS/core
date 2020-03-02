@@ -13,3 +13,10 @@ export interface PushPublishData {
     forcePush: boolean;
     filterKey: string;
 }
+
+export interface DotPushPublishEvent {
+    assetIdentifier: string;
+    dateFilter?: boolean;
+    removeOnly?: boolean;
+    isBundle?: boolean;
+}

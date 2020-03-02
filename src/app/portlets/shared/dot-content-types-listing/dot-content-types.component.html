@@ -16,12 +16,6 @@
     ></dot-base-type-selector>
 </dot-listing-data-table>
 
-<dot-push-publish-dialog
-    *ngIf="pushPublishIdentifier"
-    [assetIdentifier]="pushPublishIdentifier"
-    (cancel)="pushPublishIdentifier = null"
-></dot-push-publish-dialog>
-
 <dot-add-to-bundle
     *ngIf="addToBundleIdentifier"
     [assetIdentifier]="addToBundleIdentifier"

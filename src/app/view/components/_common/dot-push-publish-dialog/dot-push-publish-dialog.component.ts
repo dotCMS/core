@@ -13,13 +13,15 @@ import {
     DotPushPublishFiltersService,
     DotPushPublishFilter
 } from '@services/dot-push-publish-filters/dot-push-publish-filters.service';
+import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
+import { DotPushPublishEvent } from '@models/push-publish-data/push-publish-data';
 
 @Component({
     selector: 'dot-push-publish-dialog',
     styleUrls: ['./dot-push-publish-dialog.component.scss'],
     templateUrl: 'dot-push-publish-dialog.component.html'
 })
-export class DotPushPublishContentTypesDialogComponent implements OnInit, OnDestroy {
+export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     dateFieldMinDate = new Date();
     dialogActions: DotDialogActions;
     dialogShow = false;
@@ -30,26 +32,91 @@ export class DotPushPublishContentTypesDialogComponent implements OnInit, OnDest
     isPushActionPublish$: Observable<boolean>;
     isPushActionExpire$: Observable<boolean>;
 
-    @Input()
-    assetIdentifier: string;
+    @Input() assetIdentifier: string;
 
-    @Output()
-    cancel = new EventEmitter<boolean>();
+    @Output() cancel = new EventEmitter<boolean>();
 
-    @ViewChild('formEl')
-    formEl: HTMLFormElement;
+    @ViewChild('formEl') formEl: HTMLFormElement;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
+    private eventData: DotPushPublishEvent = { assetIdentifier: '' };
+    private defaultFilterKey: string;
+    private i18nMessages: { [key: string]: string } = {};
 
     constructor(
         private pushPublishService: PushPublishService,
         public fb: FormBuilder,
         public dotMessageService: DotMessageService,
         public loggerService: LoggerService,
-        private dotPushPublishFiltersService: DotPushPublishFiltersService
+        private dotPushPublishFiltersService: DotPushPublishFiltersService,
+        private dotPushPublishDialogService: DotPushPublishDialogService
     ) {}
 
     ngOnInit() {
+        this.loadMessagesAndFilters();
+        this.dotPushPublishDialogService.showDialog$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((data: DotPushPublishEvent) => {
+                this.eventData = data;
+                this.assetIdentifier = this.eventData.assetIdentifier;
+                this.pushActions = this.getPushPublishActions(this.i18nMessages);
+                this.initForm({
+                    filterKey: this.defaultFilterKey
+                });
+                this.setDialogConfig(this.i18nMessages, this.form);
+                this.dialogShow = true;
+            });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
+
+    /**
+     * Close the dialog and reset the form
+     * @memberof PushPublishContentTypesDialogComponent
+     */
+    close(): void {
+        this.cancel.emit(true);
+        this.dialogShow = false;
+        this.initForm();
+    }
+
+    /**
+     * When form is submitted
+     * If form is valid then call pushPublishService with contentTypeId and form value params
+     * @param any $event
+     * @memberof PushPublishContentTypesDialogComponent
+     */
+    submitPushAction(_event): void {
+        if (this.form.valid) {
+            this.pushPublishService
+                .pushPublishContent(
+                    this.assetIdentifier,
+                    this.form.value,
+                    !!this.eventData.isBundle
+                )
+                .subscribe((result: any) => {
+                    if (!result.errors) {
+                        this.close();
+                    } else {
+                        this.loggerService.debug(result.errorMessages);
+                    }
+                });
+            this.form.reset();
+        }
+    }
+
+    /**
+     * It submits the form from submit button
+     * @memberof PushPublishContentTypesDialogComponent
+     */
+    submitForm(): void {
+        this.formEl.ngSubmit.emit();
+    }
+
+    private loadMessagesAndFilters(): void {
         const messages$ = this.dotMessageService.getMessages([
             'contenttypes.content.push_publish',
             'contenttypes.content.push_publish.filters',
@@ -74,10 +141,10 @@ export class DotPushPublishContentTypesDialogComponent implements OnInit, OnDest
         combineLatest(messages$, filterOptions$)
             .pipe(takeUntil(this.destroy$))
             .subscribe(
-                ([messages, filterOptions]: [
-                    { [key: string]: string },
-                    DotPushPublishFilter[]
-                ]) => {
+                (
+                    [messages, filterOptions]: [{ [key: string]: string }, DotPushPublishFilter[]]
+                ) => {
+                    this.i18nMessages = messages;
                     this.filterOptions = filterOptions.map((filter: DotPushPublishFilter) => {
                         return {
                             label: filter.title,
@@ -85,68 +152,18 @@ export class DotPushPublishContentTypesDialogComponent implements OnInit, OnDest
                         };
                     });
 
-                    const defaultFilterKey = filterOptions
+                    this.defaultFilterKey = filterOptions
                         .filter((filter: DotPushPublishFilter) => filter.default)
                         .map(({ key }: DotPushPublishFilter) => key)
                         .join();
-
-                    this.pushActions = this.getPushPublishActions(messages);
-                    this.initForm({
-                        filterKey: defaultFilterKey
-                    });
-                    this.setDialogConfig(messages, this.form);
-                    this.dialogShow = true;
                 }
             );
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
-    }
-
-    /**
-     * Close the dialog and reset the form
-     * @memberof PushPublishContentTypesDialogComponent
-     */
-    close(): void {
-        this.cancel.emit(true);
-        this.initForm();
-    }
-
-    /**
-     * When form is submitted
-     * If form is valid then call pushPublishService with contentTypeId and form value params
-     * @param any $event
-     * @memberof PushPublishContentTypesDialogComponent
-     */
-    submitPushAction(_event): void {
-        if (this.form.valid) {
-            this.pushPublishService
-                .pushPublishContent(this.assetIdentifier, this.form.value)
-                .subscribe((result: any) => {
-                    if (!result.errors) {
-                        this.close();
-                    } else {
-                        this.loggerService.debug(result.errorMessages);
-                    }
-                });
-            this.form.reset();
-        }
-    }
-
-    /**
-     * It submits the form from submit button
-     * @memberof PushPublishContentTypesDialogComponent
-     */
-    submitForm(): void {
-        this.formEl.ngSubmit.emit();
     }
 
     private initForm(params?: { [key: string]: any }): void {
         this.form = this.fb.group({
             ...params,
-            pushActionSelected: [this.pushActions[0].value || '', [Validators.required]],
+            pushActionSelected: [this.pushActions[0].value, [Validators.required]],
             publishdate: [new Date(), [Validators.required]],
             expiredate: [new Date(), [Validators.required]],
             environment: ['', [Validators.required]],
@@ -180,7 +197,8 @@ export class DotPushPublishContentTypesDialogComponent implements OnInit, OnDest
             },
             {
                 label: messages['contenttypes.content.push_publish.action.pushremove'],
-                value: 'publishexpire'
+                value: 'publishexpire',
+                disabled: this.eventData.removeOnly
             }
         ];
     }

@@ -12,6 +12,8 @@ import { DotContentTypesListingModule } from '@portlets/shared/dot-content-types
 import { DotFormBuilderComponent } from './dot-form-builder.component';
 import { DotUnlicensedPorletModule } from '@portlets/shared/dot-unlicensed-porlet';
 import { LoginServiceMock } from '@tests/login-service.mock';
+import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
 
 let routeDatamock = {
     unlicensed: {
@@ -42,7 +44,7 @@ describe('DotFormBuilderComponent', () => {
                 imports: [
                     DotContentTypesListingModule,
                     DotUnlicensedPorletModule,
-                    RouterTestingModule
+                    RouterTestingModule,
                 ],
                 providers: [
                     {
@@ -52,7 +54,9 @@ describe('DotFormBuilderComponent', () => {
                     {
                         provide: ActivatedRoute,
                         useClass: ActivatedRouteMock
-                    }
+                    },
+                    PushPublishService,
+                    DotPushPublishDialogService
                 ]
             }).compileComponents();
         })

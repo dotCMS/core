@@ -14,7 +14,6 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { MockDotMessageService } from '../../../test/dot-message-service.mock';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Injectable } from '@angular/core';
-import { DotPushPublishContentTypesDialogModule } from '@components/_common/dot-push-publish-dialog/dot-push-publish-dialog.module';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { DotLicenseService } from '@services/dot-license/dot-license.service';
 import { SelectItem } from 'primeng/primeng';
@@ -27,6 +26,7 @@ import { DotCMSContentType } from 'dotcms-models';
 import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
 import { ActivatedRoute } from '@angular/router';
+import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
 
 @Injectable()
 class MockDotContentTypeService {
@@ -38,10 +38,8 @@ class MockDotContentTypeService {
     template: ''
 })
 class MockDotBaseTypeSelectorComponent {
-    @Input()
-    value: SelectItem;
-    @Output()
-    selected = new EventEmitter<string>();
+    @Input() value: SelectItem;
+    @Output() selected = new EventEmitter<string>();
 }
 
 @Injectable()
@@ -82,10 +80,8 @@ class MockDotHttpErrorManagerService {
     template: ``
 })
 class MockDotAddToBundleComponent {
-    @Input()
-    assetIdentifier: string;
-    @Output()
-    cancel = new EventEmitter<boolean>();
+    @Input() assetIdentifier: string;
+    @Output() cancel = new EventEmitter<boolean>();
 }
 
 describe('DotContentTypesPortletComponent', () => {
@@ -99,6 +95,7 @@ describe('DotContentTypesPortletComponent', () => {
     let dotLicenseService: DotLicenseService;
     let baseTypesSelector: MockDotBaseTypeSelectorComponent;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
+    let dotPushPublishDialogService: DotPushPublishDialogService;
 
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
@@ -127,14 +124,14 @@ describe('DotContentTypesPortletComponent', () => {
                     { path: 'test', component: DotContentTypesPortletComponent }
                 ]),
                 BrowserAnimationsModule,
-                DotListingDataTableModule,
-                DotPushPublishContentTypesDialogModule
+                DotListingDataTableModule
             ],
             providers: [
                 DotContentTypesInfoService,
                 DotCrudService,
                 DotAlertConfirmService,
                 FormatDateService,
+                DotPushPublishDialogService,
                 { provide: DotContentTypeService, useClass: MockDotContentTypeService },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PushPublishService, useClass: MockPushPublishService },
@@ -152,6 +149,9 @@ describe('DotContentTypesPortletComponent', () => {
         pushPublishService = fixture.debugElement.injector.get(PushPublishService);
         dotLicenseService = fixture.debugElement.injector.get(DotLicenseService);
         dotHttpErrorManagerService = fixture.debugElement.injector.get(DotHttpErrorManagerService);
+        dotPushPublishDialogService = fixture.debugElement.injector.get(
+            DotPushPublishDialogService
+        );
 
         spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(
             observableOf([
@@ -210,7 +210,7 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        spyOn(dotDialogService, 'confirm').and.callFake(conf => {
             conf.accept();
         });
 
@@ -224,7 +224,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should have remove, push publish and Add to bundle actions to the list item', () => {
         fixture.detectChanges();
-        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
+        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual([
             'Push Publish',
             'Add to bundle',
             'Delete'
@@ -236,7 +236,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         fixture.detectChanges();
         expect(
-            comp.rowActions.map((action) => {
+            comp.rowActions.map(action => {
                 return {
                     label: action.menuItem.label,
                     icon: action.menuItem.icon
@@ -254,7 +254,7 @@ describe('DotContentTypesPortletComponent', () => {
         spyOn(pushPublishService, 'getEnvironments').and.returnValue(observableOf([]));
         fixture.detectChanges();
 
-        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
+        expect(comp.rowActions.map(action => action.menuItem.label)).toEqual([
             'Add to bundle',
             'Delete'
         ]);
@@ -262,6 +262,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should open push publish dialog', () => {
         fixture.detectChanges();
+        spyOn(dotPushPublishDialogService, 'open').and.callThrough();
         const mockContentType: DotCMSContentType = {
             ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -275,14 +276,15 @@ describe('DotContentTypesPortletComponent', () => {
             owner: '123',
             system: false
         };
-        expect(comp.pushPublishIdentifier).not.toBeDefined();
+
         expect(de.query(By.css('p-dialog'))).toBeNull();
 
         comp.rowActions[0].menuItem.command(mockContentType);
         fixture.detectChanges();
-
         expect(de.query(By.css('p-dialog'))).toBeDefined();
-        expect(comp.pushPublishIdentifier).toEqual(mockContentType.id);
+        expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
+            assetIdentifier: mockContentType.id
+        });
     });
 
     it('should open add to bundle dialog', () => {
@@ -357,7 +359,7 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        spyOn(dotDialogService, 'confirm').and.callFake(conf => {
             conf.accept();
         });
 
@@ -391,7 +393,6 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     describe('filterBy', () => {
-
         beforeEach(() => {
             router.data = observableOf({
                 filterBy: 'FORM'
@@ -411,5 +412,4 @@ describe('DotContentTypesPortletComponent', () => {
             expect(comp.actionHeaderOptions.primary.command).toBeDefined();
         });
     });
-
 });

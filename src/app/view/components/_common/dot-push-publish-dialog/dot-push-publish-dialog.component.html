@@ -5,7 +5,7 @@
     (hide)="close()"
 >
     <form
-        *ngIf="pushActions"
+        *ngIf="pushActions && dialogShow"
         [formGroup]="form"
         (ngSubmit)="submitPushAction($event)"
         (keyup.enter)="submitPushAction($event)"

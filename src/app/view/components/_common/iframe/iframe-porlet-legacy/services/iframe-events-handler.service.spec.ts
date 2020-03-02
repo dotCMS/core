@@ -6,6 +6,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { DotMenuService } from '@services/dot-menu.service';
 import { DotContentletEditorService } from '../../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+import { DotPushPublishDialogService } from '@services/dot-push-publish-dialog/dot-push-publish-dialog.service';
 
 describe('DotIframeEventsHandler', () => {
     let service: DotIframeEventsHandler;
@@ -13,11 +14,17 @@ describe('DotIframeEventsHandler', () => {
     let dotRouterService: DotRouterService;
     let dotUiColorsService: DotUiColorsService;
     let dotContentletEditorService: DotContentletEditorService;
+    let dotPushPublishDialogService: DotPushPublishDialogService;
     let injector;
 
     beforeEach(() => {
         injector = DOTTestBed.configureTestingModule({
-            providers: [DotIframeEventsHandler, DotLoadingIndicatorService, DotMenuService],
+            providers: [
+                DotIframeEventsHandler,
+                DotLoadingIndicatorService,
+                DotMenuService,
+                DotPushPublishDialogService
+            ],
             imports: [RouterTestingModule]
         });
 
@@ -26,6 +33,7 @@ describe('DotIframeEventsHandler', () => {
         dotRouterService = injector.get(DotRouterService);
         dotUiColorsService = injector.get(DotUiColorsService);
         dotContentletEditorService = injector.get(DotContentletEditorService);
+        dotPushPublishDialogService = injector.get(DotPushPublishDialogService);
     });
 
     it('should show loading indicator and go to edit page when event is emited by iframe', () => {
@@ -124,5 +132,26 @@ describe('DotIframeEventsHandler', () => {
             secondary: '#000',
             background: '#ccc'
         });
+    });
+
+    it('should notify to open push publish dialog', () => {
+        const dataMock = {
+            assetIdentifier: '123',
+            dateFilter: true,
+            removeOnly: true,
+            isBundle: false
+        };
+
+        spyOn(dotPushPublishDialogService, 'open');
+        service.handle(
+            new CustomEvent('ng-event', {
+                detail: {
+                    name: 'push-publish',
+                    data: dataMock
+                }
+            })
+        );
+
+        expect(dotPushPublishDialogService.open).toHaveBeenCalledWith(dataMock);
     });
 });

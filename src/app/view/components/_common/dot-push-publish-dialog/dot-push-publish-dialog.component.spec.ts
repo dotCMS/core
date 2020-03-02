@@ -4,7 +4,7 @@ import { DebugElement, Component } from '@angular/core';
 import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { PushPublishEnvSelectorModule } from '../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
-import { DotPushPublishContentTypesDialogComponent } from './dot-push-publish-dialog.component';
+import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@services/dot-messages-service';
@@ -30,8 +30,8 @@ class TestHostComponent {
     pushPublishIdentifier: string;
 }
 
-xdescribe('DotPushPublishContentTypesDialogComponent', () => {
-    let comp: DotPushPublishContentTypesDialogComponent;
+xdescribe('DotPushPublishDialogComponent', () => {
+    let comp: DotPushPublishDialogComponent;
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let pushPublishServiceMock: PushPublishServiceMock;
@@ -54,7 +54,7 @@ xdescribe('DotPushPublishContentTypesDialogComponent', () => {
         pushPublishServiceMock = new PushPublishServiceMock();
 
         DOTTestBed.configureTestingModule({
-            declarations: [DotPushPublishContentTypesDialogComponent, TestHostComponent],
+            declarations: [DotPushPublishDialogComponent, TestHostComponent],
             imports: [
                 PushPublishEnvSelectorModule,
                 BrowserAnimationsModule,
@@ -124,7 +124,7 @@ xdescribe('DotPushPublishContentTypesDialogComponent', () => {
 
         fixture.detectChanges();
 
-        comp.cancel.subscribe((res) => {
+        comp.cancel.subscribe(res => {
             expect(res).toEqual(true);
         });
     });
@@ -228,16 +228,15 @@ xdescribe('DotPushPublishContentTypesDialogComponent', () => {
 
             expect(comp.submitPushAction).toHaveBeenCalledTimes(1);
             expect(comp.form.valid).toBeTruthy();
-            expect(pushPublishServiceMock.pushPublishContent).toHaveBeenCalledWith(
-                '7ad979-89a-97ada9d9ad',
-                {
-                    pushActionSelected: 'publishexpire',
-                    publishdate: newDate,
-                    expiredate: newDate,
-                    environment: ['my environment, my second environment'],
-                    forcePush: true
-                }
-            );
+            expect(
+                pushPublishServiceMock.pushPublishContent
+            ).toHaveBeenCalledWith('7ad979-89a-97ada9d9ad', {
+                pushActionSelected: 'publishexpire',
+                publishdate: newDate,
+                expiredate: newDate,
+                environment: ['my environment, my second environment'],
+                forcePush: true
+            });
         });
 
         it('should submit form correctly on Enter', () => {
@@ -245,16 +244,15 @@ xdescribe('DotPushPublishContentTypesDialogComponent', () => {
 
             expect(comp.submitPushAction).toHaveBeenCalledTimes(1);
             expect(comp.form.valid).toBeTruthy();
-            expect(pushPublishServiceMock.pushPublishContent).toHaveBeenCalledWith(
-                '7ad979-89a-97ada9d9ad',
-                {
-                    pushActionSelected: 'publishexpire',
-                    publishdate: newDate,
-                    expiredate: newDate,
-                    environment: ['my environment, my second environment'],
-                    forcePush: true
-                }
-            );
+            expect(
+                pushPublishServiceMock.pushPublishContent
+            ).toHaveBeenCalledWith('7ad979-89a-97ada9d9ad', {
+                pushActionSelected: 'publishexpire',
+                publishdate: newDate,
+                expiredate: newDate,
+                environment: ['my environment, my second environment'],
+                forcePush: true
+            });
         });
     });
 });
