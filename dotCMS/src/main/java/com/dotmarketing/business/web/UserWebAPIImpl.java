@@ -4,9 +4,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPIImpl;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
@@ -53,19 +51,22 @@ public class UserWebAPIImpl extends UserAPIImpl implements UserWebAPI {
                         ? user
                         : null;
     }
-
+    
+    @CloseDBIfOpened
     @Override
     public boolean isLoggedToBackend(HttpServletRequest request) {
         return PortalUtil.getUser(request) != null && PortalUtil.getUser(request).isBackendUser();
     }
-
+    
+    @CloseDBIfOpened
     @Override
     public User getLoggedInFrontendUser(HttpServletRequest request) {
         User user = getLoggedInUser(request);
 
         return user != null && PortalUtil.getUser(request).isFrontendUser() ? user : null;
     }
-
+    
+    @CloseDBIfOpened
     @Override
     public boolean isLoggedToFrontend(HttpServletRequest request) {
         User user = getLoggedInUser(request);
