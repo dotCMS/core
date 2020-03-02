@@ -22,6 +22,8 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPI;
 import com.dotcms.contenttype.business.ContentTypeFieldLayoutAPIImpl;
+import com.dotcms.contenttype.business.DotAssetAPI;
+import com.dotcms.contenttype.business.DotAssetAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
 import com.dotcms.enterprise.ESSeachAPI;
@@ -973,6 +975,14 @@ public class APILocator extends Locator<APIIndex>{
 	}
 
 	/**
+	 * Single point of entry to the dot asset api
+	 * @return The {@link DotAssetAPI} class.
+	 */
+	public static DotAssetAPI getDotAssetAPI(){
+		return (DotAssetAPI) getInstance(APIIndex.DOT_ASSET_API);
+	}
+
+	/**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1112,7 +1122,8 @@ enum APIIndex
 	URLMAP_API,
 	CONTENT_TYPE_FIELD_LAYOUT_API,
 	PUBLISH_AUDIT_API,
-	SERVICE_INTEGRATION_API;
+	SERVICE_INTEGRATION_API,
+	DOT_ASSET_API;
 
 
 
@@ -1193,6 +1204,7 @@ enum APIIndex
 			case CONTENT_TYPE_FIELD_LAYOUT_API: return new ContentTypeFieldLayoutAPIImpl();
 			case PUBLISH_AUDIT_API: return PublishAuditAPIImpl.getInstance();
 			case SERVICE_INTEGRATION_API: return ServiceIntegrationAPI.INSTANCE.get();
+			case DOT_ASSET_API: return new DotAssetAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

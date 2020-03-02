@@ -59,12 +59,22 @@
           {
               "keywordmapping" : {
                   "match_pattern": "regex",
-                  "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|moduser|owner",
+                  "match": "categories|tags|conhost|conhostname|wfstep|structurename|contenttype|conhostname|parentpath|path|urlmap|moduser|owner|metadata.contenttype|metadata.keywords",
                   "mapping": {
                       "type": "keyword"
                   }
               }
           },
+          {
+              "longmapping" : {
+                  "match_pattern": "regex",
+                  "match": "metadata.length|metadata.height|metadata.width",
+                  "mapping": {
+                      "type": "long"
+                  }
+              }
+          },
+
           {
               "hostname" : {
                   "path_match": "host.hostname",

@@ -129,6 +129,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
   public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
   public static final String AUTO_ASSIGN_WORKFLOW = "AUTO_ASSIGN_WORKFLOW";
+  public static final String TEMPLATE_MAPPINGS = "TEMPLATE_MAPPINGS";
 
   public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
   public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
@@ -1493,6 +1494,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void cleanup(){
 	    getMap().remove(IS_COPY_CONTENTLET);
 	    getMap().remove(CONTENTLET_ASSET_NAME_COPY);
+	    getMap().remove(TEMPLATE_MAPPINGS);
 		getWritableNullProperties().clear();
 	}
 
@@ -1528,6 +1530,33 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public boolean hasLiveVersion() throws DotStateException, DotDataException {
 		return APILocator.getVersionableAPI().hasLiveVersion(this);
+	}
+
+	/**
+	 * Get the optional contentlet Base Content Type
+	 * 1) first look up on the contentlet properties
+	 * 2) otherwise tries to look for based on the content type (if set)
+	 *
+	 * returns empty if can not determine any content type
+	 *
+	 * @return the contentlet Base Content Type
+	 */
+	@JsonIgnore
+	public Optional<BaseContentType> getBaseType() {
+
+		if (this.map.containsKey(Contentlet.BASE_TYPE_KEY)) {
+
+			return Optional.ofNullable(BaseContentType.getBaseContentType(
+					(String) this.map.get(Contentlet.BASE_TYPE_KEY)));
+		}
+
+		final ContentType contentletContentType = this.getContentType();
+		if (null != contentletContentType) {
+
+			return Optional.ofNullable(contentletContentType.baseType());
+		}
+
+		return Optional.empty();
 	}
 
 	/**

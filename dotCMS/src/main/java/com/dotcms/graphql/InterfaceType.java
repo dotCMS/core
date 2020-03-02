@@ -24,6 +24,7 @@ import static graphql.Scalars.GraphQLString;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.EnterpriseType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
@@ -57,7 +58,8 @@ public enum InterfaceType {
     WIDGET(WidgetContentType.class),
     VANITY_URL(VanityUrlContentType.class),
     KEY_VALUE(KeyValueContentType.class),
-    FORM(FormContentType.class);
+    FORM(FormContentType.class),
+    DOTASSET(DotAssetContentType.class);
 
     private Class<? extends ContentType> baseContentType;
 
@@ -65,7 +67,7 @@ public enum InterfaceType {
         this.baseContentType = baseContentType;
     }
 
-    public static Set<String> RESERVED_GRAPHQL_FIELD_NAMES = new HashSet<>();
+    public static Set<String> CONTENT_INTERFACE_FIELDS = new HashSet<>();
 
     private static Map<String, GraphQLInterfaceType> interfaceTypes = new HashMap<>();
 
@@ -77,10 +79,11 @@ public enum InterfaceType {
     public static final String VANITY_URL_INTERFACE_NAME = "VanityURLBaseType";
     public static final String KEY_VALUE_INTERFACE_NAME = "KeyValueBaseType";
     public static final String FORM_INTERFACE_NAME = "FormBaseType";
+    public static final String DOTASSET_INTERFACE_NAME = "DotAssetBaseType";
+
+    private static final Map<String, TypeFetcher> contentFields = new HashMap<>();
 
     static {
-
-        final Map<String, TypeFetcher> contentFields = new HashMap<>();
         contentFields.put(MOD_DATE, new TypeFetcher(GraphQLString));
         contentFields.put(TITLE, new TypeFetcher(GraphQLString));
         contentFields.put(TITLE_IMAGE_KEY, new TypeFetcher(CustomFieldType.BINARY.getType(), new TitleImageFieldDataFetcher()));
@@ -99,7 +102,7 @@ public enum InterfaceType {
         contentFields.put(OWNER_KEY, new TypeFetcher(CustomFieldType.USER.getType(), new UserDataFetcher()));
         contentFields.put(MOD_USER_KEY, new TypeFetcher(CustomFieldType.USER.getType(), new UserDataFetcher()));
 
-        RESERVED_GRAPHQL_FIELD_NAMES.addAll(contentFields.keySet());
+        CONTENT_INTERFACE_FIELDS.addAll(contentFields.keySet());
 
         interfaceTypes.put("CONTENTLET", createInterfaceType("Contentlet", contentFields, new ContentResolver()));
 
@@ -125,6 +128,9 @@ public enum InterfaceType {
 
         final Map<String, TypeFetcher> formFields = new HashMap<>(contentFields);
         interfaceTypes.put("FORM", createInterfaceType(FORM_INTERFACE_NAME, formFields, new ContentResolver()));
+
+        final Map<String, TypeFetcher> dotAssetFields = new HashMap<>(contentFields);
+        interfaceTypes.put("DOTASSET", createInterfaceType(DOTASSET_INTERFACE_NAME, dotAssetFields, new ContentResolver()));
     }
 
     public GraphQLInterfaceType getType() {
@@ -155,5 +161,9 @@ public enum InterfaceType {
         }
 
         return type;
+    }
+
+    public static Map<String, TypeFetcher> getContentletInheritedFields() {
+        return contentFields;
     }
 }

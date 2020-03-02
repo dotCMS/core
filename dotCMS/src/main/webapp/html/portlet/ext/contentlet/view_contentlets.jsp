@@ -189,7 +189,8 @@
             LanguageUtil.get(pageContext, "HTMLPage"),
             LanguageUtil.get(pageContext, "Persona"),
             LanguageUtil.get(pageContext, "VanityURL"),
-            LanguageUtil.get(pageContext, "KeyValue")
+            LanguageUtil.get(pageContext, "KeyValue"),
+            LanguageUtil.get(pageContext, "DotAsset")
             ,
     };
 
@@ -252,6 +253,8 @@
                                                         ? "<span class='vanityIcon'></span>"
                                                             : (contentType.getStructureType()==8)
                                                             ? "<span class='languageVarIcon'></span>"
+                                                              : (contentType.getStructureType()==9)
+                                                              ? "<span class='dotAssetIcon'></span>"
                                                                 :"<span class='blankIcon'></span>";
 
                     String contentTypeName= UtilMethods.javaScriptify(contentType.getName());
@@ -330,7 +333,7 @@
 
                  for (let i=0; i<data.contentlets.length;++i) {
                      let entity = data.contentlets[i];
-                     dataItems.items[i] = { label: entity.title, id: entity.identifier, searchMe : entity.title + " " + entity.identifier + " " + entity.inode };
+                     dataItems.items[i] = { label: entity.title, id: (entity.identifier + " " + entity.inode), searchMe : entity.title + " " + entity.identifier + " " + entity.inode };
                  }
                  
                  dojoRelationshipsStore = new dojo.data.ItemFileReadStore({
@@ -751,7 +754,7 @@
                     <!-- START Listing Results -->
                     <input type="hidden" name="referer" value="<%=referer%>">
                     <input type="hidden" name="cmd" value="prepublish">
-                    <div class="portlet-toolbar">
+                    <div class="portlet-toolbar" style="height: 48px">
                         <div class="portlet-toolbar__actions-secondary">
                             <button id="bulkAvailableActions" dojoType="dijit.form.Button" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
                                 <%= LanguageUtil.get(pageContext, "Available-actions")%>

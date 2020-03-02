@@ -92,8 +92,19 @@ public class FieldFactoryImpl implements FieldFactory {
   public List<Field> byContentTypeVar(String var) throws DotDataException {
     return selectByContentTypeVarInDb(var);
   }
-    @Override
-    public List<FieldVariable> byFieldVariableKey(final String key) throws DotDataException {
+
+  @Override
+  public Optional<FieldVariable> byFieldVariableKey(final String fieldId, final String key) throws DotDataException {
+
+    final List<Map<String, Object>> results =
+            new DotConnect().setSQL(sql.selectFieldIdVarByKey)
+              .addParam(fieldId).addParam(key).loadObjectResults();
+
+    return results.isEmpty()?Optional.empty():Optional.ofNullable(new DbFieldVariableTransformer(results).from());
+  }
+
+  @Override
+  public List<FieldVariable> byFieldVariableKey(final String key) throws DotDataException {
         final DotConnect dc = new DotConnect();
         dc.setSQL(sql.selectFieldVarByKey);
         dc.addParam(key);
@@ -102,7 +113,7 @@ public class FieldFactoryImpl implements FieldFactory {
 
         return UtilMethods.isSet(results) ? new DbFieldVariableTransformer(dc.loadObjectResults())
                 .asList() : Collections.emptyList();
-    }
+  }
 
   @Override
   public void delete(Field field) throws DotDataException {
@@ -237,6 +248,11 @@ public class FieldFactoryImpl implements FieldFactory {
       // normalize our velocityvar
       final List<String> takenFieldVars = fieldsAlreadyAdded.stream().map(Field::variable).collect(
               Collectors.toList());
+
+      // check if the field variable is compatible with GraphQL
+      if(!GraphQLUtil.isVariableGraphQLCompatible(throwAwayField)) {
+          takenFieldVars.add(throwAwayField.name());
+      }
 
       String tryVar = (throwAwayField.variable() == null)
           ? suggestVelocityVar(throwAwayField.name(), takenFieldVars) : throwAwayField.variable();
@@ -588,7 +604,6 @@ public String suggestVelocityVar( String tryVar, List<String> takenFieldsVariabl
 
     // adds the GraphQL Reserved field names to the "taken fields variables" list
     final List<String> forbiddenFieldVariables = new ArrayList<>(takenFieldsVariables);
-    forbiddenFieldVariables.addAll(GraphQLUtil.getFieldReservedWords());
 
     String var = StringUtils.camelCaseLower(tryVar);
     // if we don't get a var back, we are looking at UTF-8 or worse

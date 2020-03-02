@@ -17,14 +17,22 @@ import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
+import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotcms.contenttype.transform.field.FieldTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -43,9 +51,9 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
-import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.MimeTypeUtils;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -99,12 +107,14 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -122,7 +132,6 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.business.TagAPI;
@@ -163,7 +172,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -189,6 +197,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.activation.MimeType;
 import javax.servlet.http.HttpServletRequest;
+
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -240,6 +250,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private final ContentletSystemEventUtil contentletSystemEventUtil;
     private final LocalSystemEventsAPI      localSystemEventsAPI;
+    private final BaseTypeToContentTypeStrategyResolver baseTypeToContentTypeStrategyResolver =
+            BaseTypeToContentTypeStrategyResolver.getInstance();
 
     public static enum QueryType {
         search, suggest, moreLike, Facets
@@ -4047,8 +4059,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             + "; ContentIdentifier: " + (contentletIn != null ? contentletIn
                             .getIdentifier() : "Unknown"), contentletIn.getHost());
 
+            this.checkOrSetContentType(contentletIn, user);
+
             final String lockKey =
-                    "ContentletIdentifier:" + (UtilMethods.isSet(contentletIn.getIdentifier()) ? contentletIn.getIdentifier() : UUIDGenerator.generateUuid());
+                    "ContentletIdentifier:" + (UtilMethods.isSet(contentletIn.getIdentifier()) ?
+                            contentletIn.getIdentifier() : UUIDGenerator.generateUuid());
             try {
 
                 final Optional<Contentlet> workflowContentletOpt =
@@ -4105,6 +4120,37 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return contentletOut;
         } finally {
             this.cleanup(contentletOut);
+        }
+    }
+
+    /*
+     * If the contentletIn is new, has not any content type assigned and has a base type set into the properties
+     * will try to figure out a match for the content type
+     */
+    private void checkOrSetContentType(final Contentlet contentletIn, final User user) {
+
+        final Optional<BaseContentType> baseTypeOpt = contentletIn.getBaseType();
+        if (contentletIn.isNew() && null == contentletIn.getContentType() &&
+                baseTypeOpt.isPresent()) {
+
+            final BaseContentType baseContentType = baseTypeOpt.get();
+            final Optional<BaseTypeToContentTypeStrategy>  typeStrategy =
+                    this.baseTypeToContentTypeStrategyResolver.get(baseContentType);
+
+            if (typeStrategy.isPresent()) {
+
+                final Host host = Try.of(()->APILocator.getHostAPI().find(
+                        contentletIn.getHost(), user, false)).getOrNull();
+                if (null != host) {
+                    final Optional<ContentType> contentTypeOpt = typeStrategy.get().apply(baseContentType,
+                            CollectionsUtils.map("user", user, "host", host,
+                                    "contentletMap", contentletIn.getMap()));
+
+                    if (contentTypeOpt.isPresent()) {
+                        contentletIn.setContentType(contentTypeOpt.get());
+                    }
+                }
+            }
         }
     }
 
@@ -6290,34 +6336,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // validate binary
             if(isFieldTypeBinary(field)) {
-                this.validateBinary (File.class.cast(fieldValue), field.getFieldName(), field, contentType);
+                this.validateBinary (File.class.cast(fieldValue), field.getVelocityVarName(), field, contentType);
             }
 
         }
         if(hasError){
             throw cve;
         }
-    }
-
-    private String getMimeType (final File binary) {
-
-        final Path path = binary.toPath();
-        String mimeType = Sneaky.sneak(() -> Files.probeContentType(path));
-
-        if  (!UtilMethods.isSet(mimeType)) {
-
-            mimeType = Config.CONTEXT.getMimeType(binary.getAbsolutePath());
-
-            if( !UtilMethods.isSet(mimeType)){
-                try {
-                    mimeType = new TikaUtils().detect(binary);
-                } catch(Exception e) {
-                    Logger.warn(this.getClass(), e.getMessage() +  e.getStackTrace()[0]);
-                }
-            }
-        }
-
-        return mimeType;
     }
 
     private void validateBinary(final File binary, final String fieldName, final Field legacyField, final ContentType contentType) {
@@ -6336,9 +6361,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     if (BinaryField.ALLOWED_FILE_TYPES.equalsIgnoreCase(keyField)) {
 
-                        final String binaryMimeType   = this.getMimeType(binary);
+                        final String binaryMimeType   = APILocator.getFileAssetAPI().getMimeType(binary);
                         final String allowedFileTypes = fieldVariable.value();
-                        if (UtilMethods.isSet(allowedFileTypes) && UtilMethods.isSet(binaryMimeType)) {
+                        if (UtilMethods.isSet(allowedFileTypes) && UtilMethods.isSet(binaryMimeType) &&
+                                !FileAsset.UNKNOWN_MIME_TYPE.equals(binaryMimeType)) {
 
                             boolean allowed = false;
                             final MimeType fileMimeType = Sneaky.sneak(() -> new MimeType(binaryMimeType));
@@ -6352,7 +6378,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             // if the extension of the file is not supported
                             if (!allowed) {
 
-                                final DotContentletValidationException cve = new DotContentletValidationException("message.contentlet.binary.type.notallowed");
+                                final DotContentletValidationException cve = new DotContentletValidationException(Sneaky.sneak(()->LanguageUtil.get("message.contentlet.binary.type.notallowed")));
                                 Logger.warn(this, "Name of Binary field [" + fieldName + "] has an not allowed type: " + binaryMimeType);
                                 cve.addBadTypeField(legacyField);
                                 throw cve;
@@ -6369,7 +6395,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         if (-1 != maxLength && // if the user sets a valid value
                                 fileLength > maxLength) {
 
-                            final DotContentletValidationException cve = new DotContentletValidationException("message.contentlet.binary.invalidlength");
+                            final DotContentletValidationException cve = new DotContentletValidationException(Sneaky.sneak(()->LanguageUtil.get("message.contentlet.binary.invalidlength")));
                             Logger.warn(this, "Name of Binary field [" + fieldName + "] has a length: " + fileLength
                                     + " but the max length is: " + maxLength);
                             cve.addBadTypeField(legacyField);
@@ -6383,7 +6409,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private void validateHtmlPage(Contentlet contentlet, String contentIdentifier, ContentType contentType) {
         if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
-            final DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
+            final DotContentletValidationException cve = new FileAssetValidationException(Sneaky.sneak(()->LanguageUtil.get("message.contentlet.fileasset.invalid.hostfolder")));
             Logger.warn(this, "HTML Page [" + contentIdentifier + "] cannot be created directly under System " +
                     "Host");
             cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
@@ -6445,7 +6471,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private void validateFileAsset(final Contentlet contentlet, final String contentIdentifier, final ContentType contentType) {
 
         if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
-            final DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
+            final DotContentletValidationException cve = new FileAssetValidationException(Sneaky.sneak(()->LanguageUtil.get("message.contentlet.fileasset.invalid.hostfolder")));
             Logger.warn(this, "File Asset [" + contentIdentifier + "] cannot be created directly under System " +
                     "Host");
             cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
@@ -6469,7 +6495,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(UtilMethods.isSet(fileName)){
                     fileNameExists = APILocator.getFileAssetAPI().fileNameExists(site, folder, fileName, contentlet.getIdentifier());
                     if(!APILocator.getFolderAPI().matchFilter(folder, fileName)) {
-                        final DotContentletValidationException cve = new FileAssetValidationException("message.file_asset.error.filename.filters");
+                        final DotContentletValidationException cve = new FileAssetValidationException(Sneaky.sneak(()->LanguageUtil.get("message.file_asset.error.filename.filters")));
                         Logger.warn(this, "File Asset [" + contentIdentifier + "] does not match specified folder" +
                                 " file filters");
                         cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
@@ -6488,7 +6514,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new FileAssetValidationException(errorMsg, e);
             }
             if(fileNameExists){
-                final DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.filename.already.exists");
+                final DotContentletValidationException cve = new FileAssetValidationException(Sneaky.sneak(()->LanguageUtil.get("message.contentlet.fileasset.filename.already.exists")));
                 Logger.warn(this, "Name of File Asset [" + contentIdentifier + "] already exists");
                 cve.addBadTypeField(new LegacyFieldTransformer(contentType.fieldMap().get(FileAssetAPI
                         .HOST_FOLDER_FIELD)).asOldField());
@@ -7183,7 +7209,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @WrapInTransaction
     @Override
     public Contentlet copyContentlet(final Contentlet sourceContentlet, final Host host, final Folder folder, final User user, final String copySuffix, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-
+        
+        final Map<String, HTMLPageAssetAPI.TemplateContainersReMap> templateMappings = (Map<String, TemplateContainersReMap>) sourceContentlet.get(Contentlet.TEMPLATE_MAPPINGS);
         Contentlet copyContentlet = new Contentlet();
         String newIdentifier = StringPool.BLANK;
         List<Contentlet> versionsToMarkWorking = new ArrayList<>();
@@ -7304,11 +7331,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             //Set URL in the new contentlet because is needed to create Identifier in EscontentletAPI.
             if(contentlet.isHTMLPage()){
-                final Template template = APILocator.getTemplateAPI().findWorkingTemplate(contentlet.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD),user,false);
-                if(template.isAnonymous()){//If the Template has a custom layout we need to create a copy of it, so when is modified it does not modify the other pages.
-                    final Template copiedTemplate = APILocator.getTemplateAPI().copy(template,user);
-                    newContentlet.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, copiedTemplate.getIdentifier());
+                final String sourceTemplateId = contentlet.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD);
+                if (null != templateMappings && templateMappings.containsKey(sourceTemplateId)) {
+                    final Template destinationTemplate = templateMappings.get(sourceTemplateId).getDestinationTemplate();
+                    newContentlet.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, destinationTemplate.getIdentifier());
+                } else {
+                    final Template template = APILocator.getTemplateAPI().findWorkingTemplate(sourceTemplateId, user, false);
+                    if (template.isAnonymous()) {//If the Template has a custom layout we need to create a copy of it, so when is modified it does not modify the other pages.
+                        final Template copiedTemplate = APILocator.getTemplateAPI().copy(template, user);
+                        newContentlet.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, copiedTemplate.getIdentifier());
+                    }
                 }
+
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
                 if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
                     final String newAssetName = generateCopyName(identifier.getAssetName(), copySuffix);
@@ -7528,7 +7562,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         } else {
             if(isContentletUrlAlreadyUsed(contentlet, host, folder, assetNameSuffix)) {
-                throw new DotDataException("error.copy.url.conflict");
+                throw new DotDataException(Sneaky.sneak(()->LanguageUtil.get("error.copy.url.conflict")));
             }
         }
 

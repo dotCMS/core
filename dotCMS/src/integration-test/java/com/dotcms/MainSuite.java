@@ -1,6 +1,8 @@
 package com.dotcms;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
+import com.dotcms.contenttype.test.DotAssetAPITest;
+import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
@@ -10,6 +12,7 @@ import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
+import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
 import com.dotmarketing.util.TestConfig;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -187,6 +190,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.LayoutAPITest.class,
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
         com.dotmarketing.business.PermissionAPITest.class,
+        com.dotmarketing.servlets.BinaryExporterServletTest.class,
         com.dotmarketing.servlets.ShortyServletAndTitleImageTest.class,
         com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,
         com.dotmarketing.common.reindex.ReindexThreadTest.class,
@@ -219,6 +223,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.startup.runalways.Task00001LoadSchemaIntegrationTest.class,
         com.dotmarketing.startup.runonce.Task05200WorkflowTaskUniqueKeyTest.class,
         Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class,
+        Task05210CreateDefaultDotAssetTest.class,
         CleanUpFieldReferencesJobTest.class,
         ESContentletAPIImplTest.class,
         CachedParameterDecoratorTest.class,
@@ -228,7 +233,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.security.secret.SecretsStoreKeyStoreImplTest.class,
         com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class,
         ServiceIntegrationResourceTest.class,
-        VelocityServletIntegrationTest.class
+        VelocityServletIntegrationTest.class,
+        DotAssetAPITest.class,
+        RulesAPIImplIntegrationTest.class
 })
 public class MainSuite {
 

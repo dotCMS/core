@@ -1,12 +1,5 @@
 package com.dotcms.contenttype.test;
 
-import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.TestCase.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
@@ -34,6 +27,7 @@ import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.Expireable;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
@@ -68,8 +62,12 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -79,19 +77,32 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import java.io.File;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.TestCase.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
@@ -387,6 +398,47 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 				contentTypeApi.delete(newDefaultContentType);
 			}
 		}
+	}
+
+	@Test
+	public void testDotAssetType() throws DotDataException, DotSecurityException, IOException {
+
+		final String variable = "testDotAsset" + System.currentTimeMillis();
+		final ContentType dotAssetContentType = contentTypeApi.save(ContentTypeBuilder.builder(DotAssetContentType.class).folder(
+				FolderAPI.SYSTEM_FOLDER).host(Host.SYSTEM_HOST).name(variable)
+				.owner(user.getUserId()).build());
+
+		final List<Field> fields = dotAssetContentType.fields();
+
+		assertEquals(dotAssetContentType.baseType(), BaseContentType.DOTASSET);
+		assertEquals(dotAssetContentType.variable().toLowerCase(), variable.toLowerCase());
+		//Check that the defaultType attribute in the new ContentType is set to true
+		assertTrue(!fields.isEmpty());
+		//Check that the default ContentType ID is the same as the new contentType
+		assertEquals(fields.size(), 3);
+		assertTrue(fields.stream().anyMatch(field -> field.variable().equals(DotAssetContentType.SITE_OR_FOLDER_FIELD_VAR)));
+		assertTrue(fields.stream().anyMatch(field -> field.variable().equals(DotAssetContentType.ASSET_FIELD_VAR)));
+		assertTrue(fields.stream().anyMatch(field -> field.variable().equals(DotAssetContentType.TAGS_FIELD_VAR)));
+
+		final File file = FileUtil.createTemporalFile("bin");
+		final String content = "This is a test temporal file";
+		try (final FileWriter fileWriter = new FileWriter(file)) {
+
+			fileWriter.write(content);
+		}
+		final Contentlet dotAssetContentlet = new Contentlet();
+		dotAssetContentlet.setContentType(dotAssetContentType);
+		dotAssetContentlet.setBinary(DotAssetContentType.ASSET_FIELD_VAR, file);
+
+		final Contentlet checkinDotAssetContentlet = APILocator.getContentletAPI().checkin(dotAssetContentlet,
+				new ContentletDependencies.Builder()
+				.modUser(user).indexPolicy(IndexPolicy.FORCE).build());
+
+		assertNotNull(checkinDotAssetContentlet);
+		final String contentRecovery = IOUtils.toString(checkinDotAssetContentlet.getBinaryStream(
+				DotAssetContentType.ASSET_FIELD_VAR), Charset.defaultCharset());
+
+		assertEquals(content, contentRecovery);
 	}
 
 	@Test
