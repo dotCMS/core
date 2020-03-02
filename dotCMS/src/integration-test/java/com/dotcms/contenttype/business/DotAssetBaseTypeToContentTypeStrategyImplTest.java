@@ -21,12 +21,13 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
+import com.liferay.portal.util.WebKeys;
 import org.glassfish.jersey.internal.util.Base64;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -34,7 +35,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
-@RunWith(DataProviderRunner.class)
 public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationTestBase {
 
     @BeforeClass
@@ -85,6 +85,7 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");
+        request.setAttribute(WebKeys.USER, APILocator.systemUser());
 
         final File file = FileUtil.createTemporalFile("test", "txt");
         final String content = "This is a test temporal file";
@@ -112,6 +113,6 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
                                 APILocator.getTempFileAPI().getRequestFingerprint(request), sessionId)));
 
         Assert.assertTrue(contentTypeOpt.isPresent());
-        Assert.assertEquals("", contentTypeOpt.get().variable(), variable);
+        Assert.assertEquals("", contentTypeOpt.get().variable().toLowerCase(), variable.toLowerCase());
     }
 }
