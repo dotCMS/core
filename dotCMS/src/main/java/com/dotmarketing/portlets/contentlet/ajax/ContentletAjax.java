@@ -1,16 +1,10 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
-import static com.dotcms.exception.ExceptionUtil.getRootCause;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
 import com.dotcms.business.CloseDB;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
@@ -49,7 +43,6 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.hostadmin.business.CopyHostContentUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -93,6 +86,10 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import io.vavr.control.Try;
+import org.jetbrains.annotations.NotNull;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -105,10 +102,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import org.jetbrains.annotations.NotNull;
+
+import static com.dotcms.exception.ExceptionUtil.getRootCause;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * This class handles the communication between the view and the back-end
@@ -497,6 +498,14 @@ public class ContentletAjax {
 
 	 public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 	   return searchContentletsByUser(ImmutableList.of(BaseContentType.ANY), structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked, page, orderBy, perPage, currentUser, sess, modDateFrom, modDateTo);
+	 }
+
+	 private <T> List<T> distinct (final List<T> collection, final Function<T, Object> indexKeyFunction) {
+
+		 final Map<Object, T> collectionIndexMap = collection.stream().collect(
+		 		Collectors.toMap(indexKeyFunction, Function.identity(), (existing, replacement) -> existing));
+
+		return new ArrayList<>(collectionIndexMap.values());
 	 }
 	/**
 	 * This method is used by the back-end to pull the content from the Lucene
@@ -985,9 +994,12 @@ public class ContentletAjax {
 			fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Title")).getOrElse("Title"));
 			headers.add(fieldMap);
 
-			fieldMap = new HashMap<> ();
-			fieldMap.put("fieldVelocityVarName", "__type__");
-			fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Type")).getOrElse("Type"));
+			// if there is a type selected, does not make sense to show it on the list.
+			if (Structure.STRUCTURE_TYPE_ALL.equals(structureInode)) {
+				fieldMap = new HashMap<>();
+				fieldMap.put("fieldVelocityVarName", "__type__");
+				fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Type")).getOrElse("Type"));
+			}
 			headers.add(fieldMap);
 
 
@@ -998,7 +1010,7 @@ public class ContentletAjax {
 		fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Step")).getOrElse("Step"));
 		headers.add(fieldMap);
 
-		results.add(headers);
+		results.add(this.distinct(headers, headerFieldMap -> Map.class.cast(headerFieldMap).get("fieldVelocityVarName")));
 
 		// we add the total hists for the query
 		results.add(totalHits);
