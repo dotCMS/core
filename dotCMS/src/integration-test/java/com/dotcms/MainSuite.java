@@ -8,6 +8,7 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.rest.api.v1.secret.ServiceIntegrationResourceTest;
+
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
@@ -41,6 +42,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.util.RelationshipUtilTest.class,
         com.dotcms.util.ImportUtilTest.class,
         com.dotmarketing.util.PageModeTest.class,
+        com.dotmarketing.business.web.UserWebAPIImplTest.class,
         com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest.class,
         com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest.class,
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
