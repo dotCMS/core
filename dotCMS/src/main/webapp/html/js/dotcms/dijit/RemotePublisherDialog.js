@@ -77,11 +77,11 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
             	dijit.byId("iwtExpire").set("disabled", true) ;
             	dijit.byId("iwtPublishExpire").set("disabled", true) ;
             }
-            
+            // For archived Content, allow users to "Push" and "Push Remove" ONLY
             if (removeOnly) {
-            	dijit.byId("iwtExpire").set("checked", true);
-            	dijit.byId("iwtPublish").set("disabled", true);
-            	dijit.byId("iwtPublishExpire").set("disabled", true);
+                dijit.byId("iwtPublish").set("checked", true);
+                dijit.byId("iwtPublishExpire").set("disabled", true);
+                dijit.byId("iwtExpire").set("disabled", false);
             }
 
             dojo.connect(dijit.byId("iwtExpire"), "onChange", function(){

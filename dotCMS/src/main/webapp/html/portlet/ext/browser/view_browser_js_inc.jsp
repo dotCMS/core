@@ -1639,8 +1639,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
      *
      * objId - The Identifier or inode of the object to push.
      * referrer - The referrer page.
-     * isArchived - If true, only the "Remove" option in the Push Dialog
-     *              will be displayed.
+     * isArchived - If true, allow users to ONLY do a "Push" or "Remove", NOT a "Push & Remove".
      */
     function remotePublish (objId, referrer, isArchived) {
         if (isArchived != undefined && isArchived != null) {
