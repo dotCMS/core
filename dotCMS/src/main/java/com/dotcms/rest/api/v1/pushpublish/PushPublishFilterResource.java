@@ -22,7 +22,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.server.JSONP;
 
-@Path("/v1/pushpublish-filter")
+@Path("/v1/pushpublish/filter")
 public class PushPublishFilterResource {
 
     private final WebResource webResource;
