@@ -40,6 +40,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.util.marshal.MarshalUtilsIntegrationTest.class,
         com.dotcms.util.RelationshipUtilTest.class,
         com.dotcms.util.ImportUtilTest.class,
+        com.dotmarketing.util.PageModeTest.class,
         com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest.class,
         com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest.class,
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
