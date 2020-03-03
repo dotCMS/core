@@ -2,6 +2,7 @@ package com.dotcms;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
+import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
@@ -20,10 +21,6 @@ import org.junit.runners.Suite.SuiteClasses;
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 //@RunWith(Suite.class)
-
-
-
-
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
@@ -239,6 +236,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ServiceIntegrationResourceTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
+        RulesAPIImplIntegrationTest.class,
         SiteSearchJobImplTest.class
 })
 public class MainSuite {

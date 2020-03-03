@@ -229,7 +229,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         impl.run(context1);
         //First run will create the default index
 
-        List <String> indices = siteSearchAPI.listIndices();
+        final List <String> indices = siteSearchAPI.listIndices();
         Assert.assertTrue(indices.contains(defaultIndexName));
 
         recentAudits = siteSearchAuditAPI.findRecentAudits(jobId1, 0, 1);
@@ -319,7 +319,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
         String generatedBundleId1 = firstRunJob.getBundleId();
         Assert.assertNotNull(generatedBundleId1);
-        System.out.println(generatedBundleId1);
+        //System.out.println(generatedBundleId1);
 
         recentAudits = siteSearchAuditAPI.findRecentAudits(jobId, 0, 1);
         Assert.assertFalse(recentAudits.isEmpty());
@@ -348,7 +348,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
         generatedBundleId1 = secondRunJob.getBundleId();
         Assert.assertEquals(incrementalJobBundleId, generatedBundleId1);
-        System.out.println(generatedBundleId1);
+        //System.out.println(generatedBundleId1);
 
         final File incrementalBundleRoot1 = BundlerUtil.getBundleRoot(generatedBundleId1, false);
         Assert.assertTrue(incrementalBundleRoot1.exists());

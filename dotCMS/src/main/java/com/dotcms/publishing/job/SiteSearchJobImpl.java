@@ -114,10 +114,7 @@ public class SiteSearchJobImpl {
     }
 
     @SuppressWarnings("unchecked")
-    public void
-
-
-    run(final JobExecutionContext jobContext) throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticsearchException, IOException {
+    public void run(final JobExecutionContext jobContext) throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticsearchException, IOException {
         if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
             Logger.warn(this, "Invalid attempt to run SiteSearch job without a license.");
             return;
@@ -181,7 +178,7 @@ public class SiteSearchJobImpl {
         //We can only run incrementally if all the above pre-requisites are met.
         if (incremental) {
             //Incremental mode is useful only if there's already an index previously built.
-            //Incremental mode also implies we have to have a date range to work on.
+            //Incremental mode also implies that we have to have a date range to work on.
             //So if we have an empty index or we lack of audit data we can not run incrementally.
             //Even if the user wants to.
             newIndexName = null;
@@ -321,7 +318,7 @@ public class SiteSearchJobImpl {
             indexName = aliasMap.get(indexAlias);
             if (UtilMethods.isSet(indexName)) {
                 if (siteSearchAPI.isDefaultIndex(indexAlias)) {
-                    Logger.info(this, "Index is current Site-Search DEFAULT.");
+                    Logger.info(SiteSearchJobImpl.class, String.format("Index `%s` is currently Site-Search DEFAULT.",indexAlias));
                     defaultIndex = true;
                 }
             } else {
