@@ -632,14 +632,15 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                 authResult =
                         AuthPipeProxy.authenticateByUserId(PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_POST), companyId, login, password);
             }
-            if (authResult == Authenticator.SUCCESS) {
-                // User authenticated, reset failed attempts
-                Logger.debug(this, "Setting the user: " + user.getUserId() + ", failed login attempts: 0");
-                user.setFailedLoginAttempts(0);
-                UserUtil.update(user);
-            }
         }
-
+        if (authResult == Authenticator.SUCCESS) {
+            // User authenticated, reset failed attempts
+            Logger.debug(this, "Setting the user: " + user.getUserId() + ", failed login attempts: 0");
+            user.setFailedLoginAttempts(0);
+            UserUtil.update(user);
+        }
+        
+        
         if (authResult == Authenticator.FAILURE) {
 
             Logger.debug(this, "Authenticated failed for: " + login);

@@ -62,7 +62,7 @@ public enum PageMode {
     }
     
 
-    public static PageMode get(final HttpSession ses) {
+    private static PageMode get(final HttpSession ses) {
 
         PageMode mode = PageMode.isPageModeSet(ses)
                         ? (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION)
@@ -72,7 +72,7 @@ public enum PageMode {
     }
 
     public static PageMode getWithNavigateMode(final HttpServletRequest req) {
-        HttpSession ses = req.getSession();
+        HttpSession ses = req.getSession(false);
         PageMode mode = PageMode.isPageModeSet(ses)
                 ? PageMode.getCurrentPageMode(ses)
                 : DEFAULT_PAGE_MODE;
@@ -97,17 +97,11 @@ public enum PageMode {
 
         if (null == pageMode && null != request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)) {
 
-            pageMode = (PageMode)request.getAttribute(WebKeys.PAGE_MODE_PARAMETER);
+            pageMode = (PageMode) request.getAttribute(WebKeys.PAGE_MODE_PARAMETER);
         }
 
         final HttpSession session = request.getSession(false);
         if (null == pageMode) {
-
-            if (session == null) {
-
-                return DEFAULT_PAGE_MODE;
-            }
-
             pageMode = get(session);
         }
 
@@ -143,10 +137,27 @@ public enum PageMode {
         return setPageMode(request,mode);
 
     }
-
-    public static PageMode setPageMode(final HttpServletRequest request, PageMode mode) {
-        request.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
-        request.setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
+    
+    
+    /**
+     * Page mode can only be set for back end users, not for front end users (even logged in Front end users)
+     * @param request
+     * @param mode
+     * @return
+     */
+    public static PageMode setPageMode(final HttpServletRequest request, final PageMode mode) {
+        
+        if (DEFAULT_PAGE_MODE != mode) {
+            final User user = PortalUtil.getUser(request);
+            if (user == null || !user.isBackendUser()) {
+                return DEFAULT_PAGE_MODE;
+            }
+        }
+        
+        if(request.getSession(false)!=null) {
+            request.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, mode);
+        }
+        request.setAttribute(WebKeys.PAGE_MODE_PARAMETER, mode);
         return mode;
     }
 
@@ -156,7 +167,7 @@ public enum PageMode {
     }
 
     private static PageMode getCurrentPageMode(final HttpSession ses) {
-        PageMode sessionPageMode = (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION);
+        PageMode sessionPageMode = ses==null ? DEFAULT_PAGE_MODE : (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION);
 
         if (isNavigateEditMode(ses)) {
             return PageMode.NAVIGATE_EDIT_MODE;
@@ -166,9 +177,15 @@ public enum PageMode {
     }
 
     private static boolean isNavigateEditMode(final HttpSession ses) {
-        PageMode sessionPageMode = (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION);
+        PageMode sessionPageMode = ses==null ? DEFAULT_PAGE_MODE : (PageMode) ses.getAttribute(WebKeys.PAGE_MODE_SESSION);
         HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
+        final User user = PortalUtil.getUser(request);
+        if (user == null || !user.isBackendUser()) {
+            return false;
+        }
+        
+        
         return  sessionPageMode != PageMode.LIVE &&
                 request != null &&
                 request.getAttribute(WebKeys.PAGE_MODE_PARAMETER) == null ;
