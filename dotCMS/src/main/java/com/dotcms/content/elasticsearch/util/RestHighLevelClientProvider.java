@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.util;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.springframework.data.elasticsearch.client.reactive.ReactiveElasticsearchClient;
 
 /**
  * Provider used to load custom High Level Rest clients to handle API requests in Elastic
@@ -35,6 +36,8 @@ public abstract class RestHighLevelClientProvider {
     }
 
     public abstract RestHighLevelClient getClient();
+
+    public abstract DotReactiveElasticsearchClient getReactiveClient();
 
     public abstract void setClient(final RestHighLevelClient client);
 }

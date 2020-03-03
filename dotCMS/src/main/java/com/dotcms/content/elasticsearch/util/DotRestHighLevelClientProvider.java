@@ -53,6 +53,11 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.elasticsearch.client.ClientConfiguration;
+import org.springframework.data.elasticsearch.client.RestClients;
+import org.springframework.data.elasticsearch.client.reactive.ReactiveElasticsearchClient;
+import org.springframework.data.elasticsearch.client.reactive.ReactiveRestClients;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 
 /**
  * Default high level client to handle API requests in Elastic
@@ -69,12 +74,16 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     private RestHighLevelClient client;
 
+    private ReactiveElasticsearchClient reactiveClient;
+
     private static SSLContext sslContextFromPem;
 
     DotRestHighLevelClientProvider() {
         try {
             final RestClientBuilder clientBuilder = getClientBuilder(getCredentialsProvider());
             client = new RestHighLevelClient(clientBuilder);
+
+            reactiveClient = DotReactiveElasticsearchClient.create(getReactiveClientBuilder());
         } catch (IOException | GeneralSecurityException e) {
             Logger.error(DotRestHighLevelClientProvider.class,
                     "Error setting credentials for Elastic RestHighLevel Client", e);
@@ -102,6 +111,23 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         }
 
         return credentialsProvider;
+    }
+
+    private ClientConfiguration getReactiveClientBuilder(){
+        ClientConfiguration clientConfiguration = ClientConfiguration.builder()
+                .connectedTo(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1") + ":" + Config.getIntProperty("ES_PORT", 9200))
+                .usingSsl(sslContextFromPem)
+                .withBasicAuth(Config.getStringProperty("ES_AUTH_BASIC_USER", null), Config.getStringProperty("ES_AUTH_BASIC_PASSWORD", null))
+                .withWebClientConfigurer(webClient -> {
+                    ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
+                            .codecs(configurer -> configurer.defaultCodecs()
+                                    .maxInMemorySize(-1))
+                            .build();
+                    return webClient.mutate().exchangeStrategies(exchangeStrategies).build();
+                })
+                .build();
+
+        return clientConfiguration;
     }
 
     private RestClientBuilder getClientBuilder(final BasicCredentialsProvider credentialsProvider) {
@@ -197,6 +223,10 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     public RestHighLevelClient getClient() {
         return client;
+    }
+
+    public DotReactiveElasticsearchClient getReactiveClient() {
+        return (DotReactiveElasticsearchClient)reactiveClient;
     }
 
     public void setClient(final RestHighLevelClient theClient) {

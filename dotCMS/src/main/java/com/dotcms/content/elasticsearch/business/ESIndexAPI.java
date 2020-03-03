@@ -292,7 +292,7 @@ public class ESIndexAPI {
 			searchRequest.source(searchSourceBuilder);
 
 			final SearchResponse searchResponse = Sneaky.sneak(()->
-					RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,
+					RestHighLevelClientProvider.getInstance().getReactiveClient().search(searchRequest,
 							RequestOptions.DEFAULT));
 
 			String scrollId = searchResponse.getScrollId();
@@ -302,8 +302,6 @@ public class ESIndexAPI {
 				// new way
 				SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
 				scrollRequest.scroll(TimeValue.timeValueMinutes(2));
-				SearchResponse searchScrollResponse = RestHighLevelClientProvider.getInstance()
-						.getClient().scroll(scrollRequest, RequestOptions.DEFAULT);
 
 				scrollId = searchResponse.getScrollId();
 

@@ -834,7 +834,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         searchRequest.source(searchSourceBuilder);
 
         final SearchResponse response = Sneaky.sneak(()->
-                RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
+                RestHighLevelClientProvider.getInstance().getReactiveClient().search(searchRequest, RequestOptions.DEFAULT));
         SearchHits hits = response.getHits();
         List<Contentlet> cons = new ArrayList<>();
 
@@ -974,7 +974,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			searchRequest.indices((live ? info.getLive() : info.getWorking()));
 
             final SearchResponse response = Sneaky.sneak(()->
-                    RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
+                    RestHighLevelClientProvider.getInstance().getReactiveClient().search(searchRequest, RequestOptions.DEFAULT));
             SearchHits hits = response.getHits();
 
 			return find(hits.getAt(0).getSourceAsMap().get("inode").toString());
@@ -1073,7 +1073,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @NotNull
     private List<Contentlet> getContentletsFromSearchResponse(SearchRequest searchRequest) {
         final SearchResponse response = Sneaky.sneak(()->
-                RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
+                RestHighLevelClientProvider.getInstance().getReactiveClient().search(searchRequest, RequestOptions.DEFAULT));
 
         SearchHits hits = response.getHits();
 
@@ -1378,7 +1378,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         searchRequest.indices(indexToHit);
 
         final SearchResponse response = Sneaky.sneak(()->
-                RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
+                RestHighLevelClientProvider.getInstance().getReactiveClient().search(searchRequest, RequestOptions.DEFAULT));
        return response.getHits().getTotalHits().value;
 	}
 
@@ -1405,7 +1405,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 info.getLive(): info.getWorking());
 
         final SearchResponse response = Sneaky.sneak(()->
-                RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
+                RestHighLevelClientProvider.getInstance().getReactiveClient().search(searchRequest, RequestOptions.DEFAULT));
         return response.getHits().getTotalHits().value;
     }
 
@@ -1583,7 +1583,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
 
             searchRequest.source(searchSourceBuilder);
-            response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
+            response = RestHighLevelClientProvider.getInstance().getReactiveClient().search(searchRequest, RequestOptions.DEFAULT);
 
 
         } catch (ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException infe ) {
