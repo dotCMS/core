@@ -51,7 +51,7 @@ public class DotAssetAPITest extends ContentTypeBaseTest  {
 
         Optional<ContentType> contentTypeOpt = Optional.empty();
 
-        final File tempMovieTestFile = new File(ConfigTestHelper.getPathToTestResource("images/testmovie.mov"));
+        final File tempMovieTestFile = TestMediaCreator.lookupMOV();
         contentTypeOpt = APILocator.getDotAssetAPI().tryMatch(
                 tempMovieTestFile, host, APILocator.systemUser());
 
@@ -64,14 +64,14 @@ public class DotAssetAPITest extends ContentTypeBaseTest  {
         assertTrue(contentTypeOpt.isPresent());
         assertEquals(fieldDotTextAssetContentType._2().variable(), contentTypeOpt.get().variable());
 
-        final File tempImageTestFile = TestMediaCreator.createPNG();
+        final File tempImageTestFile = TestMediaCreator.lookupPNG();
         contentTypeOpt = APILocator.getDotAssetAPI().tryMatch(
                 tempImageTestFile, host, APILocator.systemUser());
 
         assertTrue(contentTypeOpt.isPresent());
         assertEquals(fieldDotimageAssetContentType._2().variable(), contentTypeOpt.get().variable());
 
-        final File tempImageTestFile2 = TestMediaCreator.createJPEG();
+        final File tempImageTestFile2 = TestMediaCreator.lookupJPG();
         contentTypeOpt = APILocator.getDotAssetAPI().tryMatch(
                 tempImageTestFile2, host, APILocator.systemUser());
 
