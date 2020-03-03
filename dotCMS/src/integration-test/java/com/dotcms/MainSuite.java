@@ -20,6 +20,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
+//@RunWith(Suite.class)
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
@@ -243,4 +244,3 @@ import org.junit.runners.Suite.SuiteClasses;
 public class MainSuite {
 
 }
-//@RunWith(Suite.class)
