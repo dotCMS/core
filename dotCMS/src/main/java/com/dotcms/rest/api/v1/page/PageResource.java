@@ -158,7 +158,7 @@ public class PageResource {
 
 
             final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
-                    PageMode.get(request.getSession()).respectAnonPerms);
+                    PageMode.get(request).respectAnonPerms);
             request.setAttribute(WebKeys.CURRENT_HOST, host);
             request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
@@ -244,7 +244,7 @@ public class PageResource {
         );
 
         final Host host = APILocator.getHostAPI().find(pageRendered.getPageInfo().getPage().getHost(), user,
-                PageMode.get(request.getSession()).respectAnonPerms);
+                PageMode.get(request).respectAnonPerms);
         request.setAttribute(WebKeys.CURRENT_HOST, host);
         request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
 
