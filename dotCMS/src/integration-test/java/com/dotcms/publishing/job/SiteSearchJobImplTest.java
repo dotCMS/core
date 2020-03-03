@@ -314,7 +314,6 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
         String generatedBundleId1 = firstRunJob.getBundleId();
         Assert.assertNotNull(generatedBundleId1);
-        //System.out.println(generatedBundleId1);
 
         recentAudits = siteSearchAuditAPI.findRecentAudits(jobId, 0, 1);
         Assert.assertFalse(recentAudits.isEmpty());
@@ -343,7 +342,6 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
         generatedBundleId1 = secondRunJob.getBundleId();
         Assert.assertEquals(incrementalJobBundleId, generatedBundleId1);
-        //System.out.println(generatedBundleId1);
 
         final File incrementalBundleRoot1 = BundlerUtil.getBundleRoot(generatedBundleId1, false);
         Assert.assertTrue(incrementalBundleRoot1.exists());
@@ -354,7 +352,6 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         recentAudits = siteSearchAuditAPI.findRecentAudits(jobId, 0, 1);
         Assert.assertFalse(recentAudits.isEmpty());
         final SiteSearchAudit siteSearchAudit2 = recentAudits.get(0);
-        //System.out.println(siteSearchAudit2);
 
         final SiteSearchResults search2 = siteSearchAPI.search(siteSearchAudit2.getIndexName(), "our-page*",0, 10);
         Assert.assertTrue(search2.getTotalResults() >= 1);
