@@ -47,7 +47,7 @@ public abstract class DotAssetContentType extends ContentType implements UrlMapa
 						.dataType(DataTypes.SYSTEM)
 						.variable(SITE_OR_FOLDER_FIELD_VAR)
 						.sortOrder(fields.size())
-						.required(false)
+						.required(true)
 						.fixed(false)
 						.searchable(true)
 						.indexed(true)
