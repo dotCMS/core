@@ -1,28 +1,9 @@
-<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
-<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-<%@page import="com.dotmarketing.beans.Host"%>
-<%@page import="java.net.URLEncoder"%>
-<%@page import="com.dotmarketing.quartz.ScheduledTask"%>
-<%@page import="com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo"%>
-<%@page import="com.dotcms.content.elasticsearch.business.ContentletIndexAPI"%>
-<%@page import="com.dotmarketing.util.Logger"%>
-<%@page import="com.dotmarketing.exception.DotSecurityException"%>
-<%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
-<%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
-<%@page import="org.elasticsearch.action.admin.indices.stats.IndexStats"%>
-<%@page import="com.dotcms.content.elasticsearch.util.ESUtils"%>
-<%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
-<%@page import="com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory"%>
-<%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
-<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@page import="java.util.ArrayList"%>
-<%@page import="com.dotmarketing.business.CacheLocator"%>
-<%@page import="java.util.Map"%>
+<%@page import="com.dotmarketing.beans.Host"%>
+<%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
+<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@ include file="/html/common/init.jsp"%>
-<%@page import="java.util.List"%>
 <%
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 Map<String, Object> props = new HashMap<String, Object>();
@@ -96,6 +77,7 @@ String includeExclude = (String) props.get("includeExclude") ==null ? "all": (St
 
 boolean hasPath = false;
 
+final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().site_search;
 
 %>
 
@@ -186,13 +168,10 @@ boolean hasPath = false;
 				<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "Index-Name") %>: </strong><a href="javascript: ;" id="aliasHintHook">?</a> <span dojoType="dijit.Tooltip" connectId="aliasHintHook" id="aliasHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "search-alias-hint") %></span>
 			</dt>
 			<dd>
-				<select id="indexAlias" name="indexAlias" dojoType="dijit.form.FilteringSelect" required="true" style="width:400px">
-					<option value="create-new"><%= LanguageUtil.get(pageContext, "Create-New-Make-Default") %></option>
-					<%for(String x : indexes){ %>
+				<select id="indexAlias" name="indexAlias" dojoType="dijit.form.ComboBox" required="true" style="width:400px">
+					<%for(final String x : indexes){ %>
 						<option value="<%=alias.get(x) == null ? x:alias.get(x)%>" <%=(x.equals(indexName)||(alias.get(x)!=null && alias.get(x).equals(indexName))) ? "selected='true'": ""%>>
-						  <%=alias.get(x) == null ? x:alias.get(x) %>
-						  <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().site_search)) ?
-						          "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %>
+						  <%=alias.get(x) == null ? x:alias.get(x) %> <%=(x.equals(siteSearch)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %>
 						</option>
 					<%} %>
 				</select>
@@ -204,7 +183,7 @@ boolean hasPath = false;
 			<dd>
 				<div class="checkbox">
 					<input  type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true" <%=(incremental) ? "checked='true'": "" %>>
-					<label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label>
+					<label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %>&nbsp;</label>
 					<a href="javascript: ;" id="incrementalHintHook1">?</a>
 					<span dojoType="dijit.Tooltip" connectId="incrementalHintHook1" class="fieldHint">
 					  <%=LanguageUtil.get(pageContext, "incremental-hint") %>
