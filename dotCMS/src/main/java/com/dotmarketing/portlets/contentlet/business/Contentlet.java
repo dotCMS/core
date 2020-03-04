@@ -305,10 +305,7 @@ public class Contentlet extends WebAsset implements Serializable {
         try {
             contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeId);
             return contentType;
-        } catch (final DotSecurityException e) {
-            Logger.error(this, String.format("An error occurred when returning the Content Type associated to " +
-                    "Contentlet '%s'", this.getIdentifier()));
-        } catch (final DotDataException e) {
+        } catch (final DotSecurityException | DotDataException e) {
             Logger.error(this, String.format("An error occurred when returning the Content Type associated to " +
                     "Contentlet '%s'", this.getIdentifier()));
         }
@@ -1624,30 +1621,18 @@ public class Contentlet extends WebAsset implements Serializable {
 	 * @param field
 	 * @param value
 	 */
-	public void setField(Field field, Object value) throws DotRuntimeException {
+	public void setField(final Field field, Object value) throws DotRuntimeException {
 		try {
 			if(value != null && value instanceof Timestamp){
 				value = new Date(((Timestamp)value).getTime());
 			}
 			BeanUtils.setProperty(this, field.getFieldContentlet(), value);
-        } catch (final IllegalArgumentException iae) {
+        } catch (final IllegalArgumentException | IllegalAccessException | InvocationTargetException iae) {
             final String errorMsg = String.format("Unable to set value [ %s ] contentlet field [ %s ]: %s", (null !=
                     value ? value.toString() : "null"), (null != field ? field.getFieldName() : "null"), iae
                     .getMessage());
             Logger.error(this, errorMsg);
             throw new DotRuntimeException(errorMsg, iae);
-        } catch (final IllegalAccessException e) {
-            final String errorMsg = String.format("Unable to set value [ %s ] contentlet field [ %s ]: %s", (null !=
-                    value ? value.toString() : "null"), (null != field ? field.getFieldName() : "null"), e.getMessage
-                    ());
-            Logger.error(this, errorMsg);
-            throw new DotRuntimeException(errorMsg, e);
-        } catch (final InvocationTargetException e) {
-            final String errorMsg = String.format("Unable to set value [ %s ] contentlet field [ %s ]: %s", (null !=
-                    value ? value.toString() : "null"), (null != field ? field.getFieldName() : "null"), e.getMessage
-                    ());
-            Logger.error(this, errorMsg);
-            throw new DotRuntimeException(errorMsg, e);
         }
     }
 
