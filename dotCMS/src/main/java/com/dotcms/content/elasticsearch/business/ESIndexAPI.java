@@ -614,11 +614,8 @@ public class ESIndexAPI {
 	 */
     public void moveIndexBackToCluster(final String index) throws IOException {
 
-        int replicas = getReplicas();
-
         Settings settings =
                 Settings.builder()
-                        .put("index.number_of_replicas", replicas)
                         .put("index.routing.allocation.include._name","*")
                         .build();
 
@@ -627,26 +624,6 @@ public class ESIndexAPI {
 		request.settings(settings);
 		RestHighLevelClientProvider.getInstance().getClient()
 				.indices().putSettings(request, RequestOptions.DEFAULT);
-    }
-
-    private int getReplicas() {
-        int replicas = 0;
-        if (clusterAPI.isTransportAutoWire()){
-            int serverCount;
-
-            try {
-                serverCount = APILocator.getServerAPI().getAliveServersIds().length;
-            } catch (DotDataException e) {
-                Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
-                serverCount = 1;
-            }
-            // formula is (live server count (including the ones that are down but not yet timed out) - 1)
-
-            if(serverCount>0) {
-                replicas = serverCount - 1;
-            }
-        }
-        return replicas;
     }
 
     /**
@@ -676,7 +653,6 @@ public class ESIndexAPI {
         }
 
 		map.put("number_of_shards", shards);
-		map.put("index.number_of_replicas", getReplicas());
 		map.put("index.mapping.total_fields.limit",
 			Config.getIntProperty("ES_INDEX_MAPPING_TOTAL_FIELD_LIMITS", 5000));
         map.put("index.mapping.nested_fields.limit",
