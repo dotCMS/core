@@ -437,17 +437,6 @@ function showRestoreIndexDialog(indexName) {
 	dialog.show();
 }
 
-function doRestoreIndex() {
-	if(dojo.byId("uploadFileName").innerHTML=='') {
-		showDotCMSErrorMessage("<%=LanguageUtil.get(pageContext, "No-File-Selected")%>");
-	}
-	else {
-		dijit.byId('uploadSubmit').set('disabled',true);
-	    dojo.query('#uploadProgress').style({display:"block"});
-	    dijit.byId("restoreIndexUploader").submit();
-	}
-}
-
 function restoreUploadCompleted() {
 	hideRestoreIndex();
 }
@@ -517,20 +506,21 @@ function doCreateSiteSearch(alias,number) {
 
 function runNow(action) {
 	//var value = dijit.byId(action).getValue();
-
-	if(action == 'now'){
-		
+	let incremental = dijit.byId('incremental');
+	if(action === 'now'){
 		dojo.query('.showScheduler').style({display:"none"});
 		dojo.query('.showRunNow').style({display:""});
 		dijit.byId("QUARTZ_JOB_NAME").setValue("<%=SiteSearchAPI.ES_SITE_SEARCH_EXECUTE_JOB_NAME%>");
+
+		incremental.attr('disabled',true);
+		incremental.attr('checked',false);
 	}
-	else if (action == 'schedule'){
+	else if (action === 'schedule'){
 		dojo.query('.showScheduler').style({display:""});
 		dojo.query('.showRunNow').style({display:"none"});
 		dijit.byId("QUARTZ_JOB_NAME").setValue("");
+		incremental.attr('disabled',false)
 	}
-
-
 }
 
 function scheduleJob() {
@@ -606,44 +596,6 @@ function submitSchedule() {
 
 	}
 }
-
-
-
-
-
-
-function updateReplicas(indexName,currentNum){
-	var number=prompt("<%=LanguageUtil.get(pageContext, "Update-Replicas-Index")%> for index:\n\n" + indexName, currentNum);
-	if(!number){return;}
-	var replicas = parseInt(number);
-	if(currentNum != replicas){
-		
-		var xhrArgs = {
-				
-				url: "/DotAjaxDirector/com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/updateReplicas/indexName/" + indexName + "/replicas/" + replicas,
-			
-				handleAs: "text",
-				handle : function(dataOrError, ioArgs) {
-					if (dojo.isString(dataOrError)) {
-						if (dataOrError.indexOf("FAILURE") == 0) {
-							showDotCMSSystemMessage(dataOrError, true);
-						} else {
-							showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Replicas-Updated")%>", true);
-							refreshIndexStats();
-						}
-					} else {
-						showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Request-Failed")%>", true);
-					}
-				}
-			};
-			dojo.xhrPost(xhrArgs);
-	}
-}
-
-
-
-
-
 
 function deleteJob(taskName){
 	if(confirm("<%=LanguageUtil.get(pageContext, "message.Scheduler.confirm.delete")%>")){

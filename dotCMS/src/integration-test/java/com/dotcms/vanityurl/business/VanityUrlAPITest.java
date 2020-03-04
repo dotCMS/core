@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
@@ -1516,6 +1517,47 @@ public class VanityUrlAPITest {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Test
+    public void Test_Vanity_URI_Ending_With_Forward_Slash_Handles_Non_forward_Slash_Ending_URL()
+            throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final String hostIdentifier = host.getIdentifier();
+
+        final long timeMillis = System.currentTimeMillis();
+        final String title = "VanityURL" + timeMillis;
+        final String uri = "/test1_" + timeMillis + "/" ;
+        final String forwardTo = "/about-us/lol" ;
+        final int action = 200;
+        final int order = 1;
+
+        final Contentlet vanityURL = filtersUtil.createVanityUrl(title, hostIdentifier, uri,
+                forwardTo, action, order, defaultLanguageId);
+        Assert.assertNotNull(vanityURL);
+        filtersUtil.publishVanityUrl(vanityURL);
+
+        final String testUri1 = "/test1_" + timeMillis + "/" ;
+        final String testUri2 = "/test1_" + timeMillis  ;
+
+        final CachedVanityUrl v1 = vanityUrlAPI.getLiveCachedVanityUrl(testUri1, host, defaultLanguageId, APILocator.systemUser());
+        Assert.assertNotNull(v1);
+        Assert.assertNotNull(v1.getVanityUrlId());
+        Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL,v1.getVanityUrlId());
+        Assert.assertEquals(v1.getForwardTo(),forwardTo);
+
+        final CachedVanityUrl v2 = vanityUrlAPI.getLiveCachedVanityUrl(testUri2, host, defaultLanguageId, APILocator.systemUser());
+        Assert.assertNotNull(v2);
+        Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL,v2.getVanityUrlId());
+        Assert.assertEquals(v2.getForwardTo(),forwardTo);
+
+        final CachedVanityUrl vanityURLCached = vanityUrlCache.get(new CacheVanityKey(
+                vanityURL.getStringProperty(VanityUrlContentType.SITE_FIELD_VAR),
+                vanityURL.getLanguageId(),
+                vanityURL.getStringProperty(VanityUrlContentType.URI_FIELD_VAR)
+        ));
+        Assert.assertNotNull(vanityURLCached);
+        Assert.assertNotEquals(VanityUrlAPI.CACHE_404_VANITY_URL,vanityURLCached.getVanityUrlId());
     }
 
 }
