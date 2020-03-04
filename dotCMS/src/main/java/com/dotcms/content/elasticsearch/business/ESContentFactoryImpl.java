@@ -1589,7 +1589,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.error(this.getClass(), "----------------------------------------------");
             Logger.error(this.getClass(), String.format("Elasticsearch error in index '%s'", indexToHit));
             Logger.error(this.getClass(), String.format("Lucene Query: [ %s ]", formattedQuery));
-            Logger.error(this.getClass(), String.format("ES Query: %s", searchSourceBuilder), e);
+            Logger.error(this.getClass(), String.format("ES Query: %s", searchSourceBuilder));
+            Logger.error(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), e.getCause()
+                    .getMessage()));
             Logger.error(this.getClass(), "----------------------------------------------");
             return new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
         } catch (final Exception e) {
