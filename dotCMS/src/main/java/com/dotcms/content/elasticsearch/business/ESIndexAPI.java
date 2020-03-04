@@ -292,7 +292,7 @@ public class ESIndexAPI {
 			searchRequest.source(searchSourceBuilder);
 
 			final SearchResponse searchResponse = Sneaky.sneak(()->
-					RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,
+					RestHighLevelClientProvider.getInstance().getNativeClient().search(searchRequest,
 							RequestOptions.DEFAULT));
 
 			String scrollId = searchResponse.getScrollId();

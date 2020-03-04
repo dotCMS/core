@@ -36,5 +36,7 @@ public abstract class RestHighLevelClientProvider {
 
     public abstract RestHighLevelClient getClient();
 
+    public abstract NativeHttpRestClient getNativeClient();
+
     public abstract void setClient(final RestHighLevelClient client);
 }

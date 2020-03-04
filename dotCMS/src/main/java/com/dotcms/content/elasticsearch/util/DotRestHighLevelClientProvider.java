@@ -69,6 +69,8 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     private RestHighLevelClient client;
 
+    private NativeHttpRestClient nativeClient;
+
     private static SSLContext sslContextFromPem;
 
     DotRestHighLevelClientProvider() {
@@ -132,6 +134,12 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
             Logger.info(DotRestHighLevelClientProvider.class,
                     "Initializing Elastic RestHighLevelClient using JWT authentication");
         }
+
+        final String url = (sslContextFromPem != null ? "https://"
+                : "http://") + Config.getStringProperty("ES_HOSTNAME", "127.0.0.1")
+                        + ":"  + Config.getIntProperty("ES_PORT", 9200);
+
+        nativeClient = new NativeHttpRestClient(sslContextFromPem, credentialsProvider, url);
 
         return clientBuilder;
     }
@@ -197,6 +205,10 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     public RestHighLevelClient getClient() {
         return client;
+    }
+
+    public NativeHttpRestClient getNativeClient(){
+        return nativeClient;
     }
 
     public void setClient(final RestHighLevelClient theClient) {

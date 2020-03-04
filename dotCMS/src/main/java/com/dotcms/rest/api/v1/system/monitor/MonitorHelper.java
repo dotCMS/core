@@ -147,7 +147,7 @@ class MonitorHelper {
                         searchRequest.indices(index);
 
                         final SearchResponse response = Sneaky.sneak(()->
-                                RestHighLevelClientProvider.getInstance().getClient().search(searchRequest,
+                                RestHighLevelClientProvider.getInstance().getNativeClient().search(searchRequest,
                                         RequestOptions.DEFAULT));
                         return response.getHits().getTotalHits().value>0;
                     }finally{
