@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.jwt.beans;
 
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
@@ -32,7 +33,8 @@ public class UserToken implements JWToken {
         this.id = id;
         this.subject = subject;
         this.issuer = issuer;
-        this.modificationDate = modificationDate;
+        // set mod date one minute in the future so as not to conflict with user sql update on login
+        this.modificationDate = modificationDate!=null ? Date.from(modificationDate.toInstant().plus(1, ChronoUnit.MINUTES)): Date.from(new Date().toInstant().plus(1, ChronoUnit.MINUTES));
         this.expiresDate = expiresDate;
         this.claims=ImmutableMap.copyOf(claims);
         

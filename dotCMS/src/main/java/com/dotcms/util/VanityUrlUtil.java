@@ -52,7 +52,7 @@ public class VanityUrlUtil {
 
         CachedVanityUrl cachedVanityUrlToReturn = cachedVanityUrl;
 
-        if (null != cachedVanityUrl && null != matches && matches.length > 0 &&
+        if (null != cachedVanityUrl && !cachedVanityUrl.getVanityUrlId().equals("CACHE_404_VANITY_URL") && null != matches && matches.length > 0 &&
                 -1 != cachedVanityUrl.getForwardTo().indexOf(GROUP_REPLACEMENT_PREFIX)) {
 
             // Replace the expressions on the vanity forward.

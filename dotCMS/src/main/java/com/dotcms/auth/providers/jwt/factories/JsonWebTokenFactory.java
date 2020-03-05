@@ -272,14 +272,18 @@ public class JsonWebTokenFactory implements Serializable {
                 throw claimException;
             }
             
+            
+
             if(jwtToken.getTokenType() == TokenType.USER_TOKEN) {
-                if(jwtToken.getModificationDate().before(user.getModificationDate())) {
+                if(Config.getBooleanProperty("JWT_CHECK_USER_MODIFICATION", true) && jwtToken.getModificationDate().before(user.getModificationDate())) {
                     IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
                     claimException.setClaimName(Claims.SUBJECT);
                     claimException.setClaimValue(body.getSubject());
                     throw claimException;
                 }
+                
                 return jwtToken;    
+ 
             }
 
             ApiToken apiToken = (ApiToken) jwtToken;
