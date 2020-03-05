@@ -911,15 +911,6 @@ public class APILocator extends Locator<APIIndex>{
 		return (HTMLPageAssetRenderedAPI) getInstance(APIIndex.HTMLPAGE_ASSET_RENDERED_API);
 	}
 
-	/*
-	 * Creates a single instance of the {@link ClusterAPI}
-	 *
-	 * @return The {@link ClusterAPI} class.
-	 */
-	public static ClusterAPI getClusterAPI() {
-		return (ClusterAPI) getInstance(APIIndex.CLUSTER_API);
-	}
-
 	/**
 	 * Creates a single instance of the {@link ThemeAPI} class.
 	 *
@@ -1114,7 +1105,6 @@ enum APIIndex
 	VANITY_URLS_API,
 	MULTI_TREE_API,
 	HTMLPAGE_ASSET_RENDERED_API,
-	CLUSTER_API,
 	THEME_API,
 	API_TOKEN_API,
 	GRAPHQL_API,
