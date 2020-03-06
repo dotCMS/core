@@ -17,15 +17,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.nio.entity.NByteArrayEntity;
-import org.apache.http.util.EntityUtils;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -233,16 +238,53 @@ public class NativeHttpRestClient {
         return entries;
     }
 
-    public NativeHttpRestClient(final SSLContext sslContext, final CredentialsProvider credentialsProvider, final String url){
-        SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext);
-        client = HttpClients.custom().setDefaultCredentialsProvider(credentialsProvider)
-                .setRetryHandler(new MyRequestRetryHandler()).setSSLSocketFactory(socketFactory).build();
-        NativeHttpRestClient.url = url;
+    public NativeHttpRestClient(final SSLContext sslContext,
+            final CredentialsProvider credentialsProvider, final String hostName, final int port) {
+
+        final String protocol = sslContext != null ? "https://" : "http://";
+
+        PoolingHttpClientConnectionManager cm;
+        SSLConnectionSocketFactory socketFactory = null;
+
+        if (sslContext != null) {
+            socketFactory = new SSLConnectionSocketFactory(sslContext);
+
+            Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register("https", socketFactory).build();
+
+            cm = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+
+        } else {
+            cm = new PoolingHttpClientConnectionManager();
+        }
+        // Increase max total connection to 200
+        cm.setMaxTotal(200);
+        // Increase default max connection per route to 20
+        cm.setDefaultMaxPerRoute(20);
+        // Increase max connections for localhost:80 to 50
+        HttpHost localhost = new HttpHost(hostName, port);
+        cm.setMaxPerRoute(new HttpRoute(localhost), 50);
+
+        if (socketFactory != null) {
+
+            client = HttpClients.custom().setDefaultCredentialsProvider(credentialsProvider)
+                    .setRetryHandler(new MyRequestRetryHandler())
+                    .setSSLSocketFactory(socketFactory)
+                    .setConnectionManager(cm)
+                    .build();
+        } else {
+            client = HttpClients.custom().setDefaultCredentialsProvider(credentialsProvider)
+                    .setRetryHandler(new MyRequestRetryHandler())
+                    .setConnectionManager(cm)
+                    .build();
+        }
+        NativeHttpRestClient.url = protocol + hostName + ":" + port;
 
         List<NamedXContentRegistry.Entry> namedXContentEntries = Collections.emptyList();
 
         registry = new NamedXContentRegistry(
-                Stream.of(getDefaultNamedXContents().stream(), getProvidedNamedXContents().stream(), namedXContentEntries.stream())
+                Stream.of(getDefaultNamedXContents().stream(), getProvidedNamedXContents().stream(),
+                        namedXContentEntries.stream())
                         .flatMap(Function.identity()).collect(toList()));
     }
 
