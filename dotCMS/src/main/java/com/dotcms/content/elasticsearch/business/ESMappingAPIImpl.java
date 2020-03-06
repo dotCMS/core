@@ -503,8 +503,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					.append(f.getVelocityVarName());
 			keyName        = keyNameBuilder.toString();
 			keyNameText    = keyNameBuilder.append(TEXT).toString();
+
 			if (f.getFieldType().equals(Field.FieldType.BINARY.toString())
-					|| f.getFieldContentlet() != null && (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SYSTEM_FIELD) && !f.getFieldType().equals(Field.FieldType.TAG.toString()))) {
+					|| f.getFieldContentlet() != null && (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SYSTEM_FIELD)
+					&& !f.getFieldType().equals(Field.FieldType.TAG.toString()))) {
+
 				continue;
 			}
 			if(!f.isIndexed()){

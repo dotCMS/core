@@ -64,6 +64,7 @@ public abstract class BinaryField extends Field {
 	@JsonIgnore
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
 	return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.NAME,
-				ContentTypeFieldProperties.HINT);
+			    ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
+				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.LISTED);
 	}
 }
