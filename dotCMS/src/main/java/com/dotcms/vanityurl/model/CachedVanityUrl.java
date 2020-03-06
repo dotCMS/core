@@ -1,9 +1,13 @@
 package com.dotcms.vanityurl.model;
 
-import com.dotcms.util.VanityUrlUtil;
-import com.liferay.util.StringPool;
+import static com.liferay.util.StringUtil.GROUP_REPLACEMENT_PREFIX;
+
 import java.io.Serializable;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.dotcms.vanityurl.util.VanityUrlUtil;
+import com.liferay.util.StringPool;
 
 /**
  * This class construct a reduced version of the {@link VanityUrl}
@@ -30,6 +34,7 @@ public class CachedVanityUrl implements Serializable {
      *
      * @param vanityUrl The vanityurl Url to cache
      */
+
     public CachedVanityUrl(final VanityUrl vanityUrl) {
         //if the VanityUrl URI is not a valid regex
         final String regex = normalize(vanityUrl.getURI());
@@ -42,6 +47,7 @@ public class CachedVanityUrl implements Serializable {
         this.response = vanityUrl.getAction();
         this.order    = vanityUrl.getOrder();
     }
+
 
     /**
      * Generates a CachedVanityUrl from another given CachedVanityUrl
@@ -64,26 +70,7 @@ public class CachedVanityUrl implements Serializable {
         this.order    = fromCachedVanityUrl.getOrder();
     }
 
-    /**
-     * Generates a CachedVanityUrl from another given CachedVanityUrl
-     *
-     * @param forwardTo replace the forward.
-     * @param fromCachedVanityUrl VanityURL to copy
-     *
-     */
-    public CachedVanityUrl(final String forwardTo,
-                           final CachedVanityUrl fromCachedVanityUrl) {
 
-
-        this.pattern     = fromCachedVanityUrl.pattern;
-        this.vanityUrlId = fromCachedVanityUrl.getVanityUrlId();
-        this.url         = fromCachedVanityUrl.url;
-        this.languageId  = fromCachedVanityUrl.getLanguageId();
-        this.siteId      = fromCachedVanityUrl.getSiteId();
-        this.forwardTo   = forwardTo;
-        this.response    = fromCachedVanityUrl.getResponse();
-        this.order       = fromCachedVanityUrl.getOrder();
-    }
 
     public int getOrder() {
         return order;
@@ -143,6 +130,23 @@ public class CachedVanityUrl implements Serializable {
         return pattern;
     }
 
+    
+    public String processForward(final String url) {
+      String newForward = this.forwardTo;
+      if(pattern!=null) {
+        Matcher matcher = pattern.matcher(url);
+        if (matcher.matches() && forwardTo.indexOf(GROUP_REPLACEMENT_PREFIX)>-1) {
+          for(int i=1;i<matcher.groupCount();i++) {
+            newForward=newForward.replace("$"+i, matcher.group(i));
+          }
+        }
+      }
+      return newForward;
+    }
+    
+    
+    
+    
     /**
      * get the Vanitu Url Identifier
      *

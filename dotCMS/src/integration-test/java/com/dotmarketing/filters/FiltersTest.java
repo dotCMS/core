@@ -17,6 +17,7 @@ import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.rendering.velocity.servlet.VelocityServlet;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.vanityurl.filters.VanityURLFilter;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;

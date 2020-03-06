@@ -1,10 +1,14 @@
 package com.dotcms.vanityurl.business;
 
+import java.util.List;
+import java.util.Optional;
+
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.liferay.portal.model.User;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 
 /**
  * This API provides access to the information related to Vanity URLs
@@ -18,56 +22,22 @@ import com.liferay.portal.model.User;
  * @since June 12, 2017
  */
 public interface VanityUrlAPI {
+  public static final String DEFAULT_VANITY_URL_STRUCTURE_INODE = "8e850645-bb92-4fda-a765-e67063a59be0";
+  public static final String DEFAULT_VANITY_URL_STRUCTURE_VARNAME = "Vanityurl";
+  public static final String DEFAULT_VANITY_URL_STRUCTURE_NAME = "Vanity URL";
 
-    public static final String CACHE_404_VANITY_URL = "CACHE_404_VANITY_URL";
+  void validateVanityUrl(Contentlet contentlet);
 
-    /**
-     * Searches and populates the cache for live VanityURLs, each VanityURL found is added into the cache.
-     * <br>
-     * Note this method does not uses cache, always does the ES search, the intention of this method
-     * is mainly to populate the cache with the found data.
-     *
-     * @param user The current user
-     * @return a List of all Cached Vanity URLs contentlets live
-     */
-    void initializeVanityURLsCache(final User user);
+  Optional<CachedVanityUrl> resolveVanityUrl(String url, Host host, Language language);
 
-    /**
-     * Return the live version of the Cached vanityurl URL contentlet with the specified URI
-     *
-     * @param uri The URI of the vanityurl URL
-     * @param host The current host
-     * @param languageId The current language Id
-     * @param user The current user
-     * @return the live version of the vanityurl URL contentlet
-     */
-    CachedVanityUrl getLiveCachedVanityUrl(final String uri, final Host site, final long languageId,
-                                           final User user);
+  VanityUrl fromContentlet(Contentlet contentlet);
 
-    /**
-     * Convert the contentlet into a Vanity URL object
-     *
-     * @param con the contentlet
-     * @return Vanity URL
-     */
-    VanityUrl getVanityUrlFromContentlet(final Contentlet con);
+  void populateAllVanityURLsCache() throws DotDataException;
 
-    /**
-     * This method checks that the Vanity Url URI is using a valid regular expression.
-     *
-     * @param contentlet The Vanity Url Contentlet
-     */
-    void validateVanityUrl(Contentlet contentlet);
+  void invalidateVanityUrl(Contentlet contentlet);
 
+  List<CachedVanityUrl> findInDb(Host host, Language lang);
 
-    /**
-     * Indicates if the uri belongs to a VanityUrl
-     *
-     * @param url The current url
-     * @param host The current host
-     * @param languageId The current language Id
-     * @return true if the URI is a vanity URL, false if not
-     */
-    boolean isVanityUrl(String url, Host host, long languageId);
+  
 
 }

@@ -1,11 +1,15 @@
 package com.dotcms.vanityurl.handler;
 
+import java.io.IOException;
+import java.util.Optional;
+
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.liferay.portal.model.User;
-import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * This class have all the method required to handle the Vanity URL in the {@link
@@ -29,7 +33,7 @@ public interface VanityUrlHandler {
      */
     VanityUrlResult handle(final String uri,
             final HttpServletResponse response, final Host host,
-            final long languageId, final User user) throws IOException;
+            final Language language, final User user) throws IOException;
 
     /**
      * This method handle the logic to process the Vanity URLs and returns a
@@ -41,6 +45,9 @@ public interface VanityUrlHandler {
      * @param languageId The current languageId
      * @return a VanityURLResult Object
      */
-    VanityUrlResult handle(CachedVanityUrl vanityUrl, HttpServletResponse response, Host host,
-            long languageId) throws IOException;
+    VanityUrlResult handle(Optional<CachedVanityUrl> vanityUrl, final String uriIn,HttpServletResponse response) throws IOException;
+    
+    
+
+    
 }

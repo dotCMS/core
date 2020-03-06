@@ -1,16 +1,20 @@
 package com.dotcms.vanityurl.handler;
 
+import java.io.IOException;
+import java.util.Optional;
+
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * This class implements the methods defined in the {@link VanityUrlHandler}
@@ -23,34 +27,34 @@ public class DefaultVanityUrlHandler implements VanityUrlHandler {
 
     private static final String CMS_HOME_PAGE = "/cmsHomePage";
 
+    
     private static final VanityUrlResult DEFAULT_RESULT = new VanityUrlResult(null, null, true);
 
     private static final int LIMIT = 2;
 
     @Override
-    public VanityUrlResult handle(final String uri,
+    public VanityUrlResult handle(final String uriIn,
             final HttpServletResponse response, final Host host,
-            final long languageId, final User user) throws IOException {
+            final Language language, final User user) throws IOException {
 
-        final CachedVanityUrl vanityUrl = APILocator.getVanityUrlAPI()
-                .getLiveCachedVanityUrl((StringPool.SLASH.equals(uri) ? CMS_HOME_PAGE
-                                : uri), host,
-                        languageId, user);
+        final Optional<CachedVanityUrl> vanityUrl = APILocator.getVanityUrlAPI()
+                .resolveVanityUrl((StringPool.SLASH.equals(uriIn) ? CMS_HOME_PAGE
+                                : uriIn), host,
+                    language);
 
-        return handle(vanityUrl, response, host, languageId);
+        return handle(vanityUrl, uriIn, response);
     }
 
     @Override
-    public VanityUrlResult handle(final CachedVanityUrl vanityUrl,
-                                  final HttpServletResponse response, final Host host,
-                                  final long languageId) throws IOException {
+    public VanityUrlResult handle(final Optional<CachedVanityUrl> optVanity, final String uriIn,
+                                  final HttpServletResponse response) throws IOException {
         String rewrite = null;
         String queryString = null;
         VanityUrlResult vanityUrlResult = null;
 
-        if (vanityUrl != null) {
-            rewrite = InodeUtils.isSet(vanityUrl.getForwardTo()) ? vanityUrl.getForwardTo() : null;
-
+        if (optVanity.isPresent()) {
+            CachedVanityUrl vanityUrl=optVanity.get();
+            rewrite = vanityUrl.processForward(uriIn);
             vanityUrlResult = processVanityResponse(vanityUrl,rewrite, response);
         }
 
