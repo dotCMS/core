@@ -191,10 +191,21 @@ public class ContentletAPITest extends ContentletBaseTest {
         dotAssetContentlet.setIndexPolicy(IndexPolicy.FORCE);
         dotAssetContentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
         dotAssetContentlet = contentletAPI.checkin(dotAssetContentlet, user, false);
+        dotAssetContentlet = contentletAPI.find(dotAssetContentlet.getInode(), user, false);
 
         assertNotNull(dotAssetContentlet);
         assertEquals("The Content Type should be: " + variable,
                 dotAssetContentType.variable(), dotAssetContentlet.getContentType().variable());
+
+        final String contentletTitle = dotAssetContentlet.getTitle();
+
+        assertEquals("the contentlet title should be the binary field name", contentletTitle, tempTestFile.getName());
+
+        dotAssetContentlet.getMap().remove(Contentlet.TITTLE_KEY);
+
+        final String contentletTitle2 = dotAssetContentlet.getTitle();
+
+        assertEquals("the contentlet title should be the binary field name", contentletTitle2, contentletTitle);
     }
 
     @Test

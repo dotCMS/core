@@ -582,7 +582,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					.append(field.getVelocityVarName());
 			keyName        = keyNameBuilder.toString();
 			keyNameText    = keyNameBuilder.append(TEXT).toString();
-			if (field.getFieldType().equals(Field.FieldType.BINARY.toString()) // todo: remove this since we are going to index the binary fields
+			if (field.getFieldType().equals(Field.FieldType.BINARY.toString())
 					|| field.getFieldContentlet() != null && (field.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SYSTEM_FIELD)
 					&& !field.getFieldType().equals(Field.FieldType.TAG.toString()))) {
 
