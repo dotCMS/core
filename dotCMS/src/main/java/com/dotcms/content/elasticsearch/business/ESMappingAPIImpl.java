@@ -60,6 +60,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -553,7 +554,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					.append(field.getVelocityVarName());
 			keyName        = keyNameBuilder.toString();
 			keyNameText    = keyNameBuilder.append(TEXT).toString();
-			if (field.getFieldType().equals(Field.FieldType.BINARY.toString()) // todo: remove this since we are going to index the binary fields
+
+			if (field.getFieldType().equals(Field.FieldType.BINARY.toString()) && field.isIndexed()){
+			    String fileName = Try.of(()-> contentlet.getBinary(field.getVelocityVarName()).getName()).getOrElse("_unk");
+                contentletMap.put(keyName, fileName);
+                contentletMap.put(keyNameText, fileName);
+                continue;
+            }
+			
+			if (field.getFieldType().equals(Field.FieldType.BINARY.toString())
 					|| field.getFieldContentlet() != null && (field.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SYSTEM_FIELD)
 					&& !field.getFieldType().equals(Field.FieldType.TAG.toString()))) {
 
