@@ -135,9 +135,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     "Initializing Elastic RestHighLevelClient using JWT authentication");
         }
 
-        nativeClient = new NativeHttpRestClient(sslContextFromPem, credentialsProvider,
-                Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
-                Config.getIntProperty("ES_PORT", 9200));
+        nativeClient = new NativeHttpRestClient(sslContextFromPem);
 
         return clientBuilder;
     }
