@@ -5587,7 +5587,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         final String transientNameKey = DotAssetContentType.ASSET_FIELD_VAR + "name";
                         final String dotAssetName     = contentlet.getStringProperty(transientNameKey);
                         String assetName              = dotAssetName;
-                        if (!UtilMethods.isSet(dotAssetName)) {
+                        if (!UtilMethods.isSet(dotAssetName) && null != contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR)) {
                             assetName = contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName();
                             contentlet.setStringProperty(transientNameKey, assetName);
                         }
