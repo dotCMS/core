@@ -23,7 +23,7 @@ import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-re
 import { mockUser } from '../../../../../test/login-service.mock';
 import { PageModelChangeEventType } from './models';
 import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
-import { DotPageRender } from '@portlets/dot-edit-page/shared/models';
+import { DotPageRender, DotPageContainer } from '@portlets/dot-edit-page/shared/models';
 
 @Injectable()
 class MockDotLicenseService {
@@ -416,6 +416,7 @@ describe('DotEditContentHtmlService', () => {
         spyOn(dotEditContentToolbarHtmlService, 'getContentletToContainer').and.returnValue(
             of('<i>testing</i>')
         );
+        spyOn(this.dotEditContentToolbarHtmlService, 'updateContainerToolbar');
 
         const contentlet: DotPageContent = {
             identifier: '67',
@@ -455,6 +456,50 @@ describe('DotEditContentHtmlService', () => {
                 type: PageModelChangeEventType.ADD_CONTENT
             },
             'should tigger model change event'
+        );
+
+        expect(this.dotEditContentToolbarHtmlService.updateContainerToolbar).toHaveBeenCalledTimes(
+            1
+        );
+    });
+
+    it('should remove contentlet and update container toolbar', () => {
+        spyOn(this.dotEditContentToolbarHtmlService, 'updateContainerToolbar');
+        let currentModel;
+        const currentContainer = [
+            {
+                identifier: '123',
+                uuid: '456',
+                contentletsId: ['3']
+            }
+        ];
+
+        const contentlet: DotPageContent = {
+            identifier: '367',
+            inode: '908',
+            type: 'NewsWidgets',
+            baseType: 'CONTENT'
+        };
+
+        const container: DotPageContainer = {
+            identifier: '976',
+            uuid: '156'
+        };
+
+        this.dotEditContentHtmlService.pageModel$.subscribe((model) => (currentModel = model));
+
+        this.dotEditContentHtmlService.removeContentlet(container, contentlet);
+
+        expect(currentModel).toEqual(
+            {
+                model: currentContainer,
+                type: PageModelChangeEventType.REMOVE_CONTENT
+            },
+            'should tigger model change event'
+        );
+
+        expect(this.dotEditContentToolbarHtmlService.updateContainerToolbar).toHaveBeenCalledTimes(
+            1
         );
     });
 

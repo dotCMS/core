@@ -27,7 +27,8 @@ describe('DotEditContentToolbarHtmlService', () => {
         'editpage.content.container.menu.content': 'Content',
         'editpage.content.container.menu.widget': 'Widget',
         'editpage.content.container.menu.form': 'Form',
-        'dot.common.license.enterprise.only.error': 'Enterprise Only'
+        'dot.common.license.enterprise.only.error': 'Enterprise Only',
+        'dot.common.contentlet.max.limit.error': 'Max contentlets limit reached'
     });
 
     beforeEach(() => {
@@ -43,7 +44,7 @@ describe('DotEditContentToolbarHtmlService', () => {
     });
 
     describe('container toolbar', () => {
-        let containerEl: Element;
+        let containerEl: HTMLElement;
         let addButtonEl: Element;
         let menuItems: NodeListOf<Element>;
 
@@ -155,6 +156,46 @@ describe('DotEditContentToolbarHtmlService', () => {
                         expect(
                             menuItems[1].classList.contains('dotedit-menu__item--disabled')
                         ).toBeFalsy();
+                        expect(
+                            menuItems[2].classList.contains('dotedit-menu__item--disabled')
+                        ).toBeTruthy();
+                    });
+                });
+
+                describe('should update container toolbar with disabled actions due to max contentlets limit', () => {
+                    beforeEach(() => {
+                        dummyContainer.innerHTML = `
+                            <div data-dot-object="container" data-max-contentlets="2" data-dot-can-add="CONTENT,WIDGET,FORM">
+                                <div data-dot-object="contentlet">
+                                    <div class="large-column"></div>
+                                </div>
+                            </div>
+                        `;
+                        const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
+                        htmlElement.appendChild(dummyContainer);
+                        dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
+                    });
+
+                    it('should create container toolbar', () => {
+                        containerEl = <HTMLElement>testDoc.querySelector('[data-dot-object="container"]');
+                        containerEl.innerHTML = `
+                        <div data-dot-object="contentlet">
+                            <div class="large-column"></div>
+                        </div>
+                        <div data-dot-object="contentlet">
+                            <div class="large-column"></div>
+                        </div>
+                        `;
+                        dotEditContentToolbarHtmlService.updateContainerToolbar(containerEl);
+                        menuItems = testDoc.querySelectorAll('.dotedit-menu__item ');
+
+                        expect(menuItems.length).toEqual(3);
+                        expect(
+                            menuItems[0].classList.contains('dotedit-menu__item--disabled')
+                        ).toBeTruthy();
+                        expect(
+                            menuItems[1].classList.contains('dotedit-menu__item--disabled')
+                        ).toBeTruthy();
                         expect(
                             menuItems[2].classList.contains('dotedit-menu__item--disabled')
                         ).toBeTruthy();
