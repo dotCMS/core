@@ -51,6 +51,7 @@
                 <input pPassword id="dot-my-account-current-password-input"
                     #currentPasswordInput="ngModel"
                     name="password"
+                    [feedback]="false"
                     [(ngModel)]="accountUser.currentPassword"
                     type="password"
                     (keyup)="message=''"
@@ -70,7 +71,6 @@
                     [(ngModel)]="accountUser.newPassword"
                     (keyup)="checkPasswords()"
                     type="password"
-                    (keyup)="message=''"
                     [disabled]="!changePasswordOption"/>
             </span>
         </div>
@@ -81,8 +81,8 @@
                     name="confirmPassword"
                     [(ngModel)]="passwordConfirm"
                     (keyup)="checkPasswords()"
+                    [feedback]="false"
                     type="password"
-                    (keyup)="message=''"
                     [disabled]="!changePasswordOption"/>
             </span>
         </div>

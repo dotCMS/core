@@ -18,6 +18,9 @@ import { DotMessageService } from '@services/dot-messages-service';
 import { DotcmsConfigService, LoginService, User, Auth } from 'dotcms-js';
 import { StringFormat } from 'src/app/api/util/stringFormat';
 
+interface AccountUserForm extends AccountUser {
+    confirmPassword?: string;
+}
 @Component({
     selector: 'dot-my-account',
     styleUrls: ['./dot-my-account.component.scss'],
@@ -106,15 +109,20 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
                     }
                 };
 
-                this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-                    this.dialogActions = {
-                        ...this.dialogActions,
-                        accept: {
-                            ...this.dialogActions.accept,
-                            disabled: (this.changePasswordOption && !this.passwordMatch) || !this.form.valid
-                        }
-                    };
-                });
+                this.form.valueChanges
+                    .pipe(takeUntil(this.destroy$))
+                    .subscribe((valueChange: AccountUserForm) => {
+                        this.dialogActions = {
+                            ...this.dialogActions,
+                            accept: {
+                                ...this.dialogActions.accept,
+                                disabled:
+                                    (this.changePasswordOption &&
+                                        valueChange.newPassword !== valueChange.confirmPassword) ||
+                                    !this.form.valid
+                            }
+                        };
+                    });
             });
     }
 
