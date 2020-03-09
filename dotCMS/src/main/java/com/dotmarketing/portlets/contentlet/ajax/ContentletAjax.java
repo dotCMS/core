@@ -1188,7 +1188,7 @@ public class ContentletAjax {
 				Long languageId = con.getLanguageId();
 				searchResult.put("languageId", languageId.toString());
 				final Language language = APILocator.getLanguageAPI().getLanguage(languageId);
-				searchResult.put("language", language.getCountryCode() + '_' + language.getLanguageCode());
+				searchResult.put("language", language.toString());
 				searchResult.put("permissions", permissionsSt.toString());
 
 				//Add mimeType
