@@ -439,7 +439,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			+ ",'" + this.DOT_FIELD_TYPE + "'"
 			+ ",'" + type + "');";
 
-			return "<input type=\"text\" dojoType=\"dijit.form.TextBox\" onKeyUp=\"contentSelector._doDebounceSearch()\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
+			return "<input type=\"text\" dojoType=\"dijit.form.TextBox\" onKeyUp=\"contentSelector._doDebounceSearch()\" data-dojo-props=\"intermediateChanges:true\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
 
 		}
 	},
