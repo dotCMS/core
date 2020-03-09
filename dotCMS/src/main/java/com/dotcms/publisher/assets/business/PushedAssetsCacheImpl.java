@@ -49,7 +49,7 @@ public class PushedAssetsCacheImpl implements PushedAssetsCache, Cachable {
 		return cacheGroups;
 	}
 
-	public synchronized void clearCache() {
+	public void clearCache() {
 		cache.flushGroup(cacheGroup);
 	}
 
