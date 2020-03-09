@@ -410,6 +410,10 @@ public class ESIndexResource {
         }
     }
 
+    /**
+     * @deprecated Use the Update Settings API of Elasticsearch. See <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-update-settings.html">Update Settings</a>
+     */
+    @Deprecated
     @PUT
     @Path("/updatereplica/{params:.*}")
     public Response updateReplica(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,@PathParam("params") String params) {

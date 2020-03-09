@@ -1035,12 +1035,13 @@ public class ContentletAjax {
 				ContentType type = con.getContentType();
 				searchResult.put("typeVariable", type.variable());
 				searchResult.put("baseType",type.baseType().name());
-				for (String fieldContentlet : fieldsMapping.keySet()) {
+				for (final String fieldContentlet : fieldsMapping.keySet()) {
 					String fieldValue = null;
 					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
 						fieldValue = (con.getMap().get(fieldContentlet)).toString();
 					}
-					Field field = (Field) fieldsMapping.get(fieldContentlet);
+
+					final Field field = fieldsMapping.get(fieldContentlet);
 					if (UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE.toString()) ||
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
@@ -1068,6 +1069,13 @@ public class ContentletAjax {
 							UtilMethods.isSet(ident) &&
 							UtilMethods.isSet(ident.getAssetName())) {
 						fieldValue = ident.getAssetName();
+					}
+
+					// when a content type is selected and the field is listed and binary, instead of displaying the path, must display just the name
+					if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && field.isListed() && field.getFieldType().equals(
+							Field.FieldType.BINARY.toString())) {
+
+						searchResult.put(fieldContentlet+"_title_", con.getBinary(fieldContentlet).getName());
 					}
 
 					searchResult.put(fieldContentlet, fieldValue);

@@ -1,6 +1,7 @@
 package com.dotmarketing.sitesearch.model;
 
 import java.util.Date;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class SiteSearchAudit {
     private String jobId;
@@ -113,5 +114,10 @@ public class SiteSearchAudit {
     }
     public void setUrlmapsCount(int urlmapsCount) {
         this.urlmapsCount = urlmapsCount;
+    }
+
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
     }
 }

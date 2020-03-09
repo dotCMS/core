@@ -24,11 +24,21 @@ public interface SiteSearchAPI {
 
 	List<String> listIndices();
 
+	/**
+	 * This basically tells you if the index passed as parameter is the default site search index or not
+	 * @param indexName
+	 * @return
+	 * @throws DotDataException
+	 */
+    boolean isDefaultIndex(String indexName) throws DotDataException;
+
 	void activateIndex(String indexName) throws DotDataException;
 
 	void deactivateIndex(String indexName) throws DotDataException, IOException;
 
 	boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticsearchException, IOException;
+
+	boolean setAlias(String indexName, final String alias);
 
 	List<ScheduledTask> getTasks() throws SchedulerException;
 

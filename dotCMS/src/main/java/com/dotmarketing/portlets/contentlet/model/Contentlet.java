@@ -48,6 +48,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,8 +65,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -233,7 +234,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   /**
    * Create a contentlet based on a map (makes a copy of it)
    *
-   * @param map
+   * @param mapIn
    */
   public Contentlet(final Map<String, Object> mapIn) {
     this();
@@ -274,27 +275,24 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public String getTitle(){
     	try {
 
-    		//Verifies if the content type has defined a title field
-			Optional<com.dotcms.contenttype.model.field.Field> fieldWithTitleFound = this.getContentType().fields().stream().
-					filter(field -> field.variable().equals(TITTLE_KEY)).findAny();
+    		if (UtilMethods.isSet(this.map.get(TITTLE_KEY))) {
 
-
-			if (fieldWithTitleFound.isPresent()) {
-				return map.get(TITTLE_KEY)!=null?map.get(TITTLE_KEY).toString():null;
-			} else {
-				Optional<com.dotcms.contenttype.model.field.Field>
-						fieldWithSuspectTitleFound = getFieldWithVarStartingWithTitleWord();
-
-				if (fieldWithSuspectTitleFound.isPresent()) {
-					return map.get(fieldWithSuspectTitleFound.get().variable())!=null
-							?map.get(fieldWithSuspectTitleFound.get().variable()).toString()
-							:null;
-				}
+    			return map.get(TITTLE_KEY).toString();
 			}
 
-			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
-			map.put(TITTLE_KEY, title);
+    		//Verifies if the content type has defined a title field
+			final Optional<com.dotcms.contenttype.model.field.Field>
+					fieldWithSuspectTitleFound = getFieldWithVarStartingWithTitleWord();
 
+			String title = fieldWithSuspectTitleFound.isPresent() &&  map.get(fieldWithSuspectTitleFound.get().variable())!=null?
+				map.get(fieldWithSuspectTitleFound.get().variable()).toString(): null;
+
+			if (!UtilMethods.isSet(title)) {
+				title = getContentletAPI().getName(
+						this, getUserAPI().getSystemUser(), false);
+			}
+
+			map.put(TITTLE_KEY, title);
     	    return title;
 		} catch (Exception e) {
 			Logger.debug(this,"Unable to get title for contentlet, id: " + getIdentifier(), e);

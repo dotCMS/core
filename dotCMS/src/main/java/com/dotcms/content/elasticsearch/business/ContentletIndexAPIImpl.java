@@ -502,8 +502,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
                 try {
                     Logger.info(this.getClass(), "Updating and optimizing ElasticSearch Indexes");
-                    esIndexApi.moveIndexBackToCluster(newInfo.getWorking());
-                    esIndexApi.moveIndexBackToCluster(newInfo.getLive());
                     optimize(ImmutableList.of(newInfo.getWorking(), newInfo.getLive()));
                 } catch (Exception e) {
                     Logger.warnAndDebug(this.getClass(), "unable to expand ES replicas:" + e.getMessage(), e);
@@ -1181,10 +1179,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final String rel = info.getReindexLive();
 
             APILocator.getIndiciesAPI().point(newinfo);
-
-            esIndexApi.moveIndexBackToCluster(rew);
-            esIndexApi.moveIndexBackToCluster(rel);
-
         } catch (Exception e) {
             throw new ElasticsearchException(e.getMessage(), e);
         }
@@ -1232,10 +1226,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         } else if (IndexType.LIVE.is(indexName)) {
             builder.setLive(null);
         } else if (IndexType.REINDEX_WORKING.is(indexName)) {
-            esIndexApi.moveIndexBackToCluster(info.getReindexWorking());
             builder.setReindexWorking(null);
         } else if (IndexType.REINDEX_LIVE.is(indexName)) {
-            esIndexApi.moveIndexBackToCluster(info.getReindexLive());
             builder.setReindexLive(null);
         }
         APILocator.getIndiciesAPI().point(builder.build());
