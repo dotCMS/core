@@ -4,7 +4,7 @@ dojo.require("dijit._Widget");
 dojo.require("dijit.Dialog");
 dojo.require("dijit.form.Button");
 
-dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
+    dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
     myId: "remotePublisherDia",
     title: "",
@@ -23,7 +23,6 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
     },
 
     show: function () {
-
         var self = this;
         //Required clean up as these modals has duplicated widgets and collide without a clean up
 
@@ -55,11 +54,10 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         var connection = dojo.connect(dia, "onLoad", function () {
 
             dojo.disconnect(connection);
-
             var hasCondition = (dojo.byId("hasCondition") ? dojo.byId("hasCondition").value : "");
             if(hasCondition === 'true'){
                var actionId = self.workflow.actionId;
-               container.evaluateCondition(actionId);
+               container.evaluateCondition(actionId, this.title);
                return;
             }
 
@@ -114,8 +112,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
             var environmentSelect = dijit.byId("environmentSelect");
             if(environmentSelect){
-               environmentSelect.set('store',container.environmentStore);
-               environmentSelect.searchAttr = 'name';
+                environmentSelect.searchAttr = 'name';
                environmentSelect.displayedValue = '0';
                environmentSelect.startup();
             }
@@ -147,8 +144,27 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         });
 
         dia.set(url);
+        const eventData = {
+            assetIdentifier: container.assetIdentifier || this.workflow.inode,
+            dateFilter: this.dateFilter,
+            isBundle: container.isBundle,
+            removeOnly: this.removeOnly,
+            restricted: this.restricted,
+            cats: this.cats,
+            title: this.title
+        };
 
-        dia.show();
+        if (this.workflow && this.workflow.actionId) {
+            container.evaluateCondition(this.workflow.actionId, this.title, eventData);
+        } else {
+            var customEvent = document.createEvent("CustomEvent");
+            customEvent.initCustomEvent("ng-event", false, false,  {
+                name: "push-publish",
+                data: eventData
+            });
+            document.dispatchEvent(customEvent);
+        }
+         //dia.show();
     },
 
     hide: function () {
