@@ -11,6 +11,8 @@ import com.dotcms.system.event.local.type.staticpublish.StaticPublishStartEvent;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
@@ -18,17 +20,15 @@ import com.liferay.portal.model.User;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import sun.rmi.runtime.Log;
 
 public class PublisherAPIImpl implements PublisherAPI {
 
     private final PublishAuditAPI publishAuditAPI = PublishAuditAPI.getInstance();
-    private LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-    private Map<String,FilterDescriptor> loadedFilters = new ConcurrentHashMap<>();
+    private final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+    private final Map<String,FilterDescriptor> loadedFilters = new ConcurrentHashMap<>();
 
 
     @Override
@@ -185,7 +185,43 @@ public class PublisherAPIImpl implements PublisherAPI {
 
     @Override
     public FilterDescriptor getFilterDescriptorByKey(final String filterKey) {
-        return this.loadedFilters.get(filterKey);
+        final FilterDescriptor defaultFilter = this.loadedFilters.values().stream().filter(filterDescriptor -> filterDescriptor.isDefaultFilter()).findAny().get();
+        if(!UtilMethods.isSet(filterKey)){
+            return defaultFilter;
+        }
+        return this.loadedFilters.getOrDefault(filterKey,defaultFilter);
     }
 
+    @Override
+    public PublisherFilter createPublisherFilter(final String bundleId)
+            throws DotDataException, DotSecurityException {
+
+        final String filterKey = APILocator.getBundleAPI().getBundleById(bundleId).getFilterKey();
+        final FilterDescriptor filterDescriptor = this.getFilterDescriptorByKey(filterKey);
+
+        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl((Boolean)filterDescriptor.getFilters().getOrDefault("dependencies",true),
+                (Boolean)filterDescriptor.getFilters().getOrDefault("relationships",true));
+
+        if(filterDescriptor.getFilters().containsKey("excludeClasses")){
+            ((ArrayList)filterDescriptor.getFilters().get("excludeClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type.toString()));
+        }
+
+        if(filterDescriptor.getFilters().containsKey("excludeDependencyClasses")){
+            ((ArrayList)filterDescriptor.getFilters().get("excludeDependencyClasses")).stream().forEach(type -> publisherFilter.addTypeToExcludeDependencyClassesSet(type.toString()));
+        }
+
+        if(filterDescriptor.getFilters().containsKey("excludeQuery")){
+            final String query = filterDescriptor.getFilters().get("excludeQuery").toString();
+            final List<Contentlet> contentlets = APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false);
+            contentlets.stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(contentlet.getIdentifier()));
+        }
+
+        if(filterDescriptor.getFilters().containsKey("excludeDependencyQuery")){
+            final String query = filterDescriptor.getFilters().get("excludeDependencyQuery").toString();
+            final List<Contentlet> contentlets = APILocator.getContentletAPI().search(query, 0, 0, "moddate", APILocator.systemUser(), false);
+            contentlets.stream().forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
+        }
+
+        return publisherFilter;
+    }
 }

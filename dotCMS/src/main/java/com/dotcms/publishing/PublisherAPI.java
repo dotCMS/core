@@ -1,6 +1,7 @@
 package com.dotcms.publishing;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
@@ -55,4 +56,6 @@ public interface PublisherAPI {
     Map<String, FilterDescriptor> getFilterMap();
 
     FilterDescriptor getFilterDescriptorByKey(final String filterKey);
+
+    PublisherFilter createPublisherFilter(final String bundleId) throws DotDataException, DotSecurityException;
 }
