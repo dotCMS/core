@@ -199,15 +199,16 @@
             fillResultsTable(headers, data);
             fillCardView(data)
             const card = getViewCardEl();
-            const list = getListEl();;
+            const list = getListEl();
 
             if (state.view === 'list') {
                 list.style.display = ''
-                card.display = 'none'
+                card.style.display = 'none'
             } else {
                 list.style.display = 'none'
-                card.display = ''
+                card.style.display = ''
             }
+
         }
 
 
@@ -1817,7 +1818,7 @@
                     disableBulkAvailableActionsButton();
                 }
             });
-			viewCard.addEventListener('onCardClick', (e) => {
+			viewCard.addEventListener('cardClick', (e) => {
 				openEditModal(e.detail);
 			});
             dojo.byId('metaMatchingResultsDiv').appendChild(viewCard);
