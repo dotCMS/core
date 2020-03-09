@@ -691,12 +691,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                     }
                 });
                 document.dispatchEvent(customEvent);
-                // dojox.html.set(dojo.byId("pushPublish-container"), html, {
-                //     executeScripts: true,
-                //     renderStyles: true,
-                //     scriptHasHooks: true,
-                //     parseContent: true
-                // });
             },
             error: function(error){
                 console.error(error);

@@ -4,7 +4,7 @@ dojo.require("dijit._Widget");
 dojo.require("dijit.Dialog");
 dojo.require("dijit.form.Button");
 
-    dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
+dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
 
     myId: "remotePublisherDia",
     title: "",
@@ -112,7 +112,8 @@ dojo.require("dijit.form.Button");
 
             var environmentSelect = dijit.byId("environmentSelect");
             if(environmentSelect){
-                environmentSelect.searchAttr = 'name';
+               environmentSelect.set('store',container.environmentStore);
+               environmentSelect.searchAttr = 'name';
                environmentSelect.displayedValue = '0';
                environmentSelect.startup();
             }
