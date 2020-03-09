@@ -306,6 +306,17 @@ public class User extends UserModel implements Recipient {
       return UserAPI.CMS_ANON_USER_ID.equals(this.getUserId());
   }
 
+	public boolean isAdmin() {
+
+		return Try.of(() -> {
+			if (isAnonymousUser()) {
+				return false;
+			}
+			return (APILocator.getRoleAPI().doesUserHaveRole(this, APILocator.getRoleAPI().loadCMSAdminRole()));
+
+		}).getOrElse(false);
+	}
+
   public boolean isBackendUser() {
 
     return Try.of(() -> {

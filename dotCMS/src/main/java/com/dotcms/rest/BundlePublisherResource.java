@@ -1,5 +1,8 @@
 package com.dotcms.rest;
 
+import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.mock.request.HttpHeaderHandlerHttpServletRequestWrapper;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
@@ -8,6 +11,8 @@ import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.pusher.PushPublisher;
+
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -16,13 +21,17 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,15 +54,16 @@ public class BundlePublisherResource {
      * server on this end point and if the security tokens match. If all the validations are correct the bundle will be add it<br/>
      * to the {@link PublishThread Publish Thread}.
      *
-     * @param fileName       File name to be published
-     * @param auth_token_enc Authentication token
-     * @param groupId        Group who sent the Bundle
-     * @param endpointId     End-point who sent the Bundle
-	 * @param type			 response type
-	 * @param callback 		 response callback
-	 * @param bundleName	 The name for the Bundle to publish
-	 * @param forcePush 	 true/false to Force the push
-     * @param req            HttpRequest
+     * @param fileName        File name to be published
+     * @param authTokenDigest Authentication token
+     * @param groupId         Group who sent the Bundle
+     * @param endpointId      End-point who sent the Bundle
+	 * @param type			  response type
+	 * @param callback 		  response callback
+	 * @param bundleName	  The name for the Bundle to publish
+	 * @param forcePush 	  true/false to Force the push
+     * @param request         {@link HttpServletRequest}
+	 * @param response        {@link HttpServletResponse}
      * @return Returns a {@link Response} object with a 200 status code if success or a 500 error code if anything fails on the Publish process
      * @see PublishThread
      */
@@ -61,124 +71,130 @@ public class BundlePublisherResource {
     @Path ("/publish")
     @Consumes(MediaType.APPLICATION_OCTET_STREAM)
 	public Response publish(
-			@QueryParam("FILE_NAME") String fileName,
-			@QueryParam("AUTH_TOKEN") String auth_token_digest,
-			@QueryParam("GROUP_ID") String groupId,
-			@QueryParam("ENDPOINT_ID") String endpointId,
-			@QueryParam("type") String type,
-			@QueryParam("callback") String callback,
-			@QueryParam("BUNDLE_NAME") String bundleName,
-			@QueryParam("FORCE_PUSH") final boolean forcePush,
-			@Context HttpServletRequest req
-	) {
-    	try {
-    		try (InputStream bundleStream = req.getInputStream()) {
-		        //Creating an utility response object
-		        Map<String, String> paramsMap = new HashMap<String, String>();
-		        paramsMap.put( "type", type );
-		        paramsMap.put( "callback", callback );
-		        ResourceResponse responseResource = new ResourceResponse( paramsMap );
+			@QueryParam("FILE_NAME")   final String fileName,
+			@QueryParam("AUTH_TOKEN")  final String authTokenDigest,
+			@QueryParam("GROUP_ID")    final String groupId,
+			@QueryParam("ENDPOINT_ID") final String endpointId,
+			@QueryParam("type")        final String type,
+			@QueryParam("callback")    final String callback,
+			@QueryParam("BUNDLE_NAME") final String bundleName,
+			@QueryParam("FORCE_PUSH")  final boolean forcePush,
+			@Context final HttpServletRequest  request,
+			@Context final HttpServletResponse response
+	) throws Exception {
 
-				String remoteIP = "";
-				try {
+		final ResourceResponse responseResource = new ResourceResponse(
+				CollectionsUtils.map("type", type, "callback", callback));
+		final String remoteIP = UtilMethods.isSet(request.getRemoteHost())?
+				request.getRemoteHost() : request.getRemoteAddr();
+		final PublishingEndPoint sendingEndPointByAddress =
+				this.endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
+		final InitDataObject initDataObject = this.init(authTokenDigest, request, response);
 
-					remoteIP = req.getRemoteHost();
-					if(!UtilMethods.isSet(remoteIP))
-						remoteIP = req.getRemoteAddr();
+		if (null == initDataObject || !this.isAdmin(initDataObject.getUser())) {
 
-					HibernateUtil.startTransaction();
+			if (sendingEndPointByAddress == null || !isValidToken(authTokenDigest, remoteIP, sendingEndPointByAddress)) {
 
-					PublishingEndPoint mySelf = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
+				Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " invalid endpoint or token");
+				return responseResource.responseError(HttpStatus.SC_UNAUTHORIZED);
+			}
+		}
 
-					if(mySelf==null || !isValidToken(auth_token_digest, remoteIP, mySelf)) {
-						bundleStream.close();
-						Logger.error(this.getClass(), "Push Publishing failed from " + remoteIP + " invalid endpoint or token");
-						
-		        return responseResource.responseError( HttpStatus.SC_UNAUTHORIZED );
-		       }
+		this.publishBundle(fileName, groupId, endpointId, bundleName,
+				forcePush, request, remoteIP, sendingEndPointByAddress);
 
-					String bundlePath = ConfigUtils.getBundlePath()+File.separator+MY_TEMP;
-					String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
-
-		            PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable( mySelf.getId(), mySelf.getId(), bundleFolder, true );
-
-		            if(bundleName.trim().length()>0) {
-					    // save bundle if it doesn't exists
-		                Bundle foundBundle = APILocator.getBundleAPI().getBundleById( bundleFolder );
-		                if ( foundBundle == null || foundBundle.getId() == null ) {
-		                    Bundle bundle = new Bundle();
-							bundle.setId(bundleFolder);
-							bundle.setName(bundleName);
-							bundle.setPublishDate(Calendar.getInstance().getTime());
-							bundle.setOwner(APILocator.getUserAPI().getSystemUser().getUserId());
-							bundle.setForcePush(forcePush);
-		                    APILocator.getBundleAPI().saveBundle(bundle);
-					    }
-					}
-
-					//Write file on FS
-					FileUtil.writeToFile(bundleStream, bundlePath+fileName);
-
-					//Start thread
-					if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
-						new Thread(new PublishThread(fileName, groupId, endpointId, status)).start();
-					}
-
-					HibernateUtil.commitTransaction();
-
-					return Response.status(HttpStatus.SC_OK).build();
-				} catch (NumberFormatException e) {
-				    try {
-		                HibernateUtil.rollbackTransaction();
-		            } catch (DotHibernateException e1) {
-		                Logger.error(this, "error rollback",e1);
-		            }
-					Logger.error(PublisherQueueJob.class,e.getMessage(),e);
-				} catch (Exception e) {
-				    try {
-		                HibernateUtil.rollbackTransaction();
-		            } catch (DotHibernateException e1) {
-		                Logger.error(this, "error rollback",e1);
-		            }
-					Logger.error(PublisherQueueJob.class, "Error caused by remote call of: "+remoteIP);
-					Logger.error(PublisherQueueJob.class,e.getMessage(),e);
-				}
-				finally {
-				    try {
-		                HibernateUtil.closeSession();
-		            } catch (DotHibernateException e) {
-		                Logger.error(this, "error close session",e);
-		            }
-				}
-    		}
-    	} catch (IOException e) {
-    		Logger.error(PublisherQueueJob.class,e.getMessage(),e);
-    	}
-
-		return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).build();
+		return Response.status(HttpStatus.SC_OK).build();
 	}
 
-    /**
+	final InitDataObject init (final String authTokenDigest, final HttpServletRequest  request,
+							   final HttpServletResponse response) {
+
+    	try {
+			return new WebResource.InitBuilder().
+					rejectWhenNoUser(false). // it would be a soft validation so not reject
+					requestAndResponse(
+					new HttpHeaderHandlerHttpServletRequestWrapper(request,
+							CollectionsUtils.map(
+									"Authorization", (name, value) -> // if the authorization is set, uses it, otherwise try with the secret (could be a jwt)
+											UtilMethods.isSet(value) ? value : JsonWebTokenAuthCredentialProcessor.BEARER + authTokenDigest
+							)), response).init();
+		}catch (Exception e) {
+    		return null;
+		}
+
+	}
+
+
+	@WrapInTransaction
+	private void publishBundle(final String fileName,
+								  final String groupId,
+								  final String endpointId,
+								  final String bundleName,
+								  final boolean forcePush,
+								  final HttpServletRequest request,
+								  final String remoteIP,
+								  final PublishingEndPoint sendingEndPointByAddress) throws Exception {
+
+		try (InputStream bundleStream = request.getInputStream()) {
+
+			final String bundlePath         = ConfigUtils.getBundlePath()+ File.separator + MY_TEMP;
+			final String bundleFolder       = fileName.substring(0, fileName.indexOf(".tar.gz"));
+			final PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable(
+					sendingEndPointByAddress.getId(), sendingEndPointByAddress.getId(), bundleFolder, true);
+
+			if(bundleName.trim().length() > 0) {
+				// save bundle if it doesn't exists
+				final Bundle foundBundle = APILocator.getBundleAPI().getBundleById(bundleFolder);
+				if (foundBundle == null || foundBundle.getId() == null) {
+
+					final Bundle bundle = new Bundle();
+					bundle.setId(bundleFolder);
+					bundle.setName(bundleName);
+					bundle.setPublishDate(Calendar.getInstance().getTime());
+					bundle.setOwner(APILocator.getUserAPI().getSystemUser().getUserId());
+					bundle.setForcePush(forcePush);
+					APILocator.getBundleAPI().saveBundle(bundle);
+				}
+			}
+
+			//Write file on FS
+			FileUtil.writeToFile(bundleStream, bundlePath + fileName);
+
+			//Start thread
+			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
+
+				// todo: shouldn't be handle by the DotConcurrent?
+				new Thread(new PublishThread(fileName, groupId, endpointId, status)).start();
+			}
+		} catch (Exception e) {
+
+			Logger.error(PublisherQueueJob.class, "Error caused by remote call of: "+remoteIP);
+			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
+			throw e;
+		}
+	}
+
+	private boolean isAdmin(final User user) {
+
+    	return null != user && user.isBackendUser() && user.isAdmin();
+	}
+
+	/**
      * Validates a received token
      *
      * @param token    Token to validate
      * @param remoteIP Sender IP
-     * @param mySelf   Current end point
+     * @param publishingEndPoint   Current end point
      * @return True if valid
      * @throws IOException If fails reading the security token
      */
-    public static boolean isValidToken ( String token, String remoteIP, PublishingEndPoint mySelf ) throws IOException {
+    public static boolean isValidToken (final String token,
+										final String remoteIP,
+										final PublishingEndPoint publishingEndPoint) throws IOException {
 
         //My key
-        Optional<String> myKey=PushPublisher.retriveEndpointKeyDigest(mySelf);
-        if(!myKey.isPresent()) {
-          return false;
-        }
-
-
-        return token.equals( myKey.get() );
+        final  Optional<String> endpointKeyDigest = PushPublisher.retriveEndpointKeyDigest(publishingEndPoint);
+        return endpointKeyDigest.isPresent()? token.equals( endpointKeyDigest.get() ): false;
     }
-
-
 
 }
