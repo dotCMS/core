@@ -48,7 +48,7 @@
                             <input
                                 type="text"
                                 dojoType="dijit.form.TextBox"
-                                onKeyDown="contentSelector._doSearch()"
+                                onKeyDown="contentSelector._doDebounceSearch()"
                                 dojoAttachPoint="generalSearch"
                             />
                         </dd>
