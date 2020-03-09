@@ -3,10 +3,8 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.content.elasticsearch.business.ESIndexHelper.SNAPSHOT_PREFIX;
 import static com.dotcms.content.elasticsearch.business.IndiciesInfo.CLUSTER_PREFIX;
 import static com.dotcms.util.DotPreconditions.checkArgument;
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import com.dotcms.cluster.ClusterUtils;
-import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
@@ -34,7 +32,18 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -92,7 +101,6 @@ import org.elasticsearch.cluster.health.ClusterIndexHealth;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.rest.RestStatus;
@@ -117,7 +125,6 @@ public class ESIndexAPI {
 
 	final private ContentletIndexAPI iapi;
 	final private ESIndexHelper esIndexHelper;
-	private final ClusterAPI clusterAPI;
 
 	public enum Status { ACTIVE("active"), INACTIVE("inactive"), PROCESSING("processing");
 		private final String status;
@@ -134,7 +141,6 @@ public class ESIndexAPI {
 	public ESIndexAPI(){
 		this.iapi = new ContentletIndexAPIImpl();
 		this.esIndexHelper = ESIndexHelper.getInstance();
-		this.clusterAPI = APILocator.getClusterAPI();
 	}
 
     private class IndexSortByDate implements Comparator<String> {
@@ -395,10 +401,6 @@ public class ESIndexAPI {
             zipIn.getNextEntry();
             br = new BufferedReader(new InputStreamReader(zipIn));
 
-            // setting number_of_replicas=0 to improve the indexing while restoring
-            // also we restrict the index to the current server
-            moveIndexToLocalNode(index);
-
             // wait a bit for the changes be made
             Thread.sleep(1000L);
 
@@ -474,10 +476,6 @@ public class ESIndexAPI {
             if (br != null) {
                 br.close();
             }
-
-            // back to the original configuration for number_of_replicas
-            // also let it go other servers
-            moveIndexBackToCluster(index);
 
             final List<String> list = new ArrayList<>();
             list.add(index);
@@ -585,70 +583,6 @@ public class ESIndexAPI {
         AdminLogger.log(this.getClass(), "clearIndex", "Index: " + indexName + " cleared");
 	}
 
-	/**
-	 * unclusters an index, including changing the routing to all local
-	 * @param index
-	 * @throws IOException
-	 */
-	private void moveIndexToLocalNode(final String index) throws IOException {
-		UpdateSettingsRequest request = new UpdateSettingsRequest(getNameWithClusterIDPrefix(index));
-		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-
-		final String nodeName="dotCMS_" + APILocator.getServerAPI().readServerId();
-
-		request.settings(jsonBuilder().startObject()
-				.startObject("index")
-				.field("number_of_replicas",0)
-				.field("routing.allocation.include._name",nodeName)
-				.endObject()
-				.endObject().toString(), XContentType.JSON);
-
-		RestHighLevelClientProvider.getInstance().getClient()
-				.indices().putSettings(request, RequestOptions.DEFAULT);
-    }
-
-	/**
-	 * clusters an index, including changing the routing
-	 * @param index
-	 * @throws IOException
-	 */
-    public void moveIndexBackToCluster(final String index) throws IOException {
-
-        int replicas = getReplicas();
-
-        Settings settings =
-                Settings.builder()
-                        .put("index.number_of_replicas", replicas)
-                        .put("index.routing.allocation.include._name","*")
-                        .build();
-
-		UpdateSettingsRequest request = new UpdateSettingsRequest(getNameWithClusterIDPrefix(index));
-		request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-		request.settings(settings);
-		RestHighLevelClientProvider.getInstance().getClient()
-				.indices().putSettings(request, RequestOptions.DEFAULT);
-    }
-
-    private int getReplicas() {
-        int replicas = 0;
-        if (clusterAPI.isTransportAutoWire()){
-            int serverCount;
-
-            try {
-                serverCount = APILocator.getServerAPI().getAliveServersIds().length;
-            } catch (DotDataException e) {
-                Logger.error(this.getClass(), "Error getting live server list for server count, using 1 as default.");
-                serverCount = 1;
-            }
-            // formula is (live server count (including the ones that are down but not yet timed out) - 1)
-
-            if(serverCount>0) {
-                replicas = serverCount - 1;
-            }
-        }
-        return replicas;
-    }
-
     /**
      * Creates a new index.  If settings is null, the getDefaultIndexSettings() will be applied,
      * if shards <1, then the default # of shards will be set
@@ -676,7 +610,7 @@ public class ESIndexAPI {
         }
 
 		map.put("number_of_shards", shards);
-		map.put("index.number_of_replicas", getReplicas());
+		map.put("index.auto_expand_replicas", "0-all");
 		map.put("index.mapping.total_fields.limit",
 			Config.getIntProperty("ES_INDEX_MAPPING_TOTAL_FIELD_LIMITS", 5000));
         map.put("index.mapping.nested_fields.limit",

@@ -5,7 +5,6 @@ import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.cluster.business.ClusterAPI;
-import com.dotcms.cluster.business.ClusterAPIImpl;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -912,15 +911,6 @@ public class APILocator extends Locator<APIIndex>{
 		return (HTMLPageAssetRenderedAPI) getInstance(APIIndex.HTMLPAGE_ASSET_RENDERED_API);
 	}
 
-	/*
-	 * Creates a single instance of the {@link ClusterAPI}
-	 *
-	 * @return The {@link ClusterAPI} class.
-	 */
-	public static ClusterAPI getClusterAPI() {
-		return (ClusterAPI) getInstance(APIIndex.CLUSTER_API);
-	}
-
 	/**
 	 * Creates a single instance of the {@link ThemeAPI} class.
 	 *
@@ -1115,7 +1105,6 @@ enum APIIndex
 	VANITY_URLS_API,
 	MULTI_TREE_API,
 	HTMLPAGE_ASSET_RENDERED_API,
-	CLUSTER_API,
 	THEME_API,
 	API_TOKEN_API,
 	GRAPHQL_API,
@@ -1196,7 +1185,6 @@ enum APIIndex
 			case LOCAL_SYSTEM_EVENTS_API: return LocalSystemEventsAPIFactory.getInstance().getLocalSystemEventsAPI();
 			case MULTI_TREE_API: return new MultiTreeAPIImpl();
 			case HTMLPAGE_ASSET_RENDERED_API: return new HTMLPageAssetRenderedAPIImpl();
-			case CLUSTER_API: return new ClusterAPIImpl();
 			case THEME_API: return new ThemeAPIImpl();
 			case GRAPHQL_API: return  new GraphqlAPIImpl();
 	        case API_TOKEN_API: return new ApiTokenAPI();

@@ -506,20 +506,21 @@ function doCreateSiteSearch(alias,number) {
 
 function runNow(action) {
 	//var value = dijit.byId(action).getValue();
-
-	if(action == 'now'){
-		
+	let incremental = dijit.byId('incremental');
+	if(action === 'now'){
 		dojo.query('.showScheduler').style({display:"none"});
 		dojo.query('.showRunNow').style({display:""});
 		dijit.byId("QUARTZ_JOB_NAME").setValue("<%=SiteSearchAPI.ES_SITE_SEARCH_EXECUTE_JOB_NAME%>");
+
+		incremental.attr('disabled',true);
+		incremental.attr('checked',false);
 	}
-	else if (action == 'schedule'){
+	else if (action === 'schedule'){
 		dojo.query('.showScheduler').style({display:""});
 		dojo.query('.showRunNow').style({display:"none"});
 		dijit.byId("QUARTZ_JOB_NAME").setValue("");
+		incremental.attr('disabled',false)
 	}
-
-
 }
 
 function scheduleJob() {

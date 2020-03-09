@@ -77,6 +77,7 @@ String includeExclude = (String) props.get("includeExclude") ==null ? "all": (St
 
 boolean hasPath = false;
 
+final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSearch();
 
 %>
 
@@ -167,13 +168,10 @@ boolean hasPath = false;
 				<span class="required"></span> <strong><%= LanguageUtil.get(pageContext, "Index-Name") %>: </strong><a href="javascript: ;" id="aliasHintHook">?</a> <span dojoType="dijit.Tooltip" connectId="aliasHintHook" id="aliasHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "search-alias-hint") %></span>
 			</dt>
 			<dd>
-				<select id="indexAlias" name="indexAlias" dojoType="dijit.form.FilteringSelect" required="true" style="width:400px">
-					<option value="create-new"><%= LanguageUtil.get(pageContext, "Create-New-Make-Default") %></option>
-					<%for(String x : indexes){ %>
+				<select id="indexAlias" name="indexAlias" dojoType="dijit.form.ComboBox" required="true" style="width:400px">
+					<%for(final String x : indexes){ %>
 						<option value="<%=alias.get(x) == null ? x:alias.get(x)%>" <%=(x.equals(indexName)||(alias.get(x)!=null && alias.get(x).equals(indexName))) ? "selected='true'": ""%>>
-						  <%=alias.get(x) == null ? x:alias.get(x) %>
-						  <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch())) ?
-						          "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %>
+						  <%=alias.get(x) == null ? x:alias.get(x) %> <%=(x.equals(siteSearch)) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %>
 						</option>
 					<%} %>
 				</select>
@@ -185,7 +183,7 @@ boolean hasPath = false;
 			<dd>
 				<div class="checkbox">
 					<input  type="checkbox" dojoType="dijit.form.CheckBox" id="incremental" name="incremental" value="true" <%=(incremental) ? "checked='true'": "" %>>
-					<label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %></label>
+					<label for="incremental">&nbsp;<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Incremental")) %>&nbsp;</label>
 					<a href="javascript: ;" id="incrementalHintHook1">?</a>
 					<span dojoType="dijit.Tooltip" connectId="incrementalHintHook1" class="fieldHint">
 					  <%=LanguageUtil.get(pageContext, "incremental-hint") %>

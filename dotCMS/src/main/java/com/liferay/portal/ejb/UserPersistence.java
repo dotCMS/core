@@ -227,7 +227,7 @@ public class UserPersistence extends BasePersistence {
 				user.setModified(false);
 				user.protect();
 				UserPool.remove(user.getPrimaryKey());
-				UserPool.put(user.getPrimaryKey(), user);
+
 			}
 
 			return user;

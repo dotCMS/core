@@ -1,5 +1,7 @@
 package com.dotcms.vanityurl.model;
 
+import static com.dotcms.vanityurl.business.VanityUrlAPI.CACHE_404_VANITY_URL;
+
 import com.dotcms.util.VanityUrlUtil;
 import com.liferay.util.StringPool;
 import java.io.Serializable;
@@ -30,12 +32,11 @@ public class CachedVanityUrl implements Serializable {
      *
      * @param vanityUrl The vanityurl Url to cache
      */
-    public CachedVanityUrl(VanityUrl vanityUrl) {
+    public CachedVanityUrl(final VanityUrl vanityUrl) {
         //if the VanityUrl URI is not a valid regex
-        String regex = VanityUrlUtil.isValidRegex(vanityUrl.getURI()) ? vanityUrl.getURI()
-                : StringPool.BLANK;
-        this.pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
         this.vanityUrlId = vanityUrl.getIdentifier();
+        final String regex = normalize(vanityUrl.getURI(), CACHE_404_VANITY_URL.equals(this.vanityUrlId));
+        this.pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
         this.url = vanityUrl.getURI();
         this.languageId = vanityUrl.getLanguageId();
         this.siteId = vanityUrl.getSite();
@@ -52,11 +53,10 @@ public class CachedVanityUrl implements Serializable {
      */
     public CachedVanityUrl(CachedVanityUrl fromCachedVanityUrl, String url) {
 
-        //if the VanityUrl URI is not a valid regex
-        String regex = VanityUrlUtil.isValidRegex(url) ? url : StringPool.BLANK;
-
-        this.pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
         this.vanityUrlId = fromCachedVanityUrl.getVanityUrlId();
+        //if the VanityUrl URI is not a valid regex
+        final String regex = normalize(url, CACHE_404_VANITY_URL.equals(this.vanityUrlId));
+        this.pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
         this.url = url;
         this.languageId = fromCachedVanityUrl.getLanguageId();
         this.siteId = fromCachedVanityUrl.getSiteId();
@@ -151,6 +151,33 @@ public class CachedVanityUrl implements Serializable {
      */
     public String getVanityUrlId() {
         return vanityUrlId;
+    }
+
+    /**
+     * This comes as fix for https://github.com/dotCMS/core/issues/16433
+     * If the uri ends with forward slash `/`
+     * This method will make that piece optional.
+     * @param uri the uri stored in the contentlet.
+     * @return the uri regexp with the optional forward slash support added.
+     */
+    private String addOptionalForwardSlashSupport(final String uri){
+        if(uri.endsWith(StringPool.FORWARD_SLASH)){
+            String regex = uri;
+            regex = regex.substring(0, regex.length() -1 );
+            return regex + "(/)*";
+        }
+        return uri;
+    }
+
+    /**
+     * This takes the uir that was originally stored in the contentlet adds validates it.
+     * @param uri the uri stored in the contentlet.
+     * @param cache404VanityUrl whether or not this is a 404 cache entry
+     * @return normalized uri.
+     */
+    private String normalize(final String uri, final boolean cache404VanityUrl){
+        final String uriRegEx = cache404VanityUrl ? uri : addOptionalForwardSlashSupport(uri);
+        return VanityUrlUtil.isValidRegex(uriRegEx) ? uriRegEx : StringPool.BLANK;
     }
 
 
