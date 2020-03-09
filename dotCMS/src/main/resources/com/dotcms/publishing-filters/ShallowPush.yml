@@ -3,10 +3,17 @@ title:                    Send Content No Dependencies
 default:                  false
 roles:                    dotcms.org.2789,Reviewer
 filters:
-       excludeDependencyQuery:   ( lucene query that dependent content is checked against to exclude)
-       excludeQuery:             (lucene query that added content is checked against to exclude)
-       excludeDependencyClasses: [ list of classes that should never be pushed as dependencies]
-       excludeClasses:           [ list of classes that should never be pushed]
+       ## Lucene query that exclude content to be added to the bundle as a dependency
+       excludeDependencyQuery:   ""
+       ## Lucene query that exclude content to be added to the bundle
+       excludeQuery:             ""
+       ##  list of classes that should never be pushed as dependencies: Structure, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category
+       excludeDependencyClasses: []
+       ## list of classes that should never be pushed: Structure, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category, User, OSGI
+       excludeClasses:           []
+       ## force push as always worked, if true will push regardless the pushed asset history
        forcePush:                false
+       ## check for any dependency that the pushed asset may need (if false will not look for any dependency)
        dependencies:             true
+       ## check for content relationships
        relationships:            true
