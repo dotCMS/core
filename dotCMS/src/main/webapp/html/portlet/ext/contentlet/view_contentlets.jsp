@@ -253,8 +253,6 @@
                                                         ? "<span class='vanityIcon'></span>"
                                                             : (contentType.getStructureType()==8)
                                                             ? "<span class='languageVarIcon'></span>"
-                                                              : (contentType.getStructureType()==9)
-                                                              ? "<span class='dotAssetIcon'></span>"
                                                                 :"<span class='blankIcon'></span>";
 
                     String contentTypeName= UtilMethods.javaScriptify(contentType.getName());
