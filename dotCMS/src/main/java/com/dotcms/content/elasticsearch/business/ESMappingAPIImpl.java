@@ -1,5 +1,10 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
@@ -53,14 +58,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
-import org.elasticsearch.common.xcontent.XContentType;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -74,14 +71,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.FastDateFormat;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionFuture;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.common.xcontent.XContentType;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
 import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
 import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * Implementation class for the {@link ContentMappingAPI}.
@@ -109,17 +108,17 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-    /**
-     * This method takes a mapping string, a type and puts it as the mapping
-     */
-    public boolean putMapping(final String indexName, final String type, final String mapping)
-            throws ElasticsearchException, IOException {
+	/**
+	 * This method takes a mapping string, a type and puts it as the mapping
+	 */
+	public boolean putMapping(final String indexName, final String type, final String mapping)
+			throws ElasticsearchException, IOException {
 
-        final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
-                .preparePutMapping().setIndices(indexName).setType(type)
-                .setSource(mapping, XContentType.JSON).execute();
-        return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
-    }
+		final ActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices()
+				.preparePutMapping().setIndices(indexName).setType(type)
+				.setSource(mapping, XContentType.JSON).execute();
+		return lis.actionGet(INDEX_OPERATIONS_TIMEOUT_IN_MS).isAcknowledged();
+	}
 
     /**
      * This method takes a mapping map, a type and puts it as the mapping
@@ -348,12 +347,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
     /**
      * Adds the current workflow task to the contentlet in order to be reindexed.
-     * 
+     *
      * @param contentlet {@link Contentlet}
      * @return {@link Map}
      */
     protected Map<String, Object> getWorkflowInfoForContentlet(final Contentlet contentlet) {
-        
+
         final Map<String, Object> workflowMap = new HashMap<>();
         final WorkflowAPI workflowAPI 		  = APILocator.getWorkflowAPI();
 
@@ -372,7 +371,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE, elasticSearchDateTimeFormat.format(task.getModDate()));
                 workflowMap.put(ESMappingConstants.WORKFLOW_MOD_DATE + TEXT, datetimeFormat.format(task.getModDate()));
             }
-                
+
         } catch (Exception e) {
             Logger.debug(this.getClass(), "No workflow info for contentlet " +  contentlet.getIdentifier());
         }
@@ -391,7 +390,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                         stepIds.add(entryStep);
                     }
                 }
-    
+
                 workflowMap.put(ESMappingConstants.WORKFLOW_SCHEME, String.join(" ", schemeWriter));
                 workflowMap.put(ESMappingConstants.WORKFLOW_STEP, stepIds);
 				workflowMap.put(ESMappingConstants.WORKFLOW_CURRENT_STEP, ESMappingConstants.WORKFLOW_CURRENT_STEP_NOT_ASSIGNED_VALUE); // multiple steps -> not assigned.
@@ -426,12 +425,12 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 String::toLowerCase).collect(Collectors.toList());
 
         m.put(ESMappingConstants.CATEGORIES, catsVarNames);
-        
+
 
 	    for(final com.dotcms.contenttype.model.field.Field f : catFields){
 	        // I don't think we care if we put all the categories in each field
             m.put(type.variable() + "." + f.variable(), catsVarNames);
-	    
+
 	    }
 	}
 
@@ -505,7 +504,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			keyNameText    = keyNameBuilder.append(TEXT).toString();
 			if (f.getFieldType().equals(Field.FieldType.BINARY.toString())
 					|| f.getFieldContentlet() != null && (f.getFieldContentlet().startsWith(ESMappingConstants.FIELD_TYPE_SYSTEM_FIELD) && !f.getFieldType().equals(Field.FieldType.TAG.toString()))) {
-
 				continue;
 			}
 			if(!f.isIndexed()){
@@ -639,6 +637,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 								+ ESMappingConstants.PERSONAS, personaTagsNames);
 						m.put(ESMappingConstants.PERSONAS, personaTagsNames);
 					}
+
 
 				} else if(f.getFieldType().equals(CUSTOM_FIELD.legacyValue())
 						&& f.getVelocityVarName().equals(PERSONA_KEY_TAG_FIELD_VAR)) {
