@@ -322,22 +322,7 @@ public interface FileAssetAPI {
      */
     public void cleanThumbnailsFromFileAsset(IFileAsset fileAsset);
 
-	/**
-	 * Tries to determine the mime type from a since file path, @{@link FileAsset#UNKNOWN_MIME_TYPE} if not found
-	 * For a more powerful but also more expensive version see {@link #getMimeType(File)}
-	 * @param filename {@link String}
-	 * @return String mime type
-	 */
 	public String getMimeType (String filename);
-
-	/**
-	 * Tries to determine the mime type from a binary,  @{@link FileAsset#UNKNOWN_MIME_TYPE} if not found
-	 * This is a more poweful and also more expensive version of {@link #getMimeType(String)}
-	 * since it uses more methods to figure out/fallbacks the mime type
-	 * @param binary {@link File}
-	 * @return String
-	 */
-	public String getMimeType (final File binary);
 
 	public String getRealAssetPathTmpBinary();
 

@@ -63,14 +63,6 @@ public enum BaseContentType {
 	}
 
 	/**
-	 * Gets the alternate name
-	 * @return String
-	 */
-	public String getAlternateName() {
-		return alternateName;
-	}
-
-	/**
 	 * Returns the immutable class associated to the specified Content Type.
 	 * 
 	 * @return The immutable class.

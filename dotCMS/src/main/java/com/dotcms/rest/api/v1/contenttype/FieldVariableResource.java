@@ -4,7 +4,6 @@ import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.transform.field.JsonFieldVariableTransformer;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -121,14 +120,9 @@ public class FieldVariableResource implements Serializable {
 		Response response = null;
 		
 		try {
+			Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 
-			final Field field = fapi.byContentTypeIdAndVar(typeId, fieldVar);
 			FieldVariable fieldVariable = new JsonFieldVariableTransformer(fieldVariableJson).from();
-
-			if (!UtilMethods.isSet(fieldVariable.fieldId())) {
-
-				fieldVariable = ImmutableFieldVariable.builder().from(fieldVariable).fieldId(field.id()).build();
-			}
 
 			if (UtilMethods.isSet(fieldVariable.id())) {
 

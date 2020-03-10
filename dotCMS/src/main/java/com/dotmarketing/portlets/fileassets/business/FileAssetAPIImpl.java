@@ -10,8 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
-
-import com.dotcms.util.MimeTypeUtils;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
@@ -780,7 +778,6 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         }
     }
 
-    @Override
 	public String getMimeType(String filename) {
 		if (filename != null) {
 			filename = filename.toLowerCase();
@@ -799,12 +796,6 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		}
 
 		return mimeType;
-	}
-
-	@Override
-	public String getMimeType(final File binary) {
-
-    	return MimeTypeUtils.getMimeType(binary);
 	}
 
 	public String getRealAssetPathTmpBinary() {

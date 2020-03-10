@@ -17,8 +17,6 @@ import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
-import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
-import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -107,7 +105,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
@@ -197,8 +194,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.activation.MimeType;
 import javax.servlet.http.HttpServletRequest;
-
-import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -249,8 +244,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private final ContentletSystemEventUtil contentletSystemEventUtil;
     private final LocalSystemEventsAPI      localSystemEventsAPI;
-    private final BaseTypeToContentTypeStrategyResolver baseTypeToContentTypeStrategyResolver =
-            BaseTypeToContentTypeStrategyResolver.getInstance();
 
     public static enum QueryType {
         search, suggest, moreLike, Facets
@@ -4050,11 +4043,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             + "; ContentIdentifier: " + (contentletIn != null ? contentletIn
                             .getIdentifier() : "Unknown"), contentletIn.getHost());
 
-            this.checkOrSetContentType(contentletIn, user);
-
             final String lockKey =
-                    "ContentletIdentifier:" + (UtilMethods.isSet(contentletIn.getIdentifier()) ?
-                            contentletIn.getIdentifier() : UUIDGenerator.generateUuid());
+                    "ContentletIdentifier:" + (UtilMethods.isSet(contentletIn.getIdentifier()) ? contentletIn.getIdentifier() : UUIDGenerator.generateUuid());
             try {
 
                 final Optional<Contentlet> workflowContentletOpt =
@@ -4111,37 +4101,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return contentletOut;
         } finally {
             this.cleanup(contentletOut);
-        }
-    }
-
-    /*
-     * If the contentletIn is new, has not any content type assigned and has a base type set into the properties
-     * will try to figure out a match for the content type
-     */
-    private void checkOrSetContentType(final Contentlet contentletIn, final User user) {
-
-        final Optional<BaseContentType> baseTypeOpt = contentletIn.getBaseType();
-        if (contentletIn.isNew() && null == contentletIn.getContentType() &&
-                baseTypeOpt.isPresent()) {
-
-            final BaseContentType baseContentType = baseTypeOpt.get();
-            final Optional<BaseTypeToContentTypeStrategy>  typeStrategy =
-                    this.baseTypeToContentTypeStrategyResolver.get(baseContentType);
-
-            if (typeStrategy.isPresent()) {
-
-                final Host host = Try.of(()->APILocator.getHostAPI().find(
-                        contentletIn.getHost(), user, false)).getOrNull();
-                if (null != host) {
-                    final Optional<ContentType> contentTypeOpt = typeStrategy.get().apply(baseContentType,
-                            CollectionsUtils.map("user", user, "host", host,
-                                    "contentletMap", contentletIn.getMap()));
-
-                    if (contentTypeOpt.isPresent()) {
-                        contentletIn.setContentType(contentTypeOpt.get());
-                    }
-                }
-            }
         }
     }
 
@@ -6301,10 +6260,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     if (BinaryField.ALLOWED_FILE_TYPES.equalsIgnoreCase(keyField)) {
 
-                        final String binaryMimeType   = APILocator.getFileAssetAPI().getMimeType(binary);
+                        final String binaryMimeType   = MimeTypeUtils.getMimeType(binary);
                         final String allowedFileTypes = fieldVariable.value();
-                        if (UtilMethods.isSet(allowedFileTypes) && UtilMethods.isSet(binaryMimeType) &&
-                                !FileAsset.UNKNOWN_MIME_TYPE.equals(binaryMimeType)) {
+                        if (UtilMethods.isSet(allowedFileTypes) && UtilMethods.isSet(binaryMimeType)) {
 
                             boolean allowed = false;
                             final MimeType fileMimeType = Sneaky.sneak(() -> new MimeType(binaryMimeType));

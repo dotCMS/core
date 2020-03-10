@@ -1279,7 +1279,7 @@ public class WorkflowResource {
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
-            final FireActionByNameForm fireActionForm = this.processForm (multipart, initDataObject.getUser());
+            final FireActionByNameForm fireActionForm = this.processForm (multipart);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
                     (inode, identifier, languageId,
@@ -1617,7 +1617,7 @@ public class WorkflowResource {
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
-            final FireActionForm fireActionForm = this.processForm (multipart, initDataObject.getUser());
+            final FireActionForm fireActionForm = this.processForm (multipart);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
                     (inode, identifier, languageId,
@@ -1697,7 +1697,7 @@ public class WorkflowResource {
 
             final long languageId = LanguageUtil.getLanguageId(language);
             final PageMode mode = PageMode.get(request);
-            final FireActionForm fireActionForm = this.processForm (multipart, initDataObject.getUser());
+            final FireActionForm fireActionForm = this.processForm (multipart);
             //if inode is set we use it to look up a contentlet
             final Contentlet contentlet = this.getContentlet
                     (inode, identifier, languageId,
@@ -1723,7 +1723,7 @@ public class WorkflowResource {
                 JsonArrayToLinkedSetConverter.EMPTY_LINKED_SET;
     }
 
-    private FireActionByNameForm processForm(final FormDataMultiPart multipart, final User user)
+    private FireActionByNameForm processForm(final FormDataMultiPart multipart)
             throws IOException, JSONException, DotSecurityException, DotDataException {
 
         Map<String, Object> contentletMap = Collections.emptyMap();
@@ -1739,7 +1739,7 @@ public class WorkflowResource {
 
         this.validateMultiPartContent    (contentletMap, binaryFields);
         this.processFireActionFormValues (fireActionFormBuilder, multiPartContent._1);
-        this.processFiles                (contentletMap, multiPartContent._2, binaryFields, user);
+        this.processFiles                (contentletMap, multiPartContent._2, binaryFields);
         fireActionFormBuilder.contentlet (contentletMap);
 
         return fireActionFormBuilder.build();
@@ -1779,17 +1779,11 @@ public class WorkflowResource {
         return binaryFields.size() <= binaryFileSize? binaryFields: binaryFields.subList(0, binaryFields.size());
     }
 
-    private String getContentTypeInode (final Map<String, Object> contentMap, final User user, final List<File> binaryFiles) {
-
-        this.contentHelper.checkOrSetContentType(contentMap, user, binaryFiles);
-        return MapToContentletPopulator.INSTANCE.getContentTypeInode(contentMap);
-    }
-
     private void processFiles(final Map<String, Object> contentMap, final List<File> binaryFiles,
-                              final LinkedHashSet<String> argBinaryFields, final User user) throws DotDataException, DotSecurityException {
+                              final LinkedHashSet<String> argBinaryFields) throws DotDataException, DotSecurityException {
 
         final ContentTypeAPI contentTypeAPI      = APILocator.getContentTypeAPI(APILocator.systemUser());
-        final String         contentTypeInode    = this.getContentTypeInode(contentMap, user, binaryFiles);
+        final String         contentTypeInode    = MapToContentletPopulator.INSTANCE.getContentTypeInode(contentMap);
         final List<Field>    fields              = contentTypeAPI.find(contentTypeInode).fields();
         final List<String>   binaryFields        = argBinaryFields.size() > 0?
                 new ArrayList<>(argBinaryFields) : this.getBinaryFields (fields, contentMap, binaryFiles.size());
@@ -1964,12 +1958,6 @@ public class WorkflowResource {
      */
     private Contentlet populateContentlet(final FireActionForm fireActionForm, final Contentlet contentletInput, final User user,final PageMode mode)
             throws DotSecurityException {
-
-        if (contentletInput.isNew()) {
-            // checks if has content type assigned, otherwise tries to see
-            // if can figure out the content type based on a base type.
-            this.contentHelper.checkOrSetContentType(fireActionForm.getContentletFormData(), user);
-        }
 
         final Contentlet contentlet = this.contentHelper.populateContentletFromMap
                 (contentletInput, fireActionForm.getContentletFormData());

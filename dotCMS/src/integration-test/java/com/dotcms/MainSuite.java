@@ -1,7 +1,6 @@
 package com.dotcms;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
-import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
@@ -236,8 +235,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.security.secret.SecretsStoreKeyStoreImplTest.class,
         com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class,
         ServiceIntegrationResourceTest.class,
-        VelocityServletIntegrationTest.class,
-        DotAssetAPITest.class
+        VelocityServletIntegrationTest.class
 })
 public class MainSuite {
 

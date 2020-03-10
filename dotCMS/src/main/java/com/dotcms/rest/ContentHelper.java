@@ -1,32 +1,16 @@
 package com.dotcms.rest;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
-import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.util.CollectionsUtils;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
 import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-import io.vavr.control.Try;
-
-import javax.servlet.http.HttpServletRequest;
-import java.io.File;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Encapsulate helper method for the {@link com.dotcms.rest.ContentResource}
@@ -36,8 +20,6 @@ public class ContentHelper {
 
     private final MapToContentletPopulator mapToContentletPopulator;
     private final IdentifierAPI identifierAPI;
-    private final BaseTypeToContentTypeStrategyResolver baseTypeToContentTypeStrategyResolver =
-            BaseTypeToContentTypeStrategyResolver.getInstance();
 
     private static class SingletonHolder {
         private static final ContentHelper INSTANCE = new ContentHelper();
@@ -71,67 +53,6 @@ public class ContentHelper {
 
         return this.mapToContentletPopulator.populate(contentlet, stringObjectMap);
     }
-
-
-    /**
-     * If the contentletMap does not have any content type assigned and a base type is set, tries to figure out the content type using the base type
-     * @param contentletMap {@link Map}
-     * @param user {@link User}
-     */
-    public void checkOrSetContentType(final Map<String, Object> contentletMap, final User user) {
-
-        this.checkOrSetContentType(contentletMap, user, Collections.emptyList());
-    }
-
-    /**
-     * If the contentletMap does not have any content type assigned and a base type is set, tries to figure out the content type using the base type
-     * @param contentletMap {@link Map}
-     * @param user {@link User}
-     */
-    public void checkOrSetContentType(final Map<String, Object> contentletMap, final User user, final List<File> binaryFiles) {
-
-        if (!this.hasContentType(contentletMap) && contentletMap.containsKey(Contentlet.BASE_TYPE_KEY)) {
-
-            final String baseType = contentletMap.get(Contentlet.BASE_TYPE_KEY).toString();
-            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            if (UtilMethods.isSet(baseType) && null != request) {
-
-                this.tryToSetContentType(contentletMap, user, baseType, request, binaryFiles);
-            }
-        }
-    }
-
-    private boolean hasContentType (final Map<String, Object> contentletMap) {
-        return  contentletMap.containsKey(Contentlet.CONTENT_TYPE_KEY)    ||
-                contentletMap.containsKey(Contentlet.STRUCTURE_INODE_KEY) ||
-                contentletMap.containsKey(Contentlet.STRUCTURE_NAME_KEY);
-    }
-
-
-    private void tryToSetContentType(final Map<String, Object> contentletMap,
-                                     final User user, final String baseType, final HttpServletRequest request,
-                                     final List<File> binaryFiles) {
-
-        final Host host = Try.of(()-> WebAPILocator.getHostWebAPI().getCurrentHost(request)).getOrNull();
-        final BaseContentType baseContentType = BaseContentType.getBaseContentType(baseType);
-        final Optional<BaseTypeToContentTypeStrategy> typeStrategy =
-                this.baseTypeToContentTypeStrategyResolver.get(baseContentType);
-
-        if (null != host && typeStrategy.isPresent()) {
-
-            final Optional<ContentType> contentTypeOpt = typeStrategy.get().apply(baseContentType,
-                    CollectionsUtils.map("user", user, "host", host,
-                            "contentletMap", contentletMap, "binaryFiles", binaryFiles));
-
-            if (contentTypeOpt.isPresent()) {
-
-                Logger.debug(this, ()-> "For the base type: " + baseType + " resolved the content type: "
-                        + contentTypeOpt.get().variable());
-                contentletMap.put(Contentlet.CONTENT_TYPE_KEY, contentTypeOpt.get().variable());
-            }
-        }
-    }
-
     /**
      * Serves as an Entry point to the ContentletToMapTransformer
      * @See ContentletToMapTransformer
