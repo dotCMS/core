@@ -54,12 +54,62 @@ public class RulesAPIImplIntegrationTest {
     }
 
 
-    //test de delete
+    /**
+     * Method to Test: {@link RulesAPIImpl#deleteRule(Rule, User, boolean)}
+     * When: User with permission try to delete a rule
+     * Should: Delete it
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void shouldDeleteRules() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Rule rule = new RuleDataGen().host(host).nextPersisted();
 
-    //test de update
+        this.addPermission(role, host, true);
 
-    //test de update un condition o action
+        assertTrue(existRule(user, rule));
 
+        rulesAPI.deleteRule(rule, user, false);
+
+        assertFalse(existRule(user, rule));
+
+    }
+
+    /**
+     * Method to Test: {@link RulesAPIImpl#deleteRule(Rule, User, boolean)}
+     * When: User without permission try to delete a rule
+     * Should: throw a {@link DotSecurityException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void shouldNotDeleteRules() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Rule rule = new RuleDataGen().host(host).nextPersisted();
+
+        try {
+            rulesAPI.deleteRule(rule, user, false);
+            throw new AssertionError("DotSecurityException Expected");
+        } catch (DotSecurityException e) {
+            assertFalse(existRule(user, rule));
+        }
+    }
+
+    private boolean existRule(User user, Rule rule) throws DotDataException, DotSecurityException {
+        final List<Rule> allRules = APILocator.getRulesAPI().getAllRules(user, false);
+
+        return allRules.stream()
+                    .map(rule1 -> rule1.getId())
+                    .anyMatch(ruleId -> ruleId.equals(rule.getId()));
+    }
+    
     /**
      * Method to Test: {@link RulesAPIImpl#getAllRulesByParent(Ruleable, User, boolean)}
      * When: User with permission try to get all the rules from host
