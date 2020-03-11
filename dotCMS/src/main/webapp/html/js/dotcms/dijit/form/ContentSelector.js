@@ -1070,7 +1070,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
         this.relateDiv.style.display = "none";
         this.generalSearch.set('value', '');
 
-		this._hideMatchingResults ();
+        this._hideMatchingResults();
+        this._doSearch();
 	},
 
 	_previousPage: function (){
