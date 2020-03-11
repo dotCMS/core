@@ -1,9 +1,6 @@
 package com.dotcms.rest.api.v1.user;
 
-import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ErrorResponseHelper;
@@ -25,6 +22,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.UserFirstNameException;
 import com.dotmarketing.exception.UserLastNameException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -35,11 +33,8 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -53,7 +48,15 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.server.JSONP;
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import static com.dotcms.util.CollectionsUtils.getMapValue;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
@@ -69,6 +72,7 @@ public class UserResource implements Serializable {
 
 	private final WebResource webResource;
 	private final UserAPI userAPI;
+	private final HostAPI siteAPI;
 	private final UserResourceHelper helper;
 	private final ErrorResponseHelper errorHelper;
 
@@ -76,15 +80,16 @@ public class UserResource implements Serializable {
 	 * Default class constructor.
 	 */
 	public UserResource() {
-		this(new WebResource(new ApiProvider()), APILocator.getUserAPI(), UserResourceHelper.getInstance(),
+		this(new WebResource(new ApiProvider()), APILocator.getUserAPI(), APILocator.getHostAPI(), UserResourceHelper.getInstance(),
 				ErrorResponseHelper.INSTANCE);
 	}
 
 	@VisibleForTesting
-	protected UserResource(final WebResource webResource,  final UserAPI userAPI, final UserResourceHelper userHelper,
+	protected UserResource(final WebResource webResource,  final UserAPI userAPI, final HostAPI siteAPI, final UserResourceHelper userHelper,
 			final ErrorResponseHelper errorHelper) {
 		this.webResource = webResource;
 		this.userAPI = userAPI;
+		this.siteAPI = siteAPI;
 		this.helper = userHelper;
 		this.errorHelper = errorHelper;
 	}
@@ -99,32 +104,28 @@ public class UserResource implements Serializable {
     @Path("/current")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public RestUser self(@Context HttpServletRequest request, final @Context HttpServletResponse response) {
+    public RestUser self(@Context final  HttpServletRequest request, final @Context HttpServletResponse response) {
 
-        final User user =
-		new WebResource.InitBuilder(webResource)
+        final User user = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requiredFrontendUser(false)
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true)
 				.init().getUser();
 
-
 		final RestUser.Builder currentUser = new RestUser.Builder();
 
         if(user != null) {
             try {
-
                 final Role role = APILocator.getRoleAPI().getUserRole(user);
                 currentUser.userId(user.getUserId())
                     .givenName(user.getFirstName())
                     .email(user.getEmailAddress())
                     .surname(user.getLastName())
                     .roleId(role.getId());
-            } catch (DotDataException e) {
-
-                Logger.error(this, e.getMessage(), e);
-                throw new BadRequestException("Could not provide current user.");
+            } catch (final DotDataException e) {
+				Logger.error(this, "Could not provide current user: " + e.getMessage(), e);
+				throw new BadRequestException("Could not provide current user.");
             }
         }
 
@@ -146,19 +147,18 @@ public class UserResource implements Serializable {
     public final Response update(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,
                                  final UpdateUserForm updateUserForm) throws Exception {
 
-        final User modUser =
-				new WebResource.InitBuilder(webResource)
+        final User modUser = new WebResource.InitBuilder(webResource)
 						.requiredBackendUser(true)
 						.requiredFrontendUser(false)
 						.requestAndResponse(httpServletRequest, httpServletResponse)
 						.rejectWhenNoUser(true)
 						.init().getUser();
 
-        Response response = null;
+        Response response;
         final String date = DateUtil.getCurrentDate();
         final User userToUpdated;
         Locale locale = LocaleUtil.getLocale(httpServletRequest);
-        Locale systemLocale = this.userAPI.getSystemUser().getLocale();
+        final Locale systemLocale = this.userAPI.getSystemUser().getLocale();
         Map<String, Object> userMap = Collections.EMPTY_MAP;
 
         this.helper.log("Updating User", "Date: " + date + "; "
@@ -181,23 +181,23 @@ public class UserResource implements Serializable {
 
             response = Response.ok(new ResponseEntityView(map("userID", userToUpdated.getUserId(),
                     "reauthenticate", reAuthenticationRequired, "user", userMap))).build(); // 200
-        } catch (UserFirstNameException e) {
+        } catch (final UserFirstNameException e) {
 
             this.helper.log("Error Updating User. Invalid First Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
             response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, "User-Info-Save-First-Name-Failed");
-        } catch (UserLastNameException e) {
+        } catch (final UserLastNameException e) {
 
             this.helper.log("Error Updating User. Invalid Last Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
             response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, "User-Info-Save-Last-Name-Failed");
-        } catch (DotSecurityException  e) {
+        } catch (final DotSecurityException  e) {
 
             this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
             response = this.errorHelper.getErrorResponse(Response.Status.UNAUTHORIZED, locale, "User-Doesnot-Have-Permission");
-        } catch (NoSuchUserException  e) {
+        } catch (final NoSuchUserException  e) {
 
             this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
             response = this.errorHelper.getErrorResponse(Response.Status.NOT_FOUND, locale, "User-Not-Found");
-        } catch (DotDataException e) {
+        } catch (final DotDataException e) {
         	if(null != e.getMessageKey()){
         		this.helper.log("Error Updating User. "+e.getFormattedMessage(systemLocale), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
         		response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, e.getMessageKey());
@@ -205,10 +205,10 @@ public class UserResource implements Serializable {
         		this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
         		response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         	}
-    	} catch (IncorrectPasswordException e) {
+    	} catch (final IncorrectPasswordException e) {
 			this.helper.log("Error Updating User. " + e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-		}catch (Exception  e) {
+		}catch (final Exception  e) {
         	this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
         	response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }
@@ -266,8 +266,7 @@ public class UserResource implements Serializable {
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response filter(@Context final HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") final String params) {
 
-		final InitDataObject initData =
-		new WebResource.InitBuilder(webResource)
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requiredFrontendUser(false)
 				.params(params)
@@ -276,7 +275,7 @@ public class UserResource implements Serializable {
 				.init();
 
 		final Map<String, String> urlParams = initData.getParamsMap();
-		Map<String, Object> userList = null;
+		Map<String, Object> userList;
 		try {
 			final Map<String, String> filterParams = map(
 					"query", urlParams.get("query"), 
@@ -285,9 +284,9 @@ public class UserResource implements Serializable {
 					"includeAnonymous", getMapValue(urlParams, "includeAnonymous", "false"), 
 					"includeDefault", getMapValue(urlParams, "includeDefault", "false"));
 			userList = this.helper.getUserList(urlParams.get("assetInode"), urlParams.get("permission"), filterParams);
-		} catch (Exception e) {
-			// In case of unknown error, so we report it as a 500
-			Logger.error(this, "An error occurred when processing the request.", e);
+		} catch (final Exception e) {
+			// In case of unknown error, a Status 500 is returned
+			Logger.error(this, "An error occurred when filtering the list of Login As users: " + e.getMessage(), e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 		return Response.ok(new ResponseEntityView(userList)).build();
@@ -331,8 +330,7 @@ public class UserResource implements Serializable {
 		final String loginAsUserId = loginAsForm.getUserId();
 		final String loginAsUserPwd = loginAsForm.getPassword();
 
-		final InitDataObject initData =
-		new WebResource.InitBuilder(webResource)
+		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requiredFrontendUser(false)
 				.credentials(loginAsUserId,loginAsUserPwd)
@@ -342,68 +340,104 @@ public class UserResource implements Serializable {
 
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
-		Response response = null;
+		final Host currentSite = Host.class.cast(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
+		Response response;
 		try {
-			Map<String, Object> sessionData = this.helper.doLoginAs(currentUser, loginAsUserId, loginAsUserPwd, serverName);
-			HttpSession session = request.getSession();
-			if (session.getAttribute(WebKeys.PRINCIPAL_USER_ID) == null) {
-				session.setAttribute(WebKeys.PRINCIPAL_USER_ID, sessionData.get(WebKeys.PRINCIPAL_USER_ID));
-			}
-			session.setAttribute(WebKeys.USER_ID, sessionData.get(WebKeys.USER_ID));
-			PrincipalThreadLocal.setName(loginAsUserId);
-			session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,
-					sessionData.get(com.dotmarketing.util.WebKeys.CURRENT_HOST));
-
+			final Map<String, Object> sessionData = this.helper.doLoginAs(currentUser, loginAsUserId, loginAsUserPwd, serverName);
+			updateLoginAsSessionInfo(request, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
+					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
 			this.setCurrentSite(request, sessionData.get(WebKeys.USER_ID).toString());
-
 			response = Response.ok(new ResponseEntityView(map("loginAs", true))).build();
-		} catch (NoSuchUserException | DotSecurityException e) {
-			SecurityLogger.logInfo(UserResource.class,
-					"An attempt to login as a different user was made by user ID ("
-							+ currentUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
+		} catch (final NoSuchUserException | DotSecurityException e) {
+			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
+					"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
+					e.getMessage()));
+			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
 			return ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
-		} catch (DotDataException e) {
-			SecurityLogger.logInfo(UserResource.class,
-					"An attempt to login as a different user was made by user ID ("
-							+ currentUser.getUserId() + "). Remote IP: " + request.getRemoteAddr());
+		} catch (final DotDataException e) {
+			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
+					"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
+					e.getMessage()));
+			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
 			if (UtilMethods.isSet(e.getMessageKey())) {
-				User user = initData.getUser();
+				final User user = initData.getUser();
 				response = Response.ok(new ResponseEntityView(
 						list(new ErrorEntity(e.getMessageKey(), LanguageUtil.get(user.getLocale(), e.getMessageKey()))),
 						map("loginAs", false))).build();
 			} else {
 				return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 			}
-		} catch (Exception e) {
-			// In case of unknown error, so we report it as a 500
-			SecurityLogger.logInfo(UserResource.class,
-					"An error occurred when processing the request." + e.getMessage());
+		} catch (final Exception e) {
+			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An error occurred when processing the " +
+					"Login As request from UserID '%s': %s", currentUser.getUserId(), e.getMessage()));
+			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+				return ErrorResponseHelper.INSTANCE.getErrorResponse(Response.Status.UNAUTHORIZED, initData.getUser()
+						.getLocale(), e.getMessage());
+			}
+			// In case of unknown error, a Status 500 is returned
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
-		SecurityLogger.logInfo(UserResource.class, "User ID (" + currentUser.getUserId()
-				+ "), has sucessfully login as (" + loginAsUserId + "). Remote IP: " + request.getRemoteAddr());
+		SecurityLogger.logInfo(UserResource.class, String.format("UserID '%s' has successfully logged in as '%s' / " +
+				"Remote IP: '%s'", currentUser.getUserId(), loginAsUserId, request.getRemoteAddr()));
 		return response;
+	}
+
+	/**
+	 * Updates the current HTTP Session data in order to simulate that the impersonated user - the Login As User - is
+	 * logged into the back-end of the system. This involves refreshing the UI of the back-end to reflect the Portlets
+	 * that the impersonated user has access to.
+	 *
+	 * @param request         The {@link HttpServletRequest} object.
+	 * @param site            The {@link Host} object representing the Site that the Login As user is directed to.
+	 * @param principalUserId The ID of the Administrator User that is temporarily impersonating user.
+	 * @param loginAsUserId   The ID of the user that is being impersonated.
+	 */
+	private void updateLoginAsSessionInfo(final HttpServletRequest request, final Host site, final String
+			principalUserId, final String loginAsUserId) {
+		final HttpSession session = request.getSession();
+		if (UtilMethods.isSet(principalUserId)) {
+			session.setAttribute(WebKeys.PRINCIPAL_USER_ID, principalUserId);
+		} else {
+			session.setAttribute(WebKeys.PRINCIPAL_USER_ID, null);
+		}
+		final String userToImpersonate = (UtilMethods.isSet(loginAsUserId) ? loginAsUserId : principalUserId);
+		session.setAttribute(WebKeys.USER_ID, userToImpersonate);
+		PrincipalThreadLocal.setName(loginAsUserId);
+		session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, site);
+	}
+
+	/**
+	 * Reverts all the data changes made to the current HTTP Session data in order to unlink the impersonated user and
+	 * bring the original Administrator User back. This process refreshes the back-end UI and brings back all the
+	 * expected Portlets.
+	 *
+	 * @param request         The {@link HttpServletRequest} object.
+	 * @param currentSite     The {@link Host} object representing the Site from where the Administrator User
+	 *                        impersonated another user.
+	 * @param principalUserId The ID of the Administrator User that is temporarily impersonating user.
+	 */
+	private void revertLoginAsSessionInfo(final HttpServletRequest request, final Host currentSite, final String
+			principalUserId) {
+		updateLoginAsSessionInfo(request, currentSite, principalUserId, null);
 	}
 
 	private void setCurrentSite(final HttpServletRequest req, final String userID) throws DotDataException, DotSecurityException {
 		final HttpSession session = req.getSession();
-		final User user = APILocator.getUserAPI().loadUserById(userID);
+		final User user = this.userAPI.loadUserById(userID);
 		final String currentSiteID = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-		Host currentSite = null;
-
+		Host currentSite;
 		try {
-			currentSite = APILocator.getHostAPI().find(currentSiteID, user, false);
-		} catch (DotSecurityException e) {
-			final List<Host> sites = APILocator.getHostAPI().findAll(user, 1,0,null, false);
-
+			currentSite = this.siteAPI.find(currentSiteID, user, false);
+		} catch (final DotSecurityException e) {
+			final List<Host> sites = this.siteAPI.findAll(user, 1,0,null, false);
 			if (sites.isEmpty()) {
-				throw new DotRuntimeException(String.format("The user %s don't have any site", userID));
+				// Review the permissions assigned to this user and assign VIEW permissions to AT LEAST one Site
+				throw new DotRuntimeException(String.format("Impersonated user '%s' does not have VIEW permissions on " +
+						"ANY Site in the system.", userID), e);
 			}
-
 			currentSite =  sites.get(0);
 		}
-
-
 		session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, currentSite.getIdentifier());
 	}
 
@@ -439,40 +473,32 @@ public class UserResource implements Serializable {
 
 		final String serverName = httpServletRequest.getServerName();
 		String principalUserId = null;
-		HttpSession session = httpServletRequest.getSession();
-		if (session.getAttribute(WebKeys.PRINCIPAL_USER_ID) != null) {
+		if (httpServletRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID) != null) {
 			principalUserId = httpServletRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID).toString();
 		}
 		User currentLoginAsUser = new User();
-		Response response = null;
+		Response response;
 		try {
 			currentLoginAsUser = PortalUtil.getUser(httpServletRequest);
-			Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
-			session.setAttribute(WebKeys.USER_ID, principalUserId);
-			session.removeAttribute(WebKeys.PRINCIPAL_USER_ID);
-			session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,
-					sessionData.get(com.dotmarketing.util.WebKeys.CURRENT_HOST));
-			PrincipalThreadLocal.setName(principalUserId);
+			final Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
+			revertLoginAsSessionInfo(httpServletRequest, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
+					.CURRENT_HOST)), principalUserId);
 			response = Response.ok(new ResponseEntityView(map("logoutAs", true))).build();
-		} catch (DotSecurityException e) {
-			SecurityLogger.logInfo(UserResource.class,
-					"An attempt to logout as a different user was made by user ID ("
-							+ currentLoginAsUser.getUserId() + "). Remote IP: " + httpServletRequest.getRemoteAddr());
+		} catch (final DotSecurityException | DotDataException e) {
+			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An error occurred when attempting to log " +
+							"out as user '%s' by UserID '%s' / Remote IP '%s': %s", currentLoginAsUser.getUserId(),
+					principalUserId, httpServletRequest.getRemoteAddr(), e.getMessage()));
 			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-		} catch (DotDataException e) {
-			SecurityLogger.logInfo(UserResource.class,
-					"An attempt to logout as a different user was made by user ID ("
-							+ currentLoginAsUser.getUserId() + "). Remote IP: " + httpServletRequest.getRemoteAddr());
-			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			// In case of unknown error, so we report it as a 500
-			SecurityLogger.logInfo(UserResource.class, 
-					"An error occurred when processing the request."+e.getMessage());
+			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An error occurred when attempting to log " +
+							"out as user '%s' by UserID '%s' / Remote IP '%s': %s", currentLoginAsUser.getUserId(),
+					principalUserId, httpServletRequest.getRemoteAddr(), e.getMessage()));
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
-		SecurityLogger.logInfo(UserResource.class,
-				"User (" + principalUserId + ") has sucessfully logged out as (" 
-		        + currentLoginAsUser.getUserId() + "). Remote IP: " + httpServletRequest.getRemoteAddr());
+		SecurityLogger.logInfo(UserResource.class, String.format("UserID '%s' has successfully logged out as '%s' / " +
+				"Remote IP: '%s'", principalUserId, currentLoginAsUser.getUserId(), httpServletRequest.getRemoteAddr
+				()));
 		return response;
 	}
 
@@ -495,7 +521,7 @@ public class UserResource implements Serializable {
 	 *
 	 * @return The list of users that can be impersonated.
 	 *
-	 * @deprecated use {@link com.dotcms.rest.api.v2.user.UserResource#loginAsData(HttpServletRequest, String, int, int)}
+	 * @deprecated use {@link com.dotcms.rest.api.v2.user.UserResource#loginAsData(HttpServletRequest, HttpServletResponse, String, int, int)}
 	 */
 	@GET
 	@Path("/loginAsData")
@@ -503,25 +529,24 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Deprecated
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public final Response loginAsData(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @QueryParam("filter") String filter,
-			@QueryParam("includeUsersCount") boolean includeUsersCount) {
-		Response response = null;
+	public final Response loginAsData(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @QueryParam("filter") final String filter,
+			@QueryParam("includeUsersCount") final boolean includeUsersCount) {
+		Response response;
+		User currentUser = new User();
 		try {
-			InitDataObject initData = //webResource.init(null, httpServletRequest, httpServletResponse, true, null);
-
-			new WebResource.InitBuilder(webResource)
+			final InitDataObject initData = new WebResource.InitBuilder(webResource)
 					.requiredBackendUser(true)
 					.requiredFrontendUser(false)
 					.requestAndResponse(httpServletRequest, httpServletResponse)
 					.rejectWhenNoUser(true)
 					.init();
 
-			User currentUser = initData.getUser();
-
+			currentUser = initData.getUser();
 			response = Response.ok(this.helper.getLoginAsUsers(currentUser, filter, includeUsersCount)).build();
-		} catch (Exception e) {
-			SecurityLogger.logInfo(UserResource.class, "An error occurred when processing the request. " + e.getMessage());
-			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		} catch (final Exception e) {
+			SecurityLogger.logInfo(UserResource.class, "ERROR: An error occurred when retrieving the Login As data: "
+					+ e.getMessage());
+			return ErrorResponseHelper.INSTANCE.getErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, currentUser.getLocale(), e.getMessage());
 		}
 		return response;
 	}
