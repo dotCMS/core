@@ -24,18 +24,19 @@ public class UserToken implements JWToken {
     private final String issuer;
     private final Date modificationDate;
     private final Date expiresDate;
+    private final String skinId;
     private final ImmutableMap<String,Object> claims;
 
     
     public UserToken(final String id, final String subject, final String issuer, final Date modificationDate,
-            Date expiresDate, final Map<String,Object> claims) {
+            Date expiresDate, final Map<String,Object> claims, final String skinId) {
         this.id = id;
         this.subject = subject;
         this.issuer = issuer;
         this.modificationDate = modificationDate;
         this.expiresDate = expiresDate;
         this.claims=ImmutableMap.copyOf(claims);
-        
+        this.skinId=skinId;
     }
     
     
@@ -53,8 +54,8 @@ public class UserToken implements JWToken {
 	 *            - The expiration date of the token.
 	 */
     public UserToken(final String id, final String subject, final String issuer, final Date modificationDate,
-            long ttlMillis, final Map<String,Object> claims) {
-        this(id,subject,issuer,modificationDate,new Date(System.currentTimeMillis()+ ttlMillis), claims);
+            long ttlMillis, final Map<String,Object> claims, final String skinId) {
+        this(id,subject,issuer,modificationDate,new Date(System.currentTimeMillis()+ ttlMillis), claims, skinId);
         
     }
 
@@ -65,8 +66,8 @@ public class UserToken implements JWToken {
      * @param subject - The subject of the token
      * @param ttlMillis - The expiration date of the token.
      */
-    public UserToken(String id, String subject, Date modificationDate, long ttlMillis) {
-        this(id, subject, ClusterFactory.getClusterId(), modificationDate,ttlMillis, ImmutableMap.of());
+    public UserToken(String id, String subject, Date modificationDate, long ttlMillis, final String skinId) {
+        this(id, subject, ClusterFactory.getClusterId(), modificationDate,ttlMillis, ImmutableMap.of(), skinId);
     }
     
     /**
@@ -76,8 +77,8 @@ public class UserToken implements JWToken {
      * @param subject - The subject of the token
      * @param ttlMillis - The expiration date of the token.
      */
-    public UserToken(String id, String subject, String issuer, Date modificationDate, long ttlMillis) {
-        this(id, subject, issuer, modificationDate,ttlMillis, ImmutableMap.of());
+    public UserToken(String id, String subject, String issuer, Date modificationDate, long ttlMillis, final String skinId) {
+        this(id, subject, issuer, modificationDate,ttlMillis, ImmutableMap.of(), skinId);
     }
     /**
      * Returns the ID of this token.
@@ -186,5 +187,7 @@ public class UserToken implements JWToken {
         return this.subject;
     }
 
-
+    public String getSkinId() {
+        return skinId;
+    }
 } // E:O:F:JWTBean.

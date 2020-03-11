@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_ALLOWED_NETWORK;
+import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_SKIN_ID_AT;
 import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
 
 /**
@@ -204,6 +205,7 @@ public class JsonWebTokenFactory implements Serializable {
             //Let's set the JWT Claims
             final JwtBuilder builder = Jwts.builder()
                     .setId(jwtBean.getId())
+                    .claim(CLAIM_SKIN_ID_AT, jwtBean.getActiveUser().get().getSkinId())
                     .claim(CLAIM_UPDATED_AT, jwtBean.getActiveUser().get().getModificationDate().getTime())
                     .claim(CLAIM_ALLOWED_NETWORK, jwtBean.getClaims().get(CLAIM_ALLOWED_NETWORK))
                     .setSubject(jwtBean.getSubject())
@@ -317,7 +319,8 @@ public class JsonWebTokenFactory implements Serializable {
                             body.getIssuer(),
                             body.get(CLAIM_UPDATED_AT, Date.class),
                             (null != body.getExpiration()) ? body.getExpiration().getTime() : 0, 
-                            body
+                            body,
+                            body.get(CLAIM_SKIN_ID_AT, String.class)
                             )
                    : APILocator.getApiTokenAPI().findApiToken(body.getSubject()).orElseGet(()->null);
         }

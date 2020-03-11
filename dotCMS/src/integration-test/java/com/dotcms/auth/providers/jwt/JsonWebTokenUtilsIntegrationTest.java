@@ -12,6 +12,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -67,7 +68,7 @@ public class JsonWebTokenUtilsIntegrationTest {
 
         //Generate a new token
         String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
-                userId, date, DateUtil.daysToMillis(2)
+                userId, date, DateUtil.daysToMillis(2), user.getSkinId()
         ));
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);
@@ -102,10 +103,12 @@ public class JsonWebTokenUtilsIntegrationTest {
                 JsonWebTokenFactory.getInstance().getJsonWebTokenService();
         assertNotNull(jsonWebTokenService);
 
+        final String skinId = APILocator.getUserAPI().loadUserById(userId).getSkinId();
         //Generate a new token
         String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
-                userId, date, DateUtil.daysToMillis(2)
+                userId, date, DateUtil.daysToMillis(2), skinId
         ));
+
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);
 

@@ -83,9 +83,9 @@ public class JsonWebTokenInterceptorIntegrationTest {
 
         when(loginService.isLoggedIn(request)).thenReturn(false);
 
+        final User user = APILocator.getUserAPI().loadUserById(userId);
 
-
-        final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime());
+        final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime(), user.getSkinId());
 
         userAPI.loadUserById(userId).setModificationDate(new Date());
 
@@ -129,7 +129,8 @@ public class JsonWebTokenInterceptorIntegrationTest {
 
         when(loginService.isLoggedIn(request)).thenReturn(false);
 
-        final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime());
+        final User user = APILocator.getUserAPI().loadUserById(userId);
+        final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime(), user.getSkinId());
 
         final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
 
@@ -189,8 +190,8 @@ public class JsonWebTokenInterceptorIntegrationTest {
 
         when(loginService.isLoggedIn(request)).thenReturn(false);
 
-
-        final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime());
+        final User user = APILocator.getUserAPI().loadUserById(userId);
+        final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime(), user.getSkinId());
 
         final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
 

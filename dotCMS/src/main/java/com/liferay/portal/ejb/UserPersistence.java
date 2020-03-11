@@ -34,6 +34,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
@@ -134,12 +135,21 @@ public class UserPersistence extends BasePersistence {
 							user.getAgreedToTermsOfUse(), user.getActive(),
 							user.getDeleteInProgress(), user.getDeleteDate());
 
+					userHBM.setSkinId(UUIDGenerator.generateUuid());
+				} else {
 
-				}
-				else {
 					try {
+
 						userHBM = (UserHBM)HibernateUtil.load(UserHBM.class,
 								user.getPrimaryKey());
+
+						if (this.diff(userHBM, user)) {
+
+							userHBM.setSkinId(UUIDGenerator.generateUuid()); // Id created for jwt user token
+						} else {
+							userHBM.setSkinId(user.getSkinId());
+						}
+
 						userHBM.setCompanyId(user.getCompanyId());
 						userHBM.setPassword(user.getPassword());
 						userHBM.setPasswordEncrypted(user.getPasswordEncrypted());
@@ -164,7 +174,6 @@ public class UserPersistence extends BasePersistence {
 						userHBM.setFavoriteMusic(user.getFavoriteMusic());
 						userHBM.setLanguageId(user.getLanguageId());
 						userHBM.setTimeZoneId(user.getTimeZoneId());
-						userHBM.setSkinId(user.getSkinId());
 						userHBM.setDottedSkins(user.getDottedSkins());
 						userHBM.setRoundedSkins(user.getRoundedSkins());
 						userHBM.setGreeting(user.getGreeting());
@@ -216,7 +225,8 @@ public class UserPersistence extends BasePersistence {
 	
 					} 
 				}
-                userHBM.setModDate(new Date());
+
+				userHBM.setModDate(new Date());
                 try {
                     com.dotmarketing.db.HibernateUtil.save(userHBM);
                 }
@@ -231,9 +241,45 @@ public class UserPersistence extends BasePersistence {
 			}
 
 			return user;
-		
-	
+	}
 
+	protected boolean diff (final UserHBM userHBM, final User user) {
+		return !userHBM.getPassword().equals(user.getPassword()) ||
+				userHBM.getActive() != user.getActive() 		 ||
+				this.diff(userHBM.getCompanyId(), user.getCompanyId()) ||
+				this.diff(userHBM.getEmailAddress(), user.getEmailAddress()) ||
+				this.diff(userHBM.getLayoutIds(), user.getLayoutIds()) ||
+				this.diff(userHBM.getUserId(), user.getUserId());
+	}
+
+	private boolean diff (final String s1, final String s2) {
+
+		if (s1 != null && s2 != null) {
+
+			return !s1.equals(s2);
+		} else {
+
+			if (s1 != null || s2 != null) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private boolean diff (final Date date1, final Date date2) {
+
+		if (date1 != null && date2 != null) {
+
+			return !date1.equals(date2);
+		} else {
+
+			if (date1 != null || date2 != null) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	@CloseDBIfOpened

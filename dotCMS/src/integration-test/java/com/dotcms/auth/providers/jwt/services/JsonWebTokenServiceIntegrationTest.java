@@ -56,11 +56,12 @@ public class JsonWebTokenServiceIntegrationTest {
      * Testing the generateToken JsonWebTokenServiceTest
      */
     @Test
-    public void generateTokenTest() {
+    public void generateTokenTest() throws DotSecurityException, DotDataException {
 
+        final User user = APILocator.getUserAPI().loadUserById(userId);
         //Generate a new token
         String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
-                userId, new Date(), DateUtil.daysToMillis(2)));
+                userId, new Date(), DateUtil.daysToMillis(2), user.getSkinId()));
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);
 
@@ -80,9 +81,10 @@ public class JsonWebTokenServiceIntegrationTest {
     @Test(expected = ExpiredJwtException.class)
     public void generateToken_expired_token_Test() throws ParseException, DotSecurityException, DotDataException {
 
+        final User user = APILocator.getUserAPI().loadUserById(userId);
         //Generate a new token
         final UserToken userToken = new UserToken(jwtId, userId,clusterId, new Date(),
-                DateUtil.addDate(new Date(), Calendar.MONTH,-2), ImmutableMap.of());
+                DateUtil.addDate(new Date(), Calendar.MONTH,-2), ImmutableMap.of(), user.getSkinId());
 
         final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
 
@@ -98,11 +100,12 @@ public class JsonWebTokenServiceIntegrationTest {
      * different server.
      */
     @Test(expected = IncorrectClaimException.class)
-    public void generateToken_incorrect_issuer() {
+    public void generateToken_incorrect_issuer() throws DotSecurityException, DotDataException {
 
+        final User user = APILocator.getUserAPI().loadUserById(userId);
         //Generate a new token
         final String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
-                userId, new Date(), DateUtil.daysToMillis(2)
+                userId, new Date(), DateUtil.daysToMillis(2), user.getSkinId()
         ));
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);

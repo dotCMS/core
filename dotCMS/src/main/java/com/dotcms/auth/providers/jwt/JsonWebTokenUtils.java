@@ -26,6 +26,7 @@ import static com.dotcms.exception.ExceptionUtil.causedBy;
  */
 public class JsonWebTokenUtils {
 
+    public static final String CLAIM_SKIN_ID_AT = "xskinid";
     public static final String CLAIM_UPDATED_AT = "xmod";
     public static final String CLAIM_ALLOWED_NETWORK = "xnet";
 
@@ -96,7 +97,7 @@ public class JsonWebTokenUtils {
                         user.getModificationDate(),
                         (jwtMaxAge > 0) ?
                                 DateUtil.daysToMillis(jwtMaxAge) :
-                                jwtMaxAge
+                                jwtMaxAge, user.getSkinId()
                 )
         );
 

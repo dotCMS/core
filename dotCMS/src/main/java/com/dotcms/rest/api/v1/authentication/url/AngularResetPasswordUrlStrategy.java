@@ -44,7 +44,7 @@ public class AngularResetPasswordUrlStrategy implements UrlStrategy {
         final String jwt = this.jsonWebTokenService.generateUserToken(
                 new UserToken(UUID.randomUUID().toString(), user.getUserId(),
                         user.getModificationDate(),
-                        this.jwtMillis
+                        this.jwtMillis, user.getSkinId()
                 ));
 
         return java.text.MessageFormat.format(HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1,

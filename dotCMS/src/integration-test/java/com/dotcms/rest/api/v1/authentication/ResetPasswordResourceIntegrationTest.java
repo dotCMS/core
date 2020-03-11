@@ -10,7 +10,9 @@ import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
 import javax.ws.rs.core.Response;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -20,6 +22,8 @@ import com.liferay.portal.model.Company;
 import java.util.Date;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
+
+import com.liferay.portal.model.User;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -55,12 +59,13 @@ public class ResetPasswordResourceIntegrationTest{
     }
 
     @Test
-    public void testNoSuchUserException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException, SystemException, PortalException {
+    public void testNoSuchUserException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException, SystemException, PortalException, DotDataException {
         UserManager userManager = getUserManagerThrowingException( new NoSuchUserException("") );
+        final User user = APILocator.getUserAPI().loadUserById("dotcms.org.1");
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
         final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(),
                 "dotcms.org.1",
-                new Date(), 100000);
+                new Date(), 100000, user.getSkinId());
 
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
@@ -70,12 +75,13 @@ public class ResetPasswordResourceIntegrationTest{
     }
 
     @Test
-    public void testTokenInvalidException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
+    public void testTokenInvalidException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException, DotDataException {
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("") );
+        final User user = APILocator.getUserAPI().loadUserById("dotcms.org.1");
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
         final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(),
                 "dotcms.org.1",
-                new Date(), 100000);
+                new Date(), 100000, user.getSkinId());
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
         
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
@@ -84,12 +90,13 @@ public class ResetPasswordResourceIntegrationTest{
     }
 
     @Test
-    public void testTokenExpiredException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException {
+    public void testTokenExpiredException() throws DotSecurityException, NoSuchUserException, DotInvalidTokenException, DotDataException {
         UserManager userManager = getUserManagerThrowingException( new DotInvalidTokenException("", true) );
+        final User user = APILocator.getUserAPI().loadUserById("dotcms.org.1");
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
         final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(),
                 "dotcms.org.1",
-                new Date(), 100000);
+                new Date(), 100000, user.getSkinId());
 
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
