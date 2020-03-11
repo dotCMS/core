@@ -30,9 +30,7 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.jgroups.util.Util.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Integration test of {@link RulesAPIImpl}
@@ -53,6 +51,121 @@ public class RulesAPIImplIntegrationTest {
         rulesAPI   = APILocator.getRulesAPI();
     }
 
+
+    /**
+     * Method to Test: {@link RulesAPIImpl#saveConditionGroup(ConditionGroup, User, boolean)}
+     *                  and {@link RulesAPIImpl#saveCondition(Condition, User, boolean)}
+     * When: User with permission try to create a Group Condition and a Condition
+     * Should: Delete it
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void shouldSaveCondition() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Rule rule = new RuleDataGen().host(host).nextPersisted();
+
+        final ConditionGroup conditionGroup = new ConditionGroupDataGen().rule(rule).next();
+        this.addPermission(role, host, true);
+
+        //Saving and testing GroupCondition
+        rulesAPI.saveConditionGroup(conditionGroup, user, false);
+
+        List<Rule> allRules = rulesAPI.getAllRules(user, false);
+        assertEquals(1, allRules.size());
+
+        final Rule ruleFromDataBase = allRules.get(0);
+
+        final List<ConditionGroup> groups = ruleFromDataBase.getGroups();
+        assertEquals(1, groups.size());
+
+        assertEquals(groups.get(0).getOperator(), conditionGroup.getOperator());
+
+        //Saving and testing Condition
+        final Condition condition = new ConditionDataGen().group(groups.get(0)).next();
+
+        rulesAPI.saveCondition(condition, user, false);
+
+        allRules = rulesAPI.getAllRules(user, false);
+        assertEquals(1, allRules.size());
+        final List<Condition> conditions = allRules.get(0).getGroups().get(0).getConditions();
+
+        assertEquals(1, conditions.size());
+
+        assertEquals(condition.getOperator(), conditions.get(0).getOperator());
+    }
+
+    /**
+     * Method to Test: {@link RulesAPIImpl#saveConditionGroup(ConditionGroup, User, boolean)}
+     * When: User without permission try to create a Group Condition
+     * Should: Throw a DotSecurityException
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void shouldNotSaveCondition() throws DotDataException, DotSecurityException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Rule rule = new RuleDataGen().host(host).nextPersisted();
+
+        final ConditionGroup conditionGroup = new ConditionGroupDataGen().rule(rule).next();
+        rulesAPI.saveConditionGroup(conditionGroup, user, false);
+    }
+
+    /**
+     * Method to Test: {@link RulesAPIImpl#saveRuleAction(RuleAction, User, boolean)}
+     * When: User with permission try to create a Rule's Action
+     * Should: Save it
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void shouldSaveRuleAction() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Rule rule = new RuleDataGen().host(host).nextPersisted();
+
+        this.addPermission(role, host, true);
+
+        final RuleAction ruleAction = new RuleActionDataGen().rule(rule).next();
+
+        rulesAPI.saveRuleAction(ruleAction, user, false);
+
+        final List<Rule> allRules = rulesAPI.getAllRules(user, false);
+        assertEquals(1, allRules.size());
+        final List<RuleAction> ruleActions = allRules.get(0).getRuleActions();
+
+        assertEquals(1, ruleActions.size());
+
+        assertEquals(ruleAction.getActionDefinition(), ruleAction.getActionDefinition());
+    }
+
+    /**
+     * Method to Test: {@link RulesAPIImpl#saveRuleAction(RuleAction, User, boolean)}
+     * When: User without permission try to create a Rule's Action
+     * Should: Throw a {@link DotSecurityException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void shouldNotSaveRuleAction() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Rule rule = new RuleDataGen().host(host).nextPersisted();
+
+        final RuleAction ruleAction = new RuleActionDataGen().rule(rule).next();
+
+        rulesAPI.saveRuleAction(ruleAction, user, false);
+    }
 
     /**
      * Method to Test: {@link RulesAPIImpl#deleteRule(Rule, User, boolean)}
@@ -109,7 +222,7 @@ public class RulesAPIImplIntegrationTest {
                     .map(rule1 -> rule1.getId())
                     .anyMatch(ruleId -> ruleId.equals(rule.getId()));
     }
-    
+
     /**
      * Method to Test: {@link RulesAPIImpl#getAllRulesByParent(Ruleable, User, boolean)}
      * When: User with permission try to get all the rules from host

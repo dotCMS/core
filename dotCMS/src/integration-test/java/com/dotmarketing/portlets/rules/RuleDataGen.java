@@ -1,10 +1,12 @@
 package com.dotmarketing.portlets.rules;
 
+import com.dotcms.datagen.AbstractDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
 //import com.dotmarketing.portlets.rules.conditionlet.MockTrueConditionlet;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.liferay.portal.model.User;
@@ -12,7 +14,7 @@ import com.liferay.portal.model.User;
 /**
  * @author Geoff M. Granum
  */
-public class RuleDataGen {
+public class RuleDataGen extends AbstractDataGen<Rule>  {
 
     private static final RulesAPI rulesAPI = APILocator.getRulesAPI();
     private static final HostAPI hostAPI = APILocator.getHostAPI();
