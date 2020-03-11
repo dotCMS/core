@@ -288,10 +288,10 @@ public class RulesAPIImplIntegrationTest {
 
         assertEquals(2, rules.size());
 
-        /*final List<String> rulesId = rules.stream().map(rule -> rule.getId()).collect(Collectors.toList());
+        final List<String> rulesId = rules.stream().map(rule -> rule.getId()).collect(Collectors.toList());
         assertTrue(rulesId.contains(rule1.getId()));
         assertTrue(rulesId.contains(rule2.getId()));
-        assertFalse(rulesId.contains(rule3.getId()));*/
+        assertFalse(rulesId.contains(rule3.getId()));
     }
 
     /**
