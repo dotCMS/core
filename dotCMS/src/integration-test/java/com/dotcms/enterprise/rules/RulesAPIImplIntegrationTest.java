@@ -211,7 +211,7 @@ public class RulesAPIImplIntegrationTest {
             rulesAPI.deleteRule(rule, user, false);
             throw new AssertionError("DotSecurityException Expected");
         } catch (DotSecurityException e) {
-            assertFalse(existRule(user, rule));
+            assertTrue(existRule(APILocator.systemUser(), rule));
         }
     }
 
@@ -253,6 +253,46 @@ public class RulesAPIImplIntegrationTest {
         assertFalse(rulesId.contains(rule3.getId()));
     }
 
+
+    /**
+     * Method to Test: {@link RulesAPIImpl#getAllRulesByParent(Ruleable, User, boolean)}
+     * When: The anonimous user have permission over the rules and try to get the rules with respectFrontendRoles set to true
+     * Should: Return all the rules from the host
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void shouldGetRulesWithAnonymous() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Rule rule1 = new RuleDataGen().host(host).nextPersisted();
+        final Rule rule2 = new RuleDataGen().host(host).nextPersisted();
+
+        final Host anotherHost = new SiteDataGen().nextPersisted();
+        final Rule rule3 = new RuleDataGen().host(anotherHost).nextPersisted();
+
+        final Role anonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
+
+        final Permission hostReadPermission = new Permission();
+        hostReadPermission.setInode(host.getPermissionId());
+        hostReadPermission.setRoleId(role.getId());
+        hostReadPermission.setPermission(PermissionAPI.PERMISSION_USE);
+
+        APILocator.getPermissionAPI().save(list(hostReadPermission), host, systemUser, false);
+
+        this.addPermission(anonymousRole, host, false);
+
+        final List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, true);
+
+        assertEquals(2, rules.size());
+
+        /*final List<String> rulesId = rules.stream().map(rule -> rule.getId()).collect(Collectors.toList());
+        assertTrue(rulesId.contains(rule1.getId()));
+        assertTrue(rulesId.contains(rule2.getId()));
+        assertFalse(rulesId.contains(rule3.getId()));*/
+    }
 
     /**
      * Method to Test: {@link RulesAPIImpl#getAllRulesByParent(String, User)} )}
@@ -434,12 +474,14 @@ public class RulesAPIImplIntegrationTest {
         final Template template = new TemplateDataGen().nextPersisted();
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
         final Rule rule = new RuleDataGen().page(htmlPageAsset).next();
-
         this.addPermission(role, host, true);
         rulesAPI.saveRule(rule, user, false);
 
         final List<Rule> rules = rulesAPI.getAllRulesByParent(htmlPageAsset, systemUser, true);
         assertEquals(1, rules.size());
+
+        final List<String> rulesId = rules.stream().map(pageRule -> pageRule.getId()).collect(Collectors.toList());
+        assertTrue(rulesId.contains(rule.getId()));
     }
 
     /**
