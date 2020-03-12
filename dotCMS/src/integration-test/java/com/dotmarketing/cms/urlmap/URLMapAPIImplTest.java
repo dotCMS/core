@@ -45,7 +45,8 @@ public class URLMapAPIImplTest {
     private static Host host;
 
     private URLMapAPIImpl urlMapAPI;
-    private static HTMLPageAsset detailPage;
+    private static HTMLPageAsset detailPage1;
+    private static HTMLPageAsset detailPage2;
     private static HttpSession session;
 
     @Before
@@ -62,10 +63,22 @@ public class URLMapAPIImplTest {
         final Folder parent2 = new FolderDataGen().name(parent2Name).title(parent2Name).parent(parent1)
                 .nextPersisted();
 
+        final String parent3Name = "news-events2";
+        final Folder parent3 = new FolderDataGen().name(parent3Name).title(parent3Name).site(host)
+                .nextPersisted();
+        final String parent4Name = "news2";
+        final Folder parent4 = new FolderDataGen().name(parent4Name).title(parent4Name).parent(parent3)
+                .nextPersisted();
+
         final Template template = new TemplateDataGen().nextPersisted();
-        detailPage = new HTMLPageDataGen(parent2, template)
+        detailPage1 = new HTMLPageDataGen(parent2, template)
                 .pageURL("news-detail")
                 .title("news-detail")
+                .nextPersisted();
+
+        detailPage2 = new HTMLPageDataGen(parent4, template)
+                .pageURL("news-detail2")
+                .title("news-detail2")
                 .nextPersisted();
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -98,6 +111,49 @@ public class URLMapAPIImplTest {
 
         final URLMapInfo urlMapInfo = urlMapInfoOptional.get();
         assertEquals(newsTestContent.getStringProperty("title"),
+                urlMapInfo.getContentlet().getName());
+        assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
+    }
+
+    /**
+     * Testing {@link URLMapAPIImpl#processURLMap(UrlMapContext)} Given Scenario: Multiple Content
+     * Types could have the same URLMap pattern, the {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     *  should be able to handle that case. On this test both the Content Type and Content exists.
+     * ExpectedResult: Should return a {@link URLMapInfo} with the right content and detail pages
+     */
+    @Test
+    public void test_multiple_content_types_using_same_pattern()
+            throws DotDataException, DotSecurityException {
+
+        // Create two content types using the same URL patterns
+        final String newsPatternPrefix =
+                TEST_PATTERN + System.currentTimeMillis() + "/";
+        final Contentlet newsTestContent1 = createURLMapperContentType(newsPatternPrefix,
+                new Date(), detailPage1);
+        final Contentlet newsTestContent2 = createURLMapperContentType(newsPatternPrefix,
+                new Date(), detailPage2);
+
+        //*************
+        // Looking for the second content
+        UrlMapContext context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent2.getStringProperty("urlTitle"));
+
+        Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        URLMapInfo urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent2.getStringProperty("title"),
+                urlMapInfo.getContentlet().getName());
+        assertEquals("/news-events2/news2/news-detail2", urlMapInfo.getIdentifier().getURI());
+
+        //*************
+        // Looking for the first content
+        context = getUrlMapContext(systemUser, host,
+                newsPatternPrefix + newsTestContent1.getStringProperty("urlTitle"));
+
+        urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        urlMapInfo = urlMapInfoOptional.get();
+        assertEquals(newsTestContent1.getStringProperty("title"),
                 urlMapInfo.getContentlet().getName());
         assertEquals("/news-events/news/news-detail", urlMapInfo.getIdentifier().getURI());
     }
@@ -319,7 +375,18 @@ public class URLMapAPIImplTest {
         return createURLMapperContentType(newsPatternPrefix, new Date());
     }
 
-    private static Contentlet createURLMapperContentType(final String newsPatternPrefix, final Date sysPublishDate) {
+    private static Contentlet createURLMapperContentType(final String newsPatternPrefix,
+            final Date sysPublishDate) {
+        return createURLMapperContentType(newsPatternPrefix, sysPublishDate, null);
+    }
+
+    private static Contentlet createURLMapperContentType(final String newsPatternPrefix,
+            final Date sysPublishDate, final HTMLPageAsset detailPageToUse) {
+
+        HTMLPageAsset detailPage = detailPage1;
+        if (null != detailPageToUse) {
+            detailPage = detailPageToUse;
+        }
 
         final ContentType newsContentType = getNewsLikeContentType(
                 "News" + System.currentTimeMillis(),
