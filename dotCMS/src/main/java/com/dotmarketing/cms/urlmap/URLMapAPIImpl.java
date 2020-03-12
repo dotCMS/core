@@ -1,5 +1,6 @@
 package com.dotmarketing.cms.urlmap;
 
+import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -33,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import org.apache.lucene.queryparser.classic.QueryParser;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -229,7 +229,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             }
             query.append('+').append(structure.getVelocityVarName()).append('.')
                     .append(fieldMatches.get(counter)).append("_dotRaw").append(':')
-                    .append(QueryParser.escape(value)).append(' ');
+                    .append(ESUtils.escapeExcludingSlashIncludingSpace(value)).append(' ');
             counter++;
         }
 

@@ -26,4 +26,29 @@ public class ESUtils {
 				+ (fieldValue == null ? "" : fieldValue.toString()) + "_"
 				+ languageId, Charset.forName("UTF-8")).toString();
 	}
+
+	/**
+	 * Returns a String where those characters that QueryParser expects to be escaped are escaped by
+	 * a preceding <code>\</code> excluding the "/", we found some cases where we don't want to
+	 * scape it.
+	 * This method is a copy of the {@link QueryParser#escape(String)} where we remove the
+	 * scape for slashes "/" and we included the scape for white spaces " "
+	 */
+	public static String escapeExcludingSlashIncludingSpace(String s) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			// These characters are part of the query syntax and must be escaped
+			if (c == '\\' || c == '+' || c == '-' || c == '!' || c == '(' || c == ')' || c == ':'
+					|| c == '^' || c == '[' || c == ']' || c == '\"' || c == '{' || c == '}'
+					|| c == '~'
+					|| c == '*' || c == '?' || c == '|' || c == '&'
+					|| c == ' ') {
+				sb.append('\\');
+			}
+			sb.append(c);
+		}
+		return sb.toString();
+	}
+
 }
