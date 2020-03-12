@@ -47,7 +47,7 @@ public class CMSUrlUtil {
 	private static final String NOT_FOUND = "NOTFOUND";
 	private static final String UNABLE_TO_FIND = "Unable to find ";
 
-	private static final String [] VANITY_FILTERED_LIST_ARRAY =
+	public static final String [] BACKEND_FILTERED_LIST_ARRAY =
 			new String[] {"/html","/api","/dotAdmin","/dwr","/webdav","/dA","/contentAsset","/c/","/DOTSASS","/DOTLESS"};
 
 	/**
@@ -317,7 +317,7 @@ public class CMSUrlUtil {
 	public boolean isVanityUrlFiltered(final String url) {
 
 		if (null != url) {
-			for (final String vanityFiltered : VANITY_FILTERED_LIST_ARRAY) {
+			for (final String vanityFiltered : BACKEND_FILTERED_LIST_ARRAY) {
 
 				if (url.startsWith(vanityFiltered)) {
 
