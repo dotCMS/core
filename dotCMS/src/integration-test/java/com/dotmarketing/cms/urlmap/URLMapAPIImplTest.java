@@ -130,7 +130,7 @@ public class URLMapAPIImplTest {
      */
     @Test
     public void shouldNotMatchUrlStaringWithAPI()
-            throws DotDataException {
+            throws DotDataException, DotSecurityException {
         final String newsPatternPrefix =
                 "/testpattern" + System.currentTimeMillis() + "/";
         final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix);
@@ -204,7 +204,7 @@ public class URLMapAPIImplTest {
      * ExpectedResult: Should return false
      */
     @Test
-    public void isUrlPatternWithoutUrlMap() throws DotDataException {
+    public void isUrlPatternWithoutUrlMap() throws DotDataException, DotSecurityException {
         deleteAllUrlMapperContentType();
         final UrlMapContext context = getUrlMapContext(systemUser, host, "/dotAdmin");
         assertFalse(urlMapAPI.isUrlPattern(context));

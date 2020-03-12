@@ -6,6 +6,7 @@ import com.dotmarketing.business.*;
 import com.dotmarketing.cms.urlmap.UrlMapContext;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -194,7 +195,7 @@ public class CMSUrlUtil {
 					APILocator.getUserAPI().getSystemUser());
 
 			return APILocator.getURLMapAPI().isUrlPattern(urlMapContext);
-		} catch (final DotDataException e){
+		} catch (final DotDataException | DotSecurityException e){
 			Logger.error(this.getClass(), e.getMessage());
 			return false;
 		}

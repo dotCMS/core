@@ -57,15 +57,8 @@ public class URLMapAPIImpl implements URLMapAPI {
      * @return
      * @throws DotDataException
      */
-    public boolean isUrlPattern(final UrlMapContext urlMapContext) throws DotDataException {
-
-        // We want to avoid unnecessary lookups for vanity urls when browsing in the backend
-        for (final String backendFilter : CMSUrlUtil.BACKEND_FILTERED_LIST_ARRAY) {
-            if (urlMapContext.getUri().startsWith(backendFilter)) {
-                return true;
-            }
-        }
-
+    public boolean isUrlPattern(final UrlMapContext urlMapContext)
+            throws DotDataException, DotSecurityException {
         return matchingUrlPattern(urlMapContext.getUri()) && getContentlet(urlMapContext) != null;
     }
 
@@ -92,14 +85,14 @@ public class URLMapAPIImpl implements URLMapAPI {
      * @param urlMapContext
      * @return
      */
-    private Contentlet getContentlet(final UrlMapContext urlMapContext) {
+    private Contentlet getContentlet(final UrlMapContext urlMapContext) throws DotSecurityException {
 
         Contentlet matchingContentlet = null;
 
         try {
             // We could have multiple matches as multiple content types could have the same
             // URLMap pattern and we need to evaluate all until we find content match.
-            final List<Matches> matchesFound = this.findPatternChange(urlMapContext.getUri());
+            final List<Matches> matchesFound = this.findMatch(urlMapContext.getUri());
             if (!matchesFound.isEmpty()) {
 
                 for (Matches matches : matchesFound) {
@@ -116,7 +109,7 @@ public class URLMapAPIImpl implements URLMapAPI {
                 }
 
             }
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(),
                     String.format("Error processing URL [%s]", urlMapContext.getUri()), e);
             return null;
@@ -157,6 +150,13 @@ public class URLMapAPIImpl implements URLMapAPI {
      */
     private List<Matches> findMatch(final String uri) throws DotDataException {
 
+        // We want to avoid unnecessary lookups for vanity urls when browsing in the backend
+        for (final String backendFilter : CMSUrlUtil.BACKEND_FILTERED_LIST_ARRAY) {
+            if (uri.startsWith(backendFilter)) {
+                return new ArrayList<>();
+            }
+        }
+
         if (this.shouldLoadPatterns()) {
             this.loadPatterns();
         }
@@ -192,16 +192,6 @@ public class URLMapAPIImpl implements URLMapAPI {
     private boolean matchingUrlPattern(final String uri) throws DotDataException {
         final List<Matches> foundMatches = findMatch(uri);
         return !foundMatches.isEmpty();
-    }
-
-    private List<Matches> findPatternChange(final String uri) throws DotDataException {
-
-        final List<Matches> foundMatches = findMatch(uri);
-        if (foundMatches.isEmpty()) {
-            throw new DotRuntimeException("Not pattern match found");
-        }
-
-        return foundMatches;
     }
 
     private Field findHostField(final Structure structure) {
