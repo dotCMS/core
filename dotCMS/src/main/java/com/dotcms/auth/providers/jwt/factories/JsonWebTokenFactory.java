@@ -241,15 +241,12 @@ public class JsonWebTokenFactory implements Serializable {
                 claimException.setClaimValue(body.getSubject());
                 throw claimException;
             }
-            
-            
+
             // Insure that we do not accept null or NONE algo and that it matches the
             final String algo = jws.getHeader().getAlgorithm();
             if(algo==null || algo.equalsIgnoreCase("none") || ! algo.equalsIgnoreCase(signatureAlgorithm().getValue())) {
               throw new SignatureException( "Invalid JWT Signature Algorithm");
             }
-            
-            
 
             // Validate the issuer is correct, meaning the same cluster id
             if (!this.getIssuer().equals(body.getIssuer())) {
@@ -258,6 +255,7 @@ public class JsonWebTokenFactory implements Serializable {
                 claimException.setClaimValue(body.getIssuer());
                 throw claimException;
             }
+
             if(jwtToken.isExpired()) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "Token Expired:" + jwtToken.getExpiresDate());
                 claimException.setClaimName(Claims.EXPIRATION);
@@ -275,11 +273,23 @@ public class JsonWebTokenFactory implements Serializable {
             }
             
             if(jwtToken.getTokenType() == TokenType.USER_TOKEN) {
-                if(jwtToken.getModificationDate().before(user.getModificationDate())) {
-                    IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
-                    claimException.setClaimName(Claims.SUBJECT);
-                    claimException.setClaimValue(body.getSubject());
-                    throw claimException;
+
+                final String uuid = UserToken.class.cast(jwtToken).getSkinId();
+                if (null == uuid) { // if not uuid use the previous validation
+                    if (jwtToken.getModificationDate().before(user.getModificationDate())) {
+                        IncorrectClaimException claimException = new IncorrectClaimException(jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
+                        claimException.setClaimName(Claims.SUBJECT);
+                        claimException.setClaimValue(body.getSubject());
+                        throw claimException;
+                    }
+                } else {
+
+                    if (!uuid.equals(user.getSkinId())) {
+                        final IncorrectClaimException claimException = new IncorrectClaimException(jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
+                        claimException.setClaimName(Claims.SUBJECT);
+                        claimException.setClaimValue(body.getSubject());
+                        throw claimException;
+                    }
                 }
                 return jwtToken;    
             }

@@ -8,6 +8,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UUIDGenerator;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -25,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +58,7 @@ public class ApiTokenResource implements Serializable {
     @VisibleForTesting
     protected ApiTokenResource(final ApiTokenAPI tokenApi, final WebResource webResource) {
 
-        this.tokenApi = tokenApi;
+        this.tokenApi    = tokenApi;
         this.webResource = webResource;
     }
 
@@ -218,5 +224,76 @@ public class ApiTokenResource implements Serializable {
         SecurityLogger.logInfo(this.getClass(), "Revealing token to user: " + user.getUserId() + " from: " + request.getRemoteAddr() + " token:"  + token );
         final String jwt = tokenApi.getJWT(token, user);
         return Response.ok(new ResponseEntityView(map("jwt", jwt), EMPTY_MAP)).build(); // 200
+    }
+
+
+
+    @PUT
+    @Path("/users/{userid}/revoke")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response revokeUserToken(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+                                         @PathParam("userid") final String userid) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder().rejectWhenNoUser(true)
+                                                .requestAndResponse(request, response).requiredPortlet("users")
+                                                .requiredBackendUser(true).init();
+
+        if (APILocator.getRoleAPI().doesUserHaveRole(initDataObject.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())) {
+
+            final User user = initDataObject.getUser();
+            final User userToken = APILocator.getUserAPI().loadUserById(userid);
+
+            if (null != userToken) {
+
+                SecurityLogger.logInfo(this.getClass(), "Revoking token " + userid + " from " + request.getRemoteAddr() + " ");
+                userToken.setSkinId(UUIDGenerator.generateUuid()); // setting a new id will invalidate the token
+                APILocator.getUserAPI().save(userToken, user, PageMode.get(request).respectAnonPerms); // this will invalidate
+                return Response.ok(new ResponseEntityView(map("revoked", userid), EMPTY_MAP)).build(); // 200
+            }
+        } else {
+
+            return ExceptionMapperUtil.createResponse(new DotStateException("unauthorized to remove the token"), Response.Status.UNAUTHORIZED);
+        }
+
+        return ExceptionMapperUtil.createResponse(new DotStateException("No token"), Response.Status.NOT_FOUND);
+    }
+
+    @PUT
+    @Path("/users/revoke")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response revokeUsersToken(@Context final HttpServletRequest request,
+                                           @Context final HttpServletResponse response) throws DotSecurityException, DotDataException {
+
+        final InitDataObject initDataObject = new WebResource.InitBuilder().rejectWhenNoUser(true)
+                .requestAndResponse(request, response).requiredPortlet("users")
+                .requiredBackendUser(true).init();
+
+        if (APILocator.getRoleAPI().doesUserHaveRole(initDataObject.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())) {
+
+            final User user                 = initDataObject.getUser();
+            final List<User>   usersToken   = APILocator.getUserAPI().findAllUsers();
+            final List<String> userTokenIds = new ArrayList<>();
+            if (null != usersToken && !usersToken.isEmpty()) {
+
+                for (final User userToken: usersToken) {
+
+                    SecurityLogger.logInfo(this.getClass(), "Revoking token " + userToken.getUserId() + " from " + request.getRemoteAddr() + " ");
+                    userToken.setSkinId(UUIDGenerator.generateUuid()); // setting a new id will invalidate the token
+                    APILocator.getUserAPI().save(userToken, user, PageMode.get(request).respectAnonPerms); // this will invalidate
+                    userTokenIds.add( userToken.getUserId());
+                }
+
+                return Response.ok(new ResponseEntityView(map("revoked", userTokenIds), EMPTY_MAP)).build(); // 200
+            }
+        } else {
+
+            return ExceptionMapperUtil.createResponse(new DotStateException("unauthorized to remove the token"), Response.Status.UNAUTHORIZED);
+        }
+
+        return ExceptionMapperUtil.createResponse(new DotStateException("No token"), Response.Status.NOT_FOUND);
     }
 }

@@ -104,8 +104,6 @@ public class UserPersistence extends BasePersistence {
 	protected com.liferay.portal.model.User update(
 			com.liferay.portal.model.User user) throws SystemException {
 	
-
-
 			if (user.isNew() || user.isModified()) {
 	
 				UserHBM userHBM = null;
@@ -220,10 +218,8 @@ public class UserPersistence extends BasePersistence {
 								user.getFailedLoginAttempts(),
 								user.getAgreedToTermsOfUse(), user.getActive(),
 								user.getDeleteInProgress(), user.getDeleteDate());
-
-
-	
-					} 
+						userHBM.setSkinId(UUIDGenerator.generateUuid());
+					}
 				}
 
 				userHBM.setModDate(new Date());
