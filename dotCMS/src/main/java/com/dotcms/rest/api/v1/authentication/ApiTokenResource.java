@@ -238,6 +238,7 @@ public class ApiTokenResource implements Serializable {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder().rejectWhenNoUser(true)
                                                 .requestAndResponse(request, response).requiredPortlet("users")
+                                                .requiredFrontendUser(false)
                                                 .requiredBackendUser(true).init();
 
         if (APILocator.getRoleAPI().doesUserHaveRole(initDataObject.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())) {
@@ -270,6 +271,7 @@ public class ApiTokenResource implements Serializable {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder().rejectWhenNoUser(true)
                 .requestAndResponse(request, response).requiredPortlet("users")
+                .requiredFrontendUser(false)
                 .requiredBackendUser(true).init();
 
         if (APILocator.getRoleAPI().doesUserHaveRole(initDataObject.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())) {

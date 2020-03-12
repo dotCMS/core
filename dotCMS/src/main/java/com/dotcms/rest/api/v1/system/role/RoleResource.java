@@ -1,8 +1,5 @@
 package com.dotcms.rest.api.v1.system.role;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -10,17 +7,29 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
-import java.io.Serializable;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import java.io.Serializable;
+import java.util.Set;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This end-point provides access to information associated to dotCMS roles that
@@ -39,6 +48,7 @@ public class RoleResource implements Serializable {
 
 	private final WebResource webResource;
 	private final RoleAPI roleAPI;
+	private final RoleHelper roleHelper = new RoleHelper();
 
 	/**
 	 * Default class constructor.
@@ -98,7 +108,59 @@ public class RoleResource implements Serializable {
 			Logger.error(this, "An error occurred when processing the request.", e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
+
 		return Response.ok(new ResponseEntityView(map("checkRoles", hasUserRole))).build();
 	}
 
+	/**
+	 * Saves set of layout into a role
+	 * The user must have to be a BE and has to have access to roles portlet
+	 */
+	@POST
+	@Path("/layouts")
+	@Produces("application/json")
+	public Response saveRoleLayouts(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			final RoleLayoutForm roleLayoutForm) throws DotDataException, PortalException, SystemException, DotSecurityException {
+
+		new WebResource.InitBuilder()
+				.requiredFrontendUser(false).rejectWhenNoUser(true)
+				.requiredBackendUser(true).requiredPortlet("roles")
+				.requestAndResponse(request, response).init();
+
+		final String roleId          = roleLayoutForm.getRoleId();
+		final Set<String> layoutIds  = roleLayoutForm.getLayoutIds();
+		final Role role              = roleAPI.loadRoleById(roleId);
+		final LayoutAPI layoutAPI    = APILocator.getLayoutAPI();
+
+		return Response.ok(new ResponseEntityView(map("savedLayouts",
+				this.roleHelper.saveRoleLayouts(role, layoutIds, layoutAPI,
+						this.roleAPI, APILocator.getSystemEventsAPI())))).build();
+	}
+
+	/**
+	 * Saves set of layout into a role
+	 * The user must have to be a BE and has to have access to roles portlet
+	 */
+	@GET
+	@Path("/{roleId}/layouts")
+	@Produces("application/json")
+	public Response findRoleLayouts(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			final @PathParam("roleId") String roleId) throws DotDataException {
+
+		new WebResource.InitBuilder()
+				.requiredFrontendUser(false).rejectWhenNoUser(true)
+				.requiredBackendUser(true).requiredPortlet("roles")
+				.requestAndResponse(request, response).init();
+
+		final Role role              = roleAPI.loadRoleById(roleId);
+		final LayoutAPI layoutAPI    = APILocator.getLayoutAPI();
+
+		return Response.ok(new ResponseEntityView(
+				layoutAPI.loadLayoutsForRole(role)
+		)).build();
+	}
 }
