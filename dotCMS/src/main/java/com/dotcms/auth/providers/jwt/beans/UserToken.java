@@ -29,7 +29,7 @@ public class UserToken implements JWToken {
 
     
     public UserToken(final String id, final String subject, final String issuer, final Date modificationDate,
-            Date expiresDate, final Map<String,Object> claims, final String skinId) {
+            final Date expiresDate, final Map<String,Object> claims, final String skinId) {
         this.id = id;
         this.subject = subject;
         this.issuer = issuer;
@@ -54,7 +54,7 @@ public class UserToken implements JWToken {
 	 *            - The expiration date of the token.
 	 */
     public UserToken(final String id, final String subject, final String issuer, final Date modificationDate,
-            long ttlMillis, final Map<String,Object> claims, final String skinId) {
+            final long ttlMillis, final Map<String,Object> claims, final String skinId) {
         this(id,subject,issuer,modificationDate,new Date(System.currentTimeMillis()+ ttlMillis), claims, skinId);
         
     }
@@ -77,7 +77,7 @@ public class UserToken implements JWToken {
      * @param subject - The subject of the token
      * @param ttlMillis - The expiration date of the token.
      */
-    public UserToken(String id, String subject, String issuer, Date modificationDate, long ttlMillis, final String skinId) {
+    public UserToken(final String id, final String subject, final String issuer, final Date modificationDate, final long ttlMillis, final String skinId) {
         this(id, subject, issuer, modificationDate,ttlMillis, ImmutableMap.of(), skinId);
     }
     /**

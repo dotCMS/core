@@ -6,6 +6,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -22,11 +23,24 @@ public class UserDataGen extends AbstractDataGen<User> {
     private String lastName = "testLastName" + currentTime;
     private String emailAddress = "testEmailAddress@" + currentTime + ".com";
     private String password = String.valueOf(currentTime);
+    private String skinId   = UUIDGenerator.generateUuid();
+    private String companyId = UUIDGenerator.generateUuid();
     private List<Role> roles = new ArrayList<>();
 
     @SuppressWarnings("unused")
     public UserDataGen id(final String id) {
         this.id = id;
+        return this;
+    }
+
+    public UserDataGen companyId(final String companyId) {
+        this.companyId = companyId;
+        return this;
+    }
+
+    @SuppressWarnings("unused")
+    public UserDataGen skinId(final String skinId) {
+        this.skinId = skinId;
         return this;
     }
 
@@ -75,6 +89,8 @@ public class UserDataGen extends AbstractDataGen<User> {
         user.setLastName(lastName);
         user.setEmailAddress(emailAddress);
         user.setPassword(password);
+        user.setSkinId(this.skinId);
+        user.setCompanyId(companyId);
 
         return user;
     }
@@ -90,6 +106,8 @@ public class UserDataGen extends AbstractDataGen<User> {
             newUser.setLastName(user.getLastName());
             newUser.setPassword(user.getPassword());
             newUser.setActive(user.getActive());
+            newUser.setSkinId(user.getSkinId());
+            newUser.setCompanyId(user.getCompanyId());
             APILocator.getUserAPI().save(newUser, APILocator.systemUser(), false);
 
             for(final Role role:roles){

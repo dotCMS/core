@@ -15,8 +15,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -165,7 +163,7 @@ public class RoleResource implements Serializable {
 			final @Context HttpServletResponse response,
 			final RoleLayoutForm roleLayoutForm) throws DotDataException, DotSecurityException {
 
-		final InitDataObject initDataObject = new WebResource.InitBuilder()
+		final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
 				.requiredFrontendUser(false).rejectWhenNoUser(true)
 				.requiredBackendUser(true).requiredPortlet("roles")
 				.requestAndResponse(request, response).init();
@@ -203,7 +201,7 @@ public class RoleResource implements Serializable {
 			final @Context HttpServletResponse response,
 			final @PathParam("roleId") String roleId) throws DotDataException {
 
-		new WebResource.InitBuilder()
+		new WebResource.InitBuilder(this.webResource)
 				.requiredFrontendUser(false).rejectWhenNoUser(true)
 				.requiredBackendUser(true).requiredPortlet("roles")
 				.requestAndResponse(request, response).init();

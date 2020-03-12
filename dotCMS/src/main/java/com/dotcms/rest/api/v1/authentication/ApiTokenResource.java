@@ -3,17 +3,7 @@ package com.dotcms.rest.api.v1.authentication;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.UUIDGenerator;
-import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -21,12 +11,29 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -236,7 +243,7 @@ public class ApiTokenResource implements Serializable {
     public final Response revokeUserToken(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
                                          @PathParam("userid") final String userid) throws DotSecurityException, DotDataException {
 
-        final InitDataObject initDataObject = new WebResource.InitBuilder().rejectWhenNoUser(true)
+        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource).rejectWhenNoUser(true)
                                                 .requestAndResponse(request, response).requiredPortlet("users")
                                                 .requiredFrontendUser(false)
                                                 .requiredBackendUser(true).init();
@@ -255,10 +262,14 @@ public class ApiTokenResource implements Serializable {
             }
         } else {
 
-            return ExceptionMapperUtil.createResponse(new DotStateException("unauthorized to remove the token"), Response.Status.UNAUTHORIZED);
+            return ResponseUtil.INSTANCE.getErrorResponse(request, Response.Status.UNAUTHORIZED, initDataObject.getUser().getLocale(),
+                    initDataObject.getUser().getUserId(),
+                    "unauthorized to remove the token");
         }
 
-        return ExceptionMapperUtil.createResponse(new DotStateException("No token"), Response.Status.NOT_FOUND);
+        return ResponseUtil.INSTANCE.getErrorResponse(request, Response.Status.NOT_FOUND, initDataObject.getUser().getLocale(),
+                initDataObject.getUser().getUserId(),
+                "No token");
     }
 
     @PUT
@@ -269,7 +280,7 @@ public class ApiTokenResource implements Serializable {
     public final Response revokeUsersToken(@Context final HttpServletRequest request,
                                            @Context final HttpServletResponse response) throws DotSecurityException, DotDataException {
 
-        final InitDataObject initDataObject = new WebResource.InitBuilder().rejectWhenNoUser(true)
+        final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource).rejectWhenNoUser(true)
                 .requestAndResponse(request, response).requiredPortlet("users")
                 .requiredFrontendUser(false)
                 .requiredBackendUser(true).init();
