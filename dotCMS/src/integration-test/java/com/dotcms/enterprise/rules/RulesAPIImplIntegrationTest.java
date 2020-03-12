@@ -1,7 +1,6 @@
 package com.dotcms.enterprise.rules;
 
 import com.dotcms.datagen.*;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -82,7 +81,7 @@ public class RulesAPIImplIntegrationTest {
         final List<ConditionGroup> groups = ruleFromDataBase.getGroups();
         assertEquals(1, groups.size());
 
-        assertEquals(groups.get(0).getOperator(), conditionGroup.getOperator());
+        assertEquals(conditionGroup.getOperator(), groups.get(0).getOperator());
 
         //Saving and testing Condition
         final Condition condition = new ConditionDataGen().group(groups.get(0)).next();
@@ -90,7 +89,6 @@ public class RulesAPIImplIntegrationTest {
         rulesAPI.saveCondition(condition, user, false);
 
         allRules = rulesAPI.getAllRules(user, false);
-        assertEquals(1, allRules.size());
         final List<Condition> conditions = allRules.get(0).getGroups().get(0).getConditions();
 
         assertEquals(1, conditions.size());
@@ -139,12 +137,11 @@ public class RulesAPIImplIntegrationTest {
         rulesAPI.saveRuleAction(ruleAction, user, false);
 
         final List<Rule> allRules = rulesAPI.getAllRules(user, false);
-        assertEquals(1, allRules.size());
         final List<RuleAction> ruleActions = allRules.get(0).getRuleActions();
 
         assertEquals(1, ruleActions.size());
 
-        assertEquals(ruleAction.getActionDefinition(), ruleAction.getActionDefinition());
+        assertEquals(ruleAction.getActionDefinition(), ruleActions.get(0).getActionDefinition());
     }
 
     /**
@@ -215,7 +212,7 @@ public class RulesAPIImplIntegrationTest {
         }
     }
 
-    private boolean existRule(User user, Rule rule) throws DotDataException, DotSecurityException {
+    private boolean existRule(final User user, final Rule rule) throws DotDataException, DotSecurityException {
         final List<Rule> allRules = APILocator.getRulesAPI().getAllRules(user, false);
 
         return allRules.stream()
