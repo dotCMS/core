@@ -247,6 +247,14 @@ public interface RoleAPI {
 	 * @throws DotStateException
 	 */
 	public void addLayoutToRole(Layout layout, Role role) throws DotDataException, DotStateException;
+
+	/**
+	 * Returns true if the layout is already related to the role, otherwise false
+	 * @param layout {@link Layout}
+	 * @param role  {@link Role}
+	 * @return boolean
+	 */
+	public boolean hasLayoutToRole(Layout layout, Role role);
 	
 	/**
 	 * Remove a layout from a role
@@ -268,7 +276,7 @@ public interface RoleAPI {
 	/**
 	 * 
 	 * @param role
-	 * @param include users that have inherited this role
+	 * @param inherited users that have inherited this role
 	 * @return
 	 * @throws DotDataException
 	 * @throws DotSecurityException 

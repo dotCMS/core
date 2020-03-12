@@ -18,6 +18,7 @@ import io.vavr.control.Try;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Jason Tesser
@@ -363,6 +364,16 @@ public class RoleAPIImpl implements RoleAPI {
 			throw new DotStateException("Cannot alter layouts on this role");
 		}
 		roleFactory.addLayoutToRole(layout, role);
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public boolean hasLayoutToRole(final Layout layout, final Role role) {
+
+		final Optional<LayoutsRoles> layoutsRolesOpt =
+				this.roleFactory.findLayoutsRoles(layout, role);
+
+		return layoutsRolesOpt.isPresent() && UtilMethods.isSet(layoutsRolesOpt.get().getId());
 	}
 
 	@WrapInTransaction

@@ -12,12 +12,15 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -116,27 +119,76 @@ public class RoleResource implements Serializable {
 	 * Saves set of layout into a role
 	 * The user must have to be a BE and has to have access to roles portlet
 	 */
+	@DELETE
+	@Path("/layouts")
+	@Produces("application/json")
+	public Response deleteRoleLayouts(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			final RoleLayoutForm roleLayoutForm) throws DotDataException, DotSecurityException {
+
+		final InitDataObject initDataObject = new WebResource.InitBuilder()
+				.requiredFrontendUser(false).rejectWhenNoUser(true)
+				.requiredBackendUser(true).requiredPortlet("roles")
+				.requestAndResponse(request, response).init();
+
+		if (this.roleAPI.doesUserHaveRole(initDataObject.getUser(), this.roleAPI.loadCMSAdminRole())) {
+
+			final String roleId         = roleLayoutForm.getRoleId();
+			final Set<String> layoutIds = roleLayoutForm.getLayoutIds();
+			final Role role 			= roleAPI.loadRoleById(roleId);
+			final LayoutAPI layoutAPI   = APILocator.getLayoutAPI();
+
+			Logger.debug(this, ()-> "Deleting the layouts : " + layoutIds + " to the role: " + roleId);
+
+			return Response.ok(new ResponseEntityView(map("deletedLayouts",
+					this.roleHelper.deleteRoleLayouts(role, layoutIds, layoutAPI,
+							this.roleAPI, APILocator.getSystemEventsAPI())))).build();
+		} else {
+
+			final String remoteIp = request.getRemoteHost();
+			SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call delete role layouts by user "+
+					initDataObject.getUser().getUserId() + " from " + remoteIp);
+			throw new DotSecurityException("User: '" +  initDataObject.getUser().getUserId() + "' not authorized");
+		}
+	}
+
+	/**
+	 * Saves set of layout into a role
+	 * The user must have to be a BE and has to have access to roles portlet
+	 */
 	@POST
 	@Path("/layouts")
 	@Produces("application/json")
 	public Response saveRoleLayouts(
 			final @Context HttpServletRequest request,
 			final @Context HttpServletResponse response,
-			final RoleLayoutForm roleLayoutForm) throws DotDataException, PortalException, SystemException, DotSecurityException {
+			final RoleLayoutForm roleLayoutForm) throws DotDataException, DotSecurityException {
 
-		new WebResource.InitBuilder()
+		final InitDataObject initDataObject = new WebResource.InitBuilder()
 				.requiredFrontendUser(false).rejectWhenNoUser(true)
 				.requiredBackendUser(true).requiredPortlet("roles")
 				.requestAndResponse(request, response).init();
 
-		final String roleId          = roleLayoutForm.getRoleId();
-		final Set<String> layoutIds  = roleLayoutForm.getLayoutIds();
-		final Role role              = roleAPI.loadRoleById(roleId);
-		final LayoutAPI layoutAPI    = APILocator.getLayoutAPI();
+		if (this.roleAPI.doesUserHaveRole(initDataObject.getUser(), this.roleAPI.loadCMSAdminRole())) {
 
-		return Response.ok(new ResponseEntityView(map("savedLayouts",
-				this.roleHelper.saveRoleLayouts(role, layoutIds, layoutAPI,
-						this.roleAPI, APILocator.getSystemEventsAPI())))).build();
+			final String roleId         = roleLayoutForm.getRoleId();
+			final Set<String> layoutIds = roleLayoutForm.getLayoutIds();
+			final Role role 			= roleAPI.loadRoleById(roleId);
+			final LayoutAPI layoutAPI   = APILocator.getLayoutAPI();
+
+			Logger.debug(this, ()-> "Saving the layouts : " + layoutIds + " to the role: " + roleId);
+
+			return Response.ok(new ResponseEntityView(map("savedLayouts",
+					this.roleHelper.saveRoleLayouts(role, layoutIds, layoutAPI,
+							this.roleAPI, APILocator.getSystemEventsAPI())))).build();
+		} else {
+
+			final String remoteIp = request.getRemoteHost();
+			SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call save role layouts by user "+
+					initDataObject.getUser().getUserId() + " from " + remoteIp);
+			throw new DotSecurityException("User: '" +  initDataObject.getUser().getUserId() + "' not authorized");
+		}
 	}
 
 	/**
@@ -156,6 +208,7 @@ public class RoleResource implements Serializable {
 				.requiredBackendUser(true).requiredPortlet("roles")
 				.requestAndResponse(request, response).init();
 
+		Logger.debug(this, ()-> "Finding the role layouts for the roleid: " + roleId);
 		final Role role              = roleAPI.loadRoleById(roleId);
 		final LayoutAPI layoutAPI    = APILocator.getLayoutAPI();
 

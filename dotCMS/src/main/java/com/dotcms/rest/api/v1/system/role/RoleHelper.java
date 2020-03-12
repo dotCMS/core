@@ -9,6 +9,7 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.UtilMethods;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,8 +52,12 @@ public class RoleHelper {
         for(final String changedLayout : layoutIds) {
 
             final Layout layout = layoutAPI.findLayout(changedLayout);
-            if(null != layout) {
-                roleAPI.addLayoutToRole(layout, role);
+            if (null != layout && UtilMethods.isSet(layout.getId())) {
+                if (!roleAPI.hasLayoutToRole(layout, role)) {
+
+                    roleAPI.addLayoutToRole(layout, role);
+                    layoutsAdded.add(layout.getId());
+                }
             }
         }
 
@@ -60,5 +65,39 @@ public class RoleHelper {
         systemEventsAPI.pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(layoutsAdded));
 
         return layoutsAdded;
+    }
+
+    /**
+     * Saves only the existing layouts on layoutIds, any issue previous added not in the list will be removed
+     * @param role
+     * @param layoutIds
+     * @param layoutAPI
+     * @param roleAPI
+     * @param systemEventsAPI
+     * @throws DotDataException
+     */
+    @WrapInTransaction
+    public List<String> deleteRoleLayouts(final Role role, final Set<String> layoutIds,
+                                        final LayoutAPI layoutAPI, final RoleAPI roleAPI,
+                                        final SystemEventsAPI systemEventsAPI) throws DotDataException {
+
+        final List<String> layoutsDeleted = new ArrayList<>();
+        // Delete layout new layouts
+        for(final String toDeleteLayout : layoutIds) {
+
+            final Layout layout = layoutAPI.findLayout(toDeleteLayout);
+            if (null != layout && UtilMethods.isSet(layout.getId())) {
+                if (roleAPI.hasLayoutToRole(layout, role)) {
+
+                    roleAPI.removeLayoutFromRole(layout, role);
+                    layoutsDeleted.add(layout.getId());
+                }
+            }
+        }
+
+        //Send a websocket event to notificate a layout change
+        systemEventsAPI.pushAsync(SystemEventType.DELETE_PORTLET_LAYOUTS, new Payload(layoutsDeleted));
+
+        return layoutsDeleted;
     }
 }
