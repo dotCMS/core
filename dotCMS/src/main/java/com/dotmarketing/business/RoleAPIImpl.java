@@ -368,7 +368,7 @@ public class RoleAPIImpl implements RoleAPI {
 
 	@CloseDBIfOpened
 	@Override
-	public boolean hasLayoutToRole(final Layout layout, final Role role) {
+	public boolean roleHasLayout(final Layout layout, final Role role) {
 
 		final Optional<LayoutsRoles> layoutsRolesOpt =
 				this.roleFactory.findLayoutsRoles(layout, role);

@@ -254,7 +254,7 @@ public interface RoleAPI {
 	 * @param role  {@link Role}
 	 * @return boolean
 	 */
-	public boolean hasLayoutToRole(Layout layout, Role role);
+	public boolean roleHasLayout(Layout layout, Role role);
 	
 	/**
 	 * Remove a layout from a role

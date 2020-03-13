@@ -53,7 +53,7 @@ public class RoleHelper {
 
             final Layout layout = layoutAPI.findLayout(changedLayout);
             if (null != layout && UtilMethods.isSet(layout.getId())) {
-                if (!roleAPI.hasLayoutToRole(layout, role)) {
+                if (!roleAPI.roleHasLayout(layout, role)) {
 
                     roleAPI.addLayoutToRole(layout, role);
                     layoutsAdded.add(layout.getId());
@@ -87,7 +87,7 @@ public class RoleHelper {
 
             final Layout layout = layoutAPI.findLayout(toDeleteLayout);
             if (null != layout && UtilMethods.isSet(layout.getId())) {
-                if (roleAPI.hasLayoutToRole(layout, role)) {
+                if (roleAPI.roleHasLayout(layout, role)) {
 
                     roleAPI.removeLayoutFromRole(layout, role);
                     layoutsDeleted.add(layout.getId());
