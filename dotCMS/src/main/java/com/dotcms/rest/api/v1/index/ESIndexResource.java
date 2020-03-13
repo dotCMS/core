@@ -483,7 +483,10 @@ public class ESIndexResource {
     @GET
     @Path("/docscount/{params:.*}")
     @Produces("text/plain")
-    public Response getDocumentCount(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
+    public Response getDocumentCount(@Context HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse,
+            @PathParam("params") String params)
+            throws DotSecurityException {
 
         InitDataObject init= null;
         try {
@@ -495,7 +498,7 @@ public class ESIndexResource {
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             return responseResource.response( Long.toString( indexDocumentCount( indexName ) ) );
 
-        } catch (DotSecurityException | DotDataException e) {
+        } catch (DotDataException e) {
             Logger.error(this.getClass(),"Exception trying to get document count: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
