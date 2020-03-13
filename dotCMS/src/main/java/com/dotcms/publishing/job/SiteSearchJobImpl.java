@@ -1,7 +1,6 @@
 package com.dotcms.publishing.job;
 
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -29,6 +28,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.commons.lang3.BooleanUtils;
 import org.elasticsearch.ElasticsearchException;
 import org.quartz.JobDataMap;
@@ -51,6 +52,8 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 public class SiteSearchJobImpl {
+
+    private static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmssSSS");
 
     static final String INCREMENTAL = "incremental";
     static final String LANG_TO_INDEX = "langToIndex";
@@ -196,8 +199,8 @@ public class SiteSearchJobImpl {
             // The job originally was meant to run incrementally therefore the results must be stored in the job specific folder.
             // So they will still be available in the next round.
             bundleId = incrementalParam ? StringUtils.camelCaseLower(jobName) :
-            // Otherwise it is safe to create a unique time-stamp like folder name.
-                       UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
+            // Otherwise it is safe to create a unique  folder name.
+                       uniqueFolderName();
             // We use a new index name only on non-incremental
             newIndexName = newIndexName();
             final String newAlias = indexMetaData.isNewIndex() ? indexMetaData.getAlias() : null ;
@@ -304,7 +307,11 @@ public class SiteSearchJobImpl {
 
      private String newIndexName(){
         return SiteSearchAPI.ES_SITE_SEARCH_NAME + StringPool.UNDERLINE
-                + ESMappingAPIImpl.datetimeFormat.format(new Date());
+                + datetimeFormat.format(new Date());
+     }
+
+     private String uniqueFolderName(){
+        return  UUIDUtil.uuid() + "_" + UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
      }
 
      private IndexMetaData getIndexMetaData(String indexAlias) throws DotDataException {
