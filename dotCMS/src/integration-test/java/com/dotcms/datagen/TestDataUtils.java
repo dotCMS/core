@@ -956,20 +956,30 @@ public class TestDataUtils {
 
     public static Contentlet getNewsContent(Boolean persist, long languageId,
             String contentTypeId, Host site, Date sysPublishDate) {
+        return getNewsContent(persist, languageId, contentTypeId, site, sysPublishDate, null);
+    }
+
+    public static Contentlet getNewsContent(Boolean persist, long languageId,
+            String contentTypeId, Host site, Date sysPublishDate, String urlTitle) {
+
+        final long millis = System.currentTimeMillis();
 
         if (null == contentTypeId) {
             contentTypeId = getNewsLikeContentType().id();
         }
 
+        if (null == urlTitle) {
+            urlTitle = "news-content-url-title" + millis;
+        }
+
         try {
 
-            final long millis = System.currentTimeMillis();
             ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
                     .languageId(languageId)
                     .host(null != site ? site : APILocator.getHostAPI()
                             .findDefaultHost(APILocator.systemUser(), false))
                     .setProperty("title", "newsContent Title" + millis)
-                    .setProperty("urlTitle", "news-content-url-title" + millis)
+                    .setProperty("urlTitle", urlTitle)
                     .setProperty("byline", "byline")
                     .setProperty("sysPublishDate", sysPublishDate)
                     .setProperty("story", "newsStory")
