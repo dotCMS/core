@@ -250,7 +250,7 @@ public class ApiTokenResource implements Serializable {
 
         if (APILocator.getRoleAPI().doesUserHaveRole(initDataObject.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())) {
 
-            final User user = initDataObject.getUser();
+            final User user      = initDataObject.getUser();
             final User userToken = APILocator.getUserAPI().loadUserById(userid);
 
             if (null != userToken) {
