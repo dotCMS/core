@@ -109,6 +109,6 @@ public class ApiTokenResourceTest {
 
         final User modifiedUser = APILocator.getUserAPI().loadUserById(limitedUser.getUserId());
         assertNotNull(modifiedUser);
-        assertNotEquals(skinId, modifiedUser.getSkinId());
+        assertNotEquals(skinId, modifiedUser.getRememberMeToken());
     }
 }

@@ -44,7 +44,7 @@ public class DefaultResetPasswordUrlStrategy implements UrlStrategy {
 
         final String jwt = this.jsonWebTokenService.generateUserToken(
                 new UserToken(UUID.randomUUID().toString(), token, user.getModificationDate(),
-                        this.jwtMillis, user.getSkinId()
+                        this.jwtMillis, user.getRememberMeToken()
                 ));
 
         return new StringBuilder(C_PORTAL_PUBLIC_LOGIN_MY_ACCOUNT_CMD_ERESET_MY_USER_ID)

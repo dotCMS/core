@@ -71,7 +71,7 @@ public class JsonWebTokenUtilsIntegrationTest {
 
         //Generate a new token
         String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
-                userId, date, DateUtil.daysToMillis(2), user.getSkinId()
+                userId, date, DateUtil.daysToMillis(2), user.getRememberMeToken()
         ));
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);
@@ -106,7 +106,7 @@ public class JsonWebTokenUtilsIntegrationTest {
                 JsonWebTokenFactory.getInstance().getJsonWebTokenService();
         assertNotNull(jsonWebTokenService);
 
-        final String skinId = APILocator.getUserAPI().loadUserById(userId).getSkinId();
+        final String skinId = APILocator.getUserAPI().loadUserById(userId).getRememberMeToken();
         //Generate a new token
         String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
                 userId, date, DateUtil.daysToMillis(2), skinId

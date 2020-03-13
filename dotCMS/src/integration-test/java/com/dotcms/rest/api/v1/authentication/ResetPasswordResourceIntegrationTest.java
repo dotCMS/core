@@ -65,7 +65,7 @@ public class ResetPasswordResourceIntegrationTest{
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
         final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(),
                 "dotcms.org.1",
-                new Date(), 100000, user.getSkinId());
+                new Date(), 100000, user.getRememberMeToken());
 
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
@@ -81,7 +81,7 @@ public class ResetPasswordResourceIntegrationTest{
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
         final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(),
                 "dotcms.org.1",
-                new Date(), 100000, user.getSkinId());
+                new Date(), 100000, user.getRememberMeToken());
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
         
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
@@ -96,7 +96,7 @@ public class ResetPasswordResourceIntegrationTest{
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
         final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(),
                 "dotcms.org.1",
-                new Date(), 100000, user.getSkinId());
+                new Date(), 100000, user.getRememberMeToken());
 
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);

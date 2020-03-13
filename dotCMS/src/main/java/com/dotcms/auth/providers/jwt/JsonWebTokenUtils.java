@@ -97,7 +97,7 @@ public class JsonWebTokenUtils {
                         user.getModificationDate(),
                         (jwtMaxAge > 0) ?
                                 DateUtil.daysToMillis(jwtMaxAge) :
-                                jwtMaxAge, user.getSkinId()
+                                jwtMaxAge, user.getRememberMeToken()
                 )
         );
 

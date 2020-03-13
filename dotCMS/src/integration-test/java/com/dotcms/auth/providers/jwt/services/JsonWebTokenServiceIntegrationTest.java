@@ -61,7 +61,7 @@ public class JsonWebTokenServiceIntegrationTest {
         final User user = APILocator.getUserAPI().loadUserById(userId);
         //Generate a new token
         String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
-                userId, new Date(), DateUtil.daysToMillis(2), user.getSkinId()));
+                userId, new Date(), DateUtil.daysToMillis(2), user.getRememberMeToken()));
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);
 
@@ -84,7 +84,7 @@ public class JsonWebTokenServiceIntegrationTest {
         final User user = APILocator.getUserAPI().loadUserById(userId);
         //Generate a new token
         final UserToken userToken = new UserToken(jwtId, userId,clusterId, new Date(),
-                DateUtil.addDate(new Date(), Calendar.MONTH,-2), ImmutableMap.of(), user.getSkinId());
+                DateUtil.addDate(new Date(), Calendar.MONTH,-2), ImmutableMap.of(), user.getRememberMeToken());
 
         final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
 
@@ -105,7 +105,7 @@ public class JsonWebTokenServiceIntegrationTest {
         final User user = APILocator.getUserAPI().loadUserById(userId);
         //Generate a new token
         final String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
-                userId, new Date(), DateUtil.daysToMillis(2), user.getSkinId()
+                userId, new Date(), DateUtil.daysToMillis(2), user.getRememberMeToken()
         ));
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);

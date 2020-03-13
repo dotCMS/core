@@ -205,7 +205,7 @@ public class JsonWebTokenFactory implements Serializable {
             //Let's set the JWT Claims
             final JwtBuilder builder = Jwts.builder()
                     .setId(jwtBean.getId())
-                    .claim(CLAIM_SKIN_ID_AT, jwtBean.getActiveUser().get().getSkinId())
+                    .claim(CLAIM_SKIN_ID_AT, jwtBean.getActiveUser().get().getRememberMeToken())
                     .claim(CLAIM_UPDATED_AT, jwtBean.getActiveUser().get().getModificationDate().getTime())
                     .claim(CLAIM_ALLOWED_NETWORK, jwtBean.getClaims().get(CLAIM_ALLOWED_NETWORK))
                     .setSubject(jwtBean.getSubject())
@@ -284,7 +284,7 @@ public class JsonWebTokenFactory implements Serializable {
                     }
                 } else {
 
-                    if (!uuid.equals(user.getSkinId())) {
+                    if (!uuid.equals(user.getRememberMeToken())) {
                         final IncorrectClaimException claimException = new IncorrectClaimException(jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
                         claimException.setClaimName(Claims.SUBJECT);
                         claimException.setClaimValue(body.getSubject());
