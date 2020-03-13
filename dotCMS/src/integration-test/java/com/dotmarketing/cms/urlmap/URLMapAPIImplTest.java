@@ -500,22 +500,23 @@ public class URLMapAPIImplTest {
 
     private static Contentlet createURLMapperContentType(final String newsPatternPrefix,
             final Date sysPublishDate, final HTMLPageAsset detailPageToUse, final String urlTitle,
-            String urlMapPattern) {
+            final String urlMapPattern) {
 
         HTMLPageAsset detailPage = detailPage1;
         if (null != detailPageToUse) {
             detailPage = detailPageToUse;
         }
 
-        if (null == urlMapPattern) {
-            urlMapPattern = newsPatternPrefix + "{urlTitle}";
+        String urlMapPatternToUse = newsPatternPrefix + "{urlTitle}";
+        if (null != urlMapPattern) {
+            urlMapPatternToUse = urlMapPattern;
         }
 
         final ContentType newsContentType = getNewsLikeContentType(
                 "News" + System.currentTimeMillis(),
                 host,
                 detailPage.getIdentifier(),
-                urlMapPattern);
+                urlMapPatternToUse);
 
         return TestDataUtils
                 .getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),

@@ -32,6 +32,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -49,14 +50,6 @@ public class URLMapAPIImpl implements URLMapAPI {
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 
-    /**
-     * Return true if any {@link com.dotcms.contenttype.model.type.UrlMapable} matches with
-     * {@link UrlMapContext#getUri()}, otherwise return false
-     *
-     * @param urlMapContext
-     * @return
-     * @throws DotDataException
-     */
     public boolean isUrlPattern(final UrlMapContext urlMapContext)
             throws DotDataException, DotSecurityException {
         return matchingUrlPattern(urlMapContext.getUri()) && getContentlet(urlMapContext) != null;
@@ -95,7 +88,7 @@ public class URLMapAPIImpl implements URLMapAPI {
             final List<Matches> matchesFound = this.findMatch(urlMapContext.getUri());
             if (!matchesFound.isEmpty()) {
 
-                for (Matches matches : matchesFound) {
+                for (final Matches matches : matchesFound) {
                     final Structure structure = CacheLocator.getContentTypeCache()
                             .getStructureByInode(matches.getPatternChange().getStructureInode());
 
@@ -151,17 +144,17 @@ public class URLMapAPIImpl implements URLMapAPI {
     private List<Matches> findMatch(final String uri) throws DotDataException {
 
         // We want to avoid unnecessary lookups for vanity urls when browsing in the backend
-        for (final String backendFilter : CMSUrlUtil.BACKEND_FILTERED_LIST_ARRAY) {
-            if (uri.startsWith(backendFilter)) {
-                return new ArrayList<>();
-            }
+        final boolean filtered = CMSUrlUtil.BACKEND_FILTERED_LIST_ARRAY.stream()
+                .anyMatch(uri::startsWith);
+        if (filtered) {
+            return Collections.emptyList();
         }
 
         if (this.shouldLoadPatterns()) {
             this.loadPatterns();
         }
 
-        List<Matches> foundMatches = new ArrayList<>();
+        final List<Matches> foundMatches = new ArrayList<>();
 
         final String url =
                 !uri.endsWith(StringPool.FORWARD_SLASH) ? uri + StringPool.FORWARD_SLASH : uri;
@@ -177,7 +170,7 @@ public class URLMapAPIImpl implements URLMapAPI {
                 a regex in the root: "/{urlTitle}" resulting in a regex like "/(.+)/" which basically
                 will match any url.
                  */
-                for (RegExMatch regExMatch : matches) {
+                for (final RegExMatch regExMatch : matches) {
                     if (regExMatch.getMatch().equals(url)) {
                         foundMatches.add(new Matches(contentTypeURLPattern, matches));
                     }

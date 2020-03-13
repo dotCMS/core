@@ -34,8 +34,8 @@ public class ESUtils {
 	 * This method is a copy of the {@link QueryParser#escape(String)} where we remove the
 	 * scape for slashes "/" and we included the scape for white spaces " "
 	 */
-	public static String escapeExcludingSlashIncludingSpace(String s) {
-		StringBuilder sb = new StringBuilder();
+	public static String escapeExcludingSlashIncludingSpace(final String s) {
+		final StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < s.length(); i++) {
 			char c = s.charAt(i);
 			// These characters are part of the query syntax and must be escaped

@@ -20,6 +20,16 @@ public interface URLMapAPI {
     Optional<URLMapInfo> processURLMap(final UrlMapContext context)
             throws DotSecurityException, DotDataException;
 
+    /**
+     * Return true if the given {@link UrlMapContext#getUri()} is an URLMap and in order to do that
+     * the requested URI needs to be evaluated against all the existing URLMaps patterns, if a match
+     * is found the URI will be used to find the associated contentlet to that URLMap pattern.
+     *
+     * @param urlMapContext
+     * @return True if the requested URI is an URLMap
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     boolean isUrlPattern(final UrlMapContext urlMapContext)
             throws DotDataException, DotSecurityException;
 
