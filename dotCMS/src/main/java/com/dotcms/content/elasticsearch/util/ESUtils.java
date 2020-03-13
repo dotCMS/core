@@ -3,6 +3,10 @@ package com.dotcms.content.elasticsearch.util;
 import com.google.common.base.CharMatcher;
 import com.google.common.hash.Hashing;
 import java.nio.charset.Charset;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.lucene.queryparser.classic.QueryParser;
 
 public class ESUtils {
@@ -34,21 +38,26 @@ public class ESUtils {
 	 * This method is a copy of the {@link QueryParser#escape(String)} where we remove the
 	 * scape for slashes "/" and we included the scape for white spaces " "
 	 */
-	public static String escapeExcludingSlashIncludingSpace(final String s) {
-		final StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < s.length(); i++) {
-			char c = s.charAt(i);
+	public static String escapeExcludingSlashIncludingSpace(final String toEscape) {
+
+		final Set<String> TO_ESCAPE_COLLECTION =
+				Stream.of("\\", "+", "-", "!", "(", ")", ":",
+						"^", "[", "]", "\"", "{", "}",
+						"~",
+						"*", "?", "|", "&",
+						" "
+				).collect(Collectors.toCollection(HashSet::new));
+
+		final StringBuilder escapedString = new StringBuilder();
+		for (int i = 0; i < toEscape.length(); i++) {
+			char c = toEscape.charAt(i);
 			// These characters are part of the query syntax and must be escaped
-			if (c == '\\' || c == '+' || c == '-' || c == '!' || c == '(' || c == ')' || c == ':'
-					|| c == '^' || c == '[' || c == ']' || c == '\"' || c == '{' || c == '}'
-					|| c == '~'
-					|| c == '*' || c == '?' || c == '|' || c == '&'
-					|| c == ' ') {
-				sb.append('\\');
+			if (TO_ESCAPE_COLLECTION.contains(String.valueOf(c))) {
+				escapedString.append('\\');
 			}
-			sb.append(c);
+			escapedString.append(c);
 		}
-		return sb.toString();
+		return escapedString.toString();
 	}
 
 }
