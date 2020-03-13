@@ -321,15 +321,9 @@ public class URLMapAPIImplTest {
 
     private static Contentlet createURLMapperContentType(final String newsPatternPrefix, final Date sysPublishDate) {
 
-        final ContentType newsContentType = getNewsLikeContentType(
-                "News" + System.currentTimeMillis(),
-                host,
-                detailPage.getIdentifier(),
-                newsPatternPrefix + "{urlTitle}");
-
-        return TestDataUtils
-                .getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                        newsContentType.id(), host, sysPublishDate);
+        return TestDataUtils.createNewsLikeURLMappedContent(newsPatternPrefix, sysPublishDate,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(), host,
+                detailPage.getIdentifier());
     }
 
     private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri, final PageMode pageMode) {
