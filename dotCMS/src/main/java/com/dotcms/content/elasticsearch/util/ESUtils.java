@@ -50,7 +50,7 @@ public class ESUtils {
 
 		final StringBuilder escapedString = new StringBuilder();
 		for (int i = 0; i < toEscape.length(); i++) {
-			char c = toEscape.charAt(i);
+			final char c = toEscape.charAt(i);
 			// These characters are part of the query syntax and must be escaped
 			if (TO_ESCAPE_COLLECTION.contains(String.valueOf(c))) {
 				escapedString.append('\\');
