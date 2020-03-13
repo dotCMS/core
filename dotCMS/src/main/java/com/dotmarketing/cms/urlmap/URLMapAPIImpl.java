@@ -144,7 +144,7 @@ public class URLMapAPIImpl implements URLMapAPI {
     private List<Matches> findMatch(final String uri) throws DotDataException {
 
         // We want to avoid unnecessary lookups for vanity urls when browsing in the backend
-        final boolean filtered = CMSUrlUtil.BACKEND_FILTERED_LIST_ARRAY.stream()
+        final boolean filtered = CMSUrlUtil.BACKEND_FILTERED_COLLECTION.stream()
                 .anyMatch(uri::startsWith);
         if (filtered) {
             return Collections.emptyList();

@@ -3,6 +3,7 @@ package com.dotmarketing.filters;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
 import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
+import static java.util.stream.Collectors.toSet;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
@@ -32,7 +33,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -54,10 +55,10 @@ public class CMSUrlUtil {
 	private static final String NOT_FOUND = "NOTFOUND";
 	private static final String UNABLE_TO_FIND = "Unable to find ";
 
-	public static final Set<String> BACKEND_FILTERED_LIST_ARRAY =
+	public static final Set<String> BACKEND_FILTERED_COLLECTION =
 			Stream.of("/api", "/webdav", "/dA", "/c/", "/contentAsset", "/DOTSASS", "/DOTLESS",
 					"/html", "/dotAdmin", "/dwr")
-					.collect(Collectors.toCollection(HashSet::new));
+					.collect(Collectors.collectingAndThen(toSet(), Collections::unmodifiableSet));
 
 	/**
 	 * Get the CmsUrlUtil singleton instance
@@ -326,7 +327,7 @@ public class CMSUrlUtil {
 	public boolean isVanityUrlFiltered(final String url) {
 
 		if (null != url) {
-			return BACKEND_FILTERED_LIST_ARRAY.stream().anyMatch(url::startsWith);
+			return BACKEND_FILTERED_COLLECTION.stream().anyMatch(url::startsWith);
 		}
 
 		return false;

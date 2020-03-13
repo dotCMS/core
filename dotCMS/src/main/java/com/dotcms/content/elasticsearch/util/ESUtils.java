@@ -1,9 +1,11 @@
 package com.dotcms.content.elasticsearch.util;
 
+import static java.util.stream.Collectors.toSet;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.hash.Hashing;
 import java.nio.charset.Charset;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -12,6 +14,14 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 public class ESUtils {
 
 	public final static String SHA_256 = "_sha256";
+
+	final static Set<String> TO_ESCAPE_COLLECTION =
+			Stream.of("\\", "+", "-", "!", "(", ")", ":",
+					"^", "[", "]", "\"", "{", "}",
+					"~",
+					"*", "?", "|", "&",
+					" "
+			).collect(Collectors.collectingAndThen(toSet(), Collections::unmodifiableSet));
 
 	public static String escape(final String text) {
 
@@ -39,14 +49,6 @@ public class ESUtils {
 	 * scape for slashes "/" and we included the scape for white spaces " "
 	 */
 	public static String escapeExcludingSlashIncludingSpace(final String toEscape) {
-
-		final Set<String> TO_ESCAPE_COLLECTION =
-				Stream.of("\\", "+", "-", "!", "(", ")", ":",
-						"^", "[", "]", "\"", "{", "}",
-						"~",
-						"*", "?", "|", "&",
-						" "
-				).collect(Collectors.toCollection(HashSet::new));
 
 		final StringBuilder escapedString = new StringBuilder();
 		for (int i = 0; i < toEscape.length(); i++) {
