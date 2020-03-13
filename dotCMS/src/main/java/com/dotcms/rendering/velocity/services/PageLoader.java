@@ -106,14 +106,16 @@ public class PageLoader implements DotLoader {
             }
         }
 
+        // Add the pre-execute code of a widget to the page, regardless the mode
+        final PageRenderUtil pce = new PageRenderUtil((HTMLPageAsset) htmlPage, sys, mode);
+        sb.append(pce.getWidgetPreExecute());
+
         /**
          * Serializes the page variables and pointers to 
-         * the content (multitree ebtries)
+         * the content (multitree entries)
          * in the page velocity template
          */
         if (mode == PageMode.LIVE) {
-          final PageRenderUtil pce = new PageRenderUtil((HTMLPageAsset) htmlPage, sys, mode);
-          sb.append(pce.getWidgetPreExecute());
           sb.append(pce.asString());
         }
       
