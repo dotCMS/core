@@ -63,7 +63,7 @@ public class HTMLPageAssetAPIImplTest {
 
         // create detail page
         final Container container = new ContainerDataGen()
-                .withContentType(blogType, "myCode")
+                .withContentType(blogType, "$body")
                 .nextPersisted();
 
         ContainerDataGen.publish(container);
@@ -85,6 +85,7 @@ public class HTMLPageAssetAPIImplTest {
         // create URL-Mapped content
         final Contentlet urlMappedContent = new ContentletDataGen(blogType.id())
                 .languageId(language.getId())
+                .setProperty("body", "myBody")
                 .nextPersisted();
 
         ContentletDataGen.publish(urlMappedContent);
@@ -101,6 +102,6 @@ public class HTMLPageAssetAPIImplTest {
                 urlMappedContent.getLanguageId(),  USER_AGENT_DOTCMS_SITESEARCH);
 
 
-        Assert.assertEquals("<div>myCode</div>", html);
+        Assert.assertEquals("<div>myBody</div>", html);
     }
 }
