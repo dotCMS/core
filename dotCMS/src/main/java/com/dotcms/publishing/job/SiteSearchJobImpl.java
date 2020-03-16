@@ -182,8 +182,8 @@ public class SiteSearchJobImpl {
             HibernateUtil.closeSession();
         }
         date = DateUtil.getCurrentDate();
-        ActivityLogger.logInfo(getClass(), " SiteSearch:::  Job Finished", "User: " +userAPI.getSystemUser().getUserId()+ "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME  );
-        AdminLogger.log(getClass(), " SiteSearch::: Job Finished", "User: " +userAPI.getSystemUser().getUserId()+ "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
+        ActivityLogger.logInfo(getClass(), "Job Finished", "User: " +userAPI.getSystemUser().getUserId()+ "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME  );
+        AdminLogger.log(getClass(), "Job Finished", "User: " +userAPI.getSystemUser().getUserId()+ "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
     }
 
      private synchronized PreparedJobContext prepareJob(final JobExecutionContext jobContext)
@@ -269,7 +269,7 @@ public class SiteSearchJobImpl {
          }
 
          Logger.info(SiteSearchJobImpl.class, () -> String
-                 .format("SiteSearch::: Incremental mode [%s]. current index is `%s`. new index is `%s`. alias is `%s`  bundle id is `%s` ",
+                 .format("Incremental mode [%s]. current index is `%s`. new index is `%s`. alias is `%s`  bundle id is `%s` ",
                          BooleanUtils.toStringYesNo(incremental), indexName ,
                          UtilMethods.isSet(newIndexName) ? newIndexName : "N/A",
                          indexAlias,
@@ -354,7 +354,7 @@ public class SiteSearchJobImpl {
             indexName = aliasMap.get(indexAlias);
             if (UtilMethods.isSet(indexName)) {
                 if (siteSearchAPI.isDefaultIndex(indexAlias)) {
-                    Logger.info(SiteSearchJobImpl.class, String.format("SiteSearch::: Index `%s` is currently Site-Search DEFAULT.",indexAlias));
+                    Logger.info(SiteSearchJobImpl.class, String.format("Index `%s` is currently Site-Search DEFAULT.",indexAlias));
                     defaultIndex = true;
                 }
             } else {
