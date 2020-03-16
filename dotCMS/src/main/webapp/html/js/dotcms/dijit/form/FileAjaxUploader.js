@@ -48,7 +48,7 @@ dojo.require("dijit.form.Button");
  */
 dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templated], {
 
-    templatePath: dojo.moduleUrl("dotcms", "dijit/form/FileAjaxUploader.jsp"),
+    templatePath: dojo.moduleUrl("dotcms", "dijit/form/FileAjaxUploader.html"),
     widgetsInTemplate: true,
 
     name: '',

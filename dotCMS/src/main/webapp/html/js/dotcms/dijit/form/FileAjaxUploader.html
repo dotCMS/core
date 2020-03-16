@@ -1,4 +1,3 @@
-<%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <div id="${id}" class="fileAjaxUploader">
 
 	<input name="${name}" id="${name}ValueField" dojoAttachPoint="fileNameField" type="hidden" value="${fileName}">
@@ -7,7 +6,7 @@
 	</div>
 	<div dojoAttachPoint="fileUploadStatus" class="fileAjaxUploaderStatus" style="display: none;">
 		<div dojoType="dijit.ProgressBar" dojoAttachPoint="progressBar"></div>
-		<div class="fileAjaxUploaderStatusMsg"><%= LanguageUtil.get(pageContext, "Uploading")%>...</div>
+		<div class="fileAjaxUploaderStatusMsg">Uploading...</div>
 	</div>
 	<div name="${name}FileName" dojoAttachPoint="fileNameDisplayField" class="fileAjaxUploaderFileName" style="display: none;"></div>
 
