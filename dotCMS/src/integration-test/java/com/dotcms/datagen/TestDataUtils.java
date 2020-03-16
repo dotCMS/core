@@ -68,10 +68,6 @@ public class TestDataUtils {
         return getBlogLikeContentType("Blog" + System.currentTimeMillis(), site);
     }
 
-    public static ContentType getBlogLikeContentType(final Host site, final String detailPage) {
-        return getBlogLikeContentType("Blog" + System.currentTimeMillis(), site);
-    }
-
     @WrapInTransaction
     public static ContentType getBlogLikeContentType(final String contentTypeName,
             final Host site, final Set <String> workflowIds) {
