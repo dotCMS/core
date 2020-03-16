@@ -144,14 +144,14 @@ public class SiteSearchJobImpl {
         try {
 
                 int filesCount = 0, pagesCount = 0, urlmapCount = 0;
-                for (final BundlerStatus bs : status.getBundlerStatuses()) {
-                    if (bs.getBundlerClass().equals(FileAssetBundler.class.getName())) {
-                        filesCount += bs.getTotal();
-                    } else if (bs.getBundlerClass().equals(URLMapBundler.class.getName())) {
-                        urlmapCount += bs.getTotal();
-                    } else if (bs.getBundlerClass()
+                for (final BundlerStatus bundlerStatus : status.getBundlerStatuses()) {
+                    if (bundlerStatus.getBundlerClass().equals(FileAssetBundler.class.getName())) {
+                        filesCount += bundlerStatus.getTotal();
+                    } else if (bundlerStatus.getBundlerClass().equals(URLMapBundler.class.getName())) {
+                        urlmapCount += bundlerStatus.getTotal();
+                    } else if (bundlerStatus.getBundlerClass()
                             .equals(HTMLPageAsContentBundler.class.getName())) {
-                        pagesCount += bs.getTotal();
+                        pagesCount += bundlerStatus.getTotal();
                     }
                 }
 
