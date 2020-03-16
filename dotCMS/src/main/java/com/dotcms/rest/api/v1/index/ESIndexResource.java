@@ -485,7 +485,7 @@ public class ESIndexResource {
     @Produces("text/plain")
     public Response getDocumentCount(@Context HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
-            @PathParam("params") String params)
+            final @PathParam("params") String params)
             throws DotSecurityException {
 
         InitDataObject init= null;

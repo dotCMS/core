@@ -10,20 +10,20 @@ public class ElasticsearchStatusExceptionMapper implements ExceptionMapper<Elast
 
 
     @Override
-    public Response toResponse(ElasticsearchStatusException exception) {
+    public Response toResponse(final ElasticsearchStatusException exception) {
 
         //Log into our logs first.
         Logger.warn(this.getClass(), exception.getMessage(), exception);
 
         //Create the message.
-        String message = exception.getMessage();
+        final String message = exception.getMessage();
 
         //Creating the message in JSON format.
-        String entity = ExceptionMapperUtil.getJsonErrorAsString(message);
+        final String entity = ExceptionMapperUtil.getJsonErrorAsString(message);
 
         //Return 4xx message to the client.
         return ExceptionMapperUtil.createResponse(entity, message,
                 message.contains("index_not_found_exception") ? Status.NOT_FOUND
-                        : Status.BAD_REQUEST);
+                        : Status.INTERNAL_SERVER_ERROR);
     }
 }
