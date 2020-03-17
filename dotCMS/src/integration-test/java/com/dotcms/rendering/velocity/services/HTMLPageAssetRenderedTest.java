@@ -5,10 +5,12 @@ import static org.mockito.Mockito.mock;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableConstantField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.WidgetContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequest;
@@ -1130,6 +1132,85 @@ public class HTMLPageAssetRenderedTest {
                 "</div>";
 
         Assert.assertTrue(html.matches(regexExpected));
+    }
+
+    //Data Provider for the Widget Pre-execute code test
+    @DataProvider
+    public static Object[] dataProviderWidgetPreExecuteCode() {
+        return new Object[] {
+                new WidgetPreExecuteCodeTestCase(PageMode.EDIT_MODE),
+                new WidgetPreExecuteCodeTestCase(PageMode.PREVIEW_MODE),
+                new WidgetPreExecuteCodeTestCase(PageMode.LIVE),
+        };
+    }
+
+    private static class WidgetPreExecuteCodeTestCase {
+        final PageMode pageMode;
+
+        public WidgetPreExecuteCodeTestCase(final PageMode pageMode) {
+            this.pageMode = pageMode;
+        }
+    }
+
+    @Test
+    @UseDataProvider("dataProviderWidgetPreExecuteCode")
+    public void test_WidgetPreExecuteCodeShowRegardlessPageMode(final WidgetPreExecuteCodeTestCase testCase) throws Exception {
+
+        //Update the Preexecute Field to have some code in it
+        final String preExcuteCode = "PreExecute Code Displayed";
+        ContentType contentType = TestDataUtils.getWidgetLikeContentType();
+        final Field preExecuteField = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(contentType.id(),WidgetContentType.WIDGET_PRE_EXECUTE_FIELD_VAR);
+        APILocator.getContentTypeFieldAPI()
+                .save(FieldBuilder.builder(preExecuteField).values(preExcuteCode).build(), systemUser);
+        // Assert that the widget has set the pre-execute field
+        Assert.assertTrue(APILocator.getContentTypeFieldAPI()
+                .byContentTypeIdAndVar(contentType.id(),WidgetContentType.WIDGET_PRE_EXECUTE_FIELD_VAR)
+                .values().equals(preExcuteCode));
+
+        //Create Contentlet
+        final Contentlet widgetContentlet = TestDataUtils.getWidgetContent(true,1,contentType.id());
+        addAnonymousPermissions(widgetContentlet);
+
+        //Create Container, Template and Page
+        final Container container = createContainer();
+        final Template template = createTemplate(container);
+
+        final String pageName = "testPage-"+System.currentTimeMillis();
+        final HTMLPageAsset page = createHtmlPageAsset(template, pageName, 1);
+
+        //Add contentlet to the page
+        MultiTree multiTree = new MultiTree(page.getIdentifier(), container.getIdentifier(),widgetContentlet.getIdentifier() ,UUID,0);
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+        //Request page
+        final HttpServletRequest mockRequest = createHttpServletRequest(page);
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        Mockito.when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+        Mockito.when(session.getAttribute(WebKeys.CMS_USER)).thenReturn(systemUser);
+        final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(systemUser)
+                        .setPageUri(page.getURI())
+                        .setPageMode(testCase.pageMode)
+                        .build(),
+                mockRequest, mockResponse);
+
+        //Page html must contains the pre-execute code
+        Assert.assertTrue("Page Mode: " + testCase.pageMode + " html: " + html,html.contains(preExcuteCode));
+    }
+
+    @NotNull
+    private HttpServletRequest createHttpServletRequest(HTMLPageAsset pageEnglishVersion) throws DotDataException {
+        final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
+        Mockito.when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
+        Mockito.when(mockRequest.getRequestURI()).thenReturn(pageEnglishVersion.getURI());
+        Mockito.when(mockRequest.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.EDIT_MODE.toString());
+        Mockito.when(mockRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
+        return mockRequest;
     }
 
     private static void addAnonymousPermissions(final Contentlet contentlet)
