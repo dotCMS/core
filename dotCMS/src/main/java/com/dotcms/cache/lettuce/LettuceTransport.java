@@ -291,12 +291,12 @@ public class LettuceTransport implements CacheTransport {
      * Legacy parsing of a message str
      */
     public void parseMessage(final String msg) {
-        if (msg.equals("ACK")) {
+        if ("ACK".equals(msg)) {
             Logger.info(this, "ACK Received " + new Date());
-        } else if (msg.equals("MultiMessageResources.reload")) {
+        } else if ("MultiMessageResources.reload".equals(msg)) {
             MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY);
             messages.reloadLocally();
-        } else if (msg.equals(ChainableCacheAdministratorImpl.DUMMY_TEXT_TO_SEND)) {
+        } else if (ChainableCacheAdministratorImpl.DUMMY_TEXT_TO_SEND.equals(msg)) {
             // Don't do anything is we are only checking sending.
         } else {
             CacheLocator.getCacheAdministrator().invalidateCacheMesageFromCluster(msg);
