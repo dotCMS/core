@@ -165,7 +165,7 @@ public class ESIndexAPI {
 		final Request request = new Request("GET", "/_stats");
 		final Map<String, Object> jsonMap = performLowLevelRequest(request);
 
-		Map<String, IndexStats> indexStatsMap = new HashMap<>();
+		final Map<String, IndexStats> indexStatsMap = new HashMap<>();
 
 		final Map<String, Object> indices = (Map<String, Object>)jsonMap.get("indices");
 
@@ -175,11 +175,12 @@ public class ESIndexAPI {
                 final Map<String, Object> indexStats = (Map<String, Object>) ((Map<String, Object>)
                         indices.get(key)).get("primaries");
 
-                int numOfDocs = (int) ((Map<String, Object>) indexStats.get("docs"))
-                        .get("count");
+                final Object countObject = ((Map<String, Object>) indexStats.get("docs")).get("count");
+                final long numOfDocs = Long.valueOf(countObject!=null? countObject.toString():"0");
 
-                int sizeInBytes = (int) ((Map<String, Object>) indexStats.get("store"))
+                final Object sizeObject = ((Map<String, Object>) indexStats.get("store"))
                         .get("size_in_bytes");
+                final long sizeInBytes = Long.valueOf(sizeObject!=null? sizeObject.toString():"0");
 
                 final String indexNameWithoutPrefix = removeClusterIdFromName(key);
                 indexStatsMap.put(indexNameWithoutPrefix,
@@ -880,7 +881,7 @@ public class ESIndexAPI {
 		return indexes;
 	}
 
-    private boolean hasClusterPrefix(final String indexName) {
+	boolean hasClusterPrefix(final String indexName) {
         final String clusterId = getClusterIdFromIndexName(indexName).orElse(null);
         return clusterId != null && clusterId.equals(ClusterFactory.getClusterId());
     }
