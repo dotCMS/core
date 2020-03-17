@@ -512,9 +512,15 @@ public class URLMapAPIImplTest {
             urlMapPatternToUse = urlMapPattern;
         }
 
-        return TestDataUtils.createNewsLikeURLMappedContent(newsPatternPrefix, sysPublishDate,
-                APILocator.getLanguageAPI().getDefaultLanguage().getId(), host,
-                detailPage.getIdentifier());
+        final ContentType newsContentType = getNewsLikeContentType(
+                "News" + System.currentTimeMillis(),
+                host,
+                detailPage.getIdentifier(),
+                urlMapPatternToUse);
+
+        return TestDataUtils
+                .getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        newsContentType.id(), host, sysPublishDate, urlTitle);
 
     }
 
