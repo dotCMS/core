@@ -1,13 +1,13 @@
 package com.dotcms.util;
 
-import com.dotcms.vanityurl.model.CachedVanityUrl;
-import com.dotmarketing.util.Logger;
-
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-
 import static com.liferay.util.StringUtil.GROUP_REPLACEMENT_PREFIX;
 import static com.liferay.util.StringUtil.replaceAllGroups;
+
+import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * This class provide some utility methods to interact with
@@ -53,7 +53,8 @@ public class VanityUrlUtil {
         CachedVanityUrl cachedVanityUrlToReturn = cachedVanityUrl;
 
         if (null != cachedVanityUrl && null != matches && matches.length > 0 &&
-                -1 != cachedVanityUrl.getForwardTo().indexOf(GROUP_REPLACEMENT_PREFIX)) {
+             UtilMethods.isSet(cachedVanityUrl.getForwardTo()) &&
+             -1 != cachedVanityUrl.getForwardTo().indexOf(GROUP_REPLACEMENT_PREFIX)) {
 
             // Replace the expressions on the vanity forward.
             final StringBuilder builder =

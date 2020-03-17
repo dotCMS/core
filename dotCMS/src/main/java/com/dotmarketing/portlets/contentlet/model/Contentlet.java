@@ -48,6 +48,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,8 +65,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -129,6 +130,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String IS_COPY_CONTENTLET = "_is_copy_contentlet";
   public static final String CONTENTLET_ASSET_NAME_COPY = "_contentlet_asset_name_copy";
   public static final String AUTO_ASSIGN_WORKFLOW = "AUTO_ASSIGN_WORKFLOW";
+  public static final String TEMPLATE_MAPPINGS = "TEMPLATE_MAPPINGS";
 
   public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
   public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";
@@ -232,7 +234,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   /**
    * Create a contentlet based on a map (makes a copy of it)
    *
-   * @param map
+   * @param mapIn
    */
   public Contentlet(final Map<String, Object> mapIn) {
     this();
@@ -273,27 +275,24 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public String getTitle(){
     	try {
 
-    		//Verifies if the content type has defined a title field
-			Optional<com.dotcms.contenttype.model.field.Field> fieldWithTitleFound = this.getContentType().fields().stream().
-					filter(field -> field.variable().equals(TITTLE_KEY)).findAny();
+    		if (UtilMethods.isSet(this.map.get(TITTLE_KEY))) {
 
-
-			if (fieldWithTitleFound.isPresent()) {
-				return map.get(TITTLE_KEY)!=null?map.get(TITTLE_KEY).toString():null;
-			} else {
-				Optional<com.dotcms.contenttype.model.field.Field>
-						fieldWithSuspectTitleFound = getFieldWithVarStartingWithTitleWord();
-
-				if (fieldWithSuspectTitleFound.isPresent()) {
-					return map.get(fieldWithSuspectTitleFound.get().variable())!=null
-							?map.get(fieldWithSuspectTitleFound.get().variable()).toString()
-							:null;
-				}
+    			return map.get(TITTLE_KEY).toString();
 			}
 
-			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
-			map.put(TITTLE_KEY, title);
+    		//Verifies if the content type has defined a title field
+			final Optional<com.dotcms.contenttype.model.field.Field>
+					fieldWithSuspectTitleFound = getFieldWithVarStartingWithTitleWord();
 
+			String title = fieldWithSuspectTitleFound.isPresent() &&  map.get(fieldWithSuspectTitleFound.get().variable())!=null?
+				map.get(fieldWithSuspectTitleFound.get().variable()).toString(): null;
+
+			if (!UtilMethods.isSet(title)) {
+				title = getContentletAPI().getName(
+						this, getUserAPI().getSystemUser(), false);
+			}
+
+			map.put(TITTLE_KEY, title);
     	    return title;
 		} catch (Exception e) {
 			Logger.debug(this,"Unable to get title for contentlet, id: " + getIdentifier(), e);
@@ -1493,6 +1492,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	public void cleanup(){
 	    getMap().remove(IS_COPY_CONTENTLET);
 	    getMap().remove(CONTENTLET_ASSET_NAME_COPY);
+	    getMap().remove(TEMPLATE_MAPPINGS);
 		getWritableNullProperties().clear();
 	}
 
@@ -1528,6 +1528,33 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public boolean hasLiveVersion() throws DotStateException, DotDataException {
 		return APILocator.getVersionableAPI().hasLiveVersion(this);
+	}
+
+	/**
+	 * Get the optional contentlet Base Content Type
+	 * 1) first look up on the contentlet properties
+	 * 2) otherwise tries to look for based on the content type (if set)
+	 *
+	 * returns empty if can not determine any content type
+	 *
+	 * @return the contentlet Base Content Type
+	 */
+	@JsonIgnore
+	public Optional<BaseContentType> getBaseType() {
+
+		if (this.map.containsKey(Contentlet.BASE_TYPE_KEY)) {
+
+			return Optional.ofNullable(BaseContentType.getBaseContentType(
+					(String) this.map.get(Contentlet.BASE_TYPE_KEY)));
+		}
+
+		final ContentType contentletContentType = this.getContentType();
+		if (null != contentletContentType) {
+
+			return Optional.ofNullable(contentletContentType.baseType());
+		}
+
+		return Optional.empty();
 	}
 
 	/**

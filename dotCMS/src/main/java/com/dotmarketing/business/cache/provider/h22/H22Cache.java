@@ -1,6 +1,6 @@
 package com.dotmarketing.business.cache.provider.h22;
 
-import com.dotcms.repackage.com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
+import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 import com.dotcms.repackage.org.apache.commons.io.comparator.LastModifiedFileComparator;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.DirectoryFileFilter;
 import com.dotcms.util.CloseUtils;

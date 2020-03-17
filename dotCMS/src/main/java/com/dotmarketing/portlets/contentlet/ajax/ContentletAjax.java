@@ -1,16 +1,10 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
-import static com.dotcms.exception.ExceptionUtil.getRootCause;
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
 import com.dotcms.business.CloseDB;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.enterprise.FormAJAXProxy;
@@ -92,6 +86,10 @@ import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import io.vavr.control.Try;
+import org.jetbrains.annotations.NotNull;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -104,10 +102,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import org.jetbrains.annotations.NotNull;
+
+import static com.dotcms.exception.ExceptionUtil.getRootCause;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * This class handles the communication between the view and the back-end
@@ -496,6 +498,14 @@ public class ContentletAjax {
 
 	 public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 	   return searchContentletsByUser(ImmutableList.of(BaseContentType.ANY), structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked, page, orderBy, perPage, currentUser, sess, modDateFrom, modDateTo);
+	 }
+
+	 private <T> List<T> distinct (final List<T> collection, final Function<T, Object> indexKeyFunction) {
+
+		 final Map<Object, T> collectionIndexMap = collection.stream().collect(
+		 		Collectors.toMap(indexKeyFunction, Function.identity(), (existing, replacement) -> existing));
+
+		return new ArrayList<>(collectionIndexMap.values());
 	 }
 	/**
 	 * This method is used by the back-end to pull the content from the Lucene
@@ -984,9 +994,12 @@ public class ContentletAjax {
 			fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Title")).getOrElse("Title"));
 			headers.add(fieldMap);
 
-			fieldMap = new HashMap<> ();
-			fieldMap.put("fieldVelocityVarName", "__type__");
-			fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Type")).getOrElse("Type"));
+			// if there is a type selected, does not make sense to show it on the list.
+			if (Structure.STRUCTURE_TYPE_ALL.equals(structureInode)) {
+				fieldMap = new HashMap<>();
+				fieldMap.put("fieldVelocityVarName", "__type__");
+				fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Type")).getOrElse("Type"));
+			}
 			headers.add(fieldMap);
 
 
@@ -997,7 +1010,7 @@ public class ContentletAjax {
 		fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Step")).getOrElse("Step"));
 		headers.add(fieldMap);
 
-		results.add(headers);
+		results.add(this.distinct(headers, headerFieldMap -> Map.class.cast(headerFieldMap).get("fieldVelocityVarName")));
 
 		// we add the total hists for the query
 		results.add(totalHits);
@@ -1022,12 +1035,13 @@ public class ContentletAjax {
 				ContentType type = con.getContentType();
 				searchResult.put("typeVariable", type.variable());
 				searchResult.put("baseType",type.baseType().name());
-				for (String fieldContentlet : fieldsMapping.keySet()) {
+				for (final String fieldContentlet : fieldsMapping.keySet()) {
 					String fieldValue = null;
 					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
 						fieldValue = (con.getMap().get(fieldContentlet)).toString();
 					}
-					Field field = (Field) fieldsMapping.get(fieldContentlet);
+
+					final Field field = fieldsMapping.get(fieldContentlet);
 					if (UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE.toString()) ||
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
@@ -1055,6 +1069,13 @@ public class ContentletAjax {
 							UtilMethods.isSet(ident) &&
 							UtilMethods.isSet(ident.getAssetName())) {
 						fieldValue = ident.getAssetName();
+					}
+
+					// when a content type is selected and the field is listed and binary, instead of displaying the path, must display just the name
+					if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && field.isListed() && field.getFieldType().equals(
+							Field.FieldType.BINARY.toString())) {
+
+						searchResult.put(fieldContentlet+"_title_", con.getBinary(fieldContentlet).getName());
 					}
 
 					searchResult.put(fieldContentlet, fieldValue);
@@ -1130,9 +1151,16 @@ public class ContentletAjax {
 				searchResult.put("working", working.toString());
 				Boolean live = con.isLive();
 				searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
+
 				searchResult.put("hasLiveVersion", "false");
-				if (!con.isLive() && con.isWorking() && !con.isArchived()) {
-					if (APILocator.getVersionableAPI().hasLiveVersion(con)) {
+
+				final boolean hasLiveVersion = APILocator.getVersionableAPI().hasLiveVersion(con);
+				if (live && hasLiveVersion) {
+
+					searchResult.put("hasLiveVersion", "true");
+				}
+				if (!live && working && !con.isArchived()) {
+					if (hasLiveVersion) {
 						searchResult.put("hasLiveVersion", "true");
 						searchResult.put("allowUnpublishOfLiveVersion", "true");
 						searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
@@ -1157,9 +1185,23 @@ public class ContentletAjax {
 				// End Workflow Actions
 
 				//searchResult.put("structureName", st.getVelocityVarName());
-				Long LanguageId = con.getLanguageId();
-				searchResult.put("languageId", LanguageId.toString());
+				Long languageId = con.getLanguageId();
+				searchResult.put("languageId", languageId.toString());
+				final Language language = APILocator.getLanguageAPI().getLanguage(languageId);
+				searchResult.put("language", language.toString());
 				searchResult.put("permissions", permissionsSt.toString());
+
+				//Add mimeType
+				if(type.baseType().getType() == BaseContentType.FILEASSET.getType()){
+					searchResult.put("mimeType", APILocator.getFileAssetAPI()
+							.getMimeType(APILocator.getFileAssetAPI().fromContentlet(con).getUnderlyingFileName()));
+				} else if(type.baseType().getType() == BaseContentType.HTMLPAGE.getType()){
+					searchResult.put("mimeType", "application/dotpage");
+				} else {
+					searchResult.put("mimeType", "");
+				}
+				final String icon = spanClass.startsWith("uknIcon") ? spanClass.replaceAll("uknIcon","").trim() : spanClass;
+				searchResult.put("__icon__",icon);
 			} catch (DotSecurityException e) {
 
 				Logger.debug(this, "Does not have permissions to read the content: " + searchResult, e);

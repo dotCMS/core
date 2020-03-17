@@ -84,9 +84,9 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		title = title.replace(/-{2,}/g, "-");
 		ele.value = title;
 		<% if (parentFolder != null) { %>
-		 	dojo.byId("pathToFolder").value = "<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>"+title;
+		 	dojo.byId("pathToFolder").innerText = "<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>"+title;
 		<% } else { %>
-		 	dojo.byId("pathToFolder").value = "/"+title;
+		 	dojo.byId("pathToFolder").innerText = "/"+title;
 		<% } %>
 	}
 
@@ -166,9 +166,9 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
 						<dd style="width:80%">
 							<% if (parentFolder != null) { %>
-								<input id="pathToFolder" readonly="true" style="width:100%;border:0;" value="<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %><%= folder.getName() %>" />
+								<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %><%= folder.getName() %></div>
 							<% } else { %>
-								<input id="pathToFolder" readonly="true" style="width:100%;border:0;" value="/<%= folder.getName() %>" />
+								<div id="pathToFolder" style="word-break: break-all;">/<%= folder.getName() %></div>
 							<% } %>
 							<!--<html:hidden property="name" />-->
 						</dd>
@@ -176,9 +176,9 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
 							<dd style="width:80%">
 								<% if (parentFolder != null) { %>
-									<input id="pathToFolder" readonly="true" style="width:100%;border:0;" value="<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>" />
+									<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %></div>
 								<% } else { %>
-									<input id="pathToFolder" readonly="true" style="width:100%;border:0;" value="/" />
+									<div id="pathToFolder" style="word-break: break-all;">/</div>
 								<% } %>
 								<!--<html:hidden property="name" />-->
 							</dd>

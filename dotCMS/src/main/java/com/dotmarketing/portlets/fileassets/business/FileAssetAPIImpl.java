@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+
+import com.dotcms.util.MimeTypeUtils;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
@@ -648,11 +650,21 @@ public class FileAssetAPIImpl implements FileAssetAPI {
     }
 
     @Override
-    public File getContentMetadataFile(String inode) {
+    public File getContentMetadataFile(final String inode) {
         return new File(getRealAssetsRootPath()+File.separator+
                 inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+inode+File.separator+
                 "metaData"+File.separator+"content");
     }
+
+	@Override
+	public File getContentMetadataFile(final String inode, final String fileName) {
+
+		return null == fileName?
+				this.getContentMetadataFile(inode):
+				new File(getRealAssetsRootPath()+File.separator+
+				inode.charAt(0)+File.separator+inode.charAt(1)+File.separator+inode+File.separator+
+				fileName);
+	}
 
     @Override
     public String getContentMetadataAsString(File metadataFile) throws Exception {
@@ -778,6 +790,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         }
     }
 
+    @Override
 	public String getMimeType(String filename) {
 		if (filename != null) {
 			filename = filename.toLowerCase();
@@ -796,6 +809,12 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		}
 
 		return mimeType;
+	}
+
+	@Override
+	public String getMimeType(final File binary) {
+
+    	return MimeTypeUtils.getMimeType(binary);
 	}
 
 	public String getRealAssetPathTmpBinary() {

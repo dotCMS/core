@@ -107,7 +107,7 @@ public abstract class FieldSql {
 	public String selectFieldVars= 	"select id, field_id, variable_name, variable_key, variable_value, user_id, last_mod_date from field_variable where field_id = ? order by variable_key";
 	public String selectFieldVar= 	"select id, field_id, variable_name, variable_key, variable_value, user_id, last_mod_date from field_variable where id = ? ";
 	public String selectFieldVarByKey= 	"select id, field_id, variable_name, variable_key, variable_value, user_id, last_mod_date from field_variable where variable_key = ? ";
-
+	public String selectFieldIdVarByKey= 	"select id, field_id, variable_name, variable_key, variable_value, user_id, last_mod_date from field_variable where field_id = ? and variable_key = ?";
 
     public String deleteFieldVar= 	"delete from field_variable where id = ? or (field_id=? and variable_key=?)";
 	public String deleteFieldVarsForField= "delete from field_variable where field_id = ?";

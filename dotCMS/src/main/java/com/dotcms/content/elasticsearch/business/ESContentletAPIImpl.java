@@ -17,14 +17,23 @@ import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
+import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.ConstantField;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.HostFolderField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotcms.contenttype.transform.field.FieldTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -99,12 +108,14 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -122,7 +133,6 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.business.TagAPI;
@@ -163,7 +173,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -189,6 +198,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.activation.MimeType;
 import javax.servlet.http.HttpServletRequest;
+
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -240,6 +251,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private final ContentletSystemEventUtil contentletSystemEventUtil;
     private final LocalSystemEventsAPI      localSystemEventsAPI;
+    private final BaseTypeToContentTypeStrategyResolver baseTypeToContentTypeStrategyResolver =
+            BaseTypeToContentTypeStrategyResolver.getInstance();
 
     public static enum QueryType {
         search, suggest, moreLike, Facets
@@ -4047,8 +4060,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             + "; ContentIdentifier: " + (contentletIn != null ? contentletIn
                             .getIdentifier() : "Unknown"), contentletIn.getHost());
 
+            this.checkOrSetContentType(contentletIn, user);
+
             final String lockKey =
-                    "ContentletIdentifier:" + (UtilMethods.isSet(contentletIn.getIdentifier()) ? contentletIn.getIdentifier() : UUIDGenerator.generateUuid());
+                    "ContentletIdentifier:" + (UtilMethods.isSet(contentletIn.getIdentifier()) ?
+                            contentletIn.getIdentifier() : UUIDGenerator.generateUuid());
             try {
 
                 final Optional<Contentlet> workflowContentletOpt =
@@ -4105,6 +4121,37 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return contentletOut;
         } finally {
             this.cleanup(contentletOut);
+        }
+    }
+
+    /*
+     * If the contentletIn is new, has not any content type assigned and has a base type set into the properties
+     * will try to figure out a match for the content type
+     */
+    private void checkOrSetContentType(final Contentlet contentletIn, final User user) {
+
+        final Optional<BaseContentType> baseTypeOpt = contentletIn.getBaseType();
+        if (contentletIn.isNew() && null == contentletIn.getContentType() &&
+                baseTypeOpt.isPresent()) {
+
+            final BaseContentType baseContentType = baseTypeOpt.get();
+            final Optional<BaseTypeToContentTypeStrategy>  typeStrategy =
+                    this.baseTypeToContentTypeStrategyResolver.get(baseContentType);
+
+            if (typeStrategy.isPresent()) {
+
+                final Host host = Try.of(()->APILocator.getHostAPI().find(
+                        contentletIn.getHost(), user, false)).getOrNull();
+                if (null != host) {
+                    final Optional<ContentType> contentTypeOpt = typeStrategy.get().apply(baseContentType,
+                            CollectionsUtils.map("user", user, "host", host,
+                                    "contentletMap", contentletIn.getMap()));
+
+                    if (contentTypeOpt.isPresent()) {
+                        contentletIn.setContentType(contentTypeOpt.get());
+                    }
+                }
+            }
         }
     }
 
@@ -5529,7 +5576,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public String getName(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException,DotContentletStateException, DotDataException {
+    public String getName(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotSecurityException,DotContentletStateException, DotDataException {
 
         Preconditions.checkNotNull(contentlet, "The contentlet is null");
 
@@ -5540,40 +5587,80 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + " cannot read Contentlet: " + contentlet.getIdentifier());
         }
 
-        if (UtilMethods.isSet(contentlet.getIdentifier()) && contentlet.isFileAsset()) {
-           try {
-               final String assetName = APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getAssetName();
-               contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
-           }catch (Exception e){
-               Logger.warn(this.getClass(), "Unable to get assetName for contentlet with identifier: " + contentlet.getIdentifier(), e);
-           }
-        }
-
+        // if already set previously
         String returnValue = (String) contentlet.getMap().get(Contentlet.DOT_NAME_KEY);
         if(UtilMethods.isSet(returnValue)){
             return returnValue;
         }
 
+        // look for listed, text and binary fields
+        final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
+        String binaryValue       = null;
 
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
+        for (final Field field : fields) {
 
-        for (Field fld : fields) {
+            try {
 
-            try{
+                if(field.isListed()  && contentlet.getMap().get(field.getVelocityVarName())!=null) {
 
-                if(fld.isListed() && contentlet.getMap().get(fld.getVelocityVarName())!=null){
-                    returnValue = contentlet.getMap().get(fld.getVelocityVarName()).toString();
-                    returnValue = returnValue.length() > 250 ? returnValue.substring(0,250) : returnValue;
-                    if(UtilMethods.isSet(returnValue)){
-                        contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, returnValue);
-                        return returnValue;
+                    if (this.isFieldTypeString(field)) {
+                        returnValue = contentlet.getMap().get(field.getVelocityVarName()).toString();
+                        break; // found one
+                    }
+
+                    if (binaryValue == null && this.isFieldTypeBinary(field) && field.isIndexed()) {
+                        binaryValue = contentlet.getBinary(field.getVelocityVarName()).getName();
+                    }
+                }
+            } catch(Exception e){
+                Logger.warn(this.getClass(), "unable to get field value " + field.getVelocityVarName() + " " + e, e);
+            }
+        }
+
+        // if not found text but found binary
+        returnValue = !UtilMethods.isSet(returnValue) && UtilMethods.isSet(binaryValue)? binaryValue:returnValue;
+
+        if(UtilMethods.isSet(returnValue)) {
+
+            contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, returnValue.length() > 250 ?
+                    returnValue.substring(0, 250) : returnValue);
+            return contentlet.getStringProperty(Contentlet.DOT_NAME_KEY);
+        }
+
+        /// if not found listed, so try to see by type (file asset or dotasset)
+        if (UtilMethods.isSet(contentlet.getIdentifier())) {
+
+            if (contentlet.isFileAsset()) {
+                try {
+
+                    final String assetName = APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getAssetName();
+                    contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
+                } catch (Exception e){
+                    Logger.warn(this.getClass(), "Unable to get assetName for contentlet with identifier: " + contentlet.getIdentifier(), e);
+                }
+            } else {
+
+                final Optional<BaseContentType> baseContentTypeOpt = contentlet.getBaseType();
+                if (baseContentTypeOpt.isPresent() && baseContentTypeOpt.get() == BaseContentType.DOTASSET) {
+                    try {
+
+                        final String transientNameKey = DotAssetContentType.ASSET_FIELD_VAR + "name";
+                        final String dotAssetName     = contentlet.getStringProperty(transientNameKey);
+                        String assetName              = dotAssetName;
+                        if (!UtilMethods.isSet(dotAssetName) && null != contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR)) {
+                            assetName = contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName();
+                            contentlet.setStringProperty(transientNameKey, assetName);
+                        }
+
+                        contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
+                    } catch (Exception e) {
+                        Logger.warn(this.getClass(), "Unable to get binary name for contentlet with identifier: " + contentlet.getIdentifier(), e);
                     }
                 }
             }
-            catch(Exception e){
-                Logger.warn(this.getClass(), "unable to get field value " + fld.getVelocityVarName() + " " + e, e);
-            }
         }
+
+        // nothing, so set identifier.
         contentlet.setStringProperty("__NAME__", contentlet.getIdentifier());
         return contentlet.getIdentifier();
     }
@@ -6315,9 +6402,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                     if (BinaryField.ALLOWED_FILE_TYPES.equalsIgnoreCase(keyField)) {
 
-                        final String binaryMimeType   = MimeTypeUtils.getMimeType(binary);
+                        final String binaryMimeType   = APILocator.getFileAssetAPI().getMimeType(binary);
                         final String allowedFileTypes = fieldVariable.value();
-                        if (UtilMethods.isSet(allowedFileTypes) && UtilMethods.isSet(binaryMimeType)) {
+                        if (UtilMethods.isSet(allowedFileTypes) && UtilMethods.isSet(binaryMimeType) &&
+                                !FileAsset.UNKNOWN_MIME_TYPE.equals(binaryMimeType)) {
 
                             boolean allowed = false;
                             final MimeType fileMimeType = Sneaky.sneak(() -> new MimeType(binaryMimeType));
@@ -7162,7 +7250,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @WrapInTransaction
     @Override
     public Contentlet copyContentlet(final Contentlet sourceContentlet, final Host host, final Folder folder, final User user, final String copySuffix, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-
+        
+        final Map<String, HTMLPageAssetAPI.TemplateContainersReMap> templateMappings = (Map<String, TemplateContainersReMap>) sourceContentlet.get(Contentlet.TEMPLATE_MAPPINGS);
         Contentlet copyContentlet = new Contentlet();
         String newIdentifier = StringPool.BLANK;
         List<Contentlet> versionsToMarkWorking = new ArrayList<>();
@@ -7283,11 +7372,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             //Set URL in the new contentlet because is needed to create Identifier in EscontentletAPI.
             if(contentlet.isHTMLPage()){
-                final Template template = APILocator.getTemplateAPI().findWorkingTemplate(contentlet.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD),user,false);
-                if(template.isAnonymous()){//If the Template has a custom layout we need to create a copy of it, so when is modified it does not modify the other pages.
-                    final Template copiedTemplate = APILocator.getTemplateAPI().copy(template,user);
-                    newContentlet.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, copiedTemplate.getIdentifier());
+                final String sourceTemplateId = contentlet.getStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD);
+                if (null != templateMappings && templateMappings.containsKey(sourceTemplateId)) {
+                    final Template destinationTemplate = templateMappings.get(sourceTemplateId).getDestinationTemplate();
+                    newContentlet.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, destinationTemplate.getIdentifier());
+                } else {
+                    final Template template = APILocator.getTemplateAPI().findWorkingTemplate(sourceTemplateId, user, false);
+                    if (template.isAnonymous()) {//If the Template has a custom layout we need to create a copy of it, so when is modified it does not modify the other pages.
+                        final Template copiedTemplate = APILocator.getTemplateAPI().copy(template, user);
+                        newContentlet.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, copiedTemplate.getIdentifier());
+                    }
                 }
+
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
                 if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
                     final String newAssetName = generateCopyName(identifier.getAssetName(), copySuffix);

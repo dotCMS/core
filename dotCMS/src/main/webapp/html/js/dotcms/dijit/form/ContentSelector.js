@@ -59,7 +59,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	templatePath: dojo.moduleUrl("dotcms", isNg ? "dijit/form/ContentSelectorNoDialog.jsp" : "dijit/form/ContentSelector.jsp"),
     selectButtonTemplate: '<button id="{buttonInode}" dojoType="dijit.form.Button">{selectButtonLabel}</button>',
-	checkBoxTemplate: '<input value="{buttonInode}" class="contentCheckbox" dojoType="dijit.form.CheckBox"></input>',
+	checkBoxTemplate: '<input value="{buttonInode}" class="contentCheckbox" onClick="event.stopPropagation()" dojoType="dijit.form.CheckBox"></input>',
 	widgetsInTemplate: true,
 	title: '',
 	structureInode: '',
@@ -92,6 +92,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	numberOfResults:20,
     selectButtonLabel:'Select',
     useRelateContentOnSelect: false,
+    debounceSearch: false,
 
 	postCreate: function () {
         var structuresParam = this.containerStructures.toString();
@@ -208,7 +209,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		htmlstr += "<dt><label for='langcombo+"+this.dialogCounter+"'>"+data[0].title+"</label></dt>";
 		htmlstr += "<dd>";
 		dojo.require("dijit.form.FilteringSelect");
-		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown' id='langcombo+"+this.dialogCounter+"' required='false' name='langcombo+"+this.dialogCounter+"'>";
+		htmlstr += "<select dojoType='dijit.form.FilteringSelect' dojoAttachPoint='langDropdown' onChange='contentSelector._doSearch()' id='langcombo+"+this.dialogCounter+"' required='false' name='langcombo+"+this.dialogCounter+"'>";
 		
 		for (var i = 0; i < data.length; i++) {
 			
@@ -274,7 +275,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				var actual_option = option[i].split("|");
 				if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0) {
 					var checkId=this.structureVelVar+"."+ fieldVelocityVarName + "Field-D"+ this.dialogCounter+"-O"+i;
-					result = result + "<input type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\"" + actual_option[1] + "\" "+
+					result = result + "<input onChange=\"contentSelector._doSearch()\" type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\"" + actual_option[1] + "\" "+
 					"id=\"" + checkId +"\" "+
 					"name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + this.dialogCounter + "\"> " +
 					actual_option[0] + "<br>\n";
@@ -299,7 +300,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			for(var i = 0; i < option.length; i++){
 				var actual_option = option[i].split("|");
 				if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0){
-					result = result + "<input type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\"" + actual_option[1] + "\" id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field-R"+ this.counter_radio+"\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\"> " + actual_option[0] + "<br>\n";
+					result = result + "<input onChange=\"contentSelector._doSearch()\" type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\"" + actual_option[1] + "\" id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field-R"+ this.counter_radio+"\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\"> " + actual_option[0] + "<br>\n";
 					if(!this.radiobuttonsIds[this.dialogCounter])
 						this.radiobuttonsIds[this.dialogCounter]=new Array();
 					this.radiobuttonsIds[this.dialogCounter][this.radiobuttonsIds[this.dialogCounter].length] = this.structureVelVar+"."+fieldVelocityVarName + "Field-R"+ this.counter_radio;
@@ -321,9 +322,9 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			var option = field["fieldValues"].split("\r\n");
 			var result="";
 			if (type=='multi_select')
-				result = result+"<select  dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n";
+				result = result+"<select onChange=\"contentSelector._doSearch()\" dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n";
 			else
-				result = result+"<select  dojoType='dijit.form.FilteringSelect' id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n<option value=\"\">None</option>";
+				result = result+"<select onChange=\"contentSelector._doSearch()\" dojoType='dijit.form.FilteringSelect' id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n<option value=\"\">None</option>";
 
 			for(var i = 0; i < option.length; i++){
 				var actual_option = option[i].split("|");
@@ -357,7 +358,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			result = result + "<tr><td style='padding:0px;'>";
 			result = result +"<textarea id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field" + this.dialogCounter + "\""
 			+ " name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\""
-			+ " cols=\"20\" rows=\"2\" onkeyup=\"suggestTagsForSearch(this,'"
+			+ " cols=\"20\" rows=\"2\" onChange=\"contentSelector._doDebounceSearch()\"  onkeyup=\"suggestTagsForSearch(this,'"
 			+ this.structureVelVar+"."+ fieldVelocityVarName + "suggestedTagsDiv" + this.dialogCounter + "');\" "
 			+ " style=\"border-color: #7F9DB9; border-style: solid; border-width: 1px; "
 			+ " height: 50px; width: 100%;\" "
@@ -424,7 +425,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			+ ",'" + this.DOT_FIELD_TYPE + "'"
 			+ ",'" + type + "');";
 
-			return "<input type=\"text\" dojoType=\"dijit.form.DateTextBox\" constraints={datePattern:'MM/dd/yyyy'} validate='return false;' invalidMessage=\"\"  id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
+			return "<input type=\"text\" dojoType=\"dijit.form.DateTextBox\" onKeyUp=\"contentSelector._doDebounceSearch()\" constraints={datePattern:'MM/dd/yyyy'} validate='return false;' invalidMessage=\"\"  id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
 		}else{
 			var fieldId=this.structureVelVar+"."+ fieldVelocityVarName + "Field" + this.dialogCounter;
 			dijit.registry.remove(fieldId);
@@ -438,7 +439,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			+ ",'" + this.DOT_FIELD_TYPE + "'"
 			+ ",'" + type + "');";
 
-			return "<input type=\"text\" dojoType=\"dijit.form.TextBox\"  id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
+			return "<input type=\"text\" dojoType=\"dijit.form.TextBox\" onKeyUp=\"contentSelector._doDebounceSearch()\" data-dojo-props=\"intermediateChanges:true\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
 
 		}
 	},
@@ -532,22 +533,29 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_doSearchPage1: function () {
 		this._doSearch(1, null);
-	},
+    },
+    
+    _doDebounceSearch: function() {
+        if (this.debounceSearch) { clearTimeout(this.debounceSearch); }
+        this.debounceSearch = setTimeout(() => {
+            this._doSearch();
+        }, 250);
+    },
 
 	_doSearch: function (page, sortBy) {
 
         var fieldsValues = new Array ();
 
-		fieldsValues[fieldsValues.length] = "languageId";
+        fieldsValues[fieldsValues.length] = "languageId";
 
 //		if(this.languageId == '')
 //		fieldsValues[fieldsValues.length] = this.htmlPageLanguage.value;
 //		else
 //		fieldsValues[fieldsValues.length] = this.languageId;
 
-		if(dijit.byId("langcombo+"+this.dialogCounter).get('displayedValue') != "")
-			fieldsValues[fieldsValues.length] = dijit.byId("langcombo+"+this.dialogCounter).get('value');
-		else
+        if(dijit.byId("langcombo+"+this.dialogCounter).get('displayedValue') != "")
+            fieldsValues[fieldsValues.length] = dijit.byId("langcombo+"+this.dialogCounter).get('value');
+        else
             fieldsValues[fieldsValues.length] = "";
             
         var allField = this.generalSearch.value;
@@ -558,146 +566,146 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
                 fieldsValues[fieldsValues.length] = allField + "*";
         }
 
-		for (var h = 0; h < this.currentStructureFields.length; h++) {
+        for (var h = 0; h < this.currentStructureFields.length; h++) {
 
-			var field = this.currentStructureFields[h];
-			var fieldId = this.structureVelVar + "." + field["fieldVelocityVarName"] + "Field";
-			var formField = document.getElementById(fieldId);
-			if(formField == null) {
-				fieldId=fieldId+this.dialogCounter;
-				formField = document.getElementById(fieldId);
-			}
-			var fieldValue = "";
+            var field = this.currentStructureFields[h];
+            var fieldId = this.structureVelVar + "." + field["fieldVelocityVarName"] + "Field";
+            var formField = document.getElementById(fieldId);
+            if(formField == null) {
+                fieldId=fieldId+this.dialogCounter;
+                formField = document.getElementById(fieldId);
+            }
+            var fieldValue = "";
 
-			if(formField != null){
-				if(field["fieldFieldType"] == 'select'){
+            if(formField != null){
+                if(field["fieldFieldType"] == 'select'){
 
-					var tempDijitObj = dijit.byId(formField.id);
-					fieldsValues[fieldsValues.length] = this.structureVelVar+"."+field["fieldVelocityVarName"];
-					fieldsValues[fieldsValues.length] = tempDijitObj.get('value');
+                    var tempDijitObj = dijit.byId(formField.id);
+                    fieldsValues[fieldsValues.length] = this.structureVelVar+"."+field["fieldVelocityVarName"];
+                    fieldsValues[fieldsValues.length] = tempDijitObj.get('value');
 
-				}else if(formField.type=='select-one' || formField.type=='select-multiple') {
+                }else if(formField.type=='select-one' || formField.type=='select-multiple') {
 
-					var values = "";
-					for (var i=0; i<formField.options.length; i++) {
-						if (formField.options[i].selected) {
-							fieldsValues[fieldsValues.length] = this.structureVelVar+"."+field["fieldVelocityVarName"];
-							fieldsValues[fieldsValues.length] = formField.options[i].value;
-						}
-					}
-				}else {
-					fieldsValues[fieldsValues.length] = this.structureVelVar+"."+field["fieldVelocityVarName"];
-					fieldsValues[fieldsValues.length] = formField.value;
-				}
-			}
-		}
+                    var values = "";
+                    for (var i=0; i<formField.options.length; i++) {
+                        if (formField.options[i].selected) {
+                            fieldsValues[fieldsValues.length] = this.structureVelVar+"."+field["fieldVelocityVarName"];
+                            fieldsValues[fieldsValues.length] = formField.options[i].value;
+                        }
+                    }
+                }else {
+                    fieldsValues[fieldsValues.length] = this.structureVelVar+"."+field["fieldVelocityVarName"];
+                    fieldsValues[fieldsValues.length] = formField.value;
+                }
+            }
+        }
 
-		if (this.hasHostFolderField) {
-			var fieldId='FolderHostSelector'+this.dialogCounter;
-			if(!isInodeSet(dijit.byId(fieldId).attr('value'))){
-				this.hostField.value = "";
-				this.folderField.value = "";
-			}else{
-				var data = dijit.byId(fieldId).attr('selectedItem');
-				if(data["type"]== "host"){
-					this.hostField.value =  dijit.byId(fieldId).attr('value');
-					this.folderField.value = "";
-				}else if(data["type"]== "folder"){
-					this.hostField.value = "";
-					this.folderField.value =  dijit.byId(fieldId).attr('value');
-				}
-			}
+        if (this.hasHostFolderField) {
+            var fieldId='FolderHostSelector'+this.dialogCounter;
+            if(!isInodeSet(dijit.byId(fieldId).attr('value'))){
+                this.hostField.value = "";
+                this.folderField.value = "";
+            }else{
+                var data = dijit.byId(fieldId).attr('selectedItem');
+                if(data["type"]== "host"){
+                    this.hostField.value =  dijit.byId(fieldId).attr('value');
+                    this.folderField.value = "";
+                }else if(data["type"]== "folder"){
+                    this.hostField.value = "";
+                    this.folderField.value =  dijit.byId(fieldId).attr('value');
+                }
+            }
 
-			var hostValue = this.hostField.value;
-			var folderValue = this.folderField.value;
-			if (isInodeSet(hostValue)) {
-				fieldsValues[fieldsValues.length] = "conHost";
-				fieldsValues[fieldsValues.length] = hostValue;
-			}
-			if (isInodeSet(folderValue)) {
-				fieldsValues[fieldsValues.length] = "conFolder";
-				fieldsValues[fieldsValues.length] = folderValue;
-			}
-		} else {
+            var hostValue = this.hostField.value;
+            var folderValue = this.folderField.value;
+            if (isInodeSet(hostValue)) {
+                fieldsValues[fieldsValues.length] = "conHost";
+                fieldsValues[fieldsValues.length] = hostValue;
+            }
+            if (isInodeSet(folderValue)) {
+                fieldsValues[fieldsValues.length] = "conFolder";
+                fieldsValues[fieldsValues.length] = folderValue;
+            }
+        } else {
             fieldsValues[fieldsValues.length] = "conHost";
             fieldsValues[fieldsValues.length] = "current";
         }
 
-		if(this.radiobuttonsIds[this.dialogCounter]) {
-			for(var i=0;i < this.radiobuttonsIds[this.dialogCounter].length ;i++ ){
-				var formField = document.getElementById(this.radiobuttonsIds[this.dialogCounter][i]);
-				if(formField != null && formField.type=='radio') {
-					var values = "";
-					if (formField.checked) {
-						values = formField.value;
-						fieldsValues[fieldsValues.length] = formField.name;
-						fieldsValues[fieldsValues.length] = values;
-					}
-				}
-			}
-		}
+        if(this.radiobuttonsIds[this.dialogCounter]) {
+            for(var i=0;i < this.radiobuttonsIds[this.dialogCounter].length ;i++ ){
+                var formField = document.getElementById(this.radiobuttonsIds[this.dialogCounter][i]);
+                if(formField != null && formField.type=='radio') {
+                    var values = "";
+                    if (formField.checked) {
+                        values = formField.value;
+                        fieldsValues[fieldsValues.length] = formField.name;
+                        fieldsValues[fieldsValues.length] = values;
+                    }
+                }
+            }
+        }
 
-		if(this.checkboxesIds[this.dialogCounter]) {
-			for(var i=0;i < this.checkboxesIds[this.dialogCounter].length ;i++ ){
-				var formField = document.getElementById(this.checkboxesIds[this.dialogCounter][i]);
-				if(formField != null && formField.type=='checkbox') {
-					var values = "";
-					if (formField.checked) {
-						values = formField.value;
-						name = formField.name.substring(0,formField.name.length-1);
-						fieldsValues[fieldsValues.length] = name;
-						fieldsValues[fieldsValues.length] = values;
-					}
-				}
-			}
-		}
+        if(this.checkboxesIds[this.dialogCounter]) {
+            for(var i=0;i < this.checkboxesIds[this.dialogCounter].length ;i++ ){
+                var formField = document.getElementById(this.checkboxesIds[this.dialogCounter][i]);
+                if(formField != null && formField.type=='checkbox') {
+                    var values = "";
+                    if (formField.checked) {
+                        values = formField.value;
+                        name = formField.name.substring(0,formField.name.length-1);
+                        fieldsValues[fieldsValues.length] = name;
+                        fieldsValues[fieldsValues.length] = values;
+                    }
+                }
+            }
+        }
 
-		var categoriesValues = new Array ();
-		var form = this.search_form;
-		var categories = document.getElementsByName("categories");
+        var categoriesValues = new Array ();
+        var form = this.search_form;
+        var categories = document.getElementsByName("categories");
 
-		if (categories != null) {
-			if (categories.options != null) {
-				var opts = categories.options;
-				for (var j = 0; j < opts.length; j++) {
-					var option = opts[j];
-					if (option.selected) {
-						categoriesValues[categoriesValues.length] = option.value;
-					}
-				}
-			} else {
-				for (var i = 0; i < categories.length; i++) {
-					var catSelect = categories[i];
-					var opts = catSelect.options;
-					for (var j = 0; j < opts.length; j++) {
-						var option = opts[j];
-						if (option.selected) {
-							categoriesValues[categoriesValues.length] = option.value;
-						}
-					}
-				}
-			}
-		}
+        if (categories != null) {
+            if (categories.options != null) {
+                var opts = categories.options;
+                for (var j = 0; j < opts.length; j++) {
+                    var option = opts[j];
+                    if (option.selected) {
+                        categoriesValues[categoriesValues.length] = option.value;
+                    }
+                }
+            } else {
+                for (var i = 0; i < categories.length; i++) {
+                    var catSelect = categories[i];
+                    var opts = catSelect.options;
+                    for (var j = 0; j < opts.length; j++) {
+                        var option = opts[j];
+                        if (option.selected) {
+                            categoriesValues[categoriesValues.length] = option.value;
+                        }
+                    }
+                }
+            }
+        }
 
-		if (page == null)
-			this.currentPage = 1;
-		else
-			this.currentPage = page;
+        if (page == null)
+            this.currentPage = 1;
+        else
+            this.currentPage = page;
 
-		if (sortBy != null) {
-			if (sortBy == this.currentSortBy)
-				sortBy = sortBy + " desc";
-			this.currentSortBy = sortBy;
-		}
+        if (sortBy != null) {
+            if (sortBy == this.currentSortBy)
+                sortBy = sortBy + " desc";
+            this.currentSortBy = sortBy;
+        }
 
         var searchFor = this.structureInode;
         if (this.structureInode === 'catchall' && this.containerStructures.length > 0) {
             searchFor = this.containerStructures
-				.map(function(contentType) { return contentType.inode })
-				.filter(function(inode){return inode !== 'catchall'});
+                .map(function(contentType) { return contentType.inode })
+                .filter(function(inode){return inode !== 'catchall'});
         }
 
-		ContentletAjax.searchContentlets(
+        ContentletAjax.searchContentlets(
             searchFor,
             fieldsValues,
             categoriesValues,
@@ -713,7 +721,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
             dojo.hitch(this, this._fillResults)
         );
 
-		this.searchCounter++; // this is used to eliminate the widget already registered exception upon repeated searchs.
+        this.searchCounter++; // this is used to eliminate the widget already registered exception upon repeated searchs.    
 	},
 
 	_fillResults: function (data) {
@@ -827,7 +835,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
             var cellData = data[i];
 			var row = table.insertRow(table.rows.length);
 			row.id="rowId" +i;
-			row.className="selectMeRowInIframe";
+            row.className="selectMeRowInIframe";
 
 			// Select button functionality
 			var selected =  function(scope,content) {
@@ -836,14 +844,21 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
                 } else {
                     scope._onContentSelected(content);
                 }
-			};
-			if(this.multiple=='false') {
+            };
+
+            if(this.multiple=='false') {
 				var asset = cellData
 				var selectRow = dojo.byId("rowId" +i);
 				if(selectRow.onclick==undefined){
 					selectRow.onclick = dojo.hitch(this, selected, this, asset);
 				}
-			}
+			} else { // Multiselect Check
+                row.onclick=dojo.hitch(this,
+                    function(i) {
+                        var checkbox = dijit.getEnclosingWidget(query('input[type="checkbox"]', 'rowId' + i)[0]);
+                        checkbox.setValue(!checkbox.getValue());
+                    }, i);
+            }
 
             var cell = row.insertCell (row.cells.length);
             var iconName = this._getIconName(cellData['__type__']);
@@ -1055,7 +1070,8 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
         this.relateDiv.style.display = "none";
         this.generalSearch.set('value', '');
 
-		this._hideMatchingResults ();
+        this._hideMatchingResults();
+        this._doSearch();
 	},
 
 	_previousPage: function (){

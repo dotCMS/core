@@ -79,7 +79,7 @@
         <td><span class="<%= a.isIncremental() ? "resolve" : "delete" %>Icon">&nbsp</span></td>
         <td><%= a.getFireDate() %></td>
         <td><%= (a.isIncremental() && a.getStartDate()!=null) ? a.getStartDate().toString() : "&nbsp;" %>
-        <td><%= a.isIncremental() ? a.getEndDate().toString() : "&nbsp;" %>
+        <td><%= (a.isIncremental() && a.getEndDate() != null) ? a.getEndDate().toString() : "&nbsp;" %>
         <td><%= a.getFilesCount() %></td>
         <td><%= a.getPagesCount() %></td>
         <td><%= a.getUrlmapsCount() %></td>

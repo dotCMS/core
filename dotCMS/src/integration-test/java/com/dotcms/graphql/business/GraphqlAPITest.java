@@ -1,5 +1,11 @@
 package com.dotcms.graphql.business;
 
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_DESCRIPTION_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_METADATA_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SHOW_ON_MENU_FIELD_VAR;
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_SORT_ORDER_FIELD_VAR;
 import static com.dotcms.graphql.InterfaceType.CONTENT_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.FILE_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.FORM_INTERFACE_NAME;
@@ -8,6 +14,7 @@ import static com.dotcms.graphql.InterfaceType.PAGE_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.PERSONA_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.VANITY_URL_INTERFACE_NAME;
 import static com.dotcms.graphql.InterfaceType.WIDGET_INTERFACE_NAME;
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_ONE;
 import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
@@ -22,6 +29,8 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.field.ImmutableCategoryField;
 import com.dotcms.contenttype.model.field.ImmutableCheckboxField;
@@ -45,7 +54,11 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.EnterpriseType;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -699,6 +712,62 @@ public class GraphqlAPITest extends IntegrationTestBase {
         final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
         assertNotNull(schema.getQueryType().getFieldDefinition(baseType.name().toLowerCase()
                 +"BaseTypeCollection"));
+    }
+
+    /**
+     * This method tests that given a {@link Field} of type {@link com.dotcms.contenttype.model.field.FileField}
+     * or {@link com.dotcms.contenttype.model.field.ImageField}, the following GraphQL fields are
+     * available to query:
+     *
+     * {@link FileAssetContentType#FILEASSET_FILE_NAME_FIELD_VAR}
+     * {@link FileAssetContentType#FILEASSET_DESCRIPTION_FIELD_VAR}
+     * {@link FileAssetContentType#FILEASSET_FILEASSET_FIELD_VAR}
+     * {@link FileAssetContentType#FILEASSET_METADATA_FIELD_VAR}
+     * {@link FileAssetContentType#FILEASSET_SHOW_ON_MENU_FIELD_VAR}
+     * {@link FileAssetContentType#FILEASSET_SORT_ORDER_FIELD_VAR}
+     */
+
+    @Test
+    public void testAvailableGraphQLFieldsOnImageAndFileFields()
+            throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+        try {
+            contentType = new ContentTypeDataGen().nextPersisted();
+            final Field fileField = new FieldDataGen().contentTypeId(contentType.id())
+                    .type(FileField.class).nextPersisted();
+            final Field imageField = new FieldDataGen().contentTypeId(contentType.id())
+                    .type(ImageField.class).nextPersisted();
+
+            APILocator.getGraphqlAPI().invalidateSchema();
+
+            final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
+
+            final GraphQLFieldDefinition fileFieldDefinition = schema
+                    .getObjectType(contentType.variable())
+                    .getFieldDefinition(fileField.variable());
+
+            final GraphQLFieldDefinition imageFieldDefinition = schema
+                    .getObjectType(contentType.variable())
+                    .getFieldDefinition(imageField.variable());
+
+            assertEquals(CustomFieldType.FILEASSET.getType(), fileFieldDefinition.getType());
+
+            assertTrue(areFileassetFieldsPresent((GraphQLObjectType) fileFieldDefinition.getType()));
+            assertTrue(areFileassetFieldsPresent((GraphQLObjectType) imageFieldDefinition.getType()));
+
+            assertEquals(CustomFieldType.FILEASSET.getType(), imageFieldDefinition.getType());
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+        }
+    }
+
+    private boolean areFileassetFieldsPresent(final GraphQLObjectType objectType) {
+        final List<String> fileAssetFields = list(FILEASSET_FILE_NAME_FIELD_VAR,
+                FILEASSET_DESCRIPTION_FIELD_VAR, FILEASSET_FILEASSET_FIELD_VAR,
+                FILEASSET_METADATA_FIELD_VAR, FILEASSET_SHOW_ON_MENU_FIELD_VAR,
+                FILEASSET_SORT_ORDER_FIELD_VAR);
+        return objectType.getFieldDefinitions().stream().allMatch(fieldDefinition ->
+                fileAssetFields.contains(fieldDefinition.getName()));
     }
 
     private ContentType createAndSaveSimpleContentType(final String name) throws DotSecurityException, DotDataException {
