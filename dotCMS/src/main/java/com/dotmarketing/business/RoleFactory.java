@@ -101,5 +101,5 @@ public abstract class RoleFactory {
 	 * @param role   {@link Role}
 	 * @return Optional LayoutsROles
 	 */
-	protected abstract Optional<LayoutsRoles> findLayoutsRoles(Layout layout, Role role);
+	protected abstract Optional<LayoutsRoles> findLayoutsRole(Layout layout, Role role);
 }

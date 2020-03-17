@@ -26,7 +26,6 @@ import static com.dotcms.exception.ExceptionUtil.causedBy;
  */
 public class JsonWebTokenUtils {
 
-    public static final String CLAIM_SKIN_ID_AT = "xskinid";
     public static final String CLAIM_UPDATED_AT = "xmod";
     public static final String CLAIM_ALLOWED_NETWORK = "xnet";
 
@@ -91,14 +90,14 @@ public class JsonWebTokenUtils {
      */
     public String createUserToken(final User user, int jwtMaxAge) {
 
+        // private UserToken(String id, String subject, Date modificationDate, long ttlMillis, final String skinId) {
         return this.jsonWebTokenService.generateUserToken(
-                new UserToken(UUID.randomUUID().toString(),
-                        user.getUserId(),
-                        user.getModificationDate(),
-                        (jwtMaxAge > 0) ?
+                new UserToken.Builder().id(user.getRememberMeToken())
+                        .subject(user.getUserId())
+                        .modificationDate(user.getModificationDate())
+                        .expiresDate(jwtMaxAge > 0 ?
                                 DateUtil.daysToMillis(jwtMaxAge) :
-                                jwtMaxAge, user.getRememberMeToken()
-                )
+                                jwtMaxAge).build()
         );
 
     } // getUserIdFromJsonWebToken

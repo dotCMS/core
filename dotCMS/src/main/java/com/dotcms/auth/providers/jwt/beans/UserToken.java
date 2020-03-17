@@ -1,12 +1,13 @@
 package com.dotcms.auth.providers.jwt.beans;
 
+import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotmarketing.business.APILocator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableMap;
+
 import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
-
-import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotmarketing.business.APILocator;
-import com.google.common.collect.ImmutableMap;
 
 /**
  * Encapsulates all the different pieces of information that make up the JSON
@@ -24,19 +25,35 @@ public class UserToken implements JWToken {
     private final String issuer;
     private final Date modificationDate;
     private final Date expiresDate;
-    private final String skinId;
     private final ImmutableMap<String,Object> claims;
 
-    
+    private UserToken(final Builder builder) {
+        this.id                 = builder.id;
+        this.subject            = builder.subject;
+        this.issuer             = builder.issuer;
+        this.modificationDate   = builder.modificationDate;
+        this.expiresDate        = builder.expiresDate;
+        this.claims             = builder.claims;
+    }
+
+    /**
+     * @deprecated use the builder
+     * @param id
+     * @param subject
+     * @param issuer
+     * @param modificationDate
+     * @param expiresDate
+     * @param claims
+     */
+    @Deprecated
     public UserToken(final String id, final String subject, final String issuer, final Date modificationDate,
-            final Date expiresDate, final Map<String,Object> claims, final String skinId) {
+            final Date expiresDate, final Map<String,Object> claims) {
         this.id = id;
         this.subject = subject;
         this.issuer = issuer;
         this.modificationDate = modificationDate;
         this.expiresDate = expiresDate;
         this.claims=ImmutableMap.copyOf(claims);
-        this.skinId=skinId;
     }
     
     
@@ -52,11 +69,12 @@ public class UserToken implements JWToken {
 	 *            - The user issuing the token
 	 * @param ttlMillis
 	 *            - The expiration date of the token.
+     * @deprecated use the builder
 	 */
+    @Deprecated
     public UserToken(final String id, final String subject, final String issuer, final Date modificationDate,
-            final long ttlMillis, final Map<String,Object> claims, final String skinId) {
-        this(id,subject,issuer,modificationDate,new Date(System.currentTimeMillis()+ ttlMillis), claims, skinId);
-        
+            final long ttlMillis, final Map<String,Object> claims) {
+        this(id,subject,issuer,modificationDate,new Date(System.currentTimeMillis()+ ttlMillis), claims);
     }
 
     /**
@@ -65,9 +83,11 @@ public class UserToken implements JWToken {
      * @param id - The ID of the token.
      * @param subject - The subject of the token
      * @param ttlMillis - The expiration date of the token.
+     * @deprecated use the builder
      */
-    public UserToken(String id, String subject, Date modificationDate, long ttlMillis, final String skinId) {
-        this(id, subject, ClusterFactory.getClusterId(), modificationDate,ttlMillis, ImmutableMap.of(), skinId);
+    @Deprecated
+    public UserToken(String id, String subject, Date modificationDate, long ttlMillis) {
+        this(id, subject, ClusterFactory.getClusterId(), modificationDate,ttlMillis, ImmutableMap.of());
     }
     
     /**
@@ -76,10 +96,15 @@ public class UserToken implements JWToken {
      * @param id - The ID of the token.
      * @param subject - The subject of the token
      * @param ttlMillis - The expiration date of the token.
+     * @deprecated use the builder
      */
-    public UserToken(final String id, final String subject, final String issuer, final Date modificationDate, final long ttlMillis, final String skinId) {
-        this(id, subject, issuer, modificationDate,ttlMillis, ImmutableMap.of(), skinId);
+    @Deprecated
+    public UserToken(final String id, final String subject, final String issuer, final Date modificationDate, final long ttlMillis) {
+        this(id, subject, issuer, modificationDate,ttlMillis, ImmutableMap.of());
     }
+
+
+
     /**
      * Returns the ID of this token.
      * 
@@ -187,7 +212,50 @@ public class UserToken implements JWToken {
         return this.subject;
     }
 
-    public String getSkinId() {
-        return skinId;
+    public static final class Builder {
+        @JsonProperty(required = true)  private String id;
+        @JsonProperty(required = true)  private String subject;
+        @JsonProperty(required = true)  private String issuer = ClusterFactory.getClusterId();
+        @JsonProperty(required = true)  private Date   modificationDate = new Date();
+        @JsonProperty(required = true)  private Date   expiresDate;
+        @JsonProperty(required = true)  private ImmutableMap<String,Object> claims = ImmutableMap.of();
+
+        public UserToken.Builder id(final String id) {
+            this.id = id;
+            return this;
+        }
+
+        public UserToken.Builder subject(final String subject) {
+            this.subject = subject;
+            return this;
+        }
+
+        public UserToken.Builder issuer(final String issuer) {
+            this.issuer = issuer;
+            return this;
+        }
+
+        public UserToken.Builder modificationDate(final Date modificationDate) {
+            this.modificationDate = modificationDate;
+            return this;
+        }
+        public UserToken.Builder expiresDate(final Date expiresDate) {
+            this.expiresDate = expiresDate;
+            return this;
+        }
+
+        public UserToken.Builder expiresDate(final long ttlMillis) {
+            this.expiresDate = new Date(System.currentTimeMillis()+ ttlMillis);
+            return this;
+        }
+
+        public UserToken.Builder claims(final Map<String,Object> claims) {
+            this.claims = ImmutableMap.copyOf(claims);
+            return this;
+        }
+
+        public UserToken build() {
+            return new UserToken(this);
+        }
     }
 } // E:O:F:JWTBean.

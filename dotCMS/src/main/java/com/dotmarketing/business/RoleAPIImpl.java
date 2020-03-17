@@ -1,6 +1,5 @@
 package com.dotmarketing.business;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -13,8 +12,6 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.SystemProperties;
-
-import io.vavr.control.Try;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -371,7 +368,7 @@ public class RoleAPIImpl implements RoleAPI {
 	public boolean roleHasLayout(final Layout layout, final Role role) {
 
 		final Optional<LayoutsRoles> layoutsRolesOpt =
-				this.roleFactory.findLayoutsRoles(layout, role);
+				this.roleFactory.findLayoutsRole(layout, role);
 
 		return layoutsRolesOpt.isPresent() && UtilMethods.isSet(layoutsRolesOpt.get().getId());
 	}

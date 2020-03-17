@@ -12,6 +12,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,7 +29,6 @@ import static org.junit.Assert.assertTrue;
 
 public class JsonWebTokenUtilsIntegrationTest {
 
-    private static final String jwtId = "jwt1";
     private static String userId;
     private static String clusterId;
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
@@ -49,7 +49,7 @@ public class JsonWebTokenUtilsIntegrationTest {
         userAPI = APILocator.getUserAPI();
 
         //Create User
-        final User newUser = new UserDataGen().nextPersisted();
+        final User newUser = new UserDataGen().skinId(UUIDGenerator.generateUuid()).nextPersisted();
         APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), newUser);
         assertTrue(userAPI.isCMSAdmin(newUser));
         userId = newUser.getUserId();
@@ -70,9 +70,13 @@ public class JsonWebTokenUtilsIntegrationTest {
         assertNotNull(jsonWebTokenService);
 
         //Generate a new token
-        String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
-                userId, date, DateUtil.daysToMillis(2), user.getRememberMeToken()
-        ));
+        final String jwtId = user.getRememberMeToken();
+        final UserToken userToken = new UserToken.Builder()
+                .id(jwtId).subject(userId)
+                .modificationDate(date)
+                .expiresDate(DateUtil.daysToMillis(2))
+                .build();
+        String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);
 
@@ -106,11 +110,12 @@ public class JsonWebTokenUtilsIntegrationTest {
                 JsonWebTokenFactory.getInstance().getJsonWebTokenService();
         assertNotNull(jsonWebTokenService);
 
-        final String skinId = APILocator.getUserAPI().loadUserById(userId).getRememberMeToken();
+        final String jwtId = APILocator.getUserAPI().loadUserById(userId).getRememberMeToken();
         //Generate a new token
-        String jsonWebToken = jsonWebTokenService.generateUserToken(new UserToken(jwtId,
-                userId, date, DateUtil.daysToMillis(2), skinId
-        ));
+        final UserToken userToken = new UserToken.Builder().id(jwtId).subject(userId).modificationDate(date)
+                .expiresDate(DateUtil.daysToMillis(2))
+                .build();
+        String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
 
         System.out.println(jsonWebToken);
         assertNotNull(jsonWebToken);
@@ -126,7 +131,7 @@ public class JsonWebTokenUtilsIntegrationTest {
 
         Thread.sleep(1000);
 
-        userAPI.loadUserById(userId).setModificationDate(new Date());
+        userAPI.loadUserById(userId).setSkinId("xxxx");
 
         //Get the user
         JsonWebTokenUtils jsonWebTokenUtils = new JsonWebTokenUtils(jsonWebTokenService);

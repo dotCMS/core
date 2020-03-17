@@ -12,7 +12,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.NoSuchCompanyException;
 import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.CompanyPool;
 import com.liferay.portal.ejb.CompanyUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -30,7 +29,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

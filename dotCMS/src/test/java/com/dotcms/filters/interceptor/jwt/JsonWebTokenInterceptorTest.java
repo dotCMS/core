@@ -171,7 +171,7 @@ public class JsonWebTokenInterceptorTest extends UnitTestBase {
             public UserToken answer(InvocationOnMock invocation) throws Throwable {
 
                 fail("On no access token should not call the method parseToken");
-                return new UserToken("jwtId", "subject", new Date(), 0l, "");
+                return new UserToken("jwtId", "subject", new Date(), 0l);
             }
         });
 

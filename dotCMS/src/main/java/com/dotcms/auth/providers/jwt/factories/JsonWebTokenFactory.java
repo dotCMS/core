@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_ALLOWED_NETWORK;
-import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_SKIN_ID_AT;
 import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
 
 /**
@@ -195,17 +194,13 @@ public class JsonWebTokenFactory implements Serializable {
             .findFirst()
             .get();
         }
-        
-        
-        
-        
+
         @Override
         public String generateUserToken(final UserToken jwtBean) {
 
             //Let's set the JWT Claims
             final JwtBuilder builder = Jwts.builder()
                     .setId(jwtBean.getId())
-                    .claim(CLAIM_SKIN_ID_AT, jwtBean.getActiveUser().get().getRememberMeToken())
                     .claim(CLAIM_UPDATED_AT, jwtBean.getActiveUser().get().getModificationDate().getTime())
                     .claim(CLAIM_ALLOWED_NETWORK, jwtBean.getClaims().get(CLAIM_ALLOWED_NETWORK))
                     .setSubject(jwtBean.getSubject())
@@ -274,24 +269,16 @@ public class JsonWebTokenFactory implements Serializable {
             
             if(jwtToken.getTokenType() == TokenType.USER_TOKEN) {
 
-                final String uuid = UserToken.class.cast(jwtToken).getSkinId();
-                if (null == uuid) { // if not uuid use the previous validation
-                    if (jwtToken.getModificationDate().before(user.getModificationDate())) {
-                        IncorrectClaimException claimException = new IncorrectClaimException(jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
-                        claimException.setClaimName(Claims.SUBJECT);
-                        claimException.setClaimValue(body.getSubject());
-                        throw claimException;
-                    }
-                } else {
+                final String uuid = jwtToken.getId();
 
-                    if (!uuid.equals(user.getRememberMeToken())) {
-                        final IncorrectClaimException claimException = new IncorrectClaimException(jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
-                        claimException.setClaimName(Claims.SUBJECT);
-                        claimException.setClaimValue(body.getSubject());
-                        throw claimException;
-                    }
+                if (!uuid.equals(user.getRememberMeToken())) {
+                    final IncorrectClaimException claimException = new IncorrectClaimException(jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
+                    claimException.setClaimName(Claims.SUBJECT);
+                    claimException.setClaimValue(body.getSubject());
+                    throw claimException;
                 }
-                return jwtToken;    
+
+                return jwtToken;
             }
 
             ApiToken apiToken = (ApiToken) jwtToken;
@@ -324,14 +311,12 @@ public class JsonWebTokenFactory implements Serializable {
 
            final Claims body = jws.getBody();
            return TokenType.getTokenType(body.getSubject()) == TokenType.USER_TOKEN ? 
-                    new UserToken(body.getId(),
-                            body.getSubject(),
-                            body.getIssuer(),
-                            body.get(CLAIM_UPDATED_AT, Date.class),
-                            (null != body.getExpiration()) ? body.getExpiration().getTime() : 0, 
-                            body,
-                            body.get(CLAIM_SKIN_ID_AT, String.class)
-                            )
+                    new UserToken.Builder().id(body.getId())
+                            .subject(body.getSubject())
+                            .issuer(body.getIssuer())
+                            .modificationDate(body.get(CLAIM_UPDATED_AT, Date.class))
+                            .expiresDate(null != body.getExpiration()? body.getExpiration().getTime() : 0)
+                            .claims(body).build()
                    : APILocator.getApiTokenAPI().findApiToken(body.getSubject()).orElseGet(()->null);
         }
 

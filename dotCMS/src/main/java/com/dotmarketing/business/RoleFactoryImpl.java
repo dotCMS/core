@@ -618,7 +618,7 @@ public class RoleFactoryImpl extends RoleFactory {
 	}
 
 	@Override
-	protected Optional<LayoutsRoles> findLayoutsRoles(final Layout layout, final Role role) {
+	protected Optional<LayoutsRoles> findLayoutsRole(final Layout layout, final Role role) {
 
 		HibernateUtil hu = new HibernateUtil(LayoutsRoles.class);
 

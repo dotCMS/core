@@ -38,14 +38,16 @@ public class AngularResetPasswordUrlStrategy implements UrlStrategy {
     @Override
     public String getURL(final Map<String, Object> params) {
 
-        final User user = (User) params.get(USER);
+        final User user    = (User) params.get(USER);
         final String token = (String) params.get(TOKEN);
 
+        // private UserToken(String id, String subject, Date modificationDate, long ttlMillis, final String skinId) {
         final String jwt = this.jsonWebTokenService.generateUserToken(
-                new UserToken(UUID.randomUUID().toString(), user.getUserId(),
-                        user.getModificationDate(),
-                        this.jwtMillis, user.getRememberMeToken()
-                ));
+                new UserToken.Builder().id(user.getRememberMeToken())
+                        .subject(user.getUserId())
+                        .modificationDate(user.getModificationDate())
+                        .expiresDate(this.jwtMillis).build()
+                );
 
         return java.text.MessageFormat.format(HTML_NG_RESET_PASSWORD_TRUE_USER_ID_0_TOKEN_1,
                 (jwt + TOKEN_SEPARATOR + token));

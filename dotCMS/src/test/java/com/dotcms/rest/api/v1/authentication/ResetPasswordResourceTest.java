@@ -76,7 +76,7 @@ public class ResetPasswordResourceTest extends UnitTestBase {
         final ResponseUtil mResponseUtil = mock(ResponseUtil.class);
 
         final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(), "dotcms.org.1", "dummy_cluster_id",
-                new Date(), 100000,"");
+                new Date(), 100000);
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
 
         final Locale locale = LocaleUtil.getLocale(request);
@@ -97,7 +97,7 @@ public class ResetPasswordResourceTest extends UnitTestBase {
         final JsonWebTokenService jsonWebTokenService = mock(JsonWebTokenService.class);
         ResetPasswordResource resetPasswordResource = new ResetPasswordResource(userManager, responseUtil, jsonWebTokenService);
         final UserToken jwtBean = new UserToken(UUID.randomUUID().toString(), "dotcms.org.1", "dummy_cluster_id",
-                new Date(), 100000,"");
+                new Date(), 100000);
         when(jsonWebTokenService.parseToken(eq("token1"))).thenReturn(jwtBean);
         Response response = resetPasswordResource.resetPassword(request, resetPasswordForm);
         RestUtilTest.verifySuccessResponse(response);

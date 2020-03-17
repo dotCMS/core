@@ -99,5 +99,14 @@ public interface LayoutAPI {
 	 * @param request
 	 * @return
 	 */
-  public Optional<Layout> resolveLayout(HttpServletRequest request);
+    public Optional<Layout> resolveLayout(HttpServletRequest request);
+
+
+	/**
+	 * Try to find the layout associated to a role
+	 * @param layout {@link Layout}
+	 * @param role   {@link Role}
+	 * @return Optional LayoutsRoles, present and LayoutsRoles identifier set if exists.
+	 */
+	public Optional<LayoutsRoles> findLayoutByRole(final Layout layout, final Role role);
 }
