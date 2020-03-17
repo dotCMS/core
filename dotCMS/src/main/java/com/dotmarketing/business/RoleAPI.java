@@ -23,7 +23,7 @@ public interface RoleAPI {
 	 * @throws DotDataException
 	 * @return
 	 */
-	public List<Role> findAllAssignableRoles(boolean showSystemRoles) throws DotDataException;
+	 List<Role> findAllAssignableRoles(boolean showSystemRoles) throws DotDataException;
 	
 	/**
 	 * 
@@ -31,17 +31,15 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public Role loadRoleById(String roleId) throws DotDataException;
+	 Role loadRoleById(String roleId) throws DotDataException;
 	
 	/**
 	 * Retrieves all roles assigned to the user including the roles implicitly inherited
 	 * @param userId
-	 * @param user
-	 * @param respectFrontEndRoles
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Role> loadRolesForUser(String userId) throws DotDataException;
+	 List<Role> loadRolesForUser(String userId) throws DotDataException;
 	
 	
 	/**
@@ -53,7 +51,7 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles) throws DotDataException;
+	 List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles) throws DotDataException;
 	
 	/**
 	 * 
@@ -68,7 +66,7 @@ public interface RoleAPI {
 	 * @author Jason Tesesr
 	 * @throws DotDataException 
 	 */
-	public List<Role> findRolesByNameFilter(String filter, int start,int limit) throws DotDataException;
+	 List<Role> findRolesByNameFilter(String filter, int start,int limit) throws DotDataException;
 
 	/**
 	 * This method returns the requested role based on the role id passed
@@ -77,7 +75,7 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public Role findRoleByName(String rolename, Role parent) throws DotDataException;
+	 Role findRoleByName(String rolename, Role parent) throws DotDataException;
 	
 	
 	/**
@@ -94,7 +92,7 @@ public interface RoleAPI {
 	 * @author Jason Tesesr
 	 * @throws DotDataException 
 	 */
-    public List<Role> findRolesByFilterLeftWildcard(String filter, int start,int limit) throws DotDataException ;
+     List<Role> findRolesByFilterLeftWildcard(String filter, int start,int limit) throws DotDataException ;
     	
 	/**
 	 * Add a role to a user
@@ -103,7 +101,7 @@ public interface RoleAPI {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	public void addRoleToUser(String roleId, User user) throws DotDataException, DotStateException;
+	 void addRoleToUser(String roleId, User user) throws DotDataException, DotStateException;
 	
 	/**
 	 * Add a role to a user
@@ -112,7 +110,7 @@ public interface RoleAPI {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	public void addRoleToUser(Role role, User user) throws DotDataException, DotStateException;
+	 void addRoleToUser(Role role, User user) throws DotDataException, DotStateException;
 	
 	/**
 	 * Add a role to a user
@@ -121,7 +119,7 @@ public interface RoleAPI {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	public void removeRoleFromUser(Role role, User user) throws DotDataException, DotStateException;
+	 void removeRoleFromUser(Role role, User user) throws DotDataException, DotStateException;
 	
 	/**
 	 * Add a role to a user
@@ -130,7 +128,7 @@ public interface RoleAPI {
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	public void removeAllRolesFromUser(User user) throws DotDataException, DotStateException;
+	 void removeAllRolesFromUser(User user) throws DotDataException, DotStateException;
 	
 	/**
 	 * 
@@ -139,7 +137,7 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public boolean roleExistsByName(String roleName, Role parent) throws DotDataException;
+	 boolean roleExistsByName(String roleName, Role parent) throws DotDataException;
 	
 	/**
 	 * Persist the given role in db
@@ -148,16 +146,16 @@ public interface RoleAPI {
 	 * @throws DotDataException 
 	 * @throws DotStateException
 	 */
-	public Role save(Role role) throws DotDataException, DotStateException;
+	 Role save(Role role) throws DotDataException, DotStateException;
 	
 	/**
 	 * Persist the given role in db with the given id
-	 * @param Role
+	 * @param role Role
 	 * @author Jason Tesser
 	 * @throws DotDataException 
 	 * @throws DotStateException
 	 */
-	public Role save(Role role, String existingId) throws DotDataException, DotStateException;
+	 Role save(Role role, String existingId) throws DotDataException, DotStateException;
 	
 	/**
 	 * Find all top level roles excluding the role key RoleAPI.USERS_ROOT_ROLE_KEY (cms_users). 
@@ -166,7 +164,7 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<Role> findRootRoles() throws DotDataException;
+	 List<Role> findRootRoles() throws DotDataException;
 	
 	/**
 	 * Will return whether a user has a specific role or not
@@ -175,7 +173,7 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException 
 	 */
-	public boolean doesUserHaveRole(User user, Role role) throws DotDataException;
+	 boolean doesUserHaveRole(User user, Role role) throws DotDataException;
 	
 	/**
 	 * Will return whether a user has a specific role or not
@@ -184,7 +182,7 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException 
 	 */
-	public boolean doesUserHaveRole(User user, String roleId) throws DotDataException;
+	 boolean doesUserHaveRole(User user, String roleId) throws DotDataException;
 
     /**
      * Removes a given Role.
@@ -195,35 +193,35 @@ public interface RoleAPI {
      * @throws DotDataException
      * @throws DotStateException
      */
-    public void delete ( Role role ) throws DotDataException, DotStateException;
+     void delete ( Role role ) throws DotDataException, DotStateException;
 
     /**
 	 * Loads the CMS Anonymous Role
 	 * @return
 	 * @throws DotDataException
 	 */
-	public Role loadCMSAnonymousRole() throws DotDataException;
+	 Role loadCMSAnonymousRole() throws DotDataException;
 	
 	/**
 	 * 
 	 * @return
 	 * @throws DotDataException
 	 */
-	public Role loadLoggedinSiteRole() throws DotDataException;
+	 Role loadLoggedinSiteRole() throws DotDataException;
 	
 	/**
 	 * 
 	 * @return
 	 * @throws DotDataException
 	 */
-	public Role loadCMSOwnerRole() throws DotDataException;
+	 Role loadCMSOwnerRole() throws DotDataException;
 	
 	/**
 	 * 
 	 * @return
 	 * @throws DotDataException
 	 */
-	public Role loadCMSAdminRole() throws DotDataException;
+	 Role loadCMSAdminRole() throws DotDataException;
 
     /**
      * Returns deafult Role
@@ -231,7 +229,7 @@ public interface RoleAPI {
      * @return default role
      * @throws DotDataException
      */
-    public Role loadDefaultRole () throws DotDataException;
+     Role loadDefaultRole () throws DotDataException;
 	
 	/**
 	 * 
@@ -239,14 +237,14 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<String> loadLayoutIdsForRole(Role role) throws DotDataException;
+	 List<String> loadLayoutIdsForRole(Role role) throws DotDataException;
 	
 	/**
 	 * Add a layout to a role
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	public void addLayoutToRole(Layout layout, Role role) throws DotDataException, DotStateException;
+	 void addLayoutToRole(Layout layout, Role role) throws DotDataException, DotStateException;
 
 	/**
 	 * Returns true if the layout is already related to the role, otherwise false
@@ -254,14 +252,14 @@ public interface RoleAPI {
 	 * @param role  {@link Role}
 	 * @return boolean
 	 */
-		public boolean roleHasLayout(Layout layout, Role role);
+		 boolean roleHasLayout(Layout layout, Role role);
 	
 	/**
 	 * Remove a layout from a role
 	 * @throws DotDataException
 	 * @throws DotStateException
 	 */
-	public void removeLayoutFromRole(Layout layout, Role role) throws DotDataException, DotStateException;
+	 void removeLayoutFromRole(Layout layout, Role role) throws DotDataException, DotStateException;
 	
 	/**
 	 * 
@@ -271,7 +269,7 @@ public interface RoleAPI {
 	 * @throws DotSecurityException 
 	 * @throws NoSuchUserException 
 	 */
-	public List<User> findUsersForRole(Role role) throws DotDataException, NoSuchUserException, DotSecurityException;
+	 List<User> findUsersForRole(Role role) throws DotDataException, NoSuchUserException, DotSecurityException;
 	
 	/**
 	 * 
@@ -282,7 +280,7 @@ public interface RoleAPI {
 	 * @throws DotSecurityException 
 	 * @throws NoSuchUserException 
 	 */
-	public List<User> findUsersForRole(Role role, boolean inherited) throws DotDataException, NoSuchUserException, DotSecurityException;
+	 List<User> findUsersForRole(Role role, boolean inherited) throws DotDataException, NoSuchUserException, DotSecurityException;
 	
 	/**
 	 * Returns the list of roles above this role in the role tree
@@ -292,7 +290,7 @@ public interface RoleAPI {
 	 * @throws NoSuchUserException
 	 * @throws DotSecurityException
 	 */
-	public List<Role> findRoleHierarchy(Role role) throws DotDataException, NoSuchUserException, DotSecurityException;
+	 List<Role> findRoleHierarchy(Role role) throws DotDataException, NoSuchUserException, DotSecurityException;
 
 	
 	/**
@@ -303,7 +301,7 @@ public interface RoleAPI {
 	 * @throws DotSecurityException 
 	 * @throws NoSuchUserException 
 	 */
-	public List<User> findUsersForRole(String roleId) throws DotDataException, NoSuchUserException, DotSecurityException;
+	 List<User> findUsersForRole(String roleId) throws DotDataException, NoSuchUserException, DotSecurityException;
 	
 	/**
 	 * 
@@ -311,7 +309,7 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public List<String> findUserIdsForRole(Role role) throws DotDataException;
+	 List<String> findUserIdsForRole(Role role) throws DotDataException;
 	
 	/**
 	 * 
@@ -319,7 +317,7 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public Role findRoleByFQN(String FQN) throws DotDataException;
+	 Role findRoleByFQN(String FQN) throws DotDataException;
 	
 	/**
 	 * 
@@ -327,7 +325,7 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public void lock(Role role) throws DotDataException;
+	 void lock(Role role) throws DotDataException;
 	
 	/**
 	 * 
@@ -335,7 +333,7 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public void unLock(Role role) throws DotDataException;
+	 void unLock(Role role) throws DotDataException;
 	
 	/**
 	 * 
@@ -343,7 +341,7 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public Role loadRoleByKey(String key) throws DotDataException;
+	 Role loadRoleByKey(String key) throws DotDataException;
 
 	/**
 	 * Retrieves the special role for user
@@ -351,7 +349,7 @@ public interface RoleAPI {
 	 * @return
 	 * @throws DotDataException 
 	 */
-	public Role getUserRole(User user) throws DotDataException;
+	 Role getUserRole(User user) throws DotDataException;
 
 
 	/**
@@ -366,7 +364,7 @@ public interface RoleAPI {
 	 * @return If the user is associated to at least one role ID, returns
 	 *         {@code true}. Otherwise, returns {@code false}.
 	 */
-	public boolean doesUserHaveRoles(String userId, List<String> roleIds);
+	 boolean doesUserHaveRoles(String userId, List<String> roleIds);
 
     /**
      * Checks if the first role parameter is indeed a parent of the second role parameter.
@@ -391,19 +389,19 @@ public interface RoleAPI {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public List<Role> findWorkflowSpecialRoles() throws DotSecurityException, DotDataException;
+	 List<Role> findWorkflowSpecialRoles() throws DotSecurityException, DotDataException;
 	/**
 	 * Returns the back end user role
 	 * @return
 	 * @throws DotDataException
 	 */
-	public Role loadBackEndUserRole() throws DotDataException;
+	 Role loadBackEndUserRole() throws DotDataException;
   
   /**
    * Returns the front end user role
    * @return
    * @throws DotDataException
    */
-	public Role loadFrontEndUserRole() throws DotDataException;
+	 Role loadFrontEndUserRole() throws DotDataException;
 
 }

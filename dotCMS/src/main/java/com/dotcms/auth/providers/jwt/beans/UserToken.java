@@ -38,7 +38,7 @@ public class UserToken implements JWToken {
 
     /**
      * @deprecated use the builder
-     * @param id
+     * @param identifier
      * @param subject
      * @param issuer
      * @param modificationDate
@@ -46,9 +46,9 @@ public class UserToken implements JWToken {
      * @param claims
      */
     @Deprecated
-    public UserToken(final String id, final String subject, final String issuer, final Date modificationDate,
+    public UserToken(final String identifier, final String subject, final String issuer, final Date modificationDate,
             final Date expiresDate, final Map<String,Object> claims) {
-        this.id = id;
+        this.id = identifier;
         this.subject = subject;
         this.issuer = issuer;
         this.modificationDate = modificationDate;
@@ -61,7 +61,7 @@ public class UserToken implements JWToken {
 	/**
 	 * Creates a JWT with its required information.
 	 * 
-	 * @param id
+	 * @param identifier
 	 *            - The ID of the token.
 	 * @param subject
 	 *            - The subject of the token
@@ -72,35 +72,35 @@ public class UserToken implements JWToken {
      * @deprecated use the builder
 	 */
     @Deprecated
-    public UserToken(final String id, final String subject, final String issuer, final Date modificationDate,
+    public UserToken(final String identifier, final String subject, final String issuer, final Date modificationDate,
             final long ttlMillis, final Map<String,Object> claims) {
-        this(id,subject,issuer,modificationDate,new Date(System.currentTimeMillis()+ ttlMillis), claims);
+        this(identifier,subject,issuer,modificationDate,new Date(System.currentTimeMillis()+ ttlMillis), claims);
     }
 
     /**
      * Creates a JWT with its required information.
      *
-     * @param id - The ID of the token.
+     * @param identifier - The ID of the token.
      * @param subject - The subject of the token
      * @param ttlMillis - The expiration date of the token.
      * @deprecated use the builder
      */
     @Deprecated
-    public UserToken(String id, String subject, Date modificationDate, long ttlMillis) {
-        this(id, subject, ClusterFactory.getClusterId(), modificationDate,ttlMillis, ImmutableMap.of());
+    public UserToken(final String identifier, final String subject, final Date modificationDate, final long ttlMillis) {
+        this(identifier, subject, ClusterFactory.getClusterId(), modificationDate,ttlMillis, ImmutableMap.of());
     }
     
     /**
      * Creates a JWT with its required information.
      *
-     * @param id - The ID of the token.
+     * @param identifier - The ID of the token.
      * @param subject - The subject of the token
      * @param ttlMillis - The expiration date of the token.
      * @deprecated use the builder
      */
     @Deprecated
-    public UserToken(final String id, final String subject, final String issuer, final Date modificationDate, final long ttlMillis) {
-        this(id, subject, issuer, modificationDate,ttlMillis, ImmutableMap.of());
+    public UserToken(final String identifier, final String subject, final String issuer, final Date modificationDate, final long ttlMillis) {
+        this(identifier, subject, issuer, modificationDate,ttlMillis, ImmutableMap.of());
     }
 
 

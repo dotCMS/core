@@ -13,6 +13,7 @@ public class RoleLayoutForm extends Validated {
     private final Set<String> layoutIds;
 
     private RoleLayoutForm(final RoleLayoutForm.Builder builder) {
+        super();
         roleId    = builder.roleId;
         layoutIds = builder.layoutIds;
         checkValid();

@@ -23,7 +23,7 @@ public class UserDataGen extends AbstractDataGen<User> {
     private String lastName = "testLastName" + currentTime;
     private String emailAddress = "testEmailAddress@" + currentTime + ".com";
     private String password = String.valueOf(currentTime);
-    private String skinId   = UUIDGenerator.generateUuid();
+    private String skinIdentifier = UUIDGenerator.generateUuid();
     private String companyId = UUIDGenerator.generateUuid();
     private List<Role> roles = new ArrayList<>();
 
@@ -39,8 +39,8 @@ public class UserDataGen extends AbstractDataGen<User> {
     }
 
     @SuppressWarnings("unused")
-    public UserDataGen skinId(final String skinId) {
-        this.skinId = skinId;
+    public UserDataGen skinId(final String skinIdentifier) {
+        this.skinIdentifier = skinIdentifier;
         return this;
     }
 
@@ -89,7 +89,7 @@ public class UserDataGen extends AbstractDataGen<User> {
         user.setLastName(lastName);
         user.setEmailAddress(emailAddress);
         user.setPassword(password);
-        user.setSkinId(this.skinId);
+        user.setSkinId(this.skinIdentifier);
         user.setCompanyId(companyId);
 
         return user;

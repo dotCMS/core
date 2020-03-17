@@ -11,6 +11,12 @@ import org.junit.Test;
  */
 public class UserPersistenceTest {
 
+    private static final String TOKEN_XXX = "xxx";
+    private static final String TOKEN_YYY = "yyy";
+    private static final String TOKEN_EEE = "eee";
+    private static final String TOKEN_III = "iii";
+    private static final String TOKEN_USER_ID = "111";
+
     @BeforeClass
     public static void prepare() throws Exception{
         //Setting web app environment
@@ -24,20 +30,20 @@ public class UserPersistenceTest {
         final UserHBM userHBM = new UserHBM();
         final User    user    = new User();
 
-        userHBM.setPassword("xxx");
-        user.setPassword("xxx");
+        userHBM.setPassword(TOKEN_XXX);
+        user.setPassword(TOKEN_XXX);
 
-        userHBM.setCompanyId("yyy");
-        user.setCompanyId("yyy");
+        userHBM.setCompanyId(TOKEN_YYY);
+        user.setCompanyId(TOKEN_YYY);
 
-        userHBM.setEmailAddress("eee");
-        user.setEmailAddress("eee");
+        userHBM.setEmailAddress(TOKEN_EEE);
+        user.setEmailAddress(TOKEN_EEE);
 
-        userHBM.setLayoutIds("iii");
-        user.setLayoutIds("iii");
+        userHBM.setLayoutIds(TOKEN_III);
+        user.setLayoutIds(TOKEN_III);
 
-        userHBM.setUserId("111");
-        user.setUserId("111");
+        userHBM.setUserId(TOKEN_USER_ID);
+        user.setUserId(TOKEN_USER_ID);
 
         Assert.assertFalse(userPersistence.diff(userHBM, user));
     }
@@ -49,20 +55,20 @@ public class UserPersistenceTest {
         final UserHBM userHBM = new UserHBM();
         final User    user    = new User();
 
-        userHBM.setPassword("xxx");
+        userHBM.setPassword(TOKEN_XXX);
         user.setPassword("ppp");
 
-        userHBM.setCompanyId("yyy");
-        user.setCompanyId("yyy");
+        userHBM.setCompanyId(TOKEN_YYY);
+        user.setCompanyId(TOKEN_YYY);
 
-        userHBM.setEmailAddress("eee");
-        user.setEmailAddress("eee");
+        userHBM.setEmailAddress(TOKEN_EEE);
+        user.setEmailAddress(TOKEN_EEE);
 
-        userHBM.setLayoutIds("iii");
-        user.setLayoutIds("iii");
+        userHBM.setLayoutIds(TOKEN_III);
+        user.setLayoutIds(TOKEN_III);
 
-        userHBM.setUserId("111");
-        user.setUserId("111");
+        userHBM.setUserId(TOKEN_USER_ID);
+        user.setUserId(TOKEN_USER_ID);
 
         Assert.assertTrue(userPersistence.diff(userHBM, user));
     }
@@ -74,20 +80,20 @@ public class UserPersistenceTest {
         final UserHBM userHBM = new UserHBM();
         final User    user    = new User();
 
-        userHBM.setPassword("xxx");
-        user.setPassword("xxx");
+        userHBM.setPassword(TOKEN_XXX);
+        user.setPassword(TOKEN_XXX);
 
-        userHBM.setCompanyId("yyy");
+        userHBM.setCompanyId(TOKEN_YYY);
         user.setCompanyId("mmm");
 
-        userHBM.setEmailAddress("eee");
-        user.setEmailAddress("eee");
+        userHBM.setEmailAddress(TOKEN_EEE);
+        user.setEmailAddress(TOKEN_EEE);
 
-        userHBM.setLayoutIds("iii");
-        user.setLayoutIds("iii");
+        userHBM.setLayoutIds(TOKEN_III);
+        user.setLayoutIds(TOKEN_III);
 
-        userHBM.setUserId("111");
-        user.setUserId("111");
+        userHBM.setUserId(TOKEN_USER_ID);
+        user.setUserId(TOKEN_USER_ID);
 
         Assert.assertTrue(userPersistence.diff(userHBM, user));
     }
@@ -99,20 +105,20 @@ public class UserPersistenceTest {
         final UserHBM userHBM = new UserHBM();
         final User    user    = new User();
 
-        userHBM.setPassword("xxx");
-        user.setPassword("xxx");
+        userHBM.setPassword(TOKEN_XXX);
+        user.setPassword(TOKEN_XXX);
 
-        userHBM.setCompanyId("yyy");
-        user.setCompanyId("yyy");
+        userHBM.setCompanyId(TOKEN_YYY);
+        user.setCompanyId(TOKEN_YYY);
 
-        userHBM.setEmailAddress("eee");
+        userHBM.setEmailAddress(TOKEN_EEE);
         user.setEmailAddress("eeeeeee");
 
-        userHBM.setLayoutIds("iii");
-        user.setLayoutIds("iii");
+        userHBM.setLayoutIds(TOKEN_III);
+        user.setLayoutIds(TOKEN_III);
 
-        userHBM.setUserId("111");
-        user.setUserId("111");
+        userHBM.setUserId(TOKEN_USER_ID);
+        user.setUserId(TOKEN_USER_ID);
 
         Assert.assertTrue(userPersistence.diff(userHBM, user));
     }
@@ -124,20 +130,20 @@ public class UserPersistenceTest {
         final UserHBM userHBM = new UserHBM();
         final User    user    = new User();
 
-        userHBM.setPassword("xxx");
-        user.setPassword("xxx");
+        userHBM.setPassword(TOKEN_XXX);
+        user.setPassword(TOKEN_XXX);
 
-        userHBM.setCompanyId("yyy");
-        user.setCompanyId("yyy");
+        userHBM.setCompanyId(TOKEN_YYY);
+        user.setCompanyId(TOKEN_YYY);
 
-        userHBM.setEmailAddress("eee");
-        user.setEmailAddress("eee");
+        userHBM.setEmailAddress(TOKEN_EEE);
+        user.setEmailAddress(TOKEN_EEE);
 
-        userHBM.setLayoutIds("iii");
+        userHBM.setLayoutIds(TOKEN_III);
         user.setLayoutIds("iiixyz");
 
-        userHBM.setUserId("111");
-        user.setUserId("111");
+        userHBM.setUserId(TOKEN_USER_ID);
+        user.setUserId(TOKEN_USER_ID);
 
         Assert.assertTrue(userPersistence.diff(userHBM, user));
     }
@@ -149,20 +155,20 @@ public class UserPersistenceTest {
         final UserHBM userHBM = new UserHBM();
         final User    user    = new User();
 
-        userHBM.setPassword("xxx");
-        user.setPassword("xxx");
+        userHBM.setPassword(TOKEN_XXX);
+        user.setPassword(TOKEN_XXX);
 
-        userHBM.setCompanyId("yyy");
-        user.setCompanyId("yyy");
+        userHBM.setCompanyId(TOKEN_YYY);
+        user.setCompanyId(TOKEN_YYY);
 
-        userHBM.setEmailAddress("eee");
-        user.setEmailAddress("eee");
+        userHBM.setEmailAddress(TOKEN_EEE);
+        user.setEmailAddress(TOKEN_EEE);
 
-        userHBM.setLayoutIds("iii");
-        user.setLayoutIds("iii");
+        userHBM.setLayoutIds(TOKEN_III);
+        user.setLayoutIds(TOKEN_III);
 
         userHBM.setUserId("111222");
-        user.setUserId("111");
+        user.setUserId(TOKEN_USER_ID);
 
         Assert.assertTrue(userPersistence.diff(userHBM, user));
     }
@@ -174,20 +180,20 @@ public class UserPersistenceTest {
         final UserHBM userHBM = new UserHBM();
         final User    user    = new User();
 
-        userHBM.setPassword("xxx");
-        user.setPassword("xxx");
+        userHBM.setPassword(TOKEN_XXX);
+        user.setPassword(TOKEN_XXX);
 
-        userHBM.setCompanyId("yyy");
-        user.setCompanyId("yyy");
+        userHBM.setCompanyId(TOKEN_YYY);
+        user.setCompanyId(TOKEN_YYY);
 
-        userHBM.setEmailAddress("eee");
-        user.setEmailAddress("eee");
+        userHBM.setEmailAddress(TOKEN_EEE);
+        user.setEmailAddress(TOKEN_EEE);
 
-        userHBM.setLayoutIds("iii");
-        user.setLayoutIds("iii");
+        userHBM.setLayoutIds(TOKEN_III);
+        user.setLayoutIds(TOKEN_III);
 
         userHBM.setUserId(null);
-        user.setUserId("111");
+        user.setUserId(TOKEN_USER_ID);
 
         Assert.assertTrue(userPersistence.diff(userHBM, user));
     }
@@ -199,19 +205,19 @@ public class UserPersistenceTest {
         final UserHBM userHBM = new UserHBM();
         final User    user    = new User();
 
-        userHBM.setPassword("xxx");
-        user.setPassword("xxx");
+        userHBM.setPassword(TOKEN_XXX);
+        user.setPassword(TOKEN_XXX);
 
-        userHBM.setCompanyId("yyy");
-        user.setCompanyId("yyy");
+        userHBM.setCompanyId(TOKEN_YYY);
+        user.setCompanyId(TOKEN_YYY);
 
-        userHBM.setEmailAddress("eee");
-        user.setEmailAddress("eee");
+        userHBM.setEmailAddress(TOKEN_EEE);
+        user.setEmailAddress(TOKEN_EEE);
 
-        userHBM.setLayoutIds("iii");
-        user.setLayoutIds("iii");
+        userHBM.setLayoutIds(TOKEN_III);
+        user.setLayoutIds(TOKEN_III);
 
-        userHBM.setUserId("111");
+        userHBM.setUserId(TOKEN_USER_ID);
         user.setUserId(null);
 
         Assert.assertTrue(userPersistence.diff(userHBM, user));

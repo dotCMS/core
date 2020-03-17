@@ -25,7 +25,7 @@ public interface LayoutAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public Layout findLayout(String layoutId) throws DotDataException;
+	Layout findLayout(String layoutId) throws DotDataException;
 	
 	/**
 	 * tries to cache first, then db to find layout
@@ -33,56 +33,63 @@ public interface LayoutAPI {
 	 * @return
 	 * @throws DotDataException
 	 */
-	public Layout loadLayout(String layoutId) throws DotDataException;
+	Layout loadLayout(String layoutId) throws DotDataException;
 	
 	/**
 	 * 
 	 * @param layout
 	 * @throws DotDataException
 	 */
-	public void saveLayout(Layout layout) throws LayoutNameAlreadyExistsException, DotDataException;
+	void saveLayout(Layout layout) throws LayoutNameAlreadyExistsException, DotDataException;
 	
 	/**
 	 * 
 	 * @param layout
 	 * @throws DotDataException
 	 */
-	public void removeLayout(Layout layout) throws DotDataException;
+	void removeLayout(Layout layout) throws DotDataException;
 	
 	/**
 	 * Will reset all portlets on the layout to the passed in portlets to the order 
 	 * they are in the list.
 	 * @param layout
 	 */
-	public void setPortletsToLayout(Layout layout, List<Portlet> portlets) throws DotDataException;
+	void setPortletsToLayout(Layout layout, List<Portlet> portlets) throws DotDataException;
 
 	/**
 	 * Will reset all portlets on the layout to the passed in portlets to the order 
 	 * they are in the list.
 	 * @param layout
 	 */
-	public void setPortletIdsToLayout(Layout layout, List<String> portletIds) throws DotDataException;
+	void setPortletIdsToLayout(Layout layout, List<String> portletIds) throws DotDataException;
 
 	/**
 	 * Get all the layouts in order for a User.
 	 * @return
 	 */
-	public List<Layout> loadLayoutsForUser(User user) throws DotDataException;
+	List<Layout> loadLayoutsForUser(User user) throws DotDataException;
 	
 	/**
 	 * Get all the layouts in order for a Role.
 	 * @return
 	 * @author David H Torres
 	 */
-	public List<Layout> loadLayoutsForRole(Role role) throws DotDataException;
+	List<Layout> loadLayoutsForRole(Role role) throws DotDataException;
 
-	public boolean doesUserHaveAccessToPortlet(String portletId, User user) throws DotDataException;
+	/**
+	 * Returns true if the user has access to the portletId
+	 * @param portletId {@link String}
+	 * @param user      {@link User}
+	 * @return boolean
+	 * @throws DotDataException
+	 */
+	boolean doesUserHaveAccessToPortlet(String portletId, User user) throws DotDataException;
 	
 	/**
 	 * Retrieves all layouts in the system
 	 * @author David H Torres
 	 */
-	public List<Layout> findAllLayouts() throws DotDataException;
+	List<Layout> findAllLayouts() throws DotDataException;
 
 	/**
 	 * Find layout by name
@@ -91,7 +98,7 @@ public interface LayoutAPI {
 	 * @return
 	 * @throws DotDataException throw when a error occur
 	 */
-	public Layout findLayoutByName(String name) throws DotDataException;
+	Layout findLayoutByName(String name) throws DotDataException;
 
 	/**
 	 * will return the requests layout or if not present, the layout from the
@@ -99,7 +106,7 @@ public interface LayoutAPI {
 	 * @param request
 	 * @return
 	 */
-    public Optional<Layout> resolveLayout(HttpServletRequest request);
+    Optional<Layout> resolveLayout(HttpServletRequest request);
 
 
 	/**
@@ -108,5 +115,5 @@ public interface LayoutAPI {
 	 * @param role   {@link Role}
 	 * @return Optional LayoutsRoles, present and LayoutsRoles identifier set if exists.
 	 */
-	public Optional<LayoutsRoles> findLayoutByRole(final Layout layout, final Role role);
+	Optional<LayoutsRoles> findLayoutByRole(final Layout layout, final Role role);
 }
