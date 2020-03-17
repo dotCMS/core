@@ -1,6 +1,7 @@
 package com.dotmarketing.util.json;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.Writer;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -58,7 +59,7 @@ import java.util.Map;
  * @author JSON.org
  * @version 2009-04-14
  */
-public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.JSONArray {
+public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.JSONArray implements Serializable {
 
 
     /**
