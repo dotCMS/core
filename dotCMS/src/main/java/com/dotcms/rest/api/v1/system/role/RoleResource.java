@@ -114,7 +114,7 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
-	 * Saves set of layout into a role
+	 * Deletes a set of layouts into a role
 	 * The user must have to be a BE and has to have access to roles portlet
 	 */
 	@DELETE
@@ -190,7 +190,7 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
-	 * Saves set of layout into a role
+	 * Returns a collection of layouts associated to a role
 	 * The user must have to be a BE and has to have access to roles portlet
 	 */
 	@GET
