@@ -521,6 +521,7 @@ public class URLMapAPIImplTest {
         return TestDataUtils
                 .getNewsContent(true, APILocator.getLanguageAPI().getDefaultLanguage().getId(),
                         newsContentType.id(), host, sysPublishDate, urlTitle);
+
     }
 
     private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri, final PageMode pageMode) {

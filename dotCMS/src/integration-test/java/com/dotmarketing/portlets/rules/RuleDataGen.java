@@ -1,17 +1,18 @@
 package com.dotmarketing.portlets.rules;
 
+import com.dotcms.datagen.AbstractDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
-//import com.dotmarketing.portlets.rules.conditionlet.MockTrueConditionlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.liferay.portal.model.User;
 
 /**
  * @author Geoff M. Granum
  */
-public class RuleDataGen {
+public class RuleDataGen extends AbstractDataGen<Rule>  {
 
     private static final RulesAPI rulesAPI = APILocator.getRulesAPI();
     private static final HostAPI hostAPI = APILocator.getHostAPI();
@@ -31,6 +32,7 @@ public class RuleDataGen {
     private Rule.FireOn fireOn = Rule.FireOn.EVERY_PAGE;
     private String name = "defaultName";
     private Host host;
+    private HTMLPageAsset htmlPageAsset;
 
     public RuleDataGen() {
     }
@@ -43,10 +45,20 @@ public class RuleDataGen {
 
         Rule rule = new Rule();
         rule.setName(name);
-        rule.setParent(host != null ? host.getIdentifier() : defaultHost.getIdentifier());
+        rule.setParent(getParentId());
         rule.setEnabled(true);
         rule.setFireOn(fireOn);
         return rule;
+    }
+
+    private String getParentId() {
+        if (host != null) {
+            return host.getIdentifier();
+        } else if (htmlPageAsset != null) {
+            return htmlPageAsset.getIdentifier();
+        } else {
+            return defaultHost.getIdentifier();
+        }
     }
 
     public Rule nextPersisted() {
@@ -77,6 +89,11 @@ public class RuleDataGen {
 
     public RuleDataGen host(final Host host) {
         this.host = host;
+        return this;
+    }
+
+    public RuleDataGen page(final HTMLPageAsset htmlPageAsset) {
+        this.htmlPageAsset = htmlPageAsset;
         return this;
     }
 }

@@ -273,7 +273,7 @@
               "script": {
                 "id": "75accc22-7c7e-4f9b-86f0-84750a30fd8e",
                 "exec": [
-                  "pm.test(\"Status code is 500\", function () { pm.response.to.have.status(500) });",
+                  "pm.test(\"Status code is 404\", function () { pm.response.to.have.status(404) });",
                   ""
                 ],
                 "type": "text/javascript"
