@@ -1,9 +1,12 @@
 @import "mixins";
 @import "variables";
 
-.my-account {
+.my-account,
+.error-message {
     width: 300px;
+}
 
+.my-account {
     .md-inputtext {
         width: 100%;
     }

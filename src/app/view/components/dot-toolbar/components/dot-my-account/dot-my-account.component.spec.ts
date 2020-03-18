@@ -146,7 +146,7 @@ describe('DotMyAccountComponent', () => {
         });
         fixture.detectChanges();
         const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
-        changePassword.triggerEventHandler('click', {});
+        changePassword.triggerEventHandler('onChange', {});
         fixture.detectChanges();
 
         fixture.whenStable().then(() => {
@@ -173,7 +173,7 @@ describe('DotMyAccountComponent', () => {
         });
         fixture.detectChanges();
         const changePassword = de.query(By.css('#dot-my-account-change-password-option'));
-        changePassword.triggerEventHandler('click', {});
+        changePassword.triggerEventHandler('onChange', {});
         fixture.detectChanges();
 
         fixture.whenStable().then(() => {
