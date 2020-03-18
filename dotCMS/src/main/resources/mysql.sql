@@ -1754,21 +1754,6 @@ alter table structure add constraint fk_structure_folder foreign key (folder) re
 alter table structure modify column velocity_var_name varchar(255) not null;
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
 
-DROP PROCEDURE IF EXISTS load_records_to_index;
-CREATE PROCEDURE load_records_to_index(IN server_id VARCHAR(100), IN records_to_fetch INT, IN priority_level INT)
-BEGIN
-DECLARE v_id BIGINT;
-DECLARE v_inode_to_index VARCHAR(100);
-DECLARE v_ident_to_index VARCHAR(100);
-DECLARE v_serverid VARCHAR(64);
-DECLARE v_priority INT;
-DECLARE v_time_entered TIMESTAMP;
-DECLARE v_index_val VARCHAR(325);
-DECLARE v_dist_action INT;
-DECLARE cursor_end BOOL DEFAULT FALSE;
-DECLARE cur1 CURSOR FOR SELECT * FROM dist_reindex_journal WHERE serverid IS NULL or serverid='' AND priority <= priority_level ORDER BY priority ASC LIMIT records_to_fetch;
-DECLARE CONTINUE HANDLER FOR NOT FOUND SET cursor_end:=TRUE;
-
 DROP TEMPORARY TABLE IF EXISTS tmp_records_reindex;
 CREATE TEMPORARY TABLE tmp_records_reindex (
   id BIGINT PRIMARY KEY,
