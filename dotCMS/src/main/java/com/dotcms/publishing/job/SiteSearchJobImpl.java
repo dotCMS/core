@@ -1,6 +1,7 @@
 package com.dotcms.publishing.job;
 
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -36,7 +37,6 @@ import com.google.common.collect.ImmutableList.Builder;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,21 +45,24 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-public class SiteSearchJobImpl {
 
-    //This should serve as an extra precaution to avoid clash between two threads generating a unique index name.
-    private static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmssSSSSS");
-    private static AtomicLong atomicLong = new AtomicLong(0L);
+/**
+ * Even though this is expected to be an implementation of a Quartz Stateful Job
+ * Which by default are guaranteed the run only one at the time (cluster wide).
+ * Such warranty is based on the job name and as these jobs can be created dynamically and named by the user
+ * It turnout that we can have sever instances of this same job type running concurrently for that reason this class needs to be thread-safe
+ * And guaranteed that several different instances can co-exist and run concurrently without stepping on each others toes.
+ * @See SiteSearchJobProxy (Quartz Stateful Job)
+ */
+public class SiteSearchJobImpl {
 
     static final String INCREMENTAL = "incremental";
     static final String LANG_TO_INDEX = "langToIndex";
@@ -258,7 +261,6 @@ public class SiteSearchJobImpl {
                 newIndexName = null;
                 endDate = jobContext.getFireTime();
                 startDate = recentAudits.get(0).getFireDate();
-                System.out.println("Starting at " + new SimpleDateFormat("yyyyMMdd-HHmmss").format(startDate));
                 //For incremental jobs, we write the bundle to the same folder every time.
                 bundleId = StringUtils.camelCaseLower(jobName);
                 //We'll be working directly into the final index.
@@ -352,16 +354,33 @@ public class SiteSearchJobImpl {
         }
     }
 
-     private String newIndexName(){
-        return SiteSearchAPI.ES_SITE_SEARCH_NAME + StringPool.UNDERLINE
-                + datetimeFormat.format(new Date()) + atomicLong.getAndIncrement();
-     }
+    /**
+     * Unique thread safe site-search index name
+     * @return
+     */
+    private String newIndexName() {
+        return SiteSearchAPI.ES_SITE_SEARCH_NAME
+                + StringPool.UNDERLINE
+                + ESMappingAPIImpl.datetimeFormat.format(new Date())
+                + StringPool.UNDERLINE
+                + UUIDUtil.uuidTimeBased();
+    }
 
-     private String uniqueFolderName(){
+    /**
+     * unique threadsafe bundle folder name
+     * @return
+     */
+    private String uniqueFolderName(){
         return  UUIDUtil.uuid() + "_" + UtilMethods.dateToJDBC(new Date()).replace(':', '-').replace(' ', '_');
-     }
+    }
 
-     private IndexMetaData getIndexMetaData(String indexAlias) throws DotDataException {
+    /***
+     * Given an alias this tells you all you need to know about an index.
+     * @param indexAlias
+     * @return @see IndexMetaData
+     * @throws DotDataException
+     */
+    private IndexMetaData getIndexMetaData(String indexAlias) throws DotDataException {
         String indexName = null;
         boolean defaultIndex = false;
         long recordCount = 0;
