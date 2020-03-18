@@ -36,6 +36,7 @@ import com.google.common.collect.ImmutableList.Builder;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,10 +45,11 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.time.FastDateFormat;
 import org.elasticsearch.ElasticsearchException;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -55,7 +57,9 @@ import org.quartz.JobExecutionException;
 
 public class SiteSearchJobImpl {
 
-    private static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmssSSS");
+    //This should serve as an extra precaution to avoid clash between two threads generating a unique index name.
+    private static final FastDateFormat datetimeFormat = FastDateFormat.getInstance("yyyyMMddHHmmssSSSSS");
+    private static AtomicLong atomicLong = new AtomicLong(0L);
 
     static final String INCREMENTAL = "incremental";
     static final String LANG_TO_INDEX = "langToIndex";
@@ -119,7 +123,8 @@ public class SiteSearchJobImpl {
     }
 
     @SuppressWarnings("unchecked")
-    public void run(final JobExecutionContext jobContext) throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticsearchException, IOException {
+    public void run(final JobExecutionContext jobContext)
+            throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticsearchException, IOException {
         if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
             Logger.warn(this, "Invalid attempt to run SiteSearch job without a license.");
             return;
@@ -133,210 +138,223 @@ public class SiteSearchJobImpl {
                         + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME);
 
         HibernateUtil.startTransaction();
-
-        final PreparedJobContext preparedJobContext = prepareJob(jobContext);
-        synchronized (preparedJobContext.lockKey()) {
-            for (final SiteSearchConfig config : preparedJobContext.getConfigs()) {
-                publisherAPI.publish(config, status);
-            }
-        }
-
         try {
-
-                int filesCount = 0, pagesCount = 0, urlmapCount = 0;
-                for (final BundlerStatus bundlerStatus : status.getBundlerStatuses()) {
-                    if (bundlerStatus.getBundlerClass().equals(FileAssetBundler.class.getName())) {
-                        filesCount += bundlerStatus.getTotal();
-                    } else if (bundlerStatus.getBundlerClass().equals(URLMapBundler.class.getName())) {
-                        urlmapCount += bundlerStatus.getTotal();
-                    } else if (bundlerStatus.getBundlerClass()
-                            .equals(HTMLPageAsContentBundler.class.getName())) {
-                        pagesCount += bundlerStatus.getTotal();
-                    }
+            final PreparedJobContext preparedJobContext = prepareJob(jobContext);
+            synchronized (preparedJobContext.lockKey()) {
+                for (final SiteSearchConfig config : preparedJobContext.getConfigs()) {
+                    publisherAPI.publish(config, status);
                 }
 
-                final SiteSearchAudit audit = new SiteSearchAudit();
-                audit.setPagesCount(pagesCount);
-                audit.setFilesCount(filesCount);
-                audit.setUrlmapsCount(urlmapCount);
-                audit.setAllHosts(preparedJobContext.isIndexAll());
-                audit.setFireDate(jobContext.getFireTime());
-                audit.setHostList(preparedJobContext.getJoinedHosts());
-                audit.setIncremental(preparedJobContext.isIncremental());
-                audit.setStartDate(preparedJobContext.getStartDate());
-                audit.setEndDate(preparedJobContext.getEndDate());
-                audit.setIndexName(
-                        UtilMethods.isSet(preparedJobContext.getNewIndexName()) ? preparedJobContext
-                                .getNewIndexName() : preparedJobContext.getIndexName());
-                audit.setJobId(preparedJobContext.getJobId());
-                audit.setJobName(preparedJobContext.getJobName());
-                audit.setLangList(preparedJobContext.getLangList());
-                audit.setPath(preparedJobContext.getPaths());
-                audit.setPathInclude(preparedJobContext.isPathInclude());
-                siteSearchAuditAPI.save(audit);
+                try {
 
+                    int filesCount = 0, pagesCount = 0, urlmapCount = 0;
+                    for (final BundlerStatus bundlerStatus : status.getBundlerStatuses()) {
+                        if (bundlerStatus.getBundlerClass()
+                                .equals(FileAssetBundler.class.getName())) {
+                            filesCount += bundlerStatus.getTotal();
+                        } else if (bundlerStatus.getBundlerClass()
+                                .equals(URLMapBundler.class.getName())) {
+                            urlmapCount += bundlerStatus.getTotal();
+                        } else if (bundlerStatus.getBundlerClass()
+                                .equals(HTMLPageAsContentBundler.class.getName())) {
+                            pagesCount += bundlerStatus.getTotal();
+                        }
+                    }
 
-        } catch (DotDataException ex) {
-            Logger.error(this, "can't save audit data", ex);
+                    final SiteSearchAudit audit = new SiteSearchAudit();
+                    audit.setPagesCount(pagesCount);
+                    audit.setFilesCount(filesCount);
+                    audit.setUrlmapsCount(urlmapCount);
+                    audit.setAllHosts(preparedJobContext.isIndexAll());
+                    audit.setFireDate(jobContext.getFireTime());
+                    audit.setHostList(preparedJobContext.getJoinedHosts());
+                    audit.setIncremental(preparedJobContext.isIncremental());
+                    audit.setStartDate(preparedJobContext.getStartDate());
+                    audit.setEndDate(preparedJobContext.getEndDate());
+                    audit.setIndexName(
+                            UtilMethods.isSet(preparedJobContext.getNewIndexName())
+                                    ? preparedJobContext
+                                    .getNewIndexName() : preparedJobContext.getIndexName());
+                    audit.setJobId(preparedJobContext.getJobId());
+                    audit.setJobName(preparedJobContext.getJobName());
+                    audit.setLangList(preparedJobContext.getLangList());
+                    audit.setPath(preparedJobContext.getPaths());
+                    audit.setPathInclude(preparedJobContext.isPathInclude());
+                    siteSearchAuditAPI.save(audit);
+
+                } catch (DotDataException ex) {
+                    Logger.error(this, "can't save audit data", ex);
+                }
+            }
         } finally {
             HibernateUtil.closeSession();
         }
         date = DateUtil.getCurrentDate();
-        ActivityLogger.logInfo(getClass(), "Job Finished", "User: " +userAPI.getSystemUser().getUserId()+ "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME  );
-        AdminLogger.log(getClass(), "Job Finished", "User: " +userAPI.getSystemUser().getUserId()+ "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
+        ActivityLogger.logInfo(getClass(), "Job Finished",
+                "User: " + userAPI.getSystemUser().getUserId() + "; Date: " + date
+                        + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME);
+        AdminLogger.log(getClass(), "Job Finished",
+                "User: " + userAPI.getSystemUser().getUserId() + "; Date: " + date
+                        + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME);
     }
 
-     private synchronized PreparedJobContext prepareJob(final JobExecutionContext jobContext)
-             throws DotDataException, IOException, DotSecurityException {
+    private PreparedJobContext prepareJob(final JobExecutionContext jobContext)
+            throws DotDataException, IOException, DotSecurityException {
+        synchronized (SiteSearchJobImpl.class) {
+            final JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
+            String jobId = (String) dataMap.get(JOB_ID);
+            if (jobId == null) {
+                jobId = dataMap.getString(QUARTZ_JOB_NAME);
+            }
 
-         final JobDataMap dataMap = jobContext.getJobDetail().getJobDataMap();
-         String jobId = (String) dataMap.get(JOB_ID);
-         if (jobId == null) {
-             jobId = dataMap.getString(QUARTZ_JOB_NAME);
-         }
+            final boolean indexAll = UtilMethods.isSet((String) dataMap.get(INDEX_ALL));
+            final String[] indexHosts;
+            final Object obj =
+                    (dataMap.get(INDEX_HOST) != null) ? dataMap.get(INDEX_HOST) : new String[0];
+            if (obj instanceof String) {
+                indexHosts = new String[]{(String) obj};
+            } else {
+                indexHosts = (String[]) obj;
+            }
 
-         final boolean indexAll = UtilMethods.isSet((String) dataMap.get(INDEX_ALL));
-         final String[] indexHosts;
-         final Object obj = (dataMap.get(INDEX_HOST) != null) ? dataMap.get(INDEX_HOST) : new String[0];
-         if (obj instanceof String) {
-             indexHosts = new String[]{(String) obj};
-         } else {
-             indexHosts = (String[]) obj;
-         }
+            final boolean incrementalParam = dataMap.getBooleanFromString(INCREMENTAL);
 
-         final boolean incrementalParam = dataMap.getBooleanFromString(INCREMENTAL);
+            final User userToRun = userAPI.getSystemUser();
 
-         final User userToRun = userAPI.getSystemUser();
+            final boolean include = ("all".equals(dataMap.getString(INCLUDE_EXCLUDE)) || INCLUDE
+                    .equals(dataMap.getString(INCLUDE_EXCLUDE)));
 
-         final boolean include = ("all".equals(dataMap.getString(INCLUDE_EXCLUDE)) || INCLUDE
-                 .equals(dataMap.getString(INCLUDE_EXCLUDE)));
+            String path = dataMap.getString(PATHS);
+            final List<String> paths = new ArrayList<>();
+            if (path != null) {
+                path = path.replace(',', '\r');
+                path = path.replace('\n', '\r');
+                for (String x : path.split("\r")) {
+                    if (UtilMethods.isSet(x)) {
+                        paths.add(x);
+                    }
+                }
+            }
+            final boolean isRunNowJob = dataMap.getBooleanFromString(RUN_NOW);
+            // Run now jobs can not get the incremental treatment.
+            final String indexAlias = dataMap.getString(INDEX_ALIAS);
+            final IndexMetaData indexMetaData = getIndexMetaData(indexAlias);
+            final String newIndexName;
+            final String indexName;
 
-         String path = dataMap.getString(PATHS);
-         final List<String> paths = new ArrayList<>();
-         if (path != null) {
-             path = path.replace(',', '\r');
-             path = path.replace('\n', '\r');
-             for (String x : path.split("\r")) {
-                 if (UtilMethods.isSet(x)) {
-                     paths.add(x);
-                 }
-             }
-         }
-         final boolean isRunNowJob = dataMap.getBooleanFromString(RUN_NOW);
-         // Run now jobs can not get the incremental treatment.
-         final String indexAlias = dataMap.getString(INDEX_ALIAS);
-         final IndexMetaData indexMetaData = getIndexMetaData(indexAlias);
-         final String newIndexName;
-         final String indexName;
+            final String jobName = dataMap.getString(QUARTZ_JOB_NAME);
+            final Date startDate, endDate;
+            final List<SiteSearchAudit> recentAudits = isRunNowJob ? Collections.emptyList()
+                    : siteSearchAuditAPI.findRecentAudits(jobId, 0, 1);
 
+            final boolean incremental = (incrementalParam && !isRunNowJob && !indexMetaData
+                    .isNewIndex() && !indexMetaData.isEmpty() && !recentAudits.isEmpty());
+            //We can only run incrementally if all the above pre-requisites are met.
+            if (incremental) {
+                //Incremental mode is useful only if there's already an index previously built.
+                //Incremental mode also implies that we have to have a date range to work on.
+                //So if we have an empty index or we lack of audit data we can not run incrementally.
+                //Even if the user wants to.
+                newIndexName = null;
+                endDate = jobContext.getFireTime();
+                startDate = recentAudits.get(0).getFireDate();
+                System.out.println("Starting at " + new SimpleDateFormat("yyyyMMdd-HHmmss").format(startDate));
+                //For incremental jobs, we write the bundle to the same folder every time.
+                bundleId = StringUtils.camelCaseLower(jobName);
+                //We'll be working directly into the final index.
+                indexName = indexMetaData.getIndexName();
+            } else {
+                //Set null explicitly just in case
+                startDate = endDate = null;
+                // For non-incremental jobs. We create a new folder using a date stamp.
+                // But even if this run was executed non-incrementally for not having met any of the pre-requisits
+                // The job originally was meant to run incrementally therefore the results must be stored in the job specific folder.
+                // So they will still be available in the next round.
+                bundleId = incrementalParam ? StringUtils.camelCaseLower(jobName) :
+                        // Otherwise it is safe to create a unique  folder name.
+                        uniqueFolderName();
+                // We use a new index name only on non-incremental
+                newIndexName = newIndexName();
+                final String newAlias =
+                        indexMetaData.isNewIndex() ? indexMetaData.getAlias() : null;
+                siteSearchAPI.createSiteSearchIndex(newIndexName, newAlias, 1);
+                // This is the old index we will swap from.
+                // if it doesnt exist. It doesnt matter here since we will end up with the new one.
+                indexName = indexMetaData.getIndexName();
+            }
 
-         final String jobName = dataMap.getString(QUARTZ_JOB_NAME);
-         final Date startDate, endDate;
-         final List<SiteSearchAudit> recentAudits = isRunNowJob ? Collections.emptyList()
-                 : siteSearchAuditAPI.findRecentAudits(jobId, 0, 1);
+            Logger.info(SiteSearchJobImpl.class, () -> String
+                    .format("Incremental mode [%s]. current index is `%s`. new index is `%s`. alias is `%s`  bundle id is `%s` ",
+                            BooleanUtils.toStringYesNo(incremental), indexName,
+                            UtilMethods.isSet(newIndexName) ? newIndexName : "N/A",
+                            indexAlias,
+                            bundleId)
+            );
 
-         final boolean incremental = (incrementalParam && !isRunNowJob && !indexMetaData.isNewIndex() && !indexMetaData.isEmpty() && !recentAudits.isEmpty());
-         //We can only run incrementally if all the above pre-requisites are met.
-         if (incremental) {
-             //Incremental mode is useful only if there's already an index previously built.
-             //Incremental mode also implies that we have to have a date range to work on.
-             //So if we have an empty index or we lack of audit data we can not run incrementally.
-             //Even if the user wants to.
-             newIndexName = null;
-             endDate = jobContext.getFireTime();
-             startDate = recentAudits.get(0).getFireDate();
-             //For incremental jobs, we write the bundle to the same folder every time.
-             bundleId = StringUtils.camelCaseLower(jobName);
-             //We'll be working directly into the final index.
-             indexName = indexMetaData.getIndexName();
-         } else {
-             //Set null explicitly just in case
-             startDate = endDate = null;
-             // For non-incremental jobs. We create a new folder using a date stamp.
-             // But even if this run was executed non-incrementally for not having met any of the pre-requisits
-             // The job originally was meant to run incrementally therefore the results must be stored in the job specific folder.
-             // So they will still be available in the next round.
-             bundleId = incrementalParam ? StringUtils.camelCaseLower(jobName) :
-                     // Otherwise it is safe to create a unique  folder name.
-                     uniqueFolderName();
-             // We use a new index name only on non-incremental
-             newIndexName = newIndexName();
-             final String newAlias = indexMetaData.isNewIndex() ? indexMetaData.getAlias() : null ;
-             siteSearchAPI.createSiteSearchIndex(newIndexName, newAlias, 1);
-             // This is the old index we will swap from.
-             // if it doesnt exist. It doesnt matter here since we will end up with the new one.
-             indexName = indexMetaData.getIndexName();
-         }
+            final List<Host> hosts;
+            if (indexAll) {
+                hosts = hostAPI.findAll(userToRun, true);
+            } else {
+                hosts = Stream.of(indexHosts).map(h -> {
+                    try {
+                        return hostAPI.find(h, userToRun, true);
+                    } catch (DotDataException | DotSecurityException e) {
+                        Logger.error(SiteSearchJobImpl.class, e);
+                    }
+                    return null;
+                }).filter(Objects::nonNull).collect(Collectors.toList());
+            }
 
-         Logger.info(SiteSearchJobImpl.class, () -> String
-                 .format("Incremental mode [%s]. current index is `%s`. new index is `%s`. alias is `%s`  bundle id is `%s` ",
-                         BooleanUtils.toStringYesNo(incremental), indexName ,
-                         UtilMethods.isSet(newIndexName) ? newIndexName : "N/A",
-                         indexAlias,
-                         bundleId)
-                 );
+            final Builder<SiteSearchConfig> builder = ImmutableList.builder();
 
-         final List<Host> hosts;
-         if (indexAll) {
-             hosts = hostAPI.findAll(userToRun, true);
-         } else {
-             hosts = Stream.of(indexHosts).map(h -> {
-                 try {
-                     return hostAPI.find(h, userToRun, true);
-                 } catch (DotDataException | DotSecurityException e) {
-                     Logger.error(SiteSearchJobImpl.class, e);
-                 }
-                 return null;
-             }).filter(Objects::nonNull).collect(Collectors.toList());
-         }
+            final List<String> languageToIndex = Arrays
+                    .asList((String[]) dataMap.get(LANG_TO_INDEX));
+            final ListIterator<String> listIterator = languageToIndex.listIterator();
+            while (listIterator.hasNext()) {
+                final String lang = listIterator.next();
+                final SiteSearchConfig config = new SiteSearchConfig();
+                config.setJobId(jobId);
+                config.setLanguage(Long.parseLong(lang));
+                config.setJobName(jobName);
+                config.setHosts(hosts);
+                config.setNewIndexName(newIndexName);
+                config.setIndexName(indexName);
+                config.setIndexAlias(indexAlias);
+                config.setId(bundleId);
+                config.setStartDate(startDate);
+                config.setEndDate(endDate);
+                config.setIncremental(incremental);
+                config.setUser(userToRun);
 
-         final Builder<SiteSearchConfig> builder = ImmutableList.builder();
+                if (include) {
+                    config.setIncludePatterns(paths);
+                } else {
+                    config.setExcludePatterns(paths);
+                }
 
-         final List<String> languageToIndex = Arrays.asList((String[])dataMap.get(LANG_TO_INDEX));
-         final ListIterator<String> listIterator = languageToIndex.listIterator();
-         while (listIterator.hasNext()) {
-             final String lang = listIterator.next();
-             final SiteSearchConfig config = new SiteSearchConfig();
-             config.setJobId(jobId);
-             config.setLanguage(Long.parseLong(lang));
-             config.setJobName(jobName);
-             config.setHosts(hosts);
-             config.setNewIndexName(newIndexName);
-             config.setIndexName(indexName);
-             config.setIndexAlias(indexAlias);
-             config.setId(bundleId);
-             config.setStartDate(startDate);
-             config.setEndDate(endDate);
-             config.setIncremental(incremental);
-             config.setUser(userToRun);
-
-             if(include) {
-                 config.setIncludePatterns(paths);
-             } else {
-                 config.setExcludePatterns(paths);
-             }
-
-             //We should always replace the index when performing on non-incremental mode.
-             //That means we drop the old one and re-use the alias.
-             //But we only activate the new index when the old one was the default.
-             //Or there wasn't any previous index.
-             //it must be done on the last round of our loop.
-             final boolean switchIndex = !incremental && !listIterator.hasNext();
-             config.setSwitchIndexWhenDone(switchIndex);
-             builder.add(config);
-         }
-         final String joinedHosts = UtilMethods.join(indexHosts,",",true);
-         final String langList = UtilMethods.join(languageToIndex, ",");
-         final String pathsAsString = paths.size() > 0 ? UtilMethods.join(paths,",") : "/*";
-         return new PreparedJobContext(indexName, newIndexName, indexAll, joinedHosts, incremental,
-                 startDate, endDate, jobId, jobName, langList, pathsAsString, include,
-                 builder.build()
-         );
-     }
+                //We should always replace the index when performing on non-incremental mode.
+                //That means we drop the old one and re-use the alias.
+                //But we only activate the new index when the old one was the default.
+                //Or there wasn't any previous index.
+                //it must be done on the last round of our loop.
+                final boolean switchIndex = !incremental && !listIterator.hasNext();
+                config.setSwitchIndexWhenDone(switchIndex);
+                builder.add(config);
+            }
+            final String joinedHosts = UtilMethods.join(indexHosts, ",", true);
+            final String langList = UtilMethods.join(languageToIndex, ",");
+            final String pathsAsString = paths.size() > 0 ? UtilMethods.join(paths, ",") : "/*";
+            return new PreparedJobContext(indexName, newIndexName, indexAll, joinedHosts,
+                    incremental,
+                    startDate, endDate, jobId, jobName, langList, pathsAsString, include,
+                    builder.build()
+            );
+        }
+    }
 
      private String newIndexName(){
         return SiteSearchAPI.ES_SITE_SEARCH_NAME + StringPool.UNDERLINE
-                + datetimeFormat.format(new Date());
+                + datetimeFormat.format(new Date()) + atomicLong.getAndIncrement();
      }
 
      private String uniqueFolderName(){
