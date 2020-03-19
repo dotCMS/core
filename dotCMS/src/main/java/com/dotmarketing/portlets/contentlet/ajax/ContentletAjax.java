@@ -84,6 +84,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionMessages;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
@@ -997,7 +998,7 @@ public class ContentletAjax {
 			headers.add(fieldMap);
 
 			// if there is a type selected, does not make sense to show it on the list.
-			if (Structure.STRUCTURE_TYPE_ALL.equals(structureInode)) {
+			if (Structure.STRUCTURE_TYPE_ALL.equals(structureInode) || this.hasManyContentTypes(structureInode)) {
 				fieldMap = new HashMap<>();
 				fieldMap.put("fieldVelocityVarName", "__type__");
 				fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Type")).getOrElse("Type"));
@@ -1272,7 +1273,12 @@ public class ContentletAjax {
 		return results;
 	}
 
-    /**
+	private boolean hasManyContentTypes(final String structureInode) {
+
+		return null != structureInode && structureInode.split(StringPool.COMMA).length > 1;
+	}
+
+	/**
      *
      * @param fields
      * @param orderBy
