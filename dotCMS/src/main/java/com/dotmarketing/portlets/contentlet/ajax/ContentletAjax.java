@@ -97,6 +97,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -503,7 +504,8 @@ public class ContentletAjax {
 	 private <T> List<T> distinct (final List<T> collection, final Function<T, Object> indexKeyFunction) {
 
 		 final Map<Object, T> collectionIndexMap = collection.stream().collect(
-		 		Collectors.toMap(indexKeyFunction, Function.identity(), (existing, replacement) -> existing));
+		 		Collectors.toMap(indexKeyFunction, Function.identity(), (existing, replacement) -> existing,
+						LinkedHashMap::new));
 
 		return new ArrayList<>(collectionIndexMap.values());
 	 }
