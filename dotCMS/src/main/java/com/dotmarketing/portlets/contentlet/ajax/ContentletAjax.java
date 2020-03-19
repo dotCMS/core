@@ -84,6 +84,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionMessages;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
@@ -97,6 +98,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -503,7 +505,8 @@ public class ContentletAjax {
 	 private <T> List<T> distinct (final List<T> collection, final Function<T, Object> indexKeyFunction) {
 
 		 final Map<Object, T> collectionIndexMap = collection.stream().collect(
-		 		Collectors.toMap(indexKeyFunction, Function.identity(), (existing, replacement) -> existing));
+		 		Collectors.toMap(indexKeyFunction, Function.identity(), (existing, replacement) -> existing,
+						LinkedHashMap::new));
 
 		return new ArrayList<>(collectionIndexMap.values());
 	 }
@@ -995,7 +998,7 @@ public class ContentletAjax {
 			headers.add(fieldMap);
 
 			// if there is a type selected, does not make sense to show it on the list.
-			if (Structure.STRUCTURE_TYPE_ALL.equals(structureInode)) {
+			if (Structure.STRUCTURE_TYPE_ALL.equals(structureInode) || this.hasManyContentTypes(structureInode)) {
 				fieldMap = new HashMap<>();
 				fieldMap.put("fieldVelocityVarName", "__type__");
 				fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Type")).getOrElse("Type"));
@@ -1249,7 +1252,12 @@ public class ContentletAjax {
 		return results;
 	}
 
-    /**
+	private boolean hasManyContentTypes(final String structureInode) {
+
+		return null != structureInode && structureInode.split(StringPool.COMMA).length > 1;
+	}
+
+	/**
      *
      * @param fields
      * @param orderBy
