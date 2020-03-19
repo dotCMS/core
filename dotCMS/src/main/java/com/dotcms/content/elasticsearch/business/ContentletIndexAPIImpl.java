@@ -17,6 +17,7 @@ import com.dotcms.contenttype.business.FieldFactory;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -248,12 +249,19 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
     }
 
+    
+    
+    
+    
+    
+    
     /**
      * Will build the corrent mapping map for a field based on its datatype.
      * @param field
      * @return
      */
     private Optional<Map<String,String>> resolveFieldType(Field field) {
+        
         switch(field.dataType()) {
             case BOOL:
                 return Optional.of(ImmutableMap.of("type","boolean"));
@@ -266,10 +274,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             case TEXT:
                 return Optional.of(ImmutableMap.of("type","text"));
             case LONG_TEXT:
-                return Optional.of(ImmutableMap.of("type","text"));
+                if(!(field instanceof KeyValueField)) {
+                    return Optional.of(ImmutableMap.of("type","text"));
+                }
             default:  
                 return Optional.empty();
         }
+        
     }
     
     
