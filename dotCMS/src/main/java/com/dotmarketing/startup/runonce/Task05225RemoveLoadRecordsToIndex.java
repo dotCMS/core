@@ -16,8 +16,8 @@ public class Task05225RemoveLoadRecordsToIndex extends AbstractJDBCStartupTask {
 
     private final String MSSQL_SCRIPT =
             "IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'load_records_to_index')\n"
-                    + "DROP PROCEDURE load_records_to_index;\n"
-                    + "GO\n";
+                    + "DROP PROCEDURE load_records_to_index;";
+
 
     private final String ORACLE_SCRIPT = "DROP FUNCTION load_records_to_index";
 
