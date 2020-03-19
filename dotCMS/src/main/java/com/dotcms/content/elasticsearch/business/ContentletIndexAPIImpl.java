@@ -14,6 +14,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldFactory;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -50,6 +51,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
@@ -183,6 +185,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
         mappingAPI.putMapping(indexName, mapping);
+
+        
+        addStandardMappings(indexName);
+        
         addCustomMapping(indexName);
 
         return true;
@@ -200,6 +206,76 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         addCustomMappingForRelationships(indexName, mappedRelationships);
     }
 
+    /**
+     * Builds a list of fields that have been marked to be "indexed" in dotCMS and tries to
+     * intelligently add the correct mapping for them based on their data type. The list of fields
+     * excludes fields that have custom mappings already defined for them. We build a list of structure
+     * inodes and then load them one by one, which will return them and their fields from cache.
+     * 
+     * @param indexName
+     * @throws ElasticsearchException
+     * @throws IOException
+     */
+    private void addStandardMappings(final String indexName) throws ElasticsearchException, IOException {
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final List<String> allTypes = Try.of(() -> new DotConnect().setSQL("select inode from structure").loadObjectResults())
+                        .getOrElseThrow(e -> new DotRuntimeException(e))
+                        .stream()
+                        .map(r -> (String) r.get("inode"))
+                        .collect(Collectors.toList());
+        final Map<String, Map<String, String>> mappingMap = new HashMap<>();
+        for (final String typeVar : allTypes) {
+            mappingMap.clear();
+            final ContentType type = Try.of(() -> contentTypeAPI.find(typeVar)).getOrNull();
+            if (type == null) {
+                continue;
+            }
+            final List<Field> indexedFields = type.fields().stream().filter(f -> f.indexed())
+                            .filter(f -> !f.fieldVariablesMap().containsKey(FieldVariable.ES_CUSTOM_MAPPING_KEY))
+                            .collect(Collectors.toList());
+
+            for (Field field : indexedFields) {
+                Optional<Map<String, String>> fieldType = resolveFieldType(field);
+                if (fieldType.isPresent()) {
+                    mappingMap.put(type.variable().toLowerCase() + "." + field.variable().toLowerCase(), fieldType.get());
+                }
+            }
+            if (!mappingMap.isEmpty()) {
+                final JSONObject jsonObject = new JSONObject().put("properties", mappingMap);
+                mappingAPI.putMapping(indexName, jsonObject.toString());
+            }
+        }
+    }
+
+    /**
+     * Will build the corrent mapping map for a field based on its datatype.
+     * @param field
+     * @return
+     */
+    private Optional<Map<String,String>> resolveFieldType(Field field) {
+        switch(field.dataType()) {
+            case BOOL:
+                return Optional.of(ImmutableMap.of("type","boolean"));
+            case FLOAT: 
+                return Optional.of(ImmutableMap.of("type","double"));
+            case INTEGER:    
+                return Optional.of(ImmutableMap.of("type","long"));
+            case DATE:
+                return Optional.of( ImmutableMap.of("type","date","format","yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"));
+            case TEXT:
+                return Optional.of(ImmutableMap.of("type","text"));
+            case LONG_TEXT:
+                return Optional.of(ImmutableMap.of("type","text"));
+            default:  
+                return Optional.empty();
+        }
+    }
+    
+    
+    
+    
+    
     /**
      * Sets a mapping for all relationships except for those that contains its custom mapping using field variables
      * @param indexName - Index where mapping will be updated

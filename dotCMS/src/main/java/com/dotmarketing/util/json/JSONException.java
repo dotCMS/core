@@ -1,11 +1,13 @@
 package com.dotmarketing.util.json;
 
+import com.dotmarketing.exception.DotRuntimeException;
+
 /**
  * The JSONException is thrown by the JSON.org classes when things are amiss.
  * @author JSON.org
  * @version 2008-09-18
  */
-public class JSONException extends com.dotcms.repackage.org.codehaus.jettison.json.JSONException {
+public class JSONException extends DotRuntimeException {
     /**
 	 * 
 	 */

@@ -184,7 +184,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @param x A JSONTokener
      * @throws JSONException If there is a syntax error.
      */
-    public JSONArray(JSONTokener x) throws JSONException {
+    public JSONArray(JSONTokener x) {
         this();
         char c = x.nextClean();
         char q;
@@ -236,7 +236,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      *  and ends with <code>]</code>&nbsp;<small>(right bracket)</small>.
      *  @throws JSONException If there is a syntax error.
      */
-    public JSONArray(String source) throws JSONException {
+    public JSONArray(String source) {
         this(new JSONTokener(source));
     }
 
@@ -261,7 +261,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * Construct a JSONArray from an array
      * @throws JSONException If not an array.
      */
-    public JSONArray(Object array) throws JSONException {
+    public JSONArray(Object array) {
         this();
         if (array.getClass().isArray()) {
             int length = Array.getLength(array);
@@ -298,7 +298,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If there is no value for the index or if the
      *  value is not convertable to boolean.
      */
-    public boolean getBoolean(int index) throws JSONException {
+    public boolean getBoolean(int index) {
         Object o = get(index);
         if (o.equals(Boolean.FALSE) ||
                 (o instanceof String &&
@@ -321,7 +321,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws   JSONException If the key is not found or if the value cannot
      *  be converted to a number.
      */
-    public double getDouble(int index) throws JSONException {
+    public double getDouble(int index) {
         Object o = get(index);
         try {
             return o instanceof Number ?
@@ -343,7 +343,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      *  be converted to a number.
      *  if the value cannot be converted to a number.
      */
-    public int getInt(int index) throws JSONException {
+    public int getInt(int index) {
         Object o = get(index);
         return o instanceof Number ?
                 ((Number)o).intValue() : (int)getDouble(index);
@@ -357,7 +357,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If there is no value for the index. or if the
      * value is not a JSONArray
      */
-    public JSONArray getJSONArray(int index) throws JSONException {
+    public JSONArray getJSONArray(int index) {
         Object o = get(index);
         if (o instanceof JSONArray) {
             return (JSONArray)o;
@@ -374,7 +374,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If there is no value for the index or if the
      * value is not a JSONObject
      */
-    public JSONObject getJSONObject(int index) throws JSONException {
+    public JSONObject getJSONObject(int index) {
         Object o = get(index);
         if (o instanceof JSONObject) {
             return (JSONObject)o;
@@ -392,7 +392,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws   JSONException If the key is not found or if the value cannot
      *  be converted to a number.
      */
-    public long getLong(int index) throws JSONException {
+    public long getLong(int index) {
         Object o = get(index);
         return o instanceof Number ?
                 ((Number)o).longValue() : (long)getDouble(index);
@@ -405,7 +405,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return      A string value.
      * @throws JSONException If there is no value for the index.
      */
-    public String getString(int index) throws JSONException {
+    public String getString(int index) {
         return get(index).toString();
     }
 
@@ -428,7 +428,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return a string.
      * @throws JSONException If the array contains an invalid number.
      */
-    public String join(String separator) throws JSONException {
+    public String join(String separator) {
         int len = length();
         StringBuffer sb = new StringBuffer();
 
@@ -670,7 +670,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException if the value is not finite.
      * @return this.
      */
-    public JSONArray put(double value) throws JSONException {
+    public JSONArray put(double value) {
         Double d = new Double(value);
         JSONObject.testValidity(d);
         put(d);
@@ -736,7 +736,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return this.
      * @throws JSONException If the index is negative.
      */
-    public JSONArray put(int index, boolean value) throws JSONException {
+    public JSONArray put(int index, boolean value) {
         put(index, value ? Boolean.TRUE : Boolean.FALSE);
         return this;
     }
@@ -751,7 +751,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If the index is negative or if the value is
      * not finite.
      */
-    public JSONArray put(int index, Collection value) throws JSONException {
+    public JSONArray put(int index, Collection value) {
         put(index, new JSONArray(value));
         return this;
     }
@@ -767,7 +767,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If the index is negative or if the value is
      * not finite.
      */
-    public JSONArray put(int index, double value) throws JSONException {
+    public JSONArray put(int index, double value) {
         put(index, new Double(value));
         return this;
     }
@@ -782,7 +782,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return this.
      * @throws JSONException If the index is negative.
      */
-    public JSONArray put(int index, int value) throws JSONException {
+    public JSONArray put(int index, int value) {
         put(index, new Integer(value));
         return this;
     }
@@ -797,7 +797,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return this.
      * @throws JSONException If the index is negative.
      */
-    public JSONArray put(int index, long value) throws JSONException {
+    public JSONArray put(int index, long value) {
         put(index, new Long(value));
         return this;
     }
@@ -812,7 +812,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If the index is negative or if the the value is
      *  an invalid number.
      */
-    public JSONArray put(int index, Map value) throws JSONException {
+    public JSONArray put(int index, Map value) {
         put(index, new JSONObject(value));
         return this;
     }
@@ -830,7 +830,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @throws JSONException If the index is negative or if the the value is
      *  an invalid number.
      */
-    public JSONArray put(int index, Object value) throws JSONException {
+    public JSONArray put(int index, Object value) {
         JSONObject.testValidity(value);
         if (index < 0) {
             throw new JSONException("JSONArray[" + index + "] not found.");
@@ -869,7 +869,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * has no values.
      * @throws JSONException If any of the names are null.
      */
-    public JSONObject toJSONObject(JSONArray names) throws JSONException {
+    public JSONObject toJSONObject(JSONArray names) {
         if (names == null || names.length() == 0 || length() == 0) {
             return null;
         }
@@ -912,7 +912,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      *  with <code>]</code>&nbsp;<small>(right bracket)</small>.
      * @throws JSONException
      */
-    public String toString(int indentFactor) throws JSONException {
+    public String toString(int indentFactor) {
         return toString(indentFactor, 0);
     }
 
@@ -927,7 +927,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      *  representation of the array.
      * @throws JSONException
      */
-    String toString(int indentFactor, int indent) throws JSONException {
+    String toString(int indentFactor, int indent) {
         int len = length();
         if (len == 0) {
             return "[]";
@@ -969,7 +969,7 @@ public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.J
      * @return The writer.
      * @throws JSONException
      */
-    public Writer write(Writer writer) throws JSONException {
+    public Writer write(Writer writer) {
         try {
             boolean b = false;
             int     len = length();
