@@ -1,8 +1,8 @@
 
-import {from as observableFrom, Observable, merge } from 'rxjs';
-import { reduce, mergeMap, take, map, filter } from 'rxjs/operators';
+import {from as observableFrom, Observable, merge, Subject } from 'rxjs';
+import { reduce, mergeMap, take, map, filter, takeUntil } from 'rxjs/operators';
 // tslint:disable-next-line:max-file-line-count
-import { Component, EventEmitter, ViewEncapsulation } from '@angular/core';
+import { Component, EventEmitter, ViewEncapsulation, OnDestroy } from '@angular/core';
 import {
   RuleModel,
   RuleService,
@@ -121,7 +121,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
     ></cw-rule-engine>
 `
 })
-export class RuleEngineContainer {
+export class RuleEngineContainer implements OnDestroy {
   rules: RuleModel[];
   state: RuleEngineState = new RuleEngineState();
 
@@ -133,6 +133,9 @@ export class RuleEngineContainer {
   globalError: string;
   pageId: string;
   isContentletHost: boolean;
+
+  static readonly DELAY_TO_SHOW_MESSAGE_ERROR = 3000;
+  private destroy$: Subject<boolean> = new Subject<boolean>();
 
   constructor(
     public _ruleService: RuleService,
@@ -156,6 +159,19 @@ export class RuleEngineContainer {
       this.state.loading = false;
       this.state.showRules = false;
     });
+
+
+    merge(
+      this._ruleActionService.error,
+      this._conditionGroupService.error,
+      this._conditionService.error)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((message: string) => {
+          this.state.globalError = message;
+
+          this.initRules();
+          this.cleanErrorMessage();
+        });
   }
 
   alphaSort(key): (a, b) => number {
@@ -170,6 +186,11 @@ export class RuleEngineContainer {
       }
       return x;
     };
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next(true);
+    this.destroy$.complete();
   }
 
   /**
@@ -198,10 +219,14 @@ export class RuleEngineContainer {
     if (rule.isPersisted()) {
       this._ruleService.deleteRule(rule.key).subscribe(result => {
         this.state.deleting = false;
+        const rules = this.rules.filter(arrayRule => arrayRule.key !== rule.key);
+        this.rules$.emit(rules);
+      },
+      (e: CwError) => {
+        this._handle403Error(e) ? null : { invalid: e.message };
       });
     }
-    const rules = this.rules.filter(arrayRule => arrayRule.key !== rule.key);
-    this.rules$.emit(rules);
+
   }
 
   onUpdateEnabledState(event: RuleActionEvent): void {
@@ -513,6 +538,8 @@ export class RuleEngineContainer {
           (e: CwError) => {
             const ruleError = this._handle403Error(e) ? null : { invalid: e.message };
             this.ruleUpdated(rule, ruleError);
+            this.initRules();
+            this.cleanErrorMessage();
           }
         );
       } else {
@@ -523,6 +550,8 @@ export class RuleEngineContainer {
           (e: CwError) => {
             const ruleError = this._handle403Error(e) ? null : { invalid: e.message };
             this.ruleUpdated(rule, ruleError);
+            this.initRules();
+            this.cleanErrorMessage();
           }
         );
       }
@@ -644,6 +673,12 @@ export class RuleEngineContainer {
       this.loadRules(rules);
     });
     this.route.queryParams.pipe(take(1)).subscribe((params: Params) => this.isContentletHost =  (params.isContentletHost === 'true'));
+ }
+
+  private cleanErrorMessage(): void {
+    setTimeout(() => {
+      this.state.globalError = '';
+    }, RuleEngineContainer.DELAY_TO_SHOW_MESSAGE_ERROR);
   }
 
   private loadRules(rules: RuleModel[]): void {

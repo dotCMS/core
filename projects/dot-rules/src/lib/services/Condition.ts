@@ -1,5 +1,5 @@
 
-import {from as observableFrom, empty as observableEmpty} from 'rxjs';
+import {from as observableFrom, empty as observableEmpty, Subject} from 'rxjs';
 
 import {reduce, mergeMap, catchError, map} from 'rxjs/operators';
 import { Injectable } from '@angular/core';
@@ -19,6 +19,12 @@ export class ConditionService {
     private _apiRoot: ApiRoot;
     private _http: Http;
     private _baseUrl: string;
+
+    private _error: Subject<string> = new Subject<string>();
+
+    public get error(): Observable<string> {
+        return this._error.asObservable();
+    }
 
     static toJson(condition: ConditionModel): any {
         const json: any = {};
@@ -171,6 +177,9 @@ export class ConditionService {
                     err
                 );
             }
+
+            this._error.next(err.json().error.replace('dotcms.api.error.forbidden: ', ''));
+            
             return observableEmpty();
         };
     }

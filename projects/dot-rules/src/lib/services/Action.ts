@@ -1,5 +1,5 @@
 
-import {from as observableFrom, empty as observableEmpty} from 'rxjs';
+import {from as observableFrom, empty as observableEmpty, Subject} from 'rxjs';
 
 import {mergeMap, reduce, catchError, map} from 'rxjs/operators';
 import { Injectable } from '@angular/core';
@@ -29,6 +29,12 @@ export class ActionService {
     private _http: Http;
     private _actionsEndpointUrl: string;
 
+    private _error: Subject<string> = new Subject<string>();0
+    
+    public get error(): Observable<string> {
+        return this._error.asObservable();
+    }
+    
     static fromJson(type: ServerSideTypeModel, json: any): ActionModel {
         const ra = new ActionModel(json.key, type, json.priority);
         Object.keys(json.parameters).forEach(key => {
@@ -180,7 +186,7 @@ and should provide the info needed to make the user aware of the fix.`);
     private _catchRequestError(
         operation
     ): (response: Response, original: Observable<any>) => Observable<any> {
-        return (response: Response, original: Observable<any>): Observable<any> => {
+        return (response: Response): Observable<any> => {
             if (response) {
                 if (response.status === HttpCode.SERVER_ERROR) {
                     if (response.text() && response.text().indexOf('ECONNREFUSED') >= 0) {
@@ -207,6 +213,9 @@ and should provide the info needed to make the user aware of the fix.`);
                         'error:',
                         response
                     );
+
+                    this._error.next(response.json().error.replace('dotcms.api.error.forbidden: ', ''));
+
                     throw new CwError(
                         UNKNOWN_RESPONSE_ERROR,
                         response.headers.get('error-message')
