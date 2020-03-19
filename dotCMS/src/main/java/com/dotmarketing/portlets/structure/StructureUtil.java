@@ -18,7 +18,7 @@ public class StructureUtil {
                     if (!frag.startsWith("{")) {
                         pattern.append(frag);
                     } else {
-                        pattern.append("(.+?)");
+                        pattern.append("(.+)");
                     }
                 }
             }

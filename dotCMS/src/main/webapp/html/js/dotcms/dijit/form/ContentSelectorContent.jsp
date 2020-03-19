@@ -48,7 +48,8 @@
                             <input
                                 type="text"
                                 dojoType="dijit.form.TextBox"
-                                onKeyDown="contentSelector._doDebounceSearch()"
+                                data-dojo-props="intermediateChanges:true"
+                                dojoAttachEvent="onKeyUp:_doDebounceSearch"
                                 dojoAttachPoint="generalSearch"
                             />
                         </dd>
@@ -76,6 +77,7 @@
             </div>
         </div>
     </div>
+
     <!-- START Right Column -->
     <div dojoType="dijit.layout.ContentPane" class="portlet-main-wrapper">
         <div dojoAttachPoint="contentWrapper">

@@ -1,8 +1,22 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
+import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Clickstream;
@@ -18,27 +32,21 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-
-import static org.mockito.Mockito.*;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class VelocityServletIntegrationTest {
 
@@ -120,6 +128,7 @@ public class VelocityServletIntegrationTest {
         final String contentletURLMap = newsPatternPrefix + contentlet.getStringProperty("urlTitle");
 
         when(request.getRequestURI()).thenReturn(contentletURLMap);
+        when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
 
         velocityServlet.service(request, response);
 

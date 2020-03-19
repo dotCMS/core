@@ -753,7 +753,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         
 
         ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), viewingLang );
-        if(cinfo==null && viewingLang!=languageAPI.getDefaultLanguage().getId() && languageAPI.canDefaultPageToDefaultLanguage()){
+        if((cinfo==null || cinfo.getLiveInode() == null) && viewingLang!=languageAPI.getDefaultLanguage().getId() && languageAPI.canDefaultPageToDefaultLanguage()){
           cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( ident.getId(), languageAPI.getDefaultLanguage().getId() );
         }
         // if we still have nothing.
