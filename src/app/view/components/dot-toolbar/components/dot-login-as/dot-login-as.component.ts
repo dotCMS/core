@@ -144,7 +144,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
                     }
                 },
                 (response) => {
-                    if (response.entity) {
+                    if (response.errorsMessages) {
                         this.errorMessage = response.errorsMessages;
                     } else {
                         this.errorMessage = this.i18nMessages['loginas.error.wrong-credentials'];
