@@ -680,7 +680,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 'Content-Type' : 'application/json;charset=utf-8',
             },
             load: function(data) {
-                debugger;
                 var customEvent = document.createEvent("CustomEvent");
                 customEvent.initCustomEvent("ng-event", false, false,  {
                     name: "push-publish",
