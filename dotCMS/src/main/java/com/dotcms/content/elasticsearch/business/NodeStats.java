@@ -5,11 +5,11 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 public class NodeStats {
     private final String name;
     private final String host;
-    private int size;
+    private long size;
     private String prettySize;
     private String transportAddress;
     private boolean master;
-    private int docCount;
+    private long docCount;
 
     private NodeStats(final Builder builder) {
         this.name = builder.name;
@@ -25,7 +25,7 @@ public class NodeStats {
         return host;
     }
 
-    public int getSizeRaw() {
+    public long getSizeRaw() {
         return size;
     }
 
@@ -41,7 +41,7 @@ public class NodeStats {
         return master;
     }
 
-    public int getDocCount() {
+    public long getDocCount() {
         return docCount;
     }
 
@@ -52,10 +52,10 @@ public class NodeStats {
     public static class Builder {
         private String name;
         private String host;
-        private int size;
+        private long size;
         private String transportAddress;
         private boolean master;
-        private int docCount;
+        private long docCount;
 
         public Builder() {}
 
@@ -69,7 +69,7 @@ public class NodeStats {
             return this;
         }
 
-        public Builder size(final int size) {
+        public Builder size(final long size) {
             this.size = size;
             return this;
         }
@@ -84,7 +84,7 @@ public class NodeStats {
             return this;
         }
 
-        public Builder docCount(final int docCount) {
+        public Builder docCount(final long docCount) {
             this.docCount = docCount;
             return this;
         }

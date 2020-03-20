@@ -1413,15 +1413,17 @@ public class ESIndexAPI {
 			builder.host((String) stats.get("host"));
 
 			final Map<String, Object> indexStats = (Map<String, Object>) stats.get("indices");
-			final int docCount = (int) ((Map<String, Object>) indexStats.get("docs")).get("count");
-			final int size = (int) ((Map<String, Object>) indexStats.get("store"))
+            final Object docCount = ((Map<String, Object>) indexStats.get("docs"))
+                    .get("count");
+
+            final Object size = ((Map<String, Object>) indexStats.get("store"))
 					.get("size_in_bytes");
 
 			final List<String> roles = (List<String>) stats.get("roles");
 
 			builder.master(roles.contains("master"));
-			builder.docCount(docCount);
-			builder.size(size);
+			builder.docCount(Long.valueOf(docCount!=null? docCount.toString():"0"));
+			builder.size(Long.valueOf(size!=null? size.toString():"0"));
 
 			clusterStats.addNodeStats(builder.build());
 		});
