@@ -131,6 +131,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.relationships.RelationshipsResourceTest.class,
         com.dotcms.rest.api.v2.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
+        com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
