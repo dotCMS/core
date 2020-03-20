@@ -81,7 +81,7 @@ public class UserResource implements Serializable {
 	}
 
 	@VisibleForTesting
-	public UserResource(final WebResource webResource,  final UserAPI userAPI, final UserResourceHelper userHelper,
+	protected UserResource(final WebResource webResource,  final UserAPI userAPI, final UserResourceHelper userHelper,
 			final ErrorResponseHelper errorHelper) {
 		this.webResource = webResource;
 		this.userAPI = userAPI;
@@ -345,19 +345,12 @@ public class UserResource implements Serializable {
 		Response response = null;
 		try {
 			Map<String, Object> sessionData = this.helper.doLoginAs(currentUser, loginAsUserId, loginAsUserPwd, serverName);
-			
-            final User newUser = userAPI.loadUserById((String) sessionData.get(WebKeys.USER_ID));
 			HttpSession session = request.getSession();
-			
-			// if we don't have a user or 
-			if (newUser==null || session.getAttribute(WebKeys.PRINCIPAL_USER_ID) != null) {
-				throw new DotSecurityException("user is already loginAs somebody else");
+			if (session.getAttribute(WebKeys.PRINCIPAL_USER_ID) == null) {
+				session.setAttribute(WebKeys.PRINCIPAL_USER_ID, sessionData.get(WebKeys.PRINCIPAL_USER_ID));
 			}
-			
-			session.setAttribute(WebKeys.PRINCIPAL_USER_ID, sessionData.get(WebKeys.PRINCIPAL_USER_ID));
-			session.setAttribute(WebKeys.USER,newUser);
-			session.setAttribute(WebKeys.USER_ID, newUser.getUserId());
-			
+			session.removeAttribute(WebKeys.USER);
+			session.setAttribute(WebKeys.USER_ID, sessionData.get(WebKeys.USER_ID));
 			PrincipalThreadLocal.setName(loginAsUserId);
 			session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,
 					sessionData.get(com.dotmarketing.util.WebKeys.CURRENT_HOST));
@@ -444,24 +437,20 @@ public class UserResource implements Serializable {
 				.requestAndResponse(httpServletRequest, httpServletResponse)
 				.rejectWhenNoUser(true)
 				.init();
-		
-		
-        User currentLoginAsUser = new User();
-        Response response = null;
-        final String serverName = httpServletRequest.getServerName();
-        String principalUserId = null;
-        HttpSession session = httpServletRequest.getSession();
-        try {
-            principalUserId = (String) session.getAttribute(WebKeys.PRINCIPAL_USER_ID);
-    		if (principalUserId == null) {
-    		    throw new DotSecurityException("There is no principle user in this session, cannot logoutAs");
-    		}
 
-    		
+		final String serverName = httpServletRequest.getServerName();
+		String principalUserId = null;
+		HttpSession session = httpServletRequest.getSession();
+		if (session.getAttribute(WebKeys.PRINCIPAL_USER_ID) != null) {
+			principalUserId = httpServletRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID).toString();
+		}
+		User currentLoginAsUser = new User();
+		Response response = null;
+		try {
 			currentLoginAsUser = PortalUtil.getUser(httpServletRequest);
 			Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			session.setAttribute(WebKeys.USER_ID, principalUserId);
-            session.setAttribute(WebKeys.USER, userAPI.loadUserById(principalUserId));
+			session.removeAttribute(WebKeys.USER);
 			session.removeAttribute(WebKeys.PRINCIPAL_USER_ID);
 			session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,
 					sessionData.get(com.dotmarketing.util.WebKeys.CURRENT_HOST));
