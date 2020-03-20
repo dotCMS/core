@@ -461,14 +461,14 @@ public class FieldResourceTest {
 
 
     /**
-     * When try to move fields in a Content Type with a right layout
-     * Should update the field with the new sortOrder
+     * This test creates a collection of fields, 2 system ones and 3 text fields: one text data type, one float and one integer
+     * The idea is to make sure the data type is deserialized in the right way
      *
      * @throws DotSecurityException
      * @throws DotDataException
      */
     @Test
-    public void testSerializerMoveFields () throws DotSecurityException, DotDataException {
+    public void testGetRows_givenFieldsinJSON_ShouldDeserializeRespectingOrderAndDatatypes() throws DotSecurityException, DotDataException {
 
         final ContentType type = createContentType();
         final List<Map<String, Object>> fieldList = createTestFields (type.id());
