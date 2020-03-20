@@ -46,7 +46,7 @@ public class Contentlet extends WebAsset implements Serializable {
 
     private FieldAPI fAPI = APILocator.getFieldAPI();
 
-    private String contentTypeId;
+    private String structureInode;
 
     private long languageId;
 
@@ -255,7 +255,7 @@ public class Contentlet extends WebAsset implements Serializable {
      * @return
      */
     public String getStructureInode() {
-        return contentTypeId;
+        return structureInode;
     }
 
     /**
@@ -264,7 +264,7 @@ public class Contentlet extends WebAsset implements Serializable {
      * @return The Content Type ID.
      */
     public String getContentTypeId() {
-        return this.contentTypeId;
+        return this.structureInode;
     }
 
     /**
@@ -273,7 +273,7 @@ public class Contentlet extends WebAsset implements Serializable {
      * @param structureInode
      */
     public void setStructureInode(String structureInode) {
-        this.contentTypeId = structureInode;
+        this.structureInode = structureInode;
     }
 
     /**
@@ -282,7 +282,7 @@ public class Contentlet extends WebAsset implements Serializable {
      * @param contentTypeId The Content Type ID.
      */
     public void setContentTypeId(final String contentTypeId) {
-        this.contentTypeId = contentTypeId;
+        this.structureInode = contentTypeId;
     }
 
     /**
@@ -291,7 +291,7 @@ public class Contentlet extends WebAsset implements Serializable {
      * @return
      */
     public Structure getStructure() {
-        Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(contentTypeId);
+        Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
         return structure;
     }
 
@@ -303,7 +303,7 @@ public class Contentlet extends WebAsset implements Serializable {
     public ContentType getContentType() {
         final ContentType contentType;
         try {
-            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeId);
+            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(structureInode);
             return contentType;
         } catch (final DotSecurityException | DotDataException e) {
             Logger.error(this, String.format("An error occurred when returning the Content Type associated to " +
@@ -1643,7 +1643,7 @@ public class Contentlet extends WebAsset implements Serializable {
 	public Map<String, Object> getMap() throws DotRuntimeException {
 		final Map<String, Object> myMap = new HashMap<>();
 		try{
-            final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeId);
+            final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(structureInode);
             final List<Field> fields = new LegacyFieldTransformer(contentType.fields()).asOldFieldList();
             for (final Field field : fields) {
                 // DO NOT map these types of fields
@@ -1691,7 +1691,7 @@ public class Contentlet extends WebAsset implements Serializable {
                     } catch (final Exception e) {
                         final String errorMsg = String.format("Unable to obtain property value for field '%s' in " +
                                 "Contentlet with ID='%s', Inode='%s', Content Type '%s': %s", field
-                                .getFieldContentlet(), this.getIdentifier(), this.getInode(), contentTypeId, e
+                                .getFieldContentlet(), this.getIdentifier(), this.getInode(), structureInode, e
                                 .getMessage());
                         Logger.error(this, errorMsg, e);
                         throw new DotRuntimeException(errorMsg, e);
@@ -1702,7 +1702,7 @@ public class Contentlet extends WebAsset implements Serializable {
             return myMap;
 		} catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when mapping the properties for Contentlet with " +
-                    "ID='%s', Inode='%s', Content Type '%s': %s", this.getIdentifier(), this.getInode(), contentTypeId, e
+                    "ID='%s', Inode='%s', Content Type '%s': %s", this.getIdentifier(), this.getInode(), structureInode, e
                     .getMessage());
             Logger.error(this, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
