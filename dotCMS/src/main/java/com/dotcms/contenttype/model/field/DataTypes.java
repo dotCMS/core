@@ -32,7 +32,7 @@ public enum DataTypes {
 		value = value.replaceAll("[0-9]", "");
 		DataTypes[] types = DataTypes.values();
 		for (DataTypes type : types) {
-			if (type.value.equals(value))
+			if (type.value.equals(value.toLowerCase()))
 				return type;
 		}
 		return SYSTEM;

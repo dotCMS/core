@@ -47,7 +47,7 @@ public class MoveFieldsForm {
 
             fieldMap.put("sortOrder", i);
             fieldMap.put("contentTypeId", contentTypeId);
-            fieldMap.remove("dataType");
+            //fieldMap.remove("dataType");
 
             final boolean isLayoutField = ImmutableRowField.class.getName().equals(fieldMap.get("clazz")) ||
                     ImmutableColumnField.class.getName().equals(fieldMap.get("clazz"));
