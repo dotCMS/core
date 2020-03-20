@@ -1,6 +1,6 @@
-package com.dotcms.rest.api.v1.secret.view;
+package com.dotcms.rest.api.v1.apps.view;
 
-import com.dotcms.security.secret.Secret;
+import com.dotcms.security.apps.Secret;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package com.dotcms.security.secret;
+package com.dotcms.security.apps;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -25,7 +25,7 @@ import java.util.Objects;
  *  required: false
  *
  */
-public class ServiceDescriptor {
+public class AppDescriptor {
 
     private final String key;
 
@@ -51,7 +51,7 @@ public class ServiceDescriptor {
 
     @VisibleForTesting
     @JsonCreator
-    public ServiceDescriptor(@JsonProperty("key") final String key,
+    public AppDescriptor(@JsonProperty("key") final String key,
             @JsonProperty("name") final String name,
             @JsonProperty("description") final String description,
             @JsonProperty("iconUrl") final String iconUrl,
@@ -126,7 +126,7 @@ public class ServiceDescriptor {
         if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        final ServiceDescriptor that = (ServiceDescriptor) object;
+        final AppDescriptor that = (AppDescriptor) object;
         return key.equals(that.key);
     }
 

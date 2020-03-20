@@ -1,6 +1,6 @@
-package com.dotcms.rest.api.v1.secret.view;
+package com.dotcms.rest.api.v1.apps.view;
 
-import com.dotcms.security.secret.ServiceDescriptor;
+import com.dotcms.security.apps.AppDescriptor;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.List;
  * Represents a service integration. Which serves as the top level entry for all the endpoints.
  * The view unfolds itself in the specifics for the associated sites.
  */
-public class ServiceIntegrationView {
+public class AppView {
 
     private final long configurationsCount;
 
@@ -26,14 +26,14 @@ public class ServiceIntegrationView {
 
     /**
      * Used to build a site-less integration view
-     * @param serviceDescriptor
+     * @param appDescriptor
      * @param configurationsCount
      */
-    public ServiceIntegrationView(final ServiceDescriptor serviceDescriptor, final long configurationsCount) {
-        this.key = serviceDescriptor.getKey();
-        this.name = serviceDescriptor.getName();
-        this.description = serviceDescriptor.getDescription();
-        this.iconUrl = serviceDescriptor.getIconUrl();
+    public AppView(final AppDescriptor appDescriptor, final long configurationsCount) {
+        this.key = appDescriptor.getKey();
+        this.name = appDescriptor.getName();
+        this.description = appDescriptor.getDescription();
+        this.iconUrl = appDescriptor.getIconUrl();
         this.configurationsCount = configurationsCount;
         this.sites = null;
     }
@@ -41,15 +41,15 @@ public class ServiceIntegrationView {
     /**
      * Use to build a more detailed integration view
      * Including site specific config info.
-     * @param serviceDescriptor
+     * @param appDescriptor
      * @param configurationsCount
      * @param sites
      */
-    public ServiceIntegrationView(final ServiceDescriptor serviceDescriptor, final long configurationsCount, final List<SiteView> sites) {
-        this.key = serviceDescriptor.getKey();
-        this.name = serviceDescriptor.getName();
-        this.description = serviceDescriptor.getDescription();
-        this.iconUrl = serviceDescriptor.getIconUrl();
+    public AppView(final AppDescriptor appDescriptor, final long configurationsCount, final List<SiteView> sites) {
+        this.key = appDescriptor.getKey();
+        this.name = appDescriptor.getName();
+        this.description = appDescriptor.getDescription();
+        this.iconUrl = appDescriptor.getIconUrl();
         this.configurationsCount = configurationsCount;
         this.sites = sites;
     }

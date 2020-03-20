@@ -1,4 +1,4 @@
-package com.dotcms.security.secret;
+package com.dotcms.security.apps;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;

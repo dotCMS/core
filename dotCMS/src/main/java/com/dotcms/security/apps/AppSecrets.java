@@ -1,4 +1,4 @@
-package com.dotcms.security.secret;
+package com.dotcms.security.apps;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,23 +7,23 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ServiceSecrets implements Serializable {
+public class AppSecrets implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final String serviceKey;
+    private final String key;
 
     private final Map<String,Secret> secrets;
 
     @JsonCreator
-    private ServiceSecrets(@JsonProperty("serviceKey") final String serviceKey,
+    private AppSecrets(@JsonProperty("key") final String key,
             @JsonProperty("secrets") final Map<String, Secret> secrets) {
-        this.serviceKey = serviceKey;
+        this.key = key;
         this.secrets = null == secrets ? new HashMap<>() : secrets ;
     }
 
-    public String getServiceKey() {
-        return serviceKey;
+    public String getKey() {
+        return key;
     }
 
     public Map<String, Secret> getSecrets() {
@@ -33,14 +33,14 @@ public class ServiceSecrets implements Serializable {
     public static class Builder {
 
         private final Map<String,Secret> secretMap = new HashMap<>();
-        private String serviceKey;
+        private String key;
 
-        public ServiceSecrets build(){
-            return new ServiceSecrets(serviceKey, ImmutableMap.copyOf(secretMap));
+        public AppSecrets build(){
+            return new AppSecrets(key, ImmutableMap.copyOf(secretMap));
         }
 
-        public Builder withServiceKey(final String serviceKey){
-            this.serviceKey = serviceKey;
+        public Builder withKey(final String key){
+            this.key = key;
             return this;
         }
 
