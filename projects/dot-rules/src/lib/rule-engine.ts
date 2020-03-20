@@ -11,6 +11,7 @@ import {
     ConditionGroupActionEvent
 } from './rule-engine.container';
 import { IPublishEnvironment } from './services/bundle-service';
+import { RuleViewService } from './services/dot-view-rule-service';
 
 const I8N_BASE = 'api.sites.ruleengine';
 
@@ -24,6 +25,8 @@ const I8N_BASE = 'api.sites.ruleengine';
   <div *ngIf="!loading && globalError" class="ui negative message cw-message">
     <div class="header">{{globalError}}</div>
     <p>Please contact an administrator</p>
+
+    <i class="material-icons" class="close-button" (click)="globalError = ''">X</i>
   </div>
 <div class="cw-rule-engine" *ngIf="!loading && showRules">
   <div class="cw-header">
@@ -88,7 +91,6 @@ export class RuleEngineComponent {
     @Input() rules: RuleModel[];
     @Input() ruleActionTypes: { [key: string]: ServerSideTypeModel } = {};
     @Input() loading: boolean;
-    @Input() globalError: string;
     @Input() showRules: boolean;
     @Input() pageId: string;
     @Input() isContentletHost: boolean;
@@ -120,6 +122,8 @@ export class RuleEngineComponent {
     updateConditionParameter: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
     @Output() updateConditionOperator: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
 
+    globalError: string;
+
     filterText: string;
     status: string;
     activeRules: number;
@@ -127,13 +131,17 @@ export class RuleEngineComponent {
     private resources: I18nService;
     private _rsrcCache: { [key: string]: Observable<string> };
 
-    constructor(resources: I18nService) {
+    constructor(resources: I18nService, private ruleViewService: RuleViewService) {
         this.resources = resources;
         resources.get(I8N_BASE).subscribe(rsrc => {});
         this.filterText = '';
         this.rules = [];
         this._rsrcCache = {};
         this.status = null;
+
+        this.ruleViewService.message.subscribe((message: string) => {
+            this.globalError = message;
+        });
     }
 
     rsrc(subkey: string): Observable<any> {

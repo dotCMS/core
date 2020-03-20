@@ -49,6 +49,7 @@ import {
 import { DotAutocompleteTagsModule } from './components/dot-autocomplete-tags/dot-autocomplete-tags.module';
 import { AppRulesComponent } from './app.component';
 import { DotAutofocusModule } from './directives/dot-autofocus/dot-autofocus.module';
+import { RuleViewService } from './services/dot-view-rule-service';
 
 
 @NgModule({
@@ -109,7 +110,8 @@ import { DotAutofocusModule } from './directives/dot-autofocus/dot-autofocus.mod
         ConditionService,
         GoogleMapService,
         I18nService,
-        RuleService
+        RuleService,
+        RuleViewService
     ],
     exports: [RuleEngineContainer, AppRulesComponent]
 })

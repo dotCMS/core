@@ -25,6 +25,7 @@ $basic-padding: 8px;
 
 $font-size-xx-large: 24px;
 $font-size-x-large: 18px;
+$font-size-medium: 14px;
 
 $action-button-height: 48px;
 
@@ -92,6 +93,15 @@ $finder-s-input: '.ui.input input';
         background-color: rgba(10, 10, 10, 0.35);
         width: 100%;
         height: 100%;
+    }
+
+    .close-button {
+        font-size: $font-size-medium;
+        position: absolute;
+        right: 5px;
+        top: 5px;
+        cursor: pointer;
+        font-style: normal;
     }
 
     .ui.fluid.input input:hover {

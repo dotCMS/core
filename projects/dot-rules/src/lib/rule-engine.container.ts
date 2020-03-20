@@ -22,9 +22,7 @@ import { BundleService, IPublishEnvironment } from './services/bundle-service';
 import { ActivatedRoute, Params } from '@angular/router';
 import { HttpCode } from 'dotcms-js';
 import { LoggerService } from 'dotcms-js';
-
-// tslint:disable-next-line:no-unused-variable
-const I8N_BASE = 'api.sites.ruleengine';
+import { RuleViewService } from './services/dot-view-rule-service';
 
 export interface ParameterChangeEvent extends CwChangeEvent {
   rule?: RuleModel;
@@ -98,7 +96,6 @@ export interface ConditionActionEvent extends RuleActionEvent {
       [showRules]="state.showRules"
       [pageId]="pageId"
       [isContentletHost]="isContentletHost"
-      [globalError]="state.globalError"
       (createRule)="onCreateRule($event)"
       (deleteRule)="onDeleteRule($event)"
       (updateName)="onUpdateRuleName($event)"
@@ -134,7 +131,6 @@ export class RuleEngineContainer implements OnDestroy {
   pageId: string;
   isContentletHost: boolean;
 
-  static readonly DELAY_TO_SHOW_MESSAGE_ERROR = 3000;
   private destroy$: Subject<boolean> = new Subject<boolean>();
 
   constructor(
@@ -145,7 +141,8 @@ export class RuleEngineContainer implements OnDestroy {
     private _resources: I18nService,
     public bundleService: BundleService,
     private route: ActivatedRoute,
-    private loggerService: LoggerService
+    private loggerService: LoggerService,
+    private ruleViewService: RuleViewService
   ) {
     this.rules$.subscribe(rules => {
       this.rules = rules;
@@ -167,10 +164,9 @@ export class RuleEngineContainer implements OnDestroy {
       this._conditionService.error)
         .pipe(takeUntil(this.destroy$))
         .subscribe((message: string) => {
-          this.state.globalError = message;
+          this.ruleViewService.showErrorMessage(message);
 
           this.initRules();
-          this.cleanErrorMessage();
         });
   }
 
@@ -539,7 +535,6 @@ export class RuleEngineContainer implements OnDestroy {
             const ruleError = this._handle403Error(e) ? null : { invalid: e.message };
             this.ruleUpdated(rule, ruleError);
             this.initRules();
-            this.cleanErrorMessage();
           }
         );
       } else {
@@ -551,7 +546,6 @@ export class RuleEngineContainer implements OnDestroy {
             const ruleError = this._handle403Error(e) ? null : { invalid: e.message };
             this.ruleUpdated(rule, ruleError);
             this.initRules();
-            this.cleanErrorMessage();
           }
         );
       }
@@ -675,12 +669,6 @@ export class RuleEngineContainer implements OnDestroy {
     this.route.queryParams.pipe(take(1)).subscribe((params: Params) => this.isContentletHost =  (params.isContentletHost === 'true'));
  }
 
-  private cleanErrorMessage(): void {
-    setTimeout(() => {
-      this.state.globalError = '';
-    }, RuleEngineContainer.DELAY_TO_SHOW_MESSAGE_ERROR);
-  }
-
   private loadRules(rules: RuleModel[]): void {
     rules.sort((a, b) => {
       return b.priority - a.priority;
@@ -695,13 +683,16 @@ export class RuleEngineContainer implements OnDestroy {
       if (e && e.response.status === HttpCode.FORBIDDEN) {
         const errorJson = e.response.json();
         if (errorJson && errorJson.error) {
-          this.state.globalError = errorJson.error.replace('dotcms.api.error.forbidden: ', '');
+          this.ruleViewService.showErrorMessage(errorJson.error.replace('dotcms.api.error.forbidden: ', ''));
           handled = true;
         }
       }
     } catch (e) {
       this.loggerService.error('Error while processing invalid response: ', e);
     }
+
+    this.initRules();
+
     return handled;
   }
 }
