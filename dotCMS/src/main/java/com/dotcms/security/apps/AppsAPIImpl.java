@@ -1,4 +1,4 @@
-package com.dotcms.security.secret;
+package com.dotcms.security.apps;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -46,12 +46,13 @@ import java.util.stream.Collectors;
  * and the structured of the service defined via
  *
  */
-public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
+public class AppsAPIImpl implements AppsAPI {
 
-    static final String INTEGRATIONS_PORTLET_ID = "integration-services";
+    static final String APPS_PORTLET_ID = "apps";
     private static final String HOST_SECRET_KEY_SEPARATOR = ":";
     private static final String DOT_GLOBAL_SERVICE = "dotCMSGlobalService";
-    private static final String SERVICE_INTEGRATION_DIR_PATH_KEY = "SERVICE_INTEGRATION_DIR_PATH_KEY";
+    private static final String APPS_DIR_NAME = "apps";
+    private static final String APPS_DIR_PATH_KEY = "APPS_DIR_PATH_KEY";
 
     private final UserAPI userAPI;
     private final LayoutAPI layoutAPI;
@@ -67,7 +68,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
             .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
             .findAndRegisterModules();
 
-    private String toJsonString(final ServiceSecrets object) throws DotDataException {
+    private String toJsonString(final AppSecrets object) throws DotDataException {
         try {
             return jsonMapper.writeValueAsString(object);
         } catch (IOException e) {
@@ -75,15 +76,15 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         }
     }
 
-    private ServiceSecrets readJson(final String json) throws DotDataException {
+    private AppSecrets readJson(final String json) throws DotDataException {
         try {
-            return jsonMapper.readValue(json, ServiceSecrets.class);
+            return jsonMapper.readValue(json, AppSecrets.class);
         } catch (IOException e) {
             throw new DotDataException(e);
         }
     }
 
-    private ServiceSecrets readJson(final char[] chars) throws DotDataException {
+    private AppSecrets readJson(final char[] chars) throws DotDataException {
         return readJson(String.valueOf(chars));
     }
 
@@ -113,7 +114,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @VisibleForTesting
-    public ServiceIntegrationAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI, final HostAPI hostAPI,
+    public AppsAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI, final HostAPI hostAPI,
             final SecretsStore secretsRepository) {
         this.userAPI = userAPI;
         this.layoutAPI = layoutAPI;
@@ -121,17 +122,17 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         this.secretsStore = secretsRepository;
     }
 
-    public ServiceIntegrationAPIImpl() {
+    public AppsAPIImpl() {
         this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(), SecretsStore.INSTANCE.get());
     }
 
     private boolean userDoesNotHaveAccess(final User user) throws DotDataException {
         return !userAPI.isCMSAdmin(user) && !layoutAPI
-                .doesUserHaveAccessToPortlet(INTEGRATIONS_PORTLET_ID, user);
+                .doesUserHaveAccessToPortlet(APPS_PORTLET_ID, user);
     }
 
     @Override
-    public List<String> listServiceKeys(final Host host, final User user)
+    public List<String> listAppKeys(final Host host, final User user)
             throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
@@ -146,7 +147,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @Override
-    public Map<String, Set<String>> serviceKeysByHost() {
+    public Map<String, Set<String>> appKeysByHost() {
         return secretsStore.listKeys().stream()
                 .filter(s -> s.contains(HOST_SECRET_KEY_SEPARATOR))
                 .map(s -> s.split(HOST_SECRET_KEY_SEPARATOR))
@@ -156,22 +157,22 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @Override
-    public Optional<ServiceSecrets> getSecrets(final String serviceKey,
+    public Optional<AppSecrets> getSecrets(final String key,
             final Host host, final User user) throws DotDataException, DotSecurityException {
-            return getSecrets(serviceKey, false, host, user);
+            return getSecrets(key, false, host, user);
     }
 
     @Override
-    public Optional<ServiceSecrets> getSecrets(final String serviceKey,
+    public Optional<AppSecrets> getSecrets(final String key,
             final boolean fallbackOnSystemHost,
             final Host host, final User user) throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid secret access attempt on `%s` performed by user with id `%s` and host `%s` ",
-                    serviceKey, user.getUserId(), host.getIdentifier()));
+                    key, user.getUserId(), host.getIdentifier()));
         }
         Optional<char[]> optionalChars = secretsStore
-                .getValue(internalKey(serviceKey, host));
+                .getValue(internalKey(key, host));
         if (optionalChars.isPresent()) {
             //We really don't want to cache the json object to protect the secrets.
             //Caching happens on the layers below.
@@ -180,7 +181,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
             //fallback
             if (fallbackOnSystemHost) {
                 optionalChars = secretsStore
-                        .getValue(internalKey(serviceKey, APILocator.systemHost()));
+                        .getValue(internalKey(key, APILocator.systemHost()));
                 if (optionalChars.isPresent()) {
                     return Optional.of(readJson(optionalChars.get()));
                 }
@@ -214,13 +215,13 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
      * @param user
      * @return
      */
-    public Set<String> filterSitesForServiceKey(final String serviceKey, final Collection<String> siteIdentifiers, final User user){
+    public Set<String> filterSitesForAppKey(final String key, final Collection<String> siteIdentifiers, final User user){
         return siteIdentifiers.stream().filter(id -> {
             try {
-                return hasAnySecrets(serviceKey, id, user);
+                return hasAnySecrets(key, id, user);
             } catch (DotDataException | DotSecurityException e) {
-                Logger.error(ServiceIntegrationAPIImpl.class,
-                        String.format("Error getting secret from `%s` ", serviceKey), e);
+                Logger.error(AppsAPIImpl.class,
+                        String.format("Error getting secret from `%s` ", key), e);
             }
             return false;
         }).collect(Collectors.toCollection(LinkedHashSet::new));
@@ -230,13 +231,13 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
      * {@inheritDoc}
      */
     @Override
-    public void deleteSecret(final String serviceKey, final Set<String> propOrSecretName,
+    public void deleteSecret(final String key, final Set<String> propOrSecretName,
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
-        final Optional<ServiceSecrets> secretsForService = getSecrets(serviceKey, host, user);
+        final Optional<AppSecrets> secretsForService = getSecrets(key, host, user);
         if (secretsForService.isPresent()) {
-            final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
-            final ServiceSecrets serviceSecrets = secretsForService.get();
+            final AppSecrets.Builder builder = new AppSecrets.Builder();
+            final AppSecrets serviceSecrets = secretsForService.get();
             final Map<String, Secret> secrets = serviceSecrets.getSecrets();
 
             secrets.keySet().removeAll(propOrSecretName); //we simply remove the secret by name and then persist the remaining.
@@ -244,25 +245,25 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
             for (final Entry<String, Secret> entry : secrets.entrySet()) {
                 builder.withSecret(entry.getKey(), entry.getValue());
             }
-            saveSecrets(builder.withServiceKey(serviceKey).build(), host, user);
+            saveSecrets(builder.withKey(key).build(), host, user);
         } else {
             throw new DotDataException(
                     String.format("Unable to find secret-property named `%s` for service `%s` .",
-                            propOrSecretName, serviceKey));
+                            propOrSecretName, key));
         }
     }
 
     @Override
-    public void saveSecret(final String serviceKey, final Tuple2<String, Secret> keyAndSecret,
+    public void saveSecret(final String key, final Tuple2<String, Secret> keyAndSecret,
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
 
-        final Optional<ServiceSecrets> secretsForService = getSecrets(serviceKey, host, user);
+        final Optional<AppSecrets> secretsForService = getSecrets(key, host, user);
         if (secretsForService.isPresent()) {
             //The secret already exists and wee need to update one specific entry they rest should be copy as they are
-            final ServiceSecrets serviceSecrets = secretsForService.get();
+            final AppSecrets serviceSecrets = secretsForService.get();
             final Map<String, Secret> secrets = serviceSecrets.getSecrets();
-            final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
+            final AppSecrets.Builder builder = new AppSecrets.Builder();
 
             for (final Entry<String, Secret> entry : secrets.entrySet()) {
                 //Replace all existing secret/property that must be copied as it is.
@@ -271,37 +272,37 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
             //finally override or add the new value.
             builder.withSecret(keyAndSecret._1, keyAndSecret._2);
 
-            saveSecrets(builder.withServiceKey(serviceKey).build(), host, user);
+            saveSecrets(builder.withKey(key).build(), host, user);
         } else {
             //The secret is brand new . We need to create a whole new one.
-            final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
+            final AppSecrets.Builder builder = new AppSecrets.Builder();
             builder.withSecret(keyAndSecret._1, keyAndSecret._2);
-            saveSecrets(builder.withServiceKey(serviceKey).build(), host, user);
+            saveSecrets(builder.withKey(key).build(), host, user);
         }
     }
 
     @Override
-    public void saveSecrets(final ServiceSecrets secrets, final Host host, final User user)
+    public void saveSecrets(final AppSecrets secrets, final Host host, final User user)
             throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid secret update attempt on `%s` performed by user with id `%s` and host `%s` ",
-                    secrets.getServiceKey(), user.getUserId(), host.getIdentifier()));
+                    secrets.getKey(), user.getUserId(), host.getIdentifier()));
         } else {
-            final String internalKey = internalKey(secrets.getServiceKey(), host);
+            final String internalKey = internalKey(secrets.getKey(), host);
             secretsStore.saveValue(internalKey, toJsonString(secrets).toCharArray());
         }
     }
 
     @Override
-    public void deleteSecrets(final String serviceKey, final Host host, final User user)
+    public void deleteSecrets(final String key, final Host host, final User user)
             throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid service delete attempt on `%s` for host `%s` performed by user with id `%s`",
-                    serviceKey, host.getIdentifier(), user.getUserId()));
+                    key, host.getIdentifier(), user.getUserId()));
         } else {
-            secretsStore.deleteValue(internalKey(serviceKey, host));
+            secretsStore.deleteValue(internalKey(key, host));
         }
     }
 
@@ -310,7 +311,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     private static final String DESCRIPTORS_MAPPED_BY_SERVICE_KEY = "DESCRIPTORS_MAPPED_BY_SERVICE_KEY";
 
     @Override
-    public List<ServiceDescriptor> getServiceDescriptors(User user)
+    public List<AppDescriptor> getAppDescriptors(User user)
             throws DotDataException, DotSecurityException {
 
         if (userDoesNotHaveAccess(user)) {
@@ -319,56 +320,56 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                     user.getUserId()));
         }
 
-        return getServiceDescriptorsMeta().stream()
-                .map(ServiceDescriptorMeta::getServiceDescriptor)
+        return getAppDescriptorsMeta().stream()
+                .map(AppDescriptorMeta::getAppDescriptor)
                 .collect(Collectors.toList());
     }
 
-    private List<ServiceDescriptorMeta> getServiceDescriptorsMeta()
+    private List<AppDescriptorMeta> getAppDescriptorsMeta()
             throws DotDataException {
-            List<ServiceDescriptorMeta> serviceDescriptors = (List<ServiceDescriptorMeta>) CacheLocator
+            List<AppDescriptorMeta> appDescriptors = (List<AppDescriptorMeta>) CacheLocator
                     .getCacheAdministrator().getNoThrow(
                             DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
-            if (!UtilMethods.isSet(serviceDescriptors)) {
-                synchronized (ServiceIntegrationAPIImpl.class) {
+            if (!UtilMethods.isSet(appDescriptors)) {
+                synchronized (AppsAPIImpl.class) {
                     try {
-                        serviceDescriptors = loadServiceDescriptors();
+                        appDescriptors = loadAppDescriptors();
                     } catch (IOException e) {
-                        Logger.error(ServiceIntegrationAPIImpl.class,
+                        Logger.error(AppsAPIImpl.class,
                                 "An error occurred while loading the service descriptor yml files. ",
                                 e);
                         throw new DotDataException(e);
                     }
                     CacheLocator.getCacheAdministrator()
-                            .put(DESCRIPTORS_LIST_KEY, serviceDescriptors, DESCRIPTORS_CACHE_GROUP);
+                            .put(DESCRIPTORS_LIST_KEY, appDescriptors, DESCRIPTORS_CACHE_GROUP);
                 }
             }
-            return serviceDescriptors;
+            return appDescriptors;
     }
 
-    private Map<String, ServiceDescriptorMeta> getServiceDescriptorMap()
+    private Map<String, AppDescriptorMeta> getAppDescriptorMap()
             throws DotDataException {
 
-        Map<String, ServiceDescriptorMeta> descriptorsByServiceKey = (Map<String, ServiceDescriptorMeta>) CacheLocator
+        Map<String, AppDescriptorMeta> descriptorsByKey = (Map<String, AppDescriptorMeta>) CacheLocator
                 .getCacheAdministrator().getNoThrow(
                         DESCRIPTORS_MAPPED_BY_SERVICE_KEY, DESCRIPTORS_CACHE_GROUP);
-        if (!UtilMethods.isSet(descriptorsByServiceKey)) {
-            synchronized (ServiceIntegrationAPIImpl.class) {
-                descriptorsByServiceKey = getServiceDescriptorsMeta().stream().collect(
+        if (!UtilMethods.isSet(descriptorsByKey)) {
+            synchronized (AppsAPIImpl.class) {
+                descriptorsByKey = getAppDescriptorsMeta().stream().collect(
                         Collectors.toMap(serviceDescriptorMeta -> serviceDescriptorMeta
-                                        .getServiceDescriptor().getKey().toLowerCase(), Function.identity(),
+                                        .getAppDescriptor().getKey().toLowerCase(), Function.identity(),
                                 (serviceDescriptor, serviceDescriptor2) -> serviceDescriptor));
 
                 CacheLocator.getCacheAdministrator()
-                        .put(DESCRIPTORS_MAPPED_BY_SERVICE_KEY, descriptorsByServiceKey,
+                        .put(DESCRIPTORS_MAPPED_BY_SERVICE_KEY, descriptorsByKey,
                                 DESCRIPTORS_CACHE_GROUP);
             }
         }
-        return descriptorsByServiceKey;
+        return descriptorsByKey;
     }
 
     @Override
-    public Optional<ServiceDescriptor> getServiceDescriptor(final String serviceKey,
+    public Optional<AppDescriptor> getAppDescriptor(final String key,
             final User user)
             throws DotDataException, DotSecurityException {
 
@@ -378,15 +379,15 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                     user.getUserId()));
         }
 
-        final String serviceKeyLC = serviceKey.toLowerCase();
-        final ServiceDescriptorMeta serviceDescriptorMeta = getServiceDescriptorMap()
-                .get(serviceKeyLC);
-        return null == serviceDescriptorMeta ? Optional.empty()
-                : Optional.of(serviceDescriptorMeta.getServiceDescriptor());
+        final String appKeyLC = key.toLowerCase();
+        final AppDescriptorMeta appDescriptorMeta = getAppDescriptorMap()
+                .get(appKeyLC);
+        return null == appDescriptorMeta ? Optional.empty()
+                : Optional.of(appDescriptorMeta.getAppDescriptor());
     }
 
     @Override
-    public ServiceDescriptor createServiceDescriptor(final InputStream inputStream,
+    public AppDescriptor createAppDescriptor(final InputStream inputStream,
             final User user) throws IOException, DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
@@ -399,15 +400,15 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         if (!basePath.exists()) {
             basePath.mkdir();
         }
-        Logger.debug(ServiceIntegrationAPIImpl.class,
+        Logger.debug(AppsAPIImpl.class,
                 () -> " ymlFiles are set under:  " + ymlFilesPath);
 
         // Now validate the incoming file.. see if we're rewriting an existing file or attempting to re-use an already in use service-key.
-        final ServiceDescriptor serviceDescriptor = ymlMapper
-                .readValue(inputStream, ServiceDescriptor.class);
+        final AppDescriptor serviceDescriptor = ymlMapper
+                .readValue(inputStream, AppDescriptor.class);
 
         if (validateServiceDescriptor(serviceDescriptor)
-                && validateServiceDescriptorUniqueName(serviceDescriptor)) {
+                && validateAppDescriptorUniqueName(serviceDescriptor)) {
 
             final String serviceKey = serviceDescriptor.getKey();
             final File incomingFile = new File(basePath, String.format("%s.yml", serviceKey));
@@ -425,7 +426,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
     }
 
     @Override
-    public void removeServiceIntegration(final String serviceKey, final User user,
+    public void removeApp(final String key, final User user,
             final boolean removeDescriptor)
             throws DotSecurityException, DotDataException {
         if (userDoesNotHaveAccess(user)) {
@@ -433,26 +434,26 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                     "Invalid attempt to delete a service descriptors performed by user with id `%s`.",
                     user.getUserId()));
         }
-        final String serviceKeyLC = serviceKey.toLowerCase();
-        final ServiceDescriptorMeta serviceDescriptorMeta = getServiceDescriptorMap().get(serviceKeyLC);
-        if (null == serviceDescriptorMeta) {
-            throw new DoesNotExistException(String.format("The requested descriptor `%s` does not exist.",serviceKey));
+        final String appKeyLC = key.toLowerCase();
+        final AppDescriptorMeta appDescriptorMeta = getAppDescriptorMap().get(appKeyLC);
+        if (null == appDescriptorMeta) {
+            throw new DoesNotExistException(String.format("The requested descriptor `%s` does not exist.",key));
         }else{
             // if we succeed trying to find the descriptor.
             // Lets get all the service-keys and organized by host-id
-            final Map<String, Set<String>> serviceKeysByHost = serviceKeysByHost();
-            for (final Entry<String, Set<String>> entry : serviceKeysByHost.entrySet()) {
+            final Map<String, Set<String>> appKeysByHost = appKeysByHost();
+            for (final Entry<String, Set<String>> entry : appKeysByHost.entrySet()) {
                 final String hostId = entry.getKey();
-                final Set<String> serviceKeys = entry.getValue();
+                final Set<String> appKeys = entry.getValue();
                 //Now we need to verify the service-key has a configuration for this host.
-                if(serviceKeys.contains(serviceKeyLC)){
+                if(appKeys.contains(appKeyLC)){
                     //And if it does we attempt to delete all the secrets.
                     final Host host = hostAPI.find(hostId, user, false);
-                    deleteSecrets(serviceKey, host, user);
+                    deleteSecrets(key, host, user);
                 }
             }
             if(removeDescriptor) {
-                removeDescriptor(serviceDescriptorMeta);
+                removeDescriptor(appDescriptorMeta);
             }
             invalidateCache();
         }
@@ -463,7 +464,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
      * @param serviceDescriptorMeta
      * @throws DotDataException
      */
-    private void removeDescriptor(final ServiceDescriptorMeta serviceDescriptorMeta) throws DotDataException{
+    private void removeDescriptor(final AppDescriptorMeta serviceDescriptorMeta) throws DotDataException{
         final String fileName = serviceDescriptorMeta.getFileName();
         //Now we need to remove the file it self.
         final String ymlFilesPath = getServiceDescriptorDirectory();
@@ -473,7 +474,7 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                     String.format(" File with path `%s` does not exist. ", file));
         }
         try {
-            Logger.warn(ServiceIntegrationAPIImpl.class, () -> String
+            Logger.warn(AppsAPIImpl.class, () -> String
                     .format(" Failed attempt to delete file with path `%s` ", file));
             Files.delete(file);
         } catch (IOException e) {
@@ -491,9 +492,9 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
 
     private static String getServiceDescriptorDirectory() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + File.separator + "services" + File.separator;
+                + File.separator + APPS_DIR_NAME + File.separator;
         final String dirPath = Config
-                .getStringProperty(SERVICE_INTEGRATION_DIR_PATH_KEY, supplier.get());
+                .getStringProperty(APPS_DIR_PATH_KEY, supplier.get());
         return Paths.get(dirPath).normalize().toString();
     }
 
@@ -503,12 +504,12 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         if (!basePath.exists()) {
             basePath.mkdir();
         }
-        Logger.debug(ServiceIntegrationAPIImpl.class,
+        Logger.debug(AppsAPIImpl.class,
                 () -> " ymlFiles are set under:  " + ymlFilesPath);
         final Set<String> files = listFiles(ymlFilesPath);
         if (!UtilMethods.isSet(files)) {
             // No files were found a default empty descriptor will be created.
-            // ymlMapper.writeValue(new File(basePath, "sample-service-descriptor.yml"), emptyDescriptor());
+            // ymlMapper.writeValue(new File(basePath, "sample-app-descriptor.yml"), emptyDescriptor());
             // return listFiles(ymlFilesPath);
            return Collections.emptySet();
         } else {
@@ -531,16 +532,16 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         return fileList;
     }
 
-    private List<ServiceDescriptorMeta> loadServiceDescriptors()
+    private List<AppDescriptorMeta> loadAppDescriptors()
             throws IOException, DotDataException {
         final Set<String> loadedServiceKeys = new HashSet<>();
-        final ImmutableList.Builder<ServiceDescriptorMeta> builder = new ImmutableList.Builder<>();
+        final ImmutableList.Builder<AppDescriptorMeta> builder = new ImmutableList.Builder<>();
         final Set<String> fileNames = listAvailableYamlFiles();
         for (final String fileName : fileNames) {
             try {
                 final File file = new File(fileName);
-                final ServiceDescriptor serviceDescriptor = ymlMapper
-                        .readValue(file, ServiceDescriptor.class);
+                final AppDescriptor serviceDescriptor = ymlMapper
+                        .readValue(file, AppDescriptor.class);
                 if (validateServiceDescriptor(serviceDescriptor)) {
                     if (loadedServiceKeys.contains(serviceDescriptor.getKey())) {
                         throw new DotDataException(
@@ -549,11 +550,11 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
                                         serviceDescriptor.getKey())
                                 );
                     }
-                    builder.add(new ServiceDescriptorMeta(serviceDescriptor, file.getName()));
+                    builder.add(new AppDescriptorMeta(serviceDescriptor, file.getName()));
                     loadedServiceKeys.add(serviceDescriptor.getKey());
                 }
             } catch (IOException e) {
-                Logger.error(ServiceIntegrationAPIImpl.class,
+                Logger.error(AppsAPIImpl.class,
                         String.format("Error reading yml file `%s`.", fileName), e);
             }
         }
@@ -561,29 +562,29 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
         return builder.build();
     }
 
-   private boolean validateServiceDescriptor(final ServiceDescriptor serviceDescriptor)
+   private boolean validateServiceDescriptor(final AppDescriptor appDescriptor)
            throws DotDataException {
-       if(UtilMethods.isNotSet(serviceDescriptor.getKey())){
+       if(UtilMethods.isNotSet(appDescriptor.getKey())){
           throw new DotDataException("The required field `key` isn't set on the incoming file.");
        }
 
-       if(serviceDescriptor.getKey().length() > 100){
+       if(appDescriptor.getKey().length() > 100){
            throw new DotDataException("The required field `key` is too large.");
        }
 
-       if(UtilMethods.isNotSet(serviceDescriptor.getName())){
+       if(UtilMethods.isNotSet(appDescriptor.getName())){
            throw new DotDataException("The required field `name` isn't set on the incoming file.");
        }
 
-       if(UtilMethods.isNotSet(serviceDescriptor.getDescription())){
+       if(UtilMethods.isNotSet(appDescriptor.getDescription())){
            throw new DotDataException("The required field `description` isn't set on the incoming file.");
        }
 
-       if(UtilMethods.isNotSet(serviceDescriptor.getIconUrl())){
+       if(UtilMethods.isNotSet(appDescriptor.getIconUrl())){
            throw new DotDataException("The required field `iconUrl` isn't set on the incoming file.");
        }
 
-       if(!UtilMethods.isSet(serviceDescriptor.getParams())){
+       if(!UtilMethods.isSet(appDescriptor.getParams())){
            throw new DotDataException("The required field `params` isn't set on the incoming file.");
        }
 
@@ -591,10 +592,10 @@ public class ServiceIntegrationAPIImpl implements ServiceIntegrationAPI {
 
    }
 
-    private boolean validateServiceDescriptorUniqueName(final ServiceDescriptor serviceDescriptor)
+    private boolean validateAppDescriptorUniqueName(final AppDescriptor serviceDescriptor)
             throws DotDataException {
 
-        if (getServiceDescriptorMap().containsKey(serviceDescriptor.getKey())) {
+        if (getAppDescriptorMap().containsKey(serviceDescriptor.getKey())) {
             throw new DotDataException(
                     String.format("There's a service already registered under key `%s`.",
                             serviceDescriptor.getKey()));

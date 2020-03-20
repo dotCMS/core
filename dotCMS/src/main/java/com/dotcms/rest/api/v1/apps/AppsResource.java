@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.secret;
+package com.dotcms.rest.api.v1.apps;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 
@@ -7,7 +7,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationView;
+import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -37,28 +37,28 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 
 /**
- * Resource API that deals with secrets and their usage on third-party service integrations.
+ * Resource API that deals with secrets and their usage on third-party apps integrations.
  */
-@Path("/v1/service-integrations")
-public class ServiceIntegrationResource {
+@Path("/v1/apps")
+public class AppsResource {
 
     private final WebResource webResource;
-    private ServiceIntegrationHelper helper;
+    private AppsHelper helper;
 
     @VisibleForTesting
-    public ServiceIntegrationResource(final WebResource webResource,
-            final ServiceIntegrationHelper helper) {
+    public AppsResource(final WebResource webResource,
+            final AppsHelper helper) {
         this.webResource = webResource;
         this.helper = helper;
     }
 
-    public ServiceIntegrationResource() {
-        this(new WebResource(), new ServiceIntegrationHelper());
+    public AppsResource() {
+        this(new WebResource(), new AppsHelper());
     }
 
 
     /**
-     * List all the services available to integrate with.
+     * List all the apps available to integrate with.
      * @param request
      * @param response
      * @return Response
@@ -70,7 +70,7 @@ public class ServiceIntegrationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response listAvailableServices(@Context final HttpServletRequest request,
+    public final Response listAvailableApps(@Context final HttpServletRequest request,
                                                 @Context final HttpServletResponse response
     ) {
         try {
@@ -82,25 +82,25 @@ public class ServiceIntegrationResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            final List<ServiceIntegrationView> integrationViews = helper.getAvailableDescriptorViews(user);
-            if(!integrationViews.isEmpty()){
-                return Response.ok(new ResponseEntityView(integrationViews)).build(); // 200
+            final List<AppView> appViews = helper.getAvailableDescriptorViews(user);
+            if(!appViews.isEmpty()){
+                return Response.ok(new ResponseEntityView(appViews)).build(); // 200
             }
-            throw new DoesNotExistException("No service integration is available to configure. Try uploading a file!");
+            throw new DoesNotExistException("No app integration is available to configure. Try uploading a file!");
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
-            Logger.error(this.getClass(), "Exception on listing all available service-integrations.", e);
+            Logger.error(this.getClass(), "Exception on listing all available apps.", e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
     /**
-     * Once you have a list of all the available services you can take the key and feed this endpoint to get a detailed view.
-     * The Detailed view will include all sites that have a configuration for the specified service.
-     * Url example: http://localhost:8080/api/v1/service-integrations/lol_1579927726215?filter=lol&per_page=100&orderby=name&direction=DESC
+     * Once you have a list of all the available apps you can take the key and feed this endpoint to get a detailed view.
+     * The Detailed view will include all sites that have a configuration for the specified app.
+     * Url example: http://localhost:8080/api/v1/apps/lol_1579927726215?filter=lol&per_page=100&orderby=name&direction=DESC
      * @param request
      * @param response
-     * @param serviceKey service unique identifier
+     * @param key app unique identifier
      * @return Response
      * @throws DotDataException
      * @throws DotSecurityException
@@ -110,10 +110,10 @@ public class ServiceIntegrationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getServiceIntegrationByKey(
+    public final Response getAppByKey(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("key") final String serviceKey,
+            @PathParam("key") final String key,
             @BeanParam final PaginationContext paginationContext
     ) {
         try {
@@ -125,11 +125,11 @@ public class ServiceIntegrationResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            return helper.getServiceIntegrationSiteView(request, serviceKey, paginationContext, user);
+            return helper.getAppSiteView(request, key, paginationContext, user);
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),
-                    String.format("Exception getting service integration for  key: `%s`. ",serviceKey) , e
+                    String.format("Exception getting app for key: `%s`.",key) , e
             );
             return ResponseUtil.mapExceptionResponse(e);
         }
@@ -141,7 +141,7 @@ public class ServiceIntegrationResource {
      * To explore the specific configuration for that site.
      * @param request
      * @param response
-     * @param serviceKey service unique identifier
+     * @param key app unique identifier
      * @param siteId site
      * @return Response
      * @throws DotDataException
@@ -152,10 +152,10 @@ public class ServiceIntegrationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response getDetailedServiceIntegration(
+    public final Response getAppDetail(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("key") final String serviceKey,
+            @PathParam("key") final String key,
             @PathParam("siteId") final String siteId
     ) {
         try {
@@ -167,26 +167,26 @@ public class ServiceIntegrationResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            final Optional<ServiceIntegrationView> serviceIntegrationDetailedView = helper
-                        .getServiceIntegrationSiteDetailedView(serviceKey, siteId, user);
-            if (serviceIntegrationDetailedView.isPresent()) {
-                return Response.ok(new ResponseEntityView(serviceIntegrationDetailedView.get()))
+            final Optional<AppView> appSiteDetailedView = helper
+                        .getAppSiteDetailedView(key, siteId, user);
+            if (appSiteDetailedView.isPresent()) {
+                return Response.ok(new ResponseEntityView(appSiteDetailedView.get()))
                 .build(); // 200
             }
             throw new DoesNotExistException(String.format(
-                        "Nope. No service integration was found for key `%s` and siteId `%s`. ",
-                        serviceKey, siteId));
+                        "Nope. No app was found for key `%s` and siteId `%s`. ",
+                        key, siteId));
 
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
-            Logger.error(this.getClass(), "Exception getting service integration and secrets with message: " + e.getMessage(), e);
+            Logger.error(this.getClass(), "Exception getting app and secrets with message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
     /**
-     * This basically allows you to upload a new service definition which has to be specified through a yml file.
-     * @see <a href=https://auth5.dotcms.com/devwiki/service-descriptor>Service descriptors</a>
+     * This basically allows you to upload a new app definition which has to be specified through a yml file.
+     * @see <a href=https://auth5.dotcms.com/devwiki/apps>Apps</a>
      * @param request
      * @param response
      * @param multipart
@@ -201,7 +201,7 @@ public class ServiceIntegrationResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public final Response createServiceIntegration(
+    public final Response createApp(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final FormDataMultiPart multipart
@@ -217,18 +217,18 @@ public class ServiceIntegrationResource {
                             .init();
 
             final User user = initData.getUser();
-            final List<ServiceIntegrationView> serviceIntegrations = helper
-                    .createServiceIntegration(multipart, user);
-            return Response.ok(new ResponseEntityView(serviceIntegrations)).build(); // 200
+            final List<AppView> apps = helper
+                    .createApp(multipart, user);
+            return Response.ok(new ResponseEntityView(apps)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
-            Logger.error(this.getClass(),"Exception saving/creating a service integration ", e);
+            Logger.error(this.getClass(),"Exception saving/creating app.", e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
 
     /**
-     * This is the endpoint used to feed secrets into the system for a specific service/host configuration.
+     * This is the endpoint used to feed secrets into the system for a specific app/host configuration.
      * @param request
      * @param response
      * @param secretForm
@@ -241,7 +241,7 @@ public class ServiceIntegrationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response createServiceIntegrationSecrets(
+    public final Response createAppSecrets(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final SecretForm secretForm
@@ -268,7 +268,7 @@ public class ServiceIntegrationResource {
     }
 
     /**
-     * This is the endpoint used to feed/update secrets for a specific service/host configuration.
+     * This is the endpoint used to feed/update secrets for a specific app/host configuration.
      * @param request
      * @param response
      * @param secretForm form
@@ -281,7 +281,7 @@ public class ServiceIntegrationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response updateServiceIntegrationIndividualSecret(
+    public final Response updateAppIndividualSecret(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final SecretForm secretForm
@@ -308,7 +308,7 @@ public class ServiceIntegrationResource {
     }
 
     /**
-     * This is the endpoint used to delete individual secrets for a specific service/host configuration.
+     * This is the endpoint used to delete individual secrets for a specific app/host configuration.
      * @param request
      * @param response
      * @param secretForm form
@@ -321,7 +321,7 @@ public class ServiceIntegrationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteIndividualServiceIntegrationSecret(
+    public final Response deleteIndividualAppSecret(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             final DeleteSecretForm secretForm
@@ -350,10 +350,10 @@ public class ServiceIntegrationResource {
     /**
      * This will remove a specific configuration for the key and site combination.
      * All the secrets at once will be lost.
-     * But the Site Configuration and Service description remains intact.
+     * But the Site Configuration and App description remains intact.
      * @param request
      * @param response
-     * @param serviceKey service unique identifier
+     * @param key App unique identifier
      * @param siteId site
      * @return
      * @throws DotDataException
@@ -364,10 +364,10 @@ public class ServiceIntegrationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteAllServiceIntegrationSecrets(
+    public final Response deleteAllAppSecrets(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("key") final String serviceKey,
+            @PathParam("key") final String key,
             @PathParam("siteId") final String siteId
     ) {
         try {
@@ -380,12 +380,12 @@ public class ServiceIntegrationResource {
                             .init();
             final User user = initData.getUser();
             //this will remove a specific configuration for the key and site combination. All the secrets at once will be lost.
-            helper.deleteServiceIntegrationSecrets(serviceKey, siteId, user);
+            helper.deleteAppSecrets(key, siteId, user);
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(),
-              String.format("Exception getting service integration and secrets for `%s`, and `%s` ",serviceKey, siteId) , e
+              String.format("Exception getting service integration and secrets for `%s`, and `%s` ",key, siteId) , e
             );
             return ResponseUtil.mapExceptionResponse(e);
         }
@@ -406,7 +406,7 @@ public class ServiceIntegrationResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteServiceIntegration(
+    public final Response deleteApp(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("key") final String serviceKey,

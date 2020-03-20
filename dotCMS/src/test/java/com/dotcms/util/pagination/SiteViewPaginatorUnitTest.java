@@ -8,8 +8,8 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.dotcms.rest.api.v1.secret.SiteViewPaginator;
-import com.dotcms.rest.api.v1.secret.view.SiteView;
+import com.dotcms.rest.api.v1.apps.SiteViewPaginator;
+import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;

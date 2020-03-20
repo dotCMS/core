@@ -1,4 +1,4 @@
-package com.dotcms.security.secret;
+package com.dotcms.security.apps;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
@@ -16,114 +16,116 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Entry Point to manage secrets and third party service integrations
+ * Entry Point to manage secrets and third party App integrations
  */
-public interface ServiceIntegrationAPI {
+public interface AppsAPI {
+
+     static final String APPS_API_IMPL = "APPS_API_IMPL";
 
     /**
-     * Given an individual host a list with the associated services is returned.
+     * Given an individual host a list with the associated App is returned.
      * @param host
      * @param user
      * @return
      */
-    List<String> listServiceKeys(Host host, User user) throws DotDataException, DotSecurityException;
+    List<String> listAppKeys(Host host, User user) throws DotDataException, DotSecurityException;
 
     /**
-     * Conforms a map where the Elements are lists of service unique names, organized by host as key.
+     * Conforms a map where the Elements are lists of app unique names, organized by host as key.
      * @return
      */
-    Map<String, Set<String>> serviceKeysByHost();
+    Map<String, Set<String>> appKeysByHost();
 
     /**
-     * This returns a json object read from the secret store that contains the service integration configuration and secret.
-     * @param serviceKey the unique service identifier
-     * @param host the host for the respective service key
+     * This returns a json object read from the secret store that contains the apps integration configuration and secret.
+     * @param key the unique app identifier
+     * @param host the host for the respective app key
      * @param user logged in user
      * @return
      */
-     Optional<ServiceSecrets> getSecrets(String serviceKey,
+     Optional<AppSecrets> getSecrets(String key,
              Host host, User user) throws DotDataException, DotSecurityException;
 
     /**
-     * This returns a json object read from the secret store that contains the service integration configuration and secret
+     * This returns a json object read from the secret store that contains the app integration configuration and secret
      * This method allows an additional hit against systemHost in case the secret isn't found under the given host
-     * The key is a combination of service + host.
-     * @param serviceKey the unique service identifier
+     * The key is a combination of app + host.
+     * @param key the unique app identifier
      * @param fallbackOnSystemHost this param allows  an additional try against system host
-     * @param host the host for the respective service key
+     * @param host the host for the respective app key
      * @param user logged in user
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Optional<ServiceSecrets> getSecrets(String serviceKey,
+    Optional<AppSecrets> getSecrets(String key,
             boolean fallbackOnSystemHost,
             Host host, User user) throws DotDataException, DotSecurityException;
 
    /**
-    * This will tell you all the different integrations for a given serviceKey.
-    * If the service key is used in a given host the host will come back in the resulting list.
+    * This will tell you all the different integrations for a given appKey.
+    * If the app key is used in a given host the host will come back in the resulting list.
     * Otherwise it means no configurations exist for the given host.
-    * @param serviceKey unique service id for the given host.
+    * @param key unique app id for the given host.
     * @param siteIdentifiers a list of host identifiers
     * @param user Logged in user
-    * @return a list where the service-key is present (a Configuration exist for the given host)
+    * @return a list where the app-key is present (a Configuration exist for the given host)
     */
-    Set<String> filterSitesForServiceKey(final String serviceKey, final Collection<String> siteIdentifiers, final User user);
+    Set<String> filterSitesForAppKey(final String key, final Collection<String> siteIdentifiers, final User user);
 
     /**
      * Lookup for an individual secret/property then updates the single entry.
-     * @param serviceKey Service unique id.
+     * @param key App unique id.
      * @param keyAndSecret Tuple value Pair with the definition of the secret and name.
      * @param host The host owning the secret.
      * @param user logged-in user
      */
-     void saveSecret(String serviceKey, Tuple2<String,Secret> keyAndSecret, Host host, User user)
+     void saveSecret(String key, Tuple2<String,Secret> keyAndSecret, Host host, User user)
              throws DotDataException, DotSecurityException;
 
     /**
-     * Creates or replaces an existing service set of secrets.
+     * Creates or replaces an existing app set of secrets.
      * When calling this the Whole secret gets replaced.
      * @param secrets Secrets info bean.
      * @param host The host owning the secret.
      */
-    void saveSecrets(ServiceSecrets secrets, Host host, User user)
+    void saveSecrets(AppSecrets secrets, Host host, User user)
             throws DotDataException, DotSecurityException;
 
     /**
      * Lookup for an individual secret/property then removes the single entry.
-     * @param serviceKey Service unique id.
+     * @param key App unique id.
      * @param propSecretNames Individual secret or property name.
      * @param host The host owning the secret.
      * @param user logged-in user
      */
-    void deleteSecret(String serviceKey, Set<String> propSecretNames, Host host, User user)
+    void deleteSecret(String key, Set<String> propSecretNames, Host host, User user)
     throws DotDataException, DotSecurityException;
 
     /**
-     * Deletes all secretes associated with the serviceKey and Host.
-     * @param serviceKey service unique id.
+     * Deletes all secretes associated with the key and Host.
+     * @param key app unique id.
      * @param host The host owning the secret.
      */
-    void deleteSecrets(String serviceKey, Host host, User user)
+    void deleteSecrets(String key, Host host, User user)
             throws DotDataException, DotSecurityException;
 
     /**
-     * This method should read the yml file service definition
+     * This method should read the yml file app definition
      * @return
      */
-    List<ServiceDescriptor> getServiceDescriptors(User user)
+    List<AppDescriptor> getAppDescriptors(User user)
             throws DotDataException, DotSecurityException;
 
     /**
      *
-     * @param serviceKey
+     * @param key
      * @param user
      * @return
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Optional<ServiceDescriptor> getServiceDescriptor(final String serviceKey, final User user)
+    Optional<AppDescriptor> getAppDescriptor(final String key, final User user)
             throws DotDataException, DotSecurityException;
 
     /**
@@ -135,33 +137,33 @@ public interface ServiceIntegrationAPI {
      * @throws DotSecurityException
      * @return
      */
-    ServiceDescriptor createServiceDescriptor(final InputStream inputStream,
+    AppDescriptor createAppDescriptor(final InputStream inputStream,
             User user) throws IOException, DotDataException, DotSecurityException;
 
     /**
      *
-     * @param serviceKey
+     * @param key
      * @param user
      * @param removeDescriptor
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    void removeServiceIntegration(final String serviceKey, final User user,
+    void removeApp(final String key, final User user,
             final boolean removeDescriptor)
             throws DotSecurityException, DotDataException;
 
     enum INSTANCE {
         INSTANCE;
-        private final ServiceIntegrationAPI integrationAPI = loadSecretsApi();
+        private final AppsAPI integrationAPI = loadSecretsApi();
 
-        public static ServiceIntegrationAPI get() {
+        public static AppsAPI get() {
             return INSTANCE.integrationAPI;
         }
 
-        private static ServiceIntegrationAPI loadSecretsApi() {
-            return (ServiceIntegrationAPI) Try.of(() -> Class
-                    .forName(Config.getStringProperty("SERVICE_INTEGRATION_API_IMPL",
-                            ServiceIntegrationAPIImpl.class.getCanonicalName()))
+        private static AppsAPI loadSecretsApi() {
+            return (AppsAPI) Try.of(() -> Class
+                    .forName(Config.getStringProperty(APPS_API_IMPL,
+                            AppsAPIImpl.class.getCanonicalName()))
                     .newInstance()).getOrNull();
 
         }

@@ -1,6 +1,6 @@
-package com.dotcms.rest.api.v1.secret;
+package com.dotcms.rest.api.v1.apps;
 
-import com.dotcms.rest.api.v1.secret.view.SiteView;
+import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.PaginatorOrdered;

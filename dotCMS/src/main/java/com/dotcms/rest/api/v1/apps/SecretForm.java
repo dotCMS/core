@@ -1,8 +1,8 @@
-package com.dotcms.rest.api.v1.secret;
+package com.dotcms.rest.api.v1.apps;
 
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
-import com.dotcms.security.secret.Param;
+import com.dotcms.security.apps.Param;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;

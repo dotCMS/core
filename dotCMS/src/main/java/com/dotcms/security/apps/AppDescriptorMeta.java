@@ -1,23 +1,23 @@
-package com.dotcms.security.secret;
+package com.dotcms.security.apps;
 
 
 /**
  * This is a immutable wrapper class
  * That holds the Service Descriptor and additional info regarding the file that it was loaded from.
  */
-class ServiceDescriptorMeta {
+class AppDescriptorMeta {
 
-    private final ServiceDescriptor serviceDescriptor;
+    private final AppDescriptor appDescriptor;
 
     private final String fileName;
 
     /**
      * The only way to instantiate it.
-     * @param serviceDescriptor
+     * @param appDescriptor
      * @param fileName
      */
-    ServiceDescriptorMeta(final ServiceDescriptor serviceDescriptor, final String fileName) {
-        this.serviceDescriptor = serviceDescriptor;
+    AppDescriptorMeta(final AppDescriptor appDescriptor, final String fileName) {
+        this.appDescriptor = appDescriptor;
         this.fileName = fileName;
     }
 
@@ -25,8 +25,8 @@ class ServiceDescriptorMeta {
      * SD read property
      * @return
      */
-    ServiceDescriptor getServiceDescriptor() {
-        return serviceDescriptor;
+    AppDescriptor getAppDescriptor() {
+        return appDescriptor;
     }
 
     /**

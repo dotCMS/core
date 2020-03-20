@@ -1,13 +1,13 @@
-package com.dotcms.rest.api.v1.secret;
+package com.dotcms.rest.api.v1.apps;
 
 import com.dotcms.rest.api.MultiPartUtils;
-import com.dotcms.rest.api.v1.secret.view.ServiceIntegrationView;
-import com.dotcms.rest.api.v1.secret.view.SiteView;
-import com.dotcms.security.secret.Param;
-import com.dotcms.security.secret.Secret;
-import com.dotcms.security.secret.ServiceDescriptor;
-import com.dotcms.security.secret.ServiceIntegrationAPI;
-import com.dotcms.security.secret.ServiceSecrets;
+import com.dotcms.rest.api.v1.apps.view.AppView;
+import com.dotcms.rest.api.v1.apps.view.SiteView;
+import com.dotcms.security.apps.Param;
+import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.AppDescriptor;
+import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
@@ -44,28 +44,28 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 /**
- * Bridge class that encapsulates the logic necessary to consume the serviceIntegration-API
- * And forward to the ServiceIntegrationsResource
+ * Bridge class that encapsulates the logic necessary to consume the appsAPI
+ * And forward to the AppsResource
  */
-class ServiceIntegrationHelper {
+class AppsHelper {
 
-    private final ServiceIntegrationAPI serviceIntegrationAPI;
+    private final AppsAPI appsAPI;
     private final HostAPI hostAPI;
     private final ContentletAPI contentletAPI;
 
     @VisibleForTesting
-    ServiceIntegrationHelper(
-            final ServiceIntegrationAPI serviceIntegrationAPI, final HostAPI hostAPI, final ContentletAPI contentletAPI) {
-        this.serviceIntegrationAPI = serviceIntegrationAPI;
+    AppsHelper(
+            final AppsAPI appsAPI, final HostAPI hostAPI, final ContentletAPI contentletAPI) {
+        this.appsAPI = appsAPI;
         this.hostAPI = hostAPI;
         this.contentletAPI = contentletAPI;
     }
 
-    ServiceIntegrationHelper() {
-        this(APILocator.getServiceIntegrationAPI(), APILocator.getHostAPI(), APILocator.getContentletAPI());
+    AppsHelper() {
+        this(APILocator.getAppsAPI(), APILocator.getHostAPI(), APILocator.getContentletAPI());
     }
 
-    private static Comparator<ServiceIntegrationView> compareByCountAndName = (o1, o2) -> {
+    private static Comparator<AppView> compareByCountAndName = (o1, o2) -> {
         final int compare = Long.compare(o2.getConfigurationsCount(), o1.getConfigurationsCount());
         if (compare != 0){
             return compare;
@@ -74,47 +74,48 @@ class ServiceIntegrationHelper {
     };
 
     /**
-     * This will give you the whole list of service descriptors.
+     * This will give you the whole list of app descriptors.
      * @param user Logged in user
      * @return a list of views.
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    List<ServiceIntegrationView> getAvailableDescriptorViews(final User user)
+    List<AppView> getAvailableDescriptorViews(final User user)
             throws DotSecurityException, DotDataException {
-        final List<ServiceIntegrationView> views = new ArrayList<>();
-        final List<ServiceDescriptor> serviceDescriptors = serviceIntegrationAPI.getServiceDescriptors(user);
-        final Set<String> hostIdentifiers = serviceIntegrationAPI.serviceKeysByHost().keySet();
-        for (final ServiceDescriptor serviceDescriptor : serviceDescriptors) {
-            final String serviceKey = serviceDescriptor.getKey();
-            final long configurationsCount = serviceIntegrationAPI.filterSitesForServiceKey(serviceKey, hostIdentifiers, user).size();
-            views.add(new ServiceIntegrationView(serviceDescriptor, configurationsCount));
+        final List<AppView> views = new ArrayList<>();
+        final List<AppDescriptor> appDescriptors = appsAPI.getAppDescriptors(user);
+        final Set<String> hostIdentifiers = appsAPI.appKeysByHost().keySet();
+        for (final AppDescriptor appDescriptor : appDescriptors) {
+            final String appKey = appDescriptor.getKey();
+            final long configurationsCount = appsAPI
+                    .filterSitesForAppKey(appKey, hostIdentifiers, user).size();
+            views.add(new AppView(appDescriptor, configurationsCount));
         }
         return views.stream().sorted(compareByCountAndName).collect(CollectionsUtils.toImmutableList());
     }
 
     /**
-     * This gets you a view composed of the service-key and all the hosts that have configurations. Wrapped within a Response
+     * This gets you a view composed of the appKey and all the hosts that have configurations. Wrapped within a Response
      * @param request httpRequest
-     * @param serviceKey unique service id for the given host.
+     * @param key unique app id for the given host.
      * @param paginationContext pagination data
      * @param user user Logged in user
      * @return Response
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    Response getServiceIntegrationSiteView(
+    Response getAppSiteView(
             final HttpServletRequest request,
-            final String serviceKey,
+            final String key,
             final PaginationContext paginationContext,
             final User user)
             throws DotSecurityException, DotDataException {
-        final Optional<ServiceDescriptor> serviceDescriptorOptional = serviceIntegrationAPI
-                .getServiceDescriptor(serviceKey, user);
-        if (!serviceDescriptorOptional.isPresent()) {
+        final Optional<AppDescriptor> appDescriptorOptional = appsAPI
+                .getAppDescriptor(key, user);
+        if (!appDescriptorOptional.isPresent()) {
             //Throw exception and allow the mapper do its thing.
             throw new DoesNotExistException(
-                    String.format("No service integration was found for key `%s`. ", serviceKey)
+                    String.format("No App was found for key `%s`. ", key)
             );
         }
 
@@ -122,9 +123,10 @@ class ServiceIntegrationHelper {
                 UtilMethods.isSet(paginationContext.getDirection()) ? OrderDirection
                         .valueOf(paginationContext.getDirection()) : OrderDirection.DESC;
 
-        final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
-        final Map<String,Set<String>> serviceKeysByHost = serviceIntegrationAPI.serviceKeysByHost();
-        final Set<String> sitesWithConfigurations = serviceIntegrationAPI.filterSitesForServiceKey(serviceDescriptor.getKey(), serviceKeysByHost.keySet(), user);
+        final AppDescriptor appDescriptor = appDescriptorOptional.get();
+        final Map<String,Set<String>> appKeysByHost = appsAPI.appKeysByHost();
+        final Set<String> sitesWithConfigurations = appsAPI
+                .filterSitesForAppKey(appDescriptor.getKey(), appKeysByHost.keySet(), user);
 
         final PaginationUtil paginationUtil = new PaginationUtil(new SiteViewPaginator(
                 () -> sitesWithConfigurations, hostAPI, contentletAPI));
@@ -136,44 +138,44 @@ class ServiceIntegrationHelper {
                         paginationContext.getOrderBy(),
                         orderDirection,
                         Collections.emptyMap(),
-                        (Function<PaginatedArrayList<SiteView>, ServiceIntegrationView>) paginatedArrayList -> {
+                        (Function<PaginatedArrayList<SiteView>, AppView>) paginatedArrayList -> {
                             final long count = sitesWithConfigurations.size();
-                            return new ServiceIntegrationView(serviceDescriptor, count,
+                            return new AppView(appDescriptor, count,
                                     paginatedArrayList);
                         });
     }
 
     /**
-     * This gives you a detailed view with all the configuration secrets for a given service-key host pair.
-     * @param serviceKey unique service id for the given host.
+     * This gives you a detailed view with all the configuration secrets for a given appKey host pair.
+     * @param key unique app id for the given host.
      * @param siteId Host Id
      * @param user Logged in user
      * @return view
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    Optional<ServiceIntegrationView> getServiceIntegrationSiteDetailedView(
-            final String serviceKey, final String siteId,
+    Optional<AppView> getAppSiteDetailedView(
+            final String key, final String siteId,
             final User user)
             throws DotSecurityException, DotDataException {
-        final Optional<ServiceDescriptor> serviceDescriptorOptional = serviceIntegrationAPI
-                .getServiceDescriptor(serviceKey, user);
-        if (serviceDescriptorOptional.isPresent()) {
-            final ServiceDescriptor serviceDescriptor = serviceDescriptorOptional.get();
+        final Optional<AppDescriptor> appDescriptorOptional = appsAPI
+                .getAppDescriptor(key, user);
+        if (appDescriptorOptional.isPresent()) {
+            final AppDescriptor appDescriptor = appDescriptorOptional.get();
             final Host host = hostAPI.find(siteId, user, false);
             if (null == host) {
                 throw new DotDataException(
                         String.format(" Couldn't find any host with identifier `%s` ", siteId));
             }
 
-            final Optional<ServiceSecrets> optionalServiceSecrets = serviceIntegrationAPI
-                    .getSecrets(serviceKey, true, host, user);
-            if (optionalServiceSecrets.isPresent()) {
-                final ServiceSecrets serviceSecrets = protectHiddenSecrets(
-                        optionalServiceSecrets.get());
+            final Optional<AppSecrets> optionalAppSecrets = appsAPI
+                    .getSecrets(key, true, host, user);
+            if (optionalAppSecrets.isPresent()) {
+                final AppSecrets appSecrets = protectHiddenSecrets(
+                        optionalAppSecrets.get());
                 final SiteView siteView = new SiteView(host.getIdentifier(), host.getHostname(),
-                        serviceSecrets.getSecrets());
-                return Optional.of(new ServiceIntegrationView(serviceDescriptor, 1L,
+                        appSecrets.getSecrets());
+                return Optional.of(new AppView(appDescriptor, 1L,
                         ImmutableList.of(siteView)));
             }
         }
@@ -181,30 +183,28 @@ class ServiceIntegrationHelper {
     }
 
     /**
-     * This will remove all the secrets under a service-integration for a given host.
-     * @param serviceKey unique service id for the given host.
+     * This will remove all the secrets under an app for a given host.
+     * @param key unique app id for the given host.
      * @param siteId Host Id
      * @param user Logged in user
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    void deleteServiceIntegrationSecrets(
-            final String serviceKey, final String siteId,
-            final User user)
+    void deleteAppSecrets(final String key, final String siteId, final User user)
             throws DotSecurityException, DotDataException {
-        final Optional<ServiceDescriptor> serviceDescriptorOptional = serviceIntegrationAPI
-                .getServiceDescriptor(serviceKey, user);
-        if (!serviceDescriptorOptional.isPresent()) {
+        final Optional<AppDescriptor> appDescriptorOptional = appsAPI
+                .getAppDescriptor(key, user);
+        if (!appDescriptorOptional.isPresent()) {
             throw new DoesNotExistException(
                     String.format(" Couldn't find a descriptor under key `%s` for host `%s` ",
-                            serviceKey, siteId));
+                            key, siteId));
         }
         final Host host = hostAPI.find(siteId, user, false);
         if (null == host) {
             throw new DotDataException(
                     String.format(" Couldn't find any site with identifier `%s` ", siteId));
         }
-        serviceIntegrationAPI.deleteSecrets(serviceKey, host, user);
+        appsAPI.deleteSecrets(key, host, user);
     }
 
 
@@ -218,9 +218,9 @@ class ServiceIntegrationHelper {
     void saveUpdateSecret(final SecretForm form, final User user)
             throws DotSecurityException, DotDataException {
 
-        final String serviceKey = form.getKey();
-        if (!UtilMethods.isSet(serviceKey)) {
-            throw new IllegalArgumentException("Required param serviceKey isn't set.");
+        final String key = form.getKey();
+        if (!UtilMethods.isSet(key)) {
+            throw new IllegalArgumentException("Required param Key isn't set.");
         }
         final String siteId = form.getSiteId();
         if (!UtilMethods.isSet(siteId)) {
@@ -230,31 +230,31 @@ class ServiceIntegrationHelper {
         if(null == host) {
             throw new IllegalArgumentException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
         }
-        final Optional<ServiceDescriptor> optionalServiceDescriptor = serviceIntegrationAPI
-                .getServiceDescriptor(serviceKey, user);
-        if (!optionalServiceDescriptor.isPresent()) {
-            throw new DoesNotExistException(  String.format("Unable to find a service descriptor bound to the  serviceKey `%s`. You must upload a yml descriptor.",serviceKey));
+        final Optional<AppDescriptor> optionalAppDescriptor = appsAPI
+                .getAppDescriptor(key, user);
+        if (!optionalAppDescriptor.isPresent()) {
+            throw new DoesNotExistException(  String.format("Unable to find an app descriptor bound to the  Key `%s`. You must upload a yml descriptor.",key));
         }
         final Map<String, Param> params = form.getParams();
         if(!UtilMethods.isSet(params)){
             throw new IllegalArgumentException("Required Params aren't set.");
         }
-        final ServiceDescriptor serviceDescriptor = optionalServiceDescriptor.get();
-        validateIncomingParams(params, serviceDescriptor);
+        final AppDescriptor appDescriptor = optionalAppDescriptor.get();
+        validateIncomingParams(params, appDescriptor);
 
-        final Optional<ServiceSecrets> serviceSecretsOptional = serviceIntegrationAPI
-                .getSecrets(serviceKey, host, user);
-        if (!serviceSecretsOptional.isPresent()) {
-            //Create a brand new secret for the present service
-            final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
-            builder.withServiceKey(serviceKey);
+        final Optional<AppSecrets> appSecretsOptional = appsAPI
+                .getSecrets(key, host, user);
+        if (!appSecretsOptional.isPresent()) {
+            //Create a brand new secret for the present app
+            final AppSecrets.Builder builder = new AppSecrets.Builder();
+            builder.withKey(key);
             for (final Entry<String, Param> stringParamEntry : params.entrySet()) {
                 final String name = stringParamEntry.getKey();
                 final Param param = stringParamEntry.getValue();
                 final Secret secret = Secret.newSecret(param.getValue().toCharArray(), param.getType(), param.isHidden());
                 builder.withSecret(name, secret);
             }
-            serviceIntegrationAPI.saveSecrets(builder.build(), host, user);
+            appsAPI.saveSecrets(builder.build(), host, user);
         } else {
            //Update individual secrets/properties.
             for (final Entry<String, Param> stringParamEntry : params.entrySet()) {
@@ -262,7 +262,7 @@ class ServiceIntegrationHelper {
                 final Param param = stringParamEntry.getValue();
                 final Secret secret = Secret.newSecret(param.getValue().toCharArray(), param.getType(), param.isHidden());
 
-                serviceIntegrationAPI.saveSecret(serviceKey, Tuple.of(name, secret), host, user);
+                appsAPI.saveSecret(key, Tuple.of(name, secret), host, user);
             }
         }
     }
@@ -277,9 +277,9 @@ class ServiceIntegrationHelper {
     void deleteSecret(final DeleteSecretForm form, final User user)
             throws DotSecurityException, DotDataException {
 
-        final String serviceKey = form.getKey();
-        if (!UtilMethods.isSet(serviceKey)) {
-            throw new IllegalArgumentException("Required param serviceKey isn't set.");
+        final String key = form.getKey();
+        if (!UtilMethods.isSet(key)) {
+            throw new IllegalArgumentException("Required param Key isn't set.");
         }
         final String siteId = form.getSiteId();
         if (!UtilMethods.isSet(siteId)) {
@@ -289,49 +289,49 @@ class ServiceIntegrationHelper {
         if(null == host) {
             throw new IllegalArgumentException(String.format(" Couldn't find any site with identifier `%s` ",siteId));
         }
-        final Optional<ServiceDescriptor> optionalServiceDescriptor = serviceIntegrationAPI
-                .getServiceDescriptor(serviceKey, user);
-        if (!optionalServiceDescriptor.isPresent()) {
-            throw new DoesNotExistException(String.format("Unable to find a service descriptor bound to the  serviceKey `%s`. You must upload a yml descriptor.",serviceKey));
+        final Optional<AppDescriptor> optionalAppDescriptor = appsAPI
+                .getAppDescriptor(key, user);
+        if (!optionalAppDescriptor.isPresent()) {
+            throw new DoesNotExistException(String.format("Unable to find an app descriptor bound to the Key `%s`. You must upload a yml descriptor.",key));
         }
         final Set<String> params = form.getParams();
         if(!UtilMethods.isSet(params)){
             throw new IllegalArgumentException("Required Params aren't set.");
         }
-        final ServiceDescriptor serviceDescriptor = optionalServiceDescriptor.get();
-        validateIncomingParams(params, serviceDescriptor);
+        final AppDescriptor appDescriptor = optionalAppDescriptor.get();
+        validateIncomingParams(params, appDescriptor);
 
-        final Optional<ServiceSecrets> serviceSecretsOptional = serviceIntegrationAPI
-                .getSecrets(serviceKey, host, user);
-        if (!serviceSecretsOptional.isPresent()) {
-            throw new DoesNotExistException(String.format("Unable to find a secret for service with Key `%s`.",serviceKey));
+        final Optional<AppSecrets> appSecretsOptional = appsAPI
+                .getSecrets(key, host, user);
+        if (!appSecretsOptional.isPresent()) {
+            throw new DoesNotExistException(String.format("Unable to find a secret for app with Key `%s`.",key));
         } else {
-            serviceIntegrationAPI.deleteSecret(serviceKey, params, host, user);
+            appsAPI.deleteSecret(key, params, host, user);
         }
     }
 
     /**
-     * Validate the incoming params match the params described by a serviceDescriptor yml.
+     * Validate the incoming params match the params described by an appDescriptor yml.
      * @param incomingParams a set of paramNames
-     * @param serviceDescriptor the service template
+     * @param appDescriptor the app template
      * @throws DotDataException This will give bac an exception if you send an invalid param.
      */
-    private void validateIncomingParams(final Map<String, Param> incomingParams, final ServiceDescriptor serviceDescriptor)
+    private void validateIncomingParams(final Map<String, Param> incomingParams, final AppDescriptor appDescriptor)
             throws DotDataException {
 
         //Param/Property names are case sensitive.
-        final Map<String, Param> serviceDescriptorParams = serviceDescriptor.getParams();
+        final Map<String, Param> appDescriptorParams = appDescriptor.getParams();
         for (final Entry<String, Param> incomingParamEntry : incomingParams.entrySet()) {
             final String incomingParamName = incomingParamEntry.getKey();
-            final Param describedParam = serviceDescriptorParams.get(incomingParamName);
-            if(serviceDescriptor.isAllowExtraParameters() && null == describedParam){
+            final Param describedParam = appDescriptorParams.get(incomingParamName);
+            if(appDescriptor.isAllowExtraParameters() && null == describedParam){
                //if the param isn't found in our description but the allow extra params flag is true we're ok
                continue;
             }
             //If the flag isn't true. Then we must reject the unknown param.
             if(null == describedParam) {
                 throw new IllegalArgumentException(String.format(
-                        "Params named `%s` can not be matched against service descriptor. ",
+                        "Params named `%s` can not be matched against an app descriptor. ",
                         incomingParamName));
             }
 
@@ -345,28 +345,28 @@ class ServiceIntegrationHelper {
     }
 
     /**
-     * Validate the incoming param names match the params described by a serviceDescriptor yml.
+     * Validate the incoming param names match the params described by an appDescriptor yml.
      * This is mostly useful to validate a delete param request
      * @param incomingParamNames
-     * @param serviceDescriptor
+     * @param appDescriptor
      * @throws DotDataException
      */
-    private void validateIncomingParams(final Set<String> incomingParamNames, final ServiceDescriptor serviceDescriptor)
+    private void validateIncomingParams(final Set<String> incomingParamNames, final AppDescriptor appDescriptor)
             throws DotDataException {
 
         //Param/Property names are case sensitive.
-        final Map<String, Param> serviceDescriptorParams = serviceDescriptor.getParams();
+        final Map<String, Param> appDescriptorParams = appDescriptor.getParams();
         for (final String incomingParamName : incomingParamNames) {
 
-            final Param describedParam = serviceDescriptorParams.get(incomingParamName);
-            if(serviceDescriptor.isAllowExtraParameters() && null == describedParam){
+            final Param describedParam = appDescriptorParams.get(incomingParamName);
+            if(appDescriptor.isAllowExtraParameters() && null == describedParam){
                 //if the param isn't found in our description but the allow extra params flag is true we're ok
                 continue;
             }
             //If the flag isn't true. Then we must reject the unknown param.
             if(null == describedParam) {
                 throw new IllegalArgumentException(String.format(
-                        "Params named `%s` can not be matched against service descriptor. ",
+                        "Params named `%s` can not be matched against an app descriptor. ",
                         incomingParamName));
             }
         }
@@ -380,36 +380,36 @@ class ServiceIntegrationHelper {
      * @throws IOException
      * @throws DotDataException
      */
-    List<ServiceIntegrationView> createServiceIntegration(final FormDataMultiPart multipart, final User user)
+    List<AppView> createApp(final FormDataMultiPart multipart, final User user)
             throws IOException, DotDataException {
         final List<File> files = new MultiPartUtils().getBinariesFromMultipart(multipart);
         if(!UtilMethods.isSet(files)){
             throw new DotDataException("Unable to extract any files from multi-part request.");
         }
-        List<ServiceIntegrationView> serviceIntegrationViews = new ArrayList<>(files.size());
+        List<AppView> appViews = new ArrayList<>(files.size());
         for (final File file : files) {
             try(final InputStream inputStream = Files.newInputStream(Paths.get(file.getPath()))){
-                final ServiceDescriptor serviceDescriptor = serviceIntegrationAPI
-                        .createServiceDescriptor(inputStream, user);
-                serviceIntegrationViews.add(new ServiceIntegrationView(serviceDescriptor,0L));
+                final AppDescriptor appDescriptor = appsAPI
+                        .createAppDescriptor(inputStream, user);
+                appViews.add(new AppView(appDescriptor,0L));
             }catch (Exception e){
-               Logger.error(ServiceIntegrationHelper.class, e);
+               Logger.error(AppsHelper.class, e);
                throw new DotDataException(e);
             }
         }
-        return serviceIntegrationViews;
+        return appViews;
     }
 
     /**
      *
-     * @param serviceKey
+     * @param key
      * @param user
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    void removeServiceIntegration(final String serviceKey, final User user, final boolean removeDescriptor)
+    void removeServiceIntegration(final String key, final User user, final boolean removeDescriptor)
             throws DotSecurityException, DotDataException {
-        serviceIntegrationAPI.removeServiceIntegration(serviceKey, user, removeDescriptor);
+        appsAPI.removeApp(key, user, removeDescriptor);
     }
 
     @VisibleForTesting
@@ -417,13 +417,13 @@ class ServiceIntegrationHelper {
 
     /**
      * Hidden secrets should never be exposed so this will replace the secret values with anything
-     * @param serviceSecrets
+     * @param appSecrets
      * @return
      */
-    private ServiceSecrets protectHiddenSecrets(final ServiceSecrets serviceSecrets){
-        final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
-        builder.withServiceKey(serviceSecrets.getServiceKey());
-        final Map<String,Secret> sourceSecrets = serviceSecrets.getSecrets();
+    private AppSecrets protectHiddenSecrets(final AppSecrets appSecrets){
+        final AppSecrets.Builder builder = new AppSecrets.Builder();
+        builder.withKey(appSecrets.getKey());
+        final Map<String,Secret> sourceSecrets = appSecrets.getSecrets();
         for (final Entry<String, Secret> secretEntry : sourceSecrets.entrySet()) {
             if(secretEntry.getValue().isHidden()){
                 builder.withHiddenSecret(secretEntry.getKey(), PROTECTED_HIDDEN_SECRET);
