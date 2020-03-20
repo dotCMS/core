@@ -351,7 +351,7 @@ public class UserResource implements Serializable {
 			
 			// if we don't have a user or 
 			if (newUser==null || session.getAttribute(WebKeys.PRINCIPAL_USER_ID) != null) {
-				throw new DotSecurityException("user is already logged in as somebody else");
+				throw new DotSecurityException("user is already loginAs somebody else");
 			}
 			
 			session.setAttribute(WebKeys.PRINCIPAL_USER_ID, sessionData.get(WebKeys.PRINCIPAL_USER_ID));
