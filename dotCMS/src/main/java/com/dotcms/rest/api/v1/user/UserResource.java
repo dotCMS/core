@@ -346,15 +346,17 @@ public class UserResource implements Serializable {
 		try {
 			Map<String, Object> sessionData = this.helper.doLoginAs(currentUser, loginAsUserId, loginAsUserPwd, serverName);
 			
-            final String newUserId = (String) sessionData.get(WebKeys.USER_ID);
+            final User newUser = userAPI.loadUserById((String) sessionData.get(WebKeys.USER_ID));
 			HttpSession session = request.getSession();
-			if (newUserId==null && session.getAttribute(WebKeys.PRINCIPAL_USER_ID) != null) {
-				throw new DotSecurityException("user is already logged in as");
+			
+			// if we don't have a user or 
+			if (newUser==null || session.getAttribute(WebKeys.PRINCIPAL_USER_ID) != null) {
+				throw new DotSecurityException("user is already logged in as somebody else");
 			}
 			
 			session.setAttribute(WebKeys.PRINCIPAL_USER_ID, sessionData.get(WebKeys.PRINCIPAL_USER_ID));
-			session.setAttribute(WebKeys.USER,userAPI.loadUserById(newUserId));
-			session.setAttribute(WebKeys.USER_ID, newUserId);
+			session.setAttribute(WebKeys.USER,newUser);
+			session.setAttribute(WebKeys.USER_ID, newUser.getUserId());
 			
 			PrincipalThreadLocal.setName(loginAsUserId);
 			session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,
@@ -450,15 +452,14 @@ public class UserResource implements Serializable {
         String principalUserId = null;
         HttpSession session = httpServletRequest.getSession();
         try {
-            principalUserId = session.getAttribute(WebKeys.PRINCIPAL_USER_ID).toString();
+            principalUserId = (String) session.getAttribute(WebKeys.PRINCIPAL_USER_ID);
     		if (principalUserId == null) {
-    		    throw new DotSecurityException("There is no principle user in this session");
+    		    throw new DotSecurityException("There is no principle user in this session, cannot logoutAs");
     		}
 
     		
 			currentLoginAsUser = PortalUtil.getUser(httpServletRequest);
 			Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
-			session.removeAttribute(WebKeys.USER);
 			session.setAttribute(WebKeys.USER_ID, principalUserId);
             session.setAttribute(WebKeys.USER, userAPI.loadUserById(principalUserId));
 			session.removeAttribute(WebKeys.PRINCIPAL_USER_ID);
