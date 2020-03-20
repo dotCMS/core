@@ -9,7 +9,8 @@ import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
-import com.dotcms.rest.api.v1.secret.ServiceIntegrationResourceTest;
+import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
@@ -233,9 +234,9 @@ import org.junit.runners.Suite.SuiteClasses;
         TestConfig.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
-        com.dotcms.security.secret.SecretsStoreKeyStoreImplTest.class,
-        com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class,
-        ServiceIntegrationResourceTest.class,
+        com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
+        AppsAPIImplTest.class,
+        AppsResourceTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
         RulesAPIImplIntegrationTest.class,

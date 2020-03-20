@@ -1,4 +1,4 @@
-package com.dotcms.security.secret;
+package com.dotcms.security.apps;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

@@ -1,4 +1,4 @@
-package com.dotcms.security.secret;
+package com.dotcms.security.apps;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,7 +30,7 @@ import java.util.Set;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class ServiceIntegrationAPIImplTest {
+public class AppsAPIImplTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -42,9 +42,9 @@ public class ServiceIntegrationAPIImplTest {
     public void Test_Store_Json_Then_Recover_Decrypted_Then_Delete_Then_Verify_Its_Gone()
             throws DotDataException, DotSecurityException {
         final User admin = TestUserUtils.getAdminUser();
-        ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
-        final String serviceKey = "anyServiceKey";
-        final ServiceSecrets bean = builder.withServiceKey(serviceKey)
+        AppSecrets.Builder builder = new AppSecrets.Builder();
+        final String appKey = "anyAppKey";
+        final AppSecrets bean = builder.withKey(appKey)
                 .withHiddenSecret("mySecret1", "Once I saw a UFO")
                 .withHiddenSecret("mySecret2", "Football soccer sucks!")
                 .withSecret("boolSecret1", true)
@@ -52,15 +52,15 @@ public class ServiceIntegrationAPIImplTest {
                 .build();
 
         final Host host = new SiteDataGen().nextPersisted();
-        final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
+        final AppsAPI api = APILocator.getAppsAPI();
         api.saveSecrets(bean, host, admin);
-        final Optional<ServiceSecrets> optionalBean = api
-                .getSecrets(serviceKey, host, admin);
+        final Optional<AppSecrets> optionalBean = api
+                .getSecrets(appKey, host, admin);
 
         assertTrue(optionalBean.isPresent());
 
-        final ServiceSecrets recoveredBean = optionalBean.get();
-        assertEquals(serviceKey, recoveredBean.getServiceKey());
+        final AppSecrets recoveredBean = optionalBean.get();
+        assertEquals(appKey, recoveredBean.getKey());
         assertTrue(recoveredBean.getSecrets().containsKey("mySecret1"));
         assertTrue(recoveredBean.getSecrets().containsKey("mySecret2"));
         assertTrue(recoveredBean.getSecrets().containsKey("boolSecret1"));
@@ -91,108 +91,108 @@ public class ServiceIntegrationAPIImplTest {
         final Host host1 = new SiteDataGen().nextPersisted();
         final Host host2 = new SiteDataGen().nextPersisted();
 
-        final ServiceSecrets.Builder builder1 = new ServiceSecrets.Builder();
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
 
-        final ServiceSecrets bean1Host1 = builder1.withServiceKey("serviceKey-1-Host-1")
+        final AppSecrets bean1Host1 = builder1.withKey("appKey-1-Host-1")
                 .withHiddenSecret("h1:secret1", "sec1")
                 .withHiddenSecret("h1:secret2", "sec2")
                 .withSecret("h1:bool1", true)
                 .withSecret("h1:bool2", false)
                 .build();
 
-        final ServiceSecrets bean2Host1 = builder1.withServiceKey("serviceKey-2-Host-1")
+        final AppSecrets bean2Host1 = builder1.withKey("appKey-2-Host-1")
                 .withHiddenSecret("h1:secret1", "sec1")
                 .withHiddenSecret("h1:secret2", "sec2")
                 .withSecret("h1:bool1", true)
                 .withSecret("h1:bool2", false)
                 .build();
 
-        final ServiceSecrets bean3Host1 = builder1.withServiceKey("serviceKey-3-Host-1")
+        final AppSecrets bean3Host1 = builder1.withKey("appKey-3-Host-1")
                 .withHiddenSecret("h1:secret1", "sec1")
                 .withHiddenSecret("h1:secret2", "sec2")
                 .withSecret("h1:bool1", true)
                 .withSecret("h1:bool2", false)
                 .build();
 
-        final ServiceSecrets.Builder builder2 = new ServiceSecrets.Builder();
+        final AppSecrets.Builder builder2 = new AppSecrets.Builder();
 
-        final ServiceSecrets bean1Host2 = builder2.withServiceKey("serviceKey-1-Host-2")
+        final AppSecrets bean1Host2 = builder2.withKey("appKey-1-Host-2")
                 .withHiddenSecret("h2:secret1", "sec1")
                 .withHiddenSecret("h2:secret2", "sec2")
                 .withSecret("h2:bool1", true)
                 .withSecret("h2:bool2", false)
                 .build();
 
-        final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
+        final AppsAPI api = APILocator.getAppsAPI();
 
         api.saveSecrets(bean1Host1, host1, admin);
         api.saveSecrets(bean2Host1, host1, admin);
         api.saveSecrets(bean3Host1, host1, admin);
         api.saveSecrets(bean1Host2, host2, admin);
 
-        final Map<String, Set<String>> serviceKeysByHost = api.serviceKeysByHost();
-        assertNotNull(serviceKeysByHost.get(host1.getIdentifier()));
-        assertNotNull(serviceKeysByHost.get(host2.getIdentifier()));
+        final Map<String, Set<String>> appKeysByHost = api.appKeysByHost();
+        assertNotNull(appKeysByHost.get(host1.getIdentifier()));
+        assertNotNull(appKeysByHost.get(host2.getIdentifier()));
 
-        assertEquals(3, api.listServiceKeys(host1, admin).size());
-        assertEquals(1, api.listServiceKeys(host2, admin).size());
+        assertEquals(3, api.listAppKeys(host1, admin).size());
+        assertEquals(1, api.listAppKeys(host2, admin).size());
 
-        assertEquals(3, serviceKeysByHost.get(host1.getIdentifier()).size());
-        assertEquals(1, serviceKeysByHost.get(host2.getIdentifier()).size());
+        assertEquals(3, appKeysByHost.get(host1.getIdentifier()).size());
+        assertEquals(1, appKeysByHost.get(host2.getIdentifier()).size());
 
-        assertTrue(serviceKeysByHost.get(host1.getIdentifier()).contains("serviceKey-1-Host-1".toLowerCase()));
-        assertTrue(serviceKeysByHost.get(host1.getIdentifier()).contains("serviceKey-2-Host-1".toLowerCase()));
-        assertTrue(serviceKeysByHost.get(host1.getIdentifier()).contains("serviceKey-3-Host-1".toLowerCase()));
-        assertTrue(serviceKeysByHost.get(host2.getIdentifier()).contains("serviceKey-1-Host-2".toLowerCase()));
+        assertTrue(appKeysByHost.get(host1.getIdentifier()).contains("appKey-1-Host-1".toLowerCase()));
+        assertTrue(appKeysByHost.get(host1.getIdentifier()).contains("appKey-2-Host-1".toLowerCase()));
+        assertTrue(appKeysByHost.get(host1.getIdentifier()).contains("appKey-3-Host-1".toLowerCase()));
+        assertTrue(appKeysByHost.get(host2.getIdentifier()).contains("appKey-1-Host-2".toLowerCase()));
 
     }
 
     @Test
     public void Test_Lookup_Fallback() throws DotDataException, DotSecurityException {
-        final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
+        final AppsAPI api = APILocator.getAppsAPI();
         final User admin = TestUserUtils.getAdminUser();
         final Host systemHost = APILocator.systemHost();
         final Host host1 = new SiteDataGen().nextPersisted();
 
-        final ServiceSecrets.Builder builder1 = new ServiceSecrets.Builder();
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
 
-        final ServiceSecrets beanSystemHost1 = builder1.withServiceKey("serviceKey-1-Any-Host")
+        final AppSecrets beanSystemHost1 = builder1.withKey("appKey-1-Any-Host")
                 .withHiddenSecret("fallback:test:secret1", "sec1")
                 .withSecret("fallback:test", true)
                 .build();
 
         api.saveSecrets(beanSystemHost1, systemHost, admin);
 
-        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecrets("serviceKey-1-Any-Host", true, host1, admin);
+        final Optional<AppSecrets> serviceSecretsOptional = api.getSecrets("appKey-1-Any-Host", true, host1, admin);
         assertTrue(serviceSecretsOptional.isPresent());
-        final ServiceSecrets recoveredBean = serviceSecretsOptional.get();
-        assertEquals("serviceKey-1-Any-Host", recoveredBean.getServiceKey());
+        final AppSecrets recoveredBean = serviceSecretsOptional.get();
+        assertEquals("appKey-1-Any-Host", recoveredBean.getKey());
         assertTrue(recoveredBean.getSecrets().containsKey("fallback:test"));
         assertTrue(recoveredBean.getSecrets().containsKey("fallback:test:secret1"));
     }
 
     @Test
     public void Test_Save_Secrets_Then_Replace_Secret() throws DotDataException, DotSecurityException {
-        final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
+        final AppsAPI api = APILocator.getAppsAPI();
         final User admin = TestUserUtils.getAdminUser();
         final Host host = new SiteDataGen().nextPersisted();
 
-        final ServiceSecrets.Builder builder1 = new ServiceSecrets.Builder();
-        final ServiceSecrets secrets1 = builder1.withServiceKey("serviceKey-1-Host-1")
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final AppSecrets secrets1 = builder1.withKey("appKey-1-Host-1")
                 .withHiddenSecret("test:secret1", "sec1")
                 .withHiddenSecret("test:secret2", "sec2")
                 .build();
         api.saveSecrets(secrets1, host, admin);
 
-        final ServiceSecrets.Builder builder2 = new ServiceSecrets.Builder();
-        final ServiceSecrets secrets2 = builder2.withServiceKey("serviceKey-1-Host-1")
+        final AppSecrets.Builder builder2 = new AppSecrets.Builder();
+        final AppSecrets secrets2 = builder2.withKey("appKey-1-Host-1")
                 .withHiddenSecret("test:secret1", "secret1")
                 .build();
         api.saveSecrets(secrets2, host, admin);
-        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecrets("serviceKey-1-Host-1", host, admin);
+        final Optional<AppSecrets> serviceSecretsOptional = api.getSecrets("appKey-1-Host-1", host, admin);
         assertTrue(serviceSecretsOptional.isPresent());
-        final ServiceSecrets recoveredBean = serviceSecretsOptional.get();
-        assertEquals("serviceKey-1-Host-1", recoveredBean.getServiceKey());
+        final AppSecrets recoveredBean = serviceSecretsOptional.get();
+        assertEquals("appKey-1-Host-1", recoveredBean.getKey());
         assertTrue(recoveredBean.getSecrets().containsKey("test:secret1"));
         assertFalse(recoveredBean.getSecrets().containsKey("test:secret2"));
         assertEquals("secret1", recoveredBean.getSecrets().get("test:secret1").getString());
@@ -200,13 +200,13 @@ public class ServiceIntegrationAPIImplTest {
 
     @Test
     public void Test_Save_Secrets_Then_Update_Single_Secret_Verify_Updated_Value() throws DotDataException, DotSecurityException {
-        final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
+        final AppsAPI api = APILocator.getAppsAPI();
         final User admin = TestUserUtils.getAdminUser();
         final Host host = new SiteDataGen().nextPersisted();
 
         //Let's create a set of secrets for a service
-        final ServiceSecrets.Builder builder1 = new ServiceSecrets.Builder();
-        final ServiceSecrets secrets1 = builder1.withServiceKey("serviceKey-1-Host-1")
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final AppSecrets secrets1 = builder1.withKey("appKey-1-Host-1")
                 .withHiddenSecret("test:secret1", "secret-1")
                 .withHiddenSecret("test:secret2", "secret-2")
                 .withHiddenSecret("test:secret3", "secret3")
@@ -219,12 +219,12 @@ public class ServiceIntegrationAPIImplTest {
         //We want to change the value from `secret3` to `secret-3` for the secret named "test:secret3"
         final Secret secret = Secret.newSecret("secret-3".toCharArray(), Type.STRING, false);
         //Update the individual secret
-        api.saveSecret("serviceKey-1-Host-1", new Tuple2<>("test:secret3",secret), host, admin);
+        api.saveSecret("appKey-1-Host-1", new Tuple2<>("test:secret3",secret), host, admin);
         //The other properties of the object should remind the same so lets verify so.
-        final Optional<ServiceSecrets> serviceSecretsOptional = api.getSecrets("serviceKey-1-Host-1", host, admin);
+        final Optional<AppSecrets> serviceSecretsOptional = api.getSecrets("appKey-1-Host-1", host, admin);
         assertTrue(serviceSecretsOptional.isPresent());
-        final ServiceSecrets recoveredBean = serviceSecretsOptional.get();
-        assertEquals("serviceKey-1-Host-1", recoveredBean.getServiceKey());
+        final AppSecrets recoveredBean = serviceSecretsOptional.get();
+        assertEquals("appKey-1-Host-1", recoveredBean.getKey());
 
         //We didn't modify the keys just the value associated with `test:secret3`
         assertTrue(recoveredBean.getSecrets().containsKey("test:secret1"));
@@ -242,13 +242,13 @@ public class ServiceIntegrationAPIImplTest {
 
     @Test
     public void Test_Save_Secrets_Then_Delete_Single_Secret_Entry_Then_Add_It_Again_With_New_Value_Then_Verify() throws DotDataException, DotSecurityException {
-        final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
+        final AppsAPI api = APILocator.getAppsAPI();
         final User admin = TestUserUtils.getAdminUser();
         final Host host = new SiteDataGen().nextPersisted();
 
         //Let's create a set of secrets for a service
-        final ServiceSecrets.Builder builder1 = new ServiceSecrets.Builder();
-        final ServiceSecrets secrets1 = builder1.withServiceKey("serviceKeyHost-1")
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final AppSecrets secrets1 = builder1.withKey("appKeyHost-1")
                 .withHiddenSecret("test:secret1", "secret-1")
                 .withHiddenSecret("test:secret2", "secret-2")
                 .withHiddenSecret("test:secret3", "secret-3")
@@ -257,13 +257,13 @@ public class ServiceIntegrationAPIImplTest {
         //Save it
         api.saveSecrets(secrets1, host, admin);
 
-        api.deleteSecret("serviceKeyHost-1",new ImmutableSet.Builder<String>().add("test:secret3").build(), host, admin);
+        api.deleteSecret("appKeyHost-1",new ImmutableSet.Builder<String>().add("test:secret3").build(), host, admin);
 
         //The other properties of the object should remind the same so lets verify so.
-        final Optional<ServiceSecrets> serviceSecretsOptional1 = api.getSecrets("serviceKeyHost-1", host, admin);
+        final Optional<AppSecrets> serviceSecretsOptional1 = api.getSecrets("appKeyHost-1", host, admin);
         assertTrue(serviceSecretsOptional1.isPresent());
-        final ServiceSecrets recoveredBean1 = serviceSecretsOptional1.get();
-        assertEquals("serviceKeyHost-1", recoveredBean1.getServiceKey());
+        final AppSecrets recoveredBean1 = serviceSecretsOptional1.get();
+        assertEquals("appKeyHost-1", recoveredBean1.getKey());
 
         assertTrue(recoveredBean1.getSecrets().containsKey("test:secret1"));
         assertTrue(recoveredBean1.getSecrets().containsKey("test:secret2"));
@@ -279,12 +279,12 @@ public class ServiceIntegrationAPIImplTest {
         final Secret secret = Secret.newSecret("lol".toCharArray(), Type.STRING, false);
 
         //This should create again the entry we just removed.
-        api.saveSecret("serviceKeyHost-1", new Tuple2<>("test:secret3",secret), host, admin);
+        api.saveSecret("appKeyHost-1", new Tuple2<>("test:secret3",secret), host, admin);
 
-        final Optional<ServiceSecrets> serviceSecretsOptional2 = api.getSecrets("serviceKeyHost-1", host, admin);
+        final Optional<AppSecrets> serviceSecretsOptional2 = api.getSecrets("appKeyHost-1", host, admin);
         assertTrue(serviceSecretsOptional2.isPresent());
-        final ServiceSecrets recoveredBean2 = serviceSecretsOptional2.get();
-        assertEquals("serviceKeyHost-1", recoveredBean2.getServiceKey());
+        final AppSecrets recoveredBean2 = serviceSecretsOptional2.get();
+        assertEquals("appKeyHost-1", recoveredBean2.getKey());
 
         assertTrue(recoveredBean2.getSecrets().containsKey("test:secret1"));
         assertTrue(recoveredBean2.getSecrets().containsKey("test:secret2"));
@@ -301,14 +301,14 @@ public class ServiceIntegrationAPIImplTest {
     @Test(expected = DotSecurityException.class)
     public void Test_Non_Admin_User_Read_Attempt() throws DotDataException, DotSecurityException {
         final User nonAdmin = TestUserUtils.getChrisPublisherUser();
-        final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
-        final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final AppSecrets.Builder builder = new AppSecrets.Builder();
         api.saveSecrets(builder.build(), APILocator.systemHost() , nonAdmin);
     }
 
     @Test
     public void Test_Non_Admin_User_With_Portlet_Read_Attempt() throws DotDataException, DotSecurityException {
-        final String integrationsPortletId = ServiceIntegrationAPIImpl.INTEGRATIONS_PORTLET_ID;
+        final String integrationsPortletId = AppsAPIImpl.APPS_PORTLET_ID;
         final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
         final Role backEndUserRole = TestUserUtils.getBackendRole();
         final Portlet portlet = getOrCreateServiceIntegrationPortlet();
@@ -324,14 +324,14 @@ public class ServiceIntegrationAPIImplTest {
 
         assertTrue(layoutAPI.doesUserHaveAccessToPortlet(integrationsPortletId, nonAdminUserWithAccessToPortlet));
 
-        final ServiceIntegrationAPI api = APILocator.getServiceIntegrationAPI();
-        final ServiceSecrets.Builder builder = new ServiceSecrets.Builder();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final AppSecrets.Builder builder = new AppSecrets.Builder();
         api.saveSecrets(builder.build(), APILocator.systemHost() , nonAdminUserWithAccessToPortlet);
     }
 
 
     private Portlet getOrCreateServiceIntegrationPortlet(){
-        final String integrationsPortletId = ServiceIntegrationAPIImpl.INTEGRATIONS_PORTLET_ID;
+        final String integrationsPortletId = AppsAPIImpl.APPS_PORTLET_ID;
         final PortletAPI portletAPI = APILocator.getPortletAPI();
         Portlet portlet = portletAPI.findPortlet(integrationsPortletId);
         if(null == portlet) {
