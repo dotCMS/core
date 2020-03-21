@@ -4,7 +4,6 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
-import com.dotcms.cluster.business.ClusterAPI;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.cms.login.LoginServiceAPI;
@@ -59,7 +58,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPI;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketContainerAPIFactory;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.security.secret.ServiceIntegrationAPI;
+import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPIFactory;
 import com.dotcms.timemachine.business.TimeMachineAPI;
@@ -958,10 +957,10 @@ public class APILocator extends Locator<APIIndex>{
 
 	/**
 	 * Single point of entry to the service integration api
-	 * @return The {@link ServiceIntegrationAPI} class.
+	 * @return The {@link AppsAPI} class.
 	 */
-	public static ServiceIntegrationAPI getServiceIntegrationAPI(){
-	   return (ServiceIntegrationAPI) getInstance(APIIndex.SERVICE_INTEGRATION_API);
+	public static AppsAPI getAppsAPI(){
+	   return (AppsAPI) getInstance(APIIndex.APPS_API);
 	}
 
 	/**
@@ -1111,7 +1110,7 @@ enum APIIndex
 	URLMAP_API,
 	CONTENT_TYPE_FIELD_LAYOUT_API,
 	PUBLISH_AUDIT_API,
-	SERVICE_INTEGRATION_API,
+	APPS_API,
 	DOT_ASSET_API;
 
 
@@ -1191,7 +1190,7 @@ enum APIIndex
 			case URLMAP_API: return new URLMapAPIImpl();
 			case CONTENT_TYPE_FIELD_LAYOUT_API: return new ContentTypeFieldLayoutAPIImpl();
 			case PUBLISH_AUDIT_API: return PublishAuditAPIImpl.getInstance();
-			case SERVICE_INTEGRATION_API: return ServiceIntegrationAPI.INSTANCE.get();
+			case APPS_API: return AppsAPI.INSTANCE.get();
 			case DOT_ASSET_API: return new DotAssetAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);

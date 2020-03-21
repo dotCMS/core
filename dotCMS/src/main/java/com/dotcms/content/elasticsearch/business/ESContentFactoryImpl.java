@@ -1521,9 +1521,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-	protected SearchHits indexSearch(String query, int limit, int offset, String sortBy) {
+	protected SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
 
-	    final String qq = LuceneQueryDateTimeFormatter
+	    final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
 	    // we check the query to figure out wich indexes to hit
@@ -1536,41 +1536,42 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        Logger.fatal(this, "Can't get indicies information",ee);
 	        return null;
 	    }
-	    if(query.contains("+live:true") && !query.contains("+deleted:true"))
-	        indexToHit=info.getLive();
-	    else
-	        indexToHit=info.getWorking();
+	    if(query.contains("+live:true") && !query.contains("+deleted:true")) {
+            indexToHit = info.getLive();
+        } else {
+            indexToHit = info.getWorking();
+        }
 
-
-        SearchRequest searchRequest = new SearchRequest();
+        final SearchRequest searchRequest = new SearchRequest();
         SearchResponse response;
+        final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
         try {
-
-            final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(qq, sortBy);
             searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
             searchRequest.indices(indexToHit);
 
-            if(limit>0)
+            if(limit>0) {
                 searchSourceBuilder.size(limit);
-            if(offset>0)
+            }
+            if(offset>0) {
                 searchSourceBuilder.from(offset);
-
+            }
             if(UtilMethods.isSet(sortBy) ) {
             	sortBy = sortBy.toLowerCase();
 
                 if(sortBy.startsWith("score")){
-            		String[] test = sortBy.split("[,|\\s+]");
+            		String[] sortByCriteria = sortBy.split("[,|\\s+]");
             		String defaultSecondarySort = "moddate";
             		SortOrder defaultSecondardOrder = SortOrder.DESC;
 
-            		if(test.length>2){
-            			if(test[2].equalsIgnoreCase("desc"))
-            				defaultSecondardOrder = SortOrder.DESC;
-            			else
-            				defaultSecondardOrder = SortOrder.ASC;
+            		if(sortByCriteria.length>2){
+            			if(sortByCriteria[2].equalsIgnoreCase("desc")) {
+                            defaultSecondardOrder = SortOrder.DESC;
+                        } else {
+                            defaultSecondardOrder = SortOrder.ASC;
+                        }
             		}
-            		if(test.length>1){
-            			defaultSecondarySort= test[1];
+            		if(sortByCriteria.length>1){
+            			defaultSecondarySort= sortByCriteria[1];
             		}
 
                     searchSourceBuilder.sort("_score", SortOrder.DESC);
@@ -1584,20 +1585,20 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             searchRequest.source(searchSourceBuilder);
             response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
-
-
-        } catch (ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException infe ) {
-            Logger.warn(this.getClass(), "----------------------------------------------");
-            Logger.warn(this.getClass(), "Elasticsearch Index Error : " + indexToHit);
-            Logger.warnAndDebug(this.getClass(), infe.getMessage(), infe);
-            Logger.warn(this.getClass(), "----------------------------------------------");
-
+        } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
+            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
+            Logger.error(this.getClass(), "----------------------------------------------");
+            Logger.error(this.getClass(), String.format("Elasticsearch error in index '%s'", indexToHit));
+            Logger.error(this.getClass(), String.format("Lucene Query: [ %s ]", formattedQuery));
+            Logger.error(this.getClass(), String.format("ES Query: %s", searchSourceBuilder));
+            Logger.error(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
+            Logger.error(this.getClass(), "----------------------------------------------");
             return new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
-
-
-        } catch (Exception e) {
-            Logger.debug(this, e.getMessage(), e);
-            throw new DotRuntimeException(e);
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
+                    formattedQuery, e.getMessage());
+            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
         }
 	    return response.getHits();
 	}
