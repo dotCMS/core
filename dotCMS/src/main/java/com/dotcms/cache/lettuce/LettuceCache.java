@@ -419,7 +419,7 @@ public class LettuceCache extends CacheProvider {
             CacheStats stats = new CacheStats();
             stats.addStat(CacheStats.REGION, "redis: " + entry.getKey());
             stats.addStat(CacheStats.REGION_SIZE, entry.getValue());
-            ret.addStatRecord(stats);
+            //ret.addStatRecord(stats);
         }
 
         NumberFormat nf = DecimalFormat.getInstance();

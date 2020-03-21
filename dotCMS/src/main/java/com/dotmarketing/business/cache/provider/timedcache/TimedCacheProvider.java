@@ -183,6 +183,13 @@ public class TimedCacheProvider extends CacheProvider {
 
             ret.addStatRecord(stats);
         }
+        
+        if(currentGroups.isEmpty()) {
+            CacheStats stats = new CacheStats();
+            stats.addStat(CacheStats.REGION, "n/a");
+            stats.addStat(CacheStats.REGION_SIZE, 0);
+            ret.addStatRecord(stats);
+        }
 
         return ret;
     }
