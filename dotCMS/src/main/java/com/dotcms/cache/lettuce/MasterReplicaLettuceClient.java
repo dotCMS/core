@@ -30,7 +30,7 @@ public enum MasterReplicaLettuceClient implements LettuceClient{
                     Arrays.asList(Config.getStringArrayProperty("redis.lettuceclient.uris", new String[] {"redis://localhost"}))
                                     .stream().map(u -> RedisURI.create(u)).collect(Collectors.toList());
 
-    private final int timeout        = Config.getIntProperty("redis.lettuceclient.timeout.ms", 10000);
+    private final int timeout        = Config.getIntProperty("redis.lettuceclient.timeout.ms", 5000);
     private final int maxConnections = Config.getIntProperty("redis.lettuceclient.max.connections", 50);
     private final GenericObjectPool<StatefulRedisConnection<String, Object>> pool;
 
