@@ -5,6 +5,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.transform.TransformerLocator;
@@ -904,6 +905,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final Container container) {
 
         if(pageContents.contains(container.getIdentifier(), containerUUID.getUUID())){
+            return true;
+        } else if(pageContents.contains(container.getIdentifier(), ParseContainer.PARSE_CONTAINER_UUID_PREFIX + containerUUID.getUUID())) {
             return true;
         } else if (ContainerUUID.UUID_LEGACY_VALUE.equals(containerUUID.getUUID())) {
             boolean pageContenstContains = pageContents.contains(containerUUID.getIdentifier(), ContainerUUID.UUID_START_VALUE);
