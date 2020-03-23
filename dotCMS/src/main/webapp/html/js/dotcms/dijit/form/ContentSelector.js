@@ -263,6 +263,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		var fieldVelocityVarName = field["fieldVelocityVarName"];
 		var fieldContentlet = field["fieldContentlet"];
 		var value = "";
+		var widgetById ='dijit.byId(\'' + this.id +'\')';
 
 		var type = field["fieldFieldType"];
 		if(type=='checkbox'){
@@ -275,7 +276,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 				var actual_option = option[i].split("|");
 				if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0) {
 					var checkId=this.structureVelVar+"."+ fieldVelocityVarName + "Field-D"+ this.dialogCounter+"-O"+i;
-					result = result + "<input onChange=\"dijit.byId('" + this.id +"')._doSearch()\" type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\"" + actual_option[1] + "\" "+
+					result = result + "<input onChange=\""+ widgetById +"._doSearch()\" type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\"" + actual_option[1] + "\" "+
 					"id=\"" + checkId +"\" "+
 					"name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + this.dialogCounter + "\"> " +
 					actual_option[0] + "<br>\n";
@@ -300,7 +301,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			for(var i = 0; i < option.length; i++){
 				var actual_option = option[i].split("|");
 				if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0){
-					result = result + "<input onChange=\"dijit.byId('" + this.id +"')._doSearch()\" type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\"" + actual_option[1] + "\" id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field-R"+ this.counter_radio+"\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\"> " + actual_option[0] + "<br>\n";
+					result = result + "<input onChange=\""+ widgetById +"._doSearch()\" type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\"" + actual_option[1] + "\" id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field-R"+ this.counter_radio+"\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\"> " + actual_option[0] + "<br>\n";
 					if(!this.radiobuttonsIds[this.dialogCounter])
 						this.radiobuttonsIds[this.dialogCounter]=new Array();
 					this.radiobuttonsIds[this.dialogCounter][this.radiobuttonsIds[this.dialogCounter].length] = this.structureVelVar+"."+fieldVelocityVarName + "Field-R"+ this.counter_radio;
@@ -322,9 +323,9 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			var option = field["fieldValues"].split("\r\n");
 			var result="";
 			if (type=='multi_select')
-				result = result+"<select onChange=\"dijit.byId('" + this.id +"')._doSearch()\" dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n";
+				result = result+"<select onChange=\""+ widgetById +"._doSearch()\" dojoType='dijit.form.MultiSelect'  multiple=\"multiple\" size=\"4\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n";
 			else
-				result = result+"<select onChange=\"dijit.byId('" + this.id +"')._doSearch()\" dojoType='dijit.form.FilteringSelect' id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n<option value=\"\">None</option>";
+				result = result+"<select onChange=\""+ widgetById +"._doSearch()\" dojoType='dijit.form.FilteringSelect' id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\">\n<option value=\"\">None</option>";
 
 			for(var i = 0; i < option.length; i++){
 				var actual_option = option[i].split("|");
@@ -358,7 +359,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			result = result + "<tr><td style='padding:0px;'>";
 			result = result +"<textarea id=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "Field" + this.dialogCounter + "\""
 			+ " name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\""
-			+ " cols=\"20\" rows=\"2\" onChange=\"dijit.byId('" + this.id +"')._doDebounceSearch()\"  onkeyup=\"suggestTagsForSearch(this,'"
+			+ " cols=\"20\" rows=\"2\" onChange=\""+ widgetById +"._doDebounceSearch()\"  onkeyup=\"suggestTagsForSearch(this,'"
 			+ this.structureVelVar+"."+ fieldVelocityVarName + "suggestedTagsDiv" + this.dialogCounter + "');\" "
 			+ " style=\"border-color: #7F9DB9; border-style: solid; border-width: 1px; "
 			+ " height: 50px; width: 100%;\" "
@@ -425,7 +426,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			+ ",'" + this.DOT_FIELD_TYPE + "'"
 			+ ",'" + type + "');";
 
-			return "<input type=\"text\" dojoType=\"dijit.form.DateTextBox\" onKeyUp=\"dijit.byId('" + this.id +"')._doDebounceSearch()\" constraints={datePattern:'MM/dd/yyyy'} validate='return false;' invalidMessage=\"\"  id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
+			return "<input type=\"text\" dojoType=\"dijit.form.DateTextBox\" onChange=\""+ widgetById +"._doDebounceSearch()\" onKeyUp=\""+ widgetById +"._doDebounceSearch()\" constraints={datePattern:'MM/dd/yyyy'} validate='return false;' invalidMessage=\"\"  id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
 		}else{
 			var fieldId=this.structureVelVar+"."+ fieldVelocityVarName + "Field" + this.dialogCounter;
 			dijit.registry.remove(fieldId);
@@ -439,7 +440,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 			+ ",'" + this.DOT_FIELD_TYPE + "'"
 			+ ",'" + type + "');";
 
-			return "<input type=\"text\" dojoType=\"dijit.form.TextBox\" onKeyUp=\"dijit.byId('" + this.id +"')._doDebounceSearch()\" data-dojo-props=\"intermediateChanges:true\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
+			return "<input type=\"text\" dojoType=\"dijit.form.TextBox\" onKeyUp=\""+ widgetById +"._doDebounceSearch()\" data-dojo-props=\"intermediateChanges:true\" id=\"" + fieldId + "\" name=\"" + this.structureVelVar+"."+ fieldVelocityVarName + "\" value=\"" + value + "\">";
 
 		}
 	},
