@@ -11,6 +11,7 @@ import okhttp3.ConnectionPool;
 import okhttp3.Credentials;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
+import okhttp3.OkHttpClient.Builder;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -32,7 +33,7 @@ public class NativeHttpRestClient {
 
         final String protocol = sslContext != null ? "https://" : "http://";
 
-        client = new OkHttpClient.Builder()
+        Builder builder = new OkHttpClient.Builder()
                 .authenticator(new Authenticator() {
                     @Override public Request authenticate(Route route, Response response) {
                         if (response.request().header("Authorization") != null) {
@@ -48,9 +49,13 @@ public class NativeHttpRestClient {
                                 .build();
                     }
                 })
-                .sslSocketFactory(sslContext.getSocketFactory())
-                .connectionPool(new ConnectionPool(5, 5, TimeUnit.MINUTES))
-                .build();
+                .connectionPool(new ConnectionPool(5, 5, TimeUnit.MINUTES));
+
+
+        if (sslContext != null){
+            builder.sslSocketFactory(sslContext.getSocketFactory());
+        }
+        client = builder.build();
 
         NativeHttpRestClient.url =
                 protocol + Config.getStringProperty("ES_HOSTNAME", "127.0.0.1") + ":" + Config
