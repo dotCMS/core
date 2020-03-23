@@ -22,15 +22,6 @@
 
 package com.liferay.portal.model;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.TimeZone;
-
-import org.apache.commons.codec.digest.DigestUtils;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
@@ -42,8 +33,15 @@ import com.liferay.util.LocaleUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
-
 import io.vavr.control.Try;
+import org.apache.commons.codec.digest.DigestUtils;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * <a href="User.java.html"><b><i>View Source</i></b></a>
