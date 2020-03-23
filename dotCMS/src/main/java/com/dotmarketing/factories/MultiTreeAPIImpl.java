@@ -899,7 +899,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @param container container
      * @return true in case of the containerUUId is contains in pageContents
      */
-    private boolean doesPageContentsHaveContainer(
+    protected boolean doesPageContentsHaveContainer(
             final Table<String, String, Set<PersonalizedContentlet>> pageContents,
             final ContainerUUID containerUUID,
             final Container container) {
