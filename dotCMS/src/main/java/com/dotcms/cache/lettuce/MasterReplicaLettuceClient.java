@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import io.lettuce.core.ReadFrom;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
@@ -34,18 +34,21 @@ public enum MasterReplicaLettuceClient implements LettuceClient{
     private final int maxConnections = Config.getIntProperty("redis.lettuceclient.max.connections", 50);
     private final GenericObjectPool<StatefulRedisConnection<String, Object>> pool;
 
-    private final ClientResources sharedResources = DefaultClientResources.create();
+    
     MasterReplicaLettuceClient() {
         pool = buildPool();
+        
     }
-
-
-
-    public StatefulRedisConnection<String, Object> get() {
-        return Try.of(() -> pool.borrowObject()).getOrElseThrow(e -> new DotRuntimeException(e));
+    
+    public LettuceConnectionWrapper get() {
+        return Try.of(() -> new LettuceConnectionWrapper(pool.borrowObject()))
+                        .onFailure(e->Logger.warnAndDebug(MasterReplicaLettuceClient.class, "redis unable to connect: " + e, e))
+                        .getOrElse(new LettuceConnectionWrapper(null));
 
     }
-
+    
+    private final ClientResources sharedResources = DefaultClientResources.create();
+    
     private GenericObjectPool<StatefulRedisConnection<String, Object>> buildPool() {
 
         GenericObjectPoolConfig config = new GenericObjectPoolConfig();
@@ -58,16 +61,20 @@ public enum MasterReplicaLettuceClient implements LettuceClient{
 
             RedisClient lettuceClient = RedisClient.create(sharedResources);
 
-            StatefulRedisMasterReplicaConnection<String, Object> connection = MasterReplica.connect(lettuceClient,
-                            CompressionCodec.valueCompressor(new DotObjectCodec(), CompressionCodec.CompressionType.GZIP),
-                            redisUris);
-            connection.setReadFrom(ReadFrom.MASTER_PREFERRED);
-            if (timeout > 0) {
-                connection.setTimeout(Duration.ofMillis(timeout));
+            try {
+                StatefulRedisMasterReplicaConnection<String, Object> connection = MasterReplica.connect(lettuceClient,
+                                CompressionCodec.valueCompressor(new DotObjectCodec(), CompressionCodec.CompressionType.GZIP),
+                                redisUris);
+                connection.setReadFrom(ReadFrom.MASTER_PREFERRED);
+                if (timeout > 0) {
+                    connection.setTimeout(Duration.ofMillis(timeout));
+                }
+                return connection;
             }
-            return connection;
+            catch(Exception e) {
+                return null;
+            }
         }, config, true);
-
 
     }
 }

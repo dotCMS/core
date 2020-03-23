@@ -1,7 +1,6 @@
 package com.dotcms.cache.lettuce;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -15,7 +14,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import com.dotcms.cluster.bean.Server;
-
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -24,7 +22,6 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.ChainableCacheAdministratorImpl;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
@@ -36,7 +33,6 @@ import io.lettuce.core.RedisCommandExecutionException;
 import io.lettuce.core.StreamMessage;
 import io.lettuce.core.XGroupCreateArgs;
 import io.lettuce.core.XReadArgs;
-import io.lettuce.core.api.StatefulRedisConnection;
 import io.vavr.control.Try;
 
 
@@ -139,7 +135,14 @@ public class LettuceTransport implements CacheTransport {
      * makes sure the group is set up and registers this server as a consumer of that group
      */
     void registerStream() {
-        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+        try (LettuceConnectionWrapper conn = lettuce.get()) {
+            
+            if(!conn.connected()) {
+                Logger.info(this, "LettuceTransport unable connect to redis");
+                return;
+            }
+            
+            
             conn.sync().xgroupCreate(XReadArgs.StreamOffset.from(streamsKey(), "$"), serverId,
                             XGroupCreateArgs.Builder.mkstream());
 
@@ -207,7 +210,7 @@ public class LettuceTransport implements CacheTransport {
      */
     void messagesIn() {
 
-        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+        try (LettuceConnectionWrapper conn = lettuce.get()) {
             List<StreamMessage<String, Object>> messages = conn.sync().xreadgroup(Consumer.from(serverId, serverId),
                             XReadArgs.StreamOffset.lastConsumed(streamsKey()));
             // ACK Attack
@@ -282,7 +285,7 @@ public class LettuceTransport implements CacheTransport {
      * @param message
      */
     private void validateCacheResponse(Message message) {
-        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+        try (LettuceConnectionWrapper conn = lettuce.get()) {
             conn.sync().sadd(CACHE_ATTACHED_TO_CACHE, serverId);
         }
     }
@@ -330,7 +333,7 @@ public class LettuceTransport implements CacheTransport {
             messagesOut.addAll(messages);
         }
 
-        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+        try (LettuceConnectionWrapper conn = lettuce.get()) {
             List<String> strList = new ArrayList<>();
             messages.forEach(m -> {
                 strList.add(m.encode());
@@ -383,7 +386,7 @@ public class LettuceTransport implements CacheTransport {
     public Map<String, Boolean> validateCacheInCluster(String dateInMillis, int numberServers, int maxWaitSeconds)
                     throws CacheTransportException {
 
-        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+        try (LettuceConnectionWrapper conn = lettuce.get()) {
             conn.sync().spop(CACHE_ATTACHED_TO_CACHE, 1000000L);
             conn.sync().sadd(CACHE_ATTACHED_TO_CACHE, serverId);
         }
@@ -401,7 +404,7 @@ public class LettuceTransport implements CacheTransport {
             // Trying to NOT wait whole 2 seconds for returning the info.
             while (passedWaitTime <= maxWaitTime) {
 
-                try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+                try (LettuceConnectionWrapper conn = lettuce.get()) {
                     cacheMembers.addAll(conn.sync().smembers(CACHE_ATTACHED_TO_CACHE).stream().map(o -> o.toString())
                                     .collect(Collectors.toSet()));
                 }
@@ -421,7 +424,7 @@ public class LettuceTransport implements CacheTransport {
         Map<String, Boolean> mapToReturn = new HashMap<String, Boolean>();
         cacheMembers.forEach(s -> mapToReturn.put(s, true));
 
-        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+        try (LettuceConnectionWrapper conn = lettuce.get()) {
             conn.sync().spop(CACHE_ATTACHED_TO_CACHE, 1000000L);
 
         }
@@ -432,7 +435,7 @@ public class LettuceTransport implements CacheTransport {
     public void shutdown() throws CacheTransportException {
         if (isInitialized.get()) {
             Logger.info(this.getClass(), "Removing Server:" + serverId + " from cache cluster");
-            try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
+            try (LettuceConnectionWrapper conn = lettuce.get()) {
                 conn.sync().xgroupDestroy(streamsKey(), serverId);
             }
             isInitialized.set(false);
@@ -448,8 +451,7 @@ public class LettuceTransport implements CacheTransport {
     @Override
     public CacheTransportInfo getInfo() {
         final Map<String, String> infoMap = new HashMap<>();
-        try (StatefulRedisConnection<String, Object> conn = lettuce.get()) {
-            String[] urls  = Config.getStringArrayProperty("redis.lettuceclient.uris", new String[] {"redis://localhost"});
+        try (LettuceConnectionWrapper conn = lettuce.get()) {
             Logger.info(this.getClass(), "REDIS INFO ------------");
             String[] infos = conn.sync().info().split("\r\n|\n|\r");
             for (String info : infos) {
