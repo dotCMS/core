@@ -420,8 +420,10 @@ public class SiteSearchJobImpl {
      */
     private String getAliasName(final String aliasName) throws DotDataException {
        if(UtilMethods.isSet(aliasName)){
-          final String cleanedUpAlias = aliasName.split("\\s+")[0].trim(); //This should grab only the first part of the alias name and drop the `(Default)` piece.
-          if(invalidAliasNamePattern.matcher(cleanedUpAlias).matches()){ //Now since we're saving the alias in the quartz job detail and the
+          final String cleanedUpAlias = aliasName.split("\\s+")[0].trim();
+          //This should grab only the first part of the alias name and drop the `(Default)` piece.
+          if(invalidAliasNamePattern.matcher(cleanedUpAlias).matches()){
+          //Since we're saving the alias in the quartz job detail we need to perform this cleanup before it runs.
              throw new DotDataException(String.format("Invalid Alias name `%s` ",aliasName));
           }
           return cleanedUpAlias;
