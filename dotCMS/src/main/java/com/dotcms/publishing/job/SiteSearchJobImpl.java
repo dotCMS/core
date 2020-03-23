@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.BooleanUtils;
@@ -240,7 +241,7 @@ public class SiteSearchJobImpl {
             }
             final boolean isRunNowJob = dataMap.getBooleanFromString(RUN_NOW);
             // Run now jobs can not get the incremental treatment.
-            final String indexAlias = dataMap.getString(INDEX_ALIAS);
+            final String indexAlias = getAliasName(dataMap.getString(INDEX_ALIAS));
             final IndexMetaData indexMetaData = getIndexMetaData(indexAlias);
             final String newIndexName;
             final String indexName;
@@ -385,7 +386,6 @@ public class SiteSearchJobImpl {
         boolean defaultIndex = false;
         long recordCount = 0;
         if (UtilMethods.isSet(indexAlias)) {
-            indexAlias = indexAlias.split("\\s+")[0];
             final List<String> indices = siteSearchAPI.listIndices();
             final Map<String, String> aliasMap = esIndexAPI.getAliasToIndexMap(indices);
             indexName = aliasMap.get(indexAlias);
@@ -407,6 +407,26 @@ public class SiteSearchJobImpl {
             }
         }//if indexName is null. Then the result is interpreted as a new index.
         return new IndexMetaData(indexName, defaultIndex, indexAlias, recordCount == 0);
+    }
+
+    private static final Pattern invalidAliasNamePattern = Pattern.compile("[^a-zA-Z0-9-_]");
+
+    /**
+     * This basically gets rid of the "(Default)" postfix and white spaces.
+     * And applies a validation to make sure the job can run with the saved alias name.
+     * The alias name is applied at the end of the execution so it is a good idea validating it ahead of time.
+     * @param aliasName the alias stored in the quartz-job detail.
+     * @return cleaned up alias string.
+     */
+    private String getAliasName(final String aliasName) throws DotDataException {
+       if(UtilMethods.isSet(aliasName)){
+          final String cleanedUpAlias = aliasName.split("\\s+")[0].trim(); //This should grab only the first part of the alias name and drop the `(Default)` piece.
+          if(invalidAliasNamePattern.matcher(cleanedUpAlias).matches()){ //Now since we're saving the alias in the quartz job detail and the
+             throw new DotDataException(String.format("Invalid Alias name `%s` ",aliasName));
+          }
+          return cleanedUpAlias;
+       }
+       return null;
     }
 
     static class IndexMetaData {
