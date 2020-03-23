@@ -95,7 +95,7 @@ public class DotParse extends DotDirective {
       ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
               .getContentletVersionInfo(identifier.getId(), languageId);
 
-      if (contentletVersionInfo == null || contentletVersionInfo.isDeleted()) {
+      if (contentletVersionInfo == null  ||  UtilMethods.isNotSet(contentletVersionInfo.getIdentifier())  || contentletVersionInfo.isDeleted()) {
 
         final long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         if (defaultLang != languageId) {
@@ -103,7 +103,7 @@ public class DotParse extends DotDirective {
         }
       }
 
-      if ( null == contentletVersionInfo ) {
+      if ( null == contentletVersionInfo || UtilMethods.isNotSet(contentletVersionInfo.getIdentifier()) ) {
           throwNotResourceNotFoundException(params, templatePath);
       }
 

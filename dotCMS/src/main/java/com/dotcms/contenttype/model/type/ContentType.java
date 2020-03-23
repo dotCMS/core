@@ -2,6 +2,7 @@ package com.dotcms.contenttype.model.type;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -162,10 +163,12 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public List<Field> fields() {
     if (innerFields == null) {
       try {
-
         innerFields = APILocator.getContentTypeFieldAPI().byContentTypeId(this.id());
-      } catch (DotDataException e) {
-        throw new DotStateException("unable to load fields:" + e.getMessage(), e);
+      } catch (final DotDataException e) {
+        final String errorMsg = String.format("Unable to load fields for Content Type '%s' [%s]: %s", this.name(),
+                this.id(), e.getMessage());
+        Logger.error(this, errorMsg);
+        throw new DotStateException(errorMsg, e);
       }
     }
     return innerFields;

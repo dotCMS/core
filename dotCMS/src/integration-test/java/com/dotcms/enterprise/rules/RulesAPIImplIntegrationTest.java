@@ -1,12 +1,29 @@
 package com.dotcms.enterprise.rules;
 
-import com.dotcms.datagen.*;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.jgroups.util.Util.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.RuleDataGen;
@@ -20,16 +37,11 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.jgroups.util.Util.assertFalse;
-import static org.junit.Assert.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Integration test of {@link RulesAPIImpl}
@@ -453,6 +465,25 @@ public class RulesAPIImplIntegrationTest {
         final List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, false);
 
         assertTrue( rules.isEmpty());
+    }
+
+    /**
+     * Method to Test: {@link RulesAPIImpl#getAllRulesByParent(Ruleable, User, boolean)}
+     * When: The parent is not a site, or a page
+     * Should: Return an empty list
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void not_site_not_page_shouldReturnEmptyList()
+            throws DotSecurityException, DotDataException {
+
+        final Contentlet notSiteOrPage = TestDataUtils.getGenericContentContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+        final List<Rule> rules = rulesAPI.getAllRulesByParent(notSiteOrPage, systemUser, false);
+        assertTrue(rules.isEmpty());
     }
 
     /**
