@@ -349,6 +349,7 @@ public class UserResource implements Serializable {
 			if (session.getAttribute(WebKeys.PRINCIPAL_USER_ID) == null) {
 				session.setAttribute(WebKeys.PRINCIPAL_USER_ID, sessionData.get(WebKeys.PRINCIPAL_USER_ID));
 			}
+			session.removeAttribute(WebKeys.USER);
 			session.setAttribute(WebKeys.USER_ID, sessionData.get(WebKeys.USER_ID));
 			PrincipalThreadLocal.setName(loginAsUserId);
 			session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,
@@ -449,6 +450,7 @@ public class UserResource implements Serializable {
 			currentLoginAsUser = PortalUtil.getUser(httpServletRequest);
 			Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			session.setAttribute(WebKeys.USER_ID, principalUserId);
+			session.removeAttribute(WebKeys.USER);
 			session.removeAttribute(WebKeys.PRINCIPAL_USER_ID);
 			session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,
 					sessionData.get(com.dotmarketing.util.WebKeys.CURRENT_HOST));
