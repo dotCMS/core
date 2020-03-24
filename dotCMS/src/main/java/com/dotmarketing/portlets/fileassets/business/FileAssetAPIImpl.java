@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.MimeTypeUtils;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.api.system.event.Payload;
@@ -53,6 +54,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.velocity.exception.ResourceNotFoundException;
 
 /**
  * This class is a bridge impl that will support the older
@@ -74,7 +76,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	    this(APILocator.getContentletAPI(),APILocator.getPermissionAPI(),APILocator.getSystemEventsAPI(),APILocator.getIdentifierAPI());
 	}
 
-   public FileAssetAPIImpl(ContentletAPI contAPI,PermissionAPI perAPI, SystemEventsAPI systemEventsAPI, IdentifierAPI identifierAPI ) {
+	@VisibleForTesting
+    public FileAssetAPIImpl(ContentletAPI contAPI,PermissionAPI perAPI, SystemEventsAPI systemEventsAPI, IdentifierAPI identifierAPI ) {
 
         this.contAPI = contAPI;
         this.perAPI = perAPI;
@@ -110,6 +113,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 		try{
 			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles),
 					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+		} catch (ResourceNotFoundException e) {
+
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
