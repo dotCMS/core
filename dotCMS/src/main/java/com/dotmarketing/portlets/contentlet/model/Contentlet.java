@@ -272,7 +272,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     @Override
-    public String getTitle(){
+    public final String getTitle(){
     	try {
 
     		if (UtilMethods.isSet(this.map.get(TITTLE_KEY))) {

@@ -209,10 +209,6 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
         setStringProperty(HTMLPageAssetAPI.TITLE_FIELD, title);
     }    
     
-    @Override
-    public String getTitle() {
-        return getStringProperty(HTMLPageAssetAPI.TITLE_FIELD);
-    }
 
     @Override
     public boolean isContent() {
