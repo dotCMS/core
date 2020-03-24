@@ -401,6 +401,7 @@ public class UserResource implements Serializable {
 			session.setAttribute(WebKeys.PRINCIPAL_USER_ID, null);
 		}
 		final String userToImpersonate = (UtilMethods.isSet(loginAsUserId) ? loginAsUserId : principalUserId);
+        session.removeAttribute(WebKeys.USER);
 		session.setAttribute(WebKeys.USER_ID, userToImpersonate);
 		PrincipalThreadLocal.setName(loginAsUserId);
 		session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, site);
