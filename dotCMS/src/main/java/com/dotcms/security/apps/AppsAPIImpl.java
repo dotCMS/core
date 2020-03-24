@@ -51,6 +51,7 @@ public class AppsAPIImpl implements AppsAPI {
     static final String APPS_PORTLET_ID = "apps";
     private static final String HOST_SECRET_KEY_SEPARATOR = ":";
     private static final String DOT_GLOBAL_SERVICE = "dotCMSGlobalService";
+    private static final String SERVER_DIR_NAME = "server";
     private static final String APPS_DIR_NAME = "apps";
     private static final String APPS_DIR_PATH_KEY = "APPS_DIR_PATH_KEY";
 
@@ -492,7 +493,7 @@ public class AppsAPIImpl implements AppsAPI {
 
     private static String getServiceDescriptorDirectory() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + File.separator + APPS_DIR_NAME + File.separator;
+        + File.separator + SERVER_DIR_NAME + File.separator + APPS_DIR_NAME + File.separator;
         final String dirPath = Config
                 .getStringProperty(APPS_DIR_PATH_KEY, supplier.get());
         return Paths.get(dirPath).normalize().toString();

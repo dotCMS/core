@@ -152,7 +152,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertNotNull(appIntegrationResponse);
             Assert.assertEquals(HttpStatus.SC_OK, appIntegrationResponse.getStatus());
             final Response availableAppsResponse = appsResource
-                    .listAvailableApps(request, response);
+                    .listAvailableApps(request, response, null);
             Assert.assertEquals(HttpStatus.SC_OK, availableAppsResponse.getStatus());
             final ResponseEntityView responseEntityView1 = (ResponseEntityView) availableAppsResponse
                     .getEntity();
@@ -260,7 +260,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertNotNull(appResponse);
             Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
             final Response availableAppsResponse = appsResource
-                    .listAvailableApps(request, response);
+                    .listAvailableApps(request, response, null);
             Assert.assertEquals(HttpStatus.SC_OK, availableAppsResponse.getStatus());
             final ResponseEntityView responseEntityView1 = (ResponseEntityView) availableAppsResponse
                     .getEntity();
@@ -402,7 +402,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertEquals(HttpStatus.SC_OK, deleteAppResponse.getStatus());
 
             final Response availableAppsResponse = appsResource
-                    .listAvailableApps(request, response);
+                    .listAvailableApps(request, response, null);
             Assert.assertEquals(HttpStatus.SC_OK, availableAppsResponse.getStatus());
             final ResponseEntityView responseEntityView1 = (ResponseEntityView) availableAppsResponse
                     .getEntity();
@@ -637,7 +637,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertNotNull(appResponse);
             Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
             final Response availableAppsResponse = appsResource
-                    .listAvailableApps(request, response);
+                    .listAvailableApps(request, response, null);
             Assert.assertEquals(HttpStatus.SC_OK, availableAppsResponse.getStatus());
             final ResponseEntityView responseEntityView1 = (ResponseEntityView) availableAppsResponse
                     .getEntity();

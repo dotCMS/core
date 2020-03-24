@@ -39,13 +39,14 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 /**
  * Bridge class that encapsulates the logic necessary to consume the appsAPI
- * And forward to the AppsResource
+ * and forward it to AppsResource
  */
 class AppsHelper {
 
@@ -80,10 +81,15 @@ class AppsHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    List<AppView> getAvailableDescriptorViews(final User user)
+    List<AppView> getAvailableDescriptorViews(final User user, final String filter)
             throws DotSecurityException, DotDataException {
         final List<AppView> views = new ArrayList<>();
-        final List<AppDescriptor> appDescriptors = appsAPI.getAppDescriptors(user);
+        List<AppDescriptor> appDescriptors = appsAPI.getAppDescriptors(user);
+        if(UtilMethods.isSet(filter)) {
+           final String regexFilter = "(.*)"+filter+"(.*)";
+           appDescriptors = appDescriptors.stream().filter(appDescriptor -> appDescriptor.getName().matches(regexFilter)).collect(
+                   Collectors.toList());
+        }
         final Set<String> hostIdentifiers = appsAPI.appKeysByHost().keySet();
         for (final AppDescriptor appDescriptor : appDescriptors) {
             final String appKey = appDescriptor.getKey();
@@ -164,7 +170,7 @@ class AppsHelper {
             final AppDescriptor appDescriptor = appDescriptorOptional.get();
             final Host host = hostAPI.find(siteId, user, false);
             if (null == host) {
-                throw new DotDataException(
+                throw new DoesNotExistException(
                         String.format(" Couldn't find any host with identifier `%s` ", siteId));
             }
 
@@ -201,7 +207,7 @@ class AppsHelper {
         }
         final Host host = hostAPI.find(siteId, user, false);
         if (null == host) {
-            throw new DotDataException(
+            throw new DoesNotExistException(
                     String.format(" Couldn't find any site with identifier `%s` ", siteId));
         }
         appsAPI.deleteSecrets(key, host, user);

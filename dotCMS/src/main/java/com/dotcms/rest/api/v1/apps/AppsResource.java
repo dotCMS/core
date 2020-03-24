@@ -71,7 +71,8 @@ public class AppsResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response listAvailableApps(@Context final HttpServletRequest request,
-                                                @Context final HttpServletResponse response
+                                            @Context final HttpServletResponse response,
+                                            @QueryParam("filter") final String filter
     ) {
         try {
             final InitDataObject initData =
@@ -82,11 +83,8 @@ public class AppsResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            final List<AppView> appViews = helper.getAvailableDescriptorViews(user);
-            if(!appViews.isEmpty()){
-                return Response.ok(new ResponseEntityView(appViews)).build(); // 200
-            }
-            throw new DoesNotExistException("No app integration is available to configure. Try uploading a file!");
+            final List<AppView> appViews = helper.getAvailableDescriptorViews(user, filter);
+            return Response.ok(new ResponseEntityView(appViews)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(), "Exception on listing all available apps.", e);
@@ -174,7 +172,7 @@ public class AppsResource {
                 .build(); // 200
             }
             throw new DoesNotExistException(String.format(
-                        "Nope. No app was found for key `%s` and siteId `%s`. ",
+                        "No app was found for key `%s` and siteId `%s`. ",
                         key, siteId));
 
         } catch (Exception e) {
