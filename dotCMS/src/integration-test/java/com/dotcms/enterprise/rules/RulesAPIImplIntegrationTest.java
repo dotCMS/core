@@ -1,10 +1,25 @@
 package com.dotcms.enterprise.rules;
 
-import com.dotcms.datagen.*;
+import static com.dotcms.util.CollectionsUtils.list;
+import static org.jgroups.util.Util.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -20,16 +35,11 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.list;
-import static org.jgroups.util.Util.assertFalse;
-import static org.junit.Assert.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Integration test of {@link RulesAPIImpl}
@@ -387,14 +397,19 @@ public class RulesAPIImplIntegrationTest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test (expected = DotSecurityException.class)
+    @Test
     public void shouldThrowDotSecurityException() throws DotSecurityException, DotDataException {
         final Role role = new RoleDataGen().nextPersisted();
         final User user = new UserDataGen().roles(role).nextPersisted();
         final Host host = new SiteDataGen().nextPersisted();
         new RuleDataGen().host(host).nextPersisted();
 
-        rulesAPI.getAllRulesByParent(host, user, false);
+        try {
+            rulesAPI.getAllRulesByParent(host, user, false);
+            throw new AssertionError("DotSecurityException expected");
+        } catch (DotSecurityException e) {
+            assertEquals("User " + user.getUserId() + " does not have permissions to VIEW Rules", e.getMessage());
+        }
     }
 
     /**
