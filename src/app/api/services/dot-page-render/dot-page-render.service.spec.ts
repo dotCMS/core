@@ -120,7 +120,7 @@ describe('DotPageRenderService', () => {
             );
         });
 
-        it('should get a page with all params', () => {
+        it('should get a page with all params and preserve render options over extraParams', () => {
             service
                 .get({
                     url,
@@ -135,11 +135,11 @@ describe('DotPageRenderService', () => {
                             identifier: '6789'
                         }
                     }
-                })
+                }, {language_id: '1'})
                 .subscribe();
 
             expect(lastConnection[0].request.url).toBe(
-                `v1/page/render/${url}?com.dotmarketing.persona.id=6789&device_inode=1234&language_id=3`
+                `v1/page/render/${url}?language_id=3&com.dotmarketing.persona.id=6789&device_inode=1234`
             );
         });
     });
