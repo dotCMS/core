@@ -1,5 +1,9 @@
 package com.dotcms.rest.api.v1.user;
 
+import static com.dotcms.util.CollectionsUtils.getMapValue;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
@@ -33,8 +37,11 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
-import org.glassfish.jersey.server.JSONP;
-
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -48,19 +55,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import static com.dotcms.util.CollectionsUtils.getMapValue;
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
+import org.glassfish.jersey.server.JSONP;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
- * 
+ *
  * @author Geoff Granum
  * @version 3.5, 3.7
  * @since Mar 29, 2016
@@ -86,7 +85,7 @@ public class UserResource implements Serializable {
 
 	@VisibleForTesting
 	protected UserResource(final WebResource webResource,  final UserAPI userAPI, final HostAPI siteAPI, final UserResourceHelper userHelper,
-			final ErrorResponseHelper errorHelper) {
+						   final ErrorResponseHelper errorHelper) {
 		this.webResource = webResource;
 		this.userAPI = userAPI;
 		this.siteAPI = siteAPI;
@@ -95,18 +94,18 @@ public class UserResource implements Serializable {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param request
 	 * @return
 	 */
-    @GET
-    @JSONP
-    @Path("/current")
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public RestUser self(@Context final  HttpServletRequest request, final @Context HttpServletResponse response) {
+	@GET
+	@JSONP
+	@Path("/current")
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public RestUser self(@Context final  HttpServletRequest request, final @Context HttpServletResponse response) {
 
-        final User user = new WebResource.InitBuilder(webResource)
+		final User user = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requiredFrontendUser(false)
 				.requestAndResponse(request, response)
@@ -115,106 +114,106 @@ public class UserResource implements Serializable {
 
 		final RestUser.Builder currentUser = new RestUser.Builder();
 
-        if(user != null) {
-            try {
-                final Role role = APILocator.getRoleAPI().getUserRole(user);
-                currentUser.userId(user.getUserId())
-                    .givenName(user.getFirstName())
-                    .email(user.getEmailAddress())
-                    .surname(user.getLastName())
-                    .roleId(role.getId());
-            } catch (final DotDataException e) {
+		if(user != null) {
+			try {
+				final Role role = APILocator.getRoleAPI().getUserRole(user);
+				currentUser.userId(user.getUserId())
+						.givenName(user.getFirstName())
+						.email(user.getEmailAddress())
+						.surname(user.getLastName())
+						.roleId(role.getId());
+			} catch (final DotDataException e) {
 				Logger.error(this, "Could not provide current user: " + e.getMessage(), e);
 				throw new BadRequestException("Could not provide current user.");
-            }
-        }
+			}
+		}
 
-        return currentUser.build();
-    }
+		return currentUser.build();
+	}
 
-    /**
-     * 
-     * @param httpServletRequest
-     * @param updateUserForm
-     * @return
-     * @throws Exception
-     */
-    @PUT
-    @JSONP
-    @Path("/current")
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response update(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,
-                                 final UpdateUserForm updateUserForm) throws Exception {
+	/**
+	 *
+	 * @param httpServletRequest
+	 * @param updateUserForm
+	 * @return
+	 * @throws Exception
+	 */
+	@PUT
+	@JSONP
+	@Path("/current")
+	@NoCache
+	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	public final Response update(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,
+								 final UpdateUserForm updateUserForm) throws Exception {
 
-        final User modUser = new WebResource.InitBuilder(webResource)
-						.requiredBackendUser(true)
-						.requiredFrontendUser(false)
-						.requestAndResponse(httpServletRequest, httpServletResponse)
-						.rejectWhenNoUser(true)
-						.init().getUser();
+		final User modUser = new WebResource.InitBuilder(webResource)
+				.requiredBackendUser(true)
+				.requiredFrontendUser(false)
+				.requestAndResponse(httpServletRequest, httpServletResponse)
+				.rejectWhenNoUser(true)
+				.init().getUser();
 
-        Response response;
-        final String date = DateUtil.getCurrentDate();
-        final User userToUpdated;
-        Locale locale = LocaleUtil.getLocale(httpServletRequest);
-        final Locale systemLocale = this.userAPI.getSystemUser().getLocale();
-        Map<String, Object> userMap = Collections.EMPTY_MAP;
+		Response response;
+		final String date = DateUtil.getCurrentDate();
+		final User userToUpdated;
+		Locale locale = LocaleUtil.getLocale(httpServletRequest);
+		final Locale systemLocale = this.userAPI.getSystemUser().getLocale();
+		Map<String, Object> userMap = Collections.EMPTY_MAP;
 
-        this.helper.log("Updating User", "Date: " + date + "; "
-                + "User:" + modUser.getUserId());
+		this.helper.log("Updating User", "Date: " + date + "; "
+				+ "User:" + modUser.getUserId());
 
-        try {
+		try {
 
-            if (null == locale) {
-                locale = modUser.getLocale();
-            }
+			if (null == locale) {
+				locale = modUser.getLocale();
+			}
 
 			userToUpdated = this.helper.updateUser(updateUserForm, modUser, httpServletRequest, locale);
-            this.helper.log("User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+			this.helper.log("User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 
 			boolean reAuthenticationRequired =  null != updateUserForm.getNewPassword();
 
-            if (!reAuthenticationRequired) { // if re authentication is not required, sent the current changed user
-                userMap = userToUpdated.toMap();
-            }
+			if (!reAuthenticationRequired) { // if re authentication is not required, sent the current changed user
+				userMap = userToUpdated.toMap();
+			}
 
-            response = Response.ok(new ResponseEntityView(map("userID", userToUpdated.getUserId(),
-                    "reauthenticate", reAuthenticationRequired, "user", userMap))).build(); // 200
-        } catch (final UserFirstNameException e) {
+			response = Response.ok(new ResponseEntityView(map("userID", userToUpdated.getUserId(),
+					"reauthenticate", reAuthenticationRequired, "user", userMap))).build(); // 200
+		} catch (final UserFirstNameException e) {
 
-            this.helper.log("Error Updating User. Invalid First Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-            response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, "User-Info-Save-First-Name-Failed");
-        } catch (final UserLastNameException e) {
+			this.helper.log("Error Updating User. Invalid First Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, "User-Info-Save-First-Name-Failed");
+		} catch (final UserLastNameException e) {
 
-            this.helper.log("Error Updating User. Invalid Last Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-            response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, "User-Info-Save-Last-Name-Failed");
-        } catch (final DotSecurityException  e) {
+			this.helper.log("Error Updating User. Invalid Last Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, "User-Info-Save-Last-Name-Failed");
+		} catch (final DotSecurityException  e) {
 
-            this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-            response = this.errorHelper.getErrorResponse(Response.Status.UNAUTHORIZED, locale, "User-Doesnot-Have-Permission");
-        } catch (final NoSuchUserException  e) {
+			this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			response = this.errorHelper.getErrorResponse(Response.Status.UNAUTHORIZED, locale, "User-Doesnot-Have-Permission");
+		} catch (final NoSuchUserException  e) {
 
-            this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-            response = this.errorHelper.getErrorResponse(Response.Status.NOT_FOUND, locale, "User-Not-Found");
-        } catch (final DotDataException e) {
-        	if(null != e.getMessageKey()){
-        		this.helper.log("Error Updating User. "+e.getFormattedMessage(systemLocale), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-        		response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, e.getMessageKey());
-        	} else{
-        		this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-        		response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-        	}
-    	} catch (final IncorrectPasswordException e) {
+			this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			response = this.errorHelper.getErrorResponse(Response.Status.NOT_FOUND, locale, "User-Not-Found");
+		} catch (final DotDataException e) {
+			if(null != e.getMessageKey()){
+				this.helper.log("Error Updating User. "+e.getFormattedMessage(systemLocale), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+				response = this.errorHelper.getErrorResponse(Response.Status.BAD_REQUEST, locale, e.getMessageKey());
+			} else{
+				this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+				response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+			}
+		} catch (final IncorrectPasswordException e) {
 			this.helper.log("Error Updating User. " + e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
-		}catch (final Exception  e) {
-        	this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
-        	response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-        }
+		} catch (final Exception  e) {
+			this.helper.log("Error Updating User. "+e.getMessage(), "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+		}
 
-        return response;
-    } // update.
+		return response;
+	} // update.
 
 	/**
 	 * Returns a list of dotCMS users based on the specified search criteria.
@@ -241,17 +240,17 @@ public class UserResource implements Serializable {
 	 * </ul>
 	 * <p>
 	 * Example #1
-	 * 
+	 *
 	 * <pre>
 	 * http://localhost:8080/api/v1/users/filter/permission/1/start/0/limit/30/includeAnonymous/false/includeDefault/false
 	 * </pre>
-	 * 
+	 *
 	 * Example #2
-	 * 
+	 *
 	 * <pre>
 	 * http://localhost:8080/api/v1/users/filter/assetInode/6e13c345-4599-49d0-aa47-6a7e59245247/permission/1/query/John/start/0/limit/10/includeAnonymous/false/includeDefault/false
 	 * </pre>
-	 * 
+	 *
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 * @param params
@@ -278,10 +277,10 @@ public class UserResource implements Serializable {
 		Map<String, Object> userList;
 		try {
 			final Map<String, String> filterParams = map(
-					"query", urlParams.get("query"), 
-					"start", getMapValue(urlParams, "start", "0"), 
+					"query", urlParams.get("query"),
+					"start", getMapValue(urlParams, "start", "0"),
 					"limit", getMapValue(urlParams, "limit", "-1"),
-					"includeAnonymous", getMapValue(urlParams, "includeAnonymous", "false"), 
+					"includeAnonymous", getMapValue(urlParams, "includeAnonymous", "false"),
 					"includeDefault", getMapValue(urlParams, "includeDefault", "false"));
 			userList = this.helper.getUserList(urlParams.get("assetInode"), urlParams.get("permission"), filterParams);
 		} catch (final Exception e) {
@@ -303,17 +302,17 @@ public class UserResource implements Serializable {
 	 * </ul>
 	 * <p>
 	 * Example #1: Login as non-admin user.
-	 * 
+	 *
 	 * <pre>
 	 * http://localhost:8080/api/v1/users/loginas/userid/dotcms.org.2789
 	 * </pre>
-	 * 
+	 *
 	 * Example #2: Login as admin user.
-	 * 
+	 *
 	 * <pre>
 	 * http://localhost:8080/api/v1/users/loginas/userid/dotcms.org.2/pwd/admin
 	 * </pre>
-	 * 
+	 *
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 *            - The parameters that can be specified in the REST call.
@@ -346,17 +345,17 @@ public class UserResource implements Serializable {
 			final Map<String, Object> sessionData = this.helper.doLoginAs(currentUser, loginAsUserId, loginAsUserPwd, serverName);
 			updateLoginAsSessionInfo(request, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
-			this.setCurrentSite(request, sessionData.get(WebKeys.USER_ID).toString());
+			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
 			response = Response.ok(new ResponseEntityView(map("loginAs", true))).build();
 		} catch (final NoSuchUserException | DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
-					"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
+							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
 			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
 			return ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
 		} catch (final DotDataException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
-					"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
+							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
 			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
 			if (UtilMethods.isSet(e.getMessageKey())) {
@@ -422,7 +421,22 @@ public class UserResource implements Serializable {
 		updateLoginAsSessionInfo(request, currentSite, principalUserId, null);
 	}
 
-	private void setCurrentSite(final HttpServletRequest req, final String userID) throws DotDataException, DotSecurityException {
+	/**
+	 * Sets the appropriate Site for the user that is being impersonated. The approach is the following:
+	 * <ul>
+	 *     <li>If the impersonated user has access to the Site previously selected by the impersonating user, then
+	 *     return the same Site.</li>
+	 *     <li>If the impersonated user DOES NOT have access to it, then traverse the list of Sites such a user has
+	 *     access to and return the first one.</li>
+	 * </ul>
+	 *
+	 * @param req    The {@link HttpServletRequest} object.
+	 * @param userID The ID of the user that is being impersonated.
+	 *
+	 * @throws DotDataException     An error ocurred when accessing the data source.
+	 * @throws DotSecurityException The specified user does not have permissions to perform this action.
+	 */
+	private void setImpersonatedUserSite(final HttpServletRequest req, final String userID) throws DotDataException, DotSecurityException {
 		final HttpSession session = req.getSession();
 		final User user = this.userAPI.loadUserById(userID);
 		final String currentSiteID = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
@@ -447,11 +461,11 @@ public class UserResource implements Serializable {
 	 * dotCMS.
 	 * <p>
 	 * Example:
-	 * 
+	 *
 	 * <pre>
 	 * http://localhost:8080/api/v1/users/logoutas
 	 * </pre>
-	 * 
+	 *
 	 * @param httpServletRequest
 	 *            - The {@link HttpServletRequest} object.
 	 * @return A {@link Response} containing the status of the operation. This
@@ -530,7 +544,7 @@ public class UserResource implements Serializable {
 	@Deprecated
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public final Response loginAsData(@Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @QueryParam("filter") final String filter,
-			@QueryParam("includeUsersCount") final boolean includeUsersCount) {
+									  @QueryParam("includeUsersCount") final boolean includeUsersCount) {
 		Response response;
 		User currentUser = new User();
 		try {
