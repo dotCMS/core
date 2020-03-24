@@ -2225,8 +2225,6 @@ CREATE TABLE cluster_server_uptime(id varchar(36) primary key, server_id varchar
 ALTER TABLE cluster_server_uptime add constraint fk_cluster_server_id foreign key (server_id) REFERENCES cluster_server(server_id);
 
 
-
-CREATE ALIAS load_records_to_index FOR "com.dotcms.h2.H2Procedure.loadRecordsToIndex";
 CREATE ALIAS dotFolderPath FOR "com.dotcms.h2.H2Procedure.dotFolderPath";
 CREATE TRIGGER rename_folder_assets_trigger AFTER UPDATE ON Folder FOR EACH ROW CALL "com.dotcms.h2.FolderRenameTrigger";
 CREATE TRIGGER check_child_assets_trigger BEFORE DELETE ON identifier FOR EACH ROW CALL "com.dotcms.h2.CheckChildAssetTrigger";
