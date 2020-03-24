@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import graphql.AssertException;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -410,7 +410,7 @@ public class RulesAPIImplIntegrationTest {
 
         try {
             rulesAPI.getAllRulesByParent(host, user, false);
-            throw new AssertException("DotSecurityException expected");
+            throw new AssertionError("DotSecurityException expected");
         } catch (DotSecurityException e) {
             assertEquals("User " + user.getUserId() + " does not have permissions to VIEW Rules", e.getMessage());
         }
