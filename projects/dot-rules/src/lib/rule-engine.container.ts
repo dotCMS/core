@@ -152,7 +152,7 @@ export class RuleEngineContainer implements OnDestroy {
     this.initRules();
 
     this._ruleService._errors$.subscribe(res => {
-      this.state.globalError = res.message;
+      this.ruleViewService.showErrorMessage(res.message, false);
       this.state.loading = false;
       this.state.showRules = false;
     });

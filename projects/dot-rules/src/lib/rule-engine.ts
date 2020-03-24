@@ -1,5 +1,5 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Component, EventEmitter, Input, Output, OnDestroy } from '@angular/core';
+import { Observable, Subject } from 'rxjs';
 import { RuleModel, RULE_CREATE } from './services/Rule';
 import { I18nService } from './services/system/locale/I18n';
 import { CwFilter } from './services/util/CwFilter';
@@ -11,7 +11,8 @@ import {
     ConditionGroupActionEvent
 } from './rule-engine.container';
 import { IPublishEnvironment } from './services/bundle-service';
-import { RuleViewService } from './services/dot-view-rule-service';
+import { RuleViewService, DotRuleMessage } from './services/dot-view-rule-service';
+import { takeUntil } from 'rxjs/operators';
 
 const I8N_BASE = 'api.sites.ruleengine';
 
@@ -26,7 +27,7 @@ const I8N_BASE = 'api.sites.ruleengine';
     <div class="header">{{globalError}}</div>
     <p>Please contact an administrator</p>
 
-    <i class="material-icons" class="close-button" (click)="globalError = ''">X</i>
+    <i *ngIf="showCloseButton" class="material-icons" class="close-button" (click)="globalError = ''">X</i>
   </div>
 <div class="cw-rule-engine" *ngIf="!loading && showRules">
   <div class="cw-header">
@@ -87,7 +88,7 @@ const I8N_BASE = 'api.sites.ruleengine';
 
 `
 })
-export class RuleEngineComponent {
+export class RuleEngineComponent implements OnDestroy {
     @Input() rules: RuleModel[];
     @Input() ruleActionTypes: { [key: string]: ServerSideTypeModel } = {};
     @Input() loading: boolean;
@@ -123,13 +124,15 @@ export class RuleEngineComponent {
     @Output() updateConditionOperator: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
 
     globalError: string;
-
+    showCloseButton: boolean;
+    
     filterText: string;
     status: string;
     activeRules: number;
 
     private resources: I18nService;
     private _rsrcCache: { [key: string]: Observable<string> };
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(resources: I18nService, private ruleViewService: RuleViewService) {
         this.resources = resources;
@@ -139,10 +142,18 @@ export class RuleEngineComponent {
         this._rsrcCache = {};
         this.status = null;
 
-        this.ruleViewService.message.subscribe((message: string) => {
-            this.globalError = message;
-        });
+        this.ruleViewService.message
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((dotRuleMessage: DotRuleMessage) => {
+                this.globalError = dotRuleMessage.message;
+                this.showCloseButton = dotRuleMessage.allowClose;
+            });
     }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+      }
 
     rsrc(subkey: string): Observable<any> {
         let x = this._rsrcCache[subkey];
