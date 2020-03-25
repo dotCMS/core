@@ -133,13 +133,13 @@ describe('DotRouterService', () => {
     });
 
     it('should go to create integration service', () => {
-        service.goToIntegrationService('123', { configured: false, name: 'test', id: '1' });
-        expect(router.navigate).toHaveBeenCalledWith(['/integration-services/123/create/1']);
+        service.goToAppsServices('123', { configured: false, name: 'test', id: '1' });
+        expect(router.navigate).toHaveBeenCalledWith(['/apps/123/create/1']);
     });
 
     it('should go to edit integration service', () => {
-        service.goToIntegrationService('123', { configured: true, name: 'test', id: '1' });
-        expect(router.navigate).toHaveBeenCalledWith(['/integration-services/123/edit/1']);
+        service.goToAppsServices('123', { configured: true, name: 'test', id: '1' });
+        expect(router.navigate).toHaveBeenCalledWith(['/apps/123/edit/1']);
     });
 
     it('should return true if a portlet is jsp', () => {

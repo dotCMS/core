@@ -1,0 +1,17 @@
+<div class="dot-apps__container">
+    <div class="dot-apps__header">
+        <input
+            pInputText
+            #searchInput
+            type="text"
+            [placeholder]="messagesKey['apps.search.placeholder']"
+        />
+    </div>
+    <div class="dot-apps__body">
+        <dot-apps-card
+            *ngFor="let integration of serviceIntegrationsCopy"
+            [serviceIntegration]="integration"
+            (actionFired)="goToIntegration($event)"
+        ></dot-apps-card>
+    </div>
+</div>

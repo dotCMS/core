@@ -3,7 +3,7 @@ import { Router, ActivatedRoute, Params } from '@angular/router';
 
 import { PortletNav } from '@models/navigation';
 import { Subject } from 'rxjs';
-import { DotServiceIntegrationSites } from '@shared/models/dot-service-integration/dot-service-integration.model';
+import { DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
 
 @Injectable()
 export class DotRouterService {
@@ -106,14 +106,14 @@ export class DotRouterService {
      * Redirects to create/edit configuration site page
      *
      * @param string integrationKey
-     * @param DotServiceIntegrationSites site
+     * @param DotAppsSites site
      * @memberof DotRouterService
      */
-    goToIntegrationService(integrationKey: string, site: DotServiceIntegrationSites) {
+    goToAppsServices(integrationKey: string, site: DotAppsSites) {
         const route =
             site && site.configured
-                ? `/integration-services/${integrationKey}/edit/${site.id}`
-                : `/integration-services/${integrationKey}/create/${site.id}`;
+                ? `/apps/${integrationKey}/edit/${site.id}`
+                : `/apps/${integrationKey}/create/${site.id}`;
         this.router.navigate([route]);
     }
 

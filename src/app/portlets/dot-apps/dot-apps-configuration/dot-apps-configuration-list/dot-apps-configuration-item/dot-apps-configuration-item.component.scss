@@ -1,0 +1,39 @@
+@import "variables";
+
+:host {
+    border: 1px solid $gray-lighter;
+    cursor: pointer;
+    display: flex;
+    height: 66px;
+    margin-right: $basic-padding * 2;
+    margin-top: $basic-padding * 2;
+    padding: $basic-padding 0;
+    transition: box-shadow $basic-speed ease-in;
+    width: 100%;
+
+    &:hover {
+        box-shadow: $md-shadow-5;
+    }
+
+    dot-icon-button {
+        align-self: center;
+        margin-right: $basic-padding * 2;
+    }
+}
+
+.dot-apps-configuration-list__name,
+.dot-apps-configuration-list__host-key {
+    align-self: center;
+    margin-left: $basic-padding * 2;
+    white-space: nowrap;
+}
+
+.dot-apps-configuration-list__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dot-apps-configuration-list__host-key {
+    color: $gray;
+    flex-grow: 1;
+}

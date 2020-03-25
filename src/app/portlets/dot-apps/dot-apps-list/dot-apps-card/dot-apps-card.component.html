@@ -1,0 +1,30 @@
+<p-card
+    [ngClass]="{
+        'dot-apps-card__disabled': !serviceIntegration.configurationsCount
+    }"
+    (click)="actionFired.emit(serviceIntegration.key)"
+>
+    <p-header>
+        <dot-avatar
+            [showDot]="!!serviceIntegration.configurationsCount"
+            [size]="40"
+            [url]="serviceIntegration.iconUrl"
+            [label]="serviceIntegration.name"
+        ></dot-avatar>
+        <div class="dot-apps-card__label-container">
+            <span class="dot-apps-card__name">
+                {{ serviceIntegration.name }}
+            </span>
+            <span class="dot-apps-card__configurations"
+                >{{
+                    serviceIntegration.configurationsCount
+                        ? serviceIntegration.configurationsCount +
+                          ' ' +
+                          messagesKey['apps.configurations']
+                        : messagesKey['apps.no.configurations']
+                }}
+            </span>
+        </div>
+    </p-header>
+    {{ serviceIntegration.description }}
+</p-card>
