@@ -77,7 +77,11 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 
 	@VisibleForTesting
-    public FileAssetAPIImpl(ContentletAPI contAPI,PermissionAPI perAPI, SystemEventsAPI systemEventsAPI, IdentifierAPI identifierAPI ) {
+    public FileAssetAPIImpl(
+    		final ContentletAPI contAPI,
+			final PermissionAPI perAPI,
+			final SystemEventsAPI systemEventsAPI,
+			final IdentifierAPI identifierAPI ) {
 
         this.contAPI = contAPI;
         this.perAPI = perAPI;
@@ -107,8 +111,10 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 	 */
 	@CloseDBIfOpened
-	public List<FileAsset> findFileAssetsByFolder(Folder parentFolder, User user, boolean respectFrontendRoles) throws DotDataException,
-			DotSecurityException {
+	public List<FileAsset> findFileAssetsByFolder(
+			final Folder parentFolder,
+			final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		List<FileAsset> assets = null;
 		try{
 			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles),

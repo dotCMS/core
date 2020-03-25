@@ -31,7 +31,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
 
     @BeforeClass
     public static void prepare() throws Exception {
-        //Setting web app environment
+        //Setting web app environment o
         IntegrationTestInitService.getInstance().init();
 
         fileAssetFactory = new FileAssetFactoryImpl();
