@@ -33,6 +33,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.business.SiteSearchAuditAPI;
 import com.dotmarketing.sitesearch.model.SiteSearchAudit;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
@@ -43,6 +44,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -222,10 +224,10 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         Mockito.when(context1.getFireTime()).thenReturn(new Date());
 
         impl.run(context1);
-        //First run will create the default index
+
 
         final List <String> indices = siteSearchAPI.listIndices();
-        Assert.assertTrue(indices.contains(defaultIndexName));
+        Assert.assertFalse(indices.contains(defaultIndexName));
 
         recentAudits = siteSearchAuditAPI.findRecentAudits(jobId1, 0, 1);
 
@@ -370,7 +372,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet1, systemUser, false);
 
-        final String pageName = "synchronicity"; // <-- I needed an unusual word with low chances to appear in the search result by transitive dependencies also included by the bundler.
+        final String pageName = RandomStringUtils.randomAlphabetic(20);
 
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template).languageId(defaultLang)
                 .pageURL(pageName)
@@ -395,7 +397,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
         //Now we make sure the page is now part of Site-search search results.
         final SiteSearchResults search3 = siteSearchAPI.search(siteSearchAudit3.getIndexName(), pageName,0, 10);
-        Assert.assertEquals(search3.getTotalResults(), 1);
+        Assert.assertEquals(1, search3.getTotalResults());
 
         final String generatedBundleId2 = thirdRunJob.getBundleId();
 
@@ -417,8 +419,9 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         //And now for my last trick I'm gonna un-publish the page that I just verified appears in the search-results.
         //Then re-run the job and make sure it's gone.
 
-        HTMLPageDataGen.unpublish(pageEnglishVersion);
+        DateUtil.sleep(6000L); //This sleep is freaking important. It allows a wider time difference between the last start-date. And the file asset last modified timestamp.
 
+        HTMLPageDataGen.unpublish(pageEnglishVersion);
         //Next Run should run completely incrementally
         final JobExecutionContext incrementalContext3 = Mockito.mock(JobExecutionContext.class);
         Mockito.when(incrementalContext3.getJobDetail()).thenReturn(jobDetail2);
@@ -430,10 +433,9 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         recentAudits = siteSearchAuditAPI.findRecentAudits(jobId, 0, 1);
         Assert.assertFalse(recentAudits.isEmpty());
         final SiteSearchAudit siteSearchAudit4 = recentAudits.get(0);
-
-        //Now we make sure the page is now part of Site-search search results.
+        //Now we make sure the page is Not part of Site-search search results.
         final SiteSearchResults search4 = siteSearchAPI.search(siteSearchAudit4.getIndexName(), pageName,0, 10);
-        Assert.assertEquals(search4.getTotalResults(), 0);
+        Assert.assertEquals(0, search4.getTotalResults());
         //Ta da!!!
 
     }

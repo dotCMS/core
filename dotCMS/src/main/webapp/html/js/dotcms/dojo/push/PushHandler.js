@@ -83,19 +83,27 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         	removeOnly = displayRemoveOnly;
         }
 
-
-        var customEvent = document.createEvent("CustomEvent");
-        customEvent.initCustomEvent("ng-event", false, false,  {
-            name: "push-publish",
-            data: {
-                assetIdentifier: assetId,
-                dateFilter: dateFilter,
-                removeOnly: removeOnly,
-                isBundle: this.isBundle
-            }
-        });
-        document.dispatchEvent(customEvent);
         this.assetIdentifier = assetId;
+        dialog = new dotcms.dijit.RemotePublisherDialog();
+        dialog.title = this.title;
+        dialog.dateFilter = dateFilter;
+        dialog.removeOnly = removeOnly;
+        dialog.container = this;
+        dialog.show();
+
+        var self = this;
+        setTimeout(function() {
+            self.environmentStore.fetch({
+                onComplete:function(items,request) {
+                    //Pre-select the environment only if there is one single instance.
+                    items = items.filter(item => item.id != '0');
+                    if(items.length === 1) {
+                        self.addToWhereToSend(items[0].id, items[0].name);
+                        self.refreshWhereToSend();
+                    }
+                }
+            })},200);
+
     },
 
     showRestrictedDialog: function (assetId, displayDateFilter) {
@@ -182,7 +190,6 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     },
 
     showWorkflowEnabledDialog:function(workflow, fireWorkflowDelegate){
-
         this.assetIdentifier = null;
 
         this.workflow = workflow;
@@ -660,8 +667,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         return (this.workflow !== null);
     },
 
-    evaluateCondition: function (actionId) {
-
+    evaluateCondition: function (actionId, title, eventData) {
         let urlTemplate = "/api/v1/workflow/actions/{actionId}/condition";
         const url = urlTemplate.replace('{actionId}',actionId);
         let dataAsJson = {};
@@ -674,13 +680,16 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
                 'Content-Type' : 'application/json;charset=utf-8',
             },
             load: function(data) {
-                var html = data.entity;
-                dojox.html.set(dojo.byId("pushPublish-container"), html, {
-                    executeScripts: true,
-                    renderStyles: true,
-                    scriptHasHooks: true,
-                    parseContent: true
+                var customEvent = document.createEvent("CustomEvent");
+                customEvent.initCustomEvent("ng-event", false, false,  {
+                    name: "push-publish",
+                    data: {
+                        customCode: data.entity,
+                        title: title,
+                        ...eventData
+                    }
                 });
+                document.dispatchEvent(customEvent);
             },
             error: function(error){
                 console.error(error);

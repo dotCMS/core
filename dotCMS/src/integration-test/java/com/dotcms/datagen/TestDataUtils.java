@@ -18,6 +18,7 @@ import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.ConfigTestHelper;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
@@ -27,6 +28,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -163,7 +165,6 @@ public class TestDataUtils {
                                 .relationType(contentTypeName + StringPool.PERIOD + "blogBlog")
                                 .next()
                 );*/
-
                 blogType = new ContentTypeDataGen()
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
@@ -956,20 +957,30 @@ public class TestDataUtils {
 
     public static Contentlet getNewsContent(Boolean persist, long languageId,
             String contentTypeId, Host site, Date sysPublishDate) {
+        return getNewsContent(persist, languageId, contentTypeId, site, sysPublishDate, null);
+    }
+
+    public static Contentlet getNewsContent(Boolean persist, long languageId,
+            String contentTypeId, Host site, Date sysPublishDate, String urlTitle) {
+
+        final long millis = System.currentTimeMillis();
 
         if (null == contentTypeId) {
             contentTypeId = getNewsLikeContentType().id();
         }
 
+        if (null == urlTitle) {
+            urlTitle = "news-content-url-title" + millis;
+        }
+
         try {
 
-            final long millis = System.currentTimeMillis();
             ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
                     .languageId(languageId)
                     .host(null != site ? site : APILocator.getHostAPI()
                             .findDefaultHost(APILocator.systemUser(), false))
                     .setProperty("title", "newsContent Title" + millis)
-                    .setProperty("urlTitle", "news-content-url-title" + millis)
+                    .setProperty("urlTitle", urlTitle)
                     .setProperty("byline", "byline")
                     .setProperty("sysPublishDate", sysPublishDate)
                     .setProperty("story", "newsStory")
@@ -1625,6 +1636,19 @@ public class TestDataUtils {
         return youtubeType;
     }
 
+    @WrapInTransaction
+    public static Contentlet createNewsLikeURLMappedContent(final String newsPatternPrefix,
+            final Date sysPublishDate, final long languageId, final Host host,
+            final String detailPageIdentifier) {
 
+        final ContentType newsContentType = getNewsLikeContentType(
+                "News" + System.currentTimeMillis(),
+                host,
+                detailPageIdentifier,
+                newsPatternPrefix + "{urlTitle}");
+
+        return getNewsContent(true, languageId,
+                        newsContentType.id(), host, sysPublishDate);
+    }
 
 }

@@ -12,15 +12,12 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.rest.exception.NotFoundException;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -50,7 +47,6 @@ public class RuleResource {
 
     private final RulesAPI rulesAPI;
     private final RuleTransform ruleTransform = new RuleTransform();
-    private HostAPI hostAPI;
     private final WebResource webResource;
 
     @SuppressWarnings("unused")
@@ -65,7 +61,6 @@ public class RuleResource {
     @VisibleForTesting
     protected RuleResource(ApiProvider apiProvider, WebResource webResource) {
         this.rulesAPI = apiProvider.rulesAPI();
-        this.hostAPI = apiProvider.hostAPI();
         this.webResource = webResource;
     }
 
@@ -82,12 +77,11 @@ public class RuleResource {
     public Map<String, RestRule> list(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("siteId") String siteId) throws DotSecurityException, DotDataException {
+            @PathParam("siteId") String parentId) throws DotSecurityException, DotDataException {
 
-        siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
+        parentId = checkNotEmpty(parentId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request, response);
-        final Host host = APILocator.getHostAPI().find(siteId, user, false);
-        final List<RestRule> restRules = getRulesInternal(user, host);
+        final List<RestRule> restRules = getRulesInternal(parentId, user);
         Map<String, RestRule> hash = Maps.newHashMapWithExpectedSize(restRules.size());
         for (RestRule restRule : restRules) {
             hash.put(restRule.key, restRule);
@@ -217,12 +211,12 @@ public class RuleResource {
     }
 
     private List<RestRule> getRulesInternal(
-            final User user,
-            final Ruleable host) throws DotSecurityException, DotDataException {
+            final String parentId,
+            final User user) throws DotSecurityException, DotDataException {
 
         List<RestRule> restRules = new ArrayList<>();
 
-        List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, false);
+        final List<Rule> rules = rulesAPI.getAllRulesByParent(parentId, user, false);
         for (Rule rule : rules) {
             try{
                 restRules.add(ruleTransform.appToRest(rule, user));

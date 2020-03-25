@@ -4,6 +4,7 @@
 package com.dotmarketing.business;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.model.User;
@@ -93,4 +94,12 @@ public abstract class RoleFactory {
 	protected abstract Role loadRoleByKey(String key) throws DotDataException;
 
 	protected abstract  Role addUserRole(User user) throws DotDataException;
+
+	/**
+	 * Tries to find the {@link LayoutsRoles} based on layout and role parameters
+	 * @param layout {@link Layout}
+	 * @param role   {@link Role}
+	 * @return Optional LayoutsROles
+	 */
+	protected abstract Optional<LayoutsRoles> findLayoutsRole(Layout layout, Role role);
 }
