@@ -512,11 +512,11 @@ public class RulesAPIImplIntegrationTest {
         this.addPermission(role, host, true);
 
         final Permission publishPermission = new Permission();
-        publishPermission.setInode(host.getPermissionId());
+        publishPermission.setInode(htmlPageAsset.getPermissionId());
         publishPermission.setRoleId(role.getId());
         publishPermission.setPermission(PermissionAPI.PERMISSION_PUBLISH);
 
-        APILocator.getPermissionAPI().save(publishPermission, host, systemUser, false);
+        APILocator.getPermissionAPI().save(publishPermission, htmlPageAsset, systemUser, false);
 
         rulesAPI.saveRule(rule, user, false);
 
@@ -529,7 +529,7 @@ public class RulesAPIImplIntegrationTest {
 
     /**
      * Method to Test: {@link RulesAPIImpl#saveRule(Rule, User, boolean)}
-     * When: A not limited user try to save a rule in a page without publish permission over the page but with RULES
+     * When: A user with permission try to save a rule in a page without publish permission over the page but with RULES
      *      permission over the host
      * Should: throw {@link DotSecurityException}
      *
