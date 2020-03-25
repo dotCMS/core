@@ -3,7 +3,6 @@ package com.dotcms.publishing.job;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
@@ -198,8 +197,8 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         }
 
         final long timeMillis1 = System.currentTimeMillis();
-        final String defaultAlias = IndexType.SITE_SEARCH.getPrefix() + "_alias_" + timeMillis1;
-        final String defaultIndexName = IndexType.SITE_SEARCH.getPrefix() + "_" + timeMillis1;
+        final String defaultAlias = "sitesearch" + "_alias_" + timeMillis1;
+        final String defaultIndexName = "sitesearch" + "_" + timeMillis1;
         siteSearchAPI.createSiteSearchIndex(defaultIndexName, defaultAlias, 1);
         siteSearchAPI.activateIndex(defaultIndexName); //Make it default.
 
@@ -237,8 +236,8 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
         //Second index
         final long timeMillis2 = System.currentTimeMillis();
-        final String newIndexAlias = IndexType.SITE_SEARCH.getPrefix() + "_alias_" +timeMillis2;
-        final String newIndexName =  IndexType.SITE_SEARCH.getPrefix() + "_" +timeMillis2;
+        final String newIndexAlias = "sitesearch" + "_alias_" +timeMillis2;
+        final String newIndexName =  "sitesearch" + "_" +timeMillis2;
         siteSearchAPI.createSiteSearchIndex(newIndexName, newIndexAlias, 1);
 
         final String jobId2 = UUIDUtil.uuid();
@@ -288,7 +287,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         }
 
         final long timeMillis1 = System.currentTimeMillis();
-        final String newIndexAlias = IndexType.SITE_SEARCH.getPrefix() + "_alias_" + timeMillis1;
+        final String newIndexAlias = "sitesearch" + "_alias_" + timeMillis1;
         final String jobId = UUIDUtil.uuid();
         // As an incremental scheduled type of job.
         // Every single run has to be tied to the same job id.
