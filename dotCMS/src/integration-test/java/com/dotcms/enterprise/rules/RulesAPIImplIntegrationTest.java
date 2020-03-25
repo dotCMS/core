@@ -41,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import graphql.AssertException;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -401,14 +401,19 @@ public class RulesAPIImplIntegrationTest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test (expected = DotSecurityException.class)
+    @Test
     public void shouldThrowDotSecurityException() throws DotSecurityException, DotDataException {
         final Role role = new RoleDataGen().nextPersisted();
         final User user = new UserDataGen().roles(role).nextPersisted();
         final Host host = new SiteDataGen().nextPersisted();
         new RuleDataGen().host(host).nextPersisted();
 
-        rulesAPI.getAllRulesByParent(host, user, false);
+        try {
+            rulesAPI.getAllRulesByParent(host, user, false);
+            throw new AssertionError("DotSecurityException expected");
+        } catch (DotSecurityException e) {
+            assertEquals("User " + user.getUserId() + " does not have permissions to VIEW Rules", e.getMessage());
+        }
     }
 
     /**
@@ -543,7 +548,7 @@ public class RulesAPIImplIntegrationTest {
 
         try {
             rulesAPI.saveRule(rule, user, false);
-            throw new AssertException("DotSecurityException expected");
+            throw new AssertionError("DotSecurityException expected");
         } catch (DotSecurityException e){
             final List<Rule> rules = rulesAPI.getAllRulesByParent(htmlPageAsset, systemUser, true);
             assertTrue(rules.isEmpty());
