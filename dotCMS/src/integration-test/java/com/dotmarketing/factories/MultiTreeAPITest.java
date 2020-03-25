@@ -2,6 +2,7 @@ package com.dotmarketing.factories;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.*;
+import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -13,10 +14,13 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.startup.runonce.Task04315UpdateMultiTreePK;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -68,7 +72,48 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         }
 
     }
-    
+
+    /**
+     * This test checks if the uuid does exact match on the table (same keys)
+     * @throws Exception
+     */
+    @Test
+    public  void testDoesPageContentsHaveContainer_no_prefix() throws Exception {
+
+        final Table<String, String, Set<PersonalizedContentlet>> pageContents = HashBasedTable.create();
+        final String  containerIdentifier = "12345";
+        final String  containeruuid       = "xxx";
+        final ContainerUUID containerUUID = new ContainerUUID(containerIdentifier, containeruuid);
+        final Container container         = new Container();
+        final MultiTreeAPIImpl multiTreeAPI = new MultiTreeAPIImpl();
+
+        container.setIdentifier(containerIdentifier);
+        pageContents.put(containerIdentifier, containeruuid, Sets.newConcurrentHashSet());
+
+        Assert.assertTrue("Should has the container", multiTreeAPI.doesPageContentsHaveContainer(pageContents, containerUUID, container));
+    }
+
+    /**
+     * This test checks if the uuid does match on the table but the table has a diff keys (with a dotParser_ prefix)
+     * @throws Exception
+     */
+    @Test
+    public  void testDoesPageContentsHaveContainer_with_prefix() throws Exception {
+
+        final Table<String, String, Set<PersonalizedContentlet>> pageContents = HashBasedTable.create();
+        final String  containerIdentifier = "12345";
+        final String  containeruuid       = "xxx";
+        final ContainerUUID containerUUID = new ContainerUUID(containerIdentifier, containeruuid);
+        final Container container         = new Container();
+        final MultiTreeAPIImpl multiTreeAPI = new MultiTreeAPIImpl();
+
+        container.setIdentifier(containerIdentifier);
+        pageContents.put(containerIdentifier, ParseContainer.PARSE_CONTAINER_UUID_PREFIX + containeruuid, Sets.newConcurrentHashSet());
+
+        Assert.assertTrue("Should has the container", multiTreeAPI.doesPageContentsHaveContainer(pageContents, containerUUID, container));
+    }
+
+
     @Test
     public  void testDeletes() throws Exception {
         deleteInitialData();
