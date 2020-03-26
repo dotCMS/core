@@ -74,6 +74,29 @@ public class FileAssetAPIImplIntegrationTest  extends IntegrationTestBase {
         assertTrue(filesInodes.contains(fileAsset2.getInode()));
     }
 
+    /**
+     * Method to test: {@link FileAssetAPIImpl#findFileAssetsByFolder(Folder, User, boolean)}
+     * When: Create one Folder with one files, and try to get the files from the first folder with a user without permission
+     * Should: return only the two files into the first folder
+     *
+     * @throws IOException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void shouldThrowDotSecurityException() throws IOException, DotDataException, DotSecurityException {
+        final Role backEndUserRole = APILocator.getRoleAPI().loadBackEndUserRole();
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role, backEndUserRole).nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Folder folder1 = new FolderDataGen().site(host).nextPersisted();
+        createFileAsset(folder1, "text1", ".txt");
+
+        fileAssetAPIImpl.findFileAssetsByFolder(folder1, user, false);
+    }
+
     private Contentlet createFileAsset(
             final Folder folder,
             final String fileName,

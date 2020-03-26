@@ -121,6 +121,8 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
 		} catch (ResourceNotFoundException e) {
 
+		} catch (DotSecurityException | DotDataException e) {
+			throw e;
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
