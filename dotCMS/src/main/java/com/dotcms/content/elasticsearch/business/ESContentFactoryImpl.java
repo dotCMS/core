@@ -21,6 +21,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.cache.provider.caffine.CaffineCache;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -51,15 +52,20 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.hash.Hashing;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -75,6 +81,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
@@ -1520,11 +1527,32 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return searchSourceBuilder;
     }
 
+    
+
+    private static Cache<String, SearchHits> searchCache = Caffeine.<String,SearchHits>newBuilder()
+                    .maximumSize(10000l)
+                    .expireAfterWrite(5, TimeUnit.SECONDS)
+                    .build();
+    
+    
+    private Optional<SearchHits> getCachedResults(final String queryHash){
+        // we only cache live requests
+        if(!PageMode.get().isAdmin) {
+            return Optional.ofNullable(searchCache.getIfPresent(queryHash));
+        }
+        return Optional.empty();
+        
+    }
+    
 	@Override
 	protected SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
 
 	    final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
+
+
+	    String defaultSecondarySort = "moddate";
+        SortOrder defaultSecondardOrder = SortOrder.DESC;
 
 	    // we check the query to figure out wich indexes to hit
 	    String indexToHit;
@@ -1560,9 +1588,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
                 if(sortBy.startsWith("score")){
             		String[] sortByCriteria = sortBy.split("[,|\\s+]");
-            		String defaultSecondarySort = "moddate";
-            		SortOrder defaultSecondardOrder = SortOrder.DESC;
-
+ 
             		if(sortByCriteria.length>2){
             			if(sortByCriteria[2].equalsIgnoreCase("desc")) {
                             defaultSecondardOrder = SortOrder.DESC;
@@ -1580,9 +1606,28 @@ public class ESContentFactoryImpl extends ContentletFactory {
                     addBuilderSort(sortBy, searchSourceBuilder);
                 }
             }else{
+                sortBy = "moddate";
                 searchSourceBuilder.sort("moddate", SortOrder.DESC);
             }
 
+            final String queryHash = Hashing.murmur3_128()
+                            .newHasher()
+                            .putBytes(query.getBytes())
+                            .putBytes(sortBy.getBytes())
+                            .putBytes(defaultSecondarySort.getBytes())
+                            .putInt(defaultSecondardOrder.ordinal())
+                            .putInt(limit)
+                            .putInt(offset)
+                            .toString();
+          
+            final Optional<SearchHits> optionalHits = getCachedResults(queryHash);
+            if(optionalHits.isPresent()) {
+                return optionalHits.get();
+            }
+            
+            
+            
+            
             searchRequest.source(searchSourceBuilder);
             response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
         } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
