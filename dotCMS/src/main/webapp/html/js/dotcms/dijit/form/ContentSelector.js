@@ -58,7 +58,7 @@ var isNg = new URLSearchParams(document.location.search).get('ng');
 dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templated], {
 
 	templatePath: dojo.moduleUrl("dotcms", isNg ? "dijit/form/ContentSelectorNoDialog.jsp" : "dijit/form/ContentSelector.jsp"),
-    selectButtonTemplate: '<button id="{buttonInode}" dojoType="dijit.form.Button">{selectButtonLabel}</button>',
+    selectButtonTemplate: '<button dojoType="dijit.form.Button">{selectButtonLabel}</button>',
 	checkBoxTemplate: '<input value="{buttonInode}" class="contentCheckbox" onClick="event.stopPropagation()" dojoType="dijit.form.CheckBox"></input>',
 	widgetsInTemplate: true,
 	title: '',
