@@ -554,7 +554,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 //		else
 //		fieldsValues[fieldsValues.length] = this.languageId;
 
-        if(dijit.byId("langcombo+"+this.dialogCounter).get('displayedValue') != "")
+        if(dijit.byId("langcombo+"+this.dialogCounter) && dijit.byId("langcombo+"+this.dialogCounter).get('displayedValue') != "")
             fieldsValues[fieldsValues.length] = dijit.byId("langcombo+"+this.dialogCounter).get('value');
         else
             fieldsValues[fieldsValues.length] = "";
