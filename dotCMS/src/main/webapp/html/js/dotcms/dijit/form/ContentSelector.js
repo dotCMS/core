@@ -72,7 +72,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 	counter_checkbox: 0,
 	languageId: '',
 	currentPage: 1,
-	searchCounter: 1,
+	searchCounter: Math.round(Math.random() * 1000000),
 	dialogCounter: 1,
 	headers:new Array(),
 	categories: new Array(),
@@ -722,7 +722,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
             dojo.hitch(this, this._fillResults)
         );
 
-        this.searchCounter++; // this is used to eliminate the widget already registered exception upon repeated searchs.    
+        this.searchCounter =  Math.round(Math.random() * 1000000); // this is used to eliminate the widget already registered exception upon repeated searchs.
 	},
 
 	_fillResults: function (data) {
