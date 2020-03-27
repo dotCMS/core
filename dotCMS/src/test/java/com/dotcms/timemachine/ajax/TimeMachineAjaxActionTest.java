@@ -6,6 +6,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -31,11 +33,13 @@ public class TimeMachineAjaxActionTest extends UnitTestBase {
     public void testGenerateNotification() throws Exception {
 
         final NotificationAPI notificationAPI = mock(NotificationAPI.class);
+        final ESIndexHelper esIndexHelper =  mock(ESIndexHelper.class);
+        final ESIndexAPI esIndexAPI =  mock(ESIndexAPI.class);
         final ServletContext context = mock(ServletContext.class);
         final WebResource webResource = mock(WebResource.class);
 
         final TimeMachineAjaxAction machineAjaxAction =
-                new TimeMachineAjaxAction(notificationAPI, webResource);
+                new TimeMachineAjaxAction(notificationAPI, esIndexHelper, esIndexAPI, webResource);
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("US").build();
 
         this.initMessages();
