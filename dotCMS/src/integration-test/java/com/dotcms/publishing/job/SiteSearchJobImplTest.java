@@ -40,6 +40,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.business.SiteSearchAuditAPI;
 import com.dotmarketing.sitesearch.model.SiteSearchAudit;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
@@ -456,95 +457,107 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
     public void test_MultilangContent_IndexingAllLanguages()
             throws DotPublishingException, JobExecutionException, DotDataException, IOException, DotSecurityException, WebAssetException {
 
-        final Host site = new SiteDataGen().nextPersisted();
-        Language lang1 = new LanguageDataGen().nextPersisted();
-        Language lang2 = new LanguageDataGen().nextPersisted();
-        folder = new FolderDataGen().site(site).nextPersisted();
+        boolean defaultContentToDefaultLangOriginalValue =
+                Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
 
-        Contentlet contentletLang1 = TestDataUtils
-                .getEmployeeContent(true, lang1.getId(), null, site);
+        try {
 
-        contentletLang1 = contentletAPI.find(contentletLang1.getInode(), systemUser, false);
-        contentletLang1.setStringProperty("firstName", "catherine");
-        contentletLang1 = contentletAPI.checkin(contentletLang1, systemUser, false);
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
 
-        ContentletDataGen.publish(contentletLang1);
+            final Host site = new SiteDataGen().nextPersisted();
+            Language lang1 = APILocator.getLanguageAPI().getDefaultLanguage();
+            Language lang2 = new LanguageDataGen().nextPersisted();
+            folder = new FolderDataGen().site(site).nextPersisted();
 
-        Contentlet contentletLang2 = contentletAPI
-                .find(contentletLang1.getInode(), systemUser, false);
-        contentletLang2.setInode("");
-        contentletLang2.setLanguageId(lang2.getId());
-        contentletLang2.setStringProperty("firstName", "catalina");
-        contentletLang2 = contentletAPI.checkin(contentletLang2, systemUser, false);
+            Contentlet contentletLang1 = TestDataUtils
+                    .getEmployeeContent(true, lang1.getId(), null, site);
 
-        ContentletDataGen.publish(contentletLang2);
+            contentletLang1 = contentletAPI.find(contentletLang1.getInode(), systemUser, false);
+            contentletLang1.setStringProperty("firstName", "catherine");
+            contentletLang1 = contentletAPI.checkin(contentletLang1, systemUser, false);
 
-        final Container container = new ContainerDataGen().withContentType(contentletLang1
-                .getContentType(), "$!{firstName}").nextPersisted();
+            ContentletDataGen.publish(contentletLang1);
 
-        ContainerDataGen.publish(container);
+            Contentlet contentletLang2 = contentletAPI
+                    .find(contentletLang1.getInode(), systemUser, false);
+            contentletLang2.setInode("");
+            contentletLang2.setLanguageId(lang2.getId());
+            contentletLang2.setStringProperty("firstName", "catalina");
+            contentletLang2 = contentletAPI.checkin(contentletLang2, systemUser, false);
 
-        final String uuid = UUIDGenerator.generateUuid();
+            ContentletDataGen.publish(contentletLang2);
 
-        final Template template = new TemplateDataGen()
-                .withContainer(container.getIdentifier(), uuid)
-                .nextPersisted();
+            final Container container = new ContainerDataGen().withContentType(contentletLang1
+                    .getContentType(), "$!{firstName}").nextPersisted();
 
-        TemplateDataGen.publish(template);
+            ContainerDataGen.publish(container);
 
-        HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(lang1.getId())
-                .nextPersisted();
+            final String uuid = UUIDGenerator.generateUuid();
 
-        HTMLPageDataGen.publish(page);
+            final Template template = new TemplateDataGen()
+                    .withContainer(container.getIdentifier(), uuid)
+                    .nextPersisted();
 
-        final MultiTree multiTree = new MultiTree(page.getIdentifier(),
-                container.getIdentifier(),
-                contentletLang1.getIdentifier(), getDotParserContainerUUID(uuid), 0);
+            TemplateDataGen.publish(template);
 
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+            HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(lang1.getId())
+                    .nextPersisted();
 
-        final String html = APILocator.getHTMLPageAssetAPI().getHTML(page.getURI(), site, true,
-                contentletLang1.getIdentifier(), APILocator.systemUser(),
-                contentletLang1.getLanguageId(), USER_AGENT_DOTCMS_SITESEARCH);
+            HTMLPageDataGen.publish(page);
 
-        Assert.assertFalse(html.isEmpty());
+            final MultiTree multiTree = new MultiTree(page.getIdentifier(),
+                    container.getIdentifier(),
+                    contentletLang1.getIdentifier(), getDotParserContainerUUID(uuid), 0);
 
-        final List<String> indicesBeforeTest = siteSearchAPI.listIndices();
-        for (final String index : indicesBeforeTest) {
-            esIndexAPI.delete(index);
+            APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+            final String html = APILocator.getHTMLPageAssetAPI().getHTML(page.getURI(), site, true,
+                    contentletLang1.getIdentifier(), APILocator.systemUser(),
+                    contentletLang1.getLanguageId(), USER_AGENT_DOTCMS_SITESEARCH);
+
+            Assert.assertFalse(html.isEmpty());
+
+            final List<String> indicesBeforeTest = siteSearchAPI.listIndices();
+            for (final String index : indicesBeforeTest) {
+                esIndexAPI.delete(index);
+            }
+            final String jobId = UUIDUtil.uuid();
+            final String alias = "any-alias-" + System.currentTimeMillis();
+            final JobDataMap jobDataMap = new JobDataMap();
+            jobDataMap.put(SiteSearchJobImpl.RUN_NOW, Boolean.TRUE.toString());
+            jobDataMap.put(SiteSearchJobImpl.INCREMENTAL, Boolean.FALSE.toString());
+            jobDataMap.put(SiteSearchJobImpl.INDEX_ALIAS, alias);
+            jobDataMap.put(SiteSearchJobImpl.JOB_ID, jobId);
+            jobDataMap.put(SiteSearchJobImpl.QUARTZ_JOB_NAME,
+                    SiteSearchJobImpl.RUNNING_ONCE_JOB_NAME);
+            jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
+            jobDataMap
+                    .put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{Long.toString(lang1.getId()),
+                            Long.toString(lang2.getId())});
+            jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
+
+            final JobDetail jobDetail = Mockito.mock(JobDetail.class);
+            Mockito.when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
+            final JobExecutionContext context = Mockito.mock(JobExecutionContext.class);
+            Mockito.when(context.getJobDetail()).thenReturn(jobDetail);
+            Mockito.when(context.getFireTime()).thenReturn(new Date());
+            final SiteSearchJobImpl impl = new SiteSearchJobImpl();
+            impl.run(context);
+
+            final List<String> indicesAfterTest = siteSearchAPI.listIndices();
+            Assert.assertFalse(indicesAfterTest.isEmpty());
+            final String newIndexName = indicesAfterTest.get(0);
+
+            SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "catalina", 0, 10);
+            Assert.assertTrue(searchResults.getTotalResults() >= 1);
+
+            searchResults = siteSearchAPI.search(newIndexName, "catherine", 0, 10);
+            Assert.assertTrue(searchResults.getTotalResults() >= 1);
+
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
+                    defaultContentToDefaultLangOriginalValue);
         }
-        final String jobId = UUIDUtil.uuid();
-        final String alias = "any-alias-" + System.currentTimeMillis();
-        final JobDataMap jobDataMap = new JobDataMap();
-        jobDataMap.put(SiteSearchJobImpl.RUN_NOW, Boolean.TRUE.toString());
-        jobDataMap.put(SiteSearchJobImpl.INCREMENTAL, Boolean.FALSE.toString());
-        jobDataMap.put(SiteSearchJobImpl.INDEX_ALIAS, alias);
-        jobDataMap.put(SiteSearchJobImpl.JOB_ID, jobId);
-        jobDataMap.put(SiteSearchJobImpl.QUARTZ_JOB_NAME,
-                SiteSearchJobImpl.RUNNING_ONCE_JOB_NAME);
-        jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
-        jobDataMap
-                .put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{Long.toString(lang1.getId()),
-                        Long.toString(lang2.getId())});
-        jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
-
-        final JobDetail jobDetail = Mockito.mock(JobDetail.class);
-        Mockito.when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
-        final JobExecutionContext context = Mockito.mock(JobExecutionContext.class);
-        Mockito.when(context.getJobDetail()).thenReturn(jobDetail);
-        Mockito.when(context.getFireTime()).thenReturn(new Date());
-        final SiteSearchJobImpl impl = new SiteSearchJobImpl();
-        impl.run(context);
-
-        final List<String> indicesAfterTest = siteSearchAPI.listIndices();
-        Assert.assertFalse(indicesAfterTest.isEmpty());
-        final String newIndexName = indicesAfterTest.get(0);
-
-        SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "catalina", 0, 10);
-        Assert.assertTrue(searchResults.getTotalResults() >= 1);
-
-        searchResults = siteSearchAPI.search(newIndexName, "catherine", 0, 10);
-        Assert.assertTrue(searchResults.getTotalResults() >= 1);
     }
 
 
