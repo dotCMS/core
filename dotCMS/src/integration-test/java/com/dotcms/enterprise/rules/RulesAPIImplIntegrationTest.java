@@ -79,7 +79,6 @@ public class RulesAPIImplIntegrationTest {
         final Rule rule = new RuleDataGen().host(host).nextPersisted();
 
         final ConditionGroup conditionGroup = new ConditionGroupDataGen().rule(rule).next();
-        addRulesReadPermissions(role, host);
         addRulesPublishPermissions(role, host);
 
         //Saving and testing GroupCondition
@@ -109,7 +108,6 @@ public class RulesAPIImplIntegrationTest {
                 .nextPersisted();
 
         addPermission(role, htmlPageAsset, PermissionAPI.PERMISSION_PUBLISH);
-        addRulesReadPermissions(role, host);
         addRulesPublishPermissions(role, host);
 
         final Rule rule = new RuleDataGen().page(htmlPageAsset).nextPersisted();
@@ -144,7 +142,6 @@ public class RulesAPIImplIntegrationTest {
                 .folder(folder)
                 .nextPersisted();
 
-        addRulesReadPermissions(role, host);
         addRulesPublishPermissions(role, host);
         final Rule rule = new RuleDataGen().page(htmlPageAsset).nextPersisted();
 
@@ -217,7 +214,6 @@ public class RulesAPIImplIntegrationTest {
         final Host host = new SiteDataGen().nextPersisted();
         final Rule rule = new RuleDataGen().host(host).nextPersisted();
 
-        addRulesReadPermissions(role, host);
         addRulesPublishPermissions(role, host);
 
         final RuleAction ruleAction = new RuleActionDataGen().rule(rule).next();
@@ -248,7 +244,6 @@ public class RulesAPIImplIntegrationTest {
 
         final Rule rule = new RuleDataGen().page(htmlPageAsset).nextPersisted();
 
-        addRulesReadPermissions(role, host);
         addRulesPublishPermissions(role, host);
         this.addPermission(role, htmlPageAsset, PermissionLevel.PUBLISH.getType());
         final RuleAction ruleAction = new RuleActionDataGen().rule(rule).next();
@@ -281,7 +276,6 @@ public class RulesAPIImplIntegrationTest {
 
         final Rule rule = new RuleDataGen().page(htmlPageAsset).nextPersisted();
 
-        addRulesReadPermissions(role, host);
         addRulesPublishPermissions(role, host);
         final RuleAction ruleAction = new RuleActionDataGen().rule(rule).next();
 
@@ -331,7 +325,6 @@ public class RulesAPIImplIntegrationTest {
         final Host host = new SiteDataGen().nextPersisted();
         final Rule rule = new RuleDataGen().host(host).nextPersisted();
 
-        addRulesReadPermissions(role, host);
         addRulesPublishPermissions(role, host);
 
         assertTrue(existRule(rule));
@@ -361,7 +354,6 @@ public class RulesAPIImplIntegrationTest {
 
         final Rule rule = new RuleDataGen().page(htmlPageAsset).nextPersisted();
 
-        addRulesReadPermissions(role, host);
         addRulesPublishPermissions(role, host);
         this.addPermission(role, htmlPageAsset, PermissionAPI.PERMISSION_PUBLISH);
 
@@ -395,7 +387,6 @@ public class RulesAPIImplIntegrationTest {
 
         final Rule rule = new RuleDataGen().page(htmlPageAsset).nextPersisted();
 
-        addRulesReadPermissions(role, host);
         addRulesPublishPermissions(role, host);
 
         assertTrue(existRule(rule));
@@ -698,7 +689,6 @@ public class RulesAPIImplIntegrationTest {
         final Template template = new TemplateDataGen().nextPersisted();
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
         final Rule rule = new RuleDataGen().page(htmlPageAsset).next();
-        addRulesReadPermissions(role, host);
         addRulesPublishPermissions(role, host);
 
         addPermission(role, htmlPageAsset, PermissionAPI.PERMISSION_PUBLISH);
@@ -753,7 +743,7 @@ public class RulesAPIImplIntegrationTest {
         final Template template = new TemplateDataGen().nextPersisted();
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
         final Rule rule = new RuleDataGen().page(htmlPageAsset).next();
-        addRulesReadPermissions(role, host);
+
         addRulesPublishPermissions(role, host);
 
         try {
@@ -780,7 +770,6 @@ public class RulesAPIImplIntegrationTest {
         final Host host = new SiteDataGen().nextPersisted();
         final Rule rule = new RuleDataGen().host(host).next();
 
-        addRulesReadPermissions(role, host);
         addRulesPublishPermissions(role, host);
         rulesAPI.saveRule(rule, user, false);
 
@@ -901,6 +890,8 @@ public class RulesAPIImplIntegrationTest {
 
     private void addRulesPublishPermissions(final Role role, final Host host)
             throws DotDataException, DotSecurityException {
+
+        addRulesReadPermissions(role, host);
 
         final List<Permission> permissions = new ArrayList<>();
 
