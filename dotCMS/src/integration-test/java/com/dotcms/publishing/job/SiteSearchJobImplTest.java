@@ -1,5 +1,8 @@
 package com.dotcms.publishing.job;
 
+import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
+import static com.dotmarketing.util.Constants.USER_AGENT_DOTCMS_SITESEARCH;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
@@ -10,8 +13,10 @@ import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
@@ -21,6 +26,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -29,6 +35,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.business.SiteSearchAuditAPI;
@@ -438,6 +445,106 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         Assert.assertEquals(0, search4.getTotalResults());
         //Ta da!!!
 
+    }
+
+    /**
+     * Given sceneario: Multi-language content referenced from a page. Create a Site-Search run including all the languages of the content and
+     * check the two versions made it into the resulting index.
+     */
+
+    @Test
+    public void test_MultilangContent_IndexingAllLanguages()
+            throws DotPublishingException, JobExecutionException, DotDataException, IOException, DotSecurityException, WebAssetException {
+
+        final Host site = new SiteDataGen().nextPersisted();
+        Language lang1 = new LanguageDataGen().nextPersisted();
+        Language lang2 = new LanguageDataGen().nextPersisted();
+        folder = new FolderDataGen().site(site).nextPersisted();
+
+        Contentlet contentletLang1 = TestDataUtils
+                .getEmployeeContent(true, lang1.getId(), null, site);
+
+        contentletLang1 = contentletAPI.find(contentletLang1.getInode(), systemUser, false);
+        contentletLang1.setStringProperty("firstName", "catherine");
+        contentletLang1 = contentletAPI.checkin(contentletLang1, systemUser, false);
+
+        ContentletDataGen.publish(contentletLang1);
+
+        Contentlet contentletLang2 = contentletAPI
+                .find(contentletLang1.getInode(), systemUser, false);
+        contentletLang2.setInode("");
+        contentletLang2.setLanguageId(lang2.getId());
+        contentletLang2.setStringProperty("firstName", "catalina");
+        contentletLang2 = contentletAPI.checkin(contentletLang2, systemUser, false);
+
+        ContentletDataGen.publish(contentletLang2);
+
+        final Container container = new ContainerDataGen().withContentType(contentletLang1
+                .getContentType(), "$!{firstName}").nextPersisted();
+
+        ContainerDataGen.publish(container);
+
+        final String uuid = UUIDGenerator.generateUuid();
+
+        final Template template = new TemplateDataGen()
+                .withContainer(container.getIdentifier(), uuid)
+                .nextPersisted();
+
+        TemplateDataGen.publish(template);
+
+        HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(lang1.getId())
+                .nextPersisted();
+
+        HTMLPageDataGen.publish(page);
+
+        final MultiTree multiTree = new MultiTree(page.getIdentifier(),
+                container.getIdentifier(),
+                contentletLang1.getIdentifier(), getDotParserContainerUUID(uuid), 0);
+
+        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+        final String html = APILocator.getHTMLPageAssetAPI().getHTML(page.getURI(), site, true,
+                contentletLang1.getIdentifier(), APILocator.systemUser(),
+                contentletLang1.getLanguageId(), USER_AGENT_DOTCMS_SITESEARCH);
+
+        Assert.assertFalse(html.isEmpty());
+
+        final List<String> indicesBeforeTest = siteSearchAPI.listIndices();
+        for (final String index : indicesBeforeTest) {
+            esIndexAPI.delete(index);
+        }
+        final String jobId = UUIDUtil.uuid();
+        final String alias = "any-alias-" + System.currentTimeMillis();
+        final JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put(SiteSearchJobImpl.RUN_NOW, Boolean.TRUE.toString());
+        jobDataMap.put(SiteSearchJobImpl.INCREMENTAL, Boolean.FALSE.toString());
+        jobDataMap.put(SiteSearchJobImpl.INDEX_ALIAS, alias);
+        jobDataMap.put(SiteSearchJobImpl.JOB_ID, jobId);
+        jobDataMap.put(SiteSearchJobImpl.QUARTZ_JOB_NAME,
+                SiteSearchJobImpl.RUNNING_ONCE_JOB_NAME);
+        jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
+        jobDataMap
+                .put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{Long.toString(lang1.getId()),
+                        Long.toString(lang2.getId())});
+        jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
+
+        final JobDetail jobDetail = Mockito.mock(JobDetail.class);
+        Mockito.when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
+        final JobExecutionContext context = Mockito.mock(JobExecutionContext.class);
+        Mockito.when(context.getJobDetail()).thenReturn(jobDetail);
+        Mockito.when(context.getFireTime()).thenReturn(new Date());
+        final SiteSearchJobImpl impl = new SiteSearchJobImpl();
+        impl.run(context);
+
+        final List<String> indicesAfterTest = siteSearchAPI.listIndices();
+        Assert.assertFalse(indicesAfterTest.isEmpty());
+        final String newIndexName = indicesAfterTest.get(0);
+
+        SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "catalina", 0, 10);
+        Assert.assertTrue(searchResults.getTotalResults() >= 1);
+
+        searchResults = siteSearchAPI.search(newIndexName, "catherine", 0, 10);
+        Assert.assertTrue(searchResults.getTotalResults() >= 1);
     }
 
 

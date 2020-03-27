@@ -328,6 +328,7 @@ public class TestDataUtils {
                         .velocityVarName(contentTypeName)
                         .fields(fields)
                         .workflowId(workflowIds)
+                        .host(site)
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -905,7 +906,8 @@ public class TestDataUtils {
             String contentTypeId, final Host site) {
 
         if (null == contentTypeId) {
-            contentTypeId = getEmployeeLikeContentType().id();
+            contentTypeId = getEmployeeLikeContentType(
+                    "Employee" + System.currentTimeMillis(), site).id();
         }
 
         try {
