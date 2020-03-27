@@ -83,9 +83,7 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
                         : "60000"));
 
         config.setConnectionTestQuery(
-                systemEnvironmentProperties.getVariable(CONNECTION_DB_VALIDATION_QUERY) != null
-                        ? systemEnvironmentProperties.getVariable(CONNECTION_DB_VALIDATION_QUERY)
-                        : "SELECT 1");
+                systemEnvironmentProperties.getVariable(CONNECTION_DB_VALIDATION_QUERY));
 
         // This property controls the amount of time that a connection can be out of the pool before a message
         // is logged indicating a possible connection leak. A value of 0 means leak detection is disabled.

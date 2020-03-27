@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.util.TestInitialContext;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Constants;
 import com.zaxxer.hikari.HikariConfig;
@@ -66,15 +65,14 @@ public class DBPropertiesDataSourceStrategyTest {
     @Test
     public void testApplyWithValidFileShouldPass()
             throws IOException, SQLException, NamingException {
-        final HikariDataSource testDatasource = (HikariDataSource) TestInitialContext.getInstance()
-                .getDataSource();
+        final HikariDataSource testDatasource = (HikariDataSource) DbConnectionFactory.getDataSource();
 
         final File tempFile = createTempFile(
                 "connection_db_driver=" + testDatasource.getDriverClassName() + "\n"
                         + "connection_db_base_url=" + testDatasource.getJdbcUrl() + "\n"
                         + "connection_db_username=" + testDatasource.getUsername() + "\n"
                         + "connection_db_password=" + testDatasource.getPassword() + "\n"
-                        + "connection_db_validation_query=SELECT 1");
+                        + "connection_db_validation_query=" + testDatasource.getConnectionTestQuery());
 
         final DataSource dataSource = new DBPropertiesDataSourceStrategy(tempFile).apply();
 
