@@ -968,10 +968,6 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 
 	_selectButton: function (data) {
 			var inode = data["inode"];
-			if (dojo.byId(this.searchCounter+inode)){
-				console.log('duplicate');
-				this.searchCounter++;
-			}
 			var buttonInode = this.searchCounter+inode;
 			var button = dojo.replace(this.selectButtonTemplate,{buttonInode:buttonInode,selectButtonLabel:this.selectButtonLabel});
 			return button;
@@ -990,8 +986,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		div.innerHTML = "<b> " + this.matchResultsTextValue + " (" + num + ")</b>";
 	},
 
-	_clearSearch: function () {
-
+	_clearSearch: function (event) {
 		dojo.empty(this.results_table);
 
 		if(dijit.byId("langcombo+"+this.dialogCounter))
@@ -1075,7 +1070,9 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
         this.generalSearch.set('value', '');
 
         this._hideMatchingResults();
-        this._doSearch();
+        if (event) { //this mean the clear was made by the Clear button and need to load initial results.
+			this._doSearch();
+		}
 	},
 
 	_previousPage: function (){
