@@ -92,7 +92,7 @@ class AppsHelper {
         final List<AppView> views = new ArrayList<>();
         List<AppDescriptor> appDescriptors = appsAPI.getAppDescriptors(user);
         if(UtilMethods.isSet(filter)) {
-           final String regexFilter = "(?i:.*)"+filter+"(.*)";
+           final String regexFilter = "(?i).*"+filter+"(.*)";
            appDescriptors = appDescriptors.stream().filter(appDescriptor -> appDescriptor.getName().matches(regexFilter)).collect(
                    Collectors.toList());
         }
@@ -219,7 +219,7 @@ class AppsHelper {
                 sorted.sort((o1, o2) -> Boolean.compare(o1.isDynamic(),o2.isDynamic()));
 
                 final SiteView siteView = new SiteView(host.getIdentifier(), host.getHostname(), sorted);
-                return Optional.of(new AppView(appDescriptor, 1L,
+                return Optional.of(new AppView(appDescriptor, mappedSecrets.size(),
                         ImmutableList.of(siteView)));
 
         }
