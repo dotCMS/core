@@ -37,7 +37,7 @@ public class AppDescriptor {
 
     private final boolean allowExtraParameters;
 
-    private final Map<String,Param> params;
+    private final Map<String, ParamDescriptor> params;
 
     /**
      * This constructor isn't used by the object mapper that reads the yml files.
@@ -56,7 +56,7 @@ public class AppDescriptor {
             @JsonProperty("description") final String description,
             @JsonProperty("iconUrl") final String iconUrl,
             @JsonProperty("allowExtraParameters") final boolean allowExtraParameters,
-            @JsonProperty("params") final Map<String,Param> params) {
+            @JsonProperty("params") final Map<String, ParamDescriptor> params) {
         this.key = key;
         this.name = name;
         this.description = description;
@@ -109,13 +109,13 @@ public class AppDescriptor {
      * Holds the definition of the params expected by the service
      * @return
      */
-    public Map<String, Param> getParams() {
+    public Map<String, ParamDescriptor> getParams() {
         return params;
     }
 
     public void addParam(final String name, final String value, final boolean hidden,
             final Type type, final String label, final String hint, final boolean required) {
-        getParams().put(name, Param.newParam(value, hidden, type, label, hint, required));
+        getParams().put(name, ParamDescriptor.newParam(value, hidden, type, label, hint, required));
     }
 
     @Override

@@ -24,6 +24,8 @@ import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,6 +42,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.commons.lang.ArrayUtils;
 
 /**
  * This API serves as the bridge between the secrets safe repository
@@ -69,7 +72,33 @@ public class AppsAPIImpl implements AppsAPI {
             .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
             .findAndRegisterModules();
 
-    private String toJsonString(final AppSecrets object) throws DotDataException {
+    char[] toJsonAsChars(final AppSecrets object) throws DotDataException {
+        try {
+            final byte [] bytes = jsonMapper.writeValueAsBytes(object);
+            return bytesToCharArrayUTF(bytes);
+        } catch (IOException e) {
+            throw new DotDataException(e);
+        }
+    }
+
+     AppSecrets readJson2(final char[] chars) throws DotDataException {
+        try {
+            final byte [] bytes = charsToBytesUTF(chars);
+            return jsonMapper.readValue(bytes, AppSecrets.class);
+        } catch (IOException e) {
+            throw new DotDataException(e);
+        }
+    }
+
+    private AppSecrets readJson(final char[] chars) throws DotDataException {
+        try {
+            return jsonMapper.readValue(new String(chars), AppSecrets.class);
+        } catch (IOException e) {
+            throw new DotDataException(e);
+        }
+    }
+
+    private String toJsonAsString(final AppSecrets object) throws DotDataException {
         try {
             return jsonMapper.writeValueAsString(object);
         } catch (IOException e) {
@@ -77,16 +106,32 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
-    private AppSecrets readJson(final String json) throws DotDataException {
-        try {
-            return jsonMapper.readValue(json, AppSecrets.class);
-        } catch (IOException e) {
-            throw new DotDataException(e);
-        }
+    /**
+     * This method takes a byte array and converts its contents into a char array
+     * No String middle man is created.
+     * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
+     * @param bytes
+     * @return
+     */
+    char[] bytesToCharArrayUTF(final byte[] bytes) {
+       final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
+       return ArrayUtils.toPrimitive(cBuffer.chars().mapToObj(value -> (char)value).toArray(Character[]::new));
     }
 
-    private AppSecrets readJson(final char[] chars) throws DotDataException {
-        return readJson(String.valueOf(chars));
+    /**
+     * This method takes a char array and converts its contents into a byte array
+     * No String middle man is created.
+     * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
+     * @param chars
+     * @return
+     */
+    byte[] charsToBytesUTF(final char[] chars) {
+        final byte[] bytes = new byte[chars.length << 1];
+        final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
+        for (final char chr : chars){
+            cBuffer.put(chr);
+        }
+        return bytes;
     }
 
     /**
@@ -291,7 +336,9 @@ public class AppsAPIImpl implements AppsAPI {
                     secrets.getKey(), user.getUserId(), host.getIdentifier()));
         } else {
             final String internalKey = internalKey(secrets.getKey(), host);
-            secretsStore.saveValue(internalKey, toJsonString(secrets).toCharArray());
+            //final char[] chars = toJsonAsChars(secrets);
+            secretsStore.saveValue(internalKey, toJsonAsString(secrets).toCharArray());
+
         }
     }
 

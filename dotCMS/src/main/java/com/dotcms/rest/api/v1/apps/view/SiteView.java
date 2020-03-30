@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.apps.view;
 
-import com.dotcms.security.apps.Secret;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.util.Map;
@@ -16,19 +15,7 @@ public class SiteView {
     private final boolean configured;
 
     @JsonInclude(Include.NON_NULL)
-    private final Map<String, Secret> secrets;
-
-    /**
-     * Plain Secret-less Site view.
-     * @param id
-     * @param name
-     */
-    public SiteView(final String id, final String name) {
-        this.id = id;
-        this.name = name;
-        this.configured = false;
-        this.secrets = null;
-    }
+    private final Map<String, SecretView> secretViews;
 
     /**
      * If we want to build a secret-less view but showing that the site has integrations.
@@ -40,21 +27,21 @@ public class SiteView {
         this.id = id;
         this.name = name;
         this.configured = configured;
-        this.secrets = null;
+        this.secretViews = null;
     }
 
     /**
      * Plain Secret-detailed Site view.
      * @param id
      * @param name
-     * @param secrets
+     * @param secretViews
      */
     public SiteView(final String id,final String name,
-            final Map<String, Secret> secrets) {
+            final Map<String, SecretView> secretViews) {
         this.id = id;
         this.name = name;
-        this.configured = null != secrets;
-        this.secrets = secrets;
+        this.configured = secretViews.values().stream().anyMatch(secretView -> null != secretView.getSecret());
+        this.secretViews = secretViews;
     }
 
     /**
@@ -85,7 +72,7 @@ public class SiteView {
      * Secrets per site
      * @return
      */
-    public Map<String, Secret> getSecrets() {
-        return secrets;
+    public Map<String, SecretView> getSecretViews() {
+        return secretViews;
     }
 }
