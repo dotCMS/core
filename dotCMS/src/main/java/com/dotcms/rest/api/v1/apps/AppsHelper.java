@@ -36,13 +36,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -192,33 +191,32 @@ class AppsHelper {
                 //As we process them we we remove them from the `descriptorParams` map.
                 //They're removed from the map as we go on so we know that what's left in the map doesnt have a secret in storage.
                 final AppSecrets appSecrets = optionalAppSecrets.isPresent() ? protectHiddenSecrets(optionalAppSecrets.get()) : AppSecrets.empty() ;
-                final Map<String, SecretView> mappedSecrets = appSecrets.getSecrets().entrySet()
+                final Set<SecretView> mappedSecrets = appSecrets.getSecrets().entrySet()
                         .stream()
-                        .collect(Collectors.toMap(Entry::getKey, e -> new SecretView(e.getValue(), descriptorParams.remove(e.getKey()))));
+                        .map(e -> new SecretView(e.getKey(),e.getValue(), descriptorParams.remove(e.getKey()))).collect(
+                                Collectors.toSet());
 
                 //Now we process the remaining on `descriptorParams`.
                 //Transform the DescriptorParams into SecretView
-                //What ever is left in there is a param that exist on the yml
-                //
+                //What ever is left in there is a param that exist on the yml.
                 // that doesnt have a secret in storage.
-                final Map<String, SecretView> mappedDescriptors = appDescriptor.getParams().entrySet().stream()
-                        .collect(Collectors.toMap(Entry::getKey,
-                                e -> new SecretView(null, descriptorParams.remove(e.getKey()))));
+                final Set<SecretView> mappedDescriptors = appDescriptor.getParams().keySet().stream()
+                        .map(
+                                paramKey -> new SecretView(paramKey, null,
+                                        descriptorParams.remove(paramKey))).collect(
+                                Collectors.toSet());
 
                 //At this point `descriptorParams` should be empty.
                 assert (descriptorParams.isEmpty());
 
                 //Now we need to present them both.
-                final Map<String, SecretView> merged = new HashMap<>(mappedDescriptors);
-                merged.putAll(mappedSecrets);
-                //This comparator is used to sort the map by value (SecretView entry) using the attribute dynamic.
-                final Comparator<String> valueComparator = (k1, k2) -> {
-                    int compare = merged.get(k1).compareTo(merged.get(k2));
-                    //it isn't expected to return 0 to avoid loosing values;
-                    return compare == 0 ? 1 : compare;
-                };
-                final SortedMap<String, SecretView> sorted = new TreeMap<>(valueComparator);
-                sorted.putAll(merged);
+                //For which we first add the ones from the descriptor.
+                final Set<SecretView> merged = new LinkedList<>(mappedDescriptors).stream()
+                    .filter(secretView -> !mappedSecrets.contains(secretView)).collect(Collectors.toSet());
+                merged.addAll(mappedSecrets);
+
+                final List<SecretView> sorted  = new LinkedList<>(merged);
+                sorted.sort((o1, o2) -> Boolean.compare(o1.isDynamic(),o2.isDynamic()));
 
                 final SiteView siteView = new SiteView(host.getIdentifier(), host.getHostname(), sorted);
                 return Optional.of(new AppView(appDescriptor, 1L,

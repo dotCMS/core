@@ -44,6 +44,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -354,9 +355,10 @@ public class AppsResourceTest extends IntegrationTestBase {
 
             Assert.assertNotNull(appViewAfterDelete.getSites());
             Assert.assertFalse(appViewAfterDelete.getSites().isEmpty());
-            final Map<String, SecretView> secretsAfterDelete = new HashMap<>(appViewAfterDelete
+            final Map<String, SecretView> secretsAfterDelete = appViewAfterDelete
                     .getSites()
-                    .get(0).getSecretViews());
+                    .get(0).getSecrets().stream().collect(Collectors.toMap(SecretView::getName,
+                    Function.identity()));
             Assert.assertEquals(secretsAfterDelete.get("param2").getSecret().getString(),"v1");
             //The deleted secrets should have returned to show their default vales defined in the yml descriptor.
             Assert.assertNull(secretsAfterDelete.get("param1").getSecret());
@@ -520,7 +522,9 @@ public class AppsResourceTest extends IntegrationTestBase {
                         .getEntity();
                 Assert.assertNotNull(appDetailedView.getSites());
                 Assert.assertFalse(appDetailedView.getSites().isEmpty());
-                final Map<String, SecretView> secrets = appDetailedView.getSites().get(0).getSecretViews();
+                final Map<String, SecretView> secrets = appDetailedView.getSites().get(0)
+                        .getSecrets().stream().collect(Collectors.toMap(SecretView::getName,
+                                Function.identity()));
                 for (Entry<String, SecretView> secretEntry : secrets.entrySet()) {
                     final String key = secretEntry.getKey();
                     final SecretView view = secretEntry.getValue();
@@ -742,7 +746,8 @@ public class AppsResourceTest extends IntegrationTestBase {
             final SiteView siteView = appDetailedView.getSites().get(0);
             Assert.assertTrue(siteView.isConfigured());
             //Once a custom comparator is applied to a treemap it becomes unnavigable.
-            final Map<String, SecretView> secrets = new HashMap<>(siteView.getSecretViews());
+            final Map<String,SecretView> secrets = siteView.getSecrets().stream().collect(Collectors.toMap(SecretView::getName,
+                    Function.identity()));
 
             final SecretView param1 = secrets.get("param1");
             Assert.assertNotNull(param1);
