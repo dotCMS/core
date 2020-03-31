@@ -321,9 +321,14 @@ class AppsHelper {
             final Input inputParam = stringParamEntry.getValue();
             final boolean dynamic = null == describedParam;
             final Secret secret;
+
             if(dynamic){
                 secret = Secret.newSecret(inputParam.getValue(), Type.STRING, inputParam.isHidden());
             } else {
+                if(describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue())){
+                   Logger.debug(AppsHelper.class, ()->"skipping secret sent with no value.");
+                   continue;
+                }
                 secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(), describedParam.isHidden());
             }
             builder.withSecret(name, secret);
@@ -365,15 +370,19 @@ class AppsHelper {
                 final Map<String, Input> params = validateFormForUpdate(form, appDescriptor);
                 //Update individual secrets/properties.
                 for (final Entry<String, Input> stringParamEntry : params.entrySet()) {
+                    final Input inputParam = stringParamEntry.getValue();
                     final String name = stringParamEntry.getKey();
                     final ParamDescriptor describedParam = appDescriptor.getParams().get(name);
-                    final Input inputParam = stringParamEntry.getValue();
                     final boolean dynamic = null == describedParam;
                     final Secret secret;
                     if (dynamic) {
                         secret = Secret.newSecret(inputParam.getValue(), Type.STRING,
                                 inputParam.isHidden());
                     } else {
+                        if(describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue())){
+                            Logger.debug(AppsHelper.class, ()->"skipping secret sent with no value.");
+                            continue;
+                        }
                         secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(),
                                 describedParam.isHidden());
                     }
@@ -620,7 +629,7 @@ class AppsHelper {
     }
 
     @VisibleForTesting
-    static final String PROTECTED_HIDDEN_SECRET = "*****";
+    static final String HIDDEN_SECRET_MASK = "*****";
 
     /**
      * Hidden secrets should never be exposed so this will replace the secret values with anything
@@ -633,12 +642,26 @@ class AppsHelper {
         final Map<String,Secret> sourceSecrets = appSecrets.getSecrets();
         for (final Entry<String, Secret> secretEntry : sourceSecrets.entrySet()) {
             if(secretEntry.getValue().isHidden()){
-                builder.withHiddenSecret(secretEntry.getKey(), PROTECTED_HIDDEN_SECRET);
+                builder.withHiddenSecret(secretEntry.getKey(), HIDDEN_SECRET_MASK);
             } else {
                 builder.withSecret(secretEntry.getKey(),secretEntry.getValue());
             }
         }
         return builder.build();
+    }
+
+    /**
+     * This method checks if we're looking at a char array all filled with the character `*`
+     * @param chars
+     * @return
+     */
+    private boolean isAllFilledWithAsters(final char [] chars){
+         for(final char chr: chars){
+            if(chr != '*'){
+               return false;
+            }
+         }
+         return true;
     }
 
 }
