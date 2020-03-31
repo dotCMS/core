@@ -1,43 +1,30 @@
 package com.dotcms.util;
 
-import com.dotmarketing.util.Constants;
+import com.dotmarketing.db.DotDataSourceStrategy;
 import com.dotmarketing.util.Logger;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.io.InputStream;
 import java.util.Properties;
-import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-/**
- * Singleton that defines a context that provides a datasource for testing purpose
- *
- * Created by nollymar on 9/16/16.
- */
-public class TestInitialContext extends InitialContext {
+public class TestDataSourceProvider implements DotDataSourceStrategy {
 
-    private DataSource dataSource;
     private Properties prop;
-    private static TestInitialContext context;
 
-    private TestInitialContext() throws NamingException {
+    @Override
+    public DataSource apply() {
+
         String dbType = "postgres.";
 
         if (System.getProperty("databaseType")!=null){
             dbType = System.getProperty("databaseType") + ".";
         } else if(System.getenv("databaseType")!=null){
-        	dbType = System.getenv("databaseType") + ".";
+            dbType = System.getenv("databaseType") + ".";
         }
 
         loadProperties();
-
-        System.out.println("dbType = " + dbType);
-
-        dataSource = hikariDataSource(dbType);
-    }
-
-    private DataSource hikariDataSource(final String dbType) {
 
         // https://github.com/brettwooldridge/HikariCP#configuration-knobs-baby
         HikariConfig config = new HikariConfig();
@@ -72,33 +59,11 @@ public class TestInitialContext extends InitialContext {
         return new HikariDataSource(config);
     }
 
-    public static TestInitialContext getInstance() throws NamingException {
-        if (context == null) {
-            context = new TestInitialContext();
-        }
-
-        return context;
-    }
-
-    @Override
-    public Object lookup(String name) throws NamingException {
-
-        if (name != null && name.equals(Constants.DATABASE_DEFAULT_DATASOURCE)) { // init datasources
-            return dataSource;
-        }
-
-        throw new NamingException("Unable to find datasource: " + name);
-    }
-
-    public DataSource getDataSource(){
-        return dataSource;
-    }
-
     /**
      * Load properties file with DB connection details
      * @throws NamingException
      */
-    private void loadProperties() throws NamingException {
+    private void loadProperties()  {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         prop = new Properties();
 
@@ -108,7 +73,8 @@ public class TestInitialContext extends InitialContext {
             Logger.info(this.getClass(), "Unable to get properties from file db-config.properties - let's try the environment");
         }
         for(String key :System.getenv().keySet()){
-          prop.put(key, System.getenv(key));
+            prop.put(key, System.getenv(key));
         }
     }
+
 }

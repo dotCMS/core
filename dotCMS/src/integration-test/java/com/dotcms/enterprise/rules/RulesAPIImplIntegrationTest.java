@@ -40,6 +40,8 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -399,14 +401,19 @@ public class RulesAPIImplIntegrationTest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    @Test (expected = DotSecurityException.class)
+    @Test
     public void shouldThrowDotSecurityException() throws DotSecurityException, DotDataException {
         final Role role = new RoleDataGen().nextPersisted();
         final User user = new UserDataGen().roles(role).nextPersisted();
         final Host host = new SiteDataGen().nextPersisted();
         new RuleDataGen().host(host).nextPersisted();
 
-        rulesAPI.getAllRulesByParent(host, user, false);
+        try {
+            rulesAPI.getAllRulesByParent(host, user, false);
+            throw new AssertionError("DotSecurityException expected");
+        } catch (DotSecurityException e) {
+            assertEquals("User " + user.getUserId() + " does not have permissions to VIEW Rules", e.getMessage());
+        }
     }
 
     /**
@@ -503,6 +510,14 @@ public class RulesAPIImplIntegrationTest {
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
         final Rule rule = new RuleDataGen().page(htmlPageAsset).next();
         this.addPermission(role, host, true);
+
+        final Permission publishPermission = new Permission();
+        publishPermission.setInode(htmlPageAsset.getPermissionId());
+        publishPermission.setRoleId(role.getId());
+        publishPermission.setPermission(PermissionAPI.PERMISSION_PUBLISH);
+
+        APILocator.getPermissionAPI().save(publishPermission, htmlPageAsset, systemUser, false);
+
         rulesAPI.saveRule(rule, user, false);
 
         final List<Rule> rules = rulesAPI.getAllRulesByParent(htmlPageAsset, systemUser, true);
@@ -510,6 +525,34 @@ public class RulesAPIImplIntegrationTest {
 
         final List<String> rulesId = rules.stream().map(pageRule -> pageRule.getId()).collect(Collectors.toList());
         assertTrue(rulesId.contains(rule.getId()));
+    }
+
+    /**
+     * Method to Test: {@link RulesAPIImpl#saveRule(Rule, User, boolean)}
+     * When: A user with permission try to save a rule in a page without publish permission over the page but with RULES
+     *      permission over the host
+     * Should: throw {@link DotSecurityException}
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void shouldSaveNewRuleInPageShouldNotWork() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+        final Rule rule = new RuleDataGen().page(htmlPageAsset).next();
+        this.addPermission(role, host, true);
+
+        try {
+            rulesAPI.saveRule(rule, user, false);
+            throw new AssertionError("DotSecurityException expected");
+        } catch (DotSecurityException e){
+            final List<Rule> rules = rulesAPI.getAllRulesByParent(htmlPageAsset, systemUser, true);
+            assertTrue(rules.isEmpty());
+        }
     }
 
     /**
@@ -660,5 +703,38 @@ public class RulesAPIImplIntegrationTest {
         permissions.add(hostReadPermission);
 
         APILocator.getPermissionAPI().save(permissions, host, systemUser, false);
+    }
+
+    /**
+     * Method to Test: {@link RulesAPIImpl#getAllRulesByParent(Ruleable, User, boolean)}
+     * When: User with permission try to get all the rules from a Page in root folder
+     * Should: Return all the rules from the page checking host permission
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void shouldGetRulesInRootFolder() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Folder folder = APILocator.getFolderAPI().findFolderByPath("/", host, APILocator.systemUser(), false);
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template)
+                .folder(folder)
+                .nextPersisted();
+
+        final Rule rule1 = new RuleDataGen().page(htmlPageAsset).nextPersisted();
+        final Rule rule2 = new RuleDataGen().page(htmlPageAsset).nextPersisted();
+
+        this.addPermission(role, host, false);
+        final List<Rule> rules = rulesAPI.getAllRulesByParent(htmlPageAsset, user, false);
+
+        assertEquals(2, rules.size());
+
+        final List<String> rulesId = rules.stream().map(rule -> rule.getId()).collect(Collectors.toList());
+        assertTrue(rulesId.contains(rule1.getId()));
+        assertTrue(rulesId.contains(rule2.getId()));
     }
 }
