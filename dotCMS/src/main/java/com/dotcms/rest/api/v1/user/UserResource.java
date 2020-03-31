@@ -420,6 +420,7 @@ public class UserResource implements Serializable {
 	private void revertLoginAsSessionInfo(final HttpServletRequest request, final Host currentSite, final String
 			principalUserId) {
 		updateLoginAsSessionInfo(request, currentSite, principalUserId, null);
+		request.getSession().removeAttribute(WebKeys.PRINCIPAL_USER_ID);
 	}
 
 	/**
@@ -498,7 +499,6 @@ public class UserResource implements Serializable {
 			final Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			revertLoginAsSessionInfo(httpServletRequest, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), principalUserId);
-			httpServletRequest.getSession().removeAttribute(WebKeys.PRINCIPAL_USER_ID);
 			response = Response.ok(new ResponseEntityView(map("logoutAs", true))).build();
 		} catch (final DotSecurityException | DotDataException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An error occurred when attempting to log " +
