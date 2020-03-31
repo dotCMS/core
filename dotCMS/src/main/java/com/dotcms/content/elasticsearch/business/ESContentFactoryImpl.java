@@ -1586,12 +1586,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
             searchRequest.source(searchSourceBuilder);
             response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
         } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
+            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.error(this.getClass(), "----------------------------------------------");
             Logger.error(this.getClass(), String.format("Elasticsearch error in index '%s'", indexToHit));
             Logger.error(this.getClass(), String.format("Lucene Query: [ %s ]", formattedQuery));
             Logger.error(this.getClass(), String.format("ES Query: %s", searchSourceBuilder));
-            Logger.error(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), e.getCause()
-                    .getMessage()));
+            Logger.error(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.error(this.getClass(), "----------------------------------------------");
             return new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
         } catch (final Exception e) {

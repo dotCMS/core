@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.util.TestInitialContext;
 import com.dotmarketing.util.Constants;
 import com.liferay.util.SystemEnvironmentProperties;
 import com.zaxxer.hikari.HikariDataSource;
@@ -38,8 +37,8 @@ public class SystemEnvDataSourceStrategyTest {
     @Test
     public void testApply() throws SQLException, NamingException {
         final Map<String, String> properties = new HashMap<>();
-        final HikariDataSource testDatasource = (HikariDataSource) TestInitialContext.getInstance()
-                .getDataSource();
+        final HikariDataSource testDatasource = (HikariDataSource) DbConnectionFactory.getDataSource();
+
         properties.put("connection_db_driver", testDatasource.getDriverClassName());
         properties.put("connection_db_base_url", testDatasource.getJdbcUrl());
         properties.put("connection_db_username", testDatasource.getUsername());
@@ -47,7 +46,7 @@ public class SystemEnvDataSourceStrategyTest {
         properties.put("connection_db_max_total", "60");
         properties.put("connection_db_max_idle", "10");
         properties.put("connection_db_max_wait", "60000");
-        properties.put("connection_db_validation_query", "SELECT 1");
+        //properties.put("connection_db_validation_query", testDatasource.getConnectionTestQuery());
         properties.put("connection_db_leak_detection_threshold", "60000");
 
         final SystemEnvironmentProperties systemEnvironmentProperties = Mockito.mock(SystemEnvironmentProperties.class);
