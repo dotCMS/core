@@ -403,7 +403,7 @@ public class UserResource implements Serializable {
 		final String userToImpersonate = (UtilMethods.isSet(loginAsUserId) ? loginAsUserId : principalUserId);
         session.removeAttribute(WebKeys.USER);
 		session.setAttribute(WebKeys.USER_ID, userToImpersonate);
-		PrincipalThreadLocal.setName(loginAsUserId);
+		PrincipalThreadLocal.setName(userToImpersonate);
 		session.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, site);
 	}
 
@@ -498,6 +498,7 @@ public class UserResource implements Serializable {
 			final Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			revertLoginAsSessionInfo(httpServletRequest, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), principalUserId);
+			httpServletRequest.getSession().removeAttribute(WebKeys.PRINCIPAL_USER_ID);
 			response = Response.ok(new ResponseEntityView(map("logoutAs", true))).build();
 		} catch (final DotSecurityException | DotDataException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An error occurred when attempting to log " +
