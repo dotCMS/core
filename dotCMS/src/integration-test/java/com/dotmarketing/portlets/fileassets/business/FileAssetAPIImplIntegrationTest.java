@@ -14,7 +14,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -56,12 +55,12 @@ public class FileAssetAPIImplIntegrationTest  extends IntegrationTestBase {
         final Host host = new SiteDataGen().nextPersisted();
 
         final Folder folder1 = new FolderDataGen().site(host).nextPersisted();
-        final Contentlet fileAsset1 = createFileAsset(folder1, "text1", ".txt");
-        final Contentlet fileAsset2 = createFileAsset(folder1, "text2", ".txt");
+        final Contentlet fileAsset1 = FileAssetDataGen.createFileAsset(folder1, "text1", ".txt");
+        final Contentlet fileAsset2 = FileAssetDataGen.createFileAsset(folder1, "text2", ".txt");
 
         final Folder folder2 = new FolderDataGen().site(host).nextPersisted();
-        final Contentlet fileAsset3 = createFileAsset(folder2, "text1", ".txt");
-        final Contentlet fileAsset4 = createFileAsset(folder2, "text2", ".txt");
+        final Contentlet fileAsset3 = FileAssetDataGen.createFileAsset(folder2, "text1", ".txt");
+        final Contentlet fileAsset4 = FileAssetDataGen.createFileAsset(folder2, "text2", ".txt");
 
         this.addPermission(role, folder1, folder2, fileAsset1, fileAsset2, fileAsset3, fileAsset4);
         final List<FileAsset> files = fileAssetAPIImpl.findFileAssetsByFolder(folder1, user, false);
@@ -92,23 +91,14 @@ public class FileAssetAPIImplIntegrationTest  extends IntegrationTestBase {
         final Host host = new SiteDataGen().nextPersisted();
 
         final Folder folder1 = new FolderDataGen().site(host).nextPersisted();
-        createFileAsset(folder1, "text1", ".txt");
+        FileAssetDataGen.createFileAsset(folder1, "text1", ".txt");
 
         final List<FileAsset> fileAssetsByFolder = fileAssetAPIImpl.findFileAssetsByFolder(folder1, user, false);
 
         assertTrue(fileAssetsByFolder.isEmpty());
     }
 
-    private Contentlet createFileAsset(
-            final Folder folder,
-            final String fileName,
-            final String suffix)
-            throws IOException, DotSecurityException, DotDataException {
-        final java.io.File file = java.io.File.createTempFile(fileName, suffix);
-        FileUtil.write(file, "helloworld");
 
-        return  new FileAssetDataGen(folder, file).nextPersisted();
-    }
 
     private void addPermission(
             final Role role,

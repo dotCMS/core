@@ -9,13 +9,19 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+import jdk.nashorn.internal.ir.annotations.Immutable;
+import org.apache.batik.dom.svg.ListBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * {@link FileAssetFactory} default implementation
+ */
 public class FileAssetFactoryImpl implements FileAssetFactory {
     private final PermissionAPI permissionAPI;
 
@@ -40,14 +46,15 @@ public class FileAssetFactoryImpl implements FileAssetFactory {
             final boolean live) throws DotDataException, DotSecurityException {
 
         final boolean respectFrontendRoles = live;
-        final DotConnect dotConnect = new DotConnect();
-        dotConnect.setSQL(String.format(FIND_FILE_ASSETS_BY_FOLDER_QUERY, live ? "live" : "working"));
-        dotConnect.addParam(parentFolder.getPath());
-        dotConnect.addParam(parentFolder.getHostId());
 
         if(!permissionAPI.doesUserHavePermission(parentFolder, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
             throw new DotSecurityException("User:" + user.getUserId() + " does not have permissions on Folder " + parentFolder);
         }
+
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(String.format(FIND_FILE_ASSETS_BY_FOLDER_QUERY, live ? "live" : "working"));
+        dotConnect.addParam(parentFolder.getPath());
+        dotConnect.addParam(parentFolder.getHostId());
 
         final List<Map<String, Object>> queryResults = dotConnect.loadObjectResults();
         return convertToFileAssets(user, respectFrontendRoles, queryResults);
@@ -59,18 +66,18 @@ public class FileAssetFactoryImpl implements FileAssetFactory {
             final boolean respectFrontendRoles,
             final List<Map<String, Object>> queryResults) throws DotDataException {
 
-        final List<Contentlet> files = new ArrayList<>();
+        final ImmutableList.Builder builder = new ImmutableList.Builder();
 
         for (final Map<String, Object> fileInfo : queryResults) {
             final String contentId = (String) fileInfo.get("inode");
 
             try {
                 final Contentlet file = APILocator.getContentletAPI().find(contentId, user, respectFrontendRoles);
-                files.add(file);
+                builder.add(file);
             } catch (DotSecurityException e) {
                 Logger.debug(FileAssetFactoryImpl.class, e.getMessage());
             }
         }
-        return files;
+        return builder.build();
     }
 }

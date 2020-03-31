@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
@@ -137,8 +138,9 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 					"+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET + " +conFolder:" + parentFolder.getInode(),
 					-1, 0, null, user, respectFrontendRoles);
 		} catch (DotRuntimeException e) {
-			if (e.getCause() instanceof ConnectException) {
-				contentlets = this.fileAssetFactory.findFileAssetsByFolderInDB(parentFolder, user, respectFrontendRoles);
+			if ( ExceptionUtil.causedBy(e, ConnectException.class)) {
+				Logger.warnEveryAndDebug(FileAssetAPIImpl.class, e.getMessage(), e, 5000);
+				contentlets = getFileAssetsByFolderInDB(parentFolder, user, respectFrontendRoles);
 			} else {
 				throw e;
 			}
@@ -151,6 +153,14 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 
 		return fromContentlets(perAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
 
+	}
+
+	private synchronized List<Contentlet> getFileAssetsByFolderInDB(
+			final Folder parentFolder,
+			final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		return this.fileAssetFactory.findFileAssetsByFolderInDB(parentFolder, user, respectFrontendRoles);
 	}
 
 	@CloseDBIfOpened
