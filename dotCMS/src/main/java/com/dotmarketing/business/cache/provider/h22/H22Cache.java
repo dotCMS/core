@@ -1,16 +1,5 @@
 package com.dotmarketing.business.cache.provider.h22;
 
-import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
-import com.dotcms.repackage.org.apache.commons.io.comparator.LastModifiedFileComparator;
-import com.dotcms.repackage.org.apache.commons.io.filefilter.DirectoryFileFilter;
-import com.dotcms.util.CloseUtils;
-import com.dotmarketing.business.cache.provider.CacheProvider;
-import com.dotmarketing.business.cache.provider.CacheProviderStats;
-import com.dotmarketing.business.cache.provider.CacheStats;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -31,14 +20,24 @@ import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.collections.map.LRUMap;
+import com.dotcms.repackage.org.apache.commons.io.comparator.LastModifiedFileComparator;
+import com.dotcms.repackage.org.apache.commons.io.filefilter.DirectoryFileFilter;
+import com.dotcms.util.CloseUtils;
+import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 
 public class H22Cache extends CacheProvider {
 
@@ -48,8 +47,11 @@ public class H22Cache extends CacheProvider {
 
 	final static String TABLE_PREFIX = "cach_table_";
 
-	@SuppressWarnings("unchecked")
-	private final static Map<Object, Object> DONT_CACHE_ME = Collections.synchronizedMap(new LRUMap(1000));
+
+	private final static Cache<String, String> DONT_CACHE_ME = Caffeine.newBuilder()
+                    .maximumSize(1000)
+                    .recordStats()
+                    .build();
 
 	// number of different dbs to shard against
 	private final int numberOfDbs = Config.getIntProperty("cache.h22.number.of.dbs", 2);
@@ -65,7 +67,7 @@ public class H22Cache extends CacheProvider {
 	private final long recoverAfterErrors = Config.getIntProperty("cache.h22.recover.after.errors", 5000);
 
 	// try to recover with h2 if within this time (30m default)
-	private final long recoverOnRestart = Config.getIntProperty("cache.h22.recover.if.restarted.in.milliseconds", 1000 * 60 * 30);
+	private final long recoverOnRestart = Config.getIntProperty("cache.h22.recover.if.restarted.in.milliseconds", 0);
 	private long lastLog = System.currentTimeMillis();
 	private long[] errorCounter = new long[numberOfDbs];
 	private final H22HikariPool[] pools = new H22HikariPool[numberOfDbs];
@@ -247,7 +249,7 @@ public class H22Cache extends CacheProvider {
 		int failedThreshold = Config.getIntProperty("cache.h22.rebuild.on.removeAll.failure.threshhold", 1);
 		failedThreshold = (failedThreshold<1) ? 1: failedThreshold;
 		// we either truncate the tables on a full flush or rebuild the tables
-		if(Config.getBooleanProperty("cache.h22.rebuild.on.removeAll", false) || failedFlushAlls==failedThreshold){
+		if(Config.getBooleanProperty("cache.h22.rebuild.on.removeAll", true) || failedFlushAlls==failedThreshold){
 			dispose(true);
 		}
 		else{
@@ -263,7 +265,7 @@ public class H22Cache extends CacheProvider {
 		if(failedFlushAlls==failedThreshold)
 		
 		stats.clear();
-		DONT_CACHE_ME.clear();
+		DONT_CACHE_ME.invalidateAll();
 		long end = System.nanoTime();
 		Logger.info(this, "End Full Cache Flush in h22 : " + TimeUnit.MILLISECONDS.convert(end-start, TimeUnit.NANOSECONDS)+ "ms");
 
@@ -350,7 +352,7 @@ public class H22Cache extends CacheProvider {
 			if (pool != null) {
 				pool.close();
 				if(trashMe){
-					new H22CacheCleanupThread(dbRoot, db, pool.database, 20*1000).run();
+					new H22CacheCleanupThread(dbRoot, db, pool.database, 20*1000).start();
 				}
 			}
 		} catch (Exception e) {
@@ -578,7 +580,7 @@ public class H22Cache extends CacheProvider {
 			pstmt.execute();
 			pstmt.close();
 			c.close();
-			DONT_CACHE_ME.remove(fqn.id);
+			DONT_CACHE_ME.invalidate(fqn.id);
 		}
 		finally{
 			pstmt.close();
@@ -715,10 +717,8 @@ public class H22Cache extends CacheProvider {
 	 */
 	private boolean exclude(Fqn fqn) {
 
-		boolean exclude = DONT_CACHE_ME.containsKey(fqn.id);
+	    return DONT_CACHE_ME.getIfPresent(fqn.id)!=null;
 
-
-		return exclude;
 	}
 
 }

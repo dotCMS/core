@@ -8,9 +8,11 @@ import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
-import com.dotcms.rest.api.v1.secret.ServiceIntegrationResourceTest;
-import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
+import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
@@ -41,6 +43,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.util.marshal.MarshalUtilsIntegrationTest.class,
         com.dotcms.util.RelationshipUtilTest.class,
         com.dotcms.util.ImportUtilTest.class,
+        com.dotmarketing.util.PageModeTest.class,
+        com.dotmarketing.business.web.UserWebAPIImplTest.class,
         com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest.class,
         com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest.class,
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
@@ -125,6 +129,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.relationships.RelationshipsResourceTest.class,
         com.dotcms.rest.api.v2.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
+        com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
@@ -231,13 +236,15 @@ import org.junit.runners.Suite.SuiteClasses;
         TestConfig.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
-        com.dotcms.security.secret.SecretsStoreKeyStoreImplTest.class,
-        com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class,
-        ServiceIntegrationResourceTest.class,
+        com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
+        AppsAPIImplTest.class,
+        AppsResourceTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
         DotAssetBaseTypeToContentTypeStrategyImplTest.class,
-        RulesAPIImplIntegrationTest.class
+        RulesAPIImplIntegrationTest.class,
+        RulesAPIImplIntegrationTest.class,
+        SiteSearchJobImplTest.class
 })
 public class MainSuite {
 

@@ -1209,7 +1209,7 @@ public class ContentResource {
         for (String key : map.keySet()) {
             if (Arrays.binarySearch(ignoreFields, key) < 0) {
                 if (jsonFields.contains(key)) {
-                    Logger.info(ContentResource.class,
+                    Logger.debug(ContentResource.class,
                             key + " is a json field: " + map.get(key).toString());
                     jo.put(key, new JSONObject(con.getKeyValueProperty(key)));
                 } else if (isCategoryField(type, key) && map.get(key) instanceof Collection) {

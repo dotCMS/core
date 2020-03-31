@@ -8,6 +8,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
+import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -17,8 +19,11 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.util.StringPool;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -302,4 +307,10 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         }
     }
 
+    @WrapInTransaction
+    public static void publish(final Template template)
+            throws DotSecurityException, WebAssetException, DotDataException {
+        PublishFactory.publishAsset(template, APILocator.systemUser(),
+                false, false);
+    }
 }

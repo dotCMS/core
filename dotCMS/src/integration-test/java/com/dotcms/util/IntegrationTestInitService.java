@@ -37,7 +37,6 @@ public class IntegrationTestInitService {
     public void init() throws Exception {
         try {
             if (initCompleted.compareAndSet(false, true)) {
-                TestingJndiDatasource.init();
                 ConfigTestHelper._setupFakeTestingContext();
 
                 CacheLocator.init();

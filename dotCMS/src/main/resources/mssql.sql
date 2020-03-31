@@ -2065,21 +2065,6 @@ BEGIN
 fetch next from cur_Inserted into @newFolder,@newHost
 END;
 
-CREATE PROCEDURE load_records_to_index(@server_id NVARCHAR(100), @records_to_fetch INT, @priority_level INT)
-AS
-BEGIN
-WITH cte AS (
-  SELECT TOP(@records_to_fetch) *
-  FROM dist_reindex_journal WITH (ROWLOCK, READPAST, UPDLOCK)
-  WHERE serverid IS NULL
-  AND priority <= @priority_level
-  ORDER BY priority ASC)
-UPDATE cte
-  SET serverid=@server_id
-OUTPUT
-  INSERTED.*
-END;
-
 CREATE Trigger check_content_versions
 ON contentlet
 FOR DELETE AS

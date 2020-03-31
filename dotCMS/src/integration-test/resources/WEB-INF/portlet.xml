@@ -502,8 +502,8 @@
     </portlet>
 
     <portlet>
-        <portlet-name>integration-services</portlet-name>
-        <display-name>Integration Services</display-name>
+        <portlet-name>apps</portlet-name>
+        <display-name>Apps</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
