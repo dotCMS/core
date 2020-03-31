@@ -201,7 +201,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
 
         final User systemUser = APILocator.systemUser();
 
-        for (Permissionable permissionable : permissionables) {
+        for (final Permissionable permissionable : permissionables) {
 
             final Permission readPermission = new Permission();
             readPermission.setInode(permissionable.getPermissionId());
