@@ -216,15 +216,24 @@ class AppsHelper {
                 merged.addAll(mappedSecrets);
 
                 final List<SecretView> sorted  = new LinkedList<>(merged);
-                sorted.sort((o1, o2) -> Boolean.compare(o1.isDynamic(),o2.isDynamic()));
+                sorted.sort(compareByNameAndDynamic);
 
                 final SiteView siteView = new SiteView(host.getIdentifier(), host.getHostname(), sorted);
                 return Optional.of(new AppView(appDescriptor, mappedSecrets.size(),
-                        ImmutableList.of(siteView)));
+                        ImmutableList.of(siteView))
+                );
 
         }
         return Optional.empty();
     }
+
+    private static Comparator<SecretView> compareByNameAndDynamic = (o1, o2) -> {
+        final int compare =  Boolean.compare(o1.isDynamic(),o2.isDynamic());
+        if (compare != 0){
+            return compare;
+        }
+        return o1.getName().compareTo(o2.getName());
+    };
 
     /**
      * This will remove all the secrets under an app for a given host.
