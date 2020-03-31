@@ -15,6 +15,7 @@ import java.util.zip.GZIPInputStream;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.MimeTypeUtils;
+import com.dotmarketing.business.*;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.api.system.event.Payload;
@@ -30,11 +31,6 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.tika.TikaUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -83,7 +79,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				APILocator.getPermissionAPI(),
 				APILocator.getSystemEventsAPI(),
 				APILocator.getIdentifierAPI(),
-				new FileAssetFactoryImpl(),
+				FactoryLocator.getFileAssetFactory(),
 				CacheLocator.getContentletCache()
 		);
 	}
