@@ -92,7 +92,9 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
                 }
                 return null;
             }).filter(Objects::nonNull).map(host -> {
-                final boolean configured = configuredSites.contains(host.getIdentifier());
+                final boolean configured = configuredSites.contains(
+                        Host.SYSTEM_HOST.equals(host.getIdentifier()) ? host.getIdentifier()
+                                .toLowerCase() : host.getIdentifier());
                 return new SiteView(host.getIdentifier(), host.getName(), configured);
             }).collect(Collectors.toList());
 
@@ -147,6 +149,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
      * So it is very performant.
      * The results are returned by default in order Ascendant order by site name (internally content-title).
      * This is very important cause any comparator applied must respect that.
+     * The identifier SYSTEM_HOST is returned in lower case by the index. If that ever changes this will be broken.
      * @param user logged-in user
      * @param filter a string to match against the title.
      * @return

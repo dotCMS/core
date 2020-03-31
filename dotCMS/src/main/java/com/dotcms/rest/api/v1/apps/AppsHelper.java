@@ -424,32 +424,49 @@ class AppsHelper {
      * Validate the incoming params match the params described by an appDescriptor yml.
      * This validation is intended to behave as a form validation. It'll make sure that all required values are present at save time.
      * And nothing else besides the params described are allowed. Unless they app-desciptor establishes that extraParams are allowed.
-     * @param form a set of paramNames
-     * @param appDescriptor the app template
-     * @throws DotDataException This will give bac an exception if you send an invalid param.
+     * @param form a set of paramNames.
+     * @param appDescriptor the app template.
+     * @throws IllegalArgumentException This will give back an exception if you send an invalid param.
      */
-    private  Map<String, Input> validateFormForSave(final SecretForm form,
+    private Map<String, Input> validateFormForSave(final SecretForm form,
             final AppDescriptor appDescriptor)
             throws IllegalArgumentException {
 
         final Map<String, Input> params = form.getInputParams();
-        if(!UtilMethods.isSet(params)){
+        if (!UtilMethods.isSet(params)) {
             throw new IllegalArgumentException("Required Params aren't set.");
         }
 
         //Param/Property names are case sensitive.
         final Map<String, ParamDescriptor> appDescriptorParams = appDescriptor.getParams();
 
-        for (final Entry<String, ParamDescriptor> appDescriptorParam : appDescriptorParams.entrySet()) {
+        for (final Entry<String, ParamDescriptor> appDescriptorParam : appDescriptorParams
+                .entrySet()) {
             final String describedParamName = appDescriptorParam.getKey();
             final Input input = params.get(describedParamName);
-            if (appDescriptorParam.getValue().isRequired() && (input == null || UtilMethods.isNotSet(input.getValue()))) {
+            if (appDescriptorParam.getValue().isRequired() && (input == null || UtilMethods
+                    .isNotSet(input.getValue()))) {
                 throw new IllegalArgumentException(
-                    String.format(
-                        "Param `%s` is marked required in the descriptor but does not come with a value.",
-                        describedParamName
-                    )
+                        String.format(
+                                "Param `%s` is marked required in the descriptor but does not come with a value.",
+                                describedParamName
+                        )
                 );
+            }
+
+            if (Type.BOOL.equals(appDescriptorParam.getValue().getType()) && UtilMethods
+                    .isSet(input.getValue())) {
+                final String asString = new String(input.getValue());
+                final boolean bool = (asString.equalsIgnoreCase(Boolean.TRUE.toString())
+                        || asString.equalsIgnoreCase(Boolean.FALSE.toString()));
+                if (!bool) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Can not convert value `%s` to type BOOL for param `%s`.",
+                                    asString, describedParamName
+                            )
+                    );
+                }
             }
         }
 
@@ -459,10 +476,10 @@ class AppsHelper {
 
             if (!extraParamsFound.isEmpty()) {
                 throw new IllegalArgumentException(
-                    String.format(
-                        "Unknown additional params `%s` not allowed by the app descriptor.",
-                        String.join(", ", extraParamsFound)
-                    )
+                        String.format(
+                                "Unknown additional params `%s` not allowed by the app descriptor.",
+                                String.join(", ", extraParamsFound)
+                        )
                 );
             }
         }
@@ -470,15 +487,11 @@ class AppsHelper {
     }
 
     /**
-     * This method is meant to validate inputs for an update that can be performed on individual properties.
-     * It assumes there's an instance already saved and only performs validations on the new incoming params.
-     * This gives the flexibility to modify the value on individual properties that are already saved.
-     * If the app
-     * We're not expecting
-     * @param form
-     * @param appDescriptor
-     * @return
-     * @throws IllegalArgumentException
+     * This method is meant to validate inputs for an update that can be performed on individual
+     * properties. It assumes there's an instance already saved and only performs validations on the
+     * new incoming params. This gives the flexibility to modify the value on individual properties
+     * that are already saved. If the app We're not expecting
+     * @throws IllegalArgumentException This will give back an exception if you send an invalid param.
      */
     private Map<String, Input> validateFormForUpdate(final SecretForm form,
             final AppDescriptor appDescriptor)
@@ -492,21 +505,36 @@ class AppsHelper {
         //Param/Property names are case sensitive.
         final Map<String, ParamDescriptor> appDescriptorParams = appDescriptor.getParams();
         for (final Entry<String, Input> entry : params.entrySet()) {
-            final String paraName = entry.getKey();
-            final ParamDescriptor paramDescriptor = appDescriptorParams.get(paraName);
+            final String paramName = entry.getKey();
+            final ParamDescriptor paramDescriptor = appDescriptorParams.get(paramName);
             if (null == paramDescriptor && !appDescriptor.isAllowExtraParameters()) {
                 throw new IllegalArgumentException(String.format(
                         "Unknown additional Param `%s` not allowed by the app descriptor.",
-                        paraName));
+                        paramName));
             } else {
                 if (null != paramDescriptor && paramDescriptor.isRequired() && null != entry
                         .getValue() && UtilMethods.isNotSet(entry.getValue().getValue())) {
                     throw new IllegalArgumentException(
                             String.format(
                                     "Param `%s` is marked required in the descriptor but does not come with a value.",
-                                    paraName
+                                    paramName
                             )
                     );
+                }
+
+                if (paramDescriptor != null && Type.BOOL.equals(paramDescriptor.getType())
+                        && UtilMethods.isSet(entry.getValue())) {
+                    final String asString = new String(entry.getValue().getValue());
+                    final boolean bool = (asString.equalsIgnoreCase(Boolean.TRUE.toString())
+                            || asString.equalsIgnoreCase(Boolean.FALSE.toString()));
+                    if (!bool) {
+                        throw new IllegalArgumentException(
+                                String.format(
+                                        "Can not convert value `%s` to type BOOL for param `%s`.",
+                                        asString, paramName
+                                )
+                        );
+                    }
                 }
             }
         }
