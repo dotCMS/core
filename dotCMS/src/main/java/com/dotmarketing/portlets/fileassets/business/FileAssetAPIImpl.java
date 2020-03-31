@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.zip.GZIPInputStream;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.MimeTypeUtils;
+import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
@@ -71,22 +73,35 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	final ContentletAPI contAPI;
 	final PermissionAPI perAPI;
 	private final IdentifierAPI identifierAPI;
+	private final FileAssetFactory fileAssetFactory;
+	private final ContentletCache contentletCache;
 
 	public FileAssetAPIImpl() {
-	    this(APILocator.getContentletAPI(),APILocator.getPermissionAPI(),APILocator.getSystemEventsAPI(),APILocator.getIdentifierAPI());
+	    this(
+	    		APILocator.getContentletAPI(),
+				APILocator.getPermissionAPI(),
+				APILocator.getSystemEventsAPI(),
+				APILocator.getIdentifierAPI(),
+				new FileAssetFactoryImpl(),
+				CacheLocator.getContentletCache()
+		);
 	}
 
 	@VisibleForTesting
     public FileAssetAPIImpl(
-    		final ContentletAPI contAPI,
+			final ContentletAPI contAPI,
 			final PermissionAPI perAPI,
 			final SystemEventsAPI systemEventsAPI,
-			final IdentifierAPI identifierAPI ) {
+			final IdentifierAPI identifierAPI,
+			final FileAssetFactory fileAssetFactory,
+			final ContentletCache contentletCache) {
 
         this.contAPI = contAPI;
         this.perAPI = perAPI;
         this.systemEventsAPI = systemEventsAPI;
         this.identifierAPI   = identifierAPI;
+        this.fileAssetFactory = fileAssetFactory;
+        this.contentletCache = contentletCache;
     }
 	
 	
@@ -115,19 +130,26 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			final Folder parentFolder,
 			final User user,
 			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		List<FileAsset> assets = null;
-		try{
-			assets = fromContentlets(perAPI.filterCollection(contAPI.search("+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET+" +conFolder:" + parentFolder.getInode(), -1, 0, null , user, respectFrontendRoles),
-					PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
-		} catch (ResourceNotFoundException e) {
+		List<Contentlet> contentlets = null;
 
+		try{
+			contentlets = contAPI.search(
+					"+structureType:" + Structure.STRUCTURE_TYPE_FILEASSET + " +conFolder:" + parentFolder.getInode(),
+					-1, 0, null, user, respectFrontendRoles);
+		} catch (DotRuntimeException e) {
+			if (e.getCause() instanceof ConnectException) {
+				contentlets = this.fileAssetFactory.findFileAssetsByFolderInDB(parentFolder, user, respectFrontendRoles);
+			} else {
+				throw e;
+			}
 		} catch (DotSecurityException | DotDataException e) {
 			throw e;
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
-		return assets;
+
+		return fromContentlets(perAPI.filterCollection(contentlets, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
 
 	}
 
@@ -274,7 +296,7 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				}
 			}
 		}
-		CacheLocator.getContentletCache().add(fileAsset);
+		this.contentletCache.add(fileAsset);
 		return fileAsset;
 	}
 	

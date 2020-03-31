@@ -29,7 +29,7 @@ public class FocalPointAPITest {
     @BeforeClass
     public static void setup() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        fpAPI = new FocalPointAPIImpl(new FileAssetAPIImpl(null, null, null, null), null);
+        fpAPI = new FocalPointAPIImpl(new FileAssetAPIImpl(null, null, null, null, null), null);
     }
 
     /**
