@@ -60,29 +60,12 @@ public class ESQueryCache implements Cachable {
      * @return
      */
     @VisibleForTesting
-    final String hash(final String queryString) {
-
-        return Hashing.murmur3_128().newHasher().putBytes(queryString.getBytes()).hash().toString();
+    final String hash(final SearchRequest searchRequest) {
+        final String source = searchRequest.source().toString() + String.join(",",searchRequest.indices());
+        return Hashing.murmur3_128().newHasher().putBytes(source.getBytes()).hash().toString();
     }
 
 
-    /**
-     * Optionally returns a
-     * 
-     * @param queryString
-     * @return
-     */
-    public Optional<SearchHits> get(final String queryString) {
-
-        if (!shouldUseCache || queryString == null || PageMode.get().isAdmin) {
-            return Optional.empty();
-        }
-        SearchHits hits = (SearchHits) cache.getNoThrow(hash(queryString), getPrimaryGroup());
-        return Optional.ofNullable(hits);
-
-    }
-
-    
 
     
 
@@ -96,23 +79,11 @@ public class ESQueryCache implements Cachable {
         if (searchRequest == null || searchRequest.source() == null) {
             return Optional.empty();
         }
-        final String source = searchRequest.source().toString() + String.join(",",searchRequest.indices());
-        return get(source);
+        final String hash = hash(searchRequest);
+        return Optional.ofNullable((SearchHits) cache.getNoThrow(hash, groups[0]));
 
     }
 
-    /**
-     * Puts SearchHits into the cache
-     * 
-     * @param queryString
-     * @param hits
-     */
-    public void put(final String queryString, final SearchHits hits) {
-        if (!shouldUseCache || queryString == null || hits == null || PageMode.get().isAdmin) {
-            return;
-        }
-        cache.put(hash(queryString), hits, groups[0]);
-    }
 
     /**
      * Puts SearchHits into the cache
@@ -121,7 +92,7 @@ public class ESQueryCache implements Cachable {
      * @param hits
      */
     public void put(final SearchRequest searchRequest, final SearchHits hits) {
-        final String source = searchRequest.source().toString() + String.join(",",searchRequest.indices());
-        put(source, hits);
+        final String hash = hash(searchRequest);
+        cache.put(hash, hits, groups[0]);
     }
 }

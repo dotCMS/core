@@ -2,6 +2,7 @@ package com.dotcms.content.elasticsearch;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,26 +48,34 @@ public class ESQueryCacheTest {
     public void test_hash() {
 
         String testQuery =RandomStringUtils.randomAscii(200);
-        String testQuery2 =new String(testQuery);
 
+        SearchRequest request1 = getSearchRquest(testQuery, true) ;
+        SearchRequest request2 = getSearchRquest(testQuery, true) ;
+        
 
-        assertEquals(cache.hash(testQuery), cache.hash(testQuery2));
+        assertEquals(cache.hash(request1), cache.hash(request2));
+        
+        
+        SearchRequest request3 = getSearchRquest(testQuery, false) ;
+        
 
+        assertNotEquals(cache.hash(request1), cache.hash(request3));
     }
 
     
     @Test
     public void test_get_hits_by_query() {
 
-        String testQuery =RandomStringUtils.randomAscii(200);
+        SearchRequest request = getSearchRequest();
         SearchHits hits= hits();
-        cache.put(testQuery, hits);
+        cache.put(request, hits);
         
+        assertTrue(cache.get(request).isPresent());
         
-        assertEquals(hits, cache.get(testQuery).get());
+        assertEquals(hits, cache.get(request).get());
         
-        
-        assertTrue(!cache.get(testQuery+"not").isPresent());
+        SearchRequest request2 = getSearchRequest();
+        assertTrue(!cache.get(request2).isPresent());
 
     }
     
@@ -81,9 +90,7 @@ public class ESQueryCacheTest {
         SearchRequest req2 = getSearchRquest(testQuery, true);
         cache.put(req1, hits);
         
-        // the query does not contain the live/working
-        assert(!cache.get(testQuery).isPresent());
-        
+
         assert(cache.get(req1).isPresent());
         
         assert(cache.get(req2).isPresent());
@@ -106,11 +113,12 @@ public class ESQueryCacheTest {
 
         
         assert(cache.get(req1).isPresent());
+        assert(cache.get(req2).isPresent());
         
         cache.clearCache();
         
         assert(!cache.get(req1).isPresent());
-        
+        assert(!cache.get(req2).isPresent());
 
 
     }
@@ -132,6 +140,13 @@ public class ESQueryCacheTest {
         
     }
     
+    
+    
+    private SearchRequest getSearchRequest() {
+
+        return getSearchRquest(RandomStringUtils.randomAscii(200), true) ;
+        
+    }
     
     @NotNull
     private SearchRequest getSearchRquest(String query, boolean live) {
