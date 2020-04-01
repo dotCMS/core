@@ -395,7 +395,7 @@ public class AppsResource {
     }
 
     /**
-     * This endpoint removes all integrations associated with an service.
+     * This endpoint removes all integrations associated with an app.
      * @param request
      * @param response
      * @param serviceKey service unique identifier

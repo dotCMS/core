@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "5fe3cb2c-b2e4-4384-9188-7a02febb845c",
-		"name": "Service Integrations Resource Test",
+		"_postman_id": "3e4f6be3-248b-49ca-a5fa-2eeb12ea484c",
+		"name": "Apps",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -9,7 +9,7 @@
 			"name": "find",
 			"item": [
 				{
-					"name": "upload-service-integration",
+					"name": "upload-app",
 					"event": [
 						{
 							"listen": "test",
@@ -68,19 +68,19 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "/build/src/core/dotCMS/src/curl-test/resources/service-descriptor.yml"
+									"src": "/build/src/curl-test/resources/app-descriptor.yml"
 								}
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/service-integrations/",
+							"raw": "{{serverURL}}/api/v1/apps/",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"service-integrations",
+								"apps",
 								""
 							]
 						}
@@ -88,7 +88,7 @@
 					"response": []
 				},
 				{
-					"name": "service-integration-get",
+					"name": "app-get-all",
 					"event": [
 						{
 							"listen": "test",
@@ -177,7 +177,7 @@
 					"response": []
 				},
 				{
-					"name": "service-integration-get-service",
+					"name": "get-app",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -253,7 +253,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n   \"serviceKey\" : \"lol\",\n   \n   \"params\": {\n   \t     \"stringParam\": {\n\t\t\t\"value\": \"lol\",\n\t\t\t\"hidden\": false,\n\t\t\t\"type\": \"STRING\",\n\t\t\t\"label\": \"This is string param\",\n\t\t\t\"hint\": \"Test string.\"\n\t\t },\n\t\t \"boolParam\": {\n\t\t\t\"value\": true,\n\t\t\t\"hidden\": false,\n\t\t\t\"type\": \"BOOL\",\n\t\t\t\"label\": \"This is a bool param\",\n\t\t\t\"hint\": \"Test Bool.\"\n\t\t }\n   }\n}\n\n"
+							"raw": ""
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}",
@@ -277,7 +277,7 @@
 			"name": "save-update",
 			"item": [
 				{
-					"name": "service-integration-save-ivalid-param-name",
+					"name": "app-save-ivalid-param-name",
 					"event": [
 						{
 							"listen": "test",
@@ -287,7 +287,7 @@
 									"pm.test(\"Status code is 400\", function () {",
 									"    pm.response.to.have.status(400);",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(pm.response.text()).to.include(\"Params named `invalid-param` can not be matched against service descriptor. \");",
+									"    pm.expect(pm.response.text()).to.include(\"Unknown additional params `invalid-param` not allowed by the app descriptor.\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -330,10 +330,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n   \"key\" : \"{{service_key}}\",\n   \"siteId\":\"{{site_id}}\",\n   \"params\": {\n   \t        \"invalid-param\": {\n\t\t\t\"value\": \"lol\",\n\t\t\t\"hidden\": false,\n\t\t\t\"type\": \"STRING\",\n\t\t\t\"label\": \"This is string param\",\n\t\t\t\"hint\": \"Test string.\"\n\t\t }\n   }\n}\n\n"
+							"raw": "{ \n\t  \"param1\": {\n\t\t \"value\": \"value1\"\n      },\n      \"param2\": {\n\t\t \"value\": \"value2\"\n      },\n     \"hiddenParam\": {\n\t\t \"value\": \"value3\"\n      },\n      \"invalid-param\": {\n\t\t \"value\": \"lol\"\n      }\n}\n\n"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/",
+							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -341,14 +341,15 @@
 								"api",
 								"v1",
 								"apps",
-								""
+								"{{service_key}}",
+								"{{site_id}}"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "service-integration-save-ivalid-site",
+					"name": "app-save-ivalid-site",
 					"event": [
 						{
 							"listen": "test",
@@ -356,7 +357,7 @@
 								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
 								"exec": [
 									"pm.test(\"Status code is 400\", function () {",
-									"    pm.response.to.have.status(400);",
+									"    pm.response.to.have.status(404);",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(pm.response.text()).to.include(\" Couldn't find any host with identifier `any-thing-but-a-valid-site-id` \");",
 									"});"
@@ -401,10 +402,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n   \"key\" : \"{{service_key}}\",\n   \"siteId\":\"any-thing-but-a-valid-site-id\",\n   \"params\": {\n   \t        \"invalid-param\": {\n\t\t\t\"value\": \"lol\",\n\t\t\t\"hidden\": false,\n\t\t\t\"type\": \"STRING\",\n\t\t\t\"label\": \"This is string param\",\n\t\t\t\"hint\": \"Test string.\"\n\t\t }\n   }\n}\n\n"
+							"raw": "{\n    \"invalid-param\": {\n        \"value\": \"lol\"\n    }\n}"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/",
+							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/any-thing-but-a-valid-site-id",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -412,14 +413,15 @@
 								"api",
 								"v1",
 								"apps",
-								""
+								"{{service_key}}",
+								"any-thing-but-a-valid-site-id"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "service-integration-save",
+					"name": "app-save",
 					"event": [
 						{
 							"listen": "test",
@@ -470,10 +472,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n   \"key\" : \"{{service_key}}\",\n   \"siteId\":\"{{site_id}}\",\n   \"params\": {\n   \t     \"param1\": {\n\t\t\t\"value\": \"val-1\",\n\t\t\t\"hidden\": false,\n\t\t\t\"type\": \"STRING\",\n\t\t\t\"label\": \"This is string param\",\n\t\t\t\"hint\": \"Test string.\"\n\t\t },\n\t\t \"param2\": {\n\t\t\t\"value\": \"true\",\n\t\t\t\"hidden\": false,\n\t\t\t\"type\": \"BOOL\",\n\t\t\t\"label\": \"This is string param\",\n\t\t\t\"hint\": \"Test string.\"\n\t\t }\n   }\n}\n\n"
+							"raw": "{ \n\t  \"param1\": {\n\t\t \"value\": \"value1\"\n      },\n      \"param2\": {\n\t\t \"value\": \"value2\"\n      },\n     \"hiddenParam\": {\n\t\t \"value\": \"value3\"\n      }\n}\n"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/",
+							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -481,14 +483,15 @@
 								"api",
 								"v1",
 								"apps",
-								""
+								"{{service_key}}",
+								"{{site_id}}"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "service-integration-save-hidden-secret",
+					"name": "app-update-hidden-secret",
 					"event": [
 						{
 							"listen": "test",
@@ -528,7 +531,7 @@
 								}
 							]
 						},
-						"method": "POST",
+						"method": "PUT",
 						"header": [
 							{
 								"key": "Content-Type",
@@ -539,10 +542,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n   \"key\" : \"{{service_key}}\",\n   \"siteId\":\"{{site_id}}\",\n   \"params\": {\n   \t        \"hiddenParam\": {\n\t\t\t  \"value\": \"This is a hidden value\",\n\t\t\t  \"hidden\": false,\n\t\t\t  \"type\": \"BOOL\",\n\t\t\t  \"label\": \"This is string param\",\n\t\t\t  \"hint\": \"Test string.\"\n\t\t }\n   }\n}\n"
+							"raw": "{\n    \"hiddenParam\": {\n        \"value\": \"This is a hidden value.\"\n    }\n}"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/",
+							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -550,7 +553,8 @@
 								"api",
 								"v1",
 								"apps",
-								""
+								"{{service_key}}",
+								"{{site_id}}"
 							]
 						}
 					},
@@ -575,9 +579,10 @@
 									"    pm.expect(sites[0].id).to.be.eql(siteId);",
 									"    pm.expect(sites[0].configured).to.be.eql(true);",
 									"    var secrets = sites[0].secrets;",
-									"    pm.expect(secrets).to.have.property('hiddenParam');",
-									"    if(secrets.hiddenParam){",
-									"       pm.expect(secrets.hiddenParam.value).to.include('*****');",
+									"    const secret = secrets.find(s => s.name === 'hiddenParam');",
+									"    ",
+									"    if(secret){",
+									"       pm.expect(secret.value).to.include('*****');",
 									"    }",
 									"});"
 								],
@@ -624,7 +629,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n   \"key\" : \"{{service_key}}\",\n   \"siteId\":\"{{site_id}}\",\n   \"params\": {\n   \t        \"hiddenParam\": {\n\t\t\t  \"value\": \"This is a hidden value\",\n\t\t\t  \"hidden\": false,\n\t\t\t  \"type\": \"BOOL\",\n\t\t\t  \"label\": \"This is string param\",\n\t\t\t  \"hint\": \"Test string.\"\n\t\t }\n   }\n}\n"
+							"raw": ""
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
@@ -694,10 +699,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n   \"key\" : \"{{service_key}}\",\n   \"siteId\":\"{{site_id}}\",\n   \"params\": {\n   \t     \"param1\": {\n\t\t\t\"value\": \"new-updated-val\",\n\t\t\t\"hidden\": false\n\t\t }   \n   }\n}\n\n"
+							"raw": "{\n    \"param1\": {\n        \"value\": \"new-updated-val\"\n    }\n}"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/",
+							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -705,7 +710,8 @@
 								"api",
 								"v1",
 								"apps",
-								""
+								"{{service_key}}",
+								"{{site_id}}"
 							]
 						}
 					},
@@ -729,10 +735,12 @@
 									"    pm.expect(sites.length).to.be.above(0);",
 									"    pm.expect(sites[0].id).to.be.eql(siteId);",
 									"    pm.expect(sites[0].configured).to.be.eql(true);",
+									"    ",
 									"    var secrets = sites[0].secrets;",
-									"    pm.expect(secrets).to.have.property('param1');",
-									"    if(secrets.param1){",
-									"       pm.expect(secrets.param1.value).to.include('new-updated-val');",
+									"    const secret = secrets.find(s => s.name === 'param1');",
+									"    ",
+									"    if(secret){",
+									"       pm.expect(secret.value).to.include('new-updated-val');",
 									"    }",
 									"});"
 								],
@@ -782,7 +790,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -790,7 +798,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}",
+								"{{key}}",
 								"{{site_id}}"
 							]
 						}
@@ -804,7 +812,7 @@
 			"name": "delete",
 			"item": [
 				{
-					"name": "service-integration-delete-param",
+					"name": "apps-delete-param",
 					"event": [
 						{
 							"listen": "test",
@@ -858,7 +866,7 @@
 							"raw": "{ \n   \"key\" : \"{{service_key}}\",\n   \"siteId\" : \"{{site_id}}\",\n   \"params\": [\"param1\"]\n}\n\n"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/",
+							"raw": "{{serverURL}}/api/v1/apps/my-key/",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -866,6 +874,7 @@
 								"api",
 								"v1",
 								"apps",
+								"my-key",
 								""
 							]
 						}
@@ -873,7 +882,7 @@
 					"response": []
 				},
 				{
-					"name": "get-service-integration-secrets-verify-delete-param",
+					"name": "apps-get-secrets-verify-delete-param",
 					"event": [
 						{
 							"listen": "test",
@@ -956,7 +965,21 @@
 					"response": []
 				},
 				{
-					"name": "service-integration-delete-configurations",
+					"name": "app-delete-configurations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c7f86063-649b-4703-ad01-343be9d4023a",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"auth": {
 							"type": "basic",
@@ -1017,7 +1040,7 @@
 					"response": []
 				},
 				{
-					"name": "get-service-integration-secrets-verify-delete-config",
+					"name": "apps-get-secrets-verify-delete-config",
 					"event": [
 						{
 							"listen": "test",
@@ -1091,15 +1114,15 @@
 					"response": []
 				},
 				{
-					"name": "service-integration-delete-descriptor",
+					"name": "app-test-delete-descriptor",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"id": "fc16be18-0766-4241-b8c9-0505c45c83b7",
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1166,7 +1189,7 @@
 					"response": []
 				},
 				{
-					"name": "get-service-integration-secrets-verify-gone-descriptor",
+					"name": "apps-secrets-verify-descriptor-gone",
 					"event": [
 						{
 							"listen": "test",
@@ -1266,15 +1289,21 @@
 	],
 	"variable": [
 		{
-			"id": "38bbc64a-0363-455b-95fd-44d79b634a73",
-			"key": "service_key",
+			"id": "87d57211-5fbb-44fa-be21-808773f662c4",
+			"key": "key",
 			"value": "postman-test-service-descriptor",
 			"type": "string"
 		},
 		{
-			"id": "85a460d0-cb72-4049-ba36-ab44bdb8fe9f",
+			"id": "d7d013f2-833e-4658-b442-28a4234b6970",
 			"key": "site_id",
-			"value": "779cd253-8a4a-4534-a61d-8b1f36e29c43",
+			"value": "d93afb22-72df-4115-93f0-264c892e2db1",
+			"type": "string"
+		},
+		{
+			"id": "98e3cd6e-2269-4ed7-8ca0-cf4e71bf7f13",
+			"key": "service_key",
+			"value": "postman-test-service-descriptor",
 			"type": "string"
 		}
 	],
