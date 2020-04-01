@@ -323,12 +323,15 @@ public class TestDataUtils {
                                 .next()
                 );
 
+                final Host siteToUse = site != null ? site :
+                        APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
                 employeeType = new ContentTypeDataGen()
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
                         .fields(fields)
                         .workflowId(workflowIds)
-                        .host(site)
+                        .host(siteToUse)
                         .nextPersisted();
             }
         } catch (Exception e) {
