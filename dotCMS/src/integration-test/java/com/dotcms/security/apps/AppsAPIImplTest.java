@@ -25,11 +25,8 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -332,6 +329,7 @@ public class AppsAPIImplTest {
         api.saveSecrets(builder.build(), APILocator.systemHost() , nonAdminUserWithAccessToPortlet);
     }
 
+    /*
     @Test
     public void Test_BytesToChar_No_Middle_String_Conversion() throws DotDataException {
         final AppsAPIImpl impl =  new AppsAPIImpl();
@@ -364,7 +362,7 @@ public class AppsAPIImplTest {
             Assert.assertNotNull(out);
             Assert.assertTrue(out.equals(entryIn.getValue()));//This does a deepEquals.
         }
-    }
+    }*/
 
     private Portlet getOrCreateServiceIntegrationPortlet(){
         final String integrationsPortletId = AppsAPIImpl.APPS_PORTLET_ID;

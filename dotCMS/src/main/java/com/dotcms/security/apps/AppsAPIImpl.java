@@ -24,8 +24,6 @@ import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,7 +40,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.ArrayUtils;
 
 /**
  * This API serves as the bridge between the secrets safe repository
@@ -72,6 +69,7 @@ public class AppsAPIImpl implements AppsAPI {
             .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
             .findAndRegisterModules();
 
+    /*
     char[] toJsonAsChars(final AppSecrets object) throws DotDataException {
         try {
             final byte [] bytes = jsonMapper.writeValueAsBytes(object);
@@ -81,14 +79,14 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
-     AppSecrets readJson2(final char[] chars) throws DotDataException {
+    AppSecrets readJson2(final char[] chars) throws DotDataException {
         try {
             final byte [] bytes = charsToBytesUTF(chars);
             return jsonMapper.readValue(bytes, AppSecrets.class);
         } catch (IOException e) {
             throw new DotDataException(e);
         }
-    }
+    }*/
 
     private AppSecrets readJson(final char[] chars) throws DotDataException {
         try {
@@ -112,11 +110,11 @@ public class AppsAPIImpl implements AppsAPI {
      * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
      * @param bytes
      * @return
-     */
+
     char[] bytesToCharArrayUTF(final byte[] bytes) {
        final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
        return ArrayUtils.toPrimitive(cBuffer.chars().mapToObj(value -> (char)value).toArray(Character[]::new));
-    }
+    }*/
 
     /**
      * This method takes a char array and converts its contents into a byte array
@@ -124,7 +122,7 @@ public class AppsAPIImpl implements AppsAPI {
      * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
      * @param chars
      * @return
-     */
+
     byte[] charsToBytesUTF(final char[] chars) {
         final byte[] bytes = new byte[chars.length << 1];
         final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
@@ -132,7 +130,7 @@ public class AppsAPIImpl implements AppsAPI {
             cBuffer.put(chr);
         }
         return bytes;
-    }
+    }*/
 
     /**
      * One single method takes care of building the internal-key
