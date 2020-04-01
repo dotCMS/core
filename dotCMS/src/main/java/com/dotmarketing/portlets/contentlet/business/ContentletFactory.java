@@ -444,6 +444,6 @@ public abstract class ContentletFactory {
 
     public abstract Optional<Contentlet> findInDb(String inode) ;
 
-    public abstract  SearchHits indexSearch(SearchRequest searchRequest) ;
+
 
 }

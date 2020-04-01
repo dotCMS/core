@@ -2,7 +2,47 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
-
+import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.search.TotalHits;
+import org.apache.lucene.search.TotalHits.Relation;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.NumberUtils;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.ESQueryCache;
@@ -22,7 +62,6 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.cache.provider.caffine.CaffineCache;
 import com.dotmarketing.business.query.ComplexCriteria;
 import com.dotmarketing.business.query.Criteria;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -53,62 +92,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.NumberUtil;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.hash.Hashing;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.search.TotalHits;
-import org.apache.lucene.search.TotalHits.Relation;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.IndexNotFoundException;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.util.NumberUtils;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -843,7 +833,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         searchSourceBuilder.fetchSource(new String[] {"inode"}, null);
         searchRequest.source(searchSourceBuilder);
 
-        SearchHits  hits = indexSearch(searchRequest);
+        SearchHits  hits = cachedIndexSearch(searchRequest);
         
         List<Contentlet> cons = new ArrayList<>();
 
@@ -1062,7 +1052,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     private List<Contentlet> getContentletsFromSearchResponse(SearchRequest searchRequest) {
         
 
-        SearchHits hits = indexSearch(searchRequest);
+        SearchHits hits = cachedIndexSearch(searchRequest);
 
         List<Contentlet> cons = new ArrayList<>();
         for (int i = 0; i < hits.getHits().length; i++) {
@@ -1364,7 +1354,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         SearchRequest searchRequest = getCountSearchRequest(qq);
         searchRequest.indices(indexToHit);
 
-        final SearchHits hits = indexSearch(searchRequest);
+        final SearchHits hits = cachedIndexSearch(searchRequest);
        return hits.getTotalHits().value;
 	}
 
@@ -1390,7 +1380,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         searchRequest.indices(query.contains("+live:true") && !query.contains("+deleted:true")?
                 info.getLive(): info.getWorking());
 
-        final SearchHits hits = indexSearch(searchRequest);
+        final SearchHits hits = cachedIndexSearch(searchRequest);
         return hits.getTotalHits().value;
     }
 
@@ -1509,8 +1499,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 
     
-    @Override
-    public SearchHits indexSearch(final SearchRequest searchRequest) {
+
+    SearchHits cachedIndexSearch(final SearchRequest searchRequest) {
         
 
         final Optional<SearchHits> optionalHits = queryCache.get(searchRequest);
@@ -1525,7 +1515,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
             final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");
-            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", String.join(",", searchRequest.indices())));
+            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", (searchRequest.indices()!=null) ? String.join(",", searchRequest.indices()): "unknown"));
             Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(searchRequest.source()) ));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
@@ -1541,10 +1531,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         
     }
     
-    
-    
-    
-    
+
     
     
 	@Override
@@ -1616,7 +1603,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         
         searchRequest.source(searchSourceBuilder);
         
-        return indexSearch(searchRequest);
+        return cachedIndexSearch(searchRequest);
             
 
 
