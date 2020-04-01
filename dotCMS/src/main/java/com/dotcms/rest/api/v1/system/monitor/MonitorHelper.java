@@ -121,7 +121,7 @@ class MonitorHelper {
                             return dc.setSQL("SELECT count(*) as count FROM (SELECT 1 FROM dot_cluster LIMIT 1) AS t").getInt("count")>0;
                         }
                         else {
-                            return  dc.setSQL("SELECT count(*) as count from contentlet").getInt("count")>0;
+                            return  dc.setSQL("SELECT count(*) as count from dot_cluster").getInt("count")>0;
                         }
                     }
                     finally{
