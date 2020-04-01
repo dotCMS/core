@@ -62,10 +62,10 @@
             if ("empty".equalsIgnoreCase(sites[0])) {
                 hostList.append(LanguageUtil.get(pageContext, "All")).append("  ");
             } else {
-                for (String hid : sites) {
-                    if (UtilMethods.isSet(hid)) {
+                for (final String hostId : sites) {
+                    if (UtilMethods.isSet(hostId)) {
                         hostList.append(APILocator.getHostAPI()
-                                .find(hid, APILocator.getUserAPI().getSystemUser(), false)).append("  ");
+                                .find(hostId, APILocator.getUserAPI().getSystemUser(), false)).append("  ");
                     }
                 }
             }
