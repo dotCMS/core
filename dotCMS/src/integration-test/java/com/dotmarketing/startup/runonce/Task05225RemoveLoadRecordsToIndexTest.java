@@ -19,9 +19,18 @@ public class Task05225RemoveLoadRecordsToIndexTest {
     }
 
     @Test
-    public void testUpgradeTaskShouldPass() throws DotDataException, SQLException {
+    public void testUpgradeTaskWhenProcedureExistsShouldPass() throws DotDataException, SQLException {
 
         createLoadRecordsToIndexProcedure();
+        final Task05225RemoveLoadRecordsToIndex task = new Task05225RemoveLoadRecordsToIndex();
+        task.executeUpgrade();
+        assertFalse(procedureExists());
+
+    }
+
+    @Test
+    public void testUpgradeTaskWhenProcedureDoesNotExistShouldPass() throws DotDataException {
+
         final Task05225RemoveLoadRecordsToIndex task = new Task05225RemoveLoadRecordsToIndex();
         task.executeUpgrade();
         assertFalse(procedureExists());

@@ -19,7 +19,14 @@ public class Task05225RemoveLoadRecordsToIndex extends AbstractJDBCStartupTask {
                     + "DROP PROCEDURE load_records_to_index;";
 
 
-    private final String ORACLE_SCRIPT = "DROP FUNCTION load_records_to_index";
+    private final String ORACLE_SCRIPT = "begin\n"
+            + "   execute immediate 'DROP FUNCTION load_records_to_index';\n"
+            + "exception when others then\n"
+            + "   if sqlcode != -4043 then\n"
+            + "      raise;\n"
+            + "   end if;\n"
+            + "end;\n"
+            + "/";
 
     @Override
     public boolean forceRun() {

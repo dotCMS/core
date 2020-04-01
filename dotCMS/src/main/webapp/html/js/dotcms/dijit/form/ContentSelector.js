@@ -554,7 +554,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 //		else
 //		fieldsValues[fieldsValues.length] = this.languageId;
 
-        if(dijit.byId("langcombo+"+this.dialogCounter).get('displayedValue') != "")
+        if(dijit.byId("langcombo+"+this.dialogCounter) && dijit.byId("langcombo+"+this.dialogCounter).get('displayedValue') != "")
             fieldsValues[fieldsValues.length] = dijit.byId("langcombo+"+this.dialogCounter).get('value');
         else
             fieldsValues[fieldsValues.length] = "";
@@ -722,7 +722,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
             dojo.hitch(this, this._fillResults)
         );
 
-        this.searchCounter++; // this is used to eliminate the widget already registered exception upon repeated searchs.    
+        this.searchCounter++; // this is used to eliminate the widget already registered exception upon repeated searchs.
 	},
 
 	_fillResults: function (data) {
@@ -986,8 +986,7 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
 		div.innerHTML = "<b> " + this.matchResultsTextValue + " (" + num + ")</b>";
 	},
 
-	_clearSearch: function () {
-
+	_clearSearch: function (event) {
 		dojo.empty(this.results_table);
 
 		if(dijit.byId("langcombo+"+this.dialogCounter))
@@ -1071,7 +1070,9 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
         this.generalSearch.set('value', '');
 
         this._hideMatchingResults();
-        this._doSearch();
+        if (event) { //this mean the clear was made by the Clear button and need to load initial results.
+			this._doSearch();
+		}
 	},
 
 	_previousPage: function (){
