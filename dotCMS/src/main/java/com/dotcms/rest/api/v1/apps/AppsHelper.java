@@ -279,7 +279,7 @@ class AppsHelper {
         }
         final Host host = hostAPI.find(siteId, user, false);
         if(null == host) {
-            throw new IllegalArgumentException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
+            throw new DoesNotExistException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
         }
         final Optional<AppDescriptor> optionalAppDescriptor = appsAPI
                 .getAppDescriptor(key, user);
@@ -355,7 +355,7 @@ class AppsHelper {
         }
         final Host host = hostAPI.find(siteId, user, false);
         if(null == host) {
-            throw new IllegalArgumentException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
+            throw new DoesNotExistException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
         }
         final Optional<AppDescriptor> optionalAppDescriptor = appsAPI.getAppDescriptor(key, user);
         if (!optionalAppDescriptor.isPresent()) {

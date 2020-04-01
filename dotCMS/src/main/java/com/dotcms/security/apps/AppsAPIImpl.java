@@ -156,7 +156,7 @@ public class AppsAPIImpl implements AppsAPI {
         final String key = UtilMethods.isSet(serviceKey) ? serviceKey : DOT_GLOBAL_SERVICE;
         final String identifier =
                 (null == hostIdentifier) ? APILocator.systemHost().getIdentifier() : hostIdentifier;
-        return identifier + HOST_SECRET_KEY_SEPARATOR + key.toLowerCase();
+        return (identifier + HOST_SECRET_KEY_SEPARATOR + key).toLowerCase();
     }
 
     @VisibleForTesting
