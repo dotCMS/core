@@ -76,7 +76,7 @@ public class ESQueryCache implements Cachable {
      * @return
      */
     public Optional<SearchHits> get(final SearchRequest searchRequest) {
-        if (searchRequest == null || searchRequest.source() == null) {
+        if (searchRequest == null || searchRequest.source() == null || PageMode.get().isAdmin) {
             return Optional.empty();
         }
         final String hash = hash(searchRequest);

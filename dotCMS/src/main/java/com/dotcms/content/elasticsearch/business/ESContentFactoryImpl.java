@@ -1534,27 +1534,23 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     
     
-	@Override
-	protected SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
+    @Override
+    protected SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
 
-	    final String formattedQuery = LuceneQueryDateTimeFormatter
+        final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
-
-	    String defaultSecondarySort = "moddate";
-        SortOrder defaultSecondardOrder = SortOrder.DESC;
-
-	    // we check the query to figure out wich indexes to hit
-	    String indexToHit;
-	    IndiciesInfo info;
-	    try {
-	        info=APILocator.getIndiciesAPI().loadIndicies();
-	    }
-	    catch(DotDataException ee) {
-	        Logger.fatal(this, "Can't get indicies information",ee);
-	        return null;
-	    }
-	    if(query.contains("+live:true") && !query.contains("+deleted:true")) {
+        // we check the query to figure out wich indexes to hit
+        String indexToHit;
+        IndiciesInfo info;
+        try {
+            info=APILocator.getIndiciesAPI().loadIndicies();
+        }
+        catch(DotDataException ee) {
+            Logger.fatal(this, "Can't get indicies information",ee);
+            return null;
+        }
+        if(query.contains("+live:true") && !query.contains("+deleted:true")) {
             indexToHit = info.getLive();
         } else {
             indexToHit = info.getWorking();
@@ -1563,7 +1559,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final SearchRequest searchRequest = new SearchRequest();
         SearchResponse response;
         final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
-
         searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
         searchRequest.indices(indexToHit);
 
@@ -1574,40 +1569,38 @@ public class ESContentFactoryImpl extends ContentletFactory {
             searchSourceBuilder.from(offset);
         }
         if(UtilMethods.isSet(sortBy) ) {
-        	sortBy = sortBy.toLowerCase();
+            sortBy = sortBy.toLowerCase();
 
             if(sortBy.startsWith("score")){
-        		String[] sortByCriteria = sortBy.split("[,|\\s+]");
- 
-            		if(sortByCriteria.length>2){
-            			if(sortByCriteria[2].equalsIgnoreCase("desc")) {
+                String[] sortByCriteria = sortBy.split("[,|\\s+]");
+                String defaultSecondarySort = "moddate";
+                SortOrder defaultSecondardOrder = SortOrder.DESC;
+
+                if(sortByCriteria.length>2){
+                    if(sortByCriteria[2].equalsIgnoreCase("desc")) {
                         defaultSecondardOrder = SortOrder.DESC;
                     } else {
                         defaultSecondardOrder = SortOrder.ASC;
                     }
-        		}
-        		if(sortByCriteria.length>1){
-        			defaultSecondarySort= sortByCriteria[1];
-        		}
+                }
+                if(sortByCriteria.length>1){
+                    defaultSecondarySort= sortByCriteria[1];
+                }
 
                 searchSourceBuilder.sort("_score", SortOrder.DESC);
                 searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
-        	} else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
+            } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
                 addBuilderSort(sortBy, searchSourceBuilder);
             }
         }else{
-            sortBy = "moddate";
             searchSourceBuilder.sort("moddate", SortOrder.DESC);
         }
 
-        
         searchRequest.source(searchSourceBuilder);
-        
         return cachedIndexSearch(searchRequest);
-            
 
 
-	}
+    }
 
     public static void addBuilderSort(String sortBy, SearchSourceBuilder srb) {
         String[] sortbyArr = sortBy.split(",");
