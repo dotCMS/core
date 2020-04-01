@@ -12,6 +12,9 @@ import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
@@ -241,7 +244,10 @@ import org.junit.runners.Suite.SuiteClasses;
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
         RulesAPIImplIntegrationTest.class,
-        SiteSearchJobImplTest.class
+        SiteSearchJobImplTest.class,
+        FileAssetAPIImplIntegrationTest.class,
+        FileAssetFactoryIntegrationTest.class,
+        FileAssetAPIImplTest.class
 })
 public class MainSuite {
 
