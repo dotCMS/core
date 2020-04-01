@@ -21,7 +21,7 @@
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
 									"    pm.expect(jsonData.entity.length).to.eql(1);",
-									"    pm.collectionVariables.set(\"service_key\", jsonData.entity[0].key);",
+									"    pm.collectionVariables.set(\"key\", jsonData.entity[0].key);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -256,7 +256,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -264,7 +264,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}"
+								"{{key}}"
 							]
 						}
 					},
@@ -333,7 +333,7 @@
 							"raw": "{ \n\t  \"param1\": {\n\t\t \"value\": \"value1\"\n      },\n      \"param2\": {\n\t\t \"value\": \"value2\"\n      },\n     \"hiddenParam\": {\n\t\t \"value\": \"value3\"\n      },\n      \"invalid-param\": {\n\t\t \"value\": \"lol\"\n      }\n}\n\n"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -341,7 +341,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}",
+								"{{key}}",
 								"{{site_id}}"
 							]
 						}
@@ -405,7 +405,7 @@
 							"raw": "{\n    \"invalid-param\": {\n        \"value\": \"lol\"\n    }\n}"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/any-thing-but-a-valid-site-id",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/any-thing-but-a-valid-site-id",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -413,7 +413,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}",
+								"{{key}}",
 								"any-thing-but-a-valid-site-id"
 							]
 						}
@@ -571,7 +571,7 @@
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"    var jsonData = pm.response.json();",
-									"    var serviceKey = pm.collectionVariables.get(\"service_key\");",
+									"    var serviceKey = pm.collectionVariables.get(\"key\");",
 									"    var siteId = pm.collectionVariables.get(\"site_id\");",
 									"    pm.expect(jsonData.entity.key).to.be.eql(serviceKey);",
 									"    var sites = jsonData.entity.sites;",
@@ -632,7 +632,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -640,7 +640,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}",
+								"{{key}}",
 								"{{site_id}}"
 							]
 						}
@@ -702,7 +702,7 @@
 							"raw": "{\n    \"param1\": {\n        \"value\": \"new-updated-val\"\n    }\n}"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -710,7 +710,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}",
+								"{{key}}",
 								"{{site_id}}"
 							]
 						}
@@ -863,7 +863,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n   \"key\" : \"{{service_key}}\",\n   \"siteId\" : \"{{site_id}}\",\n   \"params\": [\"param1\"]\n}\n\n"
+							"raw": "{ \n   \"key\" : \"{{key}}\",\n   \"siteId\" : \"{{site_id}}\",\n   \"params\": [\"param1\"]\n}\n\n"
 						},
 						"url": {
 							"raw": "{{serverURL}}/api/v1/apps/my-key/",
@@ -892,7 +892,7 @@
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"    var jsonData = pm.response.json();",
-									"    var serviceKey = pm.collectionVariables.get(\"service_key\");",
+									"    var serviceKey = pm.collectionVariables.get(\"key\");",
 									"    var siteId = pm.collectionVariables.get(\"site_id\");",
 									"    pm.expect(jsonData.entity.key).to.be.eql(serviceKey);",
 									"    var sites = jsonData.entity.sites;",
@@ -949,7 +949,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -957,7 +957,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}",
+								"{{key}}",
 								"{{site_id}}"
 							]
 						}
@@ -1019,7 +1019,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}?removeDescriptor=true",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1027,13 +1027,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}"
-							],
-							"query": [
-								{
-									"key": "removeDescriptor",
-									"value": "true"
-								}
+								"{{key}}"
 							]
 						}
 					},
@@ -1047,8 +1041,8 @@
 							"script": {
 								"id": "917e3da8-3ed7-4122-a52b-3e6f203f0388",
 								"exec": [
-									"pm.test(\"Status code is 404\", function () {",
-									"    pm.response.to.have.status(404);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
 									"    ",
 									"});"
 								],
@@ -1098,7 +1092,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1106,7 +1100,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}",
+								"{{key}}",
 								"{{site_id}}"
 							]
 						}
@@ -1168,7 +1162,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}?removeDescriptor=true",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}?removeDescriptor=true",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1176,7 +1170,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}"
+								"{{key}}"
 							],
 							"query": [
 								{
@@ -1247,7 +1241,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1255,7 +1249,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}"
+								"{{key}}"
 							]
 						}
 					},
@@ -1289,19 +1283,19 @@
 	],
 	"variable": [
 		{
-			"id": "87d57211-5fbb-44fa-be21-808773f662c4",
+			"id": "09707b1c-2f0c-4fbd-bc3c-89d9d897d710",
 			"key": "key",
 			"value": "postman-test-service-descriptor",
 			"type": "string"
 		},
 		{
-			"id": "d7d013f2-833e-4658-b442-28a4234b6970",
+			"id": "21219b16-7b05-4c8f-9ad0-dd52e99f3d8f",
 			"key": "site_id",
 			"value": "d93afb22-72df-4115-93f0-264c892e2db1",
 			"type": "string"
 		},
 		{
-			"id": "98e3cd6e-2269-4ed7-8ca0-cf4e71bf7f13",
+			"id": "410943b9-ad3b-41c6-a534-1bf878a3e843",
 			"key": "service_key",
 			"value": "postman-test-service-descriptor",
 			"type": "string"
