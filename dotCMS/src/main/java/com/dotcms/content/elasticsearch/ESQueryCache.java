@@ -61,8 +61,9 @@ public class ESQueryCache implements Cachable {
      */
     @VisibleForTesting
     final String hash(final SearchRequest searchRequest) {
-        final String source = searchRequest.source().toString() + String.join(",",searchRequest.indices());
-        return Hashing.murmur3_128().newHasher().putBytes(source.getBytes()).hash().toString();
+        
+
+        return Hashing.murmur3_128().newHasher().putBytes(searchRequest.toString().getBytes()).hash().toString();
     }
 
 
