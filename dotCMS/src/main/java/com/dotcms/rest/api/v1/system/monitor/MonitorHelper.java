@@ -47,7 +47,7 @@ class MonitorHelper {
     private static final long   DEFAULT_ASSET_FS_TIMEOUT    = 1000;
     private static final long   DEFAULT_INDEX_TIMEOUT       = 1000;
     private static final long   DEFAULT_DB_TIMEOUT          = 1000;
-    private static final String DEFAULT_IP_ACL_VALUE        = "127.0.0.1/32,0:0:0:0:0:0:0:1/128";
+    private static final String DEFAULT_IP_ACL_VALUE        = "127.0.0.1/32,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,0:0:0:0:0:0:0:1/128";
 
     private static final String EXTENDED_OPTION             = "extended";
 
