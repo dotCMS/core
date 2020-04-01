@@ -76,7 +76,7 @@ public class FileAssetAPIImplTest {
         when(fileAsset.getMap()).thenReturn(contentMap);
         when(fileAsset.getInode()).thenReturn(contentTypeInode);
 
-        final ConnectException connectException = new ConnectException();
+        final ConnectException connectException = new ConnectException("ConnectException");
         final DotRuntimeException exception = new DotRuntimeException(connectException);
 
         when(
