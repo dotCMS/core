@@ -10,6 +10,7 @@ import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
+import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
@@ -241,7 +242,8 @@ import org.junit.runners.Suite.SuiteClasses;
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
         RulesAPIImplIntegrationTest.class,
-        SiteSearchJobImplTest.class
+        SiteSearchJobImplTest.class,
+        UserResourceIntegrationTest.class
 })
 public class MainSuite {
 
