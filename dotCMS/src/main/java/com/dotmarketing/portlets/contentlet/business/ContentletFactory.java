@@ -13,6 +13,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.liferay.portal.model.User;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.search.SearchHits;
 
 import java.io.Serializable;
@@ -442,5 +443,7 @@ public abstract class ContentletFactory {
 	public abstract int updateModDate(final Set<String> inodes, User user) throws DotDataException;
 
     public abstract Optional<Contentlet> findInDb(String inode) ;
+
+    public abstract  SearchHits indexSearch(SearchRequest searchRequest) ;
 
 }
