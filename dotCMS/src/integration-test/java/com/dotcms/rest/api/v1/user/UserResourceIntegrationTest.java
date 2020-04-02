@@ -41,6 +41,7 @@ public class UserResourceIntegrationTest {
         host = APILocator.getHostAPI().findDefaultHost(adminUser,true);
         user = TestUserUtils.getChrisPublisherUser(host);
         response = new MockHttpResponse();
+
         //Check if role has any layout, if is empty add one
         if(APILocator.getLayoutAPI().loadLayoutsForUser(user).isEmpty()) {
             APILocator.getRoleAPI()
