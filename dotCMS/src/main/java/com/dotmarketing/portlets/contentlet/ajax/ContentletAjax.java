@@ -1901,7 +1901,8 @@ public class ContentletAjax {
 						  .cast(rootCause);
 				  clearBinary = handleValidationException(user, ve, saveContentErrors);
 			  } else {
-				  Logger.error(this, e.getMessage(), e);
+				  Logger.debug(this, e.getMessage(), e);
+				  Logger.error(this, e.getMessage());
 				  saveContentErrors.add(e.getMessage());
 				  callbackData.put("saveContentErrors", saveContentErrors);
 				  callbackData.put("referer", referer);

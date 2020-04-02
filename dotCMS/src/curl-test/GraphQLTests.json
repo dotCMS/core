@@ -228,37 +228,509 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Test GraphQL Image Field fields ",
+			"item": [
+				{
+					"name": "Create Image ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "599e89fa-c26c-4a5c-b6cf-9283cf40ce40",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"system\": false,\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableFileAssetContentType\",\n  \"description\": \"\",\n  \"host\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"name\": \"myImageType\",\n  \"systemActionMappings\": {\n    \"NEW\": \"\"\n  },\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create ContentType",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "599e89fa-c26c-4a5c-b6cf-9283cf40ce40",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.collectionVariables.set(\"contentTypeVariable\", jsonData.entity[0].variable);",
+									"",
+									"pm.collectionVariables.set(\"imageFieldVariable\", jsonData.entity[0].fields[1].variable);",
+									"",
+									"pm.collectionVariables.set(\"fileFieldVariable\", jsonData.entity[0].fields[2].variable);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n\t\"description\": \"My Type\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"My Custom Type {{$randomBankAccount}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n\t\"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 1,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"fixed\": true\n\t\t}, \n\t\t{\n              \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n              \"dataType\": \"TEXT\",\n              \"fieldType\": \"Image\",\n              \"fieldTypeLabel\": \"Image\",\n              \"fieldVariables\": [],\n              \"fixed\": false,\n              \"iDate\": 1585605564000,\n              \"indexed\": false,\n              \"listed\": false,\n              \"modDate\": 1585605564000,\n              \"name\": \"myImage\",\n              \"readOnly\": false,\n              \"required\": false,\n              \"searchable\": false,\n              \"sortOrder\": 2,\n              \"unique\": false\n       },\n\t   {\n\t\t      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableFileField\",\n\t\t      \"name\": \"myFile\",\n\t\t      \"required\": false,\n\t\t      \"hint\": \"\"\n\t   }\n\t]\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Image Content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d39d847f-84cc-4777-a4ee-33610815b4c1",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"imageContentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "44a75151-9352-470d-a945-be432bcc14e3",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "json",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":2\n    }\n}",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "GraphQL/Test GraphQL Image Field fields /tommylee18005.jpeg"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create File Content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d39d847f-84cc-4777-a4ee-33610815b4c1",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"fileContentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "json",
+									"value": "{\n    \"contentlet\": {\n       \"contentType\":\"{{imageContentTypeVariable}}\",\n       \"title\":\"My Image\", \n       \"hostFolder\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"showOnMenu\":\"true\",\n       \"sortOrder\":\"2\"\n    }\n}",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "GraphQL/Test GraphQL Image Field fields /Readme18005.md"
+								}
+							],
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d39d847f-84cc-4777-a4ee-33610815b4c1",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"contentIdentifier\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n       \"contentType\":\"{{contentTypeVariable}}\",\n       \"name\":\"Content With Image\", \n       \"contentHost\":\"demo.dotcms.com\",\n       \"indexPolicy\":\"WAIT_FOR\",\n       \"{{imageFieldVariable}}\":\"{{imageContentIdentifier}}\",\n       \"{{fileFieldVariable}}\":\"{{fileContentIdentifier}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "This is to fire the added default action\n\nhttp://localhost:8080/api/v1/workflow/actions/default/fire/PUBLISH\n\nIn this case I'm using the \"test\" content type that just have a name filed (text)"
+					},
+					"response": []
+				},
+				{
+					"name": "Request content with Image field",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ad7d33a0-ba48-4d15-9b92-6866ec93c006",
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"var imageFieldVariable = pm.collectionVariables.get(\"imageFieldVariable\");",
+									"var fileFieldVariable = pm.collectionVariables.get(\"fileFieldVariable\");",
+									"var jsonData = pm.response.json();",
+									"var contentIdentifier = pm.collectionVariables.get(\"contentIdentifier\")",
+									"var collectionName = pm.collectionVariables.get(\"contentTypeVariable\")+\"Collection\"",
+									"",
+									"pm.test(\"Image Field attributes should be present\", function () {",
+									"     // image field",
+									"    var imageFieldJson = jsonData.data[collectionName][0][imageFieldVariable];",
+									"    ",
+									"    // general attributes",
+									"    pm.expect(imageFieldJson.fileName).to.eql(\"tommylee18005.jpeg\");",
+									"    pm.expect(imageFieldJson.description).to.eql(\"tommylee18005\");",
+									"    pm.expect(imageFieldJson.sortOrder).to.eql(2);",
+									"    pm.expect(imageFieldJson.showOnMenu[0]).to.eql(\"true\");",
+									"    ",
+									"    // fileAsset",
+									"    pm.expect(imageFieldJson.fileAsset.name).to.eql(\"tommylee18005.jpeg\");",
+									"    pm.expect(imageFieldJson.fileAsset.size).to.eql(5494);",
+									"    pm.expect(imageFieldJson.fileAsset.mime).to.eql(\"image/jpeg\");",
+									"    ",
+									"    // metaData",
+									"    pm.expect(imageFieldJson.metaData[0].key).to.eql(\"fileSize\");",
+									"    pm.expect(imageFieldJson.metaData[0].value).to.eql(\"5494\");",
+									"    ",
+									"    pm.expect(imageFieldJson.metaData[1].key).to.eql(\"length\");",
+									"    pm.expect(imageFieldJson.metaData[1].value).to.eql(\"5494\");",
+									"    ",
+									"    pm.expect(imageFieldJson.metaData[2].key).to.eql(\"width\");",
+									"    pm.expect(imageFieldJson.metaData[2].value).to.eql(\"139\");",
+									"    ",
+									"    pm.expect(imageFieldJson.metaData[3].key).to.eql(\"contentType\");",
+									"    pm.expect(imageFieldJson.metaData[3].value).to.eql(\"image/jpeg\");",
+									"    ",
+									"    pm.expect(imageFieldJson.metaData[4].key).to.eql(\"content\");",
+									"    pm.expect(imageFieldJson.metaData[4].value).to.eql(\"\");",
+									"    ",
+									"    pm.expect(imageFieldJson.metaData[5].key).to.eql(\"height\");",
+									"    pm.expect(imageFieldJson.metaData[5].value).to.eql(\"186\");",
+									"    ",
+									"});",
+									"",
+									"pm.test(\"File Field attributes should be present\", function () {",
+									"     // image field",
+									"    var imageFieldJson = jsonData.data[collectionName][0][fileFieldVariable];",
+									"    ",
+									"    // general attributes",
+									"    pm.expect(imageFieldJson.fileName).to.eql(\"Readme18005.md\");",
+									"    pm.expect(imageFieldJson.description).to.eql(\"Readme18005\");",
+									"    pm.expect(imageFieldJson.sortOrder).to.eql(2);",
+									"    pm.expect(imageFieldJson.showOnMenu[0]).to.eql(\"true\");",
+									"    ",
+									"    // fileAsset",
+									"    pm.expect(imageFieldJson.fileAsset.name).to.eql(\"Readme18005.md\");",
+									"    pm.expect(imageFieldJson.fileAsset.size).to.eql(2260);",
+									"    pm.expect(imageFieldJson.fileAsset.mime).to.be.null;",
+									"    ",
+									"    // metaData",
+									"    pm.expect(imageFieldJson.metaData[0].key).to.eql(\"fileSize\");",
+									"    pm.expect(imageFieldJson.metaData[0].value).to.eql(\"2260\");",
+									"    ",
+									"    pm.expect(imageFieldJson.metaData[1].key).to.eql(\"length\");",
+									"    pm.expect(imageFieldJson.metaData[1].value).to.eql(\"2260\");",
+									"    ",
+									"    pm.expect(imageFieldJson.metaData[3].key).to.eql(\"contentType\");",
+									"    pm.expect(imageFieldJson.metaData[3].value).to.eql(\"text/plain; charset=ISO-8859-1\");",
+									"    ",
+									"    pm.expect(imageFieldJson.metaData[4].key).to.eql(\"content\");",
+									"    pm.expect(imageFieldJson.metaData[4].value).not.eql(null);",
+									"    ",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{\n  {{contentTypeVariable}}Collection(limit: 20) {\n    myImage {\n      fileName\n      description\n      sortOrder\n      showOnMenu\n      \n      fileAsset {\n        name\n        size\n        mime\n      }\n      metaData {\n        key\n        value\n      }\n      description\n    }\n    \n    myFile {\n      fileName\n      description\n      sortOrder\n      showOnMenu\n      \n      fileAsset {\n        name\n        size\n        mime\n      }\n      metaData {\n        key\n        value\n      }\n      description\n    }\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "This test that the custom type Image contains the expecte fields.\nExpected fields:\n\n* fileName\n* description\n* fileAsset (Composed/Custom Type. see Binary type on our GraphQL doc)\n* metaData (Custom Type. See Key Value type on our GraphQL doc)\n* showOnMenu\n* sortOrder",
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [
 		{
-			"id": "3b642566-94ef-4548-9fff-44554b44269d",
+			"id": "9e26fa87-28d3-4a68-9fc6-d045b8fa115b",
 			"key": "languageId",
 			"value": 1575934290535,
 			"type": "number"
 		},
 		{
-			"id": "73844b9e-e138-48f2-b400-2448aa360199",
+			"id": "879d471c-3869-4a14-bb6d-a72b9e79336e",
 			"key": "contentId",
 			"value": null,
 			"type": "any"
 		},
 		{
-			"id": "3eb31604-6380-4c93-95a9-c63ae41d500c",
+			"id": "5da1d244-9d67-43a9-b248-803ef4bfaa18",
 			"key": "contentTypeVariable",
-			"value": "myStructure09578274",
+			"value": "MyCustomType87775784",
 			"type": "string"
 		},
 		{
-			"id": "287978c4-3d10-4f08-9906-e83997e4f29b",
+			"id": "0edd2dbc-1724-4ee5-a0dd-fe0b1c609494",
 			"key": "contentIdentifier",
-			"value": "8bbb3295-5152-408a-94d7-071b4cc05856",
+			"value": "4e01a699-1e94-4ca7-8104-2671662d9a9c",
 			"type": "string"
 		},
 		{
-			"id": "bc67ab59-0a14-4f2c-a989-58503a30e792",
+			"id": "b4062e3a-e06d-48c7-864f-ce9e842967d0",
 			"key": "structureVariable",
 			"value": "myStructure94983807",
+			"type": "string"
+		},
+		{
+			"id": "86182aa0-f349-4a6b-bac7-8bca78112b5f",
+			"key": "imageContentTypeVariable",
+			"value": "MyImageType7",
+			"type": "string"
+		},
+		{
+			"id": "78c95be4-5c0e-4b7f-be14-de771ea66685",
+			"key": "imageContentIdentifier",
+			"value": "a0ec5a32-c136-40e5-ac72-384929756a2f",
+			"type": "string"
+		},
+		{
+			"id": "a07c66fe-df52-4410-9696-d9b5fc48deff",
+			"key": "imageFieldVariable",
+			"value": "myImage",
+			"type": "string"
+		},
+		{
+			"id": "a49687e7-7e5a-4eb2-9dbb-543d8ca1f4b7",
+			"key": "showOnMenu",
+			"value": true,
+			"type": "boolean"
+		},
+		{
+			"id": "e0ebcee1-9a10-4a55-b874-567bd2847da1",
+			"key": "sortOrder",
+			"value": 2,
+			"type": "number"
+		},
+		{
+			"id": "33df0f66-32ae-4c7f-b162-dc667f116b7e",
+			"key": "fileFieldVariable",
+			"value": "myFile",
+			"type": "string"
+		},
+		{
+			"id": "cad58671-33bd-4668-a746-4511fd7170bc",
+			"key": "fileContentIdentifier",
+			"value": "9471b1e9-2536-4802-8662-7ac94b37533a",
 			"type": "string"
 		}
 	],

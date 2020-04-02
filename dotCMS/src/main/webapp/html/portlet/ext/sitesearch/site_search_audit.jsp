@@ -1,11 +1,10 @@
-<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-<%@page import="com.dotmarketing.sitesearch.model.SiteSearchAudit"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@page import="com.dotmarketing.quartz.ScheduledTask"%>
-<%@page import="java.util.List"%>
-<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
+<%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
+<%@page import="com.dotmarketing.quartz.ScheduledTask"%>
+<%@page import="com.dotmarketing.sitesearch.business.SiteSearchAPI"%>
 <%@page import="com.dotmarketing.sitesearch.business.SiteSearchAuditAPI"%>
+<%@page import="com.dotmarketing.sitesearch.model.SiteSearchAudit"%>
 <%@ include file="/html/common/init.jsp"%>
 <%
     SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
@@ -57,11 +56,19 @@
     </tr>
     <% for(SiteSearchAudit a : recents) { %>
     <%
-        StringBuilder hostList=new StringBuilder();
-        for(String hid : a.getHostList().split(",")) {
-            if(UtilMethods.isSet(hid))
-                hostList.append(APILocator.getHostAPI().find(hid, APILocator.getUserAPI().getSystemUser(), false).getHostname())
-                        .append("  ");
+        final StringBuilder hostList = new StringBuilder();
+        final String [] sites = a.getHostList().split(",");
+        if(UtilMethods.isSet(sites) ){
+            if ("empty".equalsIgnoreCase(sites[0])) {
+                hostList.append(LanguageUtil.get(pageContext, "All")).append("  ");
+            } else {
+                for (final String hostId : sites) {
+                    if (UtilMethods.isSet(hostId)) {
+                        hostList.append(APILocator.getHostAPI()
+                                .find(hostId, APILocator.getUserAPI().getSystemUser(), false)).append("  ");
+                    }
+                }
+            }
         }
         StringBuilder langList=new StringBuilder();
         for(String lid : a.getLangList().split(",")) {
