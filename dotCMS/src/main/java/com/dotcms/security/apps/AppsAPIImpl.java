@@ -69,25 +69,6 @@ public class AppsAPIImpl implements AppsAPI {
             .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
             .findAndRegisterModules();
 
-    /*
-    char[] toJsonAsChars(final AppSecrets object) throws DotDataException {
-        try {
-            final byte [] bytes = jsonMapper.writeValueAsBytes(object);
-            return bytesToCharArrayUTF(bytes);
-        } catch (IOException e) {
-            throw new DotDataException(e);
-        }
-    }
-
-    AppSecrets readJson2(final char[] chars) throws DotDataException {
-        try {
-            final byte [] bytes = charsToBytesUTF(chars);
-            return jsonMapper.readValue(bytes, AppSecrets.class);
-        } catch (IOException e) {
-            throw new DotDataException(e);
-        }
-    }*/
-
     private AppSecrets readJson(final char[] chars) throws DotDataException {
         try {
             return jsonMapper.readValue(new String(chars), AppSecrets.class);
@@ -103,34 +84,6 @@ public class AppsAPIImpl implements AppsAPI {
             throw new DotDataException(e);
         }
     }
-
-    /**
-     * This method takes a byte array and converts its contents into a char array
-     * No String middle man is created.
-     * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
-     * @param bytes
-     * @return
-
-    char[] bytesToCharArrayUTF(final byte[] bytes) {
-       final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
-       return ArrayUtils.toPrimitive(cBuffer.chars().mapToObj(value -> (char)value).toArray(Character[]::new));
-    }*/
-
-    /**
-     * This method takes a char array and converts its contents into a byte array
-     * No String middle man is created.
-     * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
-     * @param chars
-     * @return
-
-    byte[] charsToBytesUTF(final char[] chars) {
-        final byte[] bytes = new byte[chars.length << 1];
-        final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
-        for (final char chr : chars){
-            cBuffer.put(chr);
-        }
-        return bytes;
-    }*/
 
     /**
      * One single method takes care of building the internal-key
@@ -334,9 +287,7 @@ public class AppsAPIImpl implements AppsAPI {
                     secrets.getKey(), user.getUserId(), host.getIdentifier()));
         } else {
             final String internalKey = internalKey(secrets.getKey(), host);
-            //final char[] chars = toJsonAsChars(secrets);
             secretsStore.saveValue(internalKey, toJsonAsString(secrets).toCharArray());
-
         }
     }
 

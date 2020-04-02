@@ -329,41 +329,6 @@ public class AppsAPIImplTest {
         api.saveSecrets(builder.build(), APILocator.systemHost() , nonAdminUserWithAccessToPortlet);
     }
 
-    /*
-    @Test
-    public void Test_BytesToChar_No_Middle_String_Conversion() throws DotDataException {
-        final AppsAPIImpl impl =  new AppsAPIImpl();
-        final String in = RandomStringUtils.randomAlphanumeric(600);
-        final char [] chars = impl.bytesToCharArrayUTF(in.getBytes());
-        final byte [] bytes = impl.charsToBytesUTF(chars);
-        final String out = new String(bytes);
-        Assert.assertEquals(in,out);
-    }
-
-    @Test
-    public void Test_Secret_Json_Serialization_No_String_Middle_Man() throws DotDataException {
-        final AppsAPIImpl impl = new AppsAPIImpl();
-        final AppSecrets secretsIn = new AppSecrets.Builder()
-                .withKey("TheKey")
-                .withHiddenSecret("hidden", "I'm hidden")
-                .withSecret("non-hidden", "I'm not hidden")
-                .withSecret("bool", true)
-                .build();
-        final char[] toJsonAsChars = impl.toJsonAsChars(secretsIn);
-        final AppSecrets secretsOut = impl.readJson2(toJsonAsChars);
-        Assert.assertEquals(secretsIn.getKey(), secretsOut.getKey());
-
-        Assert.assertEquals(secretsIn.getSecrets().size(), secretsOut.getSecrets().size());
-
-        final Set<Entry<String, Secret>> secretsInEntries = secretsIn.getSecrets().entrySet();
-        for (final Entry<String, Secret> entryIn : secretsInEntries) {
-            Assert.assertEquals(secretsIn.getKey(), secretsOut.getKey());
-            final Secret out = secretsOut.getSecrets().get(entryIn.getKey());
-            Assert.assertNotNull(out);
-            Assert.assertTrue(out.equals(entryIn.getValue()));//This does a deepEquals.
-        }
-    }*/
-
     private Portlet getOrCreateServiceIntegrationPortlet(){
         final String integrationsPortletId = AppsAPIImpl.APPS_PORTLET_ID;
         final PortletAPI portletAPI = APILocator.getPortletAPI();
