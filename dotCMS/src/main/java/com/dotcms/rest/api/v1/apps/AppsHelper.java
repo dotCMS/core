@@ -211,7 +211,7 @@ class AppsHelper {
 
                 //Now we need to present them both.
                 //For which we first add the ones from the descriptor.
-                final Set<SecretView> merged = new LinkedList<>(mappedDescriptors).stream()
+                final Set<SecretView> merged = mappedDescriptors.stream()
                     .filter(secretView -> !mappedSecrets.contains(secretView)).collect(Collectors.toSet());
                 merged.addAll(mappedSecrets);
 

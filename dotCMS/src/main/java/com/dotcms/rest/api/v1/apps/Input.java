@@ -5,12 +5,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
 
+/**
+ * This class represent an input value captured using a char array
+ * The value on the char array can be wiped out as opposed to a string which are final
+ */
 public class Input {
 
     @NotNull
-    private char [] value;
+    private final char [] value;
 
-    private boolean hidden;
+    private final boolean hidden;
 
     public Input(final char[] value, final boolean hidden) {
         this.value = value;
