@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -94,6 +95,7 @@ public class IndiciesFactory {
         }
         conn.commit();
         cache.clearCache();
+        CacheLocator.getESQueryCache().clearCache();
         
       } catch (Exception e) {
         if (conn != null) {
