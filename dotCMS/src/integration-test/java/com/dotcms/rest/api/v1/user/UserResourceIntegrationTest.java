@@ -8,7 +8,9 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
@@ -26,7 +28,7 @@ public class UserResourceIntegrationTest {
     static HttpServletRequest request;
     static UserResource resource;
     static User user;
-    static Host defaultHost;
+    static Host host;
     static User adminUser;
 
     @BeforeClass
@@ -35,11 +37,20 @@ public class UserResourceIntegrationTest {
         IntegrationTestInitService.getInstance().init();
 
         resource = new UserResource();
-        user = TestUserUtils.getChrisPublisherUser();
-        response = new MockHttpResponse();
-
         adminUser = TestUserUtils.getAdminUser();
-        defaultHost = APILocator.getHostAPI().findDefaultHost(adminUser, true);
+        host = APILocator.getHostAPI().findDefaultHost(adminUser,true);
+        user = TestUserUtils.getChrisPublisherUser(host);
+        response = new MockHttpResponse();
+        //Check if role has any layout, if is empty add one
+        if(APILocator.getLayoutAPI().loadLayoutsForUser(user).isEmpty()) {
+            APILocator.getRoleAPI()
+                    .addLayoutToRole(APILocator.getLayoutAPI().findAllLayouts().get(0),
+                            APILocator.getRoleAPI().getUserRole(user));
+        }
+        //Add permissions to the host
+        final Permission readPermissionsPermission = new Permission( host.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(user).getId(), PermissionAPI.PERMISSION_READ, true );
+        APILocator.getPermissionAPI().save(readPermissionsPermission,host,adminUser,false);
 
     }
 
@@ -53,7 +64,7 @@ public class UserResourceIntegrationTest {
         request.setHeader("Authorization",
                 "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
 
-        request.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,defaultHost);
+        request.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,host);
 
         return request;
     }
@@ -67,7 +78,7 @@ public class UserResourceIntegrationTest {
         assertEquals(user.getUserId(),request.getSession().getAttribute(WebKeys.USER_ID));
         assertNull(request.getSession().getAttribute(WebKeys.USER));
         assertEquals(adminUser.getUserId(),request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
-        assertEquals(defaultHost,request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
+        assertEquals(host,request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
     }
 
     @Test
@@ -84,7 +95,7 @@ public class UserResourceIntegrationTest {
         assertEquals(adminUser.getUserId(),request.getSession().getAttribute(WebKeys.USER_ID));
         assertNull(request.getSession().getAttribute(WebKeys.USER));
         assertNull(request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
-        assertEquals(defaultHost,request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
+        assertEquals(host,request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
     }
 
 
