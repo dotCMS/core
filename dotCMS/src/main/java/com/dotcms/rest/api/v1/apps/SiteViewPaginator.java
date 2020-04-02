@@ -92,9 +92,7 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
                 }
                 return null;
             }).filter(Objects::nonNull).map(host -> {
-                final boolean configured = configuredSites.contains(
-                        Host.SYSTEM_HOST.equals(host.getIdentifier()) ? host.getIdentifier()
-                                .toLowerCase() : host.getIdentifier());
+                final boolean configured = configuredSites.contains(host.getIdentifier().toLowerCase());
                 return new SiteView(host.getIdentifier(), host.getName(), configured);
             }).collect(Collectors.toList());
 
