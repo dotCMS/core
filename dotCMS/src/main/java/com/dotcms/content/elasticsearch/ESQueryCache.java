@@ -94,6 +94,9 @@ public class ESQueryCache implements Cachable {
      * @param hits
      */
     public void put(final SearchRequest searchRequest, final SearchHits hits) {
+        if (searchRequest == null || ! shouldUseCache) {
+            return ;
+        }
         final String hash = hash(searchRequest);
         cache.put(hash, hits, groups[0]);
     }
