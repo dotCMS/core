@@ -15,7 +15,7 @@ public abstract class DotForbiddenExceptionMapper<T extends Throwable> extends D
     @Override
     public Response toResponse(final T exception) {
         SecurityLogger.logInfo(this.getClass(), exception.getMessage());
-        Logger.error(this.getClass(), exception);
+        Logger.warnAndDebug(this.getClass(), exception);
 
         return ExceptionMapperUtil.createResponse(exception, this.getErrorKey(), this.getErrorStatus());
     }
