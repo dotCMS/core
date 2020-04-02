@@ -18,6 +18,7 @@ export class MockDotRouterService {
         return {};
     }
 
+    replaceQueryParams = jasmine.createSpy('replaceQueryParams');
     getPortletId = jasmine.createSpy('getPortletId').and.returnValue('test');
     goToEditContentType = jasmine.createSpy('goToEditContentType');
     goToEditContentlet = jasmine.createSpy('goToEditContentlet');

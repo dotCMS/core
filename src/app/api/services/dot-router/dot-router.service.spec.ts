@@ -177,4 +177,14 @@ describe('DotRouterService', () => {
             )
         ).toBe('content');
     });
+
+    it('should navigate replacing URL params', () => {
+        const params = {id: 'content'};
+        service.replaceQueryParams(params);
+        expect(router.navigate).toHaveBeenCalledWith([],
+            {
+                queryParams: params,
+                queryParamsHandling: 'merge'
+            });
+    });
 });

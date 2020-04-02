@@ -221,16 +221,7 @@ describe('DotPageStateService', () => {
         describe('setLanguage', () => {
             it('should set laguage 1', () => {
                 service.setLanguage(1);
-
-                expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
-                    {
-                        viewAs: {
-                            language: 1
-                        },
-                        url: '/an/url/test/form/query/params'
-                    },
-                    {}
-                ]);
+                expect(dotRouterService.replaceQueryParams).toHaveBeenCalledWith({language_id: 1});
             });
         });
 

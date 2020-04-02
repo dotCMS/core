@@ -205,6 +205,22 @@ export class DotRouterService {
         return portletId.startsWith(this.CUSTOM_PORTLET_ID_PREFIX);
     }
 
+    /**
+     * Replace the query params received, in the URL
+     *
+     * @param {{ [key: string]: string | number }} params
+     * @returns {void}
+     * @memberof DotRouterService
+     */
+    replaceQueryParams(params: { [key: string]: string | number }): void {
+        this.router.navigate(
+            [],
+            {
+                queryParams: params,
+                queryParamsHandling: 'merge'
+            });
+    }
+
     private redirectMain(): Promise<boolean> {
         if (this._previousSavedURL) {
             return this.router.navigate([this.previousSavedURL]).then((ok: boolean) => {
