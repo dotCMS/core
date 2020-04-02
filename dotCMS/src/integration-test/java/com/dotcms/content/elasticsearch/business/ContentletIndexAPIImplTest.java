@@ -506,10 +506,10 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             indexAPI.removeContentFromIndex( testContentlet );
 
             //We are just making time in order to let it apply the index
-            wasContentRemoved( query );
+            wasContentRemoved( query + " " + UUIDGenerator.generateUuid() );
 
             //Verify if it was removed to the index
-            result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
+            result = contentletAPI.search( query + " " + UUIDGenerator.generateUuid(), 0, -1, "modDate desc", user, true );
 
             //Validations
             assertTrue( result == null || result.isEmpty() );
@@ -546,7 +546,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
             //Verify if it was added to the index
             String query = "+structureName:" + testStructure.getVelocityVarName() + " +deleted:false +live:true";
-            List<Contentlet> result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
+            List<Contentlet> result = contentletAPI.search( query + " " + UUIDGenerator.generateUuid(), 0, -1, "modDate desc", user, true );
 
             //Validations
             assertNotNull( result );
@@ -559,7 +559,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             do {
                 Thread.sleep(200);
                 //Verify if it was removed to the index
-                result = contentletAPI.search( query, 0, -1, "modDate desc", user, true );
+                result = contentletAPI.search( query+ " " + UUIDGenerator.generateUuid(), 0, -1, "modDate desc", user, true );
                 x++;
             } while(!result.isEmpty() && x<100);
 
@@ -1117,11 +1117,11 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             assertFalse(content.isLive());
             assertTrue(contentletAPI.indexCount(
                     "+live:false +identifier:" + content.getIdentifier() + " +inode:" + content
-                            .getInode() + " +languageId:" + content.getLanguageId(), user,
+                            .getInode() + " +languageId:" + content.getLanguageId() + " " + UUIDGenerator.generateUuid(), user,
                     false) > 0);
             assertTrue(contentletAPI.indexCount(
                     "+live:true +identifier:" + content.getIdentifier() + " +inode:" + content
-                            .getInode() + " +languageId:" + content.getLanguageId(), user,
+                            .getInode() + " +languageId:" + content.getLanguageId()+ " " + UUIDGenerator.generateUuid(), user,
                     false) == 0);
 
         }
@@ -1134,7 +1134,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             assertTrue("the contentlet: " + content.getIdentifier() + " must be published",content.isLive());
             assertTrue(contentletAPI.indexCount(
                     "+live:true +identifier:" + content.getIdentifier() + " +inode:" + content
-                            .getInode() + " +languageId:" + content.getLanguageId(), user,
+                            .getInode() + " +languageId:" + content.getLanguageId() + " " + UUIDGenerator.generateUuid(), user,
                     false) > 0);
         }
         new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();

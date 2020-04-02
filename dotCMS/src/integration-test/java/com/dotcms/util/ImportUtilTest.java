@@ -33,6 +33,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
@@ -1442,7 +1443,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     TITLE_FIELD_NAME + ", " + BODY_FIELD_NAME + ", " + field.variable()
                             + "\r\n" +
                             "parent contentlet, parent contentlet body, ");
-
+            CacheLocator.getESQueryCache().clearCache();
             final Map results = importContentWithRelationships(parentContentType, reader,
                     new String[]{
                             parentContentType.fieldMap().get(TITLE_FIELD_NAME).inode()});
