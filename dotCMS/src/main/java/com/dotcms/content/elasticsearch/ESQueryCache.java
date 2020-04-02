@@ -9,7 +9,6 @@ import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.PageMode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.hash.Hashing;
 
@@ -49,7 +48,7 @@ public class ESQueryCache implements Cachable {
 
     @Override
     public void clearCache() {
-        Arrays.asList(getGroups()).forEach(group -> cache.flushGroup(group));
+        cache.flushGroup(groups[0]);
 
     }
 
@@ -63,7 +62,9 @@ public class ESQueryCache implements Cachable {
     final String hash(final SearchRequest searchRequest) {
         
 
-        return Hashing.murmur3_128().newHasher().putBytes(searchRequest.toString().getBytes()).hash().toString();
+        //return Hashing.murmur3_128().newHasher().putBytes(searchRequest.toString().getBytes()).hash().toString();
+        
+        return String.valueOf(searchRequest.hashCode());
     }
 
 
@@ -77,7 +78,7 @@ public class ESQueryCache implements Cachable {
      * @return
      */
     public Optional<SearchHits> get(final SearchRequest searchRequest) {
-        if (searchRequest == null || searchRequest.source() == null || PageMode.get().isAdmin) {
+        if (searchRequest == null || ! shouldUseCache) {
             return Optional.empty();
         }
         final String hash = hash(searchRequest);

@@ -210,7 +210,7 @@ public class PublisherTestUtil {
         pageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
         APILocator.getContentletIndexAPI().addContentToIndex(pageAsset);
-        assertEquals(1, APILocator.getContentletAPI().indexCount("+inode:" + pageAsset.getInode(), user, false));
+        assertEquals(1, APILocator.getContentletAPI().indexCount("+inode:" + pageAsset.getInode() + " " + UUIDGenerator.ulid(), user, false));
 
         return pageAsset;
     }

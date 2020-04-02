@@ -5051,6 +5051,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             new ContentletLoader().invalidate(contentlet);
+            
+            
+            CacheLocator.getESQueryCache().clearCache();
+            
+            
 
         } catch (Exception e) {
             if(createNewVersion && workingContentlet!= null && UtilMethods.isSet(workingContentlet.getInode())){

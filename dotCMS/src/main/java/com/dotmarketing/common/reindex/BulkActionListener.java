@@ -13,6 +13,7 @@ import org.elasticsearch.action.delete.DeleteResponse;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
@@ -74,6 +75,11 @@ class BulkActionListener implements ActionListener<BulkResponse> {
             }
         }
         handleSuccess(successful);
+        
+        /**
+         * Delete query cache no matter what
+         */
+        CacheLocator.getESQueryCache().clearCache();
 
     }
 
