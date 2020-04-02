@@ -172,7 +172,7 @@ public class FileAssetFactoryIntegrationTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test(expected = DotSecurityException.class)
-    public void shouldThorDotSecurityException() throws DotDataException, DotSecurityException {
+    public void whenUserNotHavePermissionOverParentFolder() throws DotDataException, DotSecurityException {
         final Role backEndUserRole = APILocator.getRoleAPI().loadBackEndUserRole();
         final Role role = new RoleDataGen().nextPersisted();
         final User user = new UserDataGen().roles(role, backEndUserRole).nextPersisted();
