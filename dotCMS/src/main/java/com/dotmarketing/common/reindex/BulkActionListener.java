@@ -76,9 +76,7 @@ class BulkActionListener implements ActionListener<BulkResponse> {
         }
         handleSuccess(successful);
         
-        /**
-         * Delete query cache no matter what
-         */
+        //Delete query cache when a new content has been reindexed
         CacheLocator.getESQueryCache().clearCache();
 
     }
