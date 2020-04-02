@@ -6258,7 +6258,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // validate unique
             if(field.isUnique()){
                 try{
-                    StringBuilder buffy = new StringBuilder();
+                    StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
                     buffy.append(" +structureInode:" + contentlet.getStructureInode());
                     if(UtilMethods.isSet(contentlet.getIdentifier())){
                         buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
