@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch;
 
-import java.util.Arrays;
 import java.util.Optional;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.search.SearchHits;
@@ -10,8 +9,15 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.Config;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.hash.Hashing;
 
+/**
+ * This cache will take an ElasticSearch SearchRequest as a key and will return the SearchHits for
+ * that SearchRequest from cache if they are available.  This entire cache can be turned off by setting
+ * ES_CACHE_SEARCH_QUERIES = false in your dotmarketing-config.properties
+ * 
+ * @author will
+ *
+ */
 public class ESQueryCache implements Cachable {
 
 
@@ -60,16 +66,15 @@ public class ESQueryCache implements Cachable {
      */
     @VisibleForTesting
     final String hash(final SearchRequest searchRequest) {
-        
 
-        //return Hashing.murmur3_128().newHasher().putBytes(searchRequest.toString().getBytes()).hash().toString();
-        
+
+        // return
+        // Hashing.murmur3_128().newHasher().putBytes(searchRequest.toString().getBytes()).hash().toString();
+
         return String.valueOf(searchRequest.hashCode());
     }
 
 
-
-    
 
     /**
      * taks a searchRequest and returns the SearchHits for it
@@ -78,7 +83,7 @@ public class ESQueryCache implements Cachable {
      * @return
      */
     public Optional<SearchHits> get(final SearchRequest searchRequest) {
-        if (searchRequest == null || ! shouldUseCache) {
+        if (searchRequest == null || !shouldUseCache) {
             return Optional.empty();
         }
         final String hash = hash(searchRequest);
@@ -94,8 +99,8 @@ public class ESQueryCache implements Cachable {
      * @param hits
      */
     public void put(final SearchRequest searchRequest, final SearchHits hits) {
-        if (searchRequest == null || ! shouldUseCache) {
-            return ;
+        if (searchRequest == null || !shouldUseCache) {
+            return;
         }
         final String hash = hash(searchRequest);
         cache.put(hash, hits, groups[0]);
