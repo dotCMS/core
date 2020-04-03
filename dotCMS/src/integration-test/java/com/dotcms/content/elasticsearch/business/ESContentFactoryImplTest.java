@@ -1,8 +1,10 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -25,6 +27,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -481,4 +485,49 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         assertEquals(contentlet.getInode(), hits[0].getSourceAsMap().get("inode"));
     }
 
+    @Test
+    public void test_findContentletByIdentifier() throws Exception {
+    
+        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language2 = new LanguageDataGen().nextPersisted();
+        final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
+        
+
+        // create URL-Mapped content
+        final Contentlet workingOneLanguage = new ContentletDataGen(blogType.id())
+                .languageId(language1.getId())
+                .setProperty("body", "myBody")
+                .nextPersisted();
+        
+        // create URL-Mapped content
+        final Contentlet workingTwoLanguage = new ContentletDataGen(blogType.id())
+                .languageId(language1.getId())
+                .setProperty("body", "myBody")
+                .nextPersisted();
+        
+        // create URL-Mapped content
+        final Contentlet publishedTwoLanguage2 = new ContentletDataGen(blogType.id())
+                .languageId(language2.getId())
+                .setProperty("body", "myBody")
+                .setProperty("identifier", workingTwoLanguage.getIdentifier())
+                .nextPersisted();
+        
+        
+        APILocator.getContentletAPI().publish(publishedTwoLanguage2, APILocator.systemUser(), false);
+        
+        
+        
+        assertEquals("workingOneLanguage exists and is working", workingOneLanguage, instance.findContentletByIdentifier(workingOneLanguage.getIdentifier(), false, language1.getId()));
+        assertNull("workingOneLanguage does not exist in 2nd language", instance.findContentletByIdentifier(workingOneLanguage.getIdentifier(), false, language2.getId()));
+        assertNull("workingOneLanguage does not exist in live", instance.findContentletByIdentifier(workingOneLanguage.getIdentifier(), true, language1.getId()));
+
+        assertNull("workingTwoLanguage in language1 is not live", instance.findContentletByIdentifier(workingTwoLanguage.getIdentifier(), true, language1.getId()));
+        assertEquals("workingTwoLanguage exists in langauge1 and is working", workingTwoLanguage, instance.findContentletByIdentifier(workingTwoLanguage.getIdentifier(), false, language1.getId()));
+        assertEquals("workingTwoLanguage exists in langauge2 and is working", publishedTwoLanguage2, instance.findContentletByIdentifier(workingTwoLanguage.getIdentifier(), false, language2.getId()));
+        assertEquals("workingTwoLanguage exists in langauge2 and is live", publishedTwoLanguage2, instance.findContentletByIdentifier(workingTwoLanguage.getIdentifier(), true, language2.getId()));
+
+    }
+    
+    
+    
 }
