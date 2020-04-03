@@ -1,9 +1,5 @@
 package com.dotcms.datagen;
 
-import static com.dotmarketing.business.Role.ADMINISTRATOR;
-import static com.dotmarketing.business.Role.DOTCMS_BACK_END_USER;
-import static com.dotmarketing.business.Role.DOTCMS_FRONT_END_USER;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -17,11 +13,17 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+
 import java.util.List;
 import java.util.Map;
+
+import static com.dotmarketing.business.Role.ADMINISTRATOR;
+import static com.dotmarketing.business.Role.DOTCMS_BACK_END_USER;
+import static com.dotmarketing.business.Role.DOTCMS_FRONT_END_USER;
 
 /**
  * @author Jonathan Gamba 2019-06-11
@@ -174,7 +176,7 @@ public class TestUserUtils {
         if (UtilMethods.isSet(users)) {
             return users.get(0);
         }
-        return new UserDataGen().firstName(name).lastName(lastName).emailAddress(email)
+        return new UserDataGen().firstName(name).lastName(lastName).emailAddress(email).skinId(UUIDGenerator.generateUuid())
                 .password(password).roles(role, getFrontendRole(), getBackendRole()).nextPersisted();
     }
 

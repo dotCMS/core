@@ -2,6 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -11,7 +12,10 @@ import static org.mockito.Mockito.when;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.UtilMethods;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -120,5 +124,68 @@ public class ESIndexAPITest {
         assertNotNull(stats);
         assertEquals(5, stats.getDocumentCount());
         assertEquals(2000, stats.getSizeRaw());
+    }
+
+    @Test
+    public void testGetClusterStatsWhenStatsTypeIsLongShouldPass(){
+
+        final Map<String, Object> jsonMap = new HashMap<>();
+        final Map<String, Object> nodes = new HashMap<>();
+        final Map<String, Object> indices = new HashMap<>();
+        final Map<String, Object> countMap = new HashMap<>();
+        final Map<String, Object> sizeMap = new HashMap<>();
+
+        countMap.put("count", Long.valueOf(5));
+        sizeMap.put("size_in_bytes", Long.valueOf(2000));
+        indices.put("docs", countMap);
+        indices.put("store", sizeMap);
+        nodes.put("indices", indices);
+        nodes.put("roles", new ArrayList<String>());
+        jsonMap.put("nodes", Collections.singletonMap("node1", nodes));
+        jsonMap.put("cluster_name", "dummyCluster");
+
+        final ESIndexAPI indexAPI = spy(ESIndexAPI.class);
+        doReturn(jsonMap).when(indexAPI).performLowLevelRequest(any());
+
+        final  ClusterStats result = indexAPI.getClusterStats();
+
+        assertNotNull(result);
+        assertTrue(UtilMethods.isSet(result.getNodeStats()));
+
+        final NodeStats nodeStats = result.getNodeStats().get(0);
+        assertEquals(5, nodeStats.getDocCount());
+        assertEquals(2000, nodeStats.getSizeRaw());
+    }
+
+    @Test
+    public void testGetClusterStatsWhenStatsTypeIsIntegerShouldPass(){
+
+        final Map<String, Object> jsonMap = new HashMap<>();
+        final Map<String, Object> nodes = new HashMap<>();
+        final Map<String, Object> indices = new HashMap<>();
+        final Map<String, Object> countMap = new HashMap<>();
+        final Map<String, Object> sizeMap = new HashMap<>();
+
+        countMap.put("count", 5);
+        sizeMap.put("size_in_bytes", 2000);
+        indices.put("docs", countMap);
+        indices.put("store", sizeMap);
+        nodes.put("indices", indices);
+        nodes.put("roles", new ArrayList<String>());
+        jsonMap.put("nodes", Collections.singletonMap("node1", nodes));
+        jsonMap.put("cluster_name", "dummyCluster");
+
+
+        final ESIndexAPI indexAPI = spy(ESIndexAPI.class);
+        doReturn(jsonMap).when(indexAPI).performLowLevelRequest(any());
+
+        final  ClusterStats result = indexAPI.getClusterStats();
+
+        assertNotNull(result);
+        assertTrue(UtilMethods.isSet(result.getNodeStats()));
+
+        final NodeStats nodeStats = result.getNodeStats().get(0);
+        assertEquals(5, nodeStats.getDocCount());
+        assertEquals(2000, nodeStats.getSizeRaw());
     }
 }

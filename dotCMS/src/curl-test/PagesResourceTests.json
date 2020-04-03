@@ -1,0 +1,1830 @@
+{
+	"info": {
+		"_postman_id": "9101cc46-59f9-4129-a24c-1acf5744f0a9",
+		"name": "Pages Resource Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "loadJson",
+			"item": [
+				{
+					"name": "UserAuthenticationValidation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "5f1dba43-1d08-457c-b67e-4f0534157b55",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 401, Need credentials\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body matches\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/json/about-us/index",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"json",
+								"about-us",
+								"index"
+							]
+						},
+						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
+					},
+					"response": []
+				},
+				{
+					"name": "SuccessRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "1c741cde-3a18-46ac-84c9-c28fb17f845a",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Include template\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"template\");",
+									"});",
+									"",
+									"pm.test(\"Inlude layout\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"layout\");",
+									"});",
+									"",
+									"pm.test(\"Include Containers\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"containers\");",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/json/about-us/index",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"json",
+								"about-us",
+								"index"
+							]
+						},
+						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
+					},
+					"response": []
+				},
+				{
+					"name": "ValidateReadPermissions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "868a9218-423c-4fe9-bc04-9dcb0231ef75",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"User: Bill Intranet : dotcms.org.2806 does not have permissions\");",
+									"});",
+									"",
+									"",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "bill",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "bill@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/json/about-us/index",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"json",
+								"about-us",
+								"index"
+							]
+						},
+						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
+					},
+					"response": []
+				},
+				{
+					"name": "InvalidPageURL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "55b28507-62ac-4176-807f-a9a4f49743ec",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Page '/about-us/index2' is not found\");",
+									"});",
+									"",
+									"",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/json/about-us/index2",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"json",
+								"about-us",
+								"index2"
+							]
+						},
+						"description": "http://localhost:8080/api/v1/page/json/{page-url}"
+					},
+					"response": []
+				},
+				{
+					"name": "Validate contents on advanced templates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "da875510-87f2-4848-b004-710215a08d80",
+								"exec": [
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"}); ",
+									"",
+									"pm.test(\"Has Rows and Columns\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.entity.layout.body.rows.length).to.equal(2);",
+									"    pm.expect(jsonData.entity.layout.body.rows[0].columns.length).to.equal(1);",
+									"     ",
+									"});",
+									"",
+									"pm.test(\"Number of Contents\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.entity.numberContents).to.equal(2);",
+									"    ",
+									"     ",
+									"});",
+									"",
+									"pm.test(\"Page checks\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.entity.page.pageURI).to.equal('/blog/index');",
+									"    pm.expect(jsonData.entity.page.title).to.equal('Blogs');",
+									"    pm.expect(jsonData.entity.page.type).to.equal('htmlpage');",
+									"     ",
+									"});",
+									"",
+									"pm.test(\"Site checks\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.entity.site.name).to.equal('demo.dotcms.com');",
+									"    pm.expect(jsonData.entity.site.hostname).to.equal('demo.dotcms.com');",
+									"    pm.expect(jsonData.entity.site.type).to.equal('contentlet');",
+									"     ",
+									"});",
+									"",
+									"pm.test(\"Template checks\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.entity.template.title).to.equal('anonymous_layout_1571406924828');",
+									"    pm.expect(jsonData.entity.template.type).to.equal('template');",
+									"     ",
+									"});",
+									"",
+									"pm.test(\"Contentlets checks\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.containers[\"/application/containers/default/\"].contentlets[\"uuid-1\"][0].title).to.equal('Travel Blog Header');",
+									"    pm.expect(jsonData.entity.containers[\"/application/containers/default/\"].contentlets[\"uuid-1\"][0].contentType).to.equal('webPageContent');",
+									"});",
+									"",
+									"",
+									"",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/json/blog/index",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"json",
+								"blog",
+								"index"
+							]
+						},
+						"description": "Gets an Url content map"
+					},
+					"response": []
+				}
+			],
+			"description": "Returns the metadata in JSON format of the objects that make up an HTML Page in the system.\n\nhttp://localhost:8080/api/v1/page/json/{page-url}",
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "RenderPage",
+			"item": [
+				{
+					"name": "UserAuthenticationValidation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "7008ae74-9119-4235-8670-397376f19f79",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 401, Need credentials\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body matches\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/about-us/index",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"about-us",
+								"index"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SuccessRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "fea8cb7e-1c13-432c-9acf-3f5ab66caccb",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"rendered\");",
+									"});",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"uuid\");",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/about-us/index",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"about-us",
+								"index"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "InvalidURL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "8baa5207-fc13-4a97-b86d-170b5b2b2074",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"is not found\");",
+									"});",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/about-us/index2",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"about-us",
+								"index2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "ReadPermissionsValidation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "84ababef-6a09-4292-a32e-e0317c2335c3",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 403, Need permissions to read\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body matches\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"User: Bill Intranet : dotcms.org.2806 does not have permissions READ\");",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "bill",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "bill@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/about-us/index",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"about-us",
+								"index"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Url Content Map",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "da875510-87f2-4848-b004-710215a08d80",
+								"exec": [
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"}); ",
+									"",
+									"pm.test(\"Has Rows and Columns\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.entity.layout.body.rows.length).to.equal(1);",
+									"    pm.expect(jsonData.entity.layout.body.rows[0].columns.length).to.equal(1);",
+									"     ",
+									"});",
+									"",
+									"pm.test(\"Number of Contents\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.entity.numberContents).to.equal(1);",
+									"    ",
+									"     ",
+									"});",
+									"",
+									"pm.test(\"Page checks\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.entity.page.pageURI).to.equal('/blog/post/ecotourism-in-costa-rica');",
+									"    pm.expect(jsonData.entity.page.title).to.equal('Blog Detail');",
+									"    pm.expect(jsonData.entity.page.type).to.equal('htmlpage');",
+									"     ",
+									"});",
+									"",
+									"pm.test(\"Site checks\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.entity.site.name).to.equal('demo.dotcms.com');",
+									"    pm.expect(jsonData.entity.site.hostname).to.equal('demo.dotcms.com');",
+									"    pm.expect(jsonData.entity.site.type).to.equal('contentlet');",
+									"     ",
+									"});",
+									"",
+									"pm.test(\"Template checks\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.entity.template.title).to.equal('anonymous_layout_1563211383718');",
+									"    pm.expect(jsonData.entity.template.type).to.equal('template');",
+									"     ",
+									"});",
+									"",
+									"pm.test(\"Url Contente Map checks\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    pm.expect(jsonData.entity.urlContentMap.hostName).to.equal('demo.dotcms.com');",
+									"    pm.expect(jsonData.entity.urlContentMap.baseType).to.equal('CONTENT');",
+									"    pm.expect(jsonData.entity.urlContentMap.contentType).to.equal('Blog');",
+									"    pm.expect(jsonData.entity.urlContentMap.urlTitle).to.equal('ecotourism-in-costa-rica');",
+									"    pm.expect(jsonData.entity.urlContentMap['URL_MAP_FOR_CONTENT']).to.equal('/blog/post/ecotourism-in-costa-rica');",
+									"    pm.expect(jsonData.entity.urlContentMap['urlMap']).to.equal('/blog/post/ecotourism-in-costa-rica');",
+									"});",
+									"",
+									"",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/blog/post/ecotourism-in-costa-rica?mode=EDIT_MODE",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"blog",
+								"post",
+								"ecotourism-in-costa-rica"
+							],
+							"query": [
+								{
+									"key": "mode",
+									"value": "EDIT_MODE"
+								}
+							]
+						},
+						"description": "Gets an Url content map"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "Layout",
+			"item": [
+				{
+					"name": "UserAuthenticationValidation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a4bbfcaa-009e-4b9d-a8a6-444699c8211b",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 401, Need credentials\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body matches\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"layout"
+							]
+						},
+						"description": "@Path(\"/{pageId}/layout\")"
+					},
+					"response": []
+				},
+				{
+					"name": "SuccessRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "63adc218-5d09-43f5-9298-29a015edbedc",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"rendered\");",
+									"});",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"uuid-1\");",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"layout"
+							]
+						},
+						"description": "@Path(\"/{pageId}/layout\")"
+					},
+					"response": []
+				},
+				{
+					"name": "UserPermissionsValidation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "68e21ce5-5979-4bb2-83b4-6c8f541343c8",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"User:dotcms.org.2806 does not have permissions\");",
+									"});",
+									"",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "bill",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "bill@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"layout"
+							]
+						},
+						"description": "@Path(\"/{pageId}/layout\")"
+					},
+					"response": []
+				},
+				{
+					"name": "InvalidPageId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "74b443a9-5159-4eb6-8882-103877ef54fa",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"not found\");",
+									"});",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/2c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"2c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"layout"
+							]
+						},
+						"description": "@Path(\"/{pageId}/layout\")"
+					},
+					"response": []
+				},
+				{
+					"name": "RequestWihoutParameters",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6caa4cb3-f829-47da-8a44-c8d6572ddcc6",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"required\");",
+									"});",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"layout"
+							]
+						},
+						"description": "@Path(\"/{pageId}/layout\")"
+					},
+					"response": []
+				},
+				{
+					"name": "BadRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "f763b6fa-d689-43d0-a942-9a4ea16f21df",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Unrecognized field\");",
+									"});",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"2title\":null,\"layout\":{\"body\":{\"rows\":[{\"columns\":[{\"leftOffset\":1,\"width\":7,\"containers\":[{\"identifier\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\"}]},{\"leftOffset\":8,\"width\":4,\"containers\":[{\"identifier\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\"}]}]}]},\"header\":true,\"footer\":true,\"sidebar\":{\"location\":\"\",\"containers\":[],\"width\":\"small\"}}}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/layout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"layout"
+							]
+						},
+						"description": "@Path(\"/{pageId}/layout\")"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "addContent ",
+			"item": [
+				{
+					"name": "UserAuthenticationValidation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "7c944694-ddc4-458d-9b82-5dac72060430",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 401, Need credentials\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body matches\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[{\"id\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"content"
+							]
+						},
+						"description": "@Path(\"{pageId}/content\")"
+					},
+					"response": []
+				},
+				{
+					"name": "SuccessRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "78a8ed85-648a-4a40-b82a-be6079b4bf96",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"ok\");",
+									"});",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[{\"id\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"content"
+							]
+						},
+						"description": "@Path(\"{pageId}/content\")"
+					},
+					"response": []
+				},
+				{
+					"name": "UserPermissionsValidation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "005421ca-d134-473c-93d8-623f3f15d33e",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"User:dotcms.org.2806 does not have permissions\");",
+									"});",
+									"",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "bill",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "bill@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[{\"id\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/c12fe7e6-d338-49d5-973b-2d974d57015b/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"content"
+							]
+						},
+						"description": "@Path(\"{pageId}/content\")"
+					},
+					"response": []
+				},
+				{
+					"name": "InvalidPageId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "7c13bece-d440-4275-9dc1-4f818253e075",
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"not found\");",
+									"});",
+									"",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[{\"id\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/2c12fe7e6-d338-49d5-973b-2d974d57015b/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"2c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"content"
+							]
+						},
+						"description": "@Path(\"{pageId}/content\")"
+					},
+					"response": []
+				},
+				{
+					"name": "RequestWihoutParameters",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "7ac328db-c8d9-41c1-9ff2-620969e3d431",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"required\");",
+									"});",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/2c12fe7e6-d338-49d5-973b-2d974d57015b/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"2c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"content"
+							]
+						},
+						"description": "@Path(\"{pageId}/content\")"
+					},
+					"response": []
+				},
+				{
+					"name": "BadRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "0203c365-047e-4081-88d6-3bf273277574",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body contains\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"not found\");",
+									"});",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[{\"id\":\"a050073a-a31e-4aab-9307-86bfb248096a\",\"uuid\":\"1\",\"contentlets\":[\"767509b1-2392-4661-a16b-e0e31ce27719\",\"3c30df49-ea78-417a-93ce-631cd25bc66c\"]},{\"id\":\"5363c6c6-5ba0-4946-b7af-cf875188ac2e\",\"uuid\":\"1\",\"contentlets\":[\"2efc77b4-a54f-479b-8a81-a133b9e6da04\",\"5aef0c62-b7d6-4805-9e7c-77a67f4822f3\",\"66d47ebf-7b11-4076-85b0-b6c8c373d000\"]}]"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/2c12fe7e6-d338-49d5-973b-2d974d57015b/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"2c12fe7e6-d338-49d5-973b-2d974d57015b",
+								"content"
+							]
+						},
+						"description": "@Path(\"{pageId}/content\")"
+					},
+					"response": []
+				}
+			],
+			"description": " @Path(\"{pageId}/content\")",
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "renderHTMLOnly",
+			"item": [
+				{
+					"name": "UserAuthenticationValidation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "fac4ed61-53e7-4b71-99d9-e924639e7321",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 401, Need credentials\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Response body matches\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Invalid User\");",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/renderHTML/about-us/our-team/index",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"renderHTML",
+								"about-us",
+								"our-team",
+								"index"
+							]
+						},
+						"description": "@Path(\"/renderHTML/{uri: .*}\")"
+					},
+					"response": []
+				},
+				{
+					"name": "SuccessRequest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "609e169d-e92d-4f55-a1b9-7193064e035e",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Include template\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"body\");",
+									"});",
+									"",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/renderHTML/about-us/our-team/index",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"renderHTML",
+								"about-us",
+								"our-team",
+								"index"
+							]
+						},
+						"description": "@Path(\"/renderHTML/{uri: .*}\")"
+					},
+					"response": []
+				},
+				{
+					"name": "InvalidPageURL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b320adf6-f6da-4888-a082-b081fb06edf4",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"is not found\");",
+									"});",
+									"",
+									"",
+									"",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/renderHTML/about-us/our-team/index2",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"renderHTML",
+								"about-us",
+								"our-team",
+								"index2"
+							]
+						},
+						"description": "@Path(\"/renderHTML/{uri: .*}\")"
+					},
+					"response": []
+				},
+				{
+					"name": "ValidateReadPermissions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c409fc37-784f-47c3-a84c-d6b7a35b30c2",
+								"type": "text/javascript",
+								"exec": [
+									"",
+									"pm.test(\"Status code is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"",
+									"",
+									"pm.test(\"Valid response\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"User: Bill Intranet : dotcms.org.2806 does not have permissions\");",
+									"});",
+									"",
+									"",
+									"",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "bill",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "bill@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/renderHTML/about-us/our-team/index",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"renderHTML",
+								"about-us",
+								"our-team",
+								"index"
+							]
+						},
+						"description": "@Path(\"/renderHTML/{uri: .*}\")"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "17b24941-e433-430c-b903-d784411a71cb",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "495355db-92ee-4689-8a32-3e6bec0bd95c",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "518c9428-019a-4f13-80f5-ab48226df65b",
+			"key": "serverURL",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

@@ -42,10 +42,11 @@ public class DefaultResetPasswordUrlStrategy implements UrlStrategy {
         final String token = (String) params.get(TOKEN);
         final Locale locale = (Locale) params.get(LOCALE);
 
+        // private UserToken(String id, String subject, Date modificationDate, long ttlMillis, final String skinId) {
         final String jwt = this.jsonWebTokenService.generateUserToken(
-                new UserToken(UUID.randomUUID().toString(), token, user.getModificationDate(),
-                        this.jwtMillis
-                ));
+                new UserToken.Builder().id(user.getRememberMeToken())
+                        .subject(token).modificationDate(user.getModificationDate())
+                        .expiresDate(this.jwtMillis).build());
 
         return new StringBuilder(C_PORTAL_PUBLIC_LOGIN_MY_ACCOUNT_CMD_ERESET_MY_USER_ID)
                 .append(SWITCH_LOCALE).append(locale.getLanguage()).append(UNDERSCORE)

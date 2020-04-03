@@ -11,6 +11,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.ejb.CompanyLocalManager;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
@@ -57,7 +58,7 @@ public class JsonWebTokenInterceptorIntegrationTest {
         userAPI = APILocator.getUserAPI();
 
         //Create User
-        final User newUser = new UserDataGen().nextPersisted();
+        final User newUser = new UserDataGen().skinId(UUIDGenerator.generateUuid()).nextPersisted();
         APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), newUser);
         assertTrue(userAPI.isCMSAdmin(newUser));
         userId = newUser.getUserId();
@@ -83,9 +84,10 @@ public class JsonWebTokenInterceptorIntegrationTest {
 
         when(loginService.isLoggedIn(request)).thenReturn(false);
 
+        final User user = APILocator.getUserAPI().loadUserById(userId);
 
-
-        final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime());
+        final String jwtId = user.getRememberMeToken();
+        final UserToken userToken = new UserToken.Builder().id(jwtId).subject(userId).modificationDate(date).expiresDate(date.getTime()).build();
 
         userAPI.loadUserById(userId).setModificationDate(new Date());
 
@@ -129,7 +131,10 @@ public class JsonWebTokenInterceptorIntegrationTest {
 
         when(loginService.isLoggedIn(request)).thenReturn(false);
 
-        final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime());
+        final User user = APILocator.getUserAPI().loadUserById(userId);
+        final String jwtId = user.getRememberMeToken();
+        final UserToken userToken = new UserToken.Builder().id(jwtId).subject(userId)
+                        .modificationDate(date).expiresDate(date.getTime()).build();
 
         final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
 
@@ -189,8 +194,10 @@ public class JsonWebTokenInterceptorIntegrationTest {
 
         when(loginService.isLoggedIn(request)).thenReturn(false);
 
-
-        final UserToken userToken = new UserToken(jwtId, userId, date, date.getTime());
+        final User user = APILocator.getUserAPI().loadUserById(userId);
+        final String jwtId = user.getRememberMeToken();
+        final UserToken userToken = new UserToken.Builder().id(jwtId).subject(userId).modificationDate(date)
+                .expiresDate(date.getTime()).build();
 
         final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
 

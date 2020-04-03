@@ -29,7 +29,7 @@ import com.dotcms.rest.api.v1.personalization.PersonalizationResource;
 import com.dotcms.rest.api.v1.personas.PersonaResource;
 import com.dotcms.rest.api.v1.portlet.PortletResource;
 import com.dotcms.rest.api.v1.relationships.RelationshipsResource;
-import com.dotcms.rest.api.v1.secret.ServiceIntegrationResource;
+import com.dotcms.rest.api.v1.apps.AppsResource;
 import com.dotcms.rest.api.v1.site.SiteResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.actions.ActionResource;
@@ -160,7 +160,7 @@ public class DotRestApplication extends javax.ws.rs.core.Application {
 
 					REST_CLASSES.add(UpgradeTaskResource.class);
 
-					REST_CLASSES.add(ServiceIntegrationResource.class);
+					REST_CLASSES.add(AppsResource.class);
 				}
 			}
 		}

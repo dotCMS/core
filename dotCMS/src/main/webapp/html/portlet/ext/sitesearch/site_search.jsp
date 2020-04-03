@@ -472,13 +472,17 @@ function doCreateSiteSearch(alias,number) {
 	if(!number || !alias){
 		return;
 	}
-	
+
 	var shards = parseInt(number);
 	if(shards <1){
-		return;	
-	
+		return;
 	}
-	
+
+	if(/[^a-zA-Z0-9-_]/.test(alias.split(/\b\s+/)[0].trim())) {
+		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Invalid-Index-Alias")) %>");
+		return;
+	}
+
 	var xhrArgs = {
        url: "/DotAjaxDirector/com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction/cmd/createSiteSearchIndex/shards/" + shards +"/alias/"+alias,
        handleAs: "text",
@@ -560,8 +564,11 @@ function submitSchedule() {
 		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Choose-a-Language")) %>");
 		return;
 	}
-	
-	if(/^\s*$/.test(dojo.byId("indexAlias").value)) {
+
+	//Based on the error invalid_alias_name_exception returned by the ES
+	//Alias must not contain the following characters [ , \", *, \\, <, |, ,, >, /, ?]"}]
+	let indexAlias = dojo.byId("indexAlias").value;
+	if( !indexAlias || indexAlias === "" || /[^a-zA-Z0-9-_]/.test(indexAlias.split(/\b\s+/)[0].trim())) {
 		showDotCMSErrorMessage("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Invalid-Index-Alias")) %>");
         return;
 	}
