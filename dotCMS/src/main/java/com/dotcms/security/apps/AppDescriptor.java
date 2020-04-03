@@ -3,6 +3,7 @@ package com.dotcms.security.apps;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -106,16 +107,17 @@ public class AppDescriptor {
     }
 
     /**
-     * Holds the definition of the params expected by the service
+     * Holds the definition of the params expected by the service.
+     * This method returns a defensive copy.
      * @return
      */
     public Map<String, ParamDescriptor> getParams() {
-        return params;
+        return new LinkedHashMap<>(params);
     }
 
     public void addParam(final String name, final String value, final boolean hidden,
             final Type type, final String label, final String hint, final boolean required) {
-        getParams().put(name, ParamDescriptor.newParam(value, hidden, type, label, hint, required));
+        params.put(name, ParamDescriptor.newParam(value, hidden, type, label, hint, required));
     }
 
     @Override

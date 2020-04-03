@@ -27,8 +27,10 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.liferay.portal.model.User;
 import java.io.File;
@@ -38,12 +40,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -95,9 +99,9 @@ public class AppsResourceTest extends IntegrationTestBase {
 
     private InputStream createAppDescriptorFile(final String fileName, final String key,
             final String appName, final String description, final boolean allowExtraParameters,
-            final Map<String, ParamDescriptor> paramMap) throws IOException {
+            final SortedMap<String, ParamDescriptor> paramMap) throws IOException {
         final AppDescriptor appDescriptor = new AppDescriptor(key, appName,
-                description, "/black.png", allowExtraParameters, new HashMap<>());
+                description, "/black.png", allowExtraParameters, new TreeMap<>());
 
         for (final Entry<String, ParamDescriptor> entry : paramMap.entrySet()) {
             final ParamDescriptor param = entry.getValue();
@@ -131,7 +135,7 @@ public class AppsResourceTest extends IntegrationTestBase {
 
         final Host host = new SiteDataGen().nextPersisted();
 
-        final Map<String, ParamDescriptor> paramMap = ImmutableMap.of(
+        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
                 "p1", ParamDescriptor.newParam("v1", false, Type.STRING, "label", "hint", true),
                 "p2", ParamDescriptor.newParam("v2", false, Type.STRING, "label", "hint", true),
                 "p3", ParamDescriptor.newParam("v3", false, Type.STRING, "label", "hint", true)
@@ -245,7 +249,7 @@ public class AppsResourceTest extends IntegrationTestBase {
     @Test
     public void Test_Create_App_descriptor_Then_Create_App_Integration_Then_Delete_One_Single_Secret() {
 
-        final Map<String, ParamDescriptor> paramMap = ImmutableMap.of(
+        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
                 "param1", ParamDescriptor
                         .newParam("default", false, Type.STRING, "label", "hint", true),
                 "param2", ParamDescriptor
@@ -374,7 +378,7 @@ public class AppsResourceTest extends IntegrationTestBase {
     @Test
     public void Test_Create_App_Descriptor_Then_Create_App_Integration_Then_Delete_App_Descriptor() {
 
-        final Map<String, ParamDescriptor> paramMap = ImmutableMap.of(
+        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
                 "param1", ParamDescriptor
                         .newParam("val-1", false, Type.STRING, "label", "hint", true),
                 "param2", ParamDescriptor
@@ -457,12 +461,13 @@ public class AppsResourceTest extends IntegrationTestBase {
     @Test
     public void Test_Protected_Hidden_Secret_And_Values_Returned_Match_Descriptor() {
 
+        final List<String> orderedParamNames = ImmutableList.of("param1","param2","param3","param4");
         //This is how the descriptor looks like.
-        final Map<String, ParamDescriptor> initialParamsMap = ImmutableMap.of(
-                "param1", ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true),
-                "param2", ParamDescriptor.newParam("true", false, Type.BOOL, "label", "hint", true),
-                "param3", ParamDescriptor.newParam("val-2", false, Type.STRING, "label", "hint", true),
-                "param4", ParamDescriptor.newParam("true", false, Type.BOOL, "label", "hint", true)
+        final SortedMap<String, ParamDescriptor> appDescriptorParamsMap = ImmutableSortedMap.of(
+                orderedParamNames.get(0), ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true),
+                orderedParamNames.get(1), ParamDescriptor.newParam("true", false, Type.BOOL, "label", "hint", true),
+                orderedParamNames.get(2), ParamDescriptor.newParam("val-2", false, Type.STRING, "label", "hint", true),
+                orderedParamNames.get(3), ParamDescriptor.newParam("true", false, Type.BOOL, "label", "hint", true)
         );
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -474,7 +479,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         final String fileName = String.format("%s.yml", appKey);
         try(final InputStream inputStream = createAppDescriptorFile(fileName, appKey,
                 appKey,
-                "Test-hidden-secret-protection", false, initialParamsMap)) {
+                "Test-hidden-secret-protection", false, appDescriptorParamsMap)) {
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -524,11 +529,13 @@ public class AppsResourceTest extends IntegrationTestBase {
                 Assert.assertFalse(appDetailedView.getSites().isEmpty());
                 final Map<String, SecretView> secrets = appDetailedView.getSites().get(0)
                         .getSecrets().stream().collect(Collectors.toMap(SecretView::getName,
-                                Function.identity()));
+                                Function.identity(),(v1, v2) -> v1, LinkedHashMap::new));
+                //Using a LinkedHashMap we guarantee we keep the original order on which the elements were sent.
+                int index = 0;
                 for (Entry<String, SecretView> secretEntry : secrets.entrySet()) {
                     final String key = secretEntry.getKey();
                     final SecretView view = secretEntry.getValue();
-                    final ParamDescriptor originalParam = initialParamsMap.get(key);
+                    final ParamDescriptor originalParam = appDescriptorParamsMap.get(key);
                     if (view.getSecret().isHidden()) {
                         Assert.assertEquals(AppsHelper.HIDDEN_SECRET_MASK, new String(view.getSecret().getValue()));
                     } else {
@@ -537,6 +544,8 @@ public class AppsResourceTest extends IntegrationTestBase {
                     //These should always match whatever was specified on the app-descriptor.
                     Assert.assertEquals(originalParam.isHidden(),view.getSecret().isHidden());
                     Assert.assertEquals(originalParam.getType(),view.getSecret().getType());
+                    //Test the order on which the secrets were sent back. They must whatever order was specified when building the app-descriptor.
+                    Assert.assertEquals(view.getName(), orderedParamNames.get(index++));
                 }
             }
         }catch (Exception e){
@@ -549,7 +558,7 @@ public class AppsResourceTest extends IntegrationTestBase {
     @Test
     public void Test_App_Key_Casing()  {
 
-        final Map<String, ParamDescriptor> initialParamsMap = ImmutableMap.of(
+        final SortedMap<String, ParamDescriptor> initialParamsMap = ImmutableSortedMap.of(
                 "param1", ParamDescriptor
                         .newParam("val-1", false, Type.STRING, "label", "hint", true));
 
@@ -607,7 +616,7 @@ public class AppsResourceTest extends IntegrationTestBase {
     @Test
     public void Test_Required_Params_One_Single_Descriptor_Param_Empty_Value()  {
 
-        final Map<String, ParamDescriptor> initialParamsMap = ImmutableMap.of(
+        final SortedMap<String, ParamDescriptor> initialParamsMap = ImmutableSortedMap.of(
              "param1", ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true)
         );
 
@@ -652,7 +661,7 @@ public class AppsResourceTest extends IntegrationTestBase {
     @Test
     public void Test_Required_Params_Multiple_Params_Descriptor_Non_Empty_Value_Missing_Required_Param_Sent()  {
 
-        final Map<String, ParamDescriptor> initialParamsMap = ImmutableMap.of(
+        final SortedMap<String, ParamDescriptor> initialParamsMap = ImmutableSortedMap.of(
                 "param1", ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true),
                 "param2", ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true)
         );
@@ -699,7 +708,7 @@ public class AppsResourceTest extends IntegrationTestBase {
 
     @Test
     public void Test_Create_Descriptor_Then_Add_Dynamic_Prop() {
-        final Map<String, ParamDescriptor> paramMap = ImmutableMap.of(
+        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
                 "param1",
                 ParamDescriptor.newParam("val-1", true, Type.STRING, "label", "hint", true)
         );
@@ -768,7 +777,7 @@ public class AppsResourceTest extends IntegrationTestBase {
     @Test
     public void Test_Pagination_And_Sort_Then_Request_Filter_Expect_Empty_Results() {
 
-        final Map<String, ParamDescriptor> paramMap = ImmutableMap.of(
+        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
                 "param1", ParamDescriptor
                         .newParam("val-1", false, Type.STRING, "label", "hint", true),
                 "param2", ParamDescriptor
