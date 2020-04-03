@@ -59,7 +59,9 @@ public class ESQueryCache implements Cachable {
     }
 
     /**
-     * a fast hashing algo
+     * This provides the hash String for the given SearchRequest.
+     * Taking a look at the SearchRequest.hashCode(), it seems like 
+     * it will suit our purpose
      * 
      * @param queryString
      * @return
@@ -77,7 +79,7 @@ public class ESQueryCache implements Cachable {
 
 
     /**
-     * taks a searchRequest and returns the SearchHits for it
+     * taks a SearchRequest and returns and Optional<SearchHits> for it
      * 
      * @param searchRequest
      * @return
@@ -93,7 +95,7 @@ public class ESQueryCache implements Cachable {
 
 
     /**
-     * Puts SearchHits into the cache
+     * Puts SearchHits into the cache using the SearchRequest as the key
      * 
      * @param searchRequest
      * @param hits
