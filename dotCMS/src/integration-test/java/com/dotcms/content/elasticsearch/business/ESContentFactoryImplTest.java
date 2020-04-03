@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -529,7 +530,12 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     }
     
-    
+    /**
+     * This tests whether we are getting cached results from queries to elasticsearch and that these
+     * results are invalidated when a new piece of content is checked in
+     * 
+     * @throws Exception
+     */
     @Test
     public void test_cached_es_query_response() throws Exception {
         
@@ -555,7 +561,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         
 
         // checkin a new piece of content
-        final Contentlet content = new ContentletDataGen(blogType.id())
+        new ContentletDataGen(blogType.id())
                 .languageId(language1.getId())
                 .setProperty("body", "myBody")
                 .nextPersisted();
@@ -567,24 +573,36 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         assertTrue(hits != hits3);
     }
     
+    
+    /**
+     * This test insures that we are taking all the parameters of the query into account when
+     * building our cache key
+     * @throws Exception
+     */
     @Test
     public void test_cached_es_query_different_responses_for_all_params() throws Exception {
         
-        final Language language1 = new LanguageDataGen().nextPersisted();
 
-        final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
-        
-
-        
         final String liveQuery = "+baseType:1 +live:true" ;
         final String workingQuery = "+baseType:1 +live:false" ;
         
 
+        //default
         SearchHits hits = instance.indexSearch(liveQuery, 10, 0, null);
+        
+        // working index
         SearchHits hits1 = instance.indexSearch(workingQuery, 10, 0, null);
+        
+        // different limit
         SearchHits hits2 = instance.indexSearch(liveQuery, 9, 0, null);
+        
+        // different offset
         SearchHits hits3 = instance.indexSearch(liveQuery, 10, 1, null);
+        
+        // different sort
         SearchHits hits4 = instance.indexSearch(liveQuery, 10, 0, "title desc");
+        
+        // different sort direction
         SearchHits hits5 = instance.indexSearch(liveQuery, 10, 0, "title asc");
         
         
@@ -594,11 +612,19 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
         // all parameters are being taken into account when building the cache key
         assertTrue(hits != hits1);
+        assertNotEquals(hits , hits1);
+        
         assertTrue(hits != hits2);
+        assertNotEquals(hits , hits2);
+        
         assertTrue(hits != hits3);
+        assertNotEquals(hits , hits3);
+        
         assertTrue(hits != hits4);
+        assertNotEquals(hits , hits4);
+        
         assertTrue(hits != hits5);
-
+        assertNotEquals(hits , hits5);
         
 
     }
