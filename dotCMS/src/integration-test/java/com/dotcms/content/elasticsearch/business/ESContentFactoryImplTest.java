@@ -335,6 +335,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     /**
      * Tests convertContentletToFatContentlet
+     * In this case the title generated is the identifier, and both should be the same (fatty and model)
      */
     @Test
     public void test_convertContentletToFatContentlet() throws DotDataException {
@@ -358,7 +359,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
 
     /**
-     * Tests convertContentletToFatContentlet, in this case the title is set into the null props so null as a title is expected
+     * Tests convertContentletToFatContentlet, in this case the title is set into the null props on the model contentlet so empty string as a title is expected on the fatty since it is the default value when not set
      */
     @Test
     public void test_convertContentletToFatContentlet_title_null_props() throws DotDataException {
