@@ -560,7 +560,8 @@ public class ContentletLoader implements DotLoader {
 
         long language = new Long(key.language);
         ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, language);
-        if (info == null && language != defaultLang && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage()) {
+
+        if ((info == null || key.mode.showLive && info.getLiveInode() == null) && language != defaultLang && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage()) {
             info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, defaultLang);
         }
 
