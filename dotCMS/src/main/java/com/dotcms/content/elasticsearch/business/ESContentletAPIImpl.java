@@ -7745,7 +7745,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private boolean isInodeIndexedWithQuery(String luceneQuery) {
-        return isInodeIndexedWithQuery(luceneQuery, -1);
+        return isInodeIndexedWithQuery(luceneQuery + " " + UUIDGenerator.shorty(), -1);
     }
 
     private final List<Integer> fibonacciMapping = Arrays.asList(1, 2, 3, 5, 8, 13, 21, 34, 55); // it is around 14 + 9 (by the timeout delay) seconds, enough to wait
