@@ -303,6 +303,18 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 	}
 
+	/**
+	 * This method fetch the field and look for a listed properties, it will try to get the first text field as a title.
+	 * Otherwise will try to see if there is a binary available.
+	 *
+	 * In addition if a title is found, it is chuck to 255.
+	 *
+	 * Finally there is two special cases for FileAssets and DotAssets
+	 *
+	 * If any match, uses the identifier as a title.
+	 * @return String
+	 * @throws DotContentletStateException
+	 */
 	@CloseDBIfOpened
 	private String buildName()
 			throws DotContentletStateException {
