@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -529,5 +530,76 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
     }
     
     
+    @Test
+    public void test_cached_es_query_response() throws Exception {
+        
+        final Language language1 = new LanguageDataGen().nextPersisted();
+
+        final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
+        
+
+        
+        final String liveQuery = "+baseType:1 +live:true" ;
+        final String workingQuery = "+baseType:1 +live:false" ;
+        
+
+        SearchHits hits = instance.indexSearch(liveQuery, 10, 0, null);
+        
+        //assert we have results
+        assertTrue(hits.getTotalHits().value > 0);
+        
+        SearchHits hits2 = instance.indexSearch(liveQuery, 10, 0, null);
+        
+        // hits and hits2 are the same object in memory (meaning, it came from cache)
+        assertTrue(hits == hits2);
+        
+
+        // checkin a new piece of content
+        final Contentlet content = new ContentletDataGen(blogType.id())
+                .languageId(language1.getId())
+                .setProperty("body", "myBody")
+                .nextPersisted();
+        
+
+        SearchHits hits3 = instance.indexSearch(liveQuery, 10, 0, null);
+        
+        // Checking in a new piece of content flushed the esQuerycache, we get new results
+        assertTrue(hits != hits3);
+    }
     
+    @Test
+    public void test_cached_es_query_different_responses_for_all_params() throws Exception {
+        
+        final Language language1 = new LanguageDataGen().nextPersisted();
+
+        final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
+        
+
+        
+        final String liveQuery = "+baseType:1 +live:true" ;
+        final String workingQuery = "+baseType:1 +live:false" ;
+        
+
+        SearchHits hits = instance.indexSearch(liveQuery, 10, 0, null);
+        SearchHits hits1 = instance.indexSearch(workingQuery, 10, 0, null);
+        SearchHits hits2 = instance.indexSearch(liveQuery, 9, 0, null);
+        SearchHits hits3 = instance.indexSearch(liveQuery, 10, 1, null);
+        SearchHits hits4 = instance.indexSearch(liveQuery, 10, 0, "title desc");
+        SearchHits hits5 = instance.indexSearch(liveQuery, 10, 0, "title asc");
+        
+        
+        
+        //assert we have results
+        assertTrue(hits.getTotalHits().value > 0);
+
+        // all parameters are being taken into account when building the cache key
+        assertTrue(hits != hits1);
+        assertTrue(hits != hits2);
+        assertTrue(hits != hits3);
+        assertTrue(hits != hits4);
+        assertTrue(hits != hits5);
+
+        
+
+    }
 }

@@ -183,6 +183,9 @@ public class ContentletCacheImpl extends ContentletCache {
 		}
 		CacheLocator.getHTMLPageCache().remove(key);
 		new ShortyIdCache().remove(key);
+		
+        //Delete query cache when a new content has been reindexed
+        CacheLocator.getESQueryCache().clearCache();
 	}
 
 	public String[] getGroups() {
