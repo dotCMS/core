@@ -342,10 +342,14 @@ public class UserResource implements Serializable {
 		final Host currentSite = Host.class.cast(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
 		Response response;
 		try {
+			Logger.info(this,"currentUser: " + currentUser + " ,serverName: " + serverName + " ,currentSite: " + currentSite);
 			final Map<String, Object> sessionData = this.helper.doLoginAs(currentUser, loginAsUserId, loginAsUserPwd, serverName);
+			Logger.info(this,"sessionData");
 			updateLoginAsSessionInfo(request, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
+			Logger.info(this,"updateLoginAsSessionInfo");
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
+			Logger.info(this,"sessionData");
 			response = Response.ok(new ResponseEntityView(map("loginAs", true))).build();
 		} catch (final NoSuchUserException | DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
