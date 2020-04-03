@@ -49,6 +49,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -239,12 +240,19 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             for (Field field : indexedFields) {
                 Optional<Map<String, String>> fieldType = resolveFieldType(field);
                 if (fieldType.isPresent()) {
-                    mappingMap.put(type.variable().toLowerCase() + "." + field.variable().toLowerCase(), fieldType.get());
+                    mappingMap.put(field.variable().toLowerCase(), fieldType.get());
                 }
             }
+
             if (!mappingMap.isEmpty()) {
-                final JSONObject jsonObject = new JSONObject().put("properties", mappingMap);
-                mappingAPI.putMapping(indexName, jsonObject.toString());
+                final JSONObject jsonObject = new JSONObject();
+                final JSONObject properties = new JSONObject();
+
+                jsonObject.put(type.variable().toLowerCase(),
+                        new JSONObject()
+                                .put("properties", mappingMap));
+                properties.put("properties", jsonObject);
+                mappingAPI.putMapping(indexName, properties.toString());
             }
         }
     }
@@ -555,7 +563,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch) {
 
 
-        if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 15)*1000) {
+        if(reindexTimeElapsedInLong()<Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 30)*1000) {
           Logger.info(this.getClass(), "Reindex has been running only " +reindexTimeElapsed().get() + ". Letting the reindex settle.");
           ThreadUtils.sleep(3000);
           return false;

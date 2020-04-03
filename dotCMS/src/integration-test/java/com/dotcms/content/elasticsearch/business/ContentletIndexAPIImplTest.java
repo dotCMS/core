@@ -15,8 +15,10 @@ import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.WysiwygField;
@@ -30,6 +32,8 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
+import com.dotcms.unittest.TestUtil;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -70,13 +74,16 @@ import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import java.io.IOException;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.apache.commons.compress.utils.Lists;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
@@ -88,13 +95,15 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author Jonathan Gamba
  *         Date: 4/18/13
  */
+
+@RunWith(DataProviderRunner.class)
 public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
     private static String stemmerText;
@@ -111,6 +120,64 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     private static HostAPI hostAPI;
     private static LanguageAPI languageAPI;
     private static RelationshipAPI relationshipAPI;
+
+    private static class MappingTestCase{
+        private final Class<? extends Field> field;
+        private final DataTypes fieldType;
+        private final Map<String, String> expectedMapping;
+        private final Map<String, Object> customMapping;
+
+        public MappingTestCase(final Class<? extends Field> field, final DataTypes fieldType,
+                final Map<String, String> expectedMapping, final Map<String, Object> customMapping) {
+            this.field = field;
+            this.fieldType = fieldType;
+
+            this.expectedMapping = expectedMapping;
+            this.customMapping = customMapping;
+        }
+    }
+
+    @DataProvider
+    public static Object[][] casesWithoutCustomMappings() {
+        List<MappingTestCase> data = Lists.newArrayList();
+        data.add(new MappingTestCase(HiddenField.class, DataTypes.SYSTEM,null, null));
+        data.add(new MappingTestCase(TextField.class, DataTypes.TEXT,
+                CollectionsUtils.map("type", "text"), null));
+        data.add(new MappingTestCase(TextField.class, DataTypes.LONG_TEXT,
+                CollectionsUtils.map("type", "text"), null));
+        data.add(new MappingTestCase(KeyValueField.class, DataTypes.LONG_TEXT, null, null));
+        data.add(new MappingTestCase(TextField.class, DataTypes.FLOAT,
+                CollectionsUtils.map("type", "double"), null));
+        data.add(new MappingTestCase(TextField.class, DataTypes.INTEGER,
+                CollectionsUtils.map("type", "long"), null));
+        data.add(new MappingTestCase(DateTimeField.class, DataTypes.DATE, CollectionsUtils
+                .map("type", "date", "format",
+                        "yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"),
+                null));
+
+        return TestUtil.toCaseArray(data);
+    }
+
+    @DataProvider
+    public static Object[][] casesWithCustomMappings() {
+        List<MappingTestCase> data = Lists.newArrayList();
+        data.add(new MappingTestCase(HiddenField.class, DataTypes.SYSTEM,
+                CollectionsUtils.map("type", "double"), CollectionsUtils.map("type", "double")));
+        data.add(new MappingTestCase(TextField.class, DataTypes.TEXT,
+                CollectionsUtils.map("type", "double"), CollectionsUtils.map("type", "double")));
+        data.add(new MappingTestCase(TextField.class, DataTypes.LONG_TEXT,
+                CollectionsUtils.map("type", "double"), CollectionsUtils.map("type", "double")));
+        data.add(new MappingTestCase(KeyValueField.class, DataTypes.LONG_TEXT,
+                CollectionsUtils.map("type", "double"), CollectionsUtils.map("type", "double")));
+        data.add(new MappingTestCase(TextField.class, DataTypes.FLOAT,
+                CollectionsUtils.map("type", "date"), CollectionsUtils.map("type", "date")));
+        data.add(new MappingTestCase(TextField.class, DataTypes.INTEGER,
+                CollectionsUtils.map("type", "date"), CollectionsUtils.map("type", "date")));
+        data.add(new MappingTestCase(DateTimeField.class, DataTypes.DATE,
+                CollectionsUtils.map("type", "text"), CollectionsUtils.map("type", "text")));
+
+        return TestUtil.toCaseArray(data);
+    }
 
 
     @BeforeClass
@@ -1274,6 +1341,138 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
             if (childContentType != null && childContentType.inode() != null) {
                 ContentTypeDataGen.remove(childContentType);
+            }
+        }
+    }
+
+    /**
+     * This test verifies that mapping is applied correctly considering the field type
+     * Internally tests {@link ContentletIndexAPIImpl#addStandardMappings(String)}
+     * Test results: Success
+     * @throws Exception
+     */
+    @Test
+    @UseDataProvider("casesWithoutCustomMappings")
+    public void testStandardMappingsShouldSuccess(MappingTestCase testCase) throws Exception {
+
+        String workingIndex = null;
+        ContentType contentType = null;
+        try {
+            contentType = new ContentTypeDataGen().nextPersisted();
+
+            Field field = FieldBuilder.builder(testCase.field)
+                    .name("enddate").dataType(testCase.fieldType).contentTypeId(contentType.id()).indexed(true).build();
+            field = fieldAPI.save(field, user);
+
+            //Build the index name
+            String timestamp = String.valueOf(new Date().getTime());
+            workingIndex = new ESIndexAPI().getNameWithClusterIDPrefix(IndexType.WORKING.getPrefix() + "_" + timestamp);
+
+            //Create a working index
+            boolean result = indexAPI.createContentIndex(workingIndex);
+            //Validate
+            assertTrue(result);
+
+            //verify mapping
+            final String mapping = esMappingAPI.getMapping(workingIndex);
+
+            //parse json mapping and validate
+            assertNotNull(mapping);
+
+            final JSONObject propertiesJSON = (JSONObject) (new JSONObject(mapping)).get("properties");
+
+            if (testCase.expectedMapping == null){
+                //In case no mapping should be applied
+                assertTrue(propertiesJSON.isNull(contentType.variable().toLowerCase()));
+            } else{
+                //Otherwise, validate mapping results
+                final JSONObject contentTypeJSON = (JSONObject) ((JSONObject) propertiesJSON
+                        .get(contentType.variable().toLowerCase())).get("properties");
+
+
+                final Map mappingResult = ((JSONObject) contentTypeJSON
+                        .get(field.variable().toLowerCase())).getAsMap();
+                assertNotNull(mappingResult);
+                assertEquals(testCase.expectedMapping, mappingResult);
+            }
+
+        } finally {
+            if (workingIndex != null) {
+                indexAPI.delete(workingIndex);
+            }
+
+            if (contentType != null && contentType.inode() != null) {
+                ContentTypeDataGen.remove(contentType);
+            }
+        }
+    }
+
+    /**
+     * This test verifies that mapping is applied correctly considering the field type
+     * Internally tests {@link ContentletIndexAPIImpl#addStandardMappings(String)}
+     * If a custom mapping is set, the default mapping defined by {@link ContentletIndexAPIImpl#addStandardMappings(String)}
+     * will be ignored
+     * Test results: Success
+     * @throws Exception
+     */
+    @Test
+    @UseDataProvider("casesWithCustomMappings")
+    public void testStandardMappingsWithCustomMappingsShouldConsiderCustomMapping(MappingTestCase testCase) throws Exception {
+
+        String workingIndex = null;
+        ContentType contentType = null;
+        try {
+            contentType = new ContentTypeDataGen().nextPersisted();
+
+            Field field = FieldBuilder.builder(testCase.field)
+                    .name("enddate").dataType(testCase.fieldType).contentTypeId(contentType.id()).indexed(true).build();
+            field = fieldAPI.save(field, user);
+
+            FieldVariable relVariable = ImmutableFieldVariable.builder()
+                    .fieldId(field.inode())
+                    .name("fieldMapping")
+                    .key(FieldVariable.ES_CUSTOM_MAPPING_KEY)
+                    .value(new JSONObject(testCase.customMapping).toString())
+                    .userId(user.getUserId())
+                    .build();
+
+            fieldAPI.save(relVariable, user);
+
+            //Build the index name
+            String timestamp = String.valueOf(new Date().getTime());
+            workingIndex = new ESIndexAPI().getNameWithClusterIDPrefix(IndexType.WORKING.getPrefix() + "_" + timestamp);
+
+            //Create a working index
+            boolean result = indexAPI.createContentIndex(workingIndex);
+            //Validate
+            assertTrue(result);
+
+            //verify mapping
+            final String mapping = esMappingAPI.getMapping(workingIndex);
+
+            //parse json mapping and validate
+            assertNotNull(mapping);
+
+            final JSONObject propertiesJSON = (JSONObject) (new JSONObject(mapping)).get("properties");
+
+            //Validate mapping results
+            final JSONObject contentTypeJSON = (JSONObject) ((JSONObject) propertiesJSON
+                    .get(contentType.variable().toLowerCase())).get("properties");
+
+
+            final Map mappingResult = ((JSONObject) contentTypeJSON
+                    .get(field.variable().toLowerCase())).getAsMap();
+            assertNotNull(mappingResult);
+            assertEquals(testCase.expectedMapping, mappingResult);
+
+
+        } finally {
+            if (workingIndex != null) {
+                indexAPI.delete(workingIndex);
+            }
+
+            if (contentType != null && contentType.inode() != null) {
+                ContentTypeDataGen.remove(contentType);
             }
         }
     }
