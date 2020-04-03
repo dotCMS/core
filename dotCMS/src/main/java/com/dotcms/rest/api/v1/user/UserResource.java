@@ -375,6 +375,9 @@ public class UserResource implements Serializable {
 						.getLocale(), e.getMessage());
 			}
 			// In case of unknown error, a Status 500 is returned
+			Logger.error(this,"ERROR MESSAGE: " + e.getMessage());
+			Logger.error(this,"ERROR: " + e);
+			Logger.error(this,"ERROR ST: " + e.getStackTrace());
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 		SecurityLogger.logInfo(UserResource.class, String.format("UserID '%s' has successfully logged in as '%s' / " +

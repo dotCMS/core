@@ -75,7 +75,7 @@ public class UserResourceIntegrationTest {
         request = mockRequest();
         final Response resourceResponse = resource.loginAs(request,response,loginAsForm);
         assertNotNull(resourceResponse);
-        assertEquals(Status.OK.getStatusCode(),resourceResponse.getStatus());
+        assertEquals(resourceResponse.getEntity().toString(), Status.OK.getStatusCode(),resourceResponse.getStatus());
         assertEquals(user.getUserId(),request.getSession().getAttribute(WebKeys.USER_ID));
         assertNull(request.getSession().getAttribute(WebKeys.USER));
         assertEquals(adminUser.getUserId(),request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
