@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import java.util.Objects;
 
-public class SecretView implements Comparable<SecretView>{
+public class SecretView {
 
     private final String name;
 
@@ -45,11 +45,6 @@ public class SecretView implements Comparable<SecretView>{
     }
 
     @Override
-    public int compareTo(final SecretView o) {
-        return Boolean.compare(this.dynamic,o.dynamic);
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -65,4 +60,5 @@ public class SecretView implements Comparable<SecretView>{
     public int hashCode() {
         return Objects.hash(name);
     }
+
 }

@@ -201,7 +201,7 @@ class AppsHelper {
                     .collect(Collectors.toMap(SecretView::getName, Function.identity(), (a, b) -> a,
                             LinkedHashMap::new));
 
-            final int secretsCount = mappedParams.size();
+            final int secretsCount = mappedSecrets.size();
 
             final List<SecretView> mergedParamsAndSecrets = mappedParams.entrySet().stream()
                 .map(paramViewEntry -> {
