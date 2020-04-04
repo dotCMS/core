@@ -7,7 +7,17 @@ public class Task05205UpdateIndexNameLength extends AbstractJDBCStartupTask {
 
 	@Override
 	public String getMSSQLScript() {
-		return "alter table indicies alter column index_name nvarchar(100);";
+		return "DECLARE @SQL VARCHAR(4000)\n"
+                + "SET @SQL = 'ALTER TABLE dbo.Indicies DROP CONSTRAINT |ConstraintName| '\n"
+                + "\n"
+                + "SET @SQL = REPLACE(@SQL, '|ConstraintName|', ( SELECT   name\n"
+                + "                                               FROM     sysobjects\n"
+                + "                                               WHERE    xtype = 'PK'\n"
+                + "                                                        AND parent_obj =        OBJECT_ID('Indicies')))\n"
+                + "\n"
+                + "EXEC (@SQL)\n"
+                + "alter table indicies alter column index_name nvarchar(100) not null;\n"
+		        + "alter table Indicies add primary key (index_name);";
 	}
 
 	@Override
