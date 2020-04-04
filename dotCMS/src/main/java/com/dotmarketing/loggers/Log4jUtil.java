@@ -15,6 +15,7 @@ import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Map;
@@ -42,7 +43,7 @@ public class Log4jUtil {
     public static void createAndAddConsoleAppender () {
 
         //Getting the current log4j appenders
-        org.apache.logging.log4j.Logger logger = LogManager.getRootLogger();
+        org.slf4j.Logger logger = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
         //Getting all the appenders for this logger
         Map<String, Appender> appenderMap = ((Logger) logger).getAppenders();
 
