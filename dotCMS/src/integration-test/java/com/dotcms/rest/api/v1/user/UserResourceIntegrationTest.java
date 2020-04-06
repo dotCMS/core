@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.user;
 
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -39,7 +41,7 @@ public class UserResourceIntegrationTest {
 
         resource = new UserResource();
         adminUser = TestUserUtils.getAdminUser();
-        host = APILocator.getHostAPI().findDefaultHost(adminUser,true);
+        host = new SiteDataGen().nextPersisted();
         user = TestUserUtils.getChrisPublisherUser(host);
         response = new MockHttpResponse();
 
@@ -83,7 +85,6 @@ public class UserResourceIntegrationTest {
         assertEquals(user.getUserId(),request.getSession().getAttribute(WebKeys.USER_ID));
         assertNull(request.getSession().getAttribute(WebKeys.USER));
         assertEquals(adminUser.getUserId(),request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
-        assertEquals(host,request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
     }
 
     @Test
@@ -100,7 +101,6 @@ public class UserResourceIntegrationTest {
         assertEquals(adminUser.getUserId(),request.getSession().getAttribute(WebKeys.USER_ID));
         assertNull(request.getSession().getAttribute(WebKeys.USER));
         assertNull(request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
-        assertEquals(host,request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
     }
 
 
