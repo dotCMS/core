@@ -18,10 +18,6 @@ public class DefaultVanityUrl extends Contentlet implements VanityUrl {
      */
     private static final long serialVersionUID = 1L;
 
-    @Override
-    public String getTitle() {
-        return getStringProperty(VanityUrlContentType.TITLE_FIELD_VAR);
-    }
 
     @Override
     public void setTitle(final String title) {

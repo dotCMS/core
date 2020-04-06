@@ -4604,6 +4604,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 removeURLFromContentlet( contentlet );
 
                 contentlet.setIdentifier(identifier.getId() );
+                contentlet = applyNullProperties(contentlet);
                 contentlet = contentFactory.save(contentlet);
                 contentlet.setIndexPolicy(indexPolicy);
                 contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
@@ -5587,82 +5588,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + " cannot read Contentlet: " + contentlet.getIdentifier());
         }
 
-        // if already set previously
-        String returnValue = (String) contentlet.getMap().get(Contentlet.DOT_NAME_KEY);
-        if(UtilMethods.isSet(returnValue)){
-            return returnValue;
-        }
-
-        // look for listed, text and binary fields
-        final List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-        String binaryValue       = null;
-
-        for (final Field field : fields) {
-
-            try {
-
-                if(field.isListed()  && contentlet.getMap().get(field.getVelocityVarName())!=null) {
-
-                    if (this.isFieldTypeString(field)) {
-                        returnValue = contentlet.getMap().get(field.getVelocityVarName()).toString();
-                        break; // found one
-                    }
-
-                    if (binaryValue == null && this.isFieldTypeBinary(field) && field.isIndexed()) {
-                        binaryValue = contentlet.getBinary(field.getVelocityVarName()).getName();
-                    }
-                }
-            } catch(Exception e){
-                Logger.warn(this.getClass(), "unable to get field value " + field.getVelocityVarName() + " " + e, e);
-            }
-        }
-
-        // if not found text but found binary
-        returnValue = !UtilMethods.isSet(returnValue) && UtilMethods.isSet(binaryValue)? binaryValue:returnValue;
-
-        if(UtilMethods.isSet(returnValue)) {
-
-            contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, returnValue.length() > 250 ?
-                    returnValue.substring(0, 250) : returnValue);
-            return contentlet.getStringProperty(Contentlet.DOT_NAME_KEY);
-        }
-
-        /// if not found listed, so try to see by type (file asset or dotasset)
-        if (UtilMethods.isSet(contentlet.getIdentifier())) {
-
-            if (contentlet.isFileAsset()) {
-                try {
-
-                    final String assetName = APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getAssetName();
-                    contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
-                } catch (Exception e){
-                    Logger.warn(this.getClass(), "Unable to get assetName for contentlet with identifier: " + contentlet.getIdentifier(), e);
-                }
-            } else {
-
-                final Optional<BaseContentType> baseContentTypeOpt = contentlet.getBaseType();
-                if (baseContentTypeOpt.isPresent() && baseContentTypeOpt.get() == BaseContentType.DOTASSET) {
-                    try {
-
-                        final String transientNameKey = DotAssetContentType.ASSET_FIELD_VAR + "name";
-                        final String dotAssetName     = contentlet.getStringProperty(transientNameKey);
-                        String assetName              = dotAssetName;
-                        if (!UtilMethods.isSet(dotAssetName) && null != contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR)) {
-                            assetName = contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName();
-                            contentlet.setStringProperty(transientNameKey, assetName);
-                        }
-
-                        contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
-                    } catch (Exception e) {
-                        Logger.warn(this.getClass(), "Unable to get binary name for contentlet with identifier: " + contentlet.getIdentifier(), e);
-                    }
-                }
-            }
-        }
-
-        // nothing, so set identifier.
-        contentlet.setStringProperty("__NAME__", contentlet.getIdentifier());
-        return contentlet.getIdentifier();
+        return contentlet.getTitle();
     }
 
     /**
