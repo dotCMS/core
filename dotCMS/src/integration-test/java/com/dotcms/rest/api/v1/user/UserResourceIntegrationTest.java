@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import io.vavr.API;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -52,6 +53,8 @@ public class UserResourceIntegrationTest {
         final Permission readPermissionsPermission = new Permission( host.getPermissionId(),
                 APILocator.getRoleAPI().getUserRole(user).getId(), PermissionAPI.PERMISSION_READ, true );
         APILocator.getPermissionAPI().save(readPermissionsPermission,host,adminUser,false);
+        final Host hostTest = APILocator.getHostAPI().find(host.getIdentifier(), adminUser, false);//To check if the permissions were given
+        assertNotNull(hostTest);
 
     }
 
