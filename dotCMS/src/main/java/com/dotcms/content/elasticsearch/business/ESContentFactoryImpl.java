@@ -222,15 +222,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	@Override
 	public com.dotmarketing.portlets.contentlet.business.Contentlet convertContentletToFatContentlet(Contentlet cont,
 			com.dotmarketing.portlets.contentlet.business.Contentlet fatty) throws DotDataException {
-	    String name = "";
-        try {
-            // If the contentlet doesn't have the identifier is pointless to call ContentletAPI().getName().
-            if (UtilMethods.isSet(cont) && UtilMethods.isSet(cont.getIdentifier())){
-                name = APILocator.getContentletAPI().getName(
-                        cont, APILocator.getUserAPI().getSystemUser(), true);
-            }
-        }catch (DotSecurityException e) {
 
+        // if the title was not intentionally set to null.
+        final boolean allowTitle = null == cont.getNullProperties() || !cont.getNullProperties().contains(Contentlet.TITTLE_KEY);
+
+	    String name = "";
+	    if (allowTitle) {
+            try {
+                // If the contentlet doesn't have the identifier is pointless to call ContentletAPI().getName().
+                if (UtilMethods.isSet(cont) && UtilMethods.isSet(cont.getIdentifier())) {
+                    name = APILocator.getContentletAPI().getName(
+                            cont, APILocator.getUserAPI().getSystemUser(), true);
+                }
+            } catch (DotSecurityException e) {
+
+            }
         }
         List<Field> fields = FieldsCache.getFieldsByStructureInode(cont.getStructureInode());
         for (Field f : fields) {
@@ -263,8 +269,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
         fatty.setModUser(cont.getModUser());
         fatty.setModDate(cont.getModDate());
         fatty.setReviewInterval(cont.getReviewInterval());
-        fatty.setTitle(name);
-        fatty.setFriendlyName(name);
+        if (allowTitle) { // if the title was not intentionally set to null.
+            fatty.setTitle(name);
+            fatty.setFriendlyName(name);
+        }
         List<String> wysiwygFields = cont.getDisabledWysiwyg();
         if( wysiwygFields != null && wysiwygFields.size() > 0 ) {
             StringBuilder wysiwyg = new StringBuilder();
