@@ -2319,7 +2319,7 @@ create index tag_user_id_index on tag(user_id) indextype is ctxsys.context;
 
 -- ****** Indicies Data Storage *******
 create table indicies (
-  index_name varchar2(30) primary key,
+  index_name varchar2(100) primary key,
   index_type varchar2(16) not null unique
 );
   -- ****** Log Console Table *******
