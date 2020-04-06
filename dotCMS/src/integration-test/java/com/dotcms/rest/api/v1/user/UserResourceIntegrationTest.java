@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.user;
 
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -15,7 +14,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
-import io.vavr.API;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -55,8 +53,6 @@ public class UserResourceIntegrationTest {
         final Permission readPermissionsPermission = new Permission( host.getPermissionId(),
                 APILocator.getRoleAPI().getUserRole(user).getId(), PermissionAPI.PERMISSION_READ, true );
         APILocator.getPermissionAPI().save(readPermissionsPermission,host,adminUser,false);
-        final Host hostTest = APILocator.getHostAPI().find(host.getIdentifier(), adminUser, false);//To check if the permissions were given
-        assertNotNull(hostTest);
 
     }
 
@@ -81,7 +77,7 @@ public class UserResourceIntegrationTest {
         request = mockRequest();
         final Response resourceResponse = resource.loginAs(request,response,loginAsForm);
         assertNotNull(resourceResponse);
-        assertEquals(resourceResponse.getEntity().toString(), Status.OK.getStatusCode(),resourceResponse.getStatus());
+        assertEquals(Status.OK.getStatusCode(),resourceResponse.getStatus());
         assertEquals(user.getUserId(),request.getSession().getAttribute(WebKeys.USER_ID));
         assertNull(request.getSession().getAttribute(WebKeys.USER));
         assertEquals(adminUser.getUserId(),request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));

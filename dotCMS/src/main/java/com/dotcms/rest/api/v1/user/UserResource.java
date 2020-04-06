@@ -342,14 +342,10 @@ public class UserResource implements Serializable {
 		final Host currentSite = Host.class.cast(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
 		Response response;
 		try {
-			Logger.info(this,"currentUser: " + currentUser + " ,serverName: " + serverName + " ,currentSite: " + currentSite);
 			final Map<String, Object> sessionData = this.helper.doLoginAs(currentUser, loginAsUserId, loginAsUserPwd, serverName);
-			Logger.info(this,"sessionData");
 			updateLoginAsSessionInfo(request, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
-			Logger.info(this,"updateLoginAsSessionInfo");
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
-			Logger.info(this,"sessionData");
 			response = Response.ok(new ResponseEntityView(map("loginAs", true))).build();
 		} catch (final NoSuchUserException | DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
@@ -379,9 +375,6 @@ public class UserResource implements Serializable {
 						.getLocale(), e.getMessage());
 			}
 			// In case of unknown error, a Status 500 is returned
-			Logger.error(this,"ERROR MESSAGE: " + e.getMessage());
-			Logger.error(this,"ERROR: " + e);
-			Logger.error(this,"ERROR ST: " + e.getStackTrace());
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
 		SecurityLogger.logInfo(UserResource.class, String.format("UserID '%s' has successfully logged in as '%s' / " +
@@ -448,26 +441,19 @@ public class UserResource implements Serializable {
 	private void setImpersonatedUserSite(final HttpServletRequest req, final String userID) throws DotDataException, DotSecurityException {
 		final HttpSession session = req.getSession();
 		final User user = this.userAPI.loadUserById(userID);
-		Logger.info(this,"USER: " + user);
 		final String currentSiteID = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
-		Logger.info(this,"currentSiteID: " + currentSiteID);
 		Host currentSite;
 		try {
 			currentSite = this.siteAPI.find(currentSiteID, user, false);
 		} catch (final DotSecurityException e) {
-			Logger.info(this,"currentSite: " + "DOTSECURITY");
 			final List<Host> sites = this.siteAPI.findAll(user, 1,0,null, false);
 			if (sites.isEmpty()) {
-				Logger.info(this,"currentSite: " + "FINDALL_EMPTY");
 				// Review the permissions assigned to this user and assign VIEW permissions to AT LEAST one Site
 				throw new DotRuntimeException(String.format("Impersonated user '%s' does not have VIEW permissions on " +
 						"ANY Site in the system.", userID), e);
 			}
-			Logger.info(this,"currentSite: " + "SITES: " + sites.get(0));
 			currentSite =  sites.get(0);
 		}
-		Logger.info(this,"currentSite: " + currentSite);
-		Logger.info(this,"currentSite: " + (UtilMethods.isSet(currentSite.getIdentifier()) ? currentSite.getIdentifier() : "null"));
 		session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, currentSite.getIdentifier());
 	}
 
