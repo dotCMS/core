@@ -21,10 +21,10 @@ public enum BaseContentType {
 	ANY(0,        ContentType.class),
 	CONTENT(1,    SimpleContentType.class),
 	WIDGET(2,     WidgetContentType.class),
-	FORM(3,       FormContentType.class),
+	FORM(3,       FormContentType.class, "Form"),
 	FILEASSET(4,  FileAssetContentType.class, "File"),
 	HTMLPAGE(5,   PageContentType.class, "Page"),
-	PERSONA(6,    PersonaContentType.class),
+	PERSONA(6,    PersonaContentType.class, "Persona"),
 	VANITY_URL(7, VanityUrlContentType.class, "VanityURL"),
 	KEY_VALUE(8,  KeyValueContentType.class, "KeyValue"),
 	DOTASSET(9,   DotAssetContentType.class, "DotAsset");
@@ -67,7 +67,7 @@ public enum BaseContentType {
 	 * @return String
 	 */
 	public String getAlternateName() {
-		return alternateName;
+		return alternateName != null ? alternateName : name();
 	}
 
 	/**
