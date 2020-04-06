@@ -3,7 +3,7 @@ package com.dotmarketing.startup.runonce;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import java.util.List;
 
-public class Task05205UpdateIndexNameLength extends AbstractJDBCStartupTask {
+public class Task05300UpdateIndexNameLength extends AbstractJDBCStartupTask {
 
 	@Override
 	public String getMSSQLScript() {
