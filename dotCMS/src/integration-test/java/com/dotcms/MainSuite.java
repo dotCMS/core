@@ -242,8 +242,8 @@ import org.junit.runners.Suite.SuiteClasses;
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
         RulesAPIImplIntegrationTest.class,
-        SiteSearchJobImplTest.class,
-        UserResourceIntegrationTest.class
+        UserResourceIntegrationTest.class,
+        SiteSearchJobImplTest.class
 })
 public class MainSuite {
 
