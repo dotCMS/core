@@ -455,14 +455,19 @@ public class UserResource implements Serializable {
 		try {
 			currentSite = this.siteAPI.find(currentSiteID, user, false);
 		} catch (final DotSecurityException e) {
+			Logger.info(this,"currentSite: " + "DOTSECURITY");
 			final List<Host> sites = this.siteAPI.findAll(user, 1,0,null, false);
 			if (sites.isEmpty()) {
+				Logger.info(this,"currentSite: " + "FINDALL_EMPTY");
 				// Review the permissions assigned to this user and assign VIEW permissions to AT LEAST one Site
 				throw new DotRuntimeException(String.format("Impersonated user '%s' does not have VIEW permissions on " +
 						"ANY Site in the system.", userID), e);
 			}
+			Logger.info(this,"currentSite: " + "SITES: " + sites.get(0));
 			currentSite =  sites.get(0);
 		}
+		Logger.info(this,"currentSite: " + currentSite);
+		Logger.info(this,"currentSite: " + (UtilMethods.isSet(currentSite.getIdentifier()) ? currentSite.getIdentifier() : "null"));
 		session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, currentSite.getIdentifier());
 	}
 
