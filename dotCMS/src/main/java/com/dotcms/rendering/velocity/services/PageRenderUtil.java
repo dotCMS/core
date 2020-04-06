@@ -70,10 +70,10 @@ public class PageRenderUtil implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-    private final MultiTreeAPI  multiTreeAPI  = APILocator.getMultiTreeAPI();
+    private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-    private final TagAPI        tagAPI        = APILocator.getTagAPI();
-    private final PersonaAPI    personaAPI    = APILocator.getPersonaAPI();
+    private final TagAPI tagAPI = APILocator.getTagAPI();
+    private final PersonaAPI personaAPI = APILocator.getPersonaAPI();
 
     final IHTMLPage htmlPage;
     final User user;
@@ -105,7 +105,7 @@ public class PageRenderUtil implements Serializable {
         this.htmlPage = htmlPage;
         this.user = user;
         this.mode = mode;
-        this.languageId=languageId;
+        this.languageId = languageId;
         this.widgetPreExecute = new StringBuilder();
         final Template template = APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, !mode.showLive);
         this.templateLayout = template != null && template.isDrawed() ? DotTemplateTool.themeLayout(template.getInode()) : null;
@@ -115,7 +115,7 @@ public class PageRenderUtil implements Serializable {
 
     public PageRenderUtil(final HTMLPageAsset htmlPage, final User user, final PageMode mode)
             throws DotSecurityException, DotDataException {
-        this(htmlPage,user, mode, htmlPage.getLanguageId(), APILocator.getHostAPI().find(htmlPage.getHost(), user, false));
+        this(htmlPage, user, mode, htmlPage.getLanguageId(), APILocator.getHostAPI().find(htmlPage.getHost(), user, false));
     }
 
     private Map<String, Object> populateContext() throws DotDataException, DotSecurityException {
@@ -193,13 +193,13 @@ public class PageRenderUtil implements Serializable {
         return ctxMap;
     }
 
-    private Container getLiveContainerById (final String containerId) throws DotSecurityException, DotDataException {
+    private Container getLiveContainerById(final String containerId) throws DotSecurityException, DotDataException {
 
         final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
                 LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
         final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerId);
-        final ContainerFinderByIdOrPathStrategy liveStrategy    = strategy.isPresent()?strategy.get():strategyResolver.getDefaultStrategy();
-        final Supplier<Host>                  resourceHostSupplier = ()-> this.site;
+        final ContainerFinderByIdOrPathStrategy liveStrategy = strategy.isPresent() ? strategy.get() : strategyResolver.getDefaultStrategy();
+        final Supplier<Host> resourceHostSupplier = () -> this.site;
 
 
         Container container = null;
@@ -219,7 +219,7 @@ public class PageRenderUtil implements Serializable {
 
         final LiveContainerFinderByIdOrPathStrategyResolver strategyResolver =
                 LiveContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
+        final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerIdOrPath);
 
         return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
     }
@@ -228,19 +228,19 @@ public class PageRenderUtil implements Serializable {
 
         final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
                 WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
-        final Optional<ContainerFinderByIdOrPathStrategy> strategy           = strategyResolver.get(containerIdOrPath);
+        final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerIdOrPath);
 
         return this.geContainerById(containerIdOrPath, user, template, strategy, strategyResolver.getDefaultStrategy());
     }
 
     private Container geContainerById(final String containerIdOrPath, final User user, final Template template,
                                       final Optional<ContainerFinderByIdOrPathStrategy> strategy,
-                                      final ContainerFinderByIdOrPathStrategy defaultContainerFinderByIdOrPathStrategy) throws NotFoundInDbException  {
+                                      final ContainerFinderByIdOrPathStrategy defaultContainerFinderByIdOrPathStrategy) throws NotFoundInDbException {
 
-        final Supplier<Host> resourceHostSupplier                            =  Sneaky.sneaked(()->APILocator.getTemplateAPI().getTemplateHost(template));
+        final Supplier<Host> resourceHostSupplier = Sneaky.sneaked(() -> APILocator.getTemplateAPI().getTemplateHost(template));
 
-        return strategy.isPresent()?
-                strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier):
+        return strategy.isPresent() ?
+                strategy.get().apply(containerIdOrPath, user, false, resourceHostSupplier) :
                 defaultContainerFinderByIdOrPathStrategy.apply(containerIdOrPath, user, false, resourceHostSupplier);
     }
 
@@ -262,8 +262,8 @@ public class PageRenderUtil implements Serializable {
             final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
                     WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
             final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerId);
-            final ContainerFinderByIdOrPathStrategy workingStrategy    = strategy.isPresent()?strategy.get():strategyResolver.getDefaultStrategy();
-            final Supplier<Host>                  resourceHostSupplier = ()-> this.site;
+            final ContainerFinderByIdOrPathStrategy workingStrategy = strategy.isPresent() ? strategy.get() : strategyResolver.getDefaultStrategy();
+            final Supplier<Host> resourceHostSupplier = () -> this.site;
 
             try {
                 if (live) {
@@ -284,7 +284,7 @@ public class PageRenderUtil implements Serializable {
             if (container == null) {
                 continue;
             }
-            
+
             final List<ContainerStructure> containerStructures = APILocator.getContainerAPI().getContainerStructures(container);
             final boolean hasWritePermissionOnContainer = permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user, false)
                     && APILocator.getPortletAPI().hasContainerManagerRights(user);
@@ -296,22 +296,22 @@ public class PageRenderUtil implements Serializable {
                 contextMap.put("USE_CONTAINER_PERMISSION" + container.getIdentifier(), hasReadPermissionOnContainer);
             }
 
-            final Map<String, List<Map<String,Object>>> contentMaps = Maps.newLinkedHashMap();
+            final Map<String, List<Map<String, Object>>> contentMaps = Maps.newLinkedHashMap();
             final Map<String, List<String>> containerUuidPersona = Maps.newHashMap();
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
 
                 final String uniqueUUIDForRender = needParseContainerPrefix(container, uniqueId) ?
-                                ParseContainer.getDotParserContainerUUID(uniqueId) :
-                                uniqueId;
+                        ParseContainer.getDotParserContainerUUID(uniqueId) :
+                        uniqueId;
 
-                if(ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
+                if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
                     continue;
                 }
 
                 final Collection<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
                 final List<Map<String, Object>> personalizedContentletMap = Lists.newArrayList();
 
-                for (final PersonalizedContentlet  personalizedContentlet : personalizedContentletSet) {
+                for (final PersonalizedContentlet personalizedContentlet : personalizedContentletSet) {
                     final Contentlet contentlet = getContentlet(personalizedContentlet);
 
                     if (contentlet == null) {
@@ -319,10 +319,10 @@ public class PageRenderUtil implements Serializable {
                     }
 
                     containerUuidPersona
-                        .computeIfAbsent(containerId + uniqueUUIDForRender + personalizedContentlet.getPersonalization(), k-> Lists.newArrayList())
-                        .add(personalizedContentlet.getContentletId());
+                            .computeIfAbsent(containerId + uniqueUUIDForRender + personalizedContentlet.getPersonalization(), k -> Lists.newArrayList())
+                            .add(personalizedContentlet.getContentletId());
                     contextMap.put("EDIT_CONTENT_PERMISSION" + contentlet.getIdentifier(),
-                                    permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
+                            permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
 
                     final ContentType type = contentlet.getContentType();
                     if (type.baseType() == BaseContentType.WIDGET) {
@@ -342,10 +342,10 @@ public class PageRenderUtil implements Serializable {
                             this.pageFoundTags.addAll(contentletFoundTags);
                         }
                     }
-                    
-                    if(personalizedContentlet.getPersonalization().equals(includeContentFor)) {
-                        final Map<String,Object> contentPrintableMap = Try.of(()-> ContentletUtil.getContentPrintableMap(user, contentlet)).onFailure(f-> Logger.warn(this.getClass(), f.getMessage())).getOrNull();
-                        if(contentPrintableMap==null)continue;
+
+                    if (personalizedContentlet.getPersonalization().equals(includeContentFor)) {
+                        final Map<String, Object> contentPrintableMap = Try.of(() -> ContentletUtil.getContentPrintableMap(user, contentlet)).onFailure(f -> Logger.warn(this.getClass(), f.getMessage())).getOrNull();
+                        if (contentPrintableMap == null) continue;
                         contentPrintableMap.put("contentType", contentlet.getContentType().variable());
                         personalizedContentletMap.add(contentPrintableMap);
                     }
@@ -353,15 +353,15 @@ public class PageRenderUtil implements Serializable {
 
                 contentMaps.put(CONTAINER_UUID_PREFIX + uniqueUUIDForRender, personalizedContentletMap);
             }
-            for(Map.Entry<String,List<String>> entry : containerUuidPersona.entrySet()) {
+            for (Map.Entry<String, List<String>> entry : containerUuidPersona.entrySet()) {
                 contextMap.put("contentletList" + entry.getKey(), entry.getValue());
-                contextMap.put("totalSize"  + entry.getKey(), entry.getValue().size());
+                contextMap.put("totalSize" + entry.getKey(), entry.getValue().size());
             }
-            
+
 
             raws.add(new ContainerRaw(container, containerStructures, contentMaps));
         }
-        
+
         return raws;
     }
 
@@ -375,7 +375,7 @@ public class PageRenderUtil implements Serializable {
         }
 
         return !ParseContainer.isParserContainerUUID(uniqueId) &&
-                    (templateLayout == null || !templateLayout.existsContainer(containerIdOrPath, uniqueId));
+                (templateLayout == null || !templateLayout.existsContainer(containerIdOrPath, uniqueId));
     }
 
     /**
@@ -387,21 +387,23 @@ public class PageRenderUtil implements Serializable {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    private String getRelativePathFromSite(final FileAssetContainer container)  {
+    private String getRelativePathFromSite(final FileAssetContainer container) {
         return this.site.getIdentifier().equals(container.getHost().getIdentifier()) ?
                 container.getPath() :
                 FileAssetContainerUtil.getInstance().getFullPath(container);
     }
 
-    @Nullable
     private Contentlet getContentlet(final PersonalizedContentlet personalizedContentlet) {
+
+        return (Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)) ?
+                getContentletOrFallback(personalizedContentlet) : getSpecificContentlet(personalizedContentlet);
+    }
+
+    private Contentlet getSpecificContentlet(final PersonalizedContentlet personalizedContentlet) {
         try {
 
-           final Optional<Contentlet> contentletOpt = contentletAPI.findContentletByIdentifierOrFallback
+            final Contentlet contentlet = contentletAPI.findContentletByIdentifier
                     (personalizedContentlet.getContentletId(), mode.showLive, languageId, user, mode.respectAnonPerms);
-
-            final Contentlet contentlet =  contentletOpt.isPresent()
-                    ? contentletOpt.get() : contentletAPI.findContentletByIdentifierAnyLanguage(personalizedContentlet.getContentletId());
 
             return contentlet;
         } catch (final DotContentletStateException e) {
@@ -412,6 +414,23 @@ public class PageRenderUtil implements Serializable {
         }
     }
 
+    private Contentlet getContentletOrFallback(final PersonalizedContentlet personalizedContentlet) {
+        try {
+
+            final Optional<Contentlet> contentletOpt = contentletAPI.findContentletByIdentifierOrFallback
+                    (personalizedContentlet.getContentletId(), mode.showLive, languageId, user, mode.respectAnonPerms);
+
+            final Contentlet contentlet = contentletOpt.isPresent()
+                    ? contentletOpt.get() : contentletAPI.findContentletByIdentifierAnyLanguage(personalizedContentlet.getContentletId());
+
+            return contentlet;
+        } catch (final DotContentletStateException e) {
+            // Expected behavior, DotContentletState Exception is used for flow control
+            return null;
+        } catch (Exception e) {
+            throw new DotStateException(e);
+        }
+    }
 
 
     public List<Tag> getPageFoundTags() {
@@ -452,6 +471,7 @@ public class PageRenderUtil implements Serializable {
 
     /**
      * Return the Page's {@link ContainerRaw}
+     *
      * @return
      */
     public List<ContainerRaw> getContainersRaw() {
@@ -466,7 +486,7 @@ public class PageRenderUtil implements Serializable {
             iPersona = visitor.isPresent() && visitor.get().getPersona() != null ? visitor.get().getPersona() : null;
         }
 
-        final String currentPersonaTag =  iPersona == null ? MultiTree.DOT_PERSONALIZATION_DEFAULT
+        final String currentPersonaTag = iPersona == null ? MultiTree.DOT_PERSONALIZATION_DEFAULT
                 : Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + iPersona.getKeyTag();
 
         final boolean hasPersonalizations = personalizationsForPage.contains(currentPersonaTag);
