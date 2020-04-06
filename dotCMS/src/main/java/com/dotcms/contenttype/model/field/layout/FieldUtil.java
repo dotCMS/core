@@ -4,13 +4,16 @@ import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImpl;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 
+import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -236,6 +239,15 @@ public class FieldUtil {
         return jsonFieldTransformer.from();
     }
 
+    /**
+     * Apply Internationalization to field property using a Language Variable, for each field property set into
+     * fieldMap a Language Variable with the name contentTypeVariable.fieldVariable.propertyName is searched, if it
+     * exists then the field's property value is replaced by the language variable value
+     *
+     * @param contentType
+     * @param contentTypeInternationalization set the mode, language and user to search the Language Variable
+     * @param fieldMap field properties
+     */
     public static void setFieldInternationalization(
             final ContentType contentType,
             final ContentTypeInternationalization contentTypeInternationalization,
@@ -245,14 +257,22 @@ public class FieldUtil {
         final long languageId = contentTypeInternationalization.getLanguageId();
         final boolean live = contentTypeInternationalization.isLive();
         final User user = APILocator.systemUser();
-        
-        for (final String propertyName : fieldMap.keySet()) {
-            final String key = String.format("%s.%s.%s", contentType.variable(), fieldMap.get("variable"), propertyName);
-            final String i18nValue = APILocator.getLanguageVariableAPI().getLanguageVariable(
-                    key, languageId, user, live, user == null);
 
-            if (!i18nValue.equals(key) && !i18nValue.equals(fieldMap.get(propertyName).toString())) {
-                fieldMap.put(propertyName, i18nValue);
+        try {
+            for (final String propertyName : fieldMap.keySet()) {
+                final String key = String.format("%s.%s.%s", contentType.variable(), fieldMap.get("variable"), propertyName);
+                final String i18nValue = APILocator.getLanguageVariableAPI().getLanguageVariable(
+                        key, languageId, user, live, user == null);
+
+                if (!i18nValue.equals(key) && !i18nValue.equals(fieldMap.get(propertyName).toString())) {
+                    fieldMap.put(propertyName, i18nValue);
+                }
+            }
+        } catch (DotRuntimeException e) {
+            if ( ExceptionUtil.causedBy(e, ConnectException.class)) {
+                return;
+            } else {
+                throw e;
             }
         }
     }
