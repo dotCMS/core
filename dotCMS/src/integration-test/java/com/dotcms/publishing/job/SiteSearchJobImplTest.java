@@ -514,7 +514,9 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
                 .createTestCaseSiteSearch();
 
         /*
-         * Given sceneario: default-language content referenced from a page in default lang only. DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true.
+         * Given sceneario: default-language content referenced from a page in default lang only.
+         * DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true
+         * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true.
          * Create a Site-Search run only in second language
          * Expected: searching for the content in default language should give results. The result should be the page in the default language
          */
@@ -529,6 +531,28 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
                 .createTestCaseSiteSearch();
 
         /*
+
+        /*
+         * Given sceneario: default-language content referenced from a page in default lang only.
+         * DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=false
+         * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true.
+         *
+         * Create a Site-Search run only in second language
+         * Expected: searching for the content in default language should give results. The result should be the page in the default language
+         */
+
+        TestCaseSiteSearch case2_1 = new TestCaseSiteSearchBuilder()
+                .defaultContentToDefaultLanguage(false)
+                .defaultPageToDefaultLanguage(true)
+                .siteSearchSecondLanguage(true)
+                .createContentInDefaultLanguage(true)
+                .createPageInDefaultLanguage(true)
+                .expectedResultsWhenSearchingContentInDefaultLanguage(new ExpectedResults(false, false))
+                .createTestCaseSiteSearch();
+
+        /*
+
+
          * Given sceneario: Content in second language only referenced from a page in default language.
          * DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true.
          * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true.
@@ -544,6 +568,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
                 .createPageInDefaultLanguage(true)
                 .expectedResultsWhenSearchingContentInSecondLanguage(new ExpectedResults(true, false))
                 .createTestCaseSiteSearch();
+
 
         /*
          * Same as above but with DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=false
@@ -579,7 +604,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
 
 
-        return new TestCaseSiteSearch[] {case1, case2, case3, case4, case5};
+        return new TestCaseSiteSearch[] {case1, case2, case2_1, case3, case4, case5};
     }
 
     @UseDataProvider("siteSearchTestCases")
@@ -747,89 +772,6 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         return APILocator.getHTMLPageAssetAPI().fromContentlet(pageSecondLang);
     }
 
-    /**
-     * Given sceneario: Multi-language content referenced from a page. Create a Site-Search run including all the languages of the content and
-     * check the two versions made it into the resulting index.
-     */
-
-    @Test
-    public void test_ContentInDefaultAndSecondLang_PageInDefaultLang_SiteSearchBothLangs_ShouldGetResultsForBothVersions()
-            throws DotPublishingException, JobExecutionException, DotDataException, IOException, DotSecurityException, WebAssetException {
-
-        boolean defaultContentToDefaultLangOriginalValue =
-                Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
-
-        try {
-            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
-
-            final Host site = new SiteDataGen().nextPersisted();
-            Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-            Language secondLang = new LanguageDataGen().nextPersisted();
-            folder = new FolderDataGen().site(site).nextPersisted();
-
-            Contentlet contentletDefaultLang = createAndPublishEmployeeContent(site, defaultLang,
-                    "catherine");
-
-            createNewVersionAndPublishExistingEmployeeContent(secondLang, contentletDefaultLang, "catalina");
-
-            HTMLPageAsset page = createHtmlPageAsset(defaultLang, contentletDefaultLang);
-
-            final String html = APILocator.getHTMLPageAssetAPI().getHTML(page.getURI(), site, true,
-                    contentletDefaultLang.getIdentifier(), APILocator.systemUser(),
-                    contentletDefaultLang.getLanguageId(), USER_AGENT_DOTCMS_SITESEARCH);
-
-            Assert.assertFalse(html.isEmpty());
-            Assert.assertTrue("Page should contain content's body", html.contains("catherine"));
-
-            final List<String> indicesBeforeTest = siteSearchAPI.listIndices();
-            for (final String index : indicesBeforeTest) {
-                esIndexAPI.delete(index);
-            }
-            final String jobId = UUIDUtil.uuid();
-            final String alias = "any-alias-" + System.currentTimeMillis();
-            final JobDataMap jobDataMap = new JobDataMap();
-            jobDataMap.put(SiteSearchJobImpl.RUN_NOW, Boolean.TRUE.toString());
-            jobDataMap.put(SiteSearchJobImpl.INCREMENTAL, Boolean.FALSE.toString());
-            jobDataMap.put(SiteSearchJobImpl.INDEX_ALIAS, alias);
-            jobDataMap.put(SiteSearchJobImpl.JOB_ID, jobId);
-            jobDataMap.put(SiteSearchJobImpl.QUARTZ_JOB_NAME,
-                    SiteSearchJobImpl.RUNNING_ONCE_JOB_NAME);
-            jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
-            jobDataMap
-                    .put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{Long.toString(defaultLang.getId()),
-                            Long.toString(secondLang.getId())});
-            jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
-
-            final JobDetail jobDetail = Mockito.mock(JobDetail.class);
-            Mockito.when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
-            final JobExecutionContext context = Mockito.mock(JobExecutionContext.class);
-            Mockito.when(context.getJobDetail()).thenReturn(jobDetail);
-            Mockito.when(context.getFireTime()).thenReturn(new Date());
-            final SiteSearchJobImpl impl = new SiteSearchJobImpl();
-            impl.run(context);
-
-            final List<String> indicesAfterTest = siteSearchAPI.listIndices();
-            Assert.assertFalse(indicesAfterTest.isEmpty());
-            final String newIndexName = indicesAfterTest.get(0);
-
-            SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "catalina", 0, 10);
-            Assert.assertTrue("Content in default Language gives results", searchResults.getTotalResults() >= 1);
-            Assert.assertEquals(page.getTitle(), searchResults.getResults().get(0).getTitle());
-            Assert.assertEquals(page.getLanguageId(), searchResults.getResults().get(0).getLanguage());
-
-
-            searchResults = siteSearchAPI.search(newIndexName, "catherine", 0, 10);
-            Assert.assertTrue("Content in second Language gives results", searchResults.getTotalResults() >= 1);
-            Assert.assertEquals(page.getTitle(), searchResults.getResults().get(0).getTitle());
-            Assert.assertEquals(page.getLanguageId(), searchResults.getResults().get(0).getLanguage());
-
-
-        } finally {
-            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
-                    defaultContentToDefaultLangOriginalValue);
-        }
-    }
-
     private void createNewVersionAndPublishExistingEmployeeContent(Language secondLang,
             Contentlet contentletDefaultLang, String firstName) throws DotDataException, DotSecurityException {
         Contentlet contentletSecondLang = contentletAPI
@@ -852,162 +794,6 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         contentletDefaultLang = contentletAPI.checkin(contentletDefaultLang, systemUser, false);
         ContentletDataGen.publish(contentletDefaultLang);
         return contentletDefaultLang;
-    }
-
-
-    /**
-     * Given sceneario: Content in second language only referenced from a page in default language, and having DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true.
-     * Create a Site-Search run including the second language only.
-     * Expected result: the page should be in the results, because DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true and DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true .
-     */
-
-    @Test
-    public void test_ContentInSecondLang_PageInDefaultLang_IndexingSecondLang_ShouldFindResults()
-            throws DotPublishingException, JobExecutionException, DotDataException, IOException, DotSecurityException, WebAssetException {
-
-        boolean defaultContentToDefaultLangOriginalValue =
-                Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
-
-        try {
-
-            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
-
-            final Host site = new SiteDataGen().nextPersisted();
-            Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-            Language secondLang = new LanguageDataGen().nextPersisted();
-            folder = new FolderDataGen().site(site).nextPersisted();
-
-            Contentlet contentSecondLang = createAndPublishEmployeeContent(site, secondLang, "catalina");
-
-            // create container, template and htmlpage to reference previously created content
-
-            HTMLPageAsset page = createHtmlPageAsset(defaultLang, contentSecondLang);
-
-            final String html = APILocator.getHTMLPageAssetAPI().getHTML(page.getURI(), site, true,
-                    contentSecondLang.getIdentifier(), APILocator.systemUser(),
-                    contentSecondLang.getLanguageId(), USER_AGENT_DOTCMS_SITESEARCH);
-
-            Assert.assertFalse(html.isEmpty());
-            Assert.assertTrue("Page should contain content's body", html.contains("catalina"));
-
-            final List<String> indicesBeforeTest = siteSearchAPI.listIndices();
-            for (final String index : indicesBeforeTest) {
-                esIndexAPI.delete(index);
-            }
-            final String jobId = UUIDUtil.uuid();
-            final String alias = "any-alias-" + System.currentTimeMillis();
-            final JobDataMap jobDataMap = new JobDataMap();
-            jobDataMap.put(SiteSearchJobImpl.RUN_NOW, Boolean.TRUE.toString());
-            jobDataMap.put(SiteSearchJobImpl.INCREMENTAL, Boolean.FALSE.toString());
-            jobDataMap.put(SiteSearchJobImpl.INDEX_ALIAS, alias);
-            jobDataMap.put(SiteSearchJobImpl.JOB_ID, jobId);
-            jobDataMap.put(SiteSearchJobImpl.QUARTZ_JOB_NAME,
-                    SiteSearchJobImpl.RUNNING_ONCE_JOB_NAME);
-            jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
-            jobDataMap
-                    .put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{
-                            Long.toString(secondLang.getId())});
-            jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
-
-            final JobDetail jobDetail = Mockito.mock(JobDetail.class);
-            Mockito.when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
-            final JobExecutionContext context = Mockito.mock(JobExecutionContext.class);
-            Mockito.when(context.getJobDetail()).thenReturn(jobDetail);
-            Mockito.when(context.getFireTime()).thenReturn(new Date());
-            final SiteSearchJobImpl impl = new SiteSearchJobImpl();
-            impl.run(context);
-
-            final List<String> indicesAfterTest = siteSearchAPI.listIndices();
-            Assert.assertFalse(indicesAfterTest.isEmpty());
-            final String newIndexName = indicesAfterTest.get(0);
-
-            SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "catalina", 0, 10);
-            Assert.assertTrue(searchResults.getTotalResults() >= 1);
-            Assert.assertEquals(page.getTitle(), searchResults.getResults().get(0).getTitle());
-            Assert.assertEquals(page.getLanguageId(), searchResults.getResults().get(0).getLanguage());
-
-
-        } finally {
-            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
-                    defaultContentToDefaultLangOriginalValue);
-        }
-    }
-
-    /**
-     * Given sceneario: Content in default language only referenced from a page in default language, and having DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true.
-     * Create a Site-Search run including the second language only.
-     * Expected result: the page should be in the results, because DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=true and DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true .
-     */
-
-    @Test
-    public void test_DefaultLangContent_DefaultLangPage_IndexingSecondLang_ShouldFindResults()
-            throws DotPublishingException, JobExecutionException, DotDataException, IOException, DotSecurityException, WebAssetException {
-
-        boolean defaultContentToDefaultLangOriginalValue =
-                Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
-
-        try {
-
-            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
-
-            final Host site = new SiteDataGen().nextPersisted();
-            Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-            Language secondLang = new LanguageDataGen().nextPersisted();
-            folder = new FolderDataGen().site(site).nextPersisted();
-
-            Contentlet contentDefaultLang = createAndPublishEmployeeContent(site, defaultLang, "catherine");
-
-            // create container, template and htmlpage to reference previously created content
-
-            HTMLPageAsset page = createHtmlPageAsset(defaultLang, contentDefaultLang);
-
-            final String html = APILocator.getHTMLPageAssetAPI().getHTML(page.getURI(), site, true,
-                    contentDefaultLang.getIdentifier(), APILocator.systemUser(),
-                    contentDefaultLang.getLanguageId(), USER_AGENT_DOTCMS_SITESEARCH);
-
-            Assert.assertFalse(html.isEmpty());
-            Assert.assertTrue("Page should contain content's body", html.contains("catherine"));
-
-            final List<String> indicesBeforeTest = siteSearchAPI.listIndices();
-            for (final String index : indicesBeforeTest) {
-                esIndexAPI.delete(index);
-            }
-            final String jobId = UUIDUtil.uuid();
-            final String alias = "any-alias-" + System.currentTimeMillis();
-            final JobDataMap jobDataMap = new JobDataMap();
-            jobDataMap.put(SiteSearchJobImpl.RUN_NOW, Boolean.TRUE.toString());
-            jobDataMap.put(SiteSearchJobImpl.INCREMENTAL, Boolean.FALSE.toString());
-            jobDataMap.put(SiteSearchJobImpl.INDEX_ALIAS, alias);
-            jobDataMap.put(SiteSearchJobImpl.JOB_ID, jobId);
-            jobDataMap.put(SiteSearchJobImpl.QUARTZ_JOB_NAME,
-                    SiteSearchJobImpl.RUNNING_ONCE_JOB_NAME);
-            jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
-            jobDataMap
-                    .put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{
-                            Long.toString(secondLang.getId())});
-            jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
-
-            final JobDetail jobDetail = Mockito.mock(JobDetail.class);
-            Mockito.when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
-            final JobExecutionContext context = Mockito.mock(JobExecutionContext.class);
-            Mockito.when(context.getJobDetail()).thenReturn(jobDetail);
-            Mockito.when(context.getFireTime()).thenReturn(new Date());
-            final SiteSearchJobImpl impl = new SiteSearchJobImpl();
-            impl.run(context);
-
-            final List<String> indicesAfterTest = siteSearchAPI.listIndices();
-            Assert.assertFalse(indicesAfterTest.isEmpty());
-            final String newIndexName = indicesAfterTest.get(0);
-
-            SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "catherine", 0, 10);
-            Assert.assertTrue(searchResults.getTotalResults() >= 1);
-            Assert.assertEquals(page.getTitle(), searchResults.getResults().get(0).getTitle());
-            Assert.assertEquals(page.getLanguageId(), searchResults.getResults().get(0).getLanguage());
-
-        } finally {
-            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
-                    defaultContentToDefaultLangOriginalValue);
-        }
     }
 
     private HTMLPageAsset createHtmlPageAsset(Language lang1, Contentlet contentlet)
