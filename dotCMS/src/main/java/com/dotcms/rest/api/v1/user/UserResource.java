@@ -448,7 +448,9 @@ public class UserResource implements Serializable {
 	private void setImpersonatedUserSite(final HttpServletRequest req, final String userID) throws DotDataException, DotSecurityException {
 		final HttpSession session = req.getSession();
 		final User user = this.userAPI.loadUserById(userID);
+		Logger.info(this,"USER: " + user);
 		final String currentSiteID = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		Logger.info(this,"currentSiteID: " + currentSiteID);
 		Host currentSite;
 		try {
 			currentSite = this.siteAPI.find(currentSiteID, user, false);

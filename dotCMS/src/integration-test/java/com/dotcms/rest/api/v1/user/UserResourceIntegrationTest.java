@@ -65,7 +65,8 @@ public class UserResourceIntegrationTest {
         request.setHeader("Authorization",
                 "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
 
-        request.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,host);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,host);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,host);
 
         return request;
     }
