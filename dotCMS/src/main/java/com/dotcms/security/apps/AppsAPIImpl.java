@@ -287,7 +287,12 @@ public class AppsAPIImpl implements AppsAPI {
                     secrets.getKey(), user.getUserId(), host.getIdentifier()));
         } else {
             final String internalKey = internalKey(secrets.getKey(), host);
-            secretsStore.saveValue(internalKey, toJsonAsString(secrets).toCharArray());
+            if(secrets.getSecrets().isEmpty()){
+               //if everything has been removed from the json entry we need to kick it of from cache.
+               secretsStore.deleteValue(internalKey);
+            } else {
+               secretsStore.saveValue(internalKey, toJsonAsString(secrets).toCharArray());
+            }
         }
     }
 

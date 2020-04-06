@@ -35,8 +35,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -184,56 +183,46 @@ class AppsHelper {
             final Optional<AppSecrets> optionalAppSecrets = appsAPI
                     .getSecrets(key, true, host, user);
 
-                //We need to return a view with all the secrets and also descriptors of the remaining parameters merged.
-                //So we're gonna need a copy of the params on the yml.
-                final Map<String, ParamDescriptor> descriptorParams = new HashMap<>(appDescriptor.getParams());
-                //First will process the secrets stored..
-                //As we process them we we remove them from the `descriptorParams` map.
-                //They're removed from the map as we go on so we know that what's left in the map doesnt have a secret in storage.
-                final AppSecrets appSecrets = optionalAppSecrets.isPresent() ? protectHiddenSecrets(optionalAppSecrets.get()) : AppSecrets.empty() ;
-                final Set<SecretView> mappedSecrets = appSecrets.getSecrets().entrySet()
-                        .stream()
-                        .map(e -> new SecretView(e.getKey(),e.getValue(), descriptorParams.remove(e.getKey()))).collect(
-                                Collectors.toSet());
+            //We need to return a view with all the secrets and also descriptors of the remaining parameters merged.
+            //So we're gonna need a copy of the params on the yml.
+            final Map<String, ParamDescriptor> descriptorParams = appDescriptor.getParams();
 
-                //Now we process the remaining on `descriptorParams`.
-                //Transform the DescriptorParams into SecretView
-                //What ever is left in there is a param that exist on the yml.
-                // that doesnt have a secret in storage.
-                final Set<SecretView> mappedDescriptors = appDescriptor.getParams().keySet().stream()
-                        .map(
-                                paramKey -> new SecretView(paramKey, null,
-                                        descriptorParams.remove(paramKey))).collect(
-                                Collectors.toSet());
+            final Map<String,SecretView> mappedParams = appDescriptor.getParams().keySet().stream()
+                .map(paramKey -> new SecretView(paramKey, null, descriptorParams.get(paramKey)))
+                .collect(Collectors.toMap(SecretView::getName, Function.identity(), (a, b) -> a,
+                        LinkedHashMap::new));
 
-                //At this point `descriptorParams` should be empty.
-                assert (descriptorParams.isEmpty());
+            final AppSecrets appSecrets = optionalAppSecrets.isPresent() ? protectHiddenSecrets(optionalAppSecrets.get()) : AppSecrets.empty() ;
 
-                //Now we need to present them both.
-                //For which we first add the ones from the descriptor.
-                final Set<SecretView> merged = mappedDescriptors.stream()
-                    .filter(secretView -> !mappedSecrets.contains(secretView)).collect(Collectors.toSet());
-                merged.addAll(mappedSecrets);
+            final  Map<String,SecretView> mappedSecrets = appSecrets.getSecrets().entrySet()
+                    .stream()
+                    .map(e -> new SecretView(e.getKey(), e.getValue(), descriptorParams.get(e.getKey())))
+                    .sorted((o1, o2) ->  Boolean.compare(o1.isDynamic(), o2.isDynamic()))
+                    .collect(Collectors.toMap(SecretView::getName, Function.identity(), (a, b) -> a,
+                            LinkedHashMap::new));
 
-                final List<SecretView> sorted  = new LinkedList<>(merged);
-                sorted.sort(compareByNameAndDynamic);
+            final int secretsCount = mappedSecrets.size();
 
-                final SiteView siteView = new SiteView(host.getIdentifier(), host.getHostname(), sorted);
-                return Optional.of(new AppView(appDescriptor, mappedSecrets.size(),
-                        ImmutableList.of(siteView))
-                );
+            final List<SecretView> mergedParamsAndSecrets = mappedParams.entrySet().stream()
+                .map(paramViewEntry -> {
+                    final SecretView secretView = mappedSecrets.remove(paramViewEntry.getKey());
+                    return secretView != null ? secretView : paramViewEntry.getValue();
+                })
+                .collect(Collectors.toList());
+
+            mergedParamsAndSecrets.addAll(
+                    mappedSecrets.values().stream().filter(SecretView::isDynamic)
+                            .collect(Collectors.toList())
+            );
+
+            final SiteView siteView = new SiteView(host.getIdentifier(), host.getHostname(), mergedParamsAndSecrets);
+            return Optional.of(new AppView(appDescriptor, secretsCount,
+                    ImmutableList.of(siteView))
+            );
 
         }
         return Optional.empty();
     }
-
-    private static Comparator<SecretView> compareByNameAndDynamic = (o1, o2) -> {
-        final int compare =  Boolean.compare(o1.isDynamic(),o2.isDynamic());
-        if (compare != 0){
-            return compare;
-        }
-        return o1.getName().compareTo(o2.getName());
-    };
 
     /**
      * This will remove all the secrets under an app for a given host.
