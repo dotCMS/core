@@ -24,8 +24,6 @@ import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,7 +40,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * This API serves as the bridge between the secrets safe repository
@@ -90,14 +88,6 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
-    private AppSecrets _readJson(final char[] chars) throws DotDataException {
-        try {
-            return jsonMapper.readValue(new String(chars), AppSecrets.class);
-        } catch (IOException e) {
-            throw new DotDataException(e);
-        }
-    }
-
     private String toJsonAsString(final AppSecrets object) throws DotDataException {
         try {
             return jsonMapper.writeValueAsString(object);
@@ -110,28 +100,51 @@ public class AppsAPIImpl implements AppsAPI {
      * This method takes a byte array and converts its contents into a char array
      * No String middle man is created.
      * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
+     * https://www.javacodegeeks.com/2010/11/java-best-practices-char-to-byte-and.html
      * @param bytes
      * @return
      */
-    char[] bytesToCharArrayUTF(final byte[] bytes) {
-       final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
-       return ArrayUtils.toPrimitive(cBuffer.chars().mapToObj(value -> (char)value).toArray(Character[]::new));
+    char[] bytesToCharArrayUTF(byte[] bytes) {
+        //final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
+        //return ArrayUtils.toPrimitive(cBuffer.chars().mapToObj(value -> (char)value).toArray(Character[]::new));
+
+        if(bytes.length % 2 != 0){
+            bytes = ArrayUtils.add(bytes, (byte)' ');
+        }
+
+        char[] buffer = new char[bytes.length >> 1];
+        for (int i = 0; i < buffer.length; i++) {
+            int bpos = i << 1;
+            char c = (char) (((bytes[bpos] & 0x00FF) << 8) + (bytes[bpos + 1] & 0x00FF));
+            buffer[i] = c;
+        }
+        return buffer;
     }
 
     /**
      * This method takes a char array and converts its contents into a byte array
      * No String middle man is created.
      * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
+     * https://www.javacodegeeks.com/2010/11/java-best-practices-char-to-byte-and.html
      * @param chars
      * @return
      */
     byte[] charsToBytesUTF(final char[] chars) {
+    /*
         final byte[] bytes = new byte[chars.length << 1];
         final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
         for (final char chr : chars){
             cBuffer.put(chr);
         }
         return bytes;
+     */
+        byte[] b = new byte[chars.length << 1];
+        for (int i = 0; i < chars.length; i++) {
+            int bpos = i << 1;
+            b[bpos] = (byte) ((chars[i] & 0xFF00) >> 8);
+            b[bpos + 1] = (byte) (chars[i] & 0x00FF);
+        }
+        return b;
     }
 
     /**
@@ -340,8 +353,9 @@ public class AppsAPIImpl implements AppsAPI {
                //if everything has been removed from the json entry we need to kick it of from cache.
                secretsStore.deleteValue(internalKey);
             } else {
-                //final char[] chars = toJsonAsChars(secrets);
-               secretsStore.saveValue(internalKey, toJsonAsString(secrets).toCharArray());
+               final char[] chars = toJsonAsChars(secrets);
+               secretsStore.saveValue(internalKey, chars);
+
             }
         }
     }

@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -335,8 +336,8 @@ public class AppsAPIImplTest {
     @Test
     public void Test_BytesToChar_No_Middle_String_Conversion() throws DotDataException {
         final AppsAPIImpl impl =  new AppsAPIImpl();
-        final String in = RandomStringUtils.randomAlphanumeric(600);
-        final char [] chars = impl.bytesToCharArrayUTF(in.getBytes());
+        final String in = RandomStringUtils.randomAlphanumeric(3);
+        final char [] chars = impl.bytesToCharArrayUTF(in.getBytes(StandardCharsets.UTF_8));
         final byte [] bytes = impl.charsToBytesUTF(chars);
         final String out = new String(bytes);
         Assert.assertEquals(in,out);
@@ -347,9 +348,10 @@ public class AppsAPIImplTest {
         final AppsAPIImpl impl = new AppsAPIImpl();
         final AppSecrets secretsIn = new AppSecrets.Builder()
                 .withKey("TheKey")
-                .withHiddenSecret("hidden", "I'm hidden")
-                .withSecret("non-hidden", "I'm not hidden")
-                .withSecret("bool", true)
+                .withHiddenSecret("hidden1", "I'm hidden")
+                .withSecret("non-hidden1", "I'm not hidden")
+                .withSecret("non-hidden5", RandomStringUtils.randomAlphanumeric(256))
+                .withSecret("bool1", true)
                 .build();
         final char[] toJsonAsChars = impl.toJsonAsChars(secretsIn);
         final AppSecrets secretsOut = impl.readJson(toJsonAsChars);
