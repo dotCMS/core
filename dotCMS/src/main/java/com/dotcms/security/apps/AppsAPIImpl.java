@@ -24,6 +24,8 @@ import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,6 +42,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.commons.lang.ArrayUtils;
 
 /**
  * This API serves as the bridge between the secrets safe repository
@@ -69,7 +72,25 @@ public class AppsAPIImpl implements AppsAPI {
             .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
             .findAndRegisterModules();
 
-    private AppSecrets readJson(final char[] chars) throws DotDataException {
+    char[] toJsonAsChars(final AppSecrets object) throws DotDataException {
+        try {
+            final byte [] bytes = jsonMapper.writeValueAsBytes(object);
+            return bytesToCharArrayUTF(bytes);
+        } catch (IOException e) {
+            throw new DotDataException(e);
+        }
+    }
+
+     AppSecrets readJson(final char[] chars) throws DotDataException {
+        try {
+            final byte [] bytes = charsToBytesUTF(chars);
+            return jsonMapper.readValue(bytes, AppSecrets.class);
+        } catch (IOException e) {
+            throw new DotDataException(e);
+        }
+    }
+
+    private AppSecrets _readJson(final char[] chars) throws DotDataException {
         try {
             return jsonMapper.readValue(new String(chars), AppSecrets.class);
         } catch (IOException e) {
@@ -83,6 +104,34 @@ public class AppsAPIImpl implements AppsAPI {
         } catch (IOException e) {
             throw new DotDataException(e);
         }
+    }
+
+    /**
+     * This method takes a byte array and converts its contents into a char array
+     * No String middle man is created.
+     * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
+     * @param bytes
+     * @return
+     */
+    char[] bytesToCharArrayUTF(final byte[] bytes) {
+       final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
+       return ArrayUtils.toPrimitive(cBuffer.chars().mapToObj(value -> (char)value).toArray(Character[]::new));
+    }
+
+    /**
+     * This method takes a char array and converts its contents into a byte array
+     * No String middle man is created.
+     * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
+     * @param chars
+     * @return
+     */
+    byte[] charsToBytesUTF(final char[] chars) {
+        final byte[] bytes = new byte[chars.length << 1];
+        final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
+        for (final char chr : chars){
+            cBuffer.put(chr);
+        }
+        return bytes;
     }
 
     /**
@@ -291,6 +340,7 @@ public class AppsAPIImpl implements AppsAPI {
                //if everything has been removed from the json entry we need to kick it of from cache.
                secretsStore.deleteValue(internalKey);
             } else {
+                //final char[] chars = toJsonAsChars(secrets);
                secretsStore.saveValue(internalKey, toJsonAsString(secrets).toCharArray());
             }
         }
