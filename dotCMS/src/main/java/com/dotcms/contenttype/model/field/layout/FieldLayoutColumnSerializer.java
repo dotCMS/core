@@ -43,9 +43,6 @@ public class FieldLayoutColumnSerializer extends JsonSerializer<FieldLayoutColum
             final JsonGenerator jsonGenerator,
             final SerializerProvider serializerProvider) throws IOException {
 
-        final ContentTypeInternationalization contentTypeInternationalization =
-                (ContentTypeInternationalization) serializerProvider.getAttribute("internationalization");
-
         jsonGenerator.writeStartObject();
 
         final JsonFieldTransformer jsonFieldDividerTransformer =
@@ -57,6 +54,18 @@ public class FieldLayoutColumnSerializer extends JsonSerializer<FieldLayoutColum
 
         final List<Map<String, Object>> fieldsMap = jsonColumnsTransformer.mapList();
 
+        setFieldInternationalization(serializerProvider, fieldsMap);
+
+        jsonGenerator.writeObjectField("fields", fieldsMap);
+
+        jsonGenerator.writeEndObject();
+        jsonGenerator.flush();
+    }
+
+    private void setFieldInternationalization(SerializerProvider serializerProvider, List<Map<String, Object>> fieldsMap) {
+        final ContentTypeInternationalization contentTypeInternationalization =
+                (ContentTypeInternationalization) serializerProvider.getAttribute("internationalization");
+
         if (contentTypeInternationalization != null) {
             final ContentType contentType = (ContentType) serializerProvider.getAttribute("type");
 
@@ -64,10 +73,5 @@ public class FieldLayoutColumnSerializer extends JsonSerializer<FieldLayoutColum
                 FieldUtil.setFieldInternationalization(contentType, contentTypeInternationalization, fieldMap);
             }
         }
-
-        jsonGenerator.writeObjectField("fields", fieldsMap);
-
-        jsonGenerator.writeEndObject();
-        jsonGenerator.flush();
     }
 }
