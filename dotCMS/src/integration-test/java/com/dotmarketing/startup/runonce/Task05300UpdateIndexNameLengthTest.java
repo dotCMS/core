@@ -11,7 +11,7 @@ import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class Task05205UpdateIndexNameLengthTest {
+public class Task05300UpdateIndexNameLengthTest {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -83,7 +83,7 @@ public class Task05205UpdateIndexNameLengthTest {
         assertEquals(DbConnectionFactory.getDBType().equals("Oracle") ? "N" : "NO",
                 result.get("nullable_value"));
 
-        final Task05205UpdateIndexNameLength task = new Task05205UpdateIndexNameLength();
+        final Task05300UpdateIndexNameLength task = new Task05300UpdateIndexNameLength();
 
         task.executeUpgrade();
 
