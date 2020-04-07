@@ -340,6 +340,7 @@ public class HTMLPageAssetRenderedTest {
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3(
             final Container container, final Template template) throws Exception{
 
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
 
@@ -1134,7 +1135,7 @@ public class HTMLPageAssetRenderedTest {
     @UseDataProvider("cases")
     public void shouldReturnParserContainerUUID(final Container container, final Template template) throws Exception {
 
-
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
         final String pageName = "test5Page-"+System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
@@ -1322,6 +1323,7 @@ public class HTMLPageAssetRenderedTest {
     @UseDataProvider("dataProviderWidgetPreExecuteCode")
     public void test_WidgetPreExecuteCodeShowRegardlessPageMode(final WidgetPreExecuteCodeTestCase testCase) throws Exception {
 
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
         //Update the Preexecute Field to have some code in it
         final String preExcuteCode = "PreExecute Code Displayed";
         ContentType contentType = TestDataUtils.getWidgetLikeContentType();
