@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "3e4f6be3-248b-49ca-a5fa-2eeb12ea484c",
+		"_postman_id": "423987b3-9e86-45ef-998d-e85d613647ab",
 		"name": "Apps",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -475,7 +475,7 @@
 							"raw": "{ \n\t  \"param1\": {\n\t\t \"value\": \"value1\"\n      },\n      \"param2\": {\n\t\t \"value\": \"value2\"\n      },\n     \"hiddenParam\": {\n\t\t \"value\": \"value3\"\n      }\n}\n"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -483,7 +483,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}",
+								"{{key}}",
 								"{{site_id}}"
 							]
 						}
@@ -545,7 +545,7 @@
 							"raw": "{\n    \"hiddenParam\": {\n        \"value\": \"This is a hidden value.\"\n    }\n}"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/{{service_key}}/{{site_id}}",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}/{{site_id}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -553,7 +553,7 @@
 								"api",
 								"v1",
 								"apps",
-								"{{service_key}}",
+								"{{key}}",
 								"{{site_id}}"
 							]
 						}
@@ -866,7 +866,7 @@
 							"raw": "{ \n   \"key\" : \"{{key}}\",\n   \"siteId\" : \"{{site_id}}\",\n   \"params\": [\"param1\"]\n}\n\n"
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/apps/my-key/",
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -874,8 +874,7 @@
 								"api",
 								"v1",
 								"apps",
-								"my-key",
-								""
+								"{{key}}"
 							]
 						}
 					},
@@ -898,9 +897,12 @@
 									"    var sites = jsonData.entity.sites;",
 									"    pm.expect(sites.length).to.be.above(0);",
 									"    pm.expect(sites[0].id).to.be.eql(siteId);",
-									"    pm.expect(sites[0].configured).to.be.eql(true);",
+									"    pm.expect(sites[0].configured).to.be.eql(false);",
 									"    var secrets = sites[0].secrets;",
-									"    pm.expect(secrets).to.have.not.property('param1');",
+									"    const secret = secrets.find(s => s.name === 'param1'); ",
+									"   if(secret){",
+									"       pm.expect(secret.value).to.include('default-value'); //Test this comes back with the daefault value from the yml",
+									"    } ",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1115,8 +1117,8 @@
 							"script": {
 								"id": "fc16be18-0766-4241-b8c9-0505c45c83b7",
 								"exec": [
-									"pm.test(\"Status code is 404\", function () {",
-									"    pm.response.to.have.status(404);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1283,19 +1285,19 @@
 	],
 	"variable": [
 		{
-			"id": "09707b1c-2f0c-4fbd-bc3c-89d9d897d710",
+			"id": "5ccba6e0-d83a-463d-821f-678c710d35f5",
 			"key": "key",
 			"value": "postman-test-service-descriptor",
 			"type": "string"
 		},
 		{
-			"id": "21219b16-7b05-4c8f-9ad0-dd52e99f3d8f",
+			"id": "1438f3c6-0e94-41ac-88dd-51be54614f51",
 			"key": "site_id",
-			"value": "d93afb22-72df-4115-93f0-264c892e2db1",
+			"value": "48190c8c-42c4-46af-8d1a-0cd5db894797",
 			"type": "string"
 		},
 		{
-			"id": "410943b9-ad3b-41c6-a534-1bf878a3e843",
+			"id": "398c71b3-c141-4c4f-8ba8-aac824fbef83",
 			"key": "service_key",
 			"value": "postman-test-service-descriptor",
 			"type": "string"
