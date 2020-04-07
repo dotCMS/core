@@ -39,28 +39,6 @@ public class ContentletTest {
         assertEquals(contentlet.getTitle(), expectedValue);
     }
 
-    @Test
-    public void testGetTitle_WhenNonExistingTitleField_returnGetName() throws DotDataException, DotSecurityException {
-        final ContentletAPI contentletAPI = Mockito.mock(ContentletAPI.class);
-        final UserAPI userAPI = Mockito.mock(UserAPI.class);
-        final User mockUser = new User();
-        Mockito.when(userAPI.getSystemUser()).thenReturn(mockUser);
-        final Contentlet contentlet = Mockito.spy(Contentlet.class);
-        contentlet.setUserAPI(userAPI);
-        contentlet.setContentletAPI(contentletAPI);
-        final ContentType mockContentType = Mockito.mock(ContentType.class);
-        final Field fieldWithTitle = createFieldWithVarname("thisIsNotATitle");
-        final List<Field> mockFieldWithTitle = Collections.singletonList(fieldWithTitle);
-        Mockito.doReturn(mockContentType).when(contentlet).getContentType();
-        Mockito.when(mockContentType.fields()).thenReturn(mockFieldWithTitle);
-
-        final String expectedValue = "titleTakenFromElsewhere";
-        Mockito.when(contentletAPI.getName(contentlet, mockUser, false))
-                .thenReturn(expectedValue);
-
-        assertEquals(contentlet.getTitle(), expectedValue);
-    }
-
     private Field createFieldWithVarname(final String varname) {
         return ImmutableTextField.builder()
                 .name(varname)
