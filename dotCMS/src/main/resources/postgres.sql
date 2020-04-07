@@ -1902,27 +1902,6 @@ CREATE TRIGGER structure_host_folder_trigger BEFORE INSERT OR UPDATE
     ON structure FOR EACH ROW
     EXECUTE PROCEDURE structure_host_folder_check();
 
-CREATE OR REPLACE FUNCTION load_records_to_index(server_id character varying, records_to_fetch int, priority_level int)
-  RETURNS SETOF dist_reindex_journal AS'
-DECLARE
-   dj dist_reindex_journal;
-BEGIN
-
-    FOR dj IN SELECT * FROM dist_reindex_journal
-       WHERE serverid IS NULL
-       AND priority <= priority_level
-       ORDER BY priority ASC
-       LIMIT records_to_fetch
-       FOR UPDATE
-    LOOP
-        UPDATE dist_reindex_journal SET serverid=server_id WHERE id=dj.id;
-        RETURN NEXT dj;
-    END LOOP;
-
-END'
-LANGUAGE 'plpgsql';
-
-
 CREATE OR REPLACE FUNCTION content_versions_check() RETURNS trigger AS '
    DECLARE
        versionsCount integer;

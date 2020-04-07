@@ -32,6 +32,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -4603,6 +4604,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 removeURLFromContentlet( contentlet );
 
                 contentlet.setIdentifier(identifier.getId() );
+                contentlet = applyNullProperties(contentlet);
                 contentlet = contentFactory.save(contentlet);
                 contentlet.setIndexPolicy(indexPolicy);
                 contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
@@ -5575,7 +5577,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public String getName(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException,DotContentletStateException, DotDataException {
+    public String getName(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotSecurityException,DotContentletStateException, DotDataException {
 
         Preconditions.checkNotNull(contentlet, "The contentlet is null");
 
@@ -5586,42 +5588,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + " cannot read Contentlet: " + contentlet.getIdentifier());
         }
 
-        if (UtilMethods.isSet(contentlet.getIdentifier()) && contentlet.isFileAsset()) {
-           try {
-               final String assetName = APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getAssetName();
-               contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
-           }catch (Exception e){
-               Logger.warn(this.getClass(), "Unable to get assetName for contentlet with identifier: " + contentlet.getIdentifier(), e);
-           }
-        }
-
-        String returnValue = (String) contentlet.getMap().get(Contentlet.DOT_NAME_KEY);
-        if(UtilMethods.isSet(returnValue)){
-            return returnValue;
-        }
-
-
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-
-        for (Field fld : fields) {
-
-            try{
-
-                if(fld.isListed() && contentlet.getMap().get(fld.getVelocityVarName())!=null){
-                    returnValue = contentlet.getMap().get(fld.getVelocityVarName()).toString();
-                    returnValue = returnValue.length() > 250 ? returnValue.substring(0,250) : returnValue;
-                    if(UtilMethods.isSet(returnValue)){
-                        contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, returnValue);
-                        return returnValue;
-                    }
-                }
-            }
-            catch(Exception e){
-                Logger.warn(this.getClass(), "unable to get field value " + fld.getVelocityVarName() + " " + e, e);
-            }
-        }
-        contentlet.setStringProperty("__NAME__", contentlet.getIdentifier());
-        return contentlet.getIdentifier();
+        return contentlet.getTitle();
     }
 
     /**

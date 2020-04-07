@@ -1,8 +1,5 @@
 package com.dotcms.rest.api.v1.system.role;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -10,17 +7,30 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.util.Logger;
-import java.io.Serializable;
+import com.dotmarketing.util.SecurityLogger;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import java.io.Serializable;
+import java.util.Set;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This end-point provides access to information associated to dotCMS roles that
@@ -39,6 +49,7 @@ public class RoleResource implements Serializable {
 
 	private final WebResource webResource;
 	private final RoleAPI roleAPI;
+	private final RoleHelper roleHelper = new RoleHelper();
 
 	/**
 	 * Default class constructor.
@@ -98,7 +109,109 @@ public class RoleResource implements Serializable {
 			Logger.error(this, "An error occurred when processing the request.", e);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
+
 		return Response.ok(new ResponseEntityView(map("checkRoles", hasUserRole))).build();
 	}
 
+	/**
+	 * Deletes a set of layouts into a role
+	 * The user must have to be a BE and has to have access to roles portlet
+	 */
+	@DELETE
+	@Path("/layouts")
+	@Produces("application/json")
+	public Response deleteRoleLayouts(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			final RoleLayoutForm roleLayoutForm) throws DotDataException, DotSecurityException {
+
+		final InitDataObject initDataObject = new WebResource.InitBuilder()
+				.requiredFrontendUser(false).rejectWhenNoUser(true)
+				.requiredBackendUser(true).requiredPortlet("roles")
+				.requestAndResponse(request, response).init();
+
+		if (this.roleAPI.doesUserHaveRole(initDataObject.getUser(), this.roleAPI.loadCMSAdminRole())) {
+
+			final String roleId         = roleLayoutForm.getRoleId();
+			final Set<String> layoutIds = roleLayoutForm.getLayoutIds();
+			final Role role 			= roleAPI.loadRoleById(roleId);
+			final LayoutAPI layoutAPI   = APILocator.getLayoutAPI();
+
+			Logger.debug(this, ()-> "Deleting the layouts : " + layoutIds + " to the role: " + roleId);
+
+			return Response.ok(new ResponseEntityView(map("deletedLayouts",
+					this.roleHelper.deleteRoleLayouts(role, layoutIds, layoutAPI,
+							this.roleAPI, APILocator.getSystemEventsAPI())))).build();
+		} else {
+
+			final String remoteIp = request.getRemoteHost();
+			SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call delete role layouts by user "+
+					initDataObject.getUser().getUserId() + " from " + remoteIp);
+			throw new DotSecurityException("User: '" +  initDataObject.getUser().getUserId() + "' not authorized");
+		}
+	}
+
+	/**
+	 * Saves set of layout into a role
+	 * The user must have to be a BE and has to have access to roles portlet
+	 */
+	@POST
+	@Path("/layouts")
+	@Produces("application/json")
+	public Response saveRoleLayouts(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			final RoleLayoutForm roleLayoutForm) throws DotDataException, DotSecurityException {
+
+		final InitDataObject initDataObject = new WebResource.InitBuilder(this.webResource)
+				.requiredFrontendUser(false).rejectWhenNoUser(true)
+				.requiredBackendUser(true).requiredPortlet("roles")
+				.requestAndResponse(request, response).init();
+
+		if (this.roleAPI.doesUserHaveRole(initDataObject.getUser(), this.roleAPI.loadCMSAdminRole())) {
+
+			final String roleId         = roleLayoutForm.getRoleId();
+			final Set<String> layoutIds = roleLayoutForm.getLayoutIds();
+			final Role role 			= roleAPI.loadRoleById(roleId);
+			final LayoutAPI layoutAPI   = APILocator.getLayoutAPI();
+
+			Logger.debug(this, ()-> "Saving the layouts : " + layoutIds + " to the role: " + roleId);
+
+			return Response.ok(new ResponseEntityView(map("savedLayouts",
+					this.roleHelper.saveRoleLayouts(role, layoutIds, layoutAPI,
+							this.roleAPI, APILocator.getSystemEventsAPI())))).build();
+		} else {
+
+			final String remoteIp = request.getRemoteHost();
+			SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call save role layouts by user "+
+					initDataObject.getUser().getUserId() + " from " + remoteIp);
+			throw new DotSecurityException("User: '" +  initDataObject.getUser().getUserId() + "' not authorized");
+		}
+	}
+
+	/**
+	 * Returns a collection of layouts associated to a role
+	 * The user must have to be a BE and has to have access to roles portlet
+	 */
+	@GET
+	@Path("/{roleId}/layouts")
+	@Produces("application/json")
+	public Response findRoleLayouts(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			final @PathParam("roleId") String roleId) throws DotDataException {
+
+		new WebResource.InitBuilder(this.webResource)
+				.requiredFrontendUser(false).rejectWhenNoUser(true)
+				.requiredBackendUser(true).requiredPortlet("roles")
+				.requestAndResponse(request, response).init();
+
+		Logger.debug(this, ()-> "Finding the role layouts for the roleid: " + roleId);
+		final Role role              = roleAPI.loadRoleById(roleId);
+		final LayoutAPI layoutAPI    = APILocator.getLayoutAPI();
+
+		return Response.ok(new ResponseEntityView(
+				layoutAPI.loadLayoutsForRole(role)
+		)).build();
+	}
 }

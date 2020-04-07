@@ -199,15 +199,16 @@
             fillResultsTable(headers, data);
             fillCardView(data)
             const card = getViewCardEl();
-            const list = getListEl();;
+            const list = getListEl();
 
             if (state.view === 'list') {
                 list.style.display = ''
-                card.display = 'none'
+                card.style.display = 'none'
             } else {
                 list.style.display = 'none'
-                card.display = ''
+                card.style.display = ''
             }
+
         }
 
 
@@ -1817,7 +1818,7 @@
                     disableBulkAvailableActionsButton();
                 }
             });
-			viewCard.addEventListener('onCardClick', (e) => {
+			viewCard.addEventListener('cardClick', (e) => {
 				openEditModal(e.detail);
 			});
             dojo.byId('metaMatchingResultsDiv').appendChild(viewCard);
@@ -2017,10 +2018,18 @@
                                         cell = row.insertCell (row.cells.length);
                                         cell.setAttribute("align","left");
 									}
-                                    var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
+
+                                    let fieldVarName  = header["fieldVelocityVarName"];
+                                    let fieldVarTitle = cellData[fieldVarName + "_title_"];
+                                    fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
+                                    var value         = titleCell(cellData,fieldVarTitle, i);
                                 }
                                 else{
-                                    var value = cellData[header["fieldVelocityVarName"]];
+
+                                    let fieldVarName  = header["fieldVelocityVarName"];
+                                    let fieldVarTitle = cellData[fieldVarName + "_title_"];
+                                    fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
+                                    var value         = fieldVarTitle;
                                 }
                                 if (value != null){
                                 	cell.innerHTML = value;

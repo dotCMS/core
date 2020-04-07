@@ -135,6 +135,7 @@ public class Task05210CreateDefaultDotAsset implements StartupTask {
 
         final boolean isRequired   = Boolean.TRUE;
         final boolean noRequired   = Boolean.FALSE;
+        final boolean listed       = Boolean.TRUE;
         final boolean noListed     = Boolean.FALSE;
         final boolean isIndexed    = Boolean.TRUE;
         final boolean isFixed      = Boolean.TRUE;
@@ -151,7 +152,7 @@ public class Task05210CreateDefaultDotAsset implements StartupTask {
 
         // Asset
         final Map<String, Object> assetField = setFieldElements("Binary Asset",
-                BinaryField.class.getName(), StringPool.BLANK, "system_field", isRequired, noListed, isIndexed,
+                BinaryField.class.getName(), StringPool.BLANK, "system_field", isRequired, listed, isIndexed,
                 DotAssetContentType.ASSET_FIELD_VAR, 1, StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
                 StringPool.BLANK, isFixed, noReadOnly, isSearchable, noUnique);
 

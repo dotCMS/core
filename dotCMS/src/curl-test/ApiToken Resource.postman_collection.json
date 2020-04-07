@@ -1,0 +1,353 @@
+{
+	"info": {
+		"_postman_id": "72bfa87a-27fd-4b8f-8811-f7c007f82114",
+		"name": "ApiToken Resource",
+		"description": "Tests for the api token",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "createToken",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "c2bf4bbe-1e0d-4605-9129-7329ef64f57b",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"User Id should be dotcms.org.1\", function () {",
+							"    pm.expect(jsonData.entity.token.userId).to.eql('dotcms.org.1');",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"tokenid\", jsonData.entity.token.id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"userId\":\"dotcms.org.1\",\n\t\"tokenId\":\"123\",\n\t\"expirationSeconds\":\"100000\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getApiTokens",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "0434eb2c-4aa7-4533-946b-092833c7eed3",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"User Id should be dotcms.org.1\", function() {",
+							"    pm.expect(jsonData.entity.tokens.length).to.be.above(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken/dotcms.org.1/tokens",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken",
+						"dotcms.org.1",
+						"tokens"
+					]
+				},
+				"description": "Get tokens of admin user"
+			},
+			"response": []
+		},
+		{
+			"name": "getJwtFromApiToken",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f697558f-94ed-4f74-9992-349bf63fb7de",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken/{{tokenid}}/jwt",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken",
+						"{{tokenid}}",
+						"jwt"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "revokeApiToken",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f697558f-94ed-4f74-9992-349bf63fb7de",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken/{{tokenid}}/revoke",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken",
+						"{{tokenid}}",
+						"revoke"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "revokeApiToken Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f697558f-94ed-4f74-9992-349bf63fb7de",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken/{{tokenid}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken",
+						"{{tokenid}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "revokeUserToken",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "b338181a-6425-4eab-9277-46182a2fd06e",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken/users/dotcms.org.1/revoke",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken",
+						"users",
+						"dotcms.org.1",
+						"revoke"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "revokeUsersToken",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "b338181a-6425-4eab-9277-46182a2fd06e",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function() {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken/users/revoke",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken",
+						"users",
+						"revoke"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"id": "523ae86b-2f57-474e-bb5b-e1ac657aea62",
+			"key": "tokenid",
+			"value": "api9c8d5eb4-631a-4419-b0cb-af8efc3fafbb",
+			"type": "string"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

@@ -5,18 +5,18 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 public class IndexStats {
 
     private String indexName;
-    private int documentCount;
-    private int size;
+    private long documentCount;
+    private long size;
     private String prettySize;
 
-    public IndexStats(String indexName, int documentCount, int size) {
+    public IndexStats(final String indexName, final long documentCount, final long size) {
         this.indexName = indexName;
         this.documentCount = documentCount;
         this.size = size;
         this.prettySize = new ByteSizeValue(size).toString();
     }
 
-    public int getDocumentCount() {
+    public long getDocumentCount() {
         return documentCount;
     }
 

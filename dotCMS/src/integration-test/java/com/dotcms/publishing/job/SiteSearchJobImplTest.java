@@ -1,5 +1,8 @@
 package com.dotcms.publishing.job;
 
+import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
+import static com.dotmarketing.util.Constants.USER_AGENT_DOTCMS_SITESEARCH;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
@@ -10,8 +13,10 @@ import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
@@ -21,6 +26,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -29,10 +35,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.sitesearch.business.SiteSearchAuditAPI;
 import com.dotmarketing.sitesearch.model.SiteSearchAudit;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
@@ -43,6 +52,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -83,15 +93,6 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         siteSearchAuditAPI = APILocator.getSiteSearchAuditAPI();
         contentletAPI = APILocator.getContentletAPI();
         hostAPI = APILocator.getHostAPI();
-
-        final List<Host> allHosts = hostAPI.findAll(systemUser, false);
-        for (final Host host : allHosts) {
-            if (host.isSystemHost() || host.getHostname().startsWith("demo")) {
-                continue;
-            }
-            hostAPI.archive(host, systemUser, false);
-            hostAPI.delete(host, systemUser, false);
-        }
 
         site = new SiteDataGen().nextPersisted();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
@@ -222,10 +223,10 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         Mockito.when(context1.getFireTime()).thenReturn(new Date());
 
         impl.run(context1);
-        //First run will create the default index
+
 
         final List <String> indices = siteSearchAPI.listIndices();
-        Assert.assertTrue(indices.contains(defaultIndexName));
+        Assert.assertFalse(indices.contains(defaultIndexName));
 
         recentAudits = siteSearchAuditAPI.findRecentAudits(jobId1, 0, 1);
 
@@ -370,7 +371,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet1, systemUser, false);
 
-        final String pageName = "synchronicity"; // <-- I needed an unusual word with low chances to appear in the search result by transitive dependencies also included by the bundler.
+        final String pageName = RandomStringUtils.randomAlphabetic(20);
 
         final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template).languageId(defaultLang)
                 .pageURL(pageName)
@@ -395,7 +396,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
         //Now we make sure the page is now part of Site-search search results.
         final SiteSearchResults search3 = siteSearchAPI.search(siteSearchAudit3.getIndexName(), pageName,0, 10);
-        Assert.assertEquals(search3.getTotalResults(), 1);
+        Assert.assertEquals(1, search3.getTotalResults());
 
         final String generatedBundleId2 = thirdRunJob.getBundleId();
 
@@ -417,8 +418,9 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         //And now for my last trick I'm gonna un-publish the page that I just verified appears in the search-results.
         //Then re-run the job and make sure it's gone.
 
-        HTMLPageDataGen.unpublish(pageEnglishVersion);
+        DateUtil.sleep(6000L); //This sleep is freaking important. It allows a wider time difference between the last start-date. And the file asset last modified timestamp.
 
+        HTMLPageDataGen.unpublish(pageEnglishVersion);
         //Next Run should run completely incrementally
         final JobExecutionContext incrementalContext3 = Mockito.mock(JobExecutionContext.class);
         Mockito.when(incrementalContext3.getJobDetail()).thenReturn(jobDetail2);
@@ -430,12 +432,123 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         recentAudits = siteSearchAuditAPI.findRecentAudits(jobId, 0, 1);
         Assert.assertFalse(recentAudits.isEmpty());
         final SiteSearchAudit siteSearchAudit4 = recentAudits.get(0);
-
-        //Now we make sure the page is now part of Site-search search results.
+        //Now we make sure the page is Not part of Site-search search results.
         final SiteSearchResults search4 = siteSearchAPI.search(siteSearchAudit4.getIndexName(), pageName,0, 10);
-        Assert.assertEquals(search4.getTotalResults(), 0);
+        Assert.assertEquals(0, search4.getTotalResults());
         //Ta da!!!
 
+    }
+
+    /**
+     * Given sceneario: Multi-language content referenced from a page. Create a Site-Search run including all the languages of the content and
+     * check the two versions made it into the resulting index.
+     */
+
+    @Test
+    public void test_MultilangContent_IndexingAllLanguages()
+            throws DotPublishingException, JobExecutionException, DotDataException, IOException, DotSecurityException, WebAssetException {
+
+        boolean defaultContentToDefaultLangOriginalValue =
+                Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        try {
+
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+
+            final Host site = new SiteDataGen().nextPersisted();
+            Language lang1 = APILocator.getLanguageAPI().getDefaultLanguage();
+            Language lang2 = new LanguageDataGen().nextPersisted();
+            folder = new FolderDataGen().site(site).nextPersisted();
+
+            Contentlet contentletLang1 = TestDataUtils
+                    .getEmployeeContent(true, lang1.getId(), null, site);
+
+            contentletLang1 = contentletAPI.find(contentletLang1.getInode(), systemUser, false);
+            contentletLang1.setStringProperty("firstName", "catherine");
+            contentletLang1 = contentletAPI.checkin(contentletLang1, systemUser, false);
+
+            ContentletDataGen.publish(contentletLang1);
+
+            Contentlet contentletLang2 = contentletAPI
+                    .find(contentletLang1.getInode(), systemUser, false);
+            contentletLang2.setInode("");
+            contentletLang2.setLanguageId(lang2.getId());
+            contentletLang2.setStringProperty("firstName", "catalina");
+            contentletLang2 = contentletAPI.checkin(contentletLang2, systemUser, false);
+
+            ContentletDataGen.publish(contentletLang2);
+
+            final Container container = new ContainerDataGen().withContentType(contentletLang1
+                    .getContentType(), "$!{firstName}").nextPersisted();
+
+            ContainerDataGen.publish(container);
+
+            final String uuid = UUIDGenerator.generateUuid();
+
+            final Template template = new TemplateDataGen()
+                    .withContainer(container.getIdentifier(), uuid)
+                    .nextPersisted();
+
+            TemplateDataGen.publish(template);
+
+            HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(lang1.getId())
+                    .nextPersisted();
+
+            HTMLPageDataGen.publish(page);
+
+            final MultiTree multiTree = new MultiTree(page.getIdentifier(),
+                    container.getIdentifier(),
+                    contentletLang1.getIdentifier(), getDotParserContainerUUID(uuid), 0);
+
+            APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+
+            final String html = APILocator.getHTMLPageAssetAPI().getHTML(page.getURI(), site, true,
+                    contentletLang1.getIdentifier(), APILocator.systemUser(),
+                    contentletLang1.getLanguageId(), USER_AGENT_DOTCMS_SITESEARCH);
+
+            Assert.assertFalse(html.isEmpty());
+
+            final List<String> indicesBeforeTest = siteSearchAPI.listIndices();
+            for (final String index : indicesBeforeTest) {
+                esIndexAPI.delete(index);
+            }
+            final String jobId = UUIDUtil.uuid();
+            final String alias = "any-alias-" + System.currentTimeMillis();
+            final JobDataMap jobDataMap = new JobDataMap();
+            jobDataMap.put(SiteSearchJobImpl.RUN_NOW, Boolean.TRUE.toString());
+            jobDataMap.put(SiteSearchJobImpl.INCREMENTAL, Boolean.FALSE.toString());
+            jobDataMap.put(SiteSearchJobImpl.INDEX_ALIAS, alias);
+            jobDataMap.put(SiteSearchJobImpl.JOB_ID, jobId);
+            jobDataMap.put(SiteSearchJobImpl.QUARTZ_JOB_NAME,
+                    SiteSearchJobImpl.RUNNING_ONCE_JOB_NAME);
+            jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
+            jobDataMap
+                    .put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{Long.toString(lang1.getId()),
+                            Long.toString(lang2.getId())});
+            jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
+
+            final JobDetail jobDetail = Mockito.mock(JobDetail.class);
+            Mockito.when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
+            final JobExecutionContext context = Mockito.mock(JobExecutionContext.class);
+            Mockito.when(context.getJobDetail()).thenReturn(jobDetail);
+            Mockito.when(context.getFireTime()).thenReturn(new Date());
+            final SiteSearchJobImpl impl = new SiteSearchJobImpl();
+            impl.run(context);
+
+            final List<String> indicesAfterTest = siteSearchAPI.listIndices();
+            Assert.assertFalse(indicesAfterTest.isEmpty());
+            final String newIndexName = indicesAfterTest.get(0);
+
+            SiteSearchResults searchResults = siteSearchAPI.search(newIndexName, "catalina", 0, 10);
+            Assert.assertTrue(searchResults.getTotalResults() >= 1);
+
+            searchResults = siteSearchAPI.search(newIndexName, "catherine", 0, 10);
+            Assert.assertTrue(searchResults.getTotalResults() >= 1);
+
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
+                    defaultContentToDefaultLangOriginalValue);
+        }
     }
 
 

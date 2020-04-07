@@ -126,13 +126,16 @@ public class FileAssetContainerUtil {
                 APILocator.getHostAPI().resolveHostName(hostname, APILocator.systemUser(), false);
     }
 
+    final List<String> pageModePrefixList = Stream.of(PageMode.values())
+                    .map(pageMode -> String.format("/%s/", pageMode.name()))
+                    .collect(Collectors.toList());
+    
+    
     //demo.dotcms.com/application/containers/test/
     public String getHostName(final String path) {
         try {
             String tmp = path;
-            final List<String> pageModePrefixList = Stream.of(PageMode.values())
-                    .map(pageMode -> String.format("/%s/", pageMode.name()))
-                    .collect(Collectors.toList());
+
             for (final String prefix : pageModePrefixList) {
                 if (tmp.startsWith(prefix)) {
                     tmp = tmp.substring(prefix.length());
@@ -143,7 +146,7 @@ public class FileAssetContainerUtil {
             tmp = tmp.replaceAll(HOST_INDICATOR, "");
             tmp = tmp.substring(0, tmp.indexOf(CONTAINER_FOLDER_PATH));
             final String finalString = tmp;
-            Logger.warn(FileAssetContainerUtil.class,
+            Logger.debug(FileAssetContainerUtil.class,
                     () -> String.format(" extracted hostName `%s`", finalString));
 
             return (UtilMethods.isSet(tmp) ? tmp : null);

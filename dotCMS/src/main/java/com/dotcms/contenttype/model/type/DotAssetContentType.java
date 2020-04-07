@@ -56,7 +56,7 @@ public abstract class DotAssetContentType extends ContentType implements UrlMapa
 
 		fields.add(
 				ImmutableBinaryField.builder()
-				.name("Binary Asset")
+				.name("Asset")
 				.variable(ASSET_FIELD_VAR)
 				.sortOrder(fields.size())
 				.fixed(true)
@@ -64,6 +64,7 @@ public abstract class DotAssetContentType extends ContentType implements UrlMapa
 				.readOnly(false)
 				.searchable(true)
 				.indexed(true)
+				.listed(true) // show the name of the file on the content search
 				.build()
 			);
 

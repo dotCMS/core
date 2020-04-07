@@ -9,9 +9,11 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
@@ -26,6 +28,7 @@ import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
+import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,6 +37,7 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -48,6 +52,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,8 +69,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -233,7 +238,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   /**
    * Create a contentlet based on a map (makes a copy of it)
    *
-   * @param map
+   * @param mapIn
    */
   public Contentlet(final Map<String, Object> mapIn) {
     this();
@@ -271,30 +276,26 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
     @Override
-    public String getTitle(){
+    public final String getTitle(){
     	try {
 
-    		//Verifies if the content type has defined a title field
-			Optional<com.dotcms.contenttype.model.field.Field> fieldWithTitleFound = this.getContentType().fields().stream().
-					filter(field -> field.variable().equals(TITTLE_KEY)).findAny();
+    		if (UtilMethods.isSet(this.map.get(TITTLE_KEY))) {
 
-
-			if (fieldWithTitleFound.isPresent()) {
-				return map.get(TITTLE_KEY)!=null?map.get(TITTLE_KEY).toString():null;
-			} else {
-				Optional<com.dotcms.contenttype.model.field.Field>
-						fieldWithSuspectTitleFound = getFieldWithVarStartingWithTitleWord();
-
-				if (fieldWithSuspectTitleFound.isPresent()) {
-					return map.get(fieldWithSuspectTitleFound.get().variable())!=null
-							?map.get(fieldWithSuspectTitleFound.get().variable()).toString()
-							:null;
-				}
+    			return map.get(TITTLE_KEY).toString();
 			}
 
-			String title = getContentletAPI().getName(this, getUserAPI().getSystemUser(), false);
-			map.put(TITTLE_KEY, title);
+    		//Verifies if the content type has defined a title field
+			final Optional<com.dotcms.contenttype.model.field.Field>
+					fieldWithSuspectTitleFound = getFieldWithVarStartingWithTitleWord();
 
+			String title = fieldWithSuspectTitleFound.isPresent() &&  map.get(fieldWithSuspectTitleFound.get().variable())!=null?
+				map.get(fieldWithSuspectTitleFound.get().variable()).toString(): null;
+
+			if (!UtilMethods.isSet(title)) {
+				title = this.buildName();
+			}
+
+			map.put(TITTLE_KEY, title);
     	    return title;
 		} catch (Exception e) {
 			Logger.debug(this,"Unable to get title for contentlet, id: " + getIdentifier(), e);
@@ -303,11 +304,104 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	}
 
 	/**
+	 * This method fetch the field and look for a listed properties, it will try to get the first text field as a title.
+	 * Otherwise will try to see if there is a binary available.
+	 *
+	 * In addition if a title is found, it is chuck to 255.
+	 *
+	 * Finally there is two special cases for FileAssets and DotAssets
+	 *
+	 * If any match, uses the identifier as a title.
+	 * @return String
+	 * @throws DotContentletStateException
+	 */
+	@CloseDBIfOpened
+	private String buildName()
+			throws DotContentletStateException {
+
+		// if already set previously
+		String returnValue = (String) this.map.get(Contentlet.DOT_NAME_KEY);
+		if(UtilMethods.isSet(returnValue)){
+			return returnValue;
+		}
+
+		// look for listed, text and binary fields
+		final List<Field> fields = FieldsCache.getFieldsByStructureInode(this.getStructureInode());
+		String binaryValue       = null;
+
+		for (final Field field : fields) {
+
+			try {
+
+				if(field.isListed()  && this.map.get(field.getVelocityVarName())!=null) {
+
+					if (APILocator.getContentletAPI().isFieldTypeString(field)) {
+						returnValue = this.map.get(field.getVelocityVarName()).toString();
+						break; // found one
+					}
+
+					// if it is a binary
+					if (binaryValue == null && Field.FieldType.BINARY.toString().equals(field.getFieldType()) && field.isIndexed()) {
+						binaryValue = this.getBinary(field.getVelocityVarName()).getName();
+					}
+				}
+			} catch(Exception e){
+				Logger.warn(this.getClass(), "unable to get field value " + field.getVelocityVarName() + " " + e, e);
+			}
+		}
+
+		// if not found text but found binary
+		returnValue = !UtilMethods.isSet(returnValue) && UtilMethods.isSet(binaryValue)? binaryValue:returnValue;
+
+		if(UtilMethods.isSet(returnValue)) {
+
+			this.setStringProperty(Contentlet.DOT_NAME_KEY, returnValue.length() > 250 ?
+					returnValue.substring(0, 250) : returnValue);
+			return this.getStringProperty(Contentlet.DOT_NAME_KEY);
+		}
+
+		/// if not found listed, so try to see by type (file asset or dotasset)
+		if (UtilMethods.isSet(this.getIdentifier())) {
+
+			if (this.isFileAsset()) {
+				try {
+
+					final String assetName = APILocator.getIdentifierAPI().find(this.getIdentifier()).getAssetName();
+					this.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
+				} catch (Exception e){
+					Logger.warn(this.getClass(), "Unable to get assetName for contentlet with identifier: " + this.getIdentifier(), e);
+				}
+			} else {
+
+				final Optional<BaseContentType> baseContentTypeOpt = this.getBaseType();
+				if (baseContentTypeOpt.isPresent() && baseContentTypeOpt.get() == BaseContentType.DOTASSET) {
+					try {
+
+						final String transientNameKey = DotAssetContentType.ASSET_FIELD_VAR + "name";
+						final String dotAssetName     = this.getStringProperty(transientNameKey);
+						String assetName              = dotAssetName;
+						if (!UtilMethods.isSet(dotAssetName) && null != this.getBinary(DotAssetContentType.ASSET_FIELD_VAR)) {
+							assetName = this.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName();
+							this.setStringProperty(transientNameKey, assetName);
+						}
+
+						this.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
+					} catch (Exception e) {
+						Logger.warn(this.getClass(), "Unable to get binary name for contentlet with identifier: " + this.getIdentifier(), e);
+					}
+				}
+			}
+		}
+
+		// nothing, so set identifier.
+		this.setStringProperty("__NAME__", this.getIdentifier());
+		return this.getIdentifier();
+	}
+
+	/**
 	 * Looks for a field whose variable starts with "title" and if found returns it
 	 * @return the first field found whose variable starts with "title", if any
 	 */
-
-	@NotNull
 	private Optional<com.dotcms.contenttype.model.field.Field> getFieldWithVarStartingWithTitleWord() {
 		return this.getContentType().fields().stream()
 				.filter(field -> UtilMethods.isSet(field.variable())

@@ -118,34 +118,44 @@ public final class NavResultHydrated extends NavResult{
     @Override
     public List<? extends NavResult> getChildren() throws Exception {
 
+        final List<NavResultHydrated> navList = this.navResult.getChildren().stream()
+                .map(result -> new NavResultHydrated(result, this.context)).collect(Collectors.toList());
 
-        List<NavResultHydrated> list = this.navResult.getChildren().stream().map(result -> new NavResultHydrated(result, this.context)).collect(Collectors.toList());
-        
-        
-        
         if (Config.getBooleanProperty("ENABLE_NAV_PERMISSION_CHECK", false)) {
             // now filtering permissions
-            List<NavResult> allow = new ArrayList<NavResult>(list.size());
+            final HttpServletRequest request        = this.context.getRequest();
+            User currentUser                        = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
 
-            HttpServletRequest req = (HttpServletRequest) context.getRequest();
-            User currentUser = WebAPILocator.getUserWebAPI()
-                .getLoggedInUser(req);
-            if (currentUser == null)
-                currentUser = APILocator.getUserAPI()
-                    .getAnonymousUser();
-            for (NavResult nv : list) {
+            if (currentUser == null) {
+
+                currentUser = APILocator.getUserAPI().getAnonymousUser();
+            } else {
+
+                if (currentUser.isAdmin()) {
+
+                    return navList;
+                }
+            }
+
+            final List<NavResult>    navAllowedList = new ArrayList<>(navList.size());
+
+            for (final NavResult navResult : navList) {
+
                 try {
                     if (APILocator.getPermissionAPI()
-                        .doesUserHavePermission(nv, PermissionAPI.PERMISSION_READ, currentUser)) {
-                        allow.add(nv);
+                        .doesUserHavePermission(navResult, PermissionAPI.PERMISSION_READ, currentUser)) {
+
+                        navAllowedList.add(navResult);
                     }
                 } catch (Exception ex) {
                     Logger.error(this, ex.getMessage(), ex);
                 }
             }
-            return allow;
+
+            return navAllowedList;
         }
-        return list;
+
+        return navList;
     }
 
     @Override
@@ -180,6 +190,12 @@ public final class NavResultHydrated extends NavResult{
     public String getOwner() {
         return navResult.getOwner();
     }
+
+    @Override
+    public String getPermissionId() {
+        return navResult.getPermissionId();
+    }
+
 
 
 

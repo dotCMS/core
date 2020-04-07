@@ -10,8 +10,10 @@ import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
+import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
-import com.dotcms.rest.api.v1.secret.ServiceIntegrationResourceTest;
+import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
+import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
@@ -129,6 +131,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.relationships.RelationshipsResourceTest.class,
         com.dotcms.rest.api.v2.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
+        com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
@@ -235,15 +238,16 @@ import org.junit.runners.Suite.SuiteClasses;
         TestConfig.class,
         PublishAuditAPITest.class,
         BundleFactoryTest.class,
-        com.dotcms.security.secret.SecretsStoreKeyStoreImplTest.class,
-        com.dotcms.security.secret.ServiceIntegrationAPIImplTest.class,
-        ServiceIntegrationResourceTest.class,
+        com.dotcms.security.apps.SecretsStoreKeyStoreImplTest.class,
+        AppsAPIImplTest.class,
+        AppsResourceTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
         RulesAPIImplIntegrationTest.class,
+        UserResourceIntegrationTest.class,
         SiteSearchJobImplTest.class,
         PushPublishFiltersInitializerTest.class,
-        PushPublishFilterResourceTest.class,
+        PushPublishFilterResourceTest.class
 })
 public class MainSuite {
 

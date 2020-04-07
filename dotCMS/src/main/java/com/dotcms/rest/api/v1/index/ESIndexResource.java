@@ -410,6 +410,10 @@ public class ESIndexResource {
         }
     }
 
+    /**
+     * @deprecated Use the Update Settings API of Elasticsearch. See <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-update-settings.html">Update Settings</a>
+     */
+    @Deprecated
     @PUT
     @Path("/updatereplica/{params:.*}")
     public Response updateReplica(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse,@PathParam("params") String params) {
@@ -479,16 +483,22 @@ public class ESIndexResource {
     @GET
     @Path("/docscount/{params:.*}")
     @Produces("text/plain")
-    public Response getDocumentCount(@Context HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam("params") String params) {
+    public Response getDocumentCount(@Context HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse,
+            final @PathParam("params") String params)
+            throws DotSecurityException {
+
+        InitDataObject init= null;
         try {
-            InitDataObject init=auth(params,httpServletRequest, httpServletResponse);
+            init = auth(params,httpServletRequest, httpServletResponse);
 
             //Creating an utility response object
             ResourceResponse responseResource = new ResourceResponse( init.getParamsMap() );
 
             String indexName = this.indexHelper.getIndexNameOrAlias(init.getParamsMap(),"index","alias",this.indexAPI);
             return responseResource.response( Long.toString( indexDocumentCount( indexName ) ) );
-        } catch (Exception e) {
+
+        } catch (DotDataException e) {
             Logger.error(this.getClass(),"Exception trying to get document count: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
         }

@@ -29,6 +29,7 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
@@ -62,6 +63,7 @@ public class UserResourceTest extends UnitTestBase {
         final InitDataObject initDataObject = mock(InitDataObject.class);
         final User user = new User();
         final UserAPI userAPI = mock(UserAPI.class);
+        final HostAPI siteAPI = mock(HostAPI.class);
         final UserResourceHelper userHelper  = mock(UserResourceHelper.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
 
@@ -75,7 +77,7 @@ public class UserResourceTest extends UnitTestBase {
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         UserResource userResource =
-                new UserResource(webResource, userAPI, userHelper, errorHelper);
+                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper);
 
         try {
 
@@ -121,6 +123,7 @@ public class UserResourceTest extends UnitTestBase {
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
+        final HostAPI siteAPI = mock(HostAPI.class);
         final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
@@ -152,7 +155,7 @@ public class UserResourceTest extends UnitTestBase {
                 userWebAPI, permissionAPI, userProxyAPI, loginService);
 
         UserResource userResource =
-                new UserResource(webResource, userAPI, userHelper, errorHelper);
+                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper);
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
                 .userId("dotcms.org.1")
@@ -192,6 +195,7 @@ public class UserResourceTest extends UnitTestBase {
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
         final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
+        final HostAPI siteAPI = mock(HostAPI.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
@@ -217,7 +221,7 @@ public class UserResourceTest extends UnitTestBase {
                 userWebAPI, permissionAPI, userProxyAPI, loginService);
 
         UserResource userResource =
-                new UserResource(webResource, userAPI, userHelper, errorHelper);
+                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper);
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
                 .userId("dotcms.org.1")
@@ -260,6 +264,7 @@ public class UserResourceTest extends UnitTestBase {
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
         final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
+        final HostAPI siteAPI = mock(HostAPI.class);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
@@ -284,7 +289,7 @@ public class UserResourceTest extends UnitTestBase {
                 userWebAPI, permissionAPI, userProxyAPI, loginService);
 
         UserResource userResource =
-                new UserResource(webResource, userAPI, userHelper, errorHelper);
+                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper);
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
                 .userId("dotcms.org.1")
@@ -314,6 +319,7 @@ public class UserResourceTest extends UnitTestBase {
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final PermissionAPI permissionAPI= mock(PermissionAPI.class);
         final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
+        final HostAPI siteAPI = mock(HostAPI.class);
         final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
@@ -370,7 +376,7 @@ public class UserResourceTest extends UnitTestBase {
 
 
         UserResource userResource =
-                new UserResource(webResource, userAPI, userHelper, errorHelper);
+                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper);
 
         Response response = userResource
                 .loginAsData(request, httpServletResponse, userFilter, true);

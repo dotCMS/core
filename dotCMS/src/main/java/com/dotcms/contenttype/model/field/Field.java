@@ -4,6 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.component.FieldFormRenderer;
 import com.dotcms.contenttype.model.component.FieldValueRenderer;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
@@ -182,8 +183,11 @@ public abstract class Field implements FieldIf, Serializable {
     if (innerFieldVariables == null) {
       try {
         innerFieldVariables = FactoryLocator.getFieldFactory().loadVariables(this);
-      } catch (DotDataException e) {
-        throw new DotStateException("unable to load field variables:" + e.getMessage(), e);
+      } catch (final DotDataException e) {
+        final String errorMsg = String.format("Unable to load field variables for field '%s' [%s]: %s", this.name(),
+                this.id(), e.getMessage());
+        Logger.error(this, errorMsg);
+        throw new DotStateException(errorMsg, e);
       }
     }
 
