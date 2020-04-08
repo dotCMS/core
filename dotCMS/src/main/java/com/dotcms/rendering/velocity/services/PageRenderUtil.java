@@ -20,6 +20,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -35,6 +36,7 @@ import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -403,7 +405,7 @@ public class PageRenderUtil implements Serializable {
         try {
 
             final Contentlet contentlet = contentletAPI.findContentletByIdentifier
-                    (personalizedContentlet.getContentletId(), mode.showLive, languageId, user, mode.respectAnonPerms);
+                    (personalizedContentlet.getContentletId(), mode.showLive, this.resolveLanguageId(), user, mode.respectAnonPerms);
 
             return contentlet;
         } catch (final DotContentletStateException e) {
@@ -412,6 +414,22 @@ public class PageRenderUtil implements Serializable {
         } catch (Exception e) {
             throw new DotStateException(e);
         }
+    }
+
+    private long resolveLanguageId () {
+
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        if (null != request) {
+
+            final Language currentLanguage =
+                    WebAPILocator.getLanguageWebAPI().getLanguage(request);
+            if (null != currentLanguage) {
+
+                return currentLanguage.getId();
+            }
+        }
+
+        return this.languageId;
     }
 
     private Contentlet getContentletOrFallback(final PersonalizedContentlet personalizedContentlet) {
