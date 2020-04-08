@@ -91,9 +91,9 @@ class AppsHelper {
         final List<AppView> views = new ArrayList<>();
         List<AppDescriptor> appDescriptors = appsAPI.getAppDescriptors(user);
         if(UtilMethods.isSet(filter)) {
-           final String regexFilter = "(?i).*"+filter+"(.*)";
-           appDescriptors = appDescriptors.stream().filter(appDescriptor -> appDescriptor.getName().matches(regexFilter)).collect(
-                   Collectors.toList());
+            final String regexFilter = "(?i).*"+filter+"(.*)";
+            appDescriptors = appDescriptors.stream().filter(appDescriptor -> appDescriptor.getName().matches(regexFilter)).collect(
+                    Collectors.toList());
         }
         final Set<String> hostIdentifiers = appsAPI.appKeysByHost().keySet();
         for (final AppDescriptor appDescriptor : appDescriptors) {
@@ -176,7 +176,7 @@ class AppsHelper {
             final Host host = hostAPI.find(siteId, user, false);
             if (null == host) {
                 throw new DoesNotExistException(
-                      String.format(" Couldn't find any host with identifier `%s` ", siteId)
+                        String.format(" Couldn't find any host with identifier `%s` ", siteId)
                 );
             }
 
@@ -188,9 +188,9 @@ class AppsHelper {
             final Map<String, ParamDescriptor> descriptorParams = appDescriptor.getParams();
 
             final Map<String,SecretView> mappedParams = appDescriptor.getParams().keySet().stream()
-                .map(paramKey -> new SecretView(paramKey, null, descriptorParams.get(paramKey)))
-                .collect(Collectors.toMap(SecretView::getName, Function.identity(), (a, b) -> a,
-                        LinkedHashMap::new));
+                    .map(paramKey -> new SecretView(paramKey, null, descriptorParams.get(paramKey)))
+                    .collect(Collectors.toMap(SecretView::getName, Function.identity(), (a, b) -> a,
+                            LinkedHashMap::new));
 
             final AppSecrets appSecrets = optionalAppSecrets.isPresent() ? protectHiddenSecrets(optionalAppSecrets.get()) : AppSecrets.empty() ;
 
@@ -204,11 +204,11 @@ class AppsHelper {
             final int secretsCount = mappedSecrets.size();
 
             final List<SecretView> mergedParamsAndSecrets = mappedParams.entrySet().stream()
-                .map(paramViewEntry -> {
-                    final SecretView secretView = mappedSecrets.remove(paramViewEntry.getKey());
-                    return secretView != null ? secretView : paramViewEntry.getValue();
-                })
-                .collect(Collectors.toList());
+                    .map(paramViewEntry -> {
+                        final SecretView secretView = mappedSecrets.remove(paramViewEntry.getKey());
+                        return secretView != null ? secretView : paramViewEntry.getValue();
+                    })
+                    .collect(Collectors.toList());
 
             mergedParamsAndSecrets.addAll(
                     mappedSecrets.values().stream().filter(SecretView::isDynamic)
@@ -311,8 +311,8 @@ class AppsHelper {
                 secret = Secret.newSecret(inputParam.getValue(), Type.STRING, inputParam.isHidden());
             } else {
                 if(describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue())){
-                   Logger.debug(AppsHelper.class, ()->"skipping secret sent with no value.");
-                   continue;
+                    Logger.debug(AppsHelper.class, ()->"skipping secret sent with no value.");
+                    continue;
                 }
                 secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(), describedParam.isHidden());
             }
@@ -601,8 +601,8 @@ class AppsHelper {
                         .createAppDescriptor(inputStream, user);
                 appViews.add(new AppView(appDescriptor,0L));
             }catch (Exception e){
-               Logger.error(AppsHelper.class, e);
-               throw new DotDataException(e);
+                Logger.error(AppsHelper.class, e);
+                throw new DotDataException(e);
             }
         }
         return appViews;
@@ -648,12 +648,12 @@ class AppsHelper {
      * @return
      */
     private boolean isAllFilledWithAsters(final char [] chars){
-         for(final char chr: chars){
+        for(final char chr: chars){
             if(chr != '*'){
-               return false;
+                return false;
             }
-         }
-         return true;
+        }
+        return true;
     }
 
 }
