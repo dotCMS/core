@@ -323,11 +323,15 @@ public class TestDataUtils {
                                 .next()
                 );
 
+                final Host siteToUse = site != null ? site :
+                        APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
                 employeeType = new ContentTypeDataGen()
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
                         .fields(fields)
                         .workflowId(workflowIds)
+                        .host(siteToUse)
                         .nextPersisted();
             }
         } catch (Exception e) {
@@ -905,7 +909,8 @@ public class TestDataUtils {
             String contentTypeId, final Host site) {
 
         if (null == contentTypeId) {
-            contentTypeId = getEmployeeLikeContentType().id();
+            contentTypeId = getEmployeeLikeContentType(
+                    "Employee" + System.currentTimeMillis(), site).id();
         }
 
         try {
