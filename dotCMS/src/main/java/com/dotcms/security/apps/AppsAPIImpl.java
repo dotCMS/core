@@ -52,8 +52,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * This API serves as the bridge between the secrets safe repository
- * and the structured of the service defined via
- *
+ * and the structure of the APP defined via YML file descriptor.
  */
 public class AppsAPIImpl implements AppsAPI {
 
@@ -96,14 +95,6 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
-    private String toJsonAsString(final AppSecrets object) throws DotDataException {
-        try {
-            return jsonMapper.writeValueAsString(object);
-        } catch (IOException e) {
-            throw new DotDataException(e);
-        }
-    }
-
     /**
      * This method takes a byte array and converts its contents into a char array
      * No String middle man is created.
@@ -111,13 +102,15 @@ public class AppsAPIImpl implements AppsAPI {
      * @param bytes
      * @return
      */
-    char[] bytesToCharArrayUTF(byte[] bytes) throws IOException {
-        final BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new ByteArrayInputStream(bytes), StandardCharsets.UTF_8));
+    char[] bytesToCharArrayUTF(final byte[] bytes) throws IOException {
         final List<Integer> integers = new ArrayList<>(bytes.length);
-        int chr;
-        while ((chr = reader.read()) != -1) {
-            integers.add(chr);
+        try (final BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new ByteArrayInputStream(bytes), StandardCharsets.UTF_8))) {
+
+            int chr;
+            while ((chr = reader.read()) != -1) {
+                integers.add(chr);
+            }
         }
         return ArrayUtils.toPrimitive(
                 integers.stream().map(value -> (char) value.intValue()).toArray(Character[]::new));

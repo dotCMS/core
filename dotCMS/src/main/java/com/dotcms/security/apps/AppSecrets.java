@@ -31,7 +31,7 @@ public class AppSecrets implements Serializable {
     }
 
     public void destroy() {
-        for (Secret secret : secrets.values()) {
+        for (final Secret secret : secrets.values()) {
             secret.destroy();
         }
     }
