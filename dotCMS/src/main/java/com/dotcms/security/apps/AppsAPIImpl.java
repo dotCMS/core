@@ -204,7 +204,7 @@ public class AppsAPIImpl implements AppsAPI {
     @Override
     public Optional<AppSecrets> getSecrets(final String key,
             final Host host, final User user) throws DotDataException, DotSecurityException {
-        return getSecrets(key, false, host, user);
+            return getSecrets(key, false, host, user);
     }
 
     @Override
@@ -386,24 +386,24 @@ public class AppsAPIImpl implements AppsAPI {
 
     private List<AppDescriptorMeta> getAppDescriptorsMeta()
             throws DotDataException {
-        List<AppDescriptorMeta> appDescriptors = (List<AppDescriptorMeta>) CacheLocator
-                .getCacheAdministrator().getNoThrow(
-                        DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
-        if (!UtilMethods.isSet(appDescriptors)) {
-            synchronized (AppsAPIImpl.class) {
-                try {
-                    appDescriptors = loadAppDescriptors();
-                } catch (IOException e) {
-                    Logger.error(AppsAPIImpl.class,
-                            "An error occurred while loading the service descriptor yml files. ",
-                            e);
-                    throw new DotDataException(e);
+            List<AppDescriptorMeta> appDescriptors = (List<AppDescriptorMeta>) CacheLocator
+                    .getCacheAdministrator().getNoThrow(
+                            DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
+            if (!UtilMethods.isSet(appDescriptors)) {
+                synchronized (AppsAPIImpl.class) {
+                    try {
+                        appDescriptors = loadAppDescriptors();
+                    } catch (IOException e) {
+                        Logger.error(AppsAPIImpl.class,
+                                "An error occurred while loading the service descriptor yml files. ",
+                                e);
+                        throw new DotDataException(e);
+                    }
+                    CacheLocator.getCacheAdministrator()
+                            .put(DESCRIPTORS_LIST_KEY, appDescriptors, DESCRIPTORS_CACHE_GROUP);
                 }
-                CacheLocator.getCacheAdministrator()
-                        .put(DESCRIPTORS_LIST_KEY, appDescriptors, DESCRIPTORS_CACHE_GROUP);
             }
-        }
-        return appDescriptors;
+            return appDescriptors;
     }
 
     private Map<String, AppDescriptorMeta> getAppDescriptorMap()
@@ -551,7 +551,7 @@ public class AppsAPIImpl implements AppsAPI {
 
     private static String getServiceDescriptorDirectory() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + File.separator + SERVER_DIR_NAME + File.separator + APPS_DIR_NAME + File.separator;
+        + File.separator + SERVER_DIR_NAME + File.separator + APPS_DIR_NAME + File.separator;
         final String dirPath = Config
                 .getStringProperty(APPS_DIR_PATH_KEY, supplier.get());
         return Paths.get(dirPath).normalize().toString();
@@ -604,7 +604,7 @@ public class AppsAPIImpl implements AppsAPI {
                                 String.format(
                                         "There's a service already registered under key `%s`.",
                                         serviceDescriptor.getKey())
-                        );
+                                );
                     }
                     builder.add(new AppDescriptorMeta(serviceDescriptor, file.getName()));
                     loadedServiceKeys.add(serviceDescriptor.getKey());
@@ -618,35 +618,35 @@ public class AppsAPIImpl implements AppsAPI {
         return builder.build();
     }
 
-    private boolean validateServiceDescriptor(final AppDescriptor appDescriptor)
-            throws DotDataException {
-        if(UtilMethods.isNotSet(appDescriptor.getKey())){
-            throw new DotDataException("The required field `key` isn't set on the incoming file.");
-        }
+   private boolean validateServiceDescriptor(final AppDescriptor appDescriptor)
+           throws DotDataException {
+       if(UtilMethods.isNotSet(appDescriptor.getKey())){
+          throw new DotDataException("The required field `key` isn't set on the incoming file.");
+       }
 
-        if(appDescriptor.getKey().length() > 100){
-            throw new DotDataException("The required field `key` is too large.");
-        }
+       if(appDescriptor.getKey().length() > 100){
+           throw new DotDataException("The required field `key` is too large.");
+       }
 
-        if(UtilMethods.isNotSet(appDescriptor.getName())){
-            throw new DotDataException("The required field `name` isn't set on the incoming file.");
-        }
+       if(UtilMethods.isNotSet(appDescriptor.getName())){
+           throw new DotDataException("The required field `name` isn't set on the incoming file.");
+       }
 
-        if(UtilMethods.isNotSet(appDescriptor.getDescription())){
-            throw new DotDataException("The required field `description` isn't set on the incoming file.");
-        }
+       if(UtilMethods.isNotSet(appDescriptor.getDescription())){
+           throw new DotDataException("The required field `description` isn't set on the incoming file.");
+       }
 
-        if(UtilMethods.isNotSet(appDescriptor.getIconUrl())){
-            throw new DotDataException("The required field `iconUrl` isn't set on the incoming file.");
-        }
+       if(UtilMethods.isNotSet(appDescriptor.getIconUrl())){
+           throw new DotDataException("The required field `iconUrl` isn't set on the incoming file.");
+       }
 
-        if(!UtilMethods.isSet(appDescriptor.getParams())){
-            throw new DotDataException("The required field `params` isn't set on the incoming file.");
-        }
+       if(!UtilMethods.isSet(appDescriptor.getParams())){
+           throw new DotDataException("The required field `params` isn't set on the incoming file.");
+       }
 
-        return true;
+       return true;
 
-    }
+   }
 
     private boolean validateAppDescriptorUniqueName(final AppDescriptor serviceDescriptor)
             throws DotDataException {

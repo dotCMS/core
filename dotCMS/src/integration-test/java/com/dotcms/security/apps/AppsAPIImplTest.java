@@ -32,7 +32,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -366,12 +365,12 @@ public class AppsAPIImplTest {
             final String string = fromCharCode(i);
             stringBuilder.append(string);
         }
-        final String in = stringBuilder.toString();
-        Logger.info(AppsAPIImplTest.class,()->  String.format(" UTF Charset code from `%d` to `%d` `%s` ",fromCode, toCode, in));
-        final char [] chars = impl.bytesToCharArrayUTF(in.getBytes(StandardCharsets.UTF_8));
+        final String input = stringBuilder.toString();
+        Logger.info(AppsAPIImplTest.class,()->  String.format(" UTF Charset code from `%d` to `%d` `%s` ",fromCode, toCode, input));
+        final char [] chars = impl.bytesToCharArrayUTF(input.getBytes(StandardCharsets.UTF_8));
         final byte [] bytes = impl.charsToBytesUTF(chars);
-        final String out = new String(bytes, StandardCharsets.UTF_8);
-        Assert.assertEquals(in,out);
+        final String output = new String(bytes, StandardCharsets.UTF_8);
+        assertEquals(input, output);
     }
 
     /**
@@ -379,7 +378,7 @@ public class AppsAPIImplTest {
      * @param codePoints char code see utf char codes.
      * @return the utf string representation.
      */
-    private static String fromCharCode(int... codePoints) {
+    private static String fromCharCode(final int... codePoints) {
         return new String(codePoints, 0, codePoints.length);
     }
 
@@ -395,16 +394,16 @@ public class AppsAPIImplTest {
                 .build();
         final char[] toJsonAsChars = impl.toJsonAsChars(secretsIn);
         final AppSecrets secretsOut = impl.readJson(toJsonAsChars);
-        Assert.assertEquals(secretsIn.getKey(), secretsOut.getKey());
+        assertEquals(secretsIn.getKey(), secretsOut.getKey());
 
-        Assert.assertEquals(secretsIn.getSecrets().size(), secretsOut.getSecrets().size());
+        assertEquals(secretsIn.getSecrets().size(), secretsOut.getSecrets().size());
 
         final Set<Entry<String, Secret>> secretsInEntries = secretsIn.getSecrets().entrySet();
         for (final Entry<String, Secret> entryIn : secretsInEntries) {
-            Assert.assertEquals(secretsIn.getKey(), secretsOut.getKey());
+            assertEquals(secretsIn.getKey(), secretsOut.getKey());
             final Secret out = secretsOut.getSecrets().get(entryIn.getKey());
-            Assert.assertNotNull(out);
-            Assert.assertTrue(out.equals(entryIn.getValue()));//This does a deepEquals.
+            assertNotNull(out);
+            assertTrue(out.equals(entryIn.getValue()));//This does a deepEquals.
         }
     }
 
