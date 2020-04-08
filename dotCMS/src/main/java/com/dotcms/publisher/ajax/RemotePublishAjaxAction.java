@@ -553,9 +553,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			return;
 		}
         //Read the parameters
-        Map<String, String> map = getURIParams();
+        final Map<String, String> map = getURIParams();
         final String bundleId = map.get( "bundleId" );
-        String paramOperation = map.get( "operation" );
+        final String paramOperation = map.get( "operation" );
         if ( bundleId == null || bundleId.isEmpty() ) {
             Logger.error( this.getClass(), "No Bundle Found with id: " + bundleId );
             response.sendError( 500, "No Bundle Found with id: " + bundleId );
@@ -573,12 +573,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
         
         
         File bundle;
-        String generatedBundleId;
         try {
             //Generate the bundle file for this given operation
             Map<String, Object> bundleData = generateBundle( bundleId, operation );
             bundle = (File) bundleData.get( "file" );
-            generatedBundleId = (String) bundleData.get( "id" );
         } catch ( Exception e ) {
             Logger.error( this.getClass(), "Error trying to generate bundle with id: " + bundleId, e );
             response.sendError( 500, "Error trying to generate bundle with id: " + bundleId );
@@ -607,8 +605,8 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             //Clean the just created bundle because on each download we will generate a new bundle file with a new id in order to avoid conflicts with ids
-            File bundleRoot = BundlerUtil.getBundleRoot( generatedBundleId );
-            File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + generatedBundleId + ".tar.gz" );
+            File bundleRoot = BundlerUtil.getBundleRoot( bundleId );
+            File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + bundleId + ".tar.gz" );
             if ( compressedBundle.exists() ) {
                 compressedBundle.delete();
                 if ( bundleRoot.exists() ) {
@@ -635,13 +633,13 @@ public class RemotePublishAjaxAction extends AjaxAction {
     @SuppressWarnings ("unchecked")
     private Map<String, Object> generateBundle ( String bundleId, PushPublisherConfig.Operation operation ) throws DotPublisherException, DotDataException, DotPublishingException, IllegalAccessException, InstantiationException, DotBundleException, IOException {
 
-        PushPublisherConfig pconf = new PushPublisherConfig();
-        PublisherAPI pubAPI = PublisherAPI.getInstance();
+        final PushPublisherConfig pconf = new PushPublisherConfig();
+        final PublisherAPI pubAPI = PublisherAPI.getInstance();
 
-        List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId( bundleId );
-        List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); 
+        final List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId( bundleId );
+        final List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>();
 
-        for ( PublishQueueElement c : tempBundleContents ) {
+        for ( final PublishQueueElement c : tempBundleContents ) {
                 assetsToPublish.add( c );
         }
 
@@ -656,32 +654,28 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
         //BUNDLERS
 
-        List<Class<IBundler>> bundlers = new ArrayList<Class<IBundler>>();
-        List<IBundler> confBundlers = new ArrayList<IBundler>();
+        final List<Class<IBundler>> bundlers = new ArrayList<Class<IBundler>>();
+        final List<IBundler> confBundlers = new ArrayList<IBundler>();
 
-        Publisher publisher = new PushPublisher();
+        final Publisher publisher = new PushPublisher();
         publisher.init( pconf );
         //Add the bundles for this publisher
-        for ( Class clazz : publisher.getBundlers() ) {
+        for ( final Class clazz : publisher.getBundlers() ) {
             if ( !bundlers.contains( clazz ) ) {
                 bundlers.add( clazz );
             }
         }
-
-        //Create a new bundle id for this generated bundle
-        String newBundleId = UUID.randomUUID().toString();
-        pconf.setId( newBundleId );
-        File bundleRoot = BundlerUtil.getBundleRoot( pconf );
+        final File bundleRoot = BundlerUtil.getBundleRoot( pconf );
 
         // Run bundlers
         BundlerUtil.writeBundleXML( pconf );
-        for ( Class<IBundler> c : bundlers ) {
+        for ( final Class<IBundler> c : bundlers ) {
 
-            IBundler bundler = c.newInstance();
+            final IBundler bundler = c.newInstance();
             confBundlers.add( bundler );
             bundler.setConfig( pconf );
             bundler.setPublisher(publisher);
-            BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
+            final BundlerStatus bundlerStatus = new BundlerStatus( bundler.getClass().getName() );
             //Generate the bundler
             Logger.info(this, "Start of Bundler: " + c.getSimpleName());
             bundler.generate( bundleRoot, bundlerStatus );
@@ -691,12 +685,11 @@ public class RemotePublishAjaxAction extends AjaxAction {
         pconf.setBundlers( confBundlers );
 
         //Compressing bundle
-        ArrayList<File> list = new ArrayList<File>();
+        final ArrayList<File> list = new ArrayList<File>();
         list.add( bundleRoot );
-        File bundle = new File( bundleRoot + File.separator + ".." + File.separator + pconf.getId() + ".tar.gz" );
+        final File bundle = new File( bundleRoot + File.separator + ".." + File.separator + pconf.getId() + ".tar.gz" );
 
-        Map<String, Object> bundleData = new HashMap<String, Object>();
-        bundleData.put( "id", newBundleId );
+        final Map<String, Object> bundleData = new HashMap<String, Object>();
         bundleData.put( "file", PushUtils.compressFiles( list, bundle, bundleRoot.getAbsolutePath() ) );
         return bundleData;
     }
