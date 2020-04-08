@@ -30,6 +30,13 @@ public class AppSecrets implements Serializable {
         return secrets;
     }
 
+    public void destroy() {
+        for (Secret secret : secrets.values()) {
+            secret.destroy();
+        }
+    }
+
+
     public static class Builder {
 
         private final Map<String,Secret> secretMap = new HashMap<>();

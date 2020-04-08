@@ -20,10 +20,12 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple2;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -334,13 +336,51 @@ public class AppsAPIImplTest {
     }
 
     @Test
-    public void Test_BytesToChar_No_Middle_String_Conversion() throws DotDataException {
-        final AppsAPIImpl impl =  new AppsAPIImpl();
-        final String in = RandomStringUtils.randomAlphanumeric(3);
+    public void Test_BytesToChars_No_Middle_String_Conversion() throws IOException {
+
+        final AppsAPIImpl impl = new AppsAPIImpl();
+
+        testUTFCharsSet(0,127, impl);
+        testUTFCharsSet(128,255, impl);
+        testUTFCharsSet(256,383, impl);
+        testUTFCharsSet(384,591, impl);
+        testUTFCharsSet(688,767, impl);
+        testUTFCharsSet(880,1023, impl);
+        testUTFCharsSet(1024,1279, impl);
+        testUTFCharsSet(1280,1327, impl);
+        testUTFCharsSet(8192,8303, impl);
+        testUTFCharsSet(8352,8399, impl);
+        testUTFCharsSet(8448,8527, impl);
+        testUTFCharsSet(8592,8703, impl);
+        testUTFCharsSet(8704,8959, impl);
+        testUTFCharsSet(9472,9599, impl);
+        testUTFCharsSet(9600,9631, impl);
+        testUTFCharsSet(9632,9727, impl);
+        testUTFCharsSet(9728,9983, impl);
+        testUTFCharsSet(9984,10175, impl);
+    }
+
+    private void testUTFCharsSet(final int fromCode, final int toCode, final AppsAPIImpl impl) throws IOException{
+        final StringBuilder stringBuilder = new StringBuilder();
+        for(int i=fromCode; i<= toCode; i++) {
+            final String string = fromCharCode(i);
+            stringBuilder.append(string);
+        }
+        final String in = stringBuilder.toString();
+        Logger.info(AppsAPIImplTest.class,()->  String.format(" UTF Charset code from `%d` to `%d` `%s` ",fromCode, toCode, in));
         final char [] chars = impl.bytesToCharArrayUTF(in.getBytes(StandardCharsets.UTF_8));
         final byte [] bytes = impl.charsToBytesUTF(chars);
-        final String out = new String(bytes);
+        final String out = new String(bytes, StandardCharsets.UTF_8);
         Assert.assertEquals(in,out);
+    }
+
+    /**
+     * https://www.w3schools.com/charsets/ref_html_utf8.asp
+     * @param codePoints char code see utf char codes.
+     * @return the utf string representation.
+     */
+    private static String fromCharCode(int... codePoints) {
+        return new String(codePoints, 0, codePoints.length);
     }
 
     @Test
@@ -350,7 +390,7 @@ public class AppsAPIImplTest {
                 .withKey("TheKey")
                 .withHiddenSecret("hidden1", "I'm hidden")
                 .withSecret("non-hidden1", "I'm not hidden")
-                .withSecret("non-hidden5", RandomStringUtils.randomAlphanumeric(256))
+                .withSecret("non-hidden5", RandomStringUtils.randomAlphanumeric(2337))
                 .withSecret("bool1", true)
                 .build();
         final char[] toJsonAsChars = impl.toJsonAsChars(secretsIn);

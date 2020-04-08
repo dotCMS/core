@@ -18,16 +18,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.ByteStreams;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,6 +47,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.commons.io.input.CharSequenceInputStream;
 import org.apache.commons.lang3.ArrayUtils;
 
 /**
@@ -100,51 +108,29 @@ public class AppsAPIImpl implements AppsAPI {
      * This method takes a byte array and converts its contents into a char array
      * No String middle man is created.
      * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
-     * https://www.javacodegeeks.com/2010/11/java-best-practices-char-to-byte-and.html
      * @param bytes
      * @return
      */
-    char[] bytesToCharArrayUTF(byte[] bytes) {
-        //final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
-        //return ArrayUtils.toPrimitive(cBuffer.chars().mapToObj(value -> (char)value).toArray(Character[]::new));
-
-        if(bytes.length % 2 != 0){
-            bytes = ArrayUtils.add(bytes, (byte)' ');
+    char[] bytesToCharArrayUTF(byte[] bytes) throws IOException {
+        final BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new ByteArrayInputStream(bytes), StandardCharsets.UTF_8));
+        final List<Integer> integers = new ArrayList<>(bytes.length);
+        int chr;
+        while ((chr = reader.read()) != -1) {
+            integers.add(chr);
         }
-
-        char[] buffer = new char[bytes.length >> 1];
-        for (int i = 0; i < buffer.length; i++) {
-            int bpos = i << 1;
-            char c = (char) (((bytes[bpos] & 0x00FF) << 8) + (bytes[bpos + 1] & 0x00FF));
-            buffer[i] = c;
-        }
-        return buffer;
+        return ArrayUtils.toPrimitive(
+                integers.stream().map(value -> (char) value.intValue()).toArray(Character[]::new));
     }
 
     /**
-     * This method takes a char array and converts its contents into a byte array
-     * No String middle man is created.
-     * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
-     * https://www.javacodegeeks.com/2010/11/java-best-practices-char-to-byte-and.html
-     * @param chars
-     * @return
+     * This method takes a char array and converts its contents into a byte array No String middle
+     * man is created. https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
      */
-    byte[] charsToBytesUTF(final char[] chars) {
-    /*
-        final byte[] bytes = new byte[chars.length << 1];
-        final CharBuffer cBuffer = ByteBuffer.wrap(bytes).asCharBuffer();
-        for (final char chr : chars){
-            cBuffer.put(chr);
-        }
-        return bytes;
-     */
-        byte[] b = new byte[chars.length << 1];
-        for (int i = 0; i < chars.length; i++) {
-            int bpos = i << 1;
-            b[bpos] = (byte) ((chars[i] & 0xFF00) >> 8);
-            b[bpos + 1] = (byte) (chars[i] & 0x00FF);
-        }
-        return b;
+    byte[] charsToBytesUTF(final char[] chars) throws IOException {
+        final CharSequence sequence = java.nio.CharBuffer.wrap(chars);
+        return ByteStreams
+                .toByteArray(new CharSequenceInputStream(sequence, StandardCharsets.UTF_8));
     }
 
     /**
@@ -349,13 +335,20 @@ public class AppsAPIImpl implements AppsAPI {
                     secrets.getKey(), user.getUserId(), host.getIdentifier()));
         } else {
             final String internalKey = internalKey(secrets.getKey(), host);
-            if(secrets.getSecrets().isEmpty()){
-               //if everything has been removed from the json entry we need to kick it of from cache.
-               secretsStore.deleteValue(internalKey);
+            if (secrets.getSecrets().isEmpty()) {
+                //if everything has been removed from the json entry we need to kick it off from cache.
+                secretsStore.deleteValue(internalKey);
             } else {
-               final char[] chars = toJsonAsChars(secrets);
-               secretsStore.saveValue(internalKey, chars);
-
+                char[] chars = null;
+                try {
+                    chars = toJsonAsChars(secrets);
+                    secretsStore.saveValue(internalKey, chars);
+                } finally {
+                    secrets.destroy();
+                    if (null != chars) {
+                        Arrays.fill(chars, (char) 0);
+                    }
+                }
             }
         }
     }

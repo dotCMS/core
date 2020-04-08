@@ -297,10 +297,6 @@ class AppsHelper {
     private void saveSecretForm(final String key, final Host host,
             final AppDescriptor appDescriptor, final SecretForm form, final User user) throws DotSecurityException, DotDataException {
         final Map<String, Input> params = validateFormForSave(form, appDescriptor);
-        final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
-        if (appSecretsOptional.isPresent()) {
-            appsAPI.deleteSecrets(key, host, user);
-        }
         //Create a brand new secret for the present app.
         final AppSecrets.Builder builder = new AppSecrets.Builder();
         builder.withKey(key);
@@ -322,7 +318,14 @@ class AppsHelper {
             }
             builder.withSecret(name, secret);
         }
-        appsAPI.saveSecrets(builder.build(), host, user);
+        // We're gonna build the secret upfront and have it ready.
+        // Since the next step is potentially risky (delete a secret that already exist).
+        final AppSecrets secrets = builder.build();
+        final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
+        if (appSecretsOptional.isPresent()) {
+            appsAPI.deleteSecrets(key, host, user);
+        }
+        appsAPI.saveSecrets(secrets, host, user);
     }
 
     /**
