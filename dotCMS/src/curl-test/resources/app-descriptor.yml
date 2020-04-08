@@ -6,7 +6,7 @@ iconUrl: "/test.png"
 allowExtraParameters: false
 params:
   param1:
-    value: "v1"
+    value: "default-value"
     hidden: false
     type: "STRING"
     label: "label"
@@ -20,7 +20,7 @@ params:
     hint: "hint"
     required: true
   hiddenParam:
-    value: "v3"
+    value: "default-value"
     hidden: true
     type: "STRING"
     label: "label"
