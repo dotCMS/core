@@ -539,7 +539,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
          * Expected: searching for the content in default language should give results. The result should be the page in the default language
          */
 
-        TestCaseSiteSearch case2_1 = new TestCaseSiteSearchBuilder()
+        TestCaseSiteSearch case3 = new TestCaseSiteSearchBuilder()
                 .defaultContentToDefaultLanguage(false)
                 .defaultPageToDefaultLanguage(true)
                 .siteSearchSecondLanguage(true)
@@ -558,7 +558,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
          * Expected: searching for content in second language should give results. The result should be the page in the default language
          */
 
-        TestCaseSiteSearch case3 = new TestCaseSiteSearchBuilder()
+        TestCaseSiteSearch case4 = new TestCaseSiteSearchBuilder()
                 .defaultContentToDefaultLanguage(true)
                 .defaultPageToDefaultLanguage(true)
                 .siteSearchSecondLanguage(true)
@@ -573,13 +573,13 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
          * Expected: searching for content in second language should give NO results.
          */
 
-        TestCaseSiteSearch case4 = new TestCaseSiteSearchBuilder()
+        TestCaseSiteSearch case5 = new TestCaseSiteSearchBuilder()
                 .defaultContentToDefaultLanguage(true)
                 .defaultPageToDefaultLanguage(false)
                 .siteSearchSecondLanguage(true)
                 .createContentInSecondLanguage(true)
                 .createPageInDefaultLanguage(true)
-                .expectedResultsWhenSearchingContentInSecondLanguage(true)
+                .expectedResultsWhenSearchingContentInSecondLanguage(false)
                 .createTestCaseSiteSearch();
 
         /*
@@ -588,7 +588,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
          * Expected: searching content of either version of the content should give results. The result should be the page in the default language
          */
 
-        TestCaseSiteSearch case5 = new TestCaseSiteSearchBuilder()
+        TestCaseSiteSearch case6 = new TestCaseSiteSearchBuilder()
                 .defaultContentToDefaultLanguage(true)
                 .defaultPageToDefaultLanguage(true)
                 .siteSearchDefaultLanguage(true)
@@ -607,7 +607,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
          * Expected: searching content of either version of the content should give results. The result should be the page in the default language
          */
 
-        TestCaseSiteSearch case6 = new TestCaseSiteSearchBuilder()
+        TestCaseSiteSearch case7 = new TestCaseSiteSearchBuilder()
                 .defaultContentToDefaultLanguage(true)
                 .defaultPageToDefaultLanguage(true)
                 .siteSearchSecondLanguage(true)
@@ -620,7 +620,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
                 .createTestCaseSiteSearch();
 
 
-        return new TestCaseSiteSearch[] {case6};
+        return new TestCaseSiteSearch[] {case1, case2, case3, case4, case5, case6, case7};
     }
 
     @UseDataProvider("siteSearchTestCases")
