@@ -1278,7 +1278,7 @@ public class DependencyManager {
 				Logger.debug(this, e.toString());
 			}
 
-			if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true) || publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())) {
+			if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true) && publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())) {
 				Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
 				structures.addOrClean( con.getStructureInode(), struct.getModDate());
 				structureDependencyHelper(con.getStructureInode(),publisherFilter);
