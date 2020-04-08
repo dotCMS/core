@@ -71,7 +71,8 @@ public class AppsResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response listAvailableApps(@Context final HttpServletRequest request,
-                                                @Context final HttpServletResponse response
+                                            @Context final HttpServletResponse response,
+                                            @QueryParam("filter") final String filter
     ) {
         try {
             final InitDataObject initData =
@@ -82,11 +83,8 @@ public class AppsResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            final List<AppView> appViews = helper.getAvailableDescriptorViews(user);
-            if(!appViews.isEmpty()){
-                return Response.ok(new ResponseEntityView(appViews)).build(); // 200
-            }
-            throw new DoesNotExistException("No app integration is available to configure. Try uploading a file!");
+            final List<AppView> appViews = helper.getAvailableDescriptorViews(user, filter);
+            return Response.ok(new ResponseEntityView(appViews)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(), "Exception on listing all available apps.", e);
@@ -174,7 +172,7 @@ public class AppsResource {
                 .build(); // 200
             }
             throw new DoesNotExistException(String.format(
-                        "Nope. No app was found for key `%s` and siteId `%s`. ",
+                        "No app was found for key `%s` and siteId `%s`. ",
                         key, siteId));
 
         } catch (Exception e) {
@@ -229,6 +227,7 @@ public class AppsResource {
 
     /**
      * This is the endpoint used to feed secrets into the system for a specific app/host configuration.
+     * This endpoint behaves as a form.
      * @param request
      * @param response
      * @param secretForm
@@ -237,13 +236,15 @@ public class AppsResource {
      * @throws DotSecurityException
      */
     @POST
-    @Path("/")
+    @Path("/{key}/{siteId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response createAppSecrets(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @PathParam("key") final String key,
+            @PathParam("siteId") final String siteId,
             final SecretForm secretForm
     ) {
         try {
@@ -256,7 +257,7 @@ public class AppsResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            helper.saveUpdateSecret(secretForm, user);
+            helper.saveSecretForm(key, siteId, secretForm, user);
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
@@ -277,13 +278,15 @@ public class AppsResource {
      * @throws DotSecurityException
      */
     @PUT
-    @Path("/")
+    @Path("/{key}/{siteId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response updateAppIndividualSecret(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @PathParam("key") final String key,
+            @PathParam("siteId") final String siteId,
             final SecretForm secretForm
     ) {
         try {
@@ -296,7 +299,7 @@ public class AppsResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            helper.saveUpdateSecret(secretForm, user);
+            helper.saveUpdateSecrets(key, siteId, secretForm, user);
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
@@ -392,7 +395,7 @@ public class AppsResource {
     }
 
     /**
-     * This endpoint removes all integrations associated with an service.
+     * This endpoint removes all integrations associated with an app.
      * @param request
      * @param response
      * @param serviceKey service unique identifier
@@ -421,7 +424,7 @@ public class AppsResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            helper.removeServiceIntegration(serviceKey, user, removeDescriptor);
+            helper.removeApp(serviceKey, user, removeDescriptor);
             return Response.ok(new ResponseEntityView(OK)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.

@@ -2,9 +2,8 @@ package com.dotcms.rest.api.v1.apps;
 
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
-import com.dotcms.security.apps.Param;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
@@ -14,45 +13,28 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 public class SecretForm extends Validated {
 
     @NotNull
-    private final String key;
-
-    @NotNull
-    private final String siteId;
-
-    @NotNull
-    private final Map<String, Param> params;
+    private final Map<String, Input> inputParams;
 
     @JsonCreator
-    public SecretForm(@JsonProperty("key") final String key,
-            @JsonProperty("siteId") final String siteId,
-            @JsonProperty("params") final Map<String, Param> params) {
-        this.key = key;
-        this.siteId = siteId;
-        this.params = params;
-    }
-
-    /**
-     * This should contain the unique identifier that differentiates the service
-     * @return
-     */
-    public String getKey() {
-        return key;
-    }
-
-    /**
-     * This should contain the site-id the config belongs to
-     * @return
-     */
-    public String getSiteId() {
-        return siteId;
+    public SecretForm(final Map<String, Input> inputParams) {
+        this.inputParams = inputParams;
     }
 
     /**
      * Param Name and Value Map
      * @return
      */
-    public Map<String, Param> getParams() {
-        return params;
+    Map<String, Input> getInputParams() {
+        return inputParams;
+    }
+
+    void destroySecretTraces() {
+        final Map<String, Input> inputParams = getInputParams();
+        if (UtilMethods.isSet(inputParams)) {
+            for (final Input input : inputParams.values()) {
+                input.destroySecret();
+            }
+        }
     }
 
     @Override
