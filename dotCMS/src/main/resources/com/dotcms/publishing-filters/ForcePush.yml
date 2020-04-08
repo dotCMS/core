@@ -1,7 +1,6 @@
-key:                      ForcePush.yml
 title:                    Send Everything
 default:                  false
-roles:                    dotcms.org.2789,Reviewer
+roles:                    DOTCMS_BACK_END_USER
 filters:
        ## Lucene query that exclude content to be added to the bundle as a dependency
        excludeDependencyQuery:   ""
@@ -12,7 +11,7 @@ filters:
        ## list of classes that should never be pushed: Structure, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category, User, OSGI
        excludeClasses:           []
        ## force push as always worked, if true will push regardless the pushed asset history
-       forcePush:                false
+       forcePush:                true
        ## check for any dependency that the pushed asset may need (if false will not look for any dependency)
        dependencies:             true
        ## check for content relationships

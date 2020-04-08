@@ -1,7 +1,6 @@
-key:                      ShallowPush.yml
 title:                    Send Content No Dependencies
 default:                  false
-roles:                    dotcms.org.2789,Reviewer
+roles:                    DOTCMS_BACK_END_USER
 filters:
        ## Lucene query that exclude content to be added to the bundle as a dependency
        excludeDependencyQuery:   ""
@@ -14,6 +13,6 @@ filters:
        ## force push as always worked, if true will push regardless the pushed asset history
        forcePush:                false
        ## check for any dependency that the pushed asset may need (if false will not look for any dependency)
-       dependencies:             true
+       dependencies:             false
        ## check for content relationships
-       relationships:            true
+       relationships:            false

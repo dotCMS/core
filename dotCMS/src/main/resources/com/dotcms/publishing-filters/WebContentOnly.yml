@@ -1,16 +1,15 @@
-key:                      WebContentOnly.yml
 title:                    Send Folders, Content, Rules. No Roles, WF, ContentTypes or Host.
 default:                  false
-roles:                    dotcms.org.2789,Reviewer
+roles:                    DOTCMS_BACK_END_USER
 filters:
        ## Lucene query that exclude content to be added to the bundle as a dependency
        excludeDependencyQuery:   ""
        ## Lucene query that exclude content to be added to the bundle
        excludeQuery:             ""
        ##  list of classes that should never be pushed as dependencies: Structure, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category
-       excludeDependencyClasses: []
+       excludeDependencyClasses: [Host,Workflow,Structure]
        ## list of classes that should never be pushed: Structure, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category, User, OSGI
-       excludeClasses:           []
+       excludeClasses:           [Host,User]
        ## force push as always worked, if true will push regardless the pushed asset history
        forcePush:                false
        ## check for any dependency that the pushed asset may need (if false will not look for any dependency)

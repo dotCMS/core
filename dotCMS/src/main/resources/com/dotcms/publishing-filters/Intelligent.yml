@@ -1,7 +1,6 @@
-key:                      Intelligent.yml
 title:                    Send Everything Respecting Push History
 default:                  true
-roles:                    dotcms.org.2789,Reviewer
+roles:                    DOTCMS_BACK_END_USER
 filters:
        ## Lucene query that exclude content to be added to the bundle as a dependency
        excludeDependencyQuery:   ""
