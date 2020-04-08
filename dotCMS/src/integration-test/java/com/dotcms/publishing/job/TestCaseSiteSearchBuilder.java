@@ -1,6 +1,5 @@
 package com.dotcms.publishing.job;
 
-import com.dotcms.publishing.job.SiteSearchJobImplTest.ExpectedResults;
 import com.dotcms.publishing.job.SiteSearchJobImplTest.TestCaseSiteSearch;
 
 public class TestCaseSiteSearchBuilder {
@@ -9,12 +8,15 @@ public class TestCaseSiteSearchBuilder {
     private boolean defaultContentToDefaultLanguage;
     private boolean siteSearchDefaultLanguage;
     private boolean siteSearchSecondLanguage;
+    private boolean siteSearchThirdLanguage;
     private boolean createContentInDefaultLanguage;
     private boolean createContentInSecondLanguage;
+    private boolean createContentInThirdLanguage;
     private boolean createPageInDefaultLanguage;
     private boolean createPageInSecondLanguage;
-    private ExpectedResults expectedResultsWhenSearchingContentInDefaultLanguage;
-    private ExpectedResults expectedResultsWhenSearchingContentInSecondLanguage;
+    private boolean expectedResultsWhenSearchingContentInDefaultLanguage;
+    private boolean expectedResultsWhenSearchingContentInSecondLanguage;
+    private boolean expectedResultsWhenSearchingContentInThirdLanguage;
 
     public TestCaseSiteSearchBuilder defaultPageToDefaultLanguage(
             boolean defaultPageToDefaultLanguage) {
@@ -39,6 +41,11 @@ public class TestCaseSiteSearchBuilder {
         return this;
     }
 
+    public TestCaseSiteSearchBuilder siteSearchThirdLanguage(boolean siteSearchThirdLanguage) {
+        this.siteSearchThirdLanguage = siteSearchThirdLanguage;
+        return this;
+    }
+
     public TestCaseSiteSearchBuilder createContentInDefaultLanguage(
             boolean createContentInDefaultLanguage) {
         this.createContentInDefaultLanguage = createContentInDefaultLanguage;
@@ -48,6 +55,12 @@ public class TestCaseSiteSearchBuilder {
     public TestCaseSiteSearchBuilder createContentInSecondLanguage(
             boolean createContentInSecondLanguage) {
         this.createContentInSecondLanguage = createContentInSecondLanguage;
+        return this;
+    }
+
+    public TestCaseSiteSearchBuilder createContentInThirdLanguage(
+            boolean createContentInThirdLanguage) {
+        this.createContentInThirdLanguage = createContentInThirdLanguage;
         return this;
     }
 
@@ -64,22 +77,31 @@ public class TestCaseSiteSearchBuilder {
     }
 
     public TestCaseSiteSearchBuilder expectedResultsWhenSearchingContentInDefaultLanguage(
-            ExpectedResults expectedResultsWhenSearchingContentInDefaultLanguage) {
+            boolean expectedResultsWhenSearchingContentInDefaultLanguage) {
         this.expectedResultsWhenSearchingContentInDefaultLanguage = expectedResultsWhenSearchingContentInDefaultLanguage;
         return this;
     }
 
     public TestCaseSiteSearchBuilder expectedResultsWhenSearchingContentInSecondLanguage(
-            ExpectedResults expectedResultsWhenSearchingContentInSecondLanguage) {
+            boolean expectedResultsWhenSearchingContentInSecondLanguage) {
         this.expectedResultsWhenSearchingContentInSecondLanguage = expectedResultsWhenSearchingContentInSecondLanguage;
+        return this;
+    }
+
+    public TestCaseSiteSearchBuilder expectedResultsWhenSearchingContentInThirdLanguage(
+            boolean expectedResultsWhenSearchingContentInThirdLanguage) {
+        this.expectedResultsWhenSearchingContentInThirdLanguage = expectedResultsWhenSearchingContentInThirdLanguage;
         return this;
     }
 
     public TestCaseSiteSearch createTestCaseSiteSearch() {
         return new TestCaseSiteSearch(defaultPageToDefaultLanguage, defaultContentToDefaultLanguage,
-                siteSearchDefaultLanguage, siteSearchSecondLanguage, createContentInDefaultLanguage,
-                createContentInSecondLanguage, createPageInDefaultLanguage,
+                siteSearchDefaultLanguage, siteSearchSecondLanguage, siteSearchThirdLanguage,
+                createContentInDefaultLanguage,
+                createContentInSecondLanguage, createContentInThirdLanguage,
+                createPageInDefaultLanguage,
                 createPageInSecondLanguage, expectedResultsWhenSearchingContentInDefaultLanguage,
-                expectedResultsWhenSearchingContentInSecondLanguage);
+                expectedResultsWhenSearchingContentInSecondLanguage,
+                expectedResultsWhenSearchingContentInThirdLanguage);
     }
 }
