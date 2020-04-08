@@ -6,8 +6,8 @@ import java.util.Map;
 
 /**
  * This bean to read data from the yml file that stores the Push Publishing Filters
+ * The Key will be set from the fileName.
  * The file might look like this:
- * key:   (this would be the filename)
  * title: (arbitrary title for the exclude filter)
  * defaultFilter: true|false
  * roles: [ list of roles that can access the filter]
@@ -23,7 +23,7 @@ import java.util.Map;
 
 public class FilterDescriptor {
 
-    private final String key;
+    private String key;
     private final String title;
     private final boolean defaultFilter;
     private final String roles;
@@ -67,6 +67,10 @@ public class FilterDescriptor {
     public boolean isDefaultFilter(){ return defaultFilter;}
 
     public String getRoles() { return roles; }
+
+    public void setKey(final String key){
+        this.key = key;
+    }
 
     @Override
     public String toString() {
