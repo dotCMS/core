@@ -541,7 +541,6 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         assertEquals(contentlet.getInode(), hits[0].getSourceAsMap().get("inode"));
     }
 
-<<<<<<< HEAD
     @Test
     public void test_findContentletByIdentifier() throws Exception {
     
@@ -696,6 +695,3 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
     }
 }
-=======
-}
->>>>>>> c14a5d3f8f76a5db2b84640775d19572c30f7bef
