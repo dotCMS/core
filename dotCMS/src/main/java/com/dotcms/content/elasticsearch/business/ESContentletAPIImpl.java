@@ -32,7 +32,6 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
-import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -54,7 +53,6 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
-import com.dotcms.util.MimeTypeUtils;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -7835,7 +7833,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
 
         if (!InodeUtils.isSet(contentlet.getInode())) {
-            return checkin(contentlet, contentletRelationships, cats, permissions, user, false);
+            return checkin(contentlet, contentletRelationships, cats, permissions, user, respectFrontendRoles);
         } else {
             canLock(contentlet, user);
             //get the latest and greatest from db
