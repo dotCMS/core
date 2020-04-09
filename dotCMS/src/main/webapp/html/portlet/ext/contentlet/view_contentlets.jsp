@@ -815,9 +815,9 @@
        
      }
    
+   
+   // build list of files
     function dropHandler(ev) {
-       
-
         ev.preventDefault();
         var files = new Array();
         if (ev.dataTransfer.items) {
@@ -841,7 +841,7 @@
         doMultiUpload(files);
       }
     
-    
+    // upload to temp resource
     function doMultiUpload(files){
         var xhr = new XMLHttpRequest();
         xhr.upload.onprogress = function(e) {
@@ -869,6 +869,7 @@
 
     }
     
+    // check in the assets
     function checkInAssets(response){
         var json = JSON.parse(response);
         var expected=json.tempFiles.length;
@@ -906,7 +907,7 @@
            
         }
 
-  }
+     }
     
     function doneUploading(expected){
         doSearch();
