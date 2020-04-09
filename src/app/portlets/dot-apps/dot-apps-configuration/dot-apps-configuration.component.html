@@ -2,24 +2,24 @@
     <div class="dot-apps-configuration__header">
         <dot-avatar
             [size]="112"
-            [url]="serviceIntegration.iconUrl"
-            [label]="serviceIntegration.name"
+            [url]="apps.iconUrl"
+            [label]="apps.name"
         ></dot-avatar>
         <div class="dot-apps-configuration__data">
             <span class="dot-apps-configuration__service-name">
-                {{ serviceIntegration.name }}
+                {{ apps.name }}
             </span>
             <div class="dot-apps-configuration__service-key">
                 {{ messagesKey['apps.key'] }}
                 <dot-copy-button
-                    [copy]="serviceIntegration.key"
-                    [label]="serviceIntegration.key"
+                    [copy]="apps.key"
+                    [label]="apps.key"
                 ></dot-copy-button>
             </div>
             <span class="dot-apps-configuration__configurations"
                 >{{
-                    serviceIntegration.configurationsCount
-                        ? serviceIntegration.configurationsCount +
+                    apps.configurationsCount
+                        ? apps.configurationsCount +
                           ' ' +
                           messagesKey['apps.configurations']
                         : messagesKey['apps.no.configurations']
@@ -31,10 +31,10 @@
                     'dot-apps-configuration__description__show-more': showMore
                 }"
             >
-                {{ serviceIntegration.description }}
+                {{ apps.description }}
                 <a
                     class="dot-apps-configuration__description__link_show-more"
-                    *ngIf="serviceIntegration.description.length > 220"
+                    *ngIf="apps.description.length > 220"
                     (click)="showMore = !showMore"
                     >{{
                         showMore
@@ -63,7 +63,7 @@
                 ></button>
             </div>
             <dot-apps-configuration-list
-                [siteConfigurations]="serviceIntegration.sites"
+                [siteConfigurations]="apps.sites"
                 [disabledLoadDataButton]="disabledLoadDataButton"
                 [itemsPerPage]="paginationPerPage"
                 (loadData)="loadData($event)"

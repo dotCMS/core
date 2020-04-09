@@ -3,12 +3,12 @@ import { async } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { DOTTestBed } from '../../../test/dot-test-bed';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
-import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
+import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-messages-service';
 
 class AppsServicesMock {
-    getConfigurationList(_serviceKey: string) {}
+    getConfiguration(_appKey: string, _id: string) {}
 }
 
 const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(
@@ -17,27 +17,24 @@ const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnaps
 );
 activatedRouteSnapshotMock.paramMap = {};
 
-describe('DotAppsConfigurationListResolver', () => {
+describe('DotAppsConfigurationDetailResolver', () => {
     let dotAppsServices: DotAppsService;
-    let dotAppsConfigurationListResolver: DotAppsConfigurationResolver;
+    let dotAppsConfigurationDetailResolver: DotAppsConfigurationDetailResolver;
     const messages = {
-        'apps.configurations': 'Configurations',
-        'apps.no.configurations': 'No Configurations',
-        'apps.confirmation.delete.all.button': 'Delete All',
-        'apps.confirmation.title': 'Are you sure?',
+        'apps.add.property': 'Add property',
         'apps.key': 'Key:',
-        'apps.confirmation.description.show.more': 'Show More',
-        'apps.confirmation.description.show.less': 'Show Less',
-        'apps.confirmation.delete.all.message': 'Delete all?',
-        'apps.confirmation.accept': 'Ok',
-        'apps.search.placeholder': 'Search'
+        'apps.form.dialog.success.header': 'Header',
+        'apps.form.dialog.success.message': 'Message',
+        'ok': 'OK',
+        'Cancel': 'CANCEL',
+        'Save': 'SAVE'
     };
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async(() => {
         const testbed = DOTTestBed.configureTestingModule({
             providers: [
-                DotAppsConfigurationResolver,
+                DotAppsConfigurationDetailResolver,
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotAppsService, useClass: AppsServicesMock },
                 {
@@ -47,40 +44,44 @@ describe('DotAppsConfigurationListResolver', () => {
             ]
         });
         dotAppsServices = testbed.get(DotAppsService);
-        dotAppsConfigurationListResolver = testbed.get(
-            DotAppsConfigurationResolver
-        );
+        dotAppsConfigurationDetailResolver = testbed.get(DotAppsConfigurationDetailResolver);
     }));
 
-    it('should get and return apps with configurations', () => {
+    it('should get and return app with configurations', () => {
         const response = {
             integrationsCount: 2,
-            serviceKey: 'google-calendar',
+            appKey: 'google-calendar',
             name: 'Google Calendar',
-            description: "It's a tool to keep track of your life's events",
+            description: 'It\'s a tool to keep track of your life\'s events',
             iconUrl: '/dA/d948d85c-3bc8-4d85-b0aa-0e989b9ae235/photo/surfer-profile.jpg',
             hosts: [
                 {
                     configured: true,
                     hostId: '123',
                     hostName: 'demo.dotcms.com'
-                },
-                {
-                    configured: false,
-                    hostId: '456',
-                    hostName: 'host.example.com'
                 }
             ]
         };
 
-        activatedRouteSnapshotMock.paramMap.get = () => '123';
-        spyOn(dotAppsServices, 'getConfigurationList').and.returnValue(observableOf(response));
+        const queryParams = {
+            appKey: 'sampleDescriptor1',
+            id: '48190c8c-42c4-46af-8d1a-0cd5db894797'
+        };
 
-        dotAppsConfigurationListResolver
+        activatedRouteSnapshotMock.paramMap.get = (param: string) => {
+            return param === 'appKey' ? queryParams.appKey : queryParams.id;
+        };
+        spyOn(dotAppsServices, 'getConfiguration').and.returnValue(observableOf(response));
+
+        dotAppsConfigurationDetailResolver
             .resolve(activatedRouteSnapshotMock)
             .subscribe((fakeContentType: any) => {
-                expect(fakeContentType).toEqual({app: response, messages});
+                expect(fakeContentType).toEqual({ app: response, messages });
             });
-        expect(dotAppsServices.getConfigurationList).toHaveBeenCalledWith('123');
+
+        expect(dotAppsServices.getConfiguration).toHaveBeenCalledWith(
+            queryParams.appKey,
+            queryParams.id
+        );
     });
 });

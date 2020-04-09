@@ -16,7 +16,7 @@
     padding: $basic-padding * 3 $basic-padding * 3 $basic-padding * 3 0;
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 1;
 
     dot-avatar {
         align-self: center;
@@ -69,7 +69,7 @@
     position: absolute;
     bottom: 0;
     right: 0;
-    z-index: 100;
+    z-index: 1;
 }
 
 .dot-apps-configuration__description__show-more {

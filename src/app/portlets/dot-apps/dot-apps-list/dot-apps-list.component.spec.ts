@@ -13,6 +13,11 @@ import { MockDotRouterService } from '@tests/dot-router-service.mock';
 import { DotAppsCardModule } from './dot-apps-card/dot-apps-card.module';
 import { By } from '@angular/platform-browser';
 import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
+import { DotAppsService } from '@services/dot-apps/dot-apps.service';
+
+class AppsServicesMock {
+    get() {}
+}
 
 const routeDatamock = {
     appsServices: [
@@ -70,6 +75,7 @@ describe('DotAppsListComponent', () => {
                     provide: DotRouterService,
                     useClass: MockDotRouterService
                 },
+                { provide: DotAppsService, useClass: AppsServicesMock },
                 DotAppsListResolver
             ]
         });
@@ -82,15 +88,13 @@ describe('DotAppsListComponent', () => {
         fixture.detectChanges();
     });
 
-    it('should set Service Integration from resolver', () => {
-        expect(component.serviceIntegrations).toBe(routeDatamock.appsServices);
-        expect(component.serviceIntegrationsCopy).toEqual(routeDatamock.appsServices);
+    it('should set App from resolver', () => {
+        expect(component.apps).toBe(routeDatamock.appsServices);
+        expect(component.appsCopy).toEqual(routeDatamock.appsServices);
     });
 
-    it('should contain 2 service configurations', () => {
-        expect(fixture.debugElement.queryAll(By.css('dot-apps-card')).length).toBe(
-            2
-        );
+    it('should contain 2 app configurations', () => {
+        expect(fixture.debugElement.queryAll(By.css('dot-apps-card')).length).toBe(2);
     });
 
     it('should set messages to Search Input', () => {
@@ -99,20 +103,16 @@ describe('DotAppsListComponent', () => {
         );
     });
 
-    it('should set integration data to service Card', () => {
+    it('should set app data to service Card', () => {
         expect(
-            fixture.debugElement.queryAll(By.css('dot-apps-card'))[0]
-                .componentInstance.serviceIntegration
+            fixture.debugElement.queryAll(By.css('dot-apps-card'))[0].componentInstance.app
         ).toEqual(routeDatamock.appsServices[0]);
     });
 
-    it('should redirect to detail configuration list page when service Card clicked', () => {
-        const card: DotAppsCardComponent = fixture.debugElement.queryAll(
-            By.css('dot-apps-card')
-        )[0].componentInstance;
-        card.actionFired.emit(component.serviceIntegrations[0].key);
-        expect(routerService.gotoPortlet).toHaveBeenCalledWith(
-            `/apps/${component.serviceIntegrations[0].key}`
-        );
+    it('should redirect to detail configuration list page when app Card clicked', () => {
+        const card: DotAppsCardComponent = fixture.debugElement.queryAll(By.css('dot-apps-card'))[0]
+            .componentInstance;
+        card.actionFired.emit(component.apps[0].key);
+        expect(routerService.gotoPortlet).toHaveBeenCalledWith(`/apps/${component.apps[0].key}`);
     });
 });

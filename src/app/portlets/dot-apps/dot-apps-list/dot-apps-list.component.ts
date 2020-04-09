@@ -6,6 +6,7 @@ import { DotApps } from '@shared/models/dot-apps/dot-apps.model';
 import * as _ from 'lodash';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActivatedRoute } from '@angular/router';
+import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 
 @Component({
     selector: 'dot-apps-list',
@@ -16,15 +17,16 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
     @ViewChild('searchInput')
     searchInput: ElementRef;
     messagesKey: { [key: string]: string } = {};
-    serviceIntegrations: DotApps[];
-    serviceIntegrationsCopy: DotApps[];
+    apps: DotApps[];
+    appsCopy: DotApps[];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         public dotMessageService: DotMessageService,
         private route: ActivatedRoute,
-        private dotRouterService: DotRouterService
+        private dotRouterService: DotRouterService,
+        private dotAppsService: DotAppsService
     ) {}
 
     ngOnInit() {
@@ -37,15 +39,15 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
 
         this.route.data
             .pipe(pluck('appsServices'), takeUntil(this.destroy$))
-            .subscribe((integrations: DotApps[]) => {
-                this.serviceIntegrations = integrations;
-                this.serviceIntegrationsCopy = _.cloneDeep(integrations);
+            .subscribe((apps: DotApps[]) => {
+                this.apps = apps;
+                this.appsCopy = _.cloneDeep(apps);
             });
 
         observableFromEvent(this.searchInput.nativeElement, 'keyup')
-            .pipe(debounceTime(500))
+            .pipe(debounceTime(500), takeUntil(this.destroy$))
             .subscribe((keyboardEvent: Event) => {
-                this.filterIntegrations(keyboardEvent.target['value']);
+                this.filterApps(keyboardEvent.target['value']);
             });
 
         this.searchInput.nativeElement.focus();
@@ -62,14 +64,13 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
      * @param string key
      * @memberof DotAppsListComponent
      */
-    goToIntegration(key: string): void {
+    goToApp(key: string): void {
         this.dotRouterService.gotoPortlet(`/apps/${key}`);
     }
 
-    private filterIntegrations(searchCriteria?: string): void {
-        this.serviceIntegrationsCopy = this.serviceIntegrations.filter(
-            (integration: DotApps) =>
-                integration.name.toUpperCase().search(searchCriteria.toUpperCase()) >= 0
-        );
+    private filterApps(searchCriteria?: string): void {
+        this.dotAppsService.get(searchCriteria).subscribe((apps: DotApps[]) => {
+            this.appsCopy = apps;
+        });
     }
 }

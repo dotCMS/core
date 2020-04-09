@@ -1,0 +1,45 @@
+<div class="dot-apps-configuration-detail__container">
+    <div class="dot-apps-configuration-detail__header">
+        <span class="dot-apps-configuration-detail__service-name">
+            {{ apps.name }}
+        </span>
+        <div class="dot-apps-configuration-detail__service-key">
+            {{ messagesKey['apps.key'] }}
+            <dot-copy-button [copy]="apps.key" [label]="apps.key"></dot-copy-button>
+        </div>
+        <div class="dot-apps-configuration-detail-actions">
+            <button
+                pButton
+                secondary
+                type="button"
+                [label]="messagesKey['Cancel']"
+                (click)="goToApps(apps.key)"
+            ></button>
+            <button
+                pButton
+                type="button"
+                (click)="onSubmit()"
+                [label]="messagesKey['Save']"
+                [disabled]="!formValid"
+            ></button>
+        </div>
+    </div>
+    <div class="dot-apps-configuration-detail__body">
+        <div class="dot-apps-configuration-detail__host-name">
+            {{ apps.sites[0].name }}
+        </div>
+        <div class="dot-apps-configuration-detail__form-content">
+            <dot-apps-configuration-detail-form
+                [formFields]="formFields"
+                (data)="formData = $event"
+                (valid)="formValid = $event"
+            ></dot-apps-configuration-detail-form>
+            <button
+                pButton
+                secondary
+                [label]="messagesKey['apps.add.property']"
+                icon="fa fa-plus"
+            ></button>
+        </div>
+    </div>
+</div>

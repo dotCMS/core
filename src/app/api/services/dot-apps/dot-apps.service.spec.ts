@@ -48,11 +48,11 @@ describe('DotAppsService', () => {
         });
     });
 
-    it('should get service integrations', () => {
+    it('should get apps', () => {
         const url = 'v1/apps';
 
-        this.dotAppsService.get().subscribe((services: DotApps[]) => {
-            expect(services).toEqual(mockDotApps);
+        this.dotAppsService.get().subscribe((apps: DotApps[]) => {
+            expect(apps).toEqual(mockDotApps);
         });
 
         this.lastConnection.mockRespond(
@@ -69,7 +69,28 @@ describe('DotAppsService', () => {
         expect(this.lastConnection.request.url).toContain(url);
     });
 
-    it('should throw error on get service integrations and handle it', () => {
+    it('should get filtered app', () => {
+        const filter = 'asana';
+        const url = `v1/apps?filter=${filter}`;
+        this.dotAppsService.get(filter).subscribe((apps: DotApps[]) => {
+            expect(apps).toEqual([mockDotApps[1]]);
+        });
+
+        this.lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: [mockDotApps[1]]
+                    }
+                })
+            )
+        );
+
+        expect(this.lastConnection.request.method).toBe(RequestMethod.Get);
+        expect(this.lastConnection.request.url).toContain(url);
+    });
+
+    it('should throw error on get apps and handle it', () => {
         const error404 = mockResponseView(400);
         spyOn(this.dotHttpErrorManagerService, 'handle').and.callThrough();
         spyOn(this.coreWebService, 'requestView').and.returnValue(throwError(error404));
@@ -78,28 +99,26 @@ describe('DotAppsService', () => {
         expect(this.dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
     });
 
-    it('should get a specific service integrations', () => {
-        const serviceKey = '1';
-        const url = `v1/apps/${serviceKey}`;
+    it('should get a specific app', () => {
+        const appKey = '1';
+        const url = `v1/apps/${appKey}`;
         spyOn(this.coreWebService, 'requestView').and.returnValue(
             of({
                 entity: mockDotApps[0]
             })
         );
 
-        this.dotAppsService
-            .getConfiguration(serviceKey)
-            .subscribe((service: DotApps) => {
-                expect(service).toEqual(mockDotApps[0]);
-            });
+        this.dotAppsService.getConfigurationList(appKey).subscribe((apps: DotApps) => {
+            expect(apps).toEqual(mockDotApps[0]);
+        });
 
         expect(this.coreWebService.requestView).toHaveBeenCalledWith({
             method: RequestMethod.Get,
-            url: url
+            url
         });
     });
 
-    it('should throw error on get a specific service integrations and handle it', () => {
+    it('should throw error on get a specific app and handle it', () => {
         const error404 = mockResponseView(400);
         spyOn(this.dotHttpErrorManagerService, 'handle').and.callThrough();
         spyOn(this.coreWebService, 'requestView').and.returnValue(throwError(error404));
@@ -108,13 +127,16 @@ describe('DotAppsService', () => {
         expect(this.dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
     });
 
-    it('should delete a specific configuration from a service', () => {
-        const serviceKey = '1';
+    it('should save a specific configuration from an app', () => {
+        const appKey = '1';
         const hostId = 'abc';
-        const url = `v1/apps/${serviceKey}/${hostId}`;
+        const params = {
+            name: { hidden: false, value: 'test' }
+        };
+        const url = `v1/apps/${appKey}/${hostId}`;
 
         this.dotAppsService
-            .deleteConfiguration(serviceKey, hostId)
+            .saveSiteConfiguration(appKey, hostId, params)
             .subscribe((response: string) => {
                 expect(response).toEqual('ok');
             });
@@ -129,11 +151,47 @@ describe('DotAppsService', () => {
             )
         );
 
-        expect(this.lastConnection.request.method).toBe(RequestMethod.Delete);
-        expect(this.lastConnection.request.url).toContain(url);
+        expect(this.lastConnection.request.method).toBe(RequestMethod.Post);
+        expect(this.lastConnection.request._body).toEqual(params);
+        expect(this.lastConnection.request.url).toBe(url);
     });
 
-    it('should throw error on delete a specific service integrations and handle it', () => {
+    it('should throw error on Save a specific app and handle it', () => {
+        const params = {
+            name: { hidden: false, value: 'test' }
+        };
+        const error404 = mockResponseView(400);
+        spyOn(this.dotHttpErrorManagerService, 'handle').and.callThrough();
+        spyOn(this.coreWebService, 'requestView').and.returnValue(throwError(error404));
+
+        this.dotAppsService.saveSiteConfiguration('test', '123', params).subscribe();
+        expect(this.dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
+    });
+
+    it('should delete a specific configuration from an app', () => {
+        const appKey = '1';
+        const hostId = 'abc';
+        const url = `v1/apps/${appKey}/${hostId}`;
+
+        this.dotAppsService.deleteConfiguration(appKey, hostId).subscribe((response: string) => {
+            expect(response).toEqual('ok');
+        });
+
+        this.lastConnection.mockRespond(
+            new Response(
+                new ResponseOptions({
+                    body: {
+                        entity: 'ok'
+                    }
+                })
+            )
+        );
+
+        expect(this.lastConnection.request.method).toBe(RequestMethod.Delete);
+        expect(this.lastConnection.request.url).toBe(url);
+    });
+
+    it('should throw error on delete a specific app and handle it', () => {
         const error404 = mockResponseView(400);
         spyOn(this.dotHttpErrorManagerService, 'handle').and.callThrough();
         spyOn(this.coreWebService, 'requestView').and.returnValue(throwError(error404));
@@ -142,15 +200,13 @@ describe('DotAppsService', () => {
         expect(this.dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
     });
 
-    it('should delete all configurations from a service', () => {
-        const serviceKey = '1';
-        const url = `v1/apps/${serviceKey}`;
+    it('should delete all configurations from an app', () => {
+        const appKey = '1';
+        const url = `v1/apps/${appKey}`;
 
-        this.dotAppsService
-            .deleteAllConfigurations(serviceKey)
-            .subscribe((response: string) => {
-                expect(response).toEqual('ok');
-            });
+        this.dotAppsService.deleteAllConfigurations(appKey).subscribe((response: string) => {
+            expect(response).toEqual('ok');
+        });
 
         this.lastConnection.mockRespond(
             new Response(
@@ -166,7 +222,7 @@ describe('DotAppsService', () => {
         expect(this.lastConnection.request.url).toContain(url);
     });
 
-    it('should throw error on delete all configurations from a service and handle it', () => {
+    it('should throw error on delete all configurations from an app and handle it', () => {
         const error404 = mockResponseView(400);
         spyOn(this.dotHttpErrorManagerService, 'handle').and.callThrough();
         spyOn(this.coreWebService, 'requestView').and.returnValue(throwError(error404));

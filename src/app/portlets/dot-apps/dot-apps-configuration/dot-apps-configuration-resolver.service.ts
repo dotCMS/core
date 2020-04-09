@@ -6,9 +6,9 @@ import { DotApps } from '@shared/models/dot-apps/dot-apps.model';
 import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@services/dot-messages-service';
 
-export interface IntegrationResolverData {
+export interface DotAppsResolverData {
     messages?: { [key: string]: string };
-    service: DotApps;
+    app: DotApps;
 }
 
 /**
@@ -20,16 +20,16 @@ export interface IntegrationResolverData {
  */
 @Injectable()
 export class DotAppsConfigurationResolver
-    implements Resolve<Observable<IntegrationResolverData>> {
+    implements Resolve<Observable<DotAppsResolverData>> {
     constructor(
         private dotAppsService: DotAppsService,
         public dotMessageService: DotMessageService
     ) {}
 
-    resolve(route: ActivatedRouteSnapshot): Observable<IntegrationResolverData> {
-        const serviceKey = route.paramMap.get('serviceKey');
-        const servicesConfigurations$ = this.dotAppsService
-            .getConfiguration(serviceKey)
+    resolve(route: ActivatedRouteSnapshot): Observable<DotAppsResolverData> {
+        const appsKey = route.paramMap.get('appKey');
+        const appsConfigurations$ = this.dotAppsService
+            .getConfigurationList(appsKey)
             .pipe(take(1));
         const messages$: Observable<{
             [key: string]: string;
@@ -48,9 +48,9 @@ export class DotAppsConfigurationResolver
             ])
             .pipe(take(1));
 
-        return forkJoin([servicesConfigurations$, messages$]).pipe(
-            switchMap(([integration, messages]) => {
-                return of({ messages, service: integration });
+        return forkJoin([appsConfigurations$, messages$]).pipe(
+            switchMap(([app, messages]) => {
+                return of({ messages, app });
             })
         );
     }

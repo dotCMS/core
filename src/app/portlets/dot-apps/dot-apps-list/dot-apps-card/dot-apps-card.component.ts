@@ -9,7 +9,7 @@ import { DotApps } from '@shared/models/dot-apps/dot-apps.model';
     styleUrls: ['./dot-apps-card.component.scss']
 })
 export class DotAppsCardComponent implements OnInit {
-    @Input() serviceIntegration: DotApps;
+    @Input() app: DotApps;
     @Output() actionFired = new EventEmitter<string>();
 
     messagesKey: { [key: string]: string } = {};

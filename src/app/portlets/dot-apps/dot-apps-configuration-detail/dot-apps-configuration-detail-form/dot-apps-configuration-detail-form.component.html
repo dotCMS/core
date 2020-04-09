@@ -1,0 +1,59 @@
+<form #form="ngForm" [formGroup]="myFormGroup" class="form__group" novalidate>
+    <div class="dot-apps-configuration-detail__form">
+        <div
+            class="dot-apps-configuration-detail__form-row"
+            *ngFor="let field of formFields"
+            [ngSwitch]="field.type"
+        >
+            <ng-container *ngSwitchCase="'STRING'">
+                <div *ngIf="field.hidden; then password; else textarea"></div>
+                <ng-template #password>
+                    <label
+                        [for]="field.name"
+                        class="form__label"
+                        [ngClass]="{
+                            required: field.required
+                        }"
+                        >{{ field.label }}</label
+                    >
+                    <input
+                        pInputText
+                        type="password"
+                        (click)="$event.target.select()"
+                        [id]="field.name"
+                        [formControlName]="field.name"
+                    />
+                    <span class="form__group-hint">{{ field.hint }}</span>
+                </ng-template>
+                <ng-template #textarea>
+                    <label
+                        [for]="field.name"
+                        class="form__label"
+                        [ngClass]="{
+                            required: field.required
+                        }"
+                        >{{ field.label }}</label
+                    >
+                    <textarea
+                        #inputTextarea
+                        pInputTextarea
+                        oninput='this.style.height = "";this.style.height = this.scrollHeight + "px"'
+                        [id]="field.name"
+                        [formControlName]="field.name"
+                    ></textarea>
+                    <span class="form__group-hint">{{ field.hint }}</span>
+                </ng-template>
+            </ng-container>
+            <ng-container *ngSwitchCase="'BOOL'">
+                <p-checkbox
+                    binary="true"
+                    [id]="field.name"
+                    [label]="field.label"
+                    [formControlName]="field.name"
+                    [value]="field.value"
+                ></p-checkbox>
+                <span class="form__group-hint">{{ field.hint }}</span>
+            </ng-container>
+        </div>
+    </div>
+</form>

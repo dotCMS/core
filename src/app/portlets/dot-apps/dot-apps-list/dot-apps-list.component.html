@@ -9,9 +9,9 @@
     </div>
     <div class="dot-apps__body">
         <dot-apps-card
-            *ngFor="let integration of serviceIntegrationsCopy"
-            [serviceIntegration]="integration"
-            (actionFired)="goToIntegration($event)"
+            *ngFor="let app of appsCopy"
+            [app]="app"
+            (actionFired)="goToApp($event)"
         ></dot-apps-card>
     </div>
 </div>

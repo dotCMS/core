@@ -31,11 +31,11 @@ describe('DotAppsCardComponent', () => {
 
     describe('With configuration', () => {
         beforeEach(() => {
-            component.serviceIntegration = {
+            component.app = {
                 configurationsCount: 1,
                 key: 'asana',
                 name: 'Asana',
-                description: "It's asana to keep track of your asana events",
+                description: 'It\'s asana to keep track of your asana events',
                 iconUrl: '/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/mountain-persona.jpg'
             };
             fixture.detectChanges();
@@ -53,36 +53,36 @@ describe('DotAppsCardComponent', () => {
             const avatar = fixture.debugElement.query(By.css('dot-avatar')).componentInstance;
             expect(avatar.size).toBe(40);
             expect(avatar.showDot).toBe(true);
-            expect(avatar.url).toBe(component.serviceIntegration.iconUrl);
-            expect(avatar.label).toBe(component.serviceIntegration.name);
+            expect(avatar.url).toBe(component.app.iconUrl);
+            expect(avatar.label).toBe(component.app.name);
         });
 
         it('should set messages/values in DOM correctly', () => {
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-card__name'))
                     .nativeElement.innerText
-            ).toBe(component.serviceIntegration.name);
+            ).toBe(component.app.name);
 
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-card__configurations'))
                     .nativeElement.textContent
             ).toContain(
-                `${component.serviceIntegration.configurationsCount} ${component.messagesKey['apps.configurations']}`
+                `${component.app.configurationsCount} ${component.messagesKey['apps.configurations']}`
             );
 
             expect(
                 fixture.debugElement.query(By.css('.ui-card-content')).nativeElement.textContent
-            ).toContain(component.serviceIntegration.description);
+            ).toContain(component.app.description);
         });
     });
 
     describe('With No configuration', () => {
         beforeEach(() => {
-            component.serviceIntegration = {
+            component.app = {
                 configurationsCount: 0,
                 key: 'asana',
                 name: 'Asana',
-                description: "It's asana to keep track of your asana events",
+                description: 'It\'s asana to keep track of your asana events',
                 iconUrl: '/dA/792c7c9f-6b6f-427b-80ff-1643376c9999/photo/mountain-persona.jpg'
             };
             fixture.detectChanges();
