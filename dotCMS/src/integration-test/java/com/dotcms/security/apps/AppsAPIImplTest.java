@@ -24,6 +24,9 @@ import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -34,7 +37,9 @@ import java.util.Set;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class AppsAPIImplTest {
 
     @BeforeClass
@@ -334,39 +339,44 @@ public class AppsAPIImplTest {
         api.saveSecrets(builder.build(), APILocator.systemHost() , nonAdminUserWithAccessToPortlet);
     }
 
-    @Test
-    public void Test_BytesToChars_No_Middle_String_Conversion() throws IOException {
-
-        final AppsAPIImpl impl = new AppsAPIImpl();
-
-        testUTFCharsSet(0,127, impl);
-        testUTFCharsSet(128,255, impl);
-        testUTFCharsSet(256,383, impl);
-        testUTFCharsSet(384,591, impl);
-        testUTFCharsSet(688,767, impl);
-        testUTFCharsSet(880,1023, impl);
-        testUTFCharsSet(1024,1279, impl);
-        testUTFCharsSet(1280,1327, impl);
-        testUTFCharsSet(8192,8303, impl);
-        testUTFCharsSet(8352,8399, impl);
-        testUTFCharsSet(8448,8527, impl);
-        testUTFCharsSet(8592,8703, impl);
-        testUTFCharsSet(8704,8959, impl);
-        testUTFCharsSet(9472,9599, impl);
-        testUTFCharsSet(9600,9631, impl);
-        testUTFCharsSet(9632,9727, impl);
-        testUTFCharsSet(9728,9983, impl);
-        testUTFCharsSet(9984,10175, impl);
+    @DataProvider
+    public static Object[] getTestCases() throws Exception {
+        return new Object[]{
+                new UTFCharsRangeTestCase(0, 127, "C0 Controls and Basic Latin"),
+                new UTFCharsRangeTestCase(128, 255, "C1 Controls and Latin-1 Supplement"),
+                new UTFCharsRangeTestCase(256, 383, "Latin Extended-A"),
+                new UTFCharsRangeTestCase(384, 591, "Latin Extended-B"),
+                new UTFCharsRangeTestCase(688, 767, "Spacing Modifiers"),
+                new UTFCharsRangeTestCase(768, 879, "Diacritical Marks"),
+                new UTFCharsRangeTestCase(880, 1023, "Greek and Coptic"),
+                new UTFCharsRangeTestCase(1024, 1279, "Cyrillic Basic"),
+                new UTFCharsRangeTestCase(1280, 1327, "Cyrillic Supplement"),
+                new UTFCharsRangeTestCase(8192, 8303, "General Punctuation"),
+                new UTFCharsRangeTestCase(8352, 8399, "Currency Symbols"),
+                new UTFCharsRangeTestCase(8448, 8527, "Letterlike Symbols"),
+                new UTFCharsRangeTestCase(8592, 8703, "Arrows"),
+                new UTFCharsRangeTestCase(8704, 8959, "Mathematical Operators"),
+                new UTFCharsRangeTestCase(9472, 9599, "Box Drawings"),
+                new UTFCharsRangeTestCase(9600, 9631, "Block Elements"),
+                new UTFCharsRangeTestCase(9632, 9727, "Geometric Shapes"),
+                new UTFCharsRangeTestCase(9728, 9983, "Miscellaneous Symbols"),
+                new UTFCharsRangeTestCase(9984, 10175, "Dingbats")
+        };
     }
 
-    private void testUTFCharsSet(final int fromCode, final int toCode, final AppsAPIImpl impl) throws IOException{
+    
+
+    @Test
+    @UseDataProvider("getTestCases")
+    public void Test_BytesToChars_No_Middle_String_Conversion(final UTFCharsRangeTestCase testCase) throws IOException {
+        final AppsAPIImpl impl = new AppsAPIImpl();
         final StringBuilder stringBuilder = new StringBuilder();
-        for(int i=fromCode; i<= toCode; i++) {
+        for(int i=  testCase.fromCode; i<= testCase.toCode; i++) {
             final String string = fromCharCode(i);
             stringBuilder.append(string);
         }
         final String input = stringBuilder.toString();
-        Logger.info(AppsAPIImplTest.class,()->  String.format(" UTF Charset code from `%d` to `%d` `%s` ",fromCode, toCode, input));
+        Logger.info(AppsAPIImplTest.class,()->  String.format(" UTF Charset code from `%d` to `%d`  %s `%s` ",testCase.fromCode, testCase.toCode, testCase.description,input));
         final char [] chars = impl.bytesToCharArrayUTF(input.getBytes(StandardCharsets.UTF_8));
         final byte [] bytes = impl.charsToBytesUTF(chars);
         final String output = new String(bytes, StandardCharsets.UTF_8);
@@ -416,6 +426,19 @@ public class AppsAPIImplTest {
             portlet = portletDataGen.portletId(integrationsPortletId).nextPersisted();
         }
         return portlet;
+    }
+
+    static class UTFCharsRangeTestCase {
+
+        final int fromCode;
+        final int toCode;
+        final String description;
+
+        UTFCharsRangeTestCase(final int fromCode, final int toCode, final String description) {
+            this.fromCode = fromCode;
+            this.toCode = toCode;
+            this.description = description;
+        }
     }
 
 }
