@@ -1,6 +1,7 @@
 package com.dotcms.security.apps;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Objects;
 
 /**
  * Duh its a super class that serves as the base form both Params and Secrets.
@@ -43,4 +44,22 @@ public abstract class AbstractProperty<T> {
         return Boolean.parseBoolean(getString());
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final AbstractProperty<?> that = (AbstractProperty<?>) o;
+        return hidden == that.hidden &&
+                Objects.deepEquals(value, that.value) &&
+                type == that.type;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value, hidden, type);
+    }
 }

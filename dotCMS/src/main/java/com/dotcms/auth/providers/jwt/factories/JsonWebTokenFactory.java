@@ -271,7 +271,7 @@ public class JsonWebTokenFactory implements Serializable {
 
                 final String uuid = jwtToken.getId();
 
-                if (!uuid.equals(user.getRememberMeToken())) {
+                if (null == uuid || !uuid.equals(user.getRememberMeToken())) {
                     final IncorrectClaimException claimException = new IncorrectClaimException(jws.getHeader(), body, "JWT Token user: " + jwtToken.getUserId() + " has been modified, old tokens are invalid");
                     claimException.setClaimName(Claims.SUBJECT);
                     claimException.setClaimValue(body.getSubject());

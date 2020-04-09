@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * This is an implementation of a Secret
- * Class used to collect secrets destiated to be stored into safe keeping
+ * Class used to collect secrets destined to be stored into safe keeping.
  */
 public final class Secret extends AbstractProperty<char[]> {
 
