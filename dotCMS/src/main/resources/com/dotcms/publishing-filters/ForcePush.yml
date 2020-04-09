@@ -2,17 +2,17 @@ title:                    Send Everything
 default:                  false
 roles:                    DOTCMS_BACK_END_USER
 filters:
-       ## Lucene query that exclude content to be added to the bundle as a dependency
-       excludeDependencyQuery:   ""
        ## Lucene query that exclude content to be added to the bundle
        excludeQuery:             ""
-       ##  list of classes that should never be pushed as dependencies: Structure, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category
-       excludeDependencyClasses: []
        ## list of classes that should never be pushed: Structure, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category, User, OSGI
        excludeClasses:           []
+       ## check for any dependency that the pushed asset may need (if false will not look for any dependency or relationship)
+       dependencies:             true
+       ## Lucene query that exclude content to be added to the bundle as a dependency
+       excludeDependencyQuery:   ""
+       ##  list of classes that should never be pushed as dependencies: Structure, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category
+       excludeDependencyClasses: []
        ## force push as always worked, if true will push regardless the pushed asset history
        forcePush:                true
-       ## check for any dependency that the pushed asset may need (if false will not look for any dependency)
-       dependencies:             true
        ## check for content relationships
        relationships:            true
