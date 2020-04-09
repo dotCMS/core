@@ -6,6 +6,7 @@ import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.util.PageMode;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -116,6 +117,7 @@ public class ContainerWebAPI implements ViewTool {
                         : ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT);
 
         String pTag = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request);
+        final PageMode pageMode = PageMode.get(request);
 
         pTag = (!availablePersonalizations.contains(pTag)) ? MultiTree.DOT_PERSONALIZATION_DEFAULT : pTag;
 
@@ -123,19 +125,19 @@ public class ContainerWebAPI implements ViewTool {
 		if (ContainerUUID.UUID_LEGACY_VALUE.equals(uuid)) {
 			contentlets.addAll(
 					Optional.ofNullable(
-								getContentsIdByUUID(containerId, pTag, ContainerUUID.UUID_START_VALUE)
+								getContentsIdByUUID(containerId, pTag, ContainerUUID.UUID_START_VALUE, pageMode)
 							).orElse(Collections.EMPTY_LIST)
 			);
 
 			contentlets.addAll(
 					Optional.ofNullable(
-							getContentsIdByUUID(containerId, pTag, ContainerUUID.UUID_LEGACY_VALUE)
+							getContentsIdByUUID(containerId, pTag, ContainerUUID.UUID_LEGACY_VALUE, pageMode)
 					).orElse(Collections.EMPTY_LIST)
 			);
 		} else {
 			contentlets.addAll(
 					Optional.ofNullable(
-							getContentsIdByUUID(containerId, pTag, uuid)
+							getContentsIdByUUID(containerId, pTag, uuid, pageMode)
 					).orElse(Collections.EMPTY_LIST));
 		}
 
@@ -151,12 +153,16 @@ public class ContainerWebAPI implements ViewTool {
         return new ArrayList<>();
     }
 
-	@Nullable
-	private List<String> getContentsIdByUUID(String containerId, String pTag, String uuid) {
-		// if live mode, the content list will not have a colon in the key- as it was a velocity variable
-		List<String> contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag.replace(":", ""));
-		if(contentlets !=null ) {
-			return contentlets;
+	private List<String> getContentsIdByUUID(final String containerId, final String pTag, final String uuid, final PageMode pageMode) {
+
+		List<String> contentlets = null;
+
+		if (pageMode != PageMode.EDIT_MODE && pageMode != PageMode.PREVIEW_MODE) {
+			// if live mode, the content list will not have a colon in the key- as it was a velocity variable
+			contentlets = (List<String>) ctx.get("contentletList" + containerId + uuid + pTag.replace(":", ""));
+			if (contentlets != null) {
+				return contentlets;
+			}
 		}
 
 		// if edit or preview mode, the content list WILL have a colon in the key, as this is
