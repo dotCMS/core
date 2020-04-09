@@ -417,6 +417,23 @@ public class AppsAPIImplTest {
         }
     }
 
+    @Test
+    public void Test_Secret_Destroy_Method() {
+        final AppSecrets secrets = new AppSecrets.Builder()
+                .withKey("TheKey")
+                .withHiddenSecret("hidden", RandomStringUtils.randomAlphanumeric(60))
+                .withSecret("non-hidden1", RandomStringUtils.randomAlphanumeric(27))
+                .withSecret("non-hidden5", RandomStringUtils.randomAlphanumeric(100))
+                .withSecret("bool1", true)
+                .build();
+        secrets.destroy();
+        for (final Secret secret : secrets.getSecrets().values()) {
+            for (final char chr : secret.getValue()) {
+                 assertEquals(chr,(char)0);
+            }
+        }
+    }
+
     private Portlet getOrCreateServiceIntegrationPortlet(){
         final String integrationsPortletId = AppsAPIImpl.APPS_PORTLET_ID;
         final PortletAPI portletAPI = APILocator.getPortletAPI();
