@@ -77,6 +77,14 @@ public class AppsAPIImpl implements AppsAPI {
             .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
             .findAndRegisterModules();
 
+    /**
+     * Given the AppSecrets this will return a char array representing the deserialized json object.
+     * No strings are created in the transformation process.
+     * @param object
+     * @return
+     * @throws DotDataException
+     */
+    @VisibleForTesting
     char[] toJsonAsChars(final AppSecrets object) throws DotDataException {
         try {
             final byte [] bytes = jsonMapper.writeValueAsBytes(object);
@@ -86,6 +94,14 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
+    /**
+     * Takes a char array representation of a json secret and generates the domain object.
+     * No strings are created in the transformation process.
+     * @param chars
+     * @return The Secrets domain model.
+     * @throws DotDataException
+     */
+    @VisibleForTesting
     AppSecrets readJson(final char[] chars) throws DotDataException {
         try {
             final byte [] bytes = charsToBytesUTF(chars);
@@ -102,6 +118,7 @@ public class AppsAPIImpl implements AppsAPI {
      * @param bytes
      * @return
      */
+    @VisibleForTesting
     char[] bytesToCharArrayUTF(final byte[] bytes) throws IOException {
         final List<Integer> integers = new ArrayList<>(bytes.length);
         try (final BufferedReader reader = new BufferedReader(
@@ -120,6 +137,7 @@ public class AppsAPIImpl implements AppsAPI {
      * This method takes a char array and converts its contents into a byte array No String middle
      * man is created. https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
      */
+    @VisibleForTesting
     byte[] charsToBytesUTF(final char[] chars) throws IOException {
         final CharSequence sequence = java.nio.CharBuffer.wrap(chars);
         return ByteStreams
