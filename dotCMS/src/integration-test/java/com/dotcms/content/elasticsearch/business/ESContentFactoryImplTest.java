@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -625,6 +626,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         
         // Checking in a new piece of content flushed the esQuerycache, we get new results
         assertTrue(hits != hits3);
+        assertTrue(hits3.getTotalHits().value > 0);
     }
     
     
@@ -677,20 +679,25 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         assertTrue(hits.getTotalHits().value > 0);
 
         // all parameters are being taken into account when building the cache key
-        assertTrue(hits != hits1);
+        assertNotSame(hits, hits1);
         assertNotEquals(hits , hits1);
-        
-        assertTrue(hits != hits2);
+        assertTrue(hits1.getTotalHits().value > 0);
+
+        assertNotSame(hits, hits2);
         assertNotEquals(hits , hits2);
-        
-        assertTrue(hits != hits3);
+        assertTrue(hits2.getTotalHits().value > 0);
+
+        assertNotSame(hits, hits3);
         assertNotEquals(hits , hits3);
-        
-        assertTrue(hits != hits4);
+        assertTrue(hits3.getTotalHits().value > 0);
+
+        assertNotSame(hits, hits4);
         assertNotEquals(hits , hits4);
-        
-        assertTrue(hits != hits5);
+        assertTrue(hits4.getTotalHits().value > 0);
+
+        assertNotSame(hits, hits5);
         assertNotEquals(hits , hits5);
+        assertTrue(hits5.getTotalHits().value > 0);
         
 
     }
