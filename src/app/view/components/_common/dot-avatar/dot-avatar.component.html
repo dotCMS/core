@@ -1,4 +1,4 @@
-<img [src]="url" class="avatar__img" *ngIf="url" [ngStyle]="avatarStyles">
+<img [src]="url" class="avatar__img" *ngIf="url" (error)="errorLoadingImg()" [ngStyle]="avatarStyles">
 <div class="avatar__placeholder" *ngIf="!url" [ngStyle]="avatarStyles">
     {{ avatarPlaceholder }}
 </div>

@@ -8,12 +8,9 @@ import { Input, Component } from '@angular/core';
 
 @Component({
     selector: 'dot-test-component',
-    template: `<dot-avatar [url]='url'
-                           [label]='label'
-                           [size]='size'
-                           [showDot]='showDot'
-                >
-               </dot-avatar>`
+    template: `
+        <dot-avatar [url]="url" [label]="label" [size]="size" [showDot]="showDot"> </dot-avatar>
+    `
 })
 class HostTestComponent {
     @Input()
@@ -36,10 +33,7 @@ describe('DotAvatarComponent', () => {
 
     beforeEach(async(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [
-                HostTestComponent,
-                DotAvatarComponent
-            ],
+            declarations: [HostTestComponent, DotAvatarComponent],
             imports: [CommonModule]
         });
 
@@ -52,14 +46,13 @@ describe('DotAvatarComponent', () => {
         fixture.detectChanges();
         expect(de.query(By.css('img'))).toBeNull();
         expect(de.query(By.css('.avatar__dot'))).toBeNull();
-
     });
 
     describe('url is set', () => {
         let img;
 
         beforeEach(() => {
-            fixture.componentInstance.url = '/testing_url';
+            fixture.componentInstance.url = '/testing_url.png';
             fixture.detectChanges();
 
             img = de.query(By.css('img'));
@@ -71,6 +64,13 @@ describe('DotAvatarComponent', () => {
 
         it('should have the right src', () => {
             expect(img.nativeElement.src.endsWith(component.url)).toBe(true);
+        });
+
+        it('should set src to null if path is broken', (done) => {
+            setTimeout(() => {
+                expect(component.url).toBeNull();
+                done();
+            }, 100);
         });
     });
 
@@ -109,7 +109,6 @@ describe('DotAvatarComponent', () => {
     });
 
     describe('size', () => {
-
         describe('default value', () => {
             const defaultStyles = {
                 'font-size': '24px',

@@ -53,4 +53,13 @@ export class DotAvatarComponent {
     getPlaceholder(label: string): string {
         return !!label ? label.charAt(0).toUpperCase() : null;
     }
+
+    /**
+     * Fallback to set url path as null and be able to display placeholder
+     *
+     * @memberof DotAvatarComponent
+     */
+    errorLoadingImg(): void {
+        this.url = null;
+    }
 }
