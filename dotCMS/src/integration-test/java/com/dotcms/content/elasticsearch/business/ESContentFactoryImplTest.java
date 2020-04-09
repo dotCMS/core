@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -8,35 +7,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import com.dotcms.IntegrationTestBase;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -56,6 +26,36 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.ESQueryCache;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.API;
 
 @RunWith(DataProviderRunner.class)
 public class ESContentFactoryImplTest extends IntegrationTestBase {
@@ -544,7 +544,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
         
 
-        
+        assert(CacheLocator.getESQueryCache() !=null);
         final String liveQuery = "+baseType:1 +live:true" ;
         final String workingQuery = "+baseType:1 +live:false" ;
         
@@ -581,29 +581,41 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
      */
     @Test
     public void test_cached_es_query_different_responses_for_all_params() throws Exception {
-        
+        final Language language1 = new LanguageDataGen().nextPersisted();
 
+        final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
+        
+        for(int i=0;i<10;i++) {
+        // checkin a new piece of content
+        Contentlet con = new ContentletDataGen(blogType.id())
+                .languageId(language1.getId())
+                .setProperty("body", "myBody")
+                .nextPersisted();
+            if(i % 2==0) {
+                APILocator.getContentletAPI().publish(con, APILocator.systemUser(), false);
+            }
+        }
         final String liveQuery = "+baseType:1 +live:true" ;
         final String workingQuery = "+baseType:1 +live:false" ;
         
 
         //default
-        SearchHits hits = instance.indexSearch(liveQuery, 10, 0, null);
+        SearchHits hits = instance.indexSearch(liveQuery, 5, 0, null);
         
         // working index
-        SearchHits hits1 = instance.indexSearch(workingQuery, 10, 0, null);
+        SearchHits hits1 = instance.indexSearch(workingQuery, 5, 0, null);
         
         // different limit
-        SearchHits hits2 = instance.indexSearch(liveQuery, 9, 0, null);
+        SearchHits hits2 = instance.indexSearch(liveQuery, 4, 0, null);
         
         // different offset
-        SearchHits hits3 = instance.indexSearch(liveQuery, 10, 1, null);
+        SearchHits hits3 = instance.indexSearch(liveQuery, 5, 1, null);
         
         // different sort
-        SearchHits hits4 = instance.indexSearch(liveQuery, 10, 0, "title desc");
+        SearchHits hits4 = instance.indexSearch(liveQuery, 5, 0, "title desc");
         
         // different sort direction
-        SearchHits hits5 = instance.indexSearch(liveQuery, 10, 0, "title asc");
+        SearchHits hits5 = instance.indexSearch(liveQuery, 5, 0, "title asc");
         
         
         

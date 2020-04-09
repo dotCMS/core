@@ -47,6 +47,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -135,7 +136,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         this.contentletCache = CacheLocator.getContentletCache();
         this.languageAPI     =  APILocator.getLanguageAPI();
         this.indiciesAPI     = APILocator.getIndiciesAPI();
-        this.queryCache = CacheLocator.getESQueryCache();
+        this.queryCache      = CacheLocator.getESQueryCache();
 	}
 
 	@Override
@@ -1496,21 +1497,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     
-
+    private final boolean shouldQueryCache = LicenseManager.getInstance().isEnterprise()
+                    && Config.getBooleanProperty("ES_CACHE_SEARCH_QUERIES", true);
 
     
 
     SearchHits cachedIndexSearch(final SearchRequest searchRequest) {
         
 
-        final Optional<SearchHits> optionalHits = queryCache.get(searchRequest);
+        final Optional<SearchHits> optionalHits = (shouldQueryCache) ? queryCache.get(searchRequest) : Optional.empty();
         if(optionalHits.isPresent()) {
             return optionalHits.get();
         }
         try {
             SearchResponse response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
             SearchHits hits  = response.getHits();
-            queryCache.put(searchRequest, hits);
+            if(shouldQueryCache) {
+                queryCache.put(searchRequest, hits);
+            }
             return hits;
         } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
             final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());

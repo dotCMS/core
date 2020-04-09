@@ -3,11 +3,9 @@ package com.dotcms.content.elasticsearch;
 import java.util.Optional;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.search.SearchHits;
-import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.util.Config;
 import com.google.common.annotations.VisibleForTesting;
 
 /**
@@ -23,18 +21,18 @@ public class ESQueryCache implements Cachable {
 
     private final DotCacheAdministrator cache;
 
-    private final boolean shouldUseCache;
 
+
+    
     @VisibleForTesting
-    public ESQueryCache(DotCacheAdministrator cache, boolean shouldUseCache) {
+    public ESQueryCache(DotCacheAdministrator cache) {
         this.cache = cache;
-        this.shouldUseCache = shouldUseCache;
+
     }
 
 
     public ESQueryCache() {
-        this(CacheLocator.getCacheAdministrator(), LicenseManager.getInstance().isEnterprise()
-                        && Config.getBooleanProperty("ES_CACHE_SEARCH_QUERIES", true));
+        this(CacheLocator.getCacheAdministrator());
     }
 
 
@@ -85,9 +83,6 @@ public class ESQueryCache implements Cachable {
      * @return
      */
     public Optional<SearchHits> get(final SearchRequest searchRequest) {
-        if (searchRequest == null || !shouldUseCache) {
-            return Optional.empty();
-        }
         final String hash = hash(searchRequest);
         return Optional.ofNullable((SearchHits) cache.getNoThrow(hash, groups[0]));
 
@@ -101,9 +96,6 @@ public class ESQueryCache implements Cachable {
      * @param hits
      */
     public void put(final SearchRequest searchRequest, final SearchHits hits) {
-        if (searchRequest == null || !shouldUseCache) {
-            return;
-        }
         final String hash = hash(searchRequest);
         cache.put(hash, hits, groups[0]);
     }

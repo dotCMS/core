@@ -38,7 +38,7 @@ public class ESQueryCacheTest {
     @BeforeClass
     public static void setup() {
 
-        cache = new  ESQueryCache(admin, true);
+        cache = new  ESQueryCache(admin);
         
         
         
