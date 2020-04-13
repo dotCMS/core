@@ -63,8 +63,8 @@ public interface AppsAPI {
             Host host, User user) throws DotDataException, DotSecurityException;
 
    /**
-    * This will tell you all the different integrations for a given appKey.
-    * If the app key is used in a given host the host will come back in the resulting list.
+    * This will tell you all the different apps for a given appKey.
+    * If the app key is used in a given site the site will come back in the resulting list.
     * Otherwise it means no configurations exist for the given host.
     * @param key unique app id for the given host.
     * @param siteIdentifiers a list of host identifiers

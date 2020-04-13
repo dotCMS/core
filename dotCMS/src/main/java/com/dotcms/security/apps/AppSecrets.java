@@ -79,4 +79,13 @@ public class AppSecrets implements Serializable {
 
     }
 
+    /**
+     * Short hand to
+     * new Builder().build();
+     * @return
+     */
+    public static AppSecrets empty(){
+      return new Builder().build();
+    }
+
 }

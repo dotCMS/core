@@ -329,7 +329,6 @@ public class AppsAPIImplTest {
         api.saveSecrets(builder.build(), APILocator.systemHost() , nonAdminUserWithAccessToPortlet);
     }
 
-
     private Portlet getOrCreateServiceIntegrationPortlet(){
         final String integrationsPortletId = AppsAPIImpl.APPS_PORTLET_ID;
         final PortletAPI portletAPI = APILocator.getPortletAPI();

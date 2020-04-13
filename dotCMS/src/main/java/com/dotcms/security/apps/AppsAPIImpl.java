@@ -51,6 +51,7 @@ public class AppsAPIImpl implements AppsAPI {
     static final String APPS_PORTLET_ID = "apps";
     private static final String HOST_SECRET_KEY_SEPARATOR = ":";
     private static final String DOT_GLOBAL_SERVICE = "dotCMSGlobalService";
+    private static final String SERVER_DIR_NAME = "server";
     private static final String APPS_DIR_NAME = "apps";
     private static final String APPS_DIR_PATH_KEY = "APPS_DIR_PATH_KEY";
 
@@ -68,24 +69,20 @@ public class AppsAPIImpl implements AppsAPI {
             .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
             .findAndRegisterModules();
 
-    private String toJsonString(final AppSecrets object) throws DotDataException {
+    private AppSecrets readJson(final char[] chars) throws DotDataException {
+        try {
+            return jsonMapper.readValue(new String(chars), AppSecrets.class);
+        } catch (IOException e) {
+            throw new DotDataException(e);
+        }
+    }
+
+    private String toJsonAsString(final AppSecrets object) throws DotDataException {
         try {
             return jsonMapper.writeValueAsString(object);
         } catch (IOException e) {
             throw new DotDataException(e);
         }
-    }
-
-    private AppSecrets readJson(final String json) throws DotDataException {
-        try {
-            return jsonMapper.readValue(json, AppSecrets.class);
-        } catch (IOException e) {
-            throw new DotDataException(e);
-        }
-    }
-
-    private AppSecrets readJson(final char[] chars) throws DotDataException {
-        return readJson(String.valueOf(chars));
     }
 
     /**
@@ -110,7 +107,7 @@ public class AppsAPIImpl implements AppsAPI {
         final String key = UtilMethods.isSet(serviceKey) ? serviceKey : DOT_GLOBAL_SERVICE;
         final String identifier =
                 (null == hostIdentifier) ? APILocator.systemHost().getIdentifier() : hostIdentifier;
-        return identifier + HOST_SECRET_KEY_SEPARATOR + key.toLowerCase();
+        return (identifier + HOST_SECRET_KEY_SEPARATOR + key).toLowerCase();
     }
 
     @VisibleForTesting
@@ -290,7 +287,12 @@ public class AppsAPIImpl implements AppsAPI {
                     secrets.getKey(), user.getUserId(), host.getIdentifier()));
         } else {
             final String internalKey = internalKey(secrets.getKey(), host);
-            secretsStore.saveValue(internalKey, toJsonString(secrets).toCharArray());
+            if(secrets.getSecrets().isEmpty()){
+               //if everything has been removed from the json entry we need to kick it of from cache.
+               secretsStore.deleteValue(internalKey);
+            } else {
+               secretsStore.saveValue(internalKey, toJsonAsString(secrets).toCharArray());
+            }
         }
     }
 
@@ -492,7 +494,7 @@ public class AppsAPIImpl implements AppsAPI {
 
     private static String getServiceDescriptorDirectory() {
         final Supplier<String> supplier = () -> APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                + File.separator + APPS_DIR_NAME + File.separator;
+        + File.separator + SERVER_DIR_NAME + File.separator + APPS_DIR_NAME + File.separator;
         final String dirPath = Config
                 .getStringProperty(APPS_DIR_PATH_KEY, supplier.get());
         return Paths.get(dirPath).normalize().toString();
