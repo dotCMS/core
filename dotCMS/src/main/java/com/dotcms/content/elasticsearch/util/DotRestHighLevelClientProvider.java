@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static javax.crypto.Cipher.DECRYPT_MODE;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.FileUtil;
@@ -19,8 +20,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -45,6 +48,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
@@ -85,7 +89,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         final String esAuthType = getESAuthType();
 
         //Loading TLS certificates
-        if (Config.getBooleanProperty("ES_TLS_ENABLED", true)) {
+        if (Config.getBooleanProperty("ES_TLS_ENABLED", false)) {
             loadTLSCertificates();
         }
 
@@ -106,14 +110,24 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     private RestClientBuilder getClientBuilder(final BasicCredentialsProvider credentialsProvider) {
         final String esAuthType = getESAuthType();
-
+        final String esProtocol = Config.getStringProperty("ES_PROTOCOL", "https");
         final RestClientBuilder clientBuilder = RestClient
                 .builder(new HttpHost(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
-                        Config.getIntProperty("ES_PORT", 9200), sslContextFromPem != null ? "https" :"http"))
+                        Config.getIntProperty("ES_PORT", 9200), esProtocol))
                 .setHttpClientConfigCallback((httpClientBuilder) -> {
                     if (sslContextFromPem != null) {
                         httpClientBuilder
                                 .setSSLContext(sslContextFromPem);
+                    } else if ("https".equals(esProtocol)){
+                        try {
+                            httpClientBuilder.setSSLContext(SSLContexts
+                                    .custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build());
+                        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+                            Logger.error(this.getClass(),
+                                    "Error setting TrustSelfSignedStrategy for Elastic RestHighLevelClient",
+                                    e);
+                            throw new DotRuntimeException(e);
+                        }
                     }
                     httpClientBuilder
                             .setDefaultCredentialsProvider(credentialsProvider);
