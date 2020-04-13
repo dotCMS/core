@@ -46,7 +46,7 @@ public class SaveContentAsDraftActionletTest {
     private static class TestCase {
         final private boolean respectFrontendRoles;
 
-        private TestCase(boolean respectFrontendRoles) {
+        private TestCase(final boolean respectFrontendRoles) {
             this.respectFrontendRoles = respectFrontendRoles;
         }
     }
@@ -75,7 +75,7 @@ public class SaveContentAsDraftActionletTest {
         when(processor.getUser()).thenReturn(user);
         when(processor.getContentlet()).thenReturn(contentlet);
 
-        List<Category> categories = mock(List.class);
+        final List<Category> categories = mock(List.class);
 
         final List<Permission> permissions = mock(List.class);
         when(this.permissionAPI.getPermissions(contentlet, false, true)).thenReturn(permissions);
@@ -94,7 +94,7 @@ public class SaveContentAsDraftActionletTest {
 
         saveContentAsDraftActionlet.executeAction(processor, params);
 
-        //verify(processor, times(1)).setContentlet(contentletNew);
+        verify(processor, times(1)).setContentlet(contentletNew);
         verify(this.contentletAPI, times(1)).saveDraft(
                 contentlet, (ContentletRelationships) null, categories, permissions, user, testCase.respectFrontendRoles
         );
@@ -126,7 +126,7 @@ public class SaveContentAsDraftActionletTest {
         final List<Permission> permissions = mock(List.class);
         when(this.permissionAPI.getPermissions(contentlet, false, true)).thenReturn(permissions);
 
-        when(this.categoryAPI.getParents(contentlet, user, false)).thenReturn(categories);
+        when(this.categoryAPI.getParents(contentlet, user, testCase.respectFrontendRoles)).thenReturn(categories);
 
         when(processor.getContentletDependencies()).thenReturn(null);
 
@@ -139,11 +139,11 @@ public class SaveContentAsDraftActionletTest {
 
         saveContentAsDraftActionlet.executeAction(processor, params);
 
-        //verify(processor, times(1)).setContentlet(contentletNew);
+        verify(processor, times(1)).setContentlet(contentletNew);
         verify(this.contentletAPI, times(1)).saveDraft(
                 contentlet, (ContentletRelationships) null, categories, permissions, user, testCase.respectFrontendRoles
         );
 
-        verify(this.categoryAPI, times(1)).getParents(contentlet, user, false);
+        verify(this.categoryAPI, times(1)).getParents(contentlet, user, testCase.respectFrontendRoles);
     }
 }

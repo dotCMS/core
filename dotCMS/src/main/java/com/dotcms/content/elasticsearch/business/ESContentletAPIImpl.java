@@ -7852,7 +7852,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (working.getInode().equals(contentlet.getInode())) {
 
                     return checkin(contentlet, contentletRelationships, cats ,
-                            user, false, false, false);
+                            user, respectFrontendRoles, false, false);
 
                 } else {
                     final String workingInode = working.getInode();
@@ -7860,14 +7860,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     working.setInode(workingInode);
                     working.setModUser(user.getUserId());
                     return checkin(contentlet, contentletRelationships, cats ,
-                            user, false, false, false);
+                            user, respectFrontendRoles, false, false);
                 }
             }
 
             contentlet.setInode(null);
             return checkin(contentlet, contentletRelationships,
                     cats,
-                    permissions, user, false);
+                    permissions, user, respectFrontendRoles);
         }
     }
 

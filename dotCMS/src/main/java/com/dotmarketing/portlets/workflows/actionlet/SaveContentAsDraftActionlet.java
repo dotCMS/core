@@ -43,12 +43,12 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 	}
 
 	@VisibleForTesting
-	public SaveContentAsDraftActionlet(
+	SaveContentAsDraftActionlet(
 			final ContentletAPI   contentletAPI,
 			final CategoryAPI     categoryAPI,
 			final PermissionAPI   permissionAPI
 	) {
-
+		super();
 		this.contentletAPI   = contentletAPI;
 		this.categoryAPI     = categoryAPI;
 		this.permissionAPI   = permissionAPI;
@@ -106,18 +106,21 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 				}
 			}
 
+			final boolean respectFrontendPermission = contentletDependencies != null ?
+					contentletDependencies.isRespectAnonymousPermissions() : user.isFrontendUser();
+
 			//Keeps existing relationships
 			if (contentletRelationships == null){
                 contentletRelationships = contentletAPI.getAllRelationships(contentlet);
             }
 
 			if (categories == null) {
-				categories = this.categoryAPI.getParents(contentlet, user, false);
+				categories = this.categoryAPI.getParents(contentlet, user, respectFrontendPermission);
 			}
 
 			final Contentlet contentletNew = this.contentletAPI.saveDraft(
 					contentlet, contentletRelationships, categories, permissions, user,
-					contentletDependencies != null ? contentletDependencies.isRespectAnonymousPermissions() : user.isFrontendUser()
+					respectFrontendPermission
 			);
 
 
