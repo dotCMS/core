@@ -811,10 +811,10 @@ public class FieldAPIImpl implements FieldAPI {
                 final String i18nValue = this.languageVariableAPI.getLanguageVariable(
                         key, languageId, user, live, user == null);
 
-                if (!i18nValue.equals(key)) {
+                if (!i18nValue.equals(key) && !i18nValue.equals(fieldMap.get(propertyName).toString())) {
                     builder.put(propertyName, i18nValue);
                 } else {
-                    builder.put(propertyName, fieldMap.get(propertyName).toString());
+                    builder.put(propertyName, fieldMap.get(propertyName));
                 }
             }
 
