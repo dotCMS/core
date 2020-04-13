@@ -6959,22 +6959,26 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentInSpanish.setLanguageId(spanishLanguage.getId());
             contentInSpanish = ContentletDataGen.checkin(contentInSpanish);
 
+            
+            
+            
+            
             assertEquals(2,
-                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier()  + " " + UUIDGenerator.uuid(),-1,0,"",user,true).size());
 
             contentInSpanish.setIndexPolicy(IndexPolicy.FORCE);
             ContentletDataGen.archive(contentInSpanish);
             ContentletDataGen.delete(contentInSpanish);
 
             assertEquals(1,
-                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier() + " " + UUIDGenerator.uuid(),-1,0,"",user,true).size());
 
             contentInEnglish.setIndexPolicy(IndexPolicy.FORCE);
             ContentletDataGen.archive(contentInEnglish);
             ContentletDataGen.delete(contentInEnglish);
 
             assertEquals(0,
-                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier() + " " + UUIDGenerator.uuid(),-1,0,"",user,true).size());
 
         } finally {
             if (contentType != null) {
