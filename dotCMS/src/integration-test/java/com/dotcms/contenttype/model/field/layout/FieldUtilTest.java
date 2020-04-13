@@ -78,7 +78,6 @@ public class FieldUtilTest {
         Map<String, Object> fieldMap = map("name", fieldName, "variable", fieldName);
         fieldMap  = APILocator.getContentTypeFieldAPI().getFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
 
-
         assertEquals(languageVariableValue, fieldMap.get("name"));
     }
 
