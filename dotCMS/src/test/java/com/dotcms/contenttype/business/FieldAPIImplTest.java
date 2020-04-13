@@ -62,6 +62,7 @@ public class FieldAPIImplTest {
         final long languageId = 1;
         final boolean live = true;
         final User user = mock(User.class);
+        final Object object = mock(Object.class);
 
         final ContentType contentType = mock(ContentType.class);
         final ContentTypeInternationalization contentTypeInternationalization = mock(ContentTypeInternationalization.class);
@@ -69,7 +70,8 @@ public class FieldAPIImplTest {
                 "attribute_1", "value_1",
                 "attribute_2", "value_2",
                 "attribute_3", "value_3",
-                "variable", "testField"
+                "variable", "testField",
+                "attribute_4", object
         );
 
         when(contentType.variable()).thenReturn("contentTypeVariable");
@@ -80,6 +82,7 @@ public class FieldAPIImplTest {
         final String key2 = "contentTypeVariable.testField.attribute_2";
         final String key3 = "contentTypeVariable.testField.attribute_3";
         final String key4 = "contentTypeVariable.testField.variable";
+        final String key5 = "contentTypeVariable.testField.attribute_4";
 
         when(
                 this.languageVariableAPI.getLanguageVariable(key1, languageId, user, live, false)
@@ -97,15 +100,20 @@ public class FieldAPIImplTest {
                 this.languageVariableAPI.getLanguageVariable(key4, languageId, user, live, false)
         ).thenReturn(key4);
 
+        when(
+                this.languageVariableAPI.getLanguageVariable(key5, languageId, user, live, false)
+        ).thenReturn(key5);
+
         final Map<String, Object> fieldInternationalization =
                 fieldAPIImpl.getFieldInternationalization(contentType, contentTypeInternationalization, fieldMap, user);
 
-        assertEquals(4, fieldInternationalization.size());
+        assertEquals(5, fieldInternationalization.size());
 
         assertEquals("testField", fieldInternationalization.get("variable"));
         assertEquals("Internationalization_1", fieldInternationalization.get("attribute_1"));
         assertEquals("Internationalization_2", fieldInternationalization.get("attribute_2"));
         assertEquals("value_3", fieldInternationalization.get("attribute_3"));
+        assertEquals(object, fieldInternationalization.get("attribute_4"));
     }
 
     /**

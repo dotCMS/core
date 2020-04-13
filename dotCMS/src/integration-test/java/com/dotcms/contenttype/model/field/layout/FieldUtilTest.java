@@ -75,8 +75,9 @@ public class FieldUtilTest {
         final ContentTypeInternationalization contentTypeInternationalization =
                 new ContentTypeInternationalization(languageId, live, systemUser);
 
-        final Map<String, Object> fieldMap = map("name", fieldName, "variable", fieldName);
-        FieldUtil.setFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
+        Map<String, Object> fieldMap = map("name", fieldName, "variable", fieldName);
+        fieldMap  = APILocator.getContentTypeFieldAPI().getFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
+
 
         assertEquals(languageVariableValue, fieldMap.get("name"));
     }
@@ -121,8 +122,8 @@ public class FieldUtilTest {
         final ContentTypeInternationalization contentTypeInternationalization =
                 new ContentTypeInternationalization(languageId, live, null);
 
-        final Map<String, Object> fieldMap = map("name", fieldName, "variable", fieldName);
-        FieldUtil.setFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
+        Map<String, Object> fieldMap = map("name", fieldName, "variable", fieldName);
+        fieldMap  = APILocator.getContentTypeFieldAPI().getFieldInternationalization(formContentType, contentTypeInternationalization, fieldMap);
 
         assertEquals(languageVariableValue, fieldMap.get("name"));
     }
