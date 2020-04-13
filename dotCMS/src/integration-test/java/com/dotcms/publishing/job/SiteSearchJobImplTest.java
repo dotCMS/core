@@ -100,15 +100,6 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         contentletAPI = APILocator.getContentletAPI();
         hostAPI = APILocator.getHostAPI();
 
-        final List<Host> allHosts = hostAPI.findAll(systemUser, false);
-        for (final Host host : allHosts) {
-            if (host.isSystemHost() || host.getHostname().startsWith("demo")) {
-                continue;
-            }
-            hostAPI.archive(host, systemUser, false);
-            hostAPI.delete(host, systemUser, false);
-        }
-
         site = new SiteDataGen().nextPersisted();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
         final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
