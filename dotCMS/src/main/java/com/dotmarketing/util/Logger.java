@@ -183,9 +183,35 @@ public class Logger{
             logger.warn(message + " (every "+warnEveryMillis + " millis)");
             
         }
-        logger.debug(message, ex);
+        logger.debug(()->message, ex);
     }
     
+    /**
+     * this method will print the message at WARN level every millis set
+     * and print the message plus whole stack trace if at DEGUG level
+     * @param cl
+     * @param message
+     * @param ex
+     * @param warnEveryMillis
+     */
+    public static void infoEvery(final Class cl, final String message, final int warnEveryMillis) {
+
+        final org.apache.logging.log4j.Logger logger = loadLogger(cl);    
+
+
+        final Long hash=new Long(Objects.hashCode(cl.getName(),message.substring(0, Math.min(message.length(), 10)),cl));
+        final Long expireWhen = logMap.get(hash);
+        
+        if(expireWhen == null || expireWhen < System.currentTimeMillis()) {
+            logMap.put(hash, System.currentTimeMillis() + warnEveryMillis );
+            logger.info(message + " (every "+warnEveryMillis + " millis)");
+            
+        }
+        logger.debug(()->message);
+    }
+	
+	
+	
     public static void warnEveryAndDebug(final Class cl, final Throwable ex, final int ttlMillis) {
         warnEveryAndDebug(cl,ex.getMessage(), ex, ttlMillis );
     }
@@ -206,7 +232,7 @@ public class Logger{
         }
         try{
             logger.warn(message);
-            logger.debug(message, ex);
+            logger.debug(()-> message, ex);
         }
         catch(java.lang.IllegalStateException e){
             ex.printStackTrace();

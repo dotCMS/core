@@ -6,6 +6,7 @@ import com.dotcms.cache.KeyValueCache;
 import com.dotcms.cache.KeyValueCacheImpl;
 import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.cache.VanityUrlCacheImpl;
+import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotcms.contenttype.business.ContentTypeCache2;
@@ -281,6 +282,11 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static MultiTreeCache getMultiTreeCache() {
         return (MultiTreeCache) getInstance(CacheIndex.MultiTreeCache);
     }
+    
+    public static ESQueryCache getESQueryCache() {
+        return (ESQueryCache) getInstance(CacheIndex.ESQueryCache);
+    }
+    
     /**
      * 
      * @return
@@ -389,6 +395,7 @@ enum CacheIndex
 	MultiTreeCache("MultiTree Cache"),
 	ApiTokenCache("ApiTokenCache"),
 	PortletCache("PortletCache"),
+	ESQueryCache("ESQueryCache"),
 	KeyValueCache("Key/Value Cache");
 
 	Cachable create() {
@@ -436,6 +443,7 @@ enum CacheIndex
 	      	case MultiTreeCache : return new MultiTreeCache();
 	      	case ApiTokenCache : return new ApiTokenCache();
 	      	case PortletCache : return new PortletCache();
+	      	case ESQueryCache : return new com.dotcms.content.elasticsearch.ESQueryCache();
 	      	
 		}
 		throw new AssertionError("Unknown Cache index: " + this);

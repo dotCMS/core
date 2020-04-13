@@ -20,7 +20,7 @@ import com.liferay.portal.model.User;
 
 import java.util.List;
 import java.util.Map;
-
+import org.apache.commons.lang.RandomStringUtils;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static com.dotmarketing.business.Role.DOTCMS_BACK_END_USER;
 import static com.dotmarketing.business.Role.DOTCMS_FRONT_END_USER;
@@ -173,8 +173,10 @@ public class TestUserUtils {
             final String lastName, final String password)
             throws DotDataException {
         final List<User> users = APILocator.getUserAPI().getUsersByNameOrEmail(email, 0, 1);
-        if (UtilMethods.isSet(users)) {
-            return users.get(0);
+        if (UtilMethods.isSet(users) && !users.isEmpty()) {
+            User user = users.get(0);
+            APILocator.getRoleAPI().addRoleToUser(role, user);
+            return user;
         }
         return new UserDataGen().firstName(name).lastName(lastName).emailAddress(email).skinId(UUIDGenerator.generateUuid())
                 .password(password).roles(role, getFrontendRole(), getBackendRole()).nextPersisted();
@@ -197,6 +199,24 @@ public class TestUserUtils {
         return getChrisPublisherUser(APILocator.systemHost());
     }
 
+    @WrapInTransaction
+    public static User getPublisher(final Host host)
+            throws DotDataException, DotSecurityException {
+        final String randEmail = RandomStringUtils.randomAlphabetic(10);
+        final String email = randEmail + "@dotcms.com";
+
+        return new UserDataGen().firstName(randEmail).lastName("Publisher").emailAddress(email)
+                .password(randEmail).roles(getOrCreatePublisherRole(host), getFrontendRole(), getBackendRole()).nextPersisted();
+    }
+
+    @WrapInTransaction
+    public static User getPublisher() throws DotDataException, DotSecurityException {
+        return getPublisher(APILocator.systemHost());
+    }
+
+    
+    
+    
     @WrapInTransaction
     public static User getJoeContributorUser(final Host host)
             throws DotDataException, DotSecurityException {
