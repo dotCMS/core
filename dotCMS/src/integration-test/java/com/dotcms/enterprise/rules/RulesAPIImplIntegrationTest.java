@@ -689,8 +689,8 @@ public class RulesAPIImplIntegrationTest {
         final Template template = new TemplateDataGen().nextPersisted();
         final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
         final Rule rule = new RuleDataGen().page(htmlPageAsset).next();
-        addRulesPublishPermissions(role, host);
 
+        addRulesPublishPermissions(role, host);
         addPermission(role, htmlPageAsset, PermissionAPI.PERMISSION_PUBLISH);
 
         rulesAPI.saveRule(rule, user, false);
