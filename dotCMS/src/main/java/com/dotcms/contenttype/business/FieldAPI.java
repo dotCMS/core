@@ -2,14 +2,12 @@ package com.dotcms.contenttype.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -46,13 +44,6 @@ import com.liferay.portal.model.User;
  *
  */
 public interface FieldAPI {
-
-	static FieldAPI api = new FieldAPIImpl();
-
-	default FieldAPI instance() {
-		return api;
-	}
-
 	
 	/**
 	 * Retrieves the list of the base Fields Types
@@ -229,4 +220,37 @@ public interface FieldAPI {
 	 * @throws DotDataException
 	 */
     void saveFields(final List<Field> fields, final User user) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Apply Internationalization to field property using a Language Variable, for each field property set into
+	 * fieldMap a Language Variable with the name contentTypeVariable.fieldVariable.propertyName is searched, if it
+	 * exists then the field's property value is replaced by the language variable value
+	 *
+	 * @param contentType
+	 * @param contentTypeInternationalization set the mode, language and user to search the Language Variable
+	 * @param fieldMap field properties
+	 * @return  The Field's properties with the new internationalization values
+	 */
+	public Map<String, Object> getFieldInternationalization(
+			final ContentType contentType,
+			final ContentTypeInternationalization contentTypeInternationalization,
+			final Map<String, Object> fieldMap
+	);
+
+	/**
+	 * Apply Internationalization to field property using a Language Variable, for each field property set into
+	 * fieldMap a Language Variable with the name contentTypeVariable.fieldVariable.propertyName is searched, if it
+	 * exists then the field's property value is replaced by the language variable value
+	 *
+	 * @param contentType
+	 * @param contentTypeInternationalization set the mode, language and user to search the Language Variable
+	 * @param fieldMap field properties
+	 * @return  The Field's properties with the new internationalization values
+	 */
+	public Map<String, Object> getFieldInternationalization(
+			final ContentType contentType,
+			final ContentTypeInternationalization contentTypeInternationalization,
+			final Map<String, Object> fieldMap,
+			final User user
+	);
 }
