@@ -461,6 +461,12 @@ class AppsHelper {
                 );
             }
 
+            if(null == input){
+              //Param wasn't sent but it doesn't matter since it isn't required.
+              Logger.debug(AppsHelper.class, ()-> String.format("Non required param `%s` was not sent in the request.",describedParamName));
+              continue;
+            }
+
             if (Type.BOOL.equals(appDescriptorParam.getValue().getType()) && UtilMethods
                     .isSet(input.getValue())) {
                 final String asString = new String(input.getValue());

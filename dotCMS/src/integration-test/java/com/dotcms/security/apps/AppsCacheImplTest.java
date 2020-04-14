@@ -22,16 +22,23 @@ public class AppsCacheImplTest {
         cache.clearCache();
     }
 
+    /**
+     * Simply test a put then a get. Then a get of a non existing key
+     */
     @Test
     public void Test_put_Secret_Then_Verify_Get_From_Cache(){
          final String input = RandomStringUtils.randomAlphanumeric(100);
          cache.putSecret("anyKey", input.toCharArray());
-         char [] expectedValue = cache.getFromCache("anyKey");
+         final char [] expectedValue = cache.getFromCache("anyKey");
          Assert.assertEquals(new String(expectedValue), input);
-         char[] nonExisting = cache.getFromCache("non-existing-key");
+         final char[] nonExisting = cache.getFromCache("non-existing-key");
          Assert.assertNull(nonExisting);
     }
 
+    /**
+     * Test a secret is available when set using a supplier.
+     * @throws DotCacheException
+     */
     @Test
     public void Test_Get_Secret_From_Cache_With_Supplier() throws DotCacheException {
         final String secretKey = "Secret-Key";
@@ -46,8 +53,12 @@ public class AppsCacheImplTest {
     }
 
 
+    /**
+     * Test a descriptor is available when set using a supplier.
+     * @throws DotCacheException
+     */
     @Test
-    public void Test_Get_Descriptors_From_Cache_With_Supplier() throws DotCacheException {
+    public void Test_Get_Descriptors_From_Cache_With_Supplier() {
 
         final Map<String, AppDescriptorMeta> meta = cache.getAppDescriptorsMap(() -> Arrays.asList(
                 createDescriptor("k1"),
@@ -71,6 +82,11 @@ public class AppsCacheImplTest {
 
     }
 
+    /**
+     * Short hand utility method to create AppDescriptor with semi-arbitrary values.
+     * @param key
+     * @return
+     */
     private AppDescriptorMeta createDescriptor(final String key){
         final AppDescriptor descriptor = new AppDescriptor(key,key,key,null,false, null);
         return new AppDescriptorMeta(descriptor,"/");

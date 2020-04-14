@@ -572,8 +572,24 @@ public class AppsAPIImpl implements AppsAPI {
 
    private void validateParamDescriptor(final String name, final ParamDescriptor descriptor) throws DotDataValidationException {
 
+       if(UtilMethods.isNotSet(name)){
+           throw new DotDataValidationException("Param descriptor is missing required  field `name` .");
+       }
+
        if(name.length() > 100){
            throw new DotDataValidationException(String.format("Param name `%s` exceeds 100 chars length.", name));
+       }
+
+       if(UtilMethods.isNotSet(descriptor.getHint())){
+           throw new DotDataValidationException("Param descriptor `%s` is missing required field `hint` .");
+       }
+
+       if(UtilMethods.isNotSet(descriptor.getLabel())){
+           throw new DotDataValidationException(String.format("Param descriptor `%s` is missing required field `hint` .",name));
+       }
+
+       if(null == descriptor.getType()){
+           throw new DotDataValidationException(String.format("Param descriptor `%s` is missing required field `type` .",name));
        }
 
        if (Type.BOOL.equals(descriptor.getType()) && descriptor.isHidden() ) {
