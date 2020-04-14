@@ -834,8 +834,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 final Set<PersonalizedContentlet> myContents = pageContents.contains(containerId, multiTree.getRelationType())
                         ? pageContents.get(containerId, multiTree.getRelationType())
                         : new LinkedHashSet<>();
-                long byPersonaCount  = myContents.stream().filter(p->p.getPersonalization().equals(personalization)).count();
-                if (container != null && byPersonaCount < container.getMaxContentlets()) { // todo: we have to move this validation to another place
+                
+                if (container != null) {
 
                     myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization));
                 }

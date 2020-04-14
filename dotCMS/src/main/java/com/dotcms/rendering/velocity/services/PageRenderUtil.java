@@ -249,105 +249,74 @@ public class PageRenderUtil implements Serializable {
     private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        final boolean live =
-                request != null && request.getSession(false) != null && request.getSession().getAttribute("tm_date") != null ?
-                        false :
-                        mode.showLive;
+        final boolean live               = this.isLive(request);
         final Table<String, String, Set<PersonalizedContentlet>> pageContents = this.multiTreeAPI.getPageMultiTrees(htmlPage, live);
         final Set<String> personalizationsForPage = this.multiTreeAPI.getPersonalizationsForPage(htmlPage);
-        final List<ContainerRaw> raws = Lists.newArrayList();
+        final List<ContainerRaw> raws  = Lists.newArrayList();
         final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage);
 
         for (final String containerId : pageContents.rowKeySet()) {
 
-            Container container = null;
-            final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
-                    WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
-            final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerId);
-            final ContainerFinderByIdOrPathStrategy workingStrategy = strategy.isPresent() ? strategy.get() : strategyResolver.getDefaultStrategy();
-            final Supplier<Host> resourceHostSupplier = () -> this.site;
-
-            try {
-                if (live) {
-
-                    container = this.getLiveContainerById(containerId);
-                    if (null == container) {
-                        container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
-                    }
-                } else {
-                    container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
-                }
-            } catch (NotFoundInDbException | DotRuntimeException e) {
-
-                new ContainerExceptionNotifier(e, containerId).notifyUser();
-                container = null;
-            }
+            final Container container = this.getContainer(live, containerId);
 
             if (container == null) {
                 continue;
             }
 
             final List<ContainerStructure> containerStructures = APILocator.getContainerAPI().getContainerStructures(container);
-            final boolean hasWritePermissionOnContainer = permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user, false)
-                    && APILocator.getPortletAPI().hasContainerManagerRights(user);
-            final boolean hasReadPermissionOnContainer = permissionAPI.doesUserHavePermission(container, PERMISSION_READ, user, false);
-            contextMap.put("EDIT_CONTAINER_PERMISSION" + container.getIdentifier(), hasWritePermissionOnContainer);
-            if (Config.getBooleanProperty("SIMPLE_PAGE_CONTENT_PERMISSIONING", true)) {
-                contextMap.put("USE_CONTAINER_PERMISSION" + container.getIdentifier(), true);
-            } else {
-                contextMap.put("USE_CONTAINER_PERMISSION" + container.getIdentifier(), hasReadPermissionOnContainer);
-            }
+            this.addPermissions(container);
 
             final Map<String, List<Map<String, Object>>> contentMaps = Maps.newLinkedHashMap();
-            final Map<String, List<String>> containerUuidPersona = Maps.newHashMap();
+            final Map<String, List<String>> containerUuidPersona     = Maps.newHashMap();
             for (final String uniqueId : pageContents.row(containerId).keySet()) {
 
                 final String uniqueUUIDForRender = needParseContainerPrefix(container, uniqueId) ?
-                        ParseContainer.getDotParserContainerUUID(uniqueId) :
-                        uniqueId;
+                        ParseContainer.getDotParserContainerUUID(uniqueId) : uniqueId;
 
                 if (ContainerUUID.UUID_DEFAULT_VALUE.equals(uniqueId)) {
                     continue;
                 }
 
                 final Collection<PersonalizedContentlet> personalizedContentletSet = pageContents.get(containerId, uniqueId);
-                final List<Map<String, Object>> personalizedContentletMap = Lists.newArrayList();
-
+                final List<Map<String, Object>> personalizedContentletMap          = Lists.newArrayList();
+                int   contentletIncludedCount = 1;
                 for (final PersonalizedContentlet personalizedContentlet : personalizedContentletSet) {
-                    final Contentlet contentlet = getContentlet(personalizedContentlet);
+
+                    final Contentlet contentlet = this.getContentlet(personalizedContentlet);
 
                     if (contentlet == null) {
+
+                        continue;
+                    }
+
+                    if (container.getMaxContentlets() < contentletIncludedCount++) {
+
+                        Logger.debug(this, ()-> "Contentlet: "          + contentlet.getIdentifier()
+                                + ", has been skipped. Max contentlet: "    + container.getMaxContentlets()
+                                + ", has been overcome for the container: " + containerId);
                         continue;
                     }
 
                     containerUuidPersona
-                            .computeIfAbsent(containerId + uniqueUUIDForRender + personalizedContentlet.getPersonalization(), k -> Lists.newArrayList())
+                            .computeIfAbsent(
+                                    containerId + uniqueUUIDForRender + personalizedContentlet.getPersonalization(),
+                                    k -> Lists.newArrayList())
                             .add(personalizedContentlet.getContentletId());
                     contextMap.put("EDIT_CONTENT_PERMISSION" + contentlet.getIdentifier(),
                             permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
 
-                    final ContentType type = contentlet.getContentType();
-                    if (type.baseType() == BaseContentType.WIDGET) {
-                        final com.dotcms.contenttype.model.field.Field field = type.fieldMap().get("widgetPreexecute");
-                        if (field != null && UtilMethods.isSet(field.values())) {
-                            widgetPreExecute.append(field.values());
-                        }
-                    }
-
-                    // Check if we want to accrue the tags associated to each contentlet on
-                    // this page
-                    if (Config.getBooleanProperty("ACCRUE_TAGS_IN_CONTENTS_ON_PAGE", false)) {
-
-                        // Search for the tags associated to this contentlet inode
-                        final List<Tag> contentletFoundTags = this.tagAPI.getTagsByInode(contentlet.getInode());
-                        if (contentletFoundTags != null) {
-                            this.pageFoundTags.addAll(contentletFoundTags);
-                        }
-                    }
+                    this.widgetPreExecute(contentlet);
+                    this.addAccrueTags(contentlet);
 
                     if (personalizedContentlet.getPersonalization().equals(includeContentFor)) {
-                        final Map<String, Object> contentPrintableMap = Try.of(() -> ContentletUtil.getContentPrintableMap(user, contentlet)).onFailure(f -> Logger.warn(this.getClass(), f.getMessage())).getOrNull();
-                        if (contentPrintableMap == null) continue;
+
+                        final Map<String, Object> contentPrintableMap = Try.of(() -> ContentletUtil.getContentPrintableMap(user, contentlet))
+                                .onFailure(f -> Logger.warn(this.getClass(), f.getMessage())).getOrNull();
+                        if (contentPrintableMap == null) {
+
+                            continue;
+                        }
+
                         contentPrintableMap.put("contentType", contentlet.getContentType().variable());
                         personalizedContentletMap.add(contentPrintableMap);
                     }
@@ -355,16 +324,95 @@ public class PageRenderUtil implements Serializable {
 
                 contentMaps.put(CONTAINER_UUID_PREFIX + uniqueUUIDForRender, personalizedContentletMap);
             }
-            for (Map.Entry<String, List<String>> entry : containerUuidPersona.entrySet()) {
-                contextMap.put("contentletList" + entry.getKey(), entry.getValue());
-                contextMap.put("totalSize" + entry.getKey(), entry.getValue().size());
-            }
 
+            for (final Map.Entry<String, List<String>> entry : containerUuidPersona.entrySet()) {
+
+                contextMap.put("contentletList" + entry.getKey(), entry.getValue());
+                contextMap.put("totalSize"      + entry.getKey(), entry.getValue().size());
+            }
 
             raws.add(new ContainerRaw(container, containerStructures, contentMaps));
         }
 
         return raws;
+    }
+
+    private boolean isLive(final HttpServletRequest request) {
+
+        return request != null && request.getSession(false) != null && request.getSession().getAttribute("tm_date") != null ?
+                false :
+                mode.showLive;
+    }
+
+    private Container getContainer(final boolean live, final String containerId) throws DotSecurityException, DotDataException {
+
+        Container container = null;
+        final WorkingContainerFinderByIdOrPathStrategyResolver strategyResolver =
+                WorkingContainerFinderByIdOrPathStrategyResolver.getInstance();
+        final Optional<ContainerFinderByIdOrPathStrategy> strategy = strategyResolver.get(containerId);
+        final ContainerFinderByIdOrPathStrategy workingStrategy = strategy.isPresent() ? strategy.get() : strategyResolver.getDefaultStrategy();
+        final Supplier<Host> resourceHostSupplier = () -> this.site;
+
+        try {
+            if (live) {
+
+                container = this.getLiveContainerById(containerId);
+                if (null == container) {
+                    container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
+                }
+            } else {
+                container = workingStrategy.apply(containerId, APILocator.systemUser(), false, resourceHostSupplier);
+            }
+        } catch (NotFoundInDbException | DotRuntimeException e) {
+
+            new ContainerExceptionNotifier(e, containerId).notifyUser();
+            container = null;
+        }
+        return container;
+    }
+
+    private void addPermissions(final Container container) throws DotDataException {
+
+        final boolean hasWritePermissionOnContainer = permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user, false)
+                && APILocator.getPortletAPI().hasContainerManagerRights(user);
+        final boolean hasReadPermissionOnContainer  = permissionAPI.doesUserHavePermission(container, PERMISSION_READ,  user, false);
+        contextMap.put("EDIT_CONTAINER_PERMISSION" + container.getIdentifier(), hasWritePermissionOnContainer);
+
+        if (Config.getBooleanProperty("SIMPLE_PAGE_CONTENT_PERMISSIONING", true)) {
+
+            contextMap.put("USE_CONTAINER_PERMISSION" + container.getIdentifier(), true);
+        } else {
+
+            contextMap.put("USE_CONTAINER_PERMISSION" + container.getIdentifier(), hasReadPermissionOnContainer);
+        }
+    }
+
+    /* Check if we want to accrue the tags associated to each contentlet on
+     * this page
+     */
+    private void addAccrueTags(final Contentlet contentlet) throws DotDataException {
+
+        if (Config.getBooleanProperty("ACCRUE_TAGS_IN_CONTENTS_ON_PAGE", false)) {
+
+            // Search for the tags associated to this contentlet inode
+            final List<Tag> contentletFoundTags = this.tagAPI.getTagsByInode(contentlet.getInode());
+            if (contentletFoundTags != null) {
+                this.pageFoundTags.addAll(contentletFoundTags);
+            }
+        }
+    }
+
+    private void widgetPreExecute(final Contentlet contentlet) {
+
+        final ContentType type = contentlet.getContentType();
+        if (type.baseType() == BaseContentType.WIDGET) {
+
+            final com.dotcms.contenttype.model.field.Field field = type.fieldMap().get("widgetPreexecute");
+            if (field != null && UtilMethods.isSet(field.values())) {
+
+                widgetPreExecute.append(field.values());
+            }
+        }
     }
 
     private boolean needParseContainerPrefix(final Container container, final String uniqueId) {
