@@ -834,7 +834,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 final Set<PersonalizedContentlet> myContents = pageContents.contains(containerId, multiTree.getRelationType())
                         ? pageContents.get(containerId, multiTree.getRelationType())
                         : new LinkedHashSet<>();
-                
+
                 if (container != null) {
 
                     myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization));

@@ -289,7 +289,7 @@ public class PageRenderUtil implements Serializable {
                         continue;
                     }
 
-                    if (container.getMaxContentlets() < contentletIncludedCount++) {
+                    if (container.getMaxContentlets() < contentletIncludedCount) {
 
                         Logger.debug(this, ()-> "Contentlet: "          + contentlet.getIdentifier()
                                 + ", has been skipped. Max contentlet: "    + container.getMaxContentlets()
@@ -319,6 +319,7 @@ public class PageRenderUtil implements Serializable {
 
                         contentPrintableMap.put("contentType", contentlet.getContentType().variable());
                         personalizedContentletMap.add(contentPrintableMap);
+                        contentletIncludedCount++;
                     }
                 }
 
