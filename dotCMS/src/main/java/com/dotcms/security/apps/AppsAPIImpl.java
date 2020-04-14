@@ -7,6 +7,8 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
@@ -37,7 +39,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -59,6 +60,7 @@ public class AppsAPIImpl implements AppsAPI {
     private final LayoutAPI layoutAPI;
     private final HostAPI hostAPI;
     private final SecretsStore secretsStore;
+    private final AppsCache appsCache;
 
     private final ObjectMapper jsonMapper = new ObjectMapper()
             //.enable(SerializationFeature.INDENT_OUTPUT)
@@ -68,6 +70,20 @@ public class AppsAPIImpl implements AppsAPI {
             //.enable(SerializationFeature.INDENT_OUTPUT)
             .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
             .findAndRegisterModules();
+
+    @VisibleForTesting
+    public AppsAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI, final HostAPI hostAPI,
+            final SecretsStore secretsRepository, final AppsCache appsCache) {
+        this.userAPI = userAPI;
+        this.layoutAPI = layoutAPI;
+        this.hostAPI = hostAPI;
+        this.secretsStore = secretsRepository;
+        this.appsCache = appsCache;
+    }
+
+    public AppsAPIImpl() {
+        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(), SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache());
+    }
 
     private AppSecrets readJson(final char[] chars) throws DotDataException {
         try {
@@ -108,19 +124,6 @@ public class AppsAPIImpl implements AppsAPI {
         final String identifier =
                 (null == hostIdentifier) ? APILocator.systemHost().getIdentifier() : hostIdentifier;
         return (identifier + HOST_SECRET_KEY_SEPARATOR + key).toLowerCase();
-    }
-
-    @VisibleForTesting
-    public AppsAPIImpl(final UserAPI userAPI, final LayoutAPI layoutAPI, final HostAPI hostAPI,
-            final SecretsStore secretsRepository) {
-        this.userAPI = userAPI;
-        this.layoutAPI = layoutAPI;
-        this.hostAPI = hostAPI;
-        this.secretsStore = secretsRepository;
-    }
-
-    public AppsAPIImpl() {
-        this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(), SecretsStore.INSTANCE.get());
     }
 
     private boolean userDoesNotHaveAccess(final User user) throws DotDataException {
@@ -308,10 +311,6 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
-    private static final String DESCRIPTORS_CACHE_GROUP = "DESCRIPTORS_CACHE_GROUP";
-    private static final String DESCRIPTORS_LIST_KEY = "DESCRIPTORS_LIST_KEY";
-    private static final String DESCRIPTORS_MAPPED_BY_SERVICE_KEY = "DESCRIPTORS_MAPPED_BY_SERVICE_KEY";
-
     @Override
     public List<AppDescriptor> getAppDescriptors(User user)
             throws DotDataException, DotSecurityException {
@@ -327,47 +326,24 @@ public class AppsAPIImpl implements AppsAPI {
                 .collect(Collectors.toList());
     }
 
-    private List<AppDescriptorMeta> getAppDescriptorsMeta()
-            throws DotDataException {
-            List<AppDescriptorMeta> appDescriptors = (List<AppDescriptorMeta>) CacheLocator
-                    .getCacheAdministrator().getNoThrow(
-                            DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
-            if (!UtilMethods.isSet(appDescriptors)) {
-                synchronized (AppsAPIImpl.class) {
-                    try {
-                        appDescriptors = loadAppDescriptors();
-                    } catch (IOException e) {
-                        Logger.error(AppsAPIImpl.class,
-                                "An error occurred while loading the service descriptor yml files. ",
-                                e);
-                        throw new DotDataException(e);
-                    }
-                    CacheLocator.getCacheAdministrator()
-                            .put(DESCRIPTORS_LIST_KEY, appDescriptors, DESCRIPTORS_CACHE_GROUP);
+    private List<AppDescriptorMeta> getAppDescriptorsMeta() {
+
+        synchronized (AppsAPIImpl.class) {
+            return appsCache.getAppDescriptorsMeta(() -> {
+                try {
+                    return loadAppDescriptors();
+                } catch (IOException | DotDataException e) {
+                    Logger.error(AppsAPIImpl.class,
+                            "An error occurred while loading the service descriptor yml files. ",
+                            e);
+                    throw new DotRuntimeException(e);
                 }
-            }
-            return appDescriptors;
+            });
+        }
     }
 
-    private Map<String, AppDescriptorMeta> getAppDescriptorMap()
-            throws DotDataException {
-
-        Map<String, AppDescriptorMeta> descriptorsByKey = (Map<String, AppDescriptorMeta>) CacheLocator
-                .getCacheAdministrator().getNoThrow(
-                        DESCRIPTORS_MAPPED_BY_SERVICE_KEY, DESCRIPTORS_CACHE_GROUP);
-        if (!UtilMethods.isSet(descriptorsByKey)) {
-            synchronized (AppsAPIImpl.class) {
-                descriptorsByKey = getAppDescriptorsMeta().stream().collect(
-                        Collectors.toMap(serviceDescriptorMeta -> serviceDescriptorMeta
-                                        .getAppDescriptor().getKey().toLowerCase(), Function.identity(),
-                                (serviceDescriptor, serviceDescriptor2) -> serviceDescriptor));
-
-                CacheLocator.getCacheAdministrator()
-                        .put(DESCRIPTORS_MAPPED_BY_SERVICE_KEY, descriptorsByKey,
-                                DESCRIPTORS_CACHE_GROUP);
-            }
-        }
-        return descriptorsByKey;
+    private Map<String, AppDescriptorMeta> getAppDescriptorMap(){
+       return appsCache.getAppDescriptorsMap(this::getAppDescriptorsMeta);
     }
 
     @Override
@@ -485,11 +461,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     private synchronized void invalidateCache(){
-        CacheLocator
-                .getCacheAdministrator()
-                .remove(DESCRIPTORS_LIST_KEY, DESCRIPTORS_CACHE_GROUP);
-        CacheLocator.getCacheAdministrator()
-                .remove(DESCRIPTORS_MAPPED_BY_SERVICE_KEY, DESCRIPTORS_CACHE_GROUP);
+        appsCache.invalidateDescriptorsCache();
     }
 
     private static String getServiceDescriptorDirectory() {
@@ -548,14 +520,14 @@ public class AppsAPIImpl implements AppsAPI {
                     if (loadedServiceKeys.contains(serviceDescriptor.getKey())) {
                         throw new DotDataException(
                                 String.format(
-                                        "There's a service already registered under key `%s`.",
+                                        "There's another App already registered under key `%s`.",
                                         serviceDescriptor.getKey())
                                 );
                     }
                     builder.add(new AppDescriptorMeta(serviceDescriptor, file.getName()));
                     loadedServiceKeys.add(serviceDescriptor.getKey());
                 }
-            } catch (IOException e) {
+            } catch (IOException | DotDataValidationException e) {
                 Logger.error(AppsAPIImpl.class,
                         String.format("Error reading yml file `%s`.", fileName), e);
             }
@@ -565,33 +537,55 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
    private boolean validateServiceDescriptor(final AppDescriptor appDescriptor)
-           throws DotDataException {
+           throws DotDataValidationException {
        if(UtilMethods.isNotSet(appDescriptor.getKey())){
-          throw new DotDataException("The required field `key` isn't set on the incoming file.");
+          throw new DotDataValidationException("The required field `key` isn't set on the incoming file.");
        }
 
        if(appDescriptor.getKey().length() > 100){
-           throw new DotDataException("The required field `key` is too large.");
+           throw new DotDataValidationException("The required field `key` exceeds 100 chars length.");
        }
 
        if(UtilMethods.isNotSet(appDescriptor.getName())){
-           throw new DotDataException("The required field `name` isn't set on the incoming file.");
+           throw new DotDataValidationException("The required field `name` isn't set on the incoming file.");
        }
 
        if(UtilMethods.isNotSet(appDescriptor.getDescription())){
-           throw new DotDataException("The required field `description` isn't set on the incoming file.");
+           throw new DotDataValidationException("The required field `description` isn't set on the incoming file.");
        }
 
        if(UtilMethods.isNotSet(appDescriptor.getIconUrl())){
-           throw new DotDataException("The required field `iconUrl` isn't set on the incoming file.");
+           throw new DotDataValidationException("The required field `iconUrl` isn't set on the incoming file.");
        }
 
        if(!UtilMethods.isSet(appDescriptor.getParams())){
-           throw new DotDataException("The required field `params` isn't set on the incoming file.");
+           throw new DotDataValidationException("The required field `params` isn't set on the incoming file.");
+       }
+
+       for (Map.Entry<String, ParamDescriptor> entry : appDescriptor.getParams().entrySet()) {
+           validateParamDescriptor(entry.getKey(), entry.getValue());
        }
 
        return true;
 
+   }
+
+   private void validateParamDescriptor(final String name, final ParamDescriptor descriptor) throws DotDataValidationException {
+
+       if(name.length() > 100){
+           throw new DotDataValidationException(String.format("Param name `%s` exceeds 100 chars length.", name));
+       }
+
+       if (Type.BOOL.equals(descriptor.getType()) && descriptor.isHidden() ) {
+           throw new DotDataValidationException(String.format("Boolean Params like `%s` can not be marked hidden.", name));
+       }
+
+       if ("null".equalsIgnoreCase(descriptor.getValue()) && descriptor.isRequired()) {
+           throw new DotDataValidationException(String.format(
+                   "Null isn't allowed as the default value on required params see `%s`. ",
+                   name)
+           );
+       }
    }
 
     private boolean validateAppDescriptorUniqueName(final AppDescriptor serviceDescriptor)

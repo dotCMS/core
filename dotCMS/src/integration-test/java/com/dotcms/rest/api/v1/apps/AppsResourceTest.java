@@ -14,8 +14,10 @@ import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
+import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.ParamDescriptor;
@@ -25,6 +27,9 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
@@ -36,6 +41,7 @@ import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -459,15 +465,16 @@ public class AppsResourceTest extends IntegrationTestBase {
     }
 
     @Test
-    public void Test_Protected_Hidden_Secret_And_Values_Returned_Match_Descriptor() {
+    public void Test_Secret_Serializer_Returned_Values_Match_Descriptor_Verify_Hidden_Secrets_Are_Protected() throws Exception{
 
-        final List<String> orderedParamNames = ImmutableList.of("param1","param2","param3","param4");
+        final List<String> orderedParamNames = ImmutableList.of("param1","param2","param3","param4","param5");
         //This is how the descriptor looks like.
         final SortedMap<String, ParamDescriptor> appDescriptorParamsMap = ImmutableSortedMap.of(
-                orderedParamNames.get(0), ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true),
-                orderedParamNames.get(1), ParamDescriptor.newParam("true", false, Type.BOOL, "label", "hint", true),
-                orderedParamNames.get(2), ParamDescriptor.newParam("val-2", false, Type.STRING, "label", "hint", true),
-                orderedParamNames.get(3), ParamDescriptor.newParam("true", false, Type.BOOL, "label", "hint", true)
+                orderedParamNames.get(0), ParamDescriptor.newParam("", true, Type.STRING, "label", "hint", true),
+                orderedParamNames.get(1), ParamDescriptor.newParam("", false, Type.BOOL, "label", "hint", true),//Bools shouldn't be hidden
+                orderedParamNames.get(2), ParamDescriptor.newParam("", true, Type.STRING, "label", "hint", true),
+                orderedParamNames.get(3), ParamDescriptor.newParam("", false, Type.BOOL, "label", "hint", true), //Bools shouldn't be hidden
+                orderedParamNames.get(4), ParamDescriptor.newParam("", false, Type.STRING, "label", "hint", true) //Bools shouldn't be hidden
         );
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -495,10 +502,11 @@ public class AppsResourceTest extends IntegrationTestBase {
                 //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
                 //Also note we're sending hidden value as true. Trying to override the value on the descriptor.
                 final Map<String, Input> inputParamMap = ImmutableMap.of(
-                        "param1", Input.newInputParam("val-1".toCharArray(),true),
-                        "param2", Input.newInputParam("true".toCharArray(),true),
-                        "param3", Input.newInputParam("val-2".toCharArray(),true),
-                        "param4", Input.newInputParam("true".toCharArray(),true)
+                        "param1", Input.newInputParam("val-1".toCharArray()),
+                        "param2", Input.newInputParam("true".toCharArray()),
+                        "param3", Input.newInputParam("val-2".toCharArray()),
+                        "param4", Input.newInputParam("true".toCharArray()),
+                        "param5", Input.newInputParam("non-hidden".toCharArray())
                 );
 
                 sites.add(
@@ -517,6 +525,9 @@ public class AppsResourceTest extends IntegrationTestBase {
 
             Assert.assertEquals(max, appView.getConfigurationsCount());
 
+            final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
+                    .getDefaultObjectMapper();
+
             for (final String siteId : sites) {
                 final Response detailedIntegrationResponse = appsResource
                         .getAppDetail(request, response, appKey, siteId);
@@ -533,30 +544,64 @@ public class AppsResourceTest extends IntegrationTestBase {
                 //Using a LinkedHashMap we guarantee we keep the original order on which the elements were sent.
                 int index = 0;
                 for (Entry<String, SecretView> secretEntry : secrets.entrySet()) {
-                    final String key = secretEntry.getKey();
-                    final SecretView view = secretEntry.getValue();
-                    final ParamDescriptor originalParam = appDescriptorParamsMap.get(key);
-                    if (view.getSecret().isHidden()) {
-                        Assert.assertEquals(AppsHelper.HIDDEN_SECRET_MASK, new String(view.getSecret().getValue()));
-                    } else {
-                        Assert.assertEquals(originalParam.getString(), new String(view.getSecret().getValue()));
+                    try (final StringWriter writer = new StringWriter()) {
+
+                        final JsonGenerator jsonGenerator = createJsonGenerator(writer);
+                        final String key = secretEntry.getKey();
+                        final SecretView view = secretEntry.getValue();
+                        final SecretViewSerializer secretViewSerializer = new SecretViewSerializer();
+                        secretViewSerializer.serialize(view, jsonGenerator, null);
+                        jsonGenerator.flush();
+                        final String asJson = writer.toString();
+
+                        Logger.debug(AppsResourceTest.class, () -> String.format(" `%s` ", asJson));
+
+                        final ParamDescriptor descriptorParam = appDescriptorParamsMap.get(key);
+
+                        final Map<String, Object> deserializedView = mapper.readValue(asJson, new TypeReference<Map<String, Object>>() {});
+                        final Type type = Type.valueOf(deserializedView.get("type").toString());
+                        final boolean hidden = Boolean.parseBoolean(deserializedView.get("hidden").toString());
+                        final String value = deserializedView.get("value").toString();
+
+                        Assert.assertEquals(
+                                "If it comes back as hidden it's because the descriptor also says it is hidden ",
+                                descriptorParam.isHidden(), hidden);
+
+                        if(Type.STRING.equals(type)){
+                            if (hidden) {
+                                Assert.assertEquals(SecretViewSerializer.HIDDEN_SECRET_MASK, value);
+                            } else {
+                                Assert.assertNotEquals(SecretViewSerializer.HIDDEN_SECRET_MASK, value);
+                            }
+                        } else {
+                               if(hidden){
+                                  fail("boolean type can not be marked as hidden");
+                               } else {
+                                   Assert.assertTrue("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value));
+                               }
+                        }
+
+                        //These should always match whatever was specified on the app-descriptor.
+                        Assert.assertEquals(descriptorParam.isHidden(), view.getSecret().isHidden());
+                        Assert.assertEquals(descriptorParam.getType(), view.getSecret().getType());
+                        //Test the order on which the secrets were sent back. They must whatever order was specified when building the app-descriptor.
+                        Assert.assertEquals(view.getName(), orderedParamNames.get(index++));
                     }
-                    //These should always match whatever was specified on the app-descriptor.
-                    Assert.assertEquals(originalParam.isHidden(),view.getSecret().isHidden());
-                    Assert.assertEquals(originalParam.getType(),view.getSecret().getType());
-                    //Test the order on which the secrets were sent back. They must whatever order was specified when building the app-descriptor.
-                    Assert.assertEquals(view.getName(), orderedParamNames.get(index++));
                 }
             }
-        }catch (Exception e){
-            Logger.error(AppsResourceTest.class, e);
-            fail();
         }
+    }
+
+    private JsonGenerator createJsonGenerator(final StringWriter writer) throws IOException{
+        final JsonFactory factory = new JsonFactory();
+        final JsonGenerator generator = factory.createGenerator(writer);
+        generator.useDefaultPrettyPrinter(); // pretty print JSON
+        return generator;
     }
 
 
     @Test
-    public void Test_App_Key_Casing()  {
+    public void Test_App_Key_Casing() throws IOException {
 
         final SortedMap<String, ParamDescriptor> initialParamsMap = ImmutableSortedMap.of(
                 "param1", ParamDescriptor
@@ -607,9 +652,6 @@ public class AppsResourceTest extends IntegrationTestBase {
                                 upperCaseRandom(appKey1, 30), siteId);
                 Assert.assertEquals(HttpStatus.SC_OK, detailedIntegrationResponse.getStatus());
             }
-        }catch (Exception e){
-            Logger.error(AppsResourceTest.class, e);
-            fail();
         }
     }
 
@@ -659,7 +701,8 @@ public class AppsResourceTest extends IntegrationTestBase {
     }
 
     @Test
-    public void Test_Required_Params_Multiple_Params_Descriptor_Non_Empty_Value_Missing_Required_Param_Sent()  {
+    public void Test_Required_Params_Multiple_Params_Descriptor_Non_Empty_Value_Missing_Required_Param_Sent()
+            throws IOException {
 
         final SortedMap<String, ParamDescriptor> initialParamsMap = ImmutableSortedMap.of(
                 "param1", ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true),
@@ -700,14 +743,11 @@ public class AppsResourceTest extends IntegrationTestBase {
             final Response createSecretResponse = appsResource
                     .createAppSecrets(request, response, key, host.getIdentifier(), secretForm);
             Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, createSecretResponse.getStatus());
-        }catch (Exception e){
-            Logger.error(AppsResourceTest.class, e);
-            fail();
         }
     }
 
     @Test
-    public void Test_Create_Descriptor_Then_Add_Dynamic_Prop() {
+    public void Test_Create_Descriptor_Then_Add_Dynamic_Prop() throws IOException {
         final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
                 "param1",
                 ParamDescriptor.newParam("val-1", true, Type.STRING, "label", "hint", true)
@@ -761,21 +801,19 @@ public class AppsResourceTest extends IntegrationTestBase {
             final SecretView param1 = secrets.get("param1");
             Assert.assertNotNull(param1);
             Assert.assertFalse(param1.isDynamic());
-            Assert.assertEquals(AppsHelper.HIDDEN_SECRET_MASK, String.valueOf(param1.getSecret().getValue()));
+            //Assert.assertEquals(AppsHelper.HIDDEN_SECRET_MASK, String.valueOf(param1.getSecret().getValue()));
 
             final SecretView dynamicParam1 = secrets.get("dynamicParam1");
             Assert.assertNotNull(dynamicParam1);
             Assert.assertTrue(dynamicParam1.isDynamic());
             Assert.assertEquals("any-value", String.valueOf(dynamicParam1.getSecret().getValue()));
 
-        } catch (Exception e) {
-            Logger.error(AppsResourceTest.class, e);
-            fail();
         }
     }
 
     @Test
-    public void Test_Pagination_And_Sort_Then_Request_Filter_Expect_Empty_Results() {
+    public void Test_Pagination_And_Sort_Then_Request_Filter_Expect_Empty_Results()
+            throws IOException {
 
         final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
                 "param1", ParamDescriptor
@@ -877,9 +915,6 @@ public class AppsResourceTest extends IntegrationTestBase {
             final AppView paginationFilterView = (AppView) paginationFilterEntity.getEntity();
             assertTrue(paginationFilterView.getSites().isEmpty());
 
-        } catch (Exception e) {
-            Logger.error(AppsResourceTest.class, e);
-            fail();
         }
 
     }

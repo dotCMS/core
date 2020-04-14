@@ -119,7 +119,6 @@ public class SecretsStoreKeyStoreImplTest {
 
     @Test
     public void Test_404_Cache() {
-
         final SecretsStore secretsStore = SecretsStore.INSTANCE.get();
 
         final String key = UUIDGenerator.generateUuid();
@@ -134,9 +133,9 @@ public class SecretsStoreKeyStoreImplTest {
         assertFalse(noValue.isPresent());
 
         final char[] CACHE_404 = (char[]) CacheLocator.getCacheAdministrator()
-                .getNoThrow(key, SecretsStoreKeyStoreImpl.SECRETS_CACHE_GROUP);
+                .getNoThrow(key, AppsCacheImpl.SECRETS_CACHE_GROUP);
         assertNotNull(CACHE_404);
-        assertEquals(CACHE_404, SecretsStoreKeyStoreImpl.CACHE_404);
+        assertEquals(CACHE_404, AppsCacheImpl.CACHE_404);
 
         secretsStore.saveValue(key, value.toCharArray());
         final Optional<char[]> optionalChars = secretsStore.getValue(key);
