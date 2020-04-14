@@ -9,7 +9,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.util.Encryptor;
 import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import java.io.File;
@@ -248,7 +247,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         try {
             final SecretKeyFactory factory = SecretKeyFactory.getInstance(SECRETS_STORE_SECRET_KEY_FACTORY_TYPE);
             final KeyStore keyStore = getSecretsStore();
-            final char [] encryptedVal = encrypt(variableValue).toCharArray();
+            final char [] encryptedVal = encrypt(variableValue);
             final SecretKey generatedSecret = factory.generateSecret(new PBEKeySpec(encryptedVal));
             final PasswordProtection keyStorePP = new PasswordProtection(loadStorePassword());
             keyStore.setEntry(variableKey, new KeyStore.SecretKeyEntry(generatedSecret), keyStorePP);
@@ -286,18 +285,13 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
     }
 
     @VisibleForTesting
-    protected String encrypt(final char[] val) {
-        return encrypt(new String(val));
-    }
-
-    @VisibleForTesting
-    protected String encrypt(final String val) {
-        return Sneaky.sneak(() -> Encryptor.encrypt(key(), val));
+    protected char[] encrypt(final char[] val) {
+        return Sneaky.sneak(() -> AppsUtil.encrypt(key(), val));
     }
 
     @VisibleForTesting
     protected String digest(final String val) {
-        return Sneaky.sneak(() -> Encryptor.digest(val));
+        return Sneaky.sneak(() -> AppsUtil.digest(val));
     }
 
     @VisibleForTesting
@@ -305,7 +299,7 @@ public class SecretsStoreKeyStoreImpl implements SecretsStore {
         if (encryptedString == null || encryptedString.length() == 0) {
             return null;
         }
-        return Sneaky.sneak(() -> Encryptor.decrypt(key(), encryptedString).toCharArray());
+        return Sneaky.sneak(() -> AppsUtil.decrypt(key(), encryptedString));
     }
 
     @VisibleForTesting

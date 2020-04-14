@@ -1,5 +1,8 @@
 package com.dotcms.security.apps;
 
+import static com.dotcms.security.apps.AppsUtil.readJson;
+import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -18,22 +21,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.ByteStreams;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -47,8 +44,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.commons.io.input.CharSequenceInputStream;
-import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * This API serves as the bridge between the secrets safe repository
@@ -68,81 +63,10 @@ public class AppsAPIImpl implements AppsAPI {
     private final HostAPI hostAPI;
     private final SecretsStore secretsStore;
 
-    private final ObjectMapper jsonMapper = new ObjectMapper()
-            //.enable(SerializationFeature.INDENT_OUTPUT)
-            .setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
-
     private final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
             //.enable(SerializationFeature.INDENT_OUTPUT)
             .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
             .findAndRegisterModules();
-
-    /**
-     * Given the AppSecrets this will return a char array representing the deserialized json object.
-     * No strings are created in the transformation process.
-     * @param object
-     * @return
-     * @throws DotDataException
-     */
-    @VisibleForTesting
-    char[] toJsonAsChars(final AppSecrets object) throws DotDataException {
-        try {
-            final byte [] bytes = jsonMapper.writeValueAsBytes(object);
-            return bytesToCharArrayUTF(bytes);
-        } catch (IOException e) {
-            throw new DotDataException(e);
-        }
-    }
-
-    /**
-     * Takes a char array representation of a json secret and generates the domain object.
-     * No strings are created in the transformation process.
-     * @param chars
-     * @return The Secrets domain model.
-     * @throws DotDataException
-     */
-    @VisibleForTesting
-    AppSecrets readJson(final char[] chars) throws DotDataException {
-        try {
-            final byte [] bytes = charsToBytesUTF(chars);
-            return jsonMapper.readValue(bytes, AppSecrets.class);
-        } catch (IOException e) {
-            throw new DotDataException(e);
-        }
-    }
-
-    /**
-     * This method takes a byte array and converts its contents into a char array
-     * No String middle man is created.
-     * https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
-     * @param bytes
-     * @return
-     */
-    @VisibleForTesting
-    char[] bytesToCharArrayUTF(final byte[] bytes) throws IOException {
-        final List<Integer> integers = new ArrayList<>(bytes.length);
-        try (final BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new ByteArrayInputStream(bytes), StandardCharsets.UTF_8))) {
-
-            int chr;
-            while ((chr = reader.read()) != -1) {
-                integers.add(chr);
-            }
-        }
-        return ArrayUtils.toPrimitive(
-                integers.stream().map(value -> (char) value.intValue()).toArray(Character[]::new));
-    }
-
-    /**
-     * This method takes a char array and converts its contents into a byte array No String middle
-     * man is created. https://stackoverflow.com/questions/8881291/why-is-char-preferred-over-string-for-passwords
-     */
-    @VisibleForTesting
-    byte[] charsToBytesUTF(final char[] chars) throws IOException {
-        final CharSequence sequence = java.nio.CharBuffer.wrap(chars);
-        return ByteStreams
-                .toByteArray(new CharSequenceInputStream(sequence, StandardCharsets.UTF_8));
-    }
 
     /**
      * One single method takes care of building the internal-key
