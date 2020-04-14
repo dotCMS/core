@@ -250,6 +250,8 @@ public class HTMLPageAssetRenderedTest {
         //Create Contentlet in Spanish
         final Contentlet contentlet3 = new ContentletDataGen(contentGenericType.id())
                 .languageId(spanishLanguage.getId())
+                .folder(folder)
+                .host(site)
                 .setProperty("title", "content3Spa")
                 .setProperty("body", "content3Spa")
                 .nextPersisted();
@@ -286,20 +288,27 @@ public class HTMLPageAssetRenderedTest {
     private void  createMultiTree(final String pageId, final String containerId, final String UUID)
             throws DotDataException {
 
+        final List<MultiTree> mTrees = new ArrayList<>();
+        // english - content1
         MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0),UUID,0);
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+        mTrees.add(multiTree);
 
+        // english and spanish - content2/content2Spa
         multiTree = new MultiTree(pageId, containerId, contentletsIds.get(1),UUID,0);
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+        mTrees.add(multiTree);
 
+        // spanish  - content3Spa
         multiTree = new MultiTree(pageId, containerId, contentletsIds.get(2),UUID,0);
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+        mTrees.add(multiTree);
 
+        // english, custom persona - content4
         final String personaTag  = persona.getKeyTag();
         final String personalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
 
         multiTree = new MultiTree(pageId, containerId, contentletsIds.get(3),UUID,0, personalization);
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+        mTrees.add(multiTree);
+
+        APILocator.getMultiTreeAPI().saveMultiTrees(mTrees);
     }
 
     @AfterClass
@@ -340,7 +349,6 @@ public class HTMLPageAssetRenderedTest {
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3(
             final Container container, final Template template) throws Exception{
 
-        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
         Config.setProperty(contentFallbackProperty,false);
         Config.setProperty(pageFallbackProperty,true);
 
@@ -364,7 +372,7 @@ public class HTMLPageAssetRenderedTest {
                     .setPageMode(PageMode.LIVE)
                     .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
+        Assert.assertTrue("ENG = "+html , html.contains("content1") && html.contains("content2"));
 
         //request page ESP version
         mockRequest = new MockSessionRequest(
@@ -373,6 +381,7 @@ public class HTMLPageAssetRenderedTest {
         Mockito.when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
+        mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE + ".current", spanishLanguage);
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
@@ -381,7 +390,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ESP = "+html , html.contains("content3Spacontent2Spa"));
+        Assert.assertTrue("ESP = "+html , html.contains("content2Spa") && html.contains("content3Spa"));
     }
 
     @NotNull
@@ -448,7 +457,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
+        Assert.assertTrue("ENG = "+html , html.contains("content1") && html.contains("content2"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -464,7 +473,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ESP = "+html , html.contains("content3Spacontent2Spa"));
+        Assert.assertTrue("ESP = "+html , html.contains("content2Spa") && html.contains("content3Spa"));
 
     }
 
@@ -628,7 +637,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
+        Assert.assertTrue("ENG = "+html , html.contains("content1") && html.contains("content2"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -644,7 +653,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ESP = "+html , html.contains("content3Spacontent2Spa"));
+        Assert.assertTrue("ESP = "+html , html.contains("content2Spa") && html.contains("content3Spa"));
     }
 
     /**
@@ -695,7 +704,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ENG = "+html , html.contains("content2content1"));
+        Assert.assertTrue("ENG = "+html , html.contains("content1") && html.contains("content2"));
 
         mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequest("localhost", "/").request()).request())
@@ -711,7 +720,8 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertTrue("ESP = "+html , html.contains("content3Spacontent2Spacontent1"));
+        Assert.assertTrue("ESP = "+html , html.contains("content3Spa")
+                && html.contains("content2Spa") && html.contains("content1"));
     }
 
     /**
@@ -908,7 +918,7 @@ public class HTMLPageAssetRenderedTest {
                                     .setPageMode(PageMode.LIVE)
                                     .build(),
                             mockRequest, mockResponse);
-            Assert.assertTrue(html, html.contains("content2content1"));
+            Assert.assertTrue(html, html.contains("content1") && html.contains("content2"));
 
             WebAssetFactory.unLockAsset(container);
             WebAssetFactory.archiveAsset(container, systemUser);
@@ -950,7 +960,7 @@ public class HTMLPageAssetRenderedTest {
                                     .setPageMode(PageMode.LIVE)
                                     .build(),
                             mockRequest, mockResponse);
-            Assert.assertTrue(html, html.contains("content2content1"));
+            Assert.assertTrue(html, html.contains("content1") && html.contains("content2"));
         }finally {
             if (!(container instanceof FileAssetContainer)) {
                 WebAssetFactory.unArchiveAsset(container);
@@ -1006,7 +1016,8 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals(html , "content2content1");
+        Assert.assertTrue(html , html.contains("content1") &&  html.contains("content2"));
+
     }
 
     private HttpSession createHttpSession(final HttpServletRequest mockRequest) {
@@ -1207,7 +1218,7 @@ public class HTMLPageAssetRenderedTest {
                         .build(),
                 mockRequest, mockResponse);
 
-        Assert.assertEquals("content2content1", html);
+        Assert.assertTrue(html, html.contains("content1") && html.contains("content2"));
     }
 
     /**
@@ -1248,7 +1259,7 @@ public class HTMLPageAssetRenderedTest {
                         .build(),
                 mockRequest, mockResponse);
 
-        Assert.assertEquals("content2content1", html);
+        Assert.assertTrue(html, html.contains("content1") && html.contains("content2"));
     }
 
     /**
@@ -1298,7 +1309,7 @@ public class HTMLPageAssetRenderedTest {
                         .build(),
                 mockRequest, mockResponse);
 
-        Assert.assertTrue(html.contains("content2content1"));
+        Assert.assertTrue(html, html.contains("content1") && html.contains("content2"));
     }
 
     //Data Provider for the Widget Pre-execute code test

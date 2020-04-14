@@ -446,7 +446,7 @@ public class PageRenderUtil implements Serializable {
 
     private Contentlet getContentlet(final PersonalizedContentlet personalizedContentlet) {
 
-        return (Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)) ?
+        return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false)?
                 getContentletOrFallback(personalizedContentlet) : getSpecificContentlet(personalizedContentlet);
     }
 
