@@ -801,7 +801,6 @@ public class AppsResourceTest extends IntegrationTestBase {
             final SecretView param1 = secrets.get("param1");
             Assert.assertNotNull(param1);
             Assert.assertFalse(param1.isDynamic());
-            //Assert.assertEquals(AppsHelper.HIDDEN_SECRET_MASK, String.valueOf(param1.getSecret().getValue()));
 
             final SecretView dynamicParam1 = secrets.get("dynamicParam1");
             Assert.assertNotNull(dynamicParam1);
