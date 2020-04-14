@@ -110,7 +110,8 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     private RestClientBuilder getClientBuilder(final BasicCredentialsProvider credentialsProvider) {
         final String esAuthType = getESAuthType();
-        final String esProtocol = Config.getStringProperty("ES_PROTOCOL", "https");
+        final String httpsProtocol = "https";
+        final String esProtocol = Config.getStringProperty("ES_PROTOCOL", httpsProtocol);
         final RestClientBuilder clientBuilder = RestClient
                 .builder(new HttpHost(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
                         Config.getIntProperty("ES_PORT", 9200), esProtocol))
@@ -118,7 +119,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     if (sslContextFromPem != null) {
                         httpClientBuilder
                                 .setSSLContext(sslContextFromPem);
-                    } else if ("https".equals(esProtocol)){
+                    } else if (httpsProtocol.equals(esProtocol)){
                         try {
                             httpClientBuilder.setSSLContext(SSLContexts
                                     .custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build());
