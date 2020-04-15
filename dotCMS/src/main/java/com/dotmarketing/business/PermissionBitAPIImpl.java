@@ -310,6 +310,13 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 		final List<Permission> perms =  getPermissions(permissionable, true);
 		final boolean isContentlet = permissionable instanceof Contentlet;
+
+		if (isContentlet &&
+				PermissionLevel.WRITE.getType() == permissionType &&
+				permissionable.getOwner().equals(user.getUserId())) {
+			return true;
+		}
+
 		for(Permission p : perms){
 			if(p.matchesPermission(permissionType)){
 				if(respectFrontendRoles){

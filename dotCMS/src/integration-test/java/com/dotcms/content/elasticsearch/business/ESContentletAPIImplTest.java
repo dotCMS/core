@@ -20,14 +20,12 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.*;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -37,6 +35,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -45,8 +44,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -329,6 +332,94 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 new ESContentletAPIImpl().isCheckInSafe(null, esIndexAPI));
     }
 
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#lock(Contentlet, User, boolean)}
+     * Given Scenario: A user without permission try to lock a contentlet
+     * ExpectedResult: Should throw a DotSecurityException
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test(expected = DotSecurityException.class)
+    public void whenTryToLockShouldThrowDotSecurityException() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        final ESContentletAPIImpl esContentletAPI = new ESContentletAPIImpl();
+        final Contentlet contentletSaved = esContentletAPI.checkin(contentlet, APILocator.systemUser(), false);
+        esContentletAPI.lock(contentletSaved, user, false);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#lock(Contentlet, User, boolean)}
+     * Given Scenario: A user with {@link PermissionLevel#EDIT} permission try to lock a contentlet
+     * ExpectedResult: Should work
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test
+    public void whenTryToLockShouldWork() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+
+        final ESContentletAPIImpl esContentletAPI = new ESContentletAPIImpl();
+        final Contentlet contentletSaved = esContentletAPI.checkin(contentlet, APILocator.systemUser(), false);
+
+        addPermission(role, contentType, PermissionLevel.WRITE);
+        addPermission(role, contentletSaved, PermissionLevel.WRITE);
+
+        esContentletAPI.lock(contentletSaved, user, false);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#lock(Contentlet, User, boolean)}
+     * Given Scenario: The contentlet's owner without permission to EDIT try to lock the contebtlet
+     * ExpectedResult: Should work
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    @Test()
+    public void whenOwnerTryToLockShouldWork() throws DotSecurityException, DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                 .next();
+
+        addPermission(role, contentType, PermissionLevel.WRITE);
+
+        final ESContentletAPIImpl esContentletAPI = new ESContentletAPIImpl();
+        final Contentlet contentletSaved = esContentletAPI.checkin(contentlet, user, false);
+        esContentletAPI.lock(contentletSaved, user, false);
+    }
+
+    private void addPermission(
+            final Role role,
+            final Permissionable contentType,
+            final PermissionLevel permissionLevel)
+
+            throws DotDataException, DotSecurityException {
+
+        APILocator.getPermissionAPI().save(
+                getPermission(role, contentType, permissionLevel.getType()),
+                contentType, APILocator.systemUser(), false);
+    }
+
+    @NotNull
+    private Permission getPermission(Role role, Permissionable permissionable, int permissionPublish) {
+        final Permission publishPermission = new Permission();
+        publishPermission.setInode(permissionable.getPermissionId());
+        publishPermission.setRoleId(role.getId());
+        publishPermission.setPermission(permissionPublish);
+        return publishPermission;
+    }
 
     private ContentType createContentType(final String name) throws DotSecurityException, DotDataException {
         return contentTypeAPI.save(ContentTypeBuilder.builder(SimpleContentType.class).folder(
