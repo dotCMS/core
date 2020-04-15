@@ -22,6 +22,8 @@ import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Type;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -130,6 +132,17 @@ public class AppsResourceTest extends IntegrationTestBase {
         return formDataMultiPart;
     }
 
+    /**
+     * This method tests quite a few things on the resource. First we create a yml file that exist physically on disc.
+     * The we upload the file with an app definition. Then we Create an App Then list the available apps.
+     * Then we Verify the New app is listed. under the right Host.
+     * Then We delete the app and verify the pagination results make sense.
+     * Given scenario: Test we can create an app then delete it.
+     * Expected Result: Pagination shows all available sites with no configurations
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_Create_app_descriptor_Then_Create_App_Integration_Then_Delete_The_Whole_App() {
 
@@ -246,6 +259,14 @@ public class AppsResourceTest extends IntegrationTestBase {
     }
 
 
+    /**
+     * This method tests quite a few things on the resource. First we create a yml file that exist physically on disc.
+     * The we upload the file with an app definition. Then we Create an App Then list the available apps.
+     * Then we Verify the New app is listed. under the right Host.
+     * Then We delete one single entry of the secret.
+     * Given scenario: Test we can create an app then delete individual properties/secrets from it. Not the whole secret
+     * Expected Result: Pagination shows all available sites with no configurations and the default values from the yml are loaded instead.
+     */
     @Test
     public void Test_Create_App_descriptor_Then_Create_App_Integration_Then_Delete_One_Single_Secret() {
 
@@ -374,7 +395,11 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
     }
 
-
+    /**
+     * Test we can delete an app together with all it definition and associated secrets.
+     * Given scenario: Test we can create an app descriptor and an app then delete the descriptor
+     * Expected Result: App and secrets are gone (404).
+     */
     @Test
     public void Test_Create_App_Descriptor_Then_Create_App_Integration_Then_Delete_App_Descriptor() {
 
@@ -458,6 +483,11 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test hidden secrets come back protected.
+     * Given scenario: We have a descriptor with hidden and non-hidden stuff
+     * Expected Result: Whatever was marked as hidden in the app-descriptor must come back protected.
+     */
     @Test
     public void Test_Protected_Hidden_Secret_And_Values_Returned_Match_Descriptor() {
 
@@ -555,6 +585,11 @@ public class AppsResourceTest extends IntegrationTestBase {
     }
 
 
+    /**
+     * App keys must be case insensitive since they are part of the endpoint URL
+     * Given scenario: Test we generate an app and try to access the resource using a randomly cased app-key
+     * Expected Result: The App should be available when accessed with the randomly cased url.
+     */
     @Test
     public void Test_App_Key_Casing()  {
 
@@ -613,6 +648,11 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test an addSecret operation with missing required params fails.
+     * Given scenario: Test we create an app descriptor that states required field.
+     * Expected Result: We expect a BAD_REQUEST (400) when the request is sent missing a required value.
+     */
     @Test
     public void Test_Required_Params_One_Single_Descriptor_Param_Empty_Value()  {
 
@@ -658,6 +698,11 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test a combination of extra params and required params
+     * Given scenario: Test we create an app descriptor that states required fields and allowed params too.
+     * Expected Result: We expect a BAD_REQUEST (400)
+     */
     @Test
     public void Test_Required_Params_Multiple_Params_Descriptor_Non_Empty_Value_Missing_Required_Param_Sent()  {
 
@@ -706,6 +751,11 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test Extra params support
+     * Given scenario: Test we create an app descriptor that states extra params are allowed.
+     * Expected Result: We should be able to add extra params. And they are shown at the end on the site view detail.
+     */
     @Test
     public void Test_Create_Descriptor_Then_Add_Dynamic_Prop() {
         final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
@@ -774,6 +824,11 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * This basically test pagination and filtering together.
+     * Given scenario: Test we create an app descriptor that states extra params are allowed.
+     * Expected Result: We should be able to add extra params. And they are shown at the end on the site view detail
+     */
     @Test
     public void Test_Pagination_And_Sort_Then_Request_Filter_Expect_Empty_Results() {
 

@@ -67,8 +67,10 @@ public class AppsUtilTest {
     }
 
     /**
-     * Tests the two internal methods used to transform a text stored as a array of chars in TF-8
+     * Tests the two internal methods used to transform a text stored as a array of chars in UTF-8
      * convert those into a byte array and back.
+     * Given Scenario: a set of char codes representing a UTF-8 range then the set is turned into bytes and back
+     * Expected Result: The original set of chars is restored after the byte array
      * @param testCase
      * @throws IOException
      */
@@ -117,6 +119,8 @@ public class AppsUtilTest {
     /**
      * This tests the two methods used to serialize a secret converting it into a json stored as chars
      * then and putting it back together as an object.
+     * Given Scenario: A Random Secret object is constructed with a random alphanumeric string then serialize to bytes and back.
+     * Expected Result: The resulting object must match the original one passed in.
      * @throws DotDataException
      */
     @Test
@@ -145,6 +149,8 @@ public class AppsUtilTest {
 
     /**
      * This basically test the encryption decryption round trip that a text could take.
+     * Given Scenario:
+     * Expected Result:
      * @throws EncryptorException
      */
     @Test
