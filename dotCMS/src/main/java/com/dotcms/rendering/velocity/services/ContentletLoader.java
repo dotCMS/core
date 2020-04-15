@@ -561,7 +561,8 @@ public class ContentletLoader implements DotLoader {
         long language = new Long(key.language);
         ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, language);
 
-        if (isLiveVersionNotAvailable(key, info) && language != defaultLang && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage()) {
+        if (isLiveVersionNotAvailable(key, info) && shouldCheckForVersionInfoInDefaultLanguage(
+                language)) {
             info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, defaultLang);
         }
 
@@ -579,6 +580,11 @@ public class ContentletLoader implements DotLoader {
         return buildVelocity(contentlet, key.mode, key.path);
 
 
+    }
+
+    private boolean shouldCheckForVersionInfoInDefaultLanguage(long language) {
+        return language != defaultLang && APILocator.getLanguageAPI()
+                .canDefaultContentToDefaultLanguage();
     }
 
     private boolean isLiveVersionNotAvailable(VelocityResourceKey key, ContentletVersionInfo info) {
