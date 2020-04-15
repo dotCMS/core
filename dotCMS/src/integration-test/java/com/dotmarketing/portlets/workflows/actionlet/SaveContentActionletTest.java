@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.exception.ExceptionUtil;
@@ -47,71 +48,136 @@ import static com.dotcms.util.CollectionsUtils.list;
 @RunWith(DataProviderRunner.class)
 public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
-    private static WorkflowAPI workflowAPI = null;
-    private static ContentTypeAPI contentTypeAPI = null;
-    private static ContentType customContentType = null;
+
     private static User systemUser = APILocator.systemUser();
+    private static List<ContentType> contentTypes = new ArrayList<>();
 
     private static class TestCase {
-        final private boolean respectFrontendRoles;
-        final private User user;
-        final private boolean shouldThrowException;
+        private final boolean respectFrontendRoles;
+        private final User user;
+        private final boolean hasSaveActionPermission;
+        private final boolean hasContentTypeAddChildrenPermission;
+        private final ContentType contentType;
 
-        private TestCase(final boolean respectFrontendRoles, final User user, final boolean shouldThrowException) {
+        private TestCase(
+                final boolean respectFrontendRoles,
+                final User user,
+                final ContentType contentType,
+                final boolean hasSaveActionPermission,
+                final boolean hasContentTypeAddChildrenPermission) {
             this.respectFrontendRoles = respectFrontendRoles;
             this.user = user;
-            this.shouldThrowException = shouldThrowException;
+            this.hasSaveActionPermission = hasSaveActionPermission;
+            this.hasContentTypeAddChildrenPermission = hasContentTypeAddChildrenPermission;
+            this.contentType = contentType;
         }
     }
 
     @DataProvider
-    public static Object[] users() throws Exception {
-        prepare();
-        final User userWithPermission = createUserWithPermission();
+    public static Object[] usersAndContentTypeWithoutHostFieldAndNotFrontendPermission() throws Exception {
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+
+        // creates the type to trigger the scheme
+        final ContentType contentType = createTestType();
+        contentTypes.add(contentType);
+
+        // associated the scheme to the type
+        final WorkflowScheme systemWorkflowScheme = workflowAPI.findSystemWorkflowScheme();
+        workflowAPI.saveSchemesForStruct(new StructureTransformer(contentType).asStructure(),
+                Collections.singletonList(systemWorkflowScheme));
+
+        final User userWithPermission = createUserWithPermission(contentType);
         final User userWithoutPermission = new UserDataGen().nextPersisted();
+        final User userWithJustActionPermission = createUserWithJustActionPermission();
 
-        final List<User> users = list(/*APILocator.systemUser(),*/ userWithPermission);
-        final List<TestCase> testCases = new ArrayList<>();
+        final ContentType frontendContentType = createTestType();
+        contentTypes.add(frontendContentType);
 
-        for (final User user : users) {
-            testCases.add(new TestCase(true, user, false));
-            testCases.add(new TestCase(false, user, false));
-        }
+        final User frontEndUserWithPermission = createFrontendUser(frontendContentType);
+        final User frontendUserWithoutPermission = createFrontendUserWithoutPermission();
 
-        //testCases.add(new TestCase(true, userWithoutPermission, true));
-        //testCases.add(new TestCase(false, userWithoutPermission, true));
-
-        return  testCases.toArray();
+        return new TestCase[]{
+                new TestCase(true, APILocator.systemUser(), contentType, true, true),
+                new TestCase(false, APILocator.systemUser(), contentType, true, true),
+                new TestCase(true, userWithPermission, contentType, true, true),
+                new TestCase(false, userWithPermission, contentType, true, true),
+                new TestCase(true, userWithoutPermission, contentType, false, false),
+                new TestCase(false, userWithoutPermission, contentType, false, false),
+                new TestCase(true, userWithJustActionPermission, contentType, true, false),
+                new TestCase(false, userWithJustActionPermission, contentType, true, false),
+                new TestCase(true, frontEndUserWithPermission, frontendContentType, true, true),
+                new TestCase(false, frontEndUserWithPermission, frontendContentType, true, true),
+                new TestCase(true, frontendUserWithoutPermission, frontendContentType, false, false),
+                new TestCase(false, frontendUserWithoutPermission, frontendContentType, false, false)
+        };
     }
 
-    private static User createUserWithPermission() throws DotDataException {
+    private static User createFrontendUser(final ContentType contentType) {
+
+        try {
+            final Role role = APILocator.getRoleAPI().loadFrontEndUserRole();
+            final User user = new UserDataGen().roles(role).nextPersisted();
+
+            addPermissionToAddChildren(role, contentType);
+            addPermissionToSaveAction(role);
+
+            return user;
+        } catch (DotDataException e) {
+            throw  new RuntimeException(e);
+        }
+    }
+
+    private static User createFrontendUserWithoutPermission() {
+
+        try {
+            final Role role = APILocator.getRoleAPI().loadFrontEndUserRole();
+            final User user = new UserDataGen().roles(role).nextPersisted();
+
+            return user;
+        } catch (DotDataException e) {
+            throw  new RuntimeException(e);
+        }
+    }
+
+    private static User createUserWithPermission(final ContentType contentType) throws DotDataException {
         final Role role = new RoleDataGen().nextPersisted();
         final User user = new UserDataGen().roles(role).nextPersisted();
 
-        addPermissionToAddContentlet(role);
+        addPermissionToAddChildren(role, contentType);
+        addPermissionToSaveAction(role);
         return user;
     }
 
+    private static User createUserWithJustAddChildrenPermission(final ContentType contentType) throws DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+
+        addPermissionToAddChildren(role, contentType);
+        return user;
+    }
+
+    private static User createUserWithJustActionPermission() throws DotDataException {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+
+        addPermissionToSaveAction(role);
+        return user;
+    }
+
+    @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
 
         IntegrationTestInitService.getInstance().init();
-        workflowAPI = APILocator.getWorkflowAPI();
-        contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-
-        // creates the type to trigger the scheme
-        customContentType = createTestType(contentTypeAPI);
-
-        // associated the scheme to the type
-        final WorkflowScheme systemWorkflowScheme = workflowAPI.findSystemWorkflowScheme();
-        workflowAPI.saveSchemesForStruct(new StructureTransformer(customContentType).asStructure(),
-                Collections.singletonList(systemWorkflowScheme));
 
         setDebugMode(false);
     }
 
-    private static ContentType createTestType(final ContentTypeAPI contentTypeAPI)
+    private static ContentType createTestType()
             throws DotDataException, DotSecurityException {
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
         final ContentType type = contentTypeAPI.save(
                 ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
@@ -139,28 +205,42 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
     @AfterClass
     public static void cleanup()
             throws DotDataException, DotSecurityException {
+        for (ContentType contentType : contentTypes) {
+            if (null != contentType) {
 
-        if (null != customContentType) {
-
-            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-            contentTypeAPI.delete(customContentType);
+                final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+                contentTypeAPI.delete(contentType);
+            }
         }
 
         cleanupDebug(SaveContentActionletTest.class);
     } // cleanup
 
+    /**
+     * Method to test: {@link WorkflowAPI#fireContentWorkflow(Contentlet, ContentletDependencies)}
+     * Given Scenario: Try to Save and publish a {@link Contentlet} with different users, when the ContentType does not
+     * have a 'Site or folder' field
+     * Expected Result: The follow are the expected result according to the user
+     * - If the user is system should save and publish the contentlet
+     * - If the user have {@link PermissionLevel#CAN_ADD_CHILDREN} over the ContentType
+     * - If the user doesn't have any permission should throw a DotSecurityException when try to save it
+     * - If the user just has {@link PermissionLevel#CAN_ADD_CHILDREN} over the save {@link ContentType} then should throw a DotSecurityException when try to save it
+     */
     @Test
-    @UseDataProvider("users")
-    public void test_Publish_With_Save_Contentlet_Actionlet_Tag (final TestCase testCase) throws DotSecurityException, DotDataException {
+    @UseDataProvider("usersAndContentTypeWithoutHostFieldAndNotFrontendPermission")
+    public void test_Publish_With_Save_Contentlet (final TestCase testCase) throws DotSecurityException, DotDataException {
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 
-        final Contentlet contentlet = new Contentlet();
-        contentlet.setContentType(customContentType);
-        contentlet.setProperty("title", "Test");
-        contentlet.setProperty("txt", "Test");
-        contentlet.setProperty("tag", "test");
+        final Contentlet contentlet = new ContentletDataGen(testCase.contentType.id())
+            .setProperty("title", "Test")
+            .setProperty("txt", "Test")
+            .setProperty("tag", "test")
+            .next();
+
+        Contentlet contentletSaved = null;
 
         try {
-            final Contentlet contentletSaved =
+            contentletSaved =
                     workflowAPI.fireContentWorkflow(contentlet,
                             new ContentletDependencies.Builder()
                                     .modUser(testCase.user)
@@ -168,52 +248,77 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
                                     .workflowActionId(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID)
                                     .build());
 
-            Assert.assertNotNull(contentletSaved);
-            Assert.assertEquals("Test", contentletSaved.getStringProperty("title"));
-            Assert.assertEquals("Test", contentletSaved.getStringProperty("txt"));
+            checkContentSaved(contentletSaved);
 
-            final List<TagInode> tagInodes = APILocator.getTagAPI().getTagInodesByInode(contentletSaved.getInode());
-            Assert.assertNotNull(tagInodes);
-            Assert.assertFalse(tagInodes.isEmpty());
-
-            contentletSaved.setTags();
-            final Contentlet contentletPublished =
-                    workflowAPI.fireContentWorkflow(contentletSaved,
-                            new ContentletDependencies.Builder()
-                                    .modUser(APILocator.systemUser())
-                                    .workflowActionId(SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID)
-                                    .respectAnonymousPermissions(testCase.respectFrontendRoles)
-                                    .build());
-
-            Assert.assertNotNull(contentletPublished);
-            Assert.assertEquals("Test", contentletPublished.getStringProperty("title"));
-            Assert.assertEquals("Test", contentletPublished.getStringProperty("txt"));
-            contentletPublished.setTags();
-            Assert.assertEquals("test", contentletPublished.getStringProperty("tag"));
-            Assert.assertTrue(contentletPublished.isLive());
-
-            Assert.assertFalse(testCase.shouldThrowException);
+            Assert.assertTrue(testCase.hasContentTypeAddChildrenPermission && testCase.hasSaveActionPermission);
         } catch(Exception e) {
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
-                throw e;
-                //Assert.assertTrue(testCase.shouldThrowException);
+                Assert.assertTrue(
+                        !testCase.hasContentTypeAddChildrenPermission ||
+                                !testCase.hasSaveActionPermission ||
+                                (systemUser.isFrontendUser() && !testCase.respectFrontendRoles)
+                );
+                return;
             } else {
                 throw e;
             }
         }
+
+        final Contentlet contentletPublished =
+                workflowAPI.fireContentWorkflow(contentletSaved,
+                        new ContentletDependencies.Builder()
+                                .modUser(APILocator.systemUser())
+                                .workflowActionId(SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID)
+                                .respectAnonymousPermissions(testCase.respectFrontendRoles)
+                                .build());
+
+        checkPublishContent(contentletPublished);
+    }
+
+    private void checkPublishContent(Contentlet contentletPublished) throws DotDataException, DotSecurityException {
+        Assert.assertNotNull(contentletPublished);
+        Assert.assertEquals("Test", contentletPublished.getStringProperty("title"));
+        Assert.assertEquals("Test", contentletPublished.getStringProperty("txt"));
+        contentletPublished.setTags();
+        Assert.assertEquals("test", contentletPublished.getStringProperty("tag"));
+        Assert.assertTrue(contentletPublished.isLive());
+    }
+
+    private void checkContentSaved(Contentlet contentletSaved) throws DotDataException {
+        Assert.assertNotNull(contentletSaved);
+        Assert.assertEquals("Test", contentletSaved.getStringProperty("title"));
+        Assert.assertEquals("Test", contentletSaved.getStringProperty("txt"));
+
+        final List<TagInode> tagInodes = APILocator.getTagAPI().getTagInodesByInode(contentletSaved.getInode());
+        Assert.assertNotNull(tagInodes);
+        Assert.assertFalse(tagInodes.isEmpty());
+
+        contentletSaved.setTags();
     }
 
     @NotNull
-    private static void addPermissionToAddContentlet(final Role role) throws DotDataException {
+    private static void addPermissionToAddChildren(final Role role, final ContentType contentType) throws DotDataException {
 
-        final WorkflowAction action = FactoryLocator.getWorkFlowFactory().findAction(SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID);
-        final Permission actionPermission = getPermission(role, action, PermissionLevel.USE.getType());
-
-        final Permission contentTypePermission = getPermission(role, customContentType, PermissionLevel.CAN_ADD_CHILDREN.getType());
+        final Permission contentTypePermission = getPermission(role, contentType, PermissionLevel.WRITE.getType());
 
         try {
-            APILocator.getPermissionAPI().save(contentTypePermission, customContentType, systemUser, false);
-            APILocator.getPermissionAPI().save(actionPermission, action, systemUser, false);
+
+            APILocator.getPermissionAPI().save(contentTypePermission, contentType, systemUser, false);
+
+        } catch (DotDataException | DotSecurityException e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NotNull
+    private static void addPermissionToSaveAction(final Role role) throws DotDataException {
+
+        final WorkflowAction action = FactoryLocator.getWorkFlowFactory().findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID);
+        final Permission actionPermission = getPermission(role, action, PermissionLevel.USE.getType());
+
+        try {
+             APILocator.getPermissionAPI().save(actionPermission, action, systemUser, false);
+
         } catch (DotDataException | DotSecurityException e){
             throw new RuntimeException(e);
         }
