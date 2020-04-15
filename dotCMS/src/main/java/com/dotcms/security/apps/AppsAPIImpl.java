@@ -1,5 +1,8 @@
 package com.dotcms.security.apps;
 
+import static com.dotcms.security.apps.AppsUtil.readJson;
+import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -30,6 +33,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -44,8 +48,7 @@ import java.util.stream.Collectors;
 
 /**
  * This API serves as the bridge between the secrets safe repository
- * and the structured of the service defined via
- *
+ * and the structure of the APP defined via YML file descriptor.
  */
 public class AppsAPIImpl implements AppsAPI {
 
@@ -64,10 +67,6 @@ public class AppsAPIImpl implements AppsAPI {
     private final SecretsStore secretsStore;
     private final AppsCache appsCache;
 
-    private final ObjectMapper jsonMapper = new ObjectMapper()
-            //.enable(SerializationFeature.INDENT_OUTPUT)
-            .setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
-
     private final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
             //.enable(SerializationFeature.INDENT_OUTPUT)
             .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
@@ -85,22 +84,6 @@ public class AppsAPIImpl implements AppsAPI {
 
     public AppsAPIImpl() {
         this(APILocator.getUserAPI(), APILocator.getLayoutAPI(), APILocator.getHostAPI(), SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache());
-    }
-
-    private AppSecrets readJson(final char[] chars) throws DotDataException {
-        try {
-            return jsonMapper.readValue(new String(chars), AppSecrets.class);
-        } catch (IOException e) {
-            throw new DotDataException(e);
-        }
-    }
-
-    private String toJsonAsString(final AppSecrets object) throws DotDataException {
-        try {
-            return jsonMapper.writeValueAsString(object);
-        } catch (IOException e) {
-            throw new DotDataException(e);
-        }
     }
 
     /**
@@ -292,11 +275,20 @@ public class AppsAPIImpl implements AppsAPI {
                     secrets.getKey(), user.getUserId(), host.getIdentifier()));
         } else {
             final String internalKey = internalKey(secrets.getKey(), host);
-            if(secrets.getSecrets().isEmpty()){
-               //if everything has been removed from the json entry we need to kick it of from cache.
-               secretsStore.deleteValue(internalKey);
+            if (secrets.getSecrets().isEmpty()) {
+                //if everything has been removed from the json entry we need to kick it off from cache.
+                secretsStore.deleteValue(internalKey);
             } else {
-               secretsStore.saveValue(internalKey, toJsonAsString(secrets).toCharArray());
+                char[] chars = null;
+                try {
+                    chars = toJsonAsChars(secrets);
+                    secretsStore.saveValue(internalKey, chars);
+                } finally {
+                    secrets.destroy();
+                    if (null != chars) {
+                        Arrays.fill(chars, (char) 0);
+                    }
+                }
             }
         }
     }
@@ -484,10 +476,7 @@ public class AppsAPIImpl implements AppsAPI {
                 () -> " ymlFiles are set under:  " + ymlFilesPath);
         final Set<String> files = listFiles(ymlFilesPath);
         if (!UtilMethods.isSet(files)) {
-            // No files were found a default empty descriptor will be created.
-            // ymlMapper.writeValue(new File(basePath, "sample-app-descriptor.yml"), emptyDescriptor());
-            // return listFiles(ymlFilesPath);
-           return Collections.emptySet();
+            return Collections.emptySet();
         } else {
             return files;
         }
@@ -616,19 +605,5 @@ public class AppsAPIImpl implements AppsAPI {
         }
         return true;
     }
-
-    /*
-    private ServiceDescriptor emptyDescriptor() {
-        final ServiceDescriptor serviceDescriptor = new ServiceDescriptor("sampleDescriptor",
-                "Sample Descriptor.",
-                "This is an empty descriptor created by the system to show you the expected structure.",
-                "/black_18dp.png", true);
-        serviceDescriptor.addParam("stringParam", "This is a string.", false, Type.STRING, "This is string param",
-                "Test string.");
-        serviceDescriptor.addParam("boolParam", "true", false, Type.BOOL, "This is a Bool Param",
-                "Test Bool.");
-        serviceDescriptor.addParam("myFile", "", false, Type.FILE, "", "");
-        return serviceDescriptor;
-    }*/
 
 }
