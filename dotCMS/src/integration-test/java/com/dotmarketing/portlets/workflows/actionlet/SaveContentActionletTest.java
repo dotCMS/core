@@ -10,9 +10,7 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
@@ -20,7 +18,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
@@ -42,8 +39,6 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static com.dotcms.util.CollectionsUtils.list;
 
 @RunWith(DataProviderRunner.class)
 public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
@@ -74,7 +69,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
     }
 
     @DataProvider
-    public static Object[] usersAndContentTypeWithoutHostFieldAndNotFrontendPermission() throws Exception {
+    public static Object[] usersAndContentTypeWithoutHostField() throws Exception {
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
@@ -132,9 +127,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
         try {
             final Role role = APILocator.getRoleAPI().loadFrontEndUserRole();
-            final User user = new UserDataGen().roles(role).nextPersisted();
-
-            return user;
+            return new UserDataGen().roles(role).nextPersisted();
         } catch (DotDataException e) {
             throw  new RuntimeException(e);
         }
@@ -146,14 +139,6 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
         addPermissionToAddChildren(role, contentType);
         addPermissionToSaveAction(role);
-        return user;
-    }
-
-    private static User createUserWithJustAddChildrenPermission(final ContentType contentType) throws DotDataException {
-        final Role role = new RoleDataGen().nextPersisted();
-        final User user = new UserDataGen().roles(role).nextPersisted();
-
-        addPermissionToAddChildren(role, contentType);
         return user;
     }
 
@@ -205,7 +190,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
     @AfterClass
     public static void cleanup()
             throws DotDataException, DotSecurityException {
-        for (ContentType contentType : contentTypes) {
+        for (final ContentType contentType : contentTypes) {
             if (null != contentType) {
 
                 final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
@@ -227,7 +212,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
      * - If the user just has {@link PermissionLevel#CAN_ADD_CHILDREN} over the save {@link ContentType} then should throw a DotSecurityException when try to save it
      */
     @Test
-    @UseDataProvider("usersAndContentTypeWithoutHostFieldAndNotFrontendPermission")
+    @UseDataProvider("usersAndContentTypeWithoutHostField")
     public void test_Publish_With_Save_Contentlet (final TestCase testCase) throws DotSecurityException, DotDataException {
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 
@@ -275,7 +260,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         checkPublishContent(contentletPublished);
     }
 
-    private void checkPublishContent(Contentlet contentletPublished) throws DotDataException, DotSecurityException {
+    private void checkPublishContent(final Contentlet contentletPublished) throws DotDataException, DotSecurityException {
         Assert.assertNotNull(contentletPublished);
         Assert.assertEquals("Test", contentletPublished.getStringProperty("title"));
         Assert.assertEquals("Test", contentletPublished.getStringProperty("txt"));
@@ -284,7 +269,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         Assert.assertTrue(contentletPublished.isLive());
     }
 
-    private void checkContentSaved(Contentlet contentletSaved) throws DotDataException {
+    private void checkContentSaved(final Contentlet contentletSaved) throws DotDataException {
         Assert.assertNotNull(contentletSaved);
         Assert.assertEquals("Test", contentletSaved.getStringProperty("title"));
         Assert.assertEquals("Test", contentletSaved.getStringProperty("txt"));
@@ -325,7 +310,11 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
     }
 
     @NotNull
-    private static Permission getPermission(Role role, Permissionable permissionable, int permissionPublish) {
+    private static Permission getPermission(
+            final Role role,
+            final Permissionable permissionable,
+            final int permissionPublish) {
+
         final Permission permission = new Permission();
         permission.setInode(permissionable.getPermissionId());
         permission.setRoleId(role.getId());
