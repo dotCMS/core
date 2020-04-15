@@ -21,10 +21,12 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
+import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.tag.model.TagInode;
+import com.github.rjeschke.txtmark.Run;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -36,9 +38,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+
+import static com.dotcms.util.CollectionsUtils.set;
 
 @RunWith(DataProviderRunner.class)
 public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
@@ -71,16 +73,10 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
     @DataProvider
     public static Object[] usersAndContentTypeWithoutHostField() throws Exception {
         final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
         // creates the type to trigger the scheme
         final ContentType contentType = createTestType();
         contentTypes.add(contentType);
-
-        // associated the scheme to the type
-        final WorkflowScheme systemWorkflowScheme = workflowAPI.findSystemWorkflowScheme();
-        workflowAPI.saveSchemesForStruct(new StructureTransformer(contentType).asStructure(),
-                Collections.singletonList(systemWorkflowScheme));
 
         final User userWithPermission = createUserWithPermission(contentType);
         final User userWithoutPermission = new UserDataGen().nextPersisted();
@@ -181,7 +177,14 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         fields.add(FieldBuilder.builder(TagField.class).name("tag").variable("tag").required(true)
                 .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build());
 
-        return contentTypeAPI.save(type, fields);
+        final ContentType typeSaved = contentTypeAPI.save(type, fields);
+
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final WorkflowScheme systemWorkflowScheme = workflowAPI.findSystemWorkflowScheme();
+        workflowAPI.saveSchemesForStruct(new StructureTransformer(typeSaved).asStructure(),
+                Collections.singletonList(systemWorkflowScheme));
+
+        return typeSaved;
     }
 
     /**
@@ -235,7 +238,11 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
             checkContentSaved(contentletSaved);
 
-            Assert.assertTrue(testCase.hasContentTypeAddChildrenPermission && testCase.hasSaveActionPermission);
+            Assert.assertTrue(
+                    testCase.hasContentTypeAddChildrenPermission &&
+                            testCase.hasSaveActionPermission ||
+                            (testCase.respectFrontendRoles && this.haveFrontendPermission(testCase.contentType))
+            );
         } catch(Exception e) {
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 Assert.assertTrue(
@@ -258,6 +265,17 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
                                 .build());
 
         checkPublishContent(contentletPublished);
+    }
+
+    private boolean haveFrontendPermission(final ContentType contentType) {
+        try {
+            final Role frontEndUserRole = APILocator.getRoleAPI().loadFrontEndUserRole();
+            final List<Permission> permissions = APILocator.getPermissionAPI().getPermissions(contentType);
+
+            return permissions.stream().anyMatch(permission -> permission.getRoleId().equals(frontEndUserRole.getId()));
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void checkPublishContent(final Contentlet contentletPublished) throws DotDataException, DotSecurityException {
