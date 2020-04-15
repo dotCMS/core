@@ -23,6 +23,8 @@
 <%@page import="com.dotmarketing.util.Parameter"%>
 <%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotmarketing.util.VelocityUtil"%>
+<%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
+<%@ page import="com.dotcms.contenttype.model.type.BaseContentType" %>
 
 
 <%
@@ -430,7 +432,9 @@
 
             ResourceLink resourceLink = null;
 
-            if(structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
+            if(structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET
+                    || structure.getStructureType() == BaseContentType.DOTASSET.getType()) {
+
                 resourceLink = new ResourceLinkBuilder().build(request, user, contentlet);
             }
 

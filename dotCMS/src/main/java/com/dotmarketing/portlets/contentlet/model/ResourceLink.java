@@ -2,7 +2,10 @@ package com.dotmarketing.portlets.contentlet.model;
 
 import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -19,6 +22,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
@@ -96,9 +103,11 @@ public class ResourceLink {
 
         public final ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet) throws DotDataException, DotSecurityException {
 
-            if(!(contentlet.getContentType() instanceof FileAssetContentType)){
+            if(!(contentlet.getContentType() instanceof FileAssetContentType) &&
+                    (contentlet.getBaseType().isPresent() && contentlet.getBaseType().get() != BaseContentType.DOTASSET)) {
+
                 throw new DotStateException(getLocalizedMessageOrDefault(user,"File-asset-contentlet-type-expected",
-                        "Can only build Resource Links out of content with type `File Asset`.",getClass())
+                        "Can only build Resource Links out of content with type `File Asset` or `DotAsset`.",getClass())
                 );
             }
 
@@ -124,16 +133,26 @@ public class ResourceLink {
                 if(request.getServerPort() != 80 && request.getServerPort() != 443){
                     resourceLink.append(StringPool.COLON).append(request.getServerPort());
                 }
-                resourceLinkUri.append(identifier.getParentPath()).append(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
+
+                resourceLinkUri.append(identifier.getParentPath()).append(contentlet.getContentType() instanceof FileAssetContentType?
+                        contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD): contentlet.getTitle());
                 resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri.toString()));
                 resourceLinkUri.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
                 resourceLink.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
 
-                final FileAsset fileAsset = getFileAsset(contentlet);
-                final String mimeType = fileAsset.getMimeType();
-                final String fileAssetName = fileAsset.getFileName();
+                if (contentlet.getContentType() instanceof FileAssetContentType) {
 
-                return new ResourceLink(resourceLink.toString(), resourceLinkUri.toString(), mimeType, fileAsset, isEditableAsText(mimeType, fileAssetName), downloadRestricted);
+                    final FileAsset fileAsset = getFileAsset(contentlet);
+                    final String mimeType = fileAsset.getMimeType();
+                    final String fileAssetName = fileAsset.getFileName();
+                    return new ResourceLink(resourceLink.toString(), resourceLinkUri.toString(), mimeType, fileAsset, isEditableAsText(mimeType, fileAssetName), downloadRestricted);
+                } else {
+
+                    final File file = Try.of(()->contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR)).getOrNull();
+                    final String mimeType      = null != file? MimeTypeUtils.getMimeType(file):FileAsset.UNKNOWN_MIME_TYPE; // todo: this metadata should be taken from the metadata cache instead of the file.
+                    final String fileAssetName = null != file?file.getName():FileAsset.UNKNOWN_MIME_TYPE;
+                    return new ResourceLink(resourceLink.toString(), resourceLinkUri.toString(), mimeType, null, isEditableAsText(mimeType, fileAssetName), downloadRestricted);
+                }
             }
 
             return new ResourceLink(StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, false, true);
