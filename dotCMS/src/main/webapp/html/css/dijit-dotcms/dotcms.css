@@ -8119,6 +8119,7 @@ table.sTypeTable.sTypeItem {
 
 .selectableFile {
   cursor: pointer;
+  vertical-align: middle;
 }
 
 .selectableFile img {

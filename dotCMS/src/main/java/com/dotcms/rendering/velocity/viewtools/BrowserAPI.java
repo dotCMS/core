@@ -1,26 +1,32 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.comparators.WebAssetMapComparator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.ContentletToMapTransformer;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.fileassets.business.IFileAsset;
-import com.dotmarketing.portlets.folders.business.ChildrenCondition;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -33,13 +39,7 @@ import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import io.vavr.control.Try;
 
 public class BrowserAPI {
 
@@ -151,7 +151,21 @@ public class BrowserAPI {
 
         }
     }
-
+    
+    public Map<String, Object> getFolderContent(User user, String folderId,
+                    int offset, int maxResults, String filter, List<String> mimeTypes,
+                    List<String> extensions, boolean showWorking, boolean showArchived, boolean noFolders,
+                    boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks, long languageId)
+                    throws DotSecurityException, DotDataException {
+        
+        
+        return getFolderContent( user,  folderId,
+                         offset,  maxResults,  filter,  mimeTypes,
+                        extensions,  showWorking,  showArchived,  noFolders,
+                         onlyFiles,  sortBy,  sortByDesc,  excludeLinks,  languageId, false);
+        
+    }
+    
 	/**
 	 * Gets the Folders, HTMLPages, Links, FileAssets under the specified folderId.
 	 *
@@ -180,7 +194,7 @@ public class BrowserAPI {
 	public Map<String, Object> getFolderContent(User user, String folderId,
 			int offset, int maxResults, String filter, List<String> mimeTypes,
 			List<String> extensions, boolean showWorking, boolean showArchived, boolean noFolders,
-			boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks, long languageId)
+			boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks, long languageId, boolean dotAssets)
 			throws DotSecurityException, DotDataException {
 
 		if (!UtilMethods.isSet(sortBy)) {
@@ -190,21 +204,13 @@ public class BrowserAPI {
 
 		List<Map<String, Object>> returnList = new ArrayList<Map<String, Object>>();
 
-		Role[] roles = new Role[] {};
-		try {
-			roles = com.dotmarketing.business.APILocator.getRoleAPI()
+		Role[] roles = com.dotmarketing.business.APILocator.getRoleAPI()
 					.loadRolesForUser(user.getUserId()).toArray(new Role[0]);
-		} catch (DotDataException e1) {
-			Logger.error(BrowserAPI.class, e1.getMessage(), e1);
-		}
+
 
 		// gets folder parent
-		Folder parent = null;
-		try {
-			parent = APILocator.getFolderAPI().find(folderId, user, false);
-		} catch (Exception ignored) {
-			// Probably what we have here is a host
-		}
+		Folder parent = APILocator.getFolderAPI().find(folderId, user, false);
+
 
 		Host host = null;
 		if (parent == null) {// If we didn't find a parent folder lets verify if
@@ -254,256 +260,121 @@ public class BrowserAPI {
 
 		if (!onlyFiles) {
 
-			// Getting the html pages directly under the parent folder or host
-			List<IHTMLPage> pages = new ArrayList<IHTMLPage>();
-			try {
-				if (parent != null) {//For folders
-					if(!showWorking) {
-						pages.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(parent, user, false));
-					}
-					else {
-						pages.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(parent, user, false));
-					}
+	        // Getting the links directly under the parent folder or host
+	        List<Link> links = new ArrayList<Link>();
 
-					if(showArchived) {
-						pages.addAll(APILocator.getHTMLPageAssetAPI().getDeletedHTMLPages(parent, user, false));
-					}
-				} else {//For hosts
-                    if ( !showWorking ) {
-                        pages.addAll( APILocator.getHTMLPageAssetAPI().getLiveHTMLPages( host, user, false ) );
-                    } else {
-                        pages.addAll( APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages( host, user, false ) );
-                    }
-
-                    if ( showArchived ) {
-                        pages.addAll( APILocator.getHTMLPageAssetAPI().getDeletedHTMLPages( host, user, false ) );
-                    }
-				}
-			} catch (Exception e1) {
-				Logger.error(this, "Could not load HTMLPages : ", e1);
-			}
-
-			for (IHTMLPage page : pages) {
-				
-				boolean isContentlet = page instanceof Contentlet;
-				// include only pages for the given language
-				if(isContentlet && languageId > 0 && ((Contentlet)page).getLanguageId()!= languageId)
-					continue;
-				
-				List<Integer> permissions = new ArrayList<Integer>();
-				try {
-					permissions = permissionAPI.getPermissionIdsFromRoles(page, roles, user);
-				} catch (DotDataException e) {
-					Logger.error(this, "Could not load permissions : ", e);
-				}
-				if (permissions.contains(PERMISSION_READ)) {
-				    WfData wfdata = page instanceof Contentlet ? new WfData((Contentlet)page, permissions, user, showArchived) : null;
-				    
-				    if(wfdata!=null && wfdata.skip)
-				        continue;
-				    
-					Map<String, Object> pageMap = page.getMap();
-					pageMap.put("mimeType", "application/dotpage");
-					pageMap.put("permissions", permissions);
-					pageMap.put("name", page.getPageUrl());
-					pageMap.put("description", page.getFriendlyName());
-					pageMap.put("extension", "page");
-					pageMap.put("isContentlet", isContentlet);
-					
-					if(wfdata!=null ) {
-    		            pageMap.put("wfActionMapList", wfdata.wfActionMapList);
-    	                pageMap.put("contentEditable", wfdata.contentEditable);
-					}
-					
-					if(isContentlet) {
-					    pageMap.put("identifier", page.getIdentifier());
-		                pageMap.put("inode", page.getInode());
-					    pageMap.put("languageId", ((Contentlet)page).getLanguageId());
-					    
-					    Language lang = APILocator.getLanguageAPI().getLanguage(((Contentlet)page).getLanguageId());
-					    
-					    pageMap.put("languageCode", lang.getLanguageCode());
-		                pageMap.put("countryCode", lang.getCountryCode());
-		                pageMap.put("isLocked", page.isLocked());
-		                pageMap.put("languageFlag", LanguageUtil.getLiteralLocale(lang.getLanguageCode(), lang.getCountryCode()));
-		            
-		              
-					}
-
-                    pageMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(page));
-					pageMap.put("statusIcons", UtilHTML.getStatusIcons(page));
-					pageMap.put("hasTitleImage",String.valueOf(((Contentlet)page).getTitleImage().isPresent()));
-					pageMap.put("__icon__", "pageIcon");
-					returnList.add(pageMap);
-				}
-			}
-
-		}
-
-		List<Versionable> files = new ArrayList<Versionable>();
-		try {
-
-			if (parent == null) {
-
-				// Getting the files directly under the host
-				files.addAll(APILocator.getFileAssetAPI().findFileAssetsByHost(host, user, !showWorking, showWorking, false, false));
-				if(showArchived)
-					files.addAll(APILocator.getFileAssetAPI().findFileAssetsByHost(host, user, !showWorking, showWorking, showArchived, false));
-
-			} else {
-		        ChildrenCondition cond = new ChildrenCondition();
-		        
-		        if(showWorking)
-		        	cond.working = true;
-		        else
-		        	cond.live = true;
-				
-		        cond.deleted = showArchived;
-
-				files.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(parent, "", !showWorking, showWorking, user, false));
-			}
-
-			//remove duplicated legacy files from list. See issue 5943
-    		HashSet<Versionable> tempFilesListToSet = new HashSet<Versionable>(files);
-    		files.clear();
-    		files.addAll(tempFilesListToSet);
-
-		} catch (Exception e2) {
-			Logger.error(this, "Could not load files : ", e2);
-		}
-
-		for (Versionable file : files) {
-
-			if (file == null)
-				continue;
-
-			List<Integer> permissions = new ArrayList<Integer>();
-
-            try {
-                permissions = permissionAPI.getPermissionIdsFromRoles((IFileAsset)file, roles, user);
-            } catch (DotDataException e) {
-                Logger.error(this, "Could not load permissions : ", e);
+            if (parent != null) {
+                if (showWorking) {
+                    links.addAll(folderAPI.getLinks(parent, true, false, user, false));
+                } else {
+                    links.addAll(folderAPI.getLiveLinks(parent, user, false));
+                }
+                if (showArchived)
+                    links.addAll(folderAPI.getLinks(parent, true, showArchived, user, false));
+            } else {
+                links = folderAPI.getLinks(host, true, showArchived, user, false);
             }
-			
-			WfData wfdata=null;
-			Contentlet contentlet=null;
-			if(file instanceof Contentlet) {
-			    contentlet=(Contentlet)file;
-			    wfdata=new WfData(contentlet, permissions, user, showArchived);
-			}
 
-			if (contentlet != null) {
-			    //Show only files versions if a language filter is in place
-                if(languageId > 0 && contentlet.getLanguageId()!= languageId)
+
+	        for (Link link : links) {
+
+	            List<Integer> permissions2 = permissionAPI.getPermissionIdsFromRoles(link, roles, user);
+
+	            if (permissions2.contains(PERMISSION_READ)) {
+	                Map<String, Object> linkMap = link.getMap();
+	                linkMap.put("permissions", permissions2);
+	                linkMap.put("mimeType", "application/dotlink");
+	                linkMap.put("name", link.getTitle());
+	                linkMap.put("description", link.getFriendlyName());
+	                linkMap.put("extension", "link");
+	                linkMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(link));
+	                linkMap.put("statusIcons", UtilHTML.getStatusIcons(link));
+	                linkMap.put("hasTitleImage", "");
+	                linkMap.put("__icon__", "linkIcon");
+	                returnList.add(linkMap);
+	            }
+	        }
+		    
+		    
+		    
+		    
+		    
+		    
+            // Getting the html pages directly under the parent folder or host
+            List<IHTMLPage> pages = new ArrayList<IHTMLPage>();
+            
+            if (parent != null) {//For folders
+                if(!showWorking) {
+                    pages.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(parent, user, false));
+                }
+                else {
+                    pages.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(parent, user, false));
+                }
+
+                if(showArchived) {
+                    pages.addAll(APILocator.getHTMLPageAssetAPI().getDeletedHTMLPages(parent, user, false));
+                }
+            } else {//For hosts
+                if ( !showWorking ) {
+                    pages.addAll( APILocator.getHTMLPageAssetAPI().getLiveHTMLPages( host, user, false ) );
+                } else {
+                    pages.addAll( APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages( host, user, false ) );
+                }
+
+                if ( showArchived ) {
+                    pages.addAll( APILocator.getHTMLPageAssetAPI().getDeletedHTMLPages( host, user, false ) );
+                }
+            }
+
+            for (IHTMLPage page : pages) {
+                // include only pages for the given language
+                if(languageId > 0 && ((Contentlet)page).getLanguageId()!= languageId) {
                     continue;
-                if (wfdata != null && wfdata.skip)
-                    continue;
-			}
+                }
+                returnList.add(htmlPageMap((HTMLPageAsset) page, user, showArchived, languageId));
+            }
+		}
+		
 
-			IFileAsset fileAsset=(IFileAsset)file;
-			Map<String, Object> fileMap = fileAsset.getMap();
 
-			Identifier ident = APILocator.getIdentifierAPI().find(
-					fileAsset.getVersionId());
+		
+		String luceneQuery=(dotAssets)  ? "+basetype:(4 OR 9)" : "+basetype:4 ";
+		luceneQuery+=(languageId>0) ? " +languageid:" +  languageId : "";
+		luceneQuery+=(host!=null)   ? " +conhost:" + host.getIdentifier() + " +confolder:" + Folder.SYSTEM_FOLDER : "";
+		luceneQuery+=(parent!=null) ? " +confolder:" + parent.getInode() :"";
+		
 
-			fileMap.put("permissions", permissions);
-			fileMap.put("mimeType", APILocator.getFileAssetAPI()
-					.getMimeType(fileAsset.getUnderlyingFileName()));
-			fileMap.put("name", ident.getAssetName());
-			fileMap.put("fileName", ident.getAssetName());
-			fileMap.put("title", fileAsset.getFriendlyName());
-			fileMap.put("description", fileAsset instanceof Contentlet ?
-			                           ((Contentlet)fileAsset).getStringProperty(FileAssetAPI.DESCRIPTION)
-			                           : "");
-			fileMap.put("extension", UtilMethods
-					.getFileExtension(fileAsset.getUnderlyingFileName()));
-			fileMap.put("path", fileAsset.getPath());
-			fileMap.put("type", fileAsset.getType());
-			Host hoster = APILocator.getHostAPI().find(ident.getHostId(), APILocator.systemUser(), false);
-            fileMap.put("hostName", hoster.getHostname());
-			
-			
-			
-			
-			if(wfdata!=null) {
-    			fileMap.put("wfActionMapList", wfdata.wfActionMapList);
-    			fileMap.put("contentEditable", wfdata.contentEditable);
-			}
-			fileMap.put("size", fileAsset.getFileSize());
-			fileMap.put("publishDate", fileAsset.getIDate());
-			// BEGIN GRAZIANO issue-12-dnd-template
-			fileMap.put(
-					"parent",
-					fileAsset.getParent() != null ? fileAsset
-							.getParent() : "");
-			fileMap.put("isContentlet", false);
-			// END GRAZIANO issue-12-dnd-template
-			Language lang = null;
+		if(UtilMethods.isSet(filter)) {
+		    String[] spliter = filter.split(" ");
+		    for(String tok : spliter) {
+		        luceneQuery+=" +title:" + tok + "*";
+		    }
+		}
+		
+        luceneQuery+=showWorking ?  " +working:true +deleted:" + showArchived  : " +live:true";
 
-			fileMap.put("identifier", contentlet.getIdentifier());
-			fileMap.put("inode", contentlet.getInode());
-			fileMap.put("isLocked", contentlet.isLocked());
-			fileMap.put("isContentlet", true);
-			lang = langAPI.getLanguage(contentlet.getLanguageId());
+        List<Contentlet> files = APILocator.getContentletAPI().search(luceneQuery, maxResults, offset, sortBy, user, true);
+        
 
-			fileMap.put("languageId", lang.getId());
-			fileMap.put("languageCode", lang.getLanguageCode());
-			fileMap.put("countryCode", lang.getCountryCode());
-			fileMap.put("languageFlag", LanguageUtil.getLiteralLocale(lang.getLanguageCode(), lang.getCountryCode()));
 
-            fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(file));
-			fileMap.put("statusIcons", UtilHTML.getStatusIcons(file));
-			fileMap.put("hasTitleImage",String.valueOf(contentlet.getTitleImage().isPresent()));
-			fileMap.put("__icon__", UtilMethods.getFileExtension( ident.getURI()) + "Icon");
-			returnList.add(fileMap);
+		for (Contentlet file : files) {
+
+			if (file == null) {
+                continue;
+            }
+
+
+            if (file.getBaseType().get() == BaseContentType.FILEASSET) {
+                FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(file);
+                returnList.add(fileAssetMap(fileAsset, user, showArchived));
+            }
+
+            if (file.getBaseType().get() == BaseContentType.DOTASSET) {
+                returnList.add(dotAssetMap(file, user, showArchived));
+            }
 		}
 
-		if (!onlyFiles && !excludeLinks) {
 
-			// Getting the links directly under the parent folder or host
-			List<Link> links = new ArrayList<Link>();
-			try {
-				if (parent != null) {
-					if(showWorking) {
-						links.addAll(folderAPI.getLinks(parent, true, false, user,false));
-					} else {
-						links.addAll(folderAPI.getLiveLinks(parent, user, false));
-					}
-					if(showArchived)
-						links.addAll(folderAPI.getLinks(parent, true, showArchived, user,false));
-				} else {
-					links = folderAPI.getLinks(host, true, showArchived, user, false);
-				}
-			} catch (Exception e1) {
-				Logger.error(this, "Could not load links : ", e1);
-			}
-
-			for (Link link : links) {
-
-				List<Integer> permissions = new ArrayList<Integer>();
-				try {
-					permissions = permissionAPI.getPermissionIdsFromRoles(link,
-							roles, user);
-				} catch (DotDataException e) {
-					Logger.error(this, "Could not load permissions : ", e);
-				}
-				if (permissions.contains(PERMISSION_READ)) {
-					Map<String, Object> linkMap = link.getMap();
-					linkMap.put("permissions", permissions);
-					linkMap.put("mimeType", "application/dotlink");
-					linkMap.put("name", link.getTitle());
-					linkMap.put("description", link.getFriendlyName());
-					linkMap.put("extension", "link");
-                    linkMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(link));
-					linkMap.put("statusIcons", UtilHTML.getStatusIcons(link));
-					linkMap.put("hasTitleImage","");
-					linkMap.put("__icon__","linkIcon");
-                    returnList.add(linkMap);
-				}
-
-			}
-
-		}
 
 		// Filtering
 		List<Map<String, Object>> filteredList = new ArrayList<Map<String, Object>>();
@@ -516,10 +387,7 @@ public class BrowserAPI {
 			String mimeType = (String) asset.get("mimeType");
 			mimeType = mimeType == null ? "" : mimeType;
 
-			if (UtilMethods.isSet(filter)
-					&& !(description
-							.toLowerCase().contains(filter.toLowerCase())))
-				continue;
+
 			if (mimeTypes != null && mimeTypes.size() > 0) {
 				boolean match = false;
 				for (String mType : mimeTypes)
@@ -559,4 +427,197 @@ public class BrowserAPI {
 		return returnMap;
 	}
 
+	
+	   private Map<String,Object> htmlPageMap(HTMLPageAsset page, User user, boolean showArchived, long languageId) throws DotDataException, DotStateException, DotSecurityException{
+	        Map<String, Object> pageMap = new HashMap<>(page.getMap());
+
+
+            
+            Identifier ident = APILocator.getIdentifierAPI().find(
+                            page.getVersionId());
+                    Role[] roles = com.dotmarketing.business.APILocator.getRoleAPI()
+                                    .loadRolesForUser(user.getUserId()).toArray(new Role[0]);
+
+            List<Integer> permissions = permissionAPI.getPermissionIdsFromRoles(page, roles, user);
+
+            if (permissions.contains(PERMISSION_READ)) {
+                WfData wfdata = page instanceof Contentlet ? new WfData((Contentlet)page, permissions, user, showArchived) : null;
+                
+    
+                pageMap.put("mimeType", "application/dotpage");
+                pageMap.put("permissions", permissions);
+                pageMap.put("name", page.getPageUrl());
+                pageMap.put("description", page.getFriendlyName());
+                pageMap.put("extension", "page");
+                pageMap.put("isContentlet", true);
+                
+                if(wfdata!=null ) {
+                    pageMap.put("wfActionMapList", wfdata.wfActionMapList);
+                    pageMap.put("contentEditable", wfdata.contentEditable);
+                }
+                
+
+                    pageMap.put("identifier", page.getIdentifier());
+                    pageMap.put("inode", page.getInode());
+                    pageMap.put("languageId", ((Contentlet)page).getLanguageId());
+                    
+                    Language lang = APILocator.getLanguageAPI().getLanguage(((Contentlet)page).getLanguageId());
+                    
+                    pageMap.put("languageCode", lang.getLanguageCode());
+                    pageMap.put("countryCode", lang.getCountryCode());
+                    pageMap.put("isLocked", page.isLocked());
+                    pageMap.put("languageFlag", LanguageUtil.getLiteralLocale(lang.getLanguageCode(), lang.getCountryCode()));
+                
+
+
+                pageMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(page));
+                pageMap.put("statusIcons", UtilHTML.getStatusIcons(page));
+                pageMap.put("hasTitleImage",String.valueOf(((Contentlet)page).getTitleImage().isPresent()));
+                pageMap.put("__icon__", "pageIcon");
+
+            }
+	        
+	        
+	        
+	
+	        return pageMap;
+	   }
+	
+	
+	private Map<String,Object> fileAssetMap(FileAsset fileAsset, User user, boolean showArchived) throws DotDataException, DotStateException, DotSecurityException{
+	    Map<String, Object> fileMap = new HashMap<>(fileAsset.getMap());
+
+        Identifier ident = APILocator.getIdentifierAPI().find(
+                fileAsset.getVersionId());
+        Role[] roles = com.dotmarketing.business.APILocator.getRoleAPI()
+                        .loadRolesForUser(user.getUserId()).toArray(new Role[0]);
+        
+        List<Integer> permissions =permissionAPI.getPermissionIdsFromRoles(fileAsset, roles, user);
+        
+        WfData wfdata=new WfData(fileAsset, permissions, user, showArchived);
+        fileMap.put("permissions", permissions);
+        fileMap.put("mimeType", APILocator.getFileAssetAPI()
+                .getMimeType(fileAsset.getUnderlyingFileName()));
+        fileMap.put("name", ident.getAssetName());
+        fileMap.put("fileName", ident.getAssetName());
+        fileMap.put("title", fileAsset.getFriendlyName());
+        fileMap.put("description", fileAsset instanceof Contentlet ?
+                                   ((Contentlet)fileAsset).getStringProperty(FileAssetAPI.DESCRIPTION)
+                                   : "");
+        fileMap.put("extension", UtilMethods
+                .getFileExtension(fileAsset.getUnderlyingFileName()));
+        fileMap.put("path", fileAsset.getPath());
+        fileMap.put("type", "file_asset");
+        Host hoster = APILocator.getHostAPI().find(ident.getHostId(), APILocator.systemUser(), false);
+        fileMap.put("hostName", hoster.getHostname());
+        
+        
+        
+        
+        if(wfdata!=null) {
+            fileMap.put("wfActionMapList", wfdata.wfActionMapList);
+            fileMap.put("contentEditable", wfdata.contentEditable);
+        }
+        fileMap.put("size", fileAsset.getFileSize());
+        fileMap.put("publishDate", fileAsset.getIDate());
+        // BEGIN GRAZIANO issue-12-dnd-template
+        fileMap.put(
+                "parent",
+                fileAsset.getParent() != null ? fileAsset
+                        .getParent() : "");
+
+        // END GRAZIANO issue-12-dnd-template
+        Language lang = null;
+
+        fileMap.put("identifier", fileAsset.getIdentifier());
+        fileMap.put("inode", fileAsset.getInode());
+        fileMap.put("isLocked", fileAsset.isLocked());
+        fileMap.put("isContentlet", true);
+        lang = langAPI.getLanguage(fileAsset.getLanguageId());
+
+        fileMap.put("languageId", lang.getId());
+        fileMap.put("languageCode", lang.getLanguageCode());
+        fileMap.put("countryCode", lang.getCountryCode());
+        fileMap.put("languageFlag", LanguageUtil.getLiteralLocale(lang.getLanguageCode(), lang.getCountryCode()));
+
+        fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(fileAsset));
+        fileMap.put("statusIcons", UtilHTML.getStatusIcons(fileAsset));
+        fileMap.put("hasTitleImage",String.valueOf(fileAsset.getTitleImage().isPresent()));
+        fileMap.put("__icon__", UtilMethods.getFileExtension( ident.getURI()) + "Icon");
+        return fileMap;
+	    
+	    
+	}
+	
+	
+	
+	
+	
+	   private Map<String,Object> dotAssetMap(Contentlet dotAsset, User user, boolean showArchived) throws DotDataException, DotStateException, DotSecurityException{
+	        Map<String, Object> fileMap = new  ContentletToMapTransformer(dotAsset).toMaps().get(0);
+	       
+	        Identifier ident = APILocator.getIdentifierAPI().find(
+	                dotAsset.getVersionId());
+	        Role[] roles = com.dotmarketing.business.APILocator.getRoleAPI()
+	                        .loadRolesForUser(user.getUserId()).toArray(new Role[0]);
+	        
+	        List<Integer> permissions =permissionAPI.getPermissionIdsFromRoles(dotAsset, roles, user);
+	        final String fileName=Try.of(()->dotAsset.getBinary("asset").getName()).getOrElse("unknown");
+	        WfData wfdata=new WfData(dotAsset, permissions, user, showArchived);
+	        fileMap.put("permissions", permissions);
+	        fileMap.put("mimeType", APILocator.getFileAssetAPI()
+	                .getMimeType(fileName));
+	        fileMap.put("name", fileName);
+	        fileMap.put("fileName", fileName);
+	        fileMap.put("title", fileName);
+	        fileMap.put("friendyName", "");
+	       
+	        
+	        fileMap.put("extension", UtilMethods.getFileExtension(fileName));
+	        fileMap.put("path", "/dA/" + ident.getId() + "/" + fileName);
+	        fileMap.put("type", "dotasset");
+	        Host hoster = APILocator.getHostAPI().find(ident.getHostId(), APILocator.systemUser(), false);
+	        fileMap.put("hostName", hoster.getHostname());
+	        
+	        
+	        
+	        if(wfdata!=null) {
+	            fileMap.put("wfActionMapList", wfdata.wfActionMapList);
+	            fileMap.put("contentEditable", wfdata.contentEditable);
+	        }
+	        fileMap.put("size", Try.of(()->dotAsset.getBinary("asset").length()).getOrElse(0l));
+	        fileMap.put("publishDate", dotAsset.getModDate());
+	        // BEGIN GRAZIANO issue-12-dnd-template
+
+	        fileMap.put("isContentlet", true);
+	        // END GRAZIANO issue-12-dnd-template
+	        Language lang = null;
+
+	        fileMap.put("identifier", dotAsset.getIdentifier());
+	        fileMap.put("inode", dotAsset.getInode());
+	        fileMap.put("isLocked", dotAsset.isLocked());
+	        fileMap.put("isContentlet", true);
+	        lang = langAPI.getLanguage(dotAsset.getLanguageId());
+
+	        fileMap.put("languageId", lang.getId());
+	        fileMap.put("languageCode", lang.getLanguageCode());
+	        fileMap.put("countryCode", lang.getCountryCode());
+	        fileMap.put("languageFlag", LanguageUtil.getLiteralLocale(lang.getLanguageCode(), lang.getCountryCode()));
+
+	        fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(dotAsset));
+	        fileMap.put("statusIcons", UtilHTML.getStatusIcons(dotAsset));
+	        fileMap.put("hasTitleImage",String.valueOf(dotAsset.getTitleImage().isPresent()));
+	        fileMap.put("__icon__", UtilMethods.getFileExtension( ident.getURI()) + "Icon");
+	        return fileMap;
+	        
+	        
+	    }
+	    
+	
+	
+	
+	
+	
+	
 }
+

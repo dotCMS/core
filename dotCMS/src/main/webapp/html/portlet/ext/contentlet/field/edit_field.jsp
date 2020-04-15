@@ -431,6 +431,7 @@
             }
 
             ResourceLink resourceLink = new ResourceLinkBuilder().build(request, user, contentlet, field.getVelocityVarName());
+
         %>
 
         <!--  display -->
@@ -593,6 +594,7 @@
             <% if (resourceLink.isEditableAsText()) { %>
                 <%
                     if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
+
                 %>
                     <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
                 <%  } %>

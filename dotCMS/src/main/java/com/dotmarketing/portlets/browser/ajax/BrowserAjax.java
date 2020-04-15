@@ -344,6 +344,41 @@ public class BrowserAjax {
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, languageId);
 	}
 
+	
+	
+	
+	
+	
+	   public Map<String, Object> getFolderContentWithDotAssets(String folderId, int offset,
+	                   int maxResults, String filter, List<String> mimeTypes,
+	                   List<String> extensions, boolean showArchived, boolean noFolders,
+	                   boolean onlyFiles, String sortBy, boolean sortByDesc,
+	                   boolean excludeLinks) throws DotSecurityException, DotDataException {
+	       
+	       
+	       
+	       
+	        WebContext ctx = WebContextFactory.get();
+	        HttpServletRequest req = ctx.getHttpServletRequest();
+	        User user = getUser(req);
+	        long getAllLanguages = 0;
+
+	        Map<String, Object> results = browserAPI.getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions, true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, getAllLanguages, true);
+	        listCleanup((List<Map<String, Object>>) results.get("list"), getContentSelectedLanguageId(req));
+
+	        return results;
+	       
+
+	       
+	       
+	       
+	   }
+	
+	
+	
+	
+	
+	
 	/**
 	 * Retrieves the list of contents under the specified folder. This specific
 	 * implementation will only have one identifier per entry. This means that,
