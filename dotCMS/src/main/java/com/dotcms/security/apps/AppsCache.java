@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+/**
+ * Cache Admin allows management of Apps Cache Entries organized in various ways.
+ */
 public abstract class AppsCache implements Cachable {
 
     static final String SECRETS_CACHE_GROUP = "SECRETS_CACHE_GROUP";

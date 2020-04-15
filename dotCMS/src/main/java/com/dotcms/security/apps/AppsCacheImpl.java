@@ -20,12 +20,13 @@ import java.util.stream.Collectors;
  */
 public class AppsCacheImpl extends AppsCache {
 
-    private DotCacheAdministrator cache;
+    private final DotCacheAdministrator cache;
 
     /**
      * Default constructor.
      */
     public AppsCacheImpl() {
+        super();
         cache = CacheLocator.getCacheAdministrator();
     }
 
@@ -127,13 +128,16 @@ public class AppsCacheImpl extends AppsCache {
      * @return
      * @throws DotCacheException
      */
-    public synchronized Set<String> getKeysFromCache(final Supplier<Set<String>> supplier) throws DotCacheException {
-        Set<String> keys = (Set<String>) cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
-        if (!UtilMethods.isSet(keys) && null != supplier) {
-            keys = supplier.get();
-            putKeys(keys);
+    public Set<String> getKeysFromCache(final Supplier<Set<String>> supplier)
+            throws DotCacheException {
+        synchronized (AppsCacheImpl.class) {
+            Set<String> keys = (Set<String>) cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
+            if (!UtilMethods.isSet(keys) && null != supplier) {
+                keys = supplier.get();
+                putKeys(keys);
+            }
+            return keys;
         }
-        return keys;
     }
 
     /**
@@ -152,13 +156,15 @@ public class AppsCacheImpl extends AppsCache {
      * @param supplier encrypted secret supplier
      * @return encrypted secret from cache.
      */
-    public synchronized char[] getFromCache(final String key, final Supplier<char[]> supplier) {
-        char[] retVal = (char[]) cache.getNoThrow(key, SECRETS_CACHE_GROUP);
-        if (retVal == null && null != supplier) {
-            retVal = supplier.get();
-            putSecret(key, retVal);
+    public char[] getFromCache(final String key, final Supplier<char[]> supplier) {
+        synchronized (AppsCacheImpl.class) {
+            char[] retVal = (char[]) cache.getNoThrow(key, SECRETS_CACHE_GROUP);
+            if (retVal == null && null != supplier) {
+                retVal = supplier.get();
+                putSecret(key, retVal);
+            }
+            return retVal;
         }
-        return retVal;
     }
 
     /**
@@ -167,7 +173,7 @@ public class AppsCacheImpl extends AppsCache {
      * @param key secret key
      * @return encrypted secret from cache.
      */
-    public synchronized char[] getFromCache(final String key){
+    public char[] getFromCache(final String key){
        return getFromCache(key, null);
     }
 
@@ -183,9 +189,11 @@ public class AppsCacheImpl extends AppsCache {
     /**
      * All Secrets flush.
      */
-    public synchronized void flushSecret() {
-        cache.flushGroup(SECRETS_CACHE_GROUP);
-        cache.flushGroup(SECRETS_CACHE_KEYS_GROUP);
+    public  void flushSecret() {
+        synchronized (AppsCacheImpl.class) {
+           cache.flushGroup(SECRETS_CACHE_GROUP);
+           cache.flushGroup(SECRETS_CACHE_KEYS_GROUP);
+        }
     }
 
     /**
@@ -193,12 +201,14 @@ public class AppsCacheImpl extends AppsCache {
      * @param key
      * @throws DotCacheException
      */
-    public synchronized void flushSecret(final String key) throws DotCacheException {
-        cache.remove(key, SECRETS_CACHE_GROUP);
-        final Set<String> keys = (Set<String>)cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
-        if(UtilMethods.isSet(keys)){
-            keys.remove(key);
-            putKeys(keys);
+    public void flushSecret(final String key) throws DotCacheException {
+        synchronized (AppsCacheImpl.class) {
+            cache.remove(key, SECRETS_CACHE_GROUP);
+            final Set<String> keys = (Set<String>)cache.get(SECRETS_CACHE_KEY, SECRETS_CACHE_KEYS_GROUP);
+            if(UtilMethods.isSet(keys)){
+                keys.remove(key);
+                putKeys(keys);
+            }
         }
     }
 

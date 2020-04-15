@@ -55,6 +55,8 @@ public class AppsAPIImpl implements AppsAPI {
     private static final String SERVER_DIR_NAME = "server";
     private static final String APPS_DIR_NAME = "apps";
     private static final String APPS_DIR_PATH_KEY = "APPS_DIR_PATH_KEY";
+    private static final int DESCRIPTOR_KEY_MAX_LENGTH = 100;
+    private static final int DESCRIPTOR_NAME_MAX_LENGTH = 100;
 
     private final UserAPI userAPI;
     private final LayoutAPI layoutAPI;
@@ -542,8 +544,8 @@ public class AppsAPIImpl implements AppsAPI {
           throw new DotDataValidationException("The required field `key` isn't set on the incoming file.");
        }
 
-       if(appDescriptor.getKey().length() > 100){
-           throw new DotDataValidationException("The required field `key` exceeds 100 chars length.");
+       if(DESCRIPTOR_KEY_MAX_LENGTH < appDescriptor.getKey().length()){
+           throw new DotDataValidationException(String.format("The required field `key` exceeds %d chars length.", DESCRIPTOR_KEY_MAX_LENGTH));
        }
 
        if(UtilMethods.isNotSet(appDescriptor.getName())){
@@ -562,7 +564,7 @@ public class AppsAPIImpl implements AppsAPI {
            throw new DotDataValidationException("The required field `params` isn't set on the incoming file.");
        }
 
-       for (Map.Entry<String, ParamDescriptor> entry : appDescriptor.getParams().entrySet()) {
+       for (final Map.Entry<String, ParamDescriptor> entry : appDescriptor.getParams().entrySet()) {
            validateParamDescriptor(entry.getKey(), entry.getValue());
        }
 
@@ -576,8 +578,8 @@ public class AppsAPIImpl implements AppsAPI {
            throw new DotDataValidationException("Param descriptor is missing required  field `name` .");
        }
 
-       if(name.length() > 100){
-           throw new DotDataValidationException(String.format("Param name `%s` exceeds 100 chars length.", name));
+       if(DESCRIPTOR_NAME_MAX_LENGTH < name.length()){
+           throw new DotDataValidationException(String.format("Param name `%s` exceeds %d chars length.", name, DESCRIPTOR_NAME_MAX_LENGTH));
        }
 
        if(UtilMethods.isNotSet(descriptor.getHint())){
@@ -596,7 +598,7 @@ public class AppsAPIImpl implements AppsAPI {
            throw new DotDataValidationException(String.format("Boolean Params like `%s` can not be marked hidden.", name));
        }
 
-       if ("null".equalsIgnoreCase(descriptor.getValue()) && descriptor.isRequired()) {
+       if (StringPool.NULL.equalsIgnoreCase(descriptor.getValue()) && descriptor.isRequired()) {
            throw new DotDataValidationException(String.format(
                    "Null isn't allowed as the default value on required params see `%s`. ",
                    name)

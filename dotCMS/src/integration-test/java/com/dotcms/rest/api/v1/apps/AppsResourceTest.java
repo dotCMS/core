@@ -385,12 +385,9 @@ public class AppsResourceTest extends IntegrationTestBase {
     public void Test_Create_App_Descriptor_Then_Create_App_Integration_Then_Delete_App_Descriptor() {
 
         final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
-                "param1", ParamDescriptor
-                        .newParam("val-1", false, Type.STRING, "label", "hint", true),
-                "param2", ParamDescriptor
-                        .newParam("val-2", false, Type.STRING, "label", "hint", true),
-                "param3", ParamDescriptor
-                        .newParam("val-3", false, Type.STRING, "label", "hint", true)
+                "param1", ParamDescriptor.newParam("", false, Type.STRING, "label", "hint", true),
+                "param2", ParamDescriptor.newParam("", false, Type.STRING, "label", "hint", true),
+                "param3", ParamDescriptor.newParam("", false, Type.STRING, "label", "hint", true)
         );
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -414,9 +411,9 @@ public class AppsResourceTest extends IntegrationTestBase {
 
                 //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
                 final Map<String, Input> inputParamMap = ImmutableMap.of(
-                        "param1", Input.newInputParam("val-1".toCharArray(),false),
-                        "param2", Input.newInputParam("val-2".toCharArray(),false),
-                        "param3", Input.newInputParam("val-3".toCharArray(),false));
+                        "param1", Input.newInputParam("val-1".toCharArray()),
+                        "param2", Input.newInputParam("val-2".toCharArray()),
+                        "param3", Input.newInputParam("val-3".toCharArray()));
 
                 final Host host = createAppSecret(inputParamMap, appKey, request, response);
                 sites.add(host.getIdentifier());
@@ -467,14 +464,13 @@ public class AppsResourceTest extends IntegrationTestBase {
     @Test
     public void Test_Secret_Serializer_Returned_Values_Match_Descriptor_Verify_Hidden_Secrets_Are_Protected() throws Exception{
 
-        final List<String> orderedParamNames = ImmutableList.of("param1","param2","param3","param4","param5");
+        final List<String> orderedParamNames = ImmutableList.of("param1","param2","param3","param4");
         //This is how the descriptor looks like.
         final SortedMap<String, ParamDescriptor> appDescriptorParamsMap = ImmutableSortedMap.of(
                 orderedParamNames.get(0), ParamDescriptor.newParam("", true, Type.STRING, "label", "hint", true),
                 orderedParamNames.get(1), ParamDescriptor.newParam("", false, Type.BOOL, "label", "hint", true),//Bools shouldn't be hidden
-                orderedParamNames.get(2), ParamDescriptor.newParam("", true, Type.STRING, "label", "hint", true),
-                orderedParamNames.get(3), ParamDescriptor.newParam("", false, Type.BOOL, "label", "hint", true), //Bools shouldn't be hidden
-                orderedParamNames.get(4), ParamDescriptor.newParam("", false, Type.STRING, "label", "hint", true) //Bools shouldn't be hidden
+                orderedParamNames.get(2), ParamDescriptor.newParam("", false, Type.BOOL, "label", "hint", true), //Bools shouldn't be hidden
+                orderedParamNames.get(3), ParamDescriptor.newParam("", false, Type.STRING, "label", "hint", true) //Bools shouldn't be hidden
         );
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -496,17 +492,16 @@ public class AppsResourceTest extends IntegrationTestBase {
 
             final List<String> sites = new ArrayList<>();
 
-            final int max = 10;
+            final int max = 5;
             for (int i = 1; i <= max; i++) {
 
                 //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
                 //Also note we're sending hidden value as true. Trying to override the value on the descriptor.
                 final Map<String, Input> inputParamMap = ImmutableMap.of(
-                        "param1", Input.newInputParam("val-1".toCharArray()),
+                        "param1", Input.newInputParam("hidden".toCharArray()),
                         "param2", Input.newInputParam("true".toCharArray()),
-                        "param3", Input.newInputParam("val-2".toCharArray()),
-                        "param4", Input.newInputParam("true".toCharArray()),
-                        "param5", Input.newInputParam("non-hidden".toCharArray())
+                        "param3", Input.newInputParam("true".toCharArray()),
+                        "param4", Input.newInputParam("non-hidden".toCharArray())
                 );
 
                 sites.add(
@@ -544,9 +539,9 @@ public class AppsResourceTest extends IntegrationTestBase {
                 //Using a LinkedHashMap we guarantee we keep the original order on which the elements were sent.
                 int index = 0;
                 for (Entry<String, SecretView> secretEntry : secrets.entrySet()) {
-                    try (final StringWriter writer = new StringWriter()) {
+                    try (StringWriter writer = new StringWriter()) {
 
-                        final JsonGenerator jsonGenerator = createJsonGenerator(writer);
+                        try(final JsonGenerator jsonGenerator = createJsonGenerator(writer)){
                         final String key = secretEntry.getKey();
                         final SecretView view = secretEntry.getValue();
                         final SecretViewSerializer secretViewSerializer = new SecretViewSerializer();
@@ -586,6 +581,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                         Assert.assertEquals(descriptorParam.getType(), view.getSecret().getType());
                         //Test the order on which the secrets were sent back. They must whatever order was specified when building the app-descriptor.
                         Assert.assertEquals(view.getName(), orderedParamNames.get(index++));
+                        }
                     }
                 }
             }

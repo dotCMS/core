@@ -1,7 +1,6 @@
 package com.dotcms.security.apps;
 
-import static com.dotcms.security.apps.AppsCache.*;
-
+import static com.dotcms.security.apps.AppsCache.CACHE_404;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
