@@ -33,6 +33,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,8 +59,8 @@ public class AppsAPIImpl implements AppsAPI {
     private static final String SERVER_DIR_NAME = "server";
     private static final String APPS_DIR_NAME = "apps";
     private static final String APPS_DIR_PATH_KEY = "APPS_DIR_PATH_KEY";
-    private static final int DESCRIPTOR_KEY_MAX_LENGTH = 100;
-    private static final int DESCRIPTOR_NAME_MAX_LENGTH = 100;
+    static final int DESCRIPTOR_KEY_MAX_LENGTH = 60;
+    static final int DESCRIPTOR_NAME_MAX_LENGTH = 60;
 
     private final UserAPI userAPI;
     private final LayoutAPI layoutAPI;
@@ -527,72 +528,111 @@ public class AppsAPIImpl implements AppsAPI {
         return builder.build();
     }
 
+    /**
+     * internal descriptor validator
+     * @param appDescriptor
+     * @return
+     * @throws DotDataValidationException
+     */
    private boolean validateServiceDescriptor(final AppDescriptor appDescriptor)
            throws DotDataValidationException {
+
+       final List<String> errors = new ArrayList<>();
+
        if(UtilMethods.isNotSet(appDescriptor.getKey())){
-          throw new DotDataValidationException("The required field `key` isn't set on the incoming file.");
+          errors.add("The required field `key` isn't set on the incoming file.");
        }
 
        if(DESCRIPTOR_KEY_MAX_LENGTH < appDescriptor.getKey().length()){
-           throw new DotDataValidationException(String.format("The required field `key` exceeds %d chars length.", DESCRIPTOR_KEY_MAX_LENGTH));
+           errors.add(String.format("The required field `key` exceeds %d chars length.", DESCRIPTOR_KEY_MAX_LENGTH));
        }
 
        if(UtilMethods.isNotSet(appDescriptor.getName())){
-           throw new DotDataValidationException("The required field `name` isn't set on the incoming file.");
+           errors.add("The required field `name` isn't set on the incoming file.");
        }
 
        if(UtilMethods.isNotSet(appDescriptor.getDescription())){
-           throw new DotDataValidationException("The required field `description` isn't set on the incoming file.");
+           errors.add("The required field `description` isn't set on the incoming file.");
        }
 
        if(UtilMethods.isNotSet(appDescriptor.getIconUrl())){
-           throw new DotDataValidationException("The required field `iconUrl` isn't set on the incoming file.");
+           errors.add("The required field `iconUrl` isn't set on the incoming file.");
        }
 
        if(!UtilMethods.isSet(appDescriptor.getParams())){
-           throw new DotDataValidationException("The required field `params` isn't set on the incoming file.");
+           errors.add("The required field `params` isn't set on the incoming file.");
        }
 
        for (final Map.Entry<String, ParamDescriptor> entry : appDescriptor.getParams().entrySet()) {
-           validateParamDescriptor(entry.getKey(), entry.getValue());
+           errors.addAll(validateParamDescriptor(entry.getKey(), entry.getValue()));
+       }
+
+       if(!errors.isEmpty()){
+           throw new DotDataValidationException(String.join(" \n", errors));
        }
 
        return true;
 
    }
 
-   private void validateParamDescriptor(final String name, final ParamDescriptor descriptor) throws DotDataValidationException {
+    /**
+     * internal param validator
+     * @param name
+     * @param descriptor
+     * @return
+     * @throws DotDataValidationException
+     */
+   private List<String> validateParamDescriptor(final String name, final ParamDescriptor descriptor) throws DotDataValidationException {
+
+       final List<String> errors = new ArrayList<>();
 
        if(UtilMethods.isNotSet(name)){
-           throw new DotDataValidationException("Param descriptor is missing required  field `name` .");
+           errors.add("Param descriptor is missing required  field `name` .");
        }
 
        if(DESCRIPTOR_NAME_MAX_LENGTH < name.length()){
-           throw new DotDataValidationException(String.format("Param name `%s` exceeds %d chars length.", name, DESCRIPTOR_NAME_MAX_LENGTH));
+           errors.add(String.format("Param name `%s` exceeds %d chars length.", name, DESCRIPTOR_NAME_MAX_LENGTH));
        }
 
        if(UtilMethods.isNotSet(descriptor.getHint())){
-           throw new DotDataValidationException("Param descriptor `%s` is missing required field `hint` .");
+           errors.add("Param descriptor `%s` is missing required field `hint` .");
        }
 
        if(UtilMethods.isNotSet(descriptor.getLabel())){
-           throw new DotDataValidationException(String.format("Param descriptor `%s` is missing required field `hint` .",name));
+           errors.add(String.format("Param descriptor `%s` is missing required field `hint` .",name));
        }
 
        if(null == descriptor.getType()){
-           throw new DotDataValidationException(String.format("Param descriptor `%s` is missing required field `type` .",name));
+           errors.add(String.format("Param descriptor `%s` is missing required field `type` .",name));
        }
 
        if (Type.BOOL.equals(descriptor.getType()) && descriptor.isHidden() ) {
-           throw new DotDataValidationException(String.format("Boolean Params like `%s` can not be marked hidden.", name));
+           errors.add(String.format("Boolean Params like `%s` can not be marked hidden.", name));
+       }
+
+       if (Type.BOOL.equals(descriptor.getType()) && UtilMethods.isSet(descriptor.getValue()) && !isBoolString(descriptor.getValue())) {
+           errors.add(String.format(
+                   "Boolean Param `%s` has a default value `%s` that can not be parsed to bool (true|false).",
+                    name, descriptor.getValue()));
        }
 
        if (StringPool.NULL.equalsIgnoreCase(descriptor.getValue()) && descriptor.isRequired()) {
-           throw new DotDataValidationException(String.format(
+           errors.add(String.format(
                    "Null isn't allowed as the default value on required params see `%s`. ",
                    name)
            );
        }
+
+       return errors;
+   }
+
+    /**
+     * Verifies if a string can be parsed to boolean safely
+     * @param value
+     * @return
+     */
+   private boolean isBoolString(final String value){
+      return Boolean.TRUE.toString().equalsIgnoreCase(value) || Boolean.FALSE.toString().equalsIgnoreCase(value);
    }
 
     private boolean validateAppDescriptorUniqueName(final AppDescriptor serviceDescriptor)
