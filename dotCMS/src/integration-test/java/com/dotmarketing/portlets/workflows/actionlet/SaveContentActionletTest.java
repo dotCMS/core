@@ -40,11 +40,14 @@ import org.junit.runner.RunWith;
 
 import java.util.*;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.set;
 
 @RunWith(DataProviderRunner.class)
 public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
+    private static WorkflowAction saveAction;
+    private static WorkflowAction publishAction;
 
     private static User systemUser = APILocator.systemUser();
     private static List<ContentType> contentTypes = new ArrayList<>();
@@ -72,6 +75,8 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
     @DataProvider
     public static Object[] usersAndContentTypeWithoutHostField() throws Exception {
+        saveAction = getSaveActionFromSystemSchema("Save");
+        publishAction = getSaveActionFromSystemSchema("Publish");
         // creates the type to trigger the scheme
         final ContentType contentType = createTestType();
         contentTypes.add(contentType);
@@ -109,7 +114,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
             final User user = new UserDataGen().roles(role).nextPersisted();
 
             addPermissionToAddChildren(role, contentType);
-            addPermissionToSaveAction(role);
+            addPermissionToActions(role);
 
             return user;
         } catch (DotDataException e) {
@@ -132,7 +137,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         final User user = new UserDataGen().roles(role).nextPersisted();
 
         addPermissionToAddChildren(role, contentType);
-        addPermissionToSaveAction(role);
+        addPermissionToActions(role);
         return user;
     }
 
@@ -140,7 +145,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         final Role role = new RoleDataGen().nextPersisted();
         final User user = new UserDataGen().roles(role).nextPersisted();
 
-        addPermissionToSaveAction(role);
+        addPermissionToActions(role);
         return user;
     }
 
@@ -231,7 +236,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
                             new ContentletDependencies.Builder()
                                     .modUser(testCase.user)
                                     .respectAnonymousPermissions(testCase.respectFrontendRoles)
-                                    .workflowActionId(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID)
+                                    .workflowActionId(saveAction.getId())
                                     .build());
 
             checkContentSaved(contentletSaved);
@@ -316,27 +321,27 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
     }
 
     @NotNull
-    private static void addPermissionToSaveAction(final Role role) throws DotDataException {
-
-        final WorkflowAction action = getSaveActionFromSystemSchema();
-        final Permission actionPermission = getPermission(role, action, PermissionLevel.USE.getType());
+    private static void addPermissionToActions(final Role role) throws DotDataException {
+        final Permission publishPermission = getPermission(role, publishAction, PermissionLevel.USE.getType());
+        final Permission savePermission = getPermission(role, saveAction, PermissionLevel.USE.getType());
 
         try {
-             APILocator.getPermissionAPI().save(actionPermission, action, systemUser, false);
+             APILocator.getPermissionAPI().save(savePermission, saveAction, systemUser, false);
+            APILocator.getPermissionAPI().save(publishPermission, publishAction, systemUser, false);
 
         } catch (DotDataException | DotSecurityException e){
             throw new RuntimeException(e);
         }
     }
 
-    private static WorkflowAction getSaveActionFromSystemSchema(){
+    private static WorkflowAction getSaveActionFromSystemSchema(final String actionName){
 
         try {
             final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
             final List<WorkflowAction> actions = APILocator.getWorkflowAPI().findActions(systemWorkflowScheme, systemUser);
 
             for (final WorkflowAction workflowAction : actions) {
-                if (workflowAction.getName().equals("Save")) {
+                if (workflowAction.getName().equals(actionName)) {
                     return workflowAction;
                 }
             }
