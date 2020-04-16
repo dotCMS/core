@@ -15,10 +15,16 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink.ResourceLinkBuilder;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.File;
+import java.io.FileWriter;
 
 public class ResourceLinkTest {
 
@@ -73,11 +79,8 @@ public class ResourceLinkTest {
             }
 
             @Override
-            FileAsset getFileAsset(final Contentlet contentlet){
-                final FileAsset fileAsset = mock(FileAsset.class);
-                when(fileAsset.getMimeType()).thenReturn(mimeType);
-                when(fileAsset.getFileName()).thenReturn(htmlFileName);
-                return fileAsset;
+            String getMimiType(final File binary) {
+                return mimeType;
             }
 
             @Override
@@ -111,17 +114,26 @@ public class ResourceLinkTest {
     public void test_Html_ResourceLink_Expect_Downloadable_No_Port_Number() throws Exception{
 
         final String mimeType = "text/html";
-        final String htmlFileName = "comments-list.html";
         final String path = "/application/comments/angular/";
         final String hostName = "demo.dotcms.com";
         final long languageId = 1L;
         final boolean isSecure = false;
 
+        final File file = FileUtil.createTemporalFile("comments-list", "html");
+        final String content = "This is a test temporal file";
+        try (final FileWriter fileWriter = new FileWriter(file)) {
+
+            fileWriter.write(content);
+        }
+
+        final String htmlFileName = file.getName();
         final User adminUser = mockAdminUser();
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
+        when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
 
@@ -133,7 +145,7 @@ public class ResourceLinkTest {
         final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
         final ResourceLink link = resourceLinkBuilder.build(request, adminUser, contentlet);
         assertFalse(link.isDownloadRestricted());
-        assertEquals("http://demo.dotcms.com/application/comments/angular/comments-list.html?language_id=1",link.getResourceLinkAsString());
+        assertEquals("http://demo.dotcms.com/application/comments/angular/"+htmlFileName+"?language_id=1",link.getResourceLinkAsString());
 
     }
 
@@ -141,19 +153,30 @@ public class ResourceLinkTest {
     public void test_html_ResourceLink_Expect_Downloadable_Secure_Site_Port_Number() throws Exception{
 
         final String mimeType = "text/html";
-        final String htmlFileName = "comments-list.html";
         final String path = "/application/comments/angular/";
         final String hostName = "localhost";
         final long languageId = 1L;
         final boolean isSecure = false;
 
+        final File file = FileUtil.createTemporalFile("comments-list", "html");
+        final String content = "This is a test temporal file";
+        try (final FileWriter fileWriter = new FileWriter(file)) {
+
+            fileWriter.write(content);
+        }
+
+        final String htmlFileName = file.getName();
+
         final User adminUser = mockAdminUser();
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
+        when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
+
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(ResourceLink.HOST_REQUEST_ATTRIBUTE)).thenReturn(HOST_ID);
@@ -162,9 +185,8 @@ public class ResourceLinkTest {
 
         final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
         final ResourceLink link = resourceLinkBuilder.build(request, adminUser, contentlet);
+        assertEquals("http://localhost:8080/application/comments/angular/"+htmlFileName+"?language_id=1",link.getResourceLinkAsString());
         assertFalse(link.isDownloadRestricted());
-        assertEquals("http://localhost:8080/application/comments/angular/comments-list.html?language_id=1",link.getResourceLinkAsString());
-
     }
 
 
@@ -172,17 +194,27 @@ public class ResourceLinkTest {
     public void test_vtl_ResourceLink_WithAdminUser_Expect_Downloadable_No_Port_Number() throws Exception{
 
         final String mimeType = "text/velocity";
-        final String htmlFileName = "widget-code.vtl";
         final String path = "/application/comments/angular/";
         final String hostName = "demo.dotcms.com";
         final long languageId = 2L;
         final boolean isSecure = false;
+
+        final File file = FileUtil.createTemporalFile("widget-code", "vtl");
+        final String content = "This is a test temporal file";
+        try (final FileWriter fileWriter = new FileWriter(file)) {
+
+            fileWriter.write(content);
+        }
+
+        final String htmlFileName = file.getName();
 
         final User adminUser = mockAdminUser();
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
+        when(contentlet.isFileAsset()).thenReturn(true);
+        when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
 
@@ -194,7 +226,7 @@ public class ResourceLinkTest {
         final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
         final ResourceLink link = resourceLinkBuilder.build(request, adminUser, contentlet);
         assertFalse(link.isDownloadRestricted());
-        assertEquals("http://demo.dotcms.com/application/comments/angular/widget-code.vtl?language_id=2",link.getResourceLinkAsString());
+        assertEquals("http://demo.dotcms.com/application/comments/angular/"+htmlFileName+"?language_id=2",link.getResourceLinkAsString());
 
     }
 
@@ -202,7 +234,6 @@ public class ResourceLinkTest {
     public void test_vtl_ResourceLink_WithLimitedUser_Expect_Downloadable_No_Port_Number() throws Exception{
 
         final String mimeType = "text/velocity";
-        final String htmlFileName = "widget-code.vtl";
         final String path = "/application/comments/angular/";
         final String hostName = "demo.dotcms.com";
         final long languageId = 2L;
@@ -210,9 +241,21 @@ public class ResourceLinkTest {
 
         final User limitedUser = mockLimitedUser();
 
+        final File file = FileUtil.createTemporalFile("widget-code", "vtl");
+        final String content = "This is a test temporal file";
+        try (final FileWriter fileWriter = new FileWriter(file)) {
+
+            fileWriter.write(content);
+        }
+
+        final String htmlFileName = file.getName();
+
+
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
+        when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
 
@@ -224,7 +267,7 @@ public class ResourceLinkTest {
         final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
         final ResourceLink link = resourceLinkBuilder.build(request, limitedUser, contentlet);
         assertTrue(link.isDownloadRestricted());
-        assertEquals("http://demo.dotcms.com/application/comments/angular/widget-code.vtl?language_id=2",link.getResourceLinkAsString());
+        assertEquals("http://demo.dotcms.com/application/comments/angular/"+htmlFileName+"?language_id=2",link.getResourceLinkAsString());
 
     }
 
@@ -234,17 +277,27 @@ public class ResourceLinkTest {
     public void test_vm_ResourceLink_With_Admin_User_Expect_Downloadable_NoPortNumber() throws Exception{
 
         final String mimeType = "text/velocity";
-        final String htmlFileName = "any.vm";
         final String path = "/any/";
         final String hostName = "demo.dotcms.com";
         final long languageId = 2L;
         final boolean isSecure = false;
+
+        final File file = FileUtil.createTemporalFile("any", "vm");
+        final String content = "This is a test temporal file";
+        try (final FileWriter fileWriter = new FileWriter(file)) {
+
+            fileWriter.write(content);
+        }
+
+        final String htmlFileName = file.getName();
 
         final User adminUser = mockAdminUser();
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
+        when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
+        when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
 
@@ -256,7 +309,7 @@ public class ResourceLinkTest {
         final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
         final ResourceLink link = resourceLinkBuilder.build(request, adminUser, contentlet);
         assertFalse(link.isDownloadRestricted());
-        assertEquals("http://demo.dotcms.com/any/any.vm?language_id=2",link.getResourceLinkAsString());
+        assertEquals("http://demo.dotcms.com/any/"+htmlFileName+"?language_id=2",link.getResourceLinkAsString());
 
     }
 
@@ -264,7 +317,6 @@ public class ResourceLinkTest {
     public void test_vm_ResourceLink_With_LimitedUser_ExpectRestricted_NoPortNumber() throws Exception{
 
         final String mimeType = "text/velocity";
-        final String htmlFileName = "any.vm";
         final String path = "/any/";
         final String hostName = "demo.dotcms.com";
         final long languageId = 2L;
@@ -272,9 +324,19 @@ public class ResourceLinkTest {
 
         final User limitedUser = mockLimitedUser();
 
+        final File file = FileUtil.createTemporalFile("any", "vm");
+        final String content = "This is a test temporal file";
+        try (final FileWriter fileWriter = new FileWriter(file)) {
+
+            fileWriter.write(content);
+        }
+
+        final String htmlFileName = file.getName();
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
+        when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
 
@@ -286,7 +348,7 @@ public class ResourceLinkTest {
         final ResourceLinkBuilder resourceLinkBuilder = getResourceLinkBuilder(hostName, path, mimeType, htmlFileName);
         final ResourceLink link = resourceLinkBuilder.build(request, limitedUser, contentlet);
         assertTrue(link.isDownloadRestricted());
-        assertEquals("http://demo.dotcms.com/any/any.vm?language_id=2",link.getResourceLinkAsString());
+        assertEquals("http://demo.dotcms.com/any/"+htmlFileName+"?language_id=2",link.getResourceLinkAsString());
 
     }
 
@@ -305,6 +367,7 @@ public class ResourceLinkTest {
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(true);
@@ -335,6 +398,7 @@ public class ResourceLinkTest {
 
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getContentType()).thenReturn(mockFileAssetContentType());
+        when(contentlet.isFileAsset()).thenReturn(true);
         when(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)).thenReturn(htmlFileName);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(true);
