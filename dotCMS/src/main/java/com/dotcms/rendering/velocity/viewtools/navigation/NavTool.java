@@ -26,11 +26,13 @@ import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 
 import com.liferay.util.StringPool;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -77,13 +79,24 @@ public class NavTool implements ViewTool {
             path = path.substring(0, path.lastIndexOf("/"));
         }
 
-        Folder folder = !path.equals("/") ? APILocator.getFolderAPI()
+        final Folder originalFolder = !path.equals("/") ? APILocator.getFolderAPI()
             .findFolderByPath(path, host, systemUserParam, true)
                 : APILocator.getFolderAPI()
                     .findSystemFolder();
-        if (folder == null || !UtilMethods.isSet(folder.getIdentifier())) {
+
+        if (originalFolder == null || !UtilMethods.isSet(originalFolder.getIdentifier())) {
             return null;
         }
+
+        // make a defensive copy to avoid mutating cached version
+        Folder folder = new Folder();
+        try {
+            BeanUtils.copyProperties(folder, originalFolder);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            folder = originalFolder;
+            Logger.warnAndDebug(NavTool.class,"Defensive copy failed. Using original object", e);
+        }
+
         NavResult result = CacheLocator.getNavToolCache()
             .getNav(host.getIdentifier(), folder.getInode(), languageId);
         if (result != null) {

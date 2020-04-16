@@ -578,10 +578,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 			if (parentFolder != null
 					&& InodeUtils.isSet(parentFolder.getInode())) {
 
-				final String hostIdentifier = parentFolder.getInode().equals(SYSTEM_FOLDER) ?
-						contentPage.getHost() : parentFolder.getHostId();
-
-				Host host = hostAPI.find(hostIdentifier, systemUser, true);
+				Host host = hostAPI.find(parentFolder.getHostId(), systemUser,
+						true);
 
 				String parentFolderPath = parentFolder.getPath();
 				if (UtilMethods.isSet(parentFolderPath)) {
