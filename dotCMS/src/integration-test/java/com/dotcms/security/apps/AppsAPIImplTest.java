@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.PortletDataGen;
 import com.dotcms.datagen.RoleDataGen;
@@ -24,6 +25,8 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import io.vavr.Tuple;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -415,6 +418,47 @@ public class AppsAPIImplTest {
             for (final char chr : secret.getValue()) {
                  assertEquals(chr,(char)0);
             }
+        }
+    }
+
+    
+    public void Test_Validate_Descriptor(final AppDescriptorTestCase testCase)
+            throws IOException, DotDataException, DotSecurityException {
+        final AppDescriptorDataGen descriptorDataGen = new AppDescriptorDataGen();
+        descriptorDataGen.name(testCase.name).key(testCase.key).description(testCase.description)
+                .allowExtraParameters(testCase.allowExtraParameters).iconUrl(testCase.iconUrl);
+        for (final Map.Entry<String, ParamDescriptor> entry : testCase.params.entrySet()) {
+            descriptorDataGen.param(entry.getKey(), entry.getValue());
+        }
+        try (final InputStream inputStream = descriptorDataGen.nextPersistedDescriptor()) {
+            final AppsAPI api = APILocator.getAppsAPI();
+            final User admin = TestUserUtils.getAdminUser();
+            AppDescriptor desc = api.createAppDescriptor(inputStream, admin);
+
+        }
+    }
+
+    static class AppDescriptorTestCase{
+
+        private final String key;
+        private final String name;
+        private final String description;
+        private final boolean allowExtraParameters;
+        private final String iconUrl;
+        private final Map<String,ParamDescriptor> params;
+        private final boolean expectFail;
+
+        AppDescriptorTestCase(
+                final String key, final String name,final String description,
+                final boolean allowExtraParameters, final String iconUrl,
+                final Map<String, ParamDescriptor> params, final boolean expectFail) {
+            this.key = key;
+            this.name = name;
+            this.description = description;
+            this.allowExtraParameters = allowExtraParameters;
+            this.iconUrl = iconUrl;
+            this.params = params;
+            this.expectFail = expectFail;
         }
     }
 

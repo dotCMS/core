@@ -122,7 +122,6 @@ public class AppsResourceTest extends IntegrationTestBase {
         basePath = Paths.get(basePath).normalize().toString();
         final File file = new File(basePath, fileName);
         ymlMapper.writeValue(file, appDescriptor);
-        //System.out.println(file);
         return Files.newInputStream(Paths.get(file.getPath()));
     }
 
@@ -150,7 +149,8 @@ public class AppsResourceTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void Test_Create_app_descriptor_Then_Create_App_Integration_Then_Delete_The_Whole_App() {
+    public void Test_Create_app_descriptor_Then_Create_App_Integration_Then_Delete_The_Whole_App()
+            throws IOException {
 
         final Host host = new SiteDataGen().nextPersisted();
 
@@ -258,9 +258,6 @@ public class AppsResourceTest extends IntegrationTestBase {
             // But the pagination will now return only items marked to have no configurations.
             Assert.assertEquals("None of the returned item should have configuration", 0,
                     expectedEmptyHosts.stream().filter(SiteView::isConfigured).count());
-        }catch (Exception e){
-            Logger.error(AppsResourceTest.class, e);
-            fail();
         }
     }
 
@@ -274,7 +271,8 @@ public class AppsResourceTest extends IntegrationTestBase {
      * Expected Result: Pagination shows all available sites with no configurations and the default values from the yml are loaded instead.
      */
     @Test
-    public void Test_Create_App_descriptor_Then_Create_App_Integration_Then_Delete_One_Single_Secret() {
+    public void Test_Create_App_descriptor_Then_Create_App_Integration_Then_Delete_One_Single_Secret()
+            throws IOException {
 
         final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
                 "param1", ParamDescriptor
@@ -395,9 +393,6 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertNull(secretsAfterDelete.get("param1").getSecret());
             Assert.assertNull(secretsAfterDelete.get("param3").getSecret());
 
-        }catch (Exception e){
-            Logger.error(AppsResourceTest.class, e);
-            fail();
         }
     }
 
@@ -407,7 +402,8 @@ public class AppsResourceTest extends IntegrationTestBase {
      * Expected Result: App and secrets are gone (404).
      */
     @Test
-    public void Test_Create_App_Descriptor_Then_Create_App_Integration_Then_Delete_App_Descriptor() {
+    public void Test_Create_App_Descriptor_Then_Create_App_Integration_Then_Delete_App_Descriptor()
+            throws IOException {
 
         final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
                 "param1", ParamDescriptor.newParam("", false, Type.STRING, "label", "hint", true),
@@ -480,9 +476,6 @@ public class AppsResourceTest extends IntegrationTestBase {
                         .getAppDetail(request, response, appKey, siteId);
                 Assert.assertEquals(HttpStatus.SC_NOT_FOUND, responseNotFound.getStatus());
             }
-        } catch (Exception e) {
-            Logger.error(AppsResourceTest.class, e);
-            fail();
         }
     }
 
@@ -528,10 +521,10 @@ public class AppsResourceTest extends IntegrationTestBase {
                 //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
                 //Also note we're sending hidden value as true. Trying to override the value on the descriptor.
                 final Map<String, Input> inputParamMap = ImmutableMap.of(
-                        "param1", Input.newInputParam("hidden".toCharArray()),
-                        "param2", Input.newInputParam("true".toCharArray()),
-                        "param3", Input.newInputParam("true".toCharArray()),
-                        "param4", Input.newInputParam("non-hidden".toCharArray())
+                        orderedParamNames.get(0), Input.newInputParam("hidden".toCharArray()),
+                        orderedParamNames.get(1), Input.newInputParam("true".toCharArray()),
+                        orderedParamNames.get(2), Input.newInputParam("true".toCharArray()),
+                        orderedParamNames.get(3), Input.newInputParam("non-hidden".toCharArray())
                 );
 
                 sites.add(
@@ -692,7 +685,7 @@ public class AppsResourceTest extends IntegrationTestBase {
      * Expected Result: We expect a BAD_REQUEST (400) when the request is sent missing a required value.
      */
     @Test
-    public void Test_Required_Params_One_Single_Descriptor_Param_Empty_Value()  {
+    public void Test_Required_Params_One_Single_Descriptor_Param_Empty_Value() throws IOException {
 
         final SortedMap<String, ParamDescriptor> initialParamsMap = ImmutableSortedMap.of(
              "param1", ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true)
@@ -730,9 +723,6 @@ public class AppsResourceTest extends IntegrationTestBase {
             final Response createSecretResponse = appsResource
                     .createAppSecrets(request, response, key, host.getIdentifier(), secretForm);
             Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, createSecretResponse.getStatus());
-        }catch (Exception e){
-            Logger.error(AppsResourceTest.class, e);
-            fail();
         }
     }
 
