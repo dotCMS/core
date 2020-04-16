@@ -245,11 +245,15 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
             );
         } catch(Exception e) {
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
-                Assert.assertTrue(
-                        !testCase.hasContentTypeAddChildrenPermission ||
-                                !testCase.hasSaveActionPermission ||
-                                (systemUser.isFrontendUser() && !testCase.respectFrontendRoles)
-                );
+                try {
+                    Assert.assertTrue(
+                            !testCase.hasContentTypeAddChildrenPermission ||
+                                    !testCase.hasSaveActionPermission ||
+                                    (systemUser.isFrontendUser() && !testCase.respectFrontendRoles)
+                    );
+                } catch (AssertionError ex){
+                    throw e;
+                }
                 return;
             } else {
                 throw e;
