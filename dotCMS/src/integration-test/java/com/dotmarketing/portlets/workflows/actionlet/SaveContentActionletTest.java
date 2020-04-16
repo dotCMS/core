@@ -72,8 +72,6 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
     @DataProvider
     public static Object[] usersAndContentTypeWithoutHostField() throws Exception {
-        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-
         // creates the type to trigger the scheme
         final ContentType contentType = createTestType();
         contentTypes.add(contentType);
@@ -320,7 +318,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
     @NotNull
     private static void addPermissionToSaveAction(final Role role) throws DotDataException {
 
-        final WorkflowAction action = FactoryLocator.getWorkFlowFactory().findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID);
+        final WorkflowAction action = getSaveActionFromSystemSchema();
         final Permission actionPermission = getPermission(role, action, PermissionLevel.USE.getType());
 
         try {
@@ -329,6 +327,24 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         } catch (DotDataException | DotSecurityException e){
             throw new RuntimeException(e);
         }
+    }
+
+    private static WorkflowAction getSaveActionFromSystemSchema(){
+
+        try {
+            final WorkflowScheme systemWorkflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
+            final List<WorkflowAction> actions = APILocator.getWorkflowAPI().findActions(systemWorkflowScheme, systemUser);
+
+            for (final WorkflowAction workflowAction : actions) {
+                if (workflowAction.getName().equals("Save")) {
+                    return workflowAction;
+                }
+            }
+
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
     }
 
     @NotNull
