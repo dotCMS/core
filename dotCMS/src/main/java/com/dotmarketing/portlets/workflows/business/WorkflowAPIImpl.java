@@ -3506,7 +3506,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
         final WorkflowAction action = workFlowFactory.findAction(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 
-        DotPreconditions.isTrue(
+		throw new RuntimeException(
+				APILocator.getPermissionAPI().getPermissions(action).stream().map((permission) -> permission.getRoleId()).collect(Collectors.toList()) + " " +
+						APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).stream().map(role -> role.getId()).collect(Collectors.toList())
+
+		);
+
+        /*DotPreconditions.isTrue(
                 workflowActionUtils
 						.hasSpecialWorkflowPermission(user, RESPECT_FRONTEND_ROLES, permissionable, action) ||
                         this.permissionAPI
@@ -3515,7 +3521,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                 () -> "User " + user + " cannot read action " + action.getName() + " " + action.getId(),
                 DotSecurityException.class);
 
-        return action;
+        return action;*/
     }
 
 	@Override
