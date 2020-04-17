@@ -15,6 +15,8 @@ import com.dotmarketing.util.Logger;
 
 /**
  * {@link WorkFlowActionlet} that unlock a {@link Contentlet}
+ *
+ * This name is not good because this {@link WorkFlowActionlet} really is not checking in the contentlet
  */
 public class CheckinContentActionlet extends WorkFlowActionlet {
 
