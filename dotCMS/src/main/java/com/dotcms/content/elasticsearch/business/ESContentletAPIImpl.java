@@ -2931,14 +2931,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
     }
 
-    private boolean isOwner(final User user, final Contentlet contentlet) {
-        DotPreconditions.checkNotNull(user);
-        DotPreconditions.checkNotNull(user.getUserId());
-        DotPreconditions.checkNotNull(contentlet);
-
-        return user.getUserId().equals(contentlet.getOwner());
-    }
-
     @Override
     public void reindex()throws DotReindexStateException {
         refreshAllContent();

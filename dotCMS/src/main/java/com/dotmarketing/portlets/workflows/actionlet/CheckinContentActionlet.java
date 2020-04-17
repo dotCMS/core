@@ -12,6 +12,9 @@ import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 
+/**
+ * {@link WorkFlowActionlet} that unlock a {@link Contentlet}
+ */
 public class CheckinContentActionlet extends WorkFlowActionlet {
 
 
@@ -27,16 +30,19 @@ public class CheckinContentActionlet extends WorkFlowActionlet {
 
 	public String getHowTo() {
 
-		return "This actionlet will checkin and unlock the content.";
+		return "This actionlet will unlock the content.";
 	}
 
 	public void executeAction(WorkflowProcessor processor,Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
 		try {
+			final Contentlet contentlet = processor.getContentlet();
 
-			processor.getContentlet().setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
-			APILocator.getContentletAPI().unlock(processor.getContentlet(), processor.getUser(),
-					processor.getContentletDependencies() != null
-							&& processor.getContentletDependencies().isRespectAnonymousPermissions());
+			if (contentlet.isLocked()) {
+				contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+				APILocator.getContentletAPI().unlock(contentlet, processor.getUser(),
+						processor.getContentletDependencies() != null
+								&& processor.getContentletDependencies().isRespectAnonymousPermissions());
+			}
 		} catch (Exception e) {
 			Logger.error(this.getClass(),e.getMessage(),e);
 			throw new  WorkflowActionFailureException(e.getMessage(),e);

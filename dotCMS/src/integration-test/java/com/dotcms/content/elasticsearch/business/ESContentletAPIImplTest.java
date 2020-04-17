@@ -31,6 +31,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -375,6 +376,17 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         addPermission(role, contentletSaved, PermissionLevel.WRITE);
 
         esContentletAPI.lock(contentletSaved, user, false);
+
+        checkLock(user, contentletSaved);
+    }
+
+    private void checkLock(final User user, final Contentlet contentletSaved) throws DotDataException {
+        final ContentletVersionInfo info = APILocator.getVersionableAPI().
+                getContentletVersionInfo(contentletSaved.getIdentifier(), contentletSaved.getLanguageId());
+
+        assertNotNull(info.getLockedBy());
+        assertNotNull(info.getLockedOn());
+        assertEquals(user.getUserId(), info.getLockedBy());
     }
 
     /**
@@ -397,7 +409,13 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         final ESContentletAPIImpl esContentletAPI = new ESContentletAPIImpl();
         final Contentlet contentletSaved = esContentletAPI.checkin(contentlet, user, false);
+
+        final Role ownerRole = APILocator.getRoleAPI().loadCMSOwnerRole();
+        addPermission(ownerRole, contentletSaved, PermissionLevel.WRITE);
+
         esContentletAPI.lock(contentletSaved, user, false);
+
+        checkLock(user, contentletSaved);
     }
 
     private void addPermission(
