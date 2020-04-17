@@ -441,4 +441,36 @@ public class NavToolTest extends IntegrationTestBase{
 
     }
 
+    /**
+     * Method to test: NavTool.getNav
+     * Given scenario: get navigation for system folder ("/")
+     * Expected result: getting the navigation should not change system folder's hostId
+     * @throws Exception exception
+     */
+
+    @Test
+    public void testNavTool_getNav_SystemFolder_ShouldNotChangeSystemFolderHostId() throws Exception
+    {
+        //Get SystemFolder
+        Folder systemFolder = APILocator.getFolderAPI().findSystemFolder();
+
+        //Create new Host
+        final Host host = new SiteDataGen().nextPersisted();
+
+        //Create contentlets on one host
+        final File file = File.createTempFile("fileTestEngTrue", ".txt");
+        FileUtil.write(file, "helloworld");
+        final Contentlet fileAssetOneHost = new FileAssetDataGen(systemFolder, file)
+                .host(host).setProperty(FileAssetAPI.SHOW_ON_MENU, "true").nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Contentlet pageAssetOneHost = new HTMLPageDataGen(systemFolder, template)
+                .showOnMenu(true).host(host).nextPersisted();
+        ContentletDataGen.publish(pageAssetOneHost);
+        ContentletDataGen.publish(fileAssetOneHost);
+
+        new NavTool().getNav(host, systemFolder.getPath());
+        systemFolder = APILocator.getFolderAPI().findSystemFolder();
+        assertEquals(Host.SYSTEM_HOST, systemFolder.getHostId());
+    }
+
 }
