@@ -7,8 +7,6 @@ import com.dotcms.security.apps.Type;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableSortedMap;
@@ -27,15 +25,13 @@ import java.util.SortedMap;
 public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
 
     private static final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
-            //.enable(SerializationFeature.INDENT_OUTPUT)
-            .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
             .findAndRegisterModules();
 
     private String key = String.format("app_%d", System.currentTimeMillis());
     private String name = key;
     private String fileName = String.format("%s.yml", key);
     private  String description = "";
-    private boolean allowExtraParameters;
+    private Boolean allowExtraParameters;
     private String iconUrl = "none.ico";
 
     private SortedMap<String, ParamDescriptor> paramMap;
@@ -176,7 +172,7 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
      * @param extraParameters
      * @return
      */
-    public AppDescriptorDataGen withExtraParameters(final boolean extraParameters) {
+    public AppDescriptorDataGen withExtraParameters(final Boolean extraParameters) {
         this.allowExtraParameters = extraParameters;
         return this;
     }
@@ -217,11 +213,25 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
        return param(name, ParamDescriptor.newParam(StringPool.BLANK, hidden, type, label, hint, required));
     }
 
-    public AppDescriptorDataGen stringParam(final String name,  boolean hidden, final boolean required) {
+    /**
+     * Param builder method
+     * @param name
+     * @param hidden
+     * @param required
+     * @return
+     */
+    public AppDescriptorDataGen stringParam(final String name, final Boolean hidden, final Boolean required) {
         return param(name, ParamDescriptor.newParam(StringPool.BLANK, hidden, Type.STRING, "label", "hint", required));
     }
 
-    public AppDescriptorDataGen boolParam(final String name,  boolean hidden, final boolean required) {
+    /**
+     * Param builder method
+     * @param name
+     * @param hidden
+     * @param required
+     * @return
+     */
+    public AppDescriptorDataGen boolParam(final String name, final Boolean hidden, final Boolean required) {
         return param(name, ParamDescriptor.newParam(Boolean.TRUE.toString(), hidden, Type.STRING, "label", "hint", required));
     }
 }

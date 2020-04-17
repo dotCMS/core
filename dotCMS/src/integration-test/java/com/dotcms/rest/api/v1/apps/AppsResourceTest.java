@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.apps;
 
-import static com.dotcms.rest.api.v1.apps.Input.*;
+import static com.dotcms.rest.api.v1.apps.Input.newInputParam;
 import static com.dotcms.unittest.TestUtil.upperCaseRandom;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -28,13 +28,10 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -70,11 +67,6 @@ public class AppsResourceTest extends IntegrationTestBase {
     private static final String ADMIN_NAME = "User Admin";
 
     private static AppsResource appsResource;
-
-    private static final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
-            //.enable(SerializationFeature.INDENT_OUTPUT)
-            .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
-            .findAndRegisterModules();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -281,7 +273,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertFalse(integrationViewList.isEmpty());
             Assert.assertTrue(
                     integrationViewList.stream().anyMatch(
-                            appView -> "lola"
+                            appView -> dataGen.getName()
                                     .equals(appView.getName())));
 
             //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
@@ -827,7 +819,9 @@ public class AppsResourceTest extends IntegrationTestBase {
                 .stringParam("param1", false, true)
                 .stringParam("param2", false, true)
                 .stringParam("param3", false, true)
-                .withName("any").withDescription("demo");
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(false);
 
         final long timeMark = System.currentTimeMillis();
         final List<Host> hosts = new ArrayList<>();

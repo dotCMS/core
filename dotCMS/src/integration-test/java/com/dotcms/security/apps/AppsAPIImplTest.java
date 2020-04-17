@@ -436,9 +436,11 @@ public class AppsAPIImplTest {
 
     private AppDescriptor evaluateAppTestCase(final AppTestCase testCase)
             throws IOException, DotDataException, DotSecurityException {
-        Logger.info(AppsAPIImplTest.class, ()->"Evaluating  "+testCase.toString());
+        Logger.info(AppsAPIImplTest.class, () -> "Evaluating  " + testCase.toString());
         final AppDescriptorDataGen descriptorDataGen = new AppDescriptorDataGen();
-        descriptorDataGen.withName(testCase.name).withKey(testCase.key).withDescription(testCase.description).withIconUrl(testCase.iconUrl);
+        descriptorDataGen.withName(testCase.name).withKey(testCase.key)
+                .withExtraParameters(testCase.allowExtraParameters)
+                .withDescription(testCase.description).withIconUrl(testCase.iconUrl);
         for (final Map.Entry<String, ParamDescriptor> entry : testCase.params.entrySet()) {
             descriptorDataGen.param(entry.getKey(), entry.getValue());
         }
@@ -465,41 +467,57 @@ public class AppsAPIImplTest {
     public static Object[] getExpectedExceptionTestCases() throws Exception {
         final Map<String, ParamDescriptor> emptyParams = ImmutableMap.of();
         return new Object[]{
-                //The following test that the general required fields are mandatory
-                new AppTestCase("", "","", "", emptyParams),
-                new AppTestCase("any-key", "","", "",  emptyParams),
-                new AppTestCase("any-key", "any-name","", "", emptyParams),
-                new AppTestCase("any-key", "any-name","desc", "", emptyParams),
-                new AppTestCase("any-key", "any-name","desc", "icon", emptyParams),
+                //The following test that the general required fields are mandatory.
+                new AppTestCase("", "", "", "", false, emptyParams),
+                new AppTestCase("any-key", "", "", "", false, emptyParams),
+                new AppTestCase("any-key", "any-name", "", "", false, emptyParams),
+                new AppTestCase("any-key", "any-name", "desc", "", false, emptyParams),
+                new AppTestCase("any-key", "any-name", "desc", "icon", false, emptyParams),
                 //Name too large.
-                new AppTestCase(RandomStringUtils.randomAlphanumeric(AppsAPIImpl.DESCRIPTOR_KEY_MAX_LENGTH + 1), "any-name","desc", "icon", emptyParams),
-                //Key-too large
-                new AppTestCase("any-key", RandomStringUtils.randomAlphanumeric(AppsAPIImpl.DESCRIPTOR_NAME_MAX_LENGTH + 1),"desc", "icon", emptyParams),
-                //The following test paramDefinition
+                new AppTestCase(RandomStringUtils
+                        .randomAlphanumeric(AppsAPIImpl.DESCRIPTOR_KEY_MAX_LENGTH + 1), "any-name",
+                        "desc", "icon", false,
+                        emptyParams),
+                //Key-too large.
+                new AppTestCase("any-key", RandomStringUtils
+                        .randomAlphanumeric(AppsAPIImpl.DESCRIPTOR_NAME_MAX_LENGTH + 1), "desc",
+                        "icon", false,
+                        emptyParams),
+                //The following test paramDefinition.
                 //Null type  is not allowed.
-                new AppTestCase("any-key", "any-name", "desc", "icon", ImmutableSortedMap.of(
-                  "p1", newParam("", true, null, "", "", true)
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                       ImmutableSortedMap.of("p1", newParam("", true, null, "", "", true)
                 )),
                 //Hidden bool param is not allowed.
-                new AppTestCase("any-key", "any-name", "desc", "icon", ImmutableSortedMap.of(
-                  "p1", newParam("", true, Type.BOOL, "label", "hint", true)
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                       ImmutableSortedMap.of("p1", newParam("", true, Type.BOOL, "label", "hint", true)
                 )),
-                //emptyLabel
-                new AppTestCase("any-key", "any-name", "desc", "icon", ImmutableSortedMap.of(
-                  "p1", newParam("v1", true, Type.STRING, "", "", true)
+                //emptyLabel.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                       ImmutableSortedMap.of("p1", newParam("v1", true, Type.STRING, "", "", true)
                 )),
-                //emptyHint
-                new AppTestCase("any-key", "any-name", "desc", "icon", ImmutableSortedMap.of(
-                 "p1", newParam("v1", true, Type.STRING, "label", "", true)
+                //emptyHint.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                       ImmutableSortedMap.of("p1", newParam("v1", true, Type.STRING, "label", "", true)
                 )),
-                //Required param with null default
-                new AppTestCase("any-key", "any-name", "desc", "icon", ImmutableSortedMap.of(
-                        "p1", newParam("null", false, Type.STRING, "label", "hint", true)
+                //Required param with null default.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                       ImmutableSortedMap.of("p1", newParam("null", false, Type.STRING, "label", "hint", true)
                 )),
-                //non parsable to bool string
-                new AppTestCase("any-key", "any-name", "desc", "icon", ImmutableSortedMap.of(
-                        "p1", newParam("lol", false, Type.BOOL, "label", "hint", true)
-                ))
+                //non parsable to bool string.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                        ImmutableSortedMap.of("p1", newParam("lol", false, Type.BOOL, "label", "hint", true)
+                )),
+                //Null hidden to emulate missing hidden field.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                        ImmutableSortedMap.of(
+                                "p1", newParam("false", null, Type.BOOL, "label", "hint", true)
+                        )),
+                //Null required to emulate missing hidden field.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                        ImmutableSortedMap.of(
+                                "p1", newParam("false", false, Type.BOOL, "label", "hint", null)
+                        ))
         };
     }
 
@@ -518,20 +536,24 @@ public class AppsAPIImplTest {
 
     @DataProvider
     public static Object[] getValidExceptionFreeTestCases() throws Exception {
-       final long postfix = System.currentTimeMillis();
+        final long postfix = System.currentTimeMillis();
         return new Object[]{
-                new AppTestCase("key1_" + postfix, "any-name", "desc", "icon", ImmutableSortedMap.of(
-                        "p1", newParam("", true, Type.STRING, "label", "hint", true)
-                )),
-                new AppTestCase("key2_" + postfix, "any-name", "desc", "icon", ImmutableSortedMap.of(
-                        "p1", newParam("", true, Type.STRING, "label", "hint", false)
-                )),
-                new AppTestCase("key3_" + postfix, "any-name", "desc", "icon", ImmutableSortedMap.of(
-                        "p1", newParam("true", false, Type.BOOL, "label", "hint", true)
-                )),
-                new AppTestCase("key4_" + postfix, "any-name", "desc", "icon", ImmutableSortedMap.of(
-                        "p1", newParam("false", false, Type.BOOL, "label", "hint", true)
-                ))
+                new AppTestCase("key1_" + postfix, "any-name", "desc", "icon", true,
+                        ImmutableSortedMap.of(
+                                "p1", newParam("", true, Type.STRING, "label", "hint", true)
+                        )),
+                new AppTestCase("key2_" + postfix, "any-name", "desc", "icon", true,
+                        ImmutableSortedMap.of(
+                                "p1", newParam("", true, Type.STRING, "label", "hint", false)
+                        )),
+                new AppTestCase("key3_" + postfix, "any-name", "desc", "icon", false,
+                        ImmutableSortedMap.of(
+                                "p1", newParam("true", false, Type.BOOL, "label", "hint", true)
+                        )),
+                new AppTestCase("key4_" + postfix, "any-name", "desc", "icon", false,
+                        ImmutableSortedMap.of(
+                                "p1", newParam("false", false, Type.BOOL, "label", "hint", true)
+                        ))
         };
     }
 
@@ -542,6 +564,7 @@ public class AppsAPIImplTest {
         private final String name;
         private final String description;
         private final String iconUrl;
+        private final Boolean allowExtraParameters;
         private final Map<String,ParamDescriptor> params;
 
         AppTestCase(
@@ -549,11 +572,13 @@ public class AppsAPIImplTest {
                 final String name,
                 final String description,
                 final String iconUrl,
+                final Boolean allowExtraParameters,
                 final Map<String, ParamDescriptor> params) {
             this.key = key;
             this.name = name;
             this.description = description;
             this.iconUrl = iconUrl;
+            this.allowExtraParameters = allowExtraParameters;
             this.params = params;
         }
 

@@ -17,8 +17,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.annotations.VisibleForTesting;
@@ -70,7 +68,6 @@ public class AppsAPIImpl implements AppsAPI {
 
     private final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
             //.enable(SerializationFeature.INDENT_OUTPUT)
-            .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
             .findAndRegisterModules();
 
     @VisibleForTesting
@@ -559,6 +556,10 @@ public class AppsAPIImpl implements AppsAPI {
            errors.add("The required field `iconUrl` isn't set on the incoming file.");
        }
 
+       if(!UtilMethods.isSet(appDescriptor.getAllowExtraParameters())){
+           errors.add("The required boolean field `allowExtraParameters` isn't set on the incoming file.");
+       }
+
        if(!UtilMethods.isSet(appDescriptor.getParams())){
            errors.add("The required field `params` isn't set on the incoming file.");
        }
@@ -582,49 +583,69 @@ public class AppsAPIImpl implements AppsAPI {
      * @return
      * @throws DotDataValidationException
      */
-   private List<String> validateParamDescriptor(final String name, final ParamDescriptor descriptor) throws DotDataValidationException {
+    private List<String> validateParamDescriptor(final String name,
+            final ParamDescriptor descriptor)  {
 
-       final List<String> errors = new ArrayList<>();
+        final List<String> errors = new ArrayList<>();
 
-       if(UtilMethods.isNotSet(name)){
-           errors.add("Param descriptor is missing required  field `name` .");
-       }
+        if (UtilMethods.isNotSet(name)) {
+            errors.add("Param descriptor is missing required  field `name` .");
+        }
 
-       if(DESCRIPTOR_NAME_MAX_LENGTH < name.length()){
-           errors.add(String.format("Param name `%s` exceeds %d chars length.", name, DESCRIPTOR_NAME_MAX_LENGTH));
-       }
+        if (DESCRIPTOR_NAME_MAX_LENGTH < name.length()) {
+            errors.add(String.format("`%s`: exceeds %d chars length.", name,
+                    DESCRIPTOR_NAME_MAX_LENGTH));
+        }
 
-       if(UtilMethods.isNotSet(descriptor.getHint())){
-           errors.add("Param descriptor `%s` is missing required field `hint` .");
-       }
+        if (null == descriptor.getValue()) {
+            errors.add(String.format("`%s`: is missing required field `value`. It is mandatory that the param exist. ", name));
+        }
 
-       if(UtilMethods.isNotSet(descriptor.getLabel())){
-           errors.add(String.format("Param descriptor `%s` is missing required field `hint` .",name));
-       }
+        if (UtilMethods.isNotSet(descriptor.getHint())) {
+            errors.add(String.format("Param `%s`: is missing required field `hint` .", name));
+        }
 
-       if(null == descriptor.getType()){
-           errors.add(String.format("Param descriptor `%s` is missing required field `type` .",name));
-       }
+        if (UtilMethods.isNotSet(descriptor.getLabel())) {
+            errors.add(String.format("Param `%s`: is missing required field `hint` .", name));
+        }
 
-       if (Type.BOOL.equals(descriptor.getType()) && descriptor.isHidden() ) {
-           errors.add(String.format("Boolean Params like `%s` can not be marked hidden.", name));
-       }
+        if (null == descriptor.getType()) {
+            errors.add(String.format("Param `%s`: is missing required field `type` (STRING|BOOL|FILE) .",
+                    name));
+        }
 
-       if (Type.BOOL.equals(descriptor.getType()) && UtilMethods.isSet(descriptor.getValue()) && !isBoolString(descriptor.getValue())) {
-           errors.add(String.format(
-                   "Boolean Param `%s` has a default value `%s` that can not be parsed to bool (true|false).",
+        if (!UtilMethods.isSet(descriptor.getRequired())) {
+            errors.add(String.format("Param `%s`: is missing required field `required` (true|false) .",
+                    name));
+        }
+
+        if (!UtilMethods.isSet(descriptor.getHidden())) {
+            errors.add(
+                    String.format("Param `%s`: is missing required field `hidden` (true|false) .", name));
+        }
+
+        if (Type.BOOL.equals(descriptor.getType()) && UtilMethods.isSet(descriptor.getHidden()) && descriptor.isHidden()) {
+            errors.add(String.format(
+                    "Param `%s`: Bool params can not be marked hidden. The combination (Bool + Hidden) isn't allowed.",
+                    name));
+        }
+
+        if (Type.BOOL.equals(descriptor.getType()) && UtilMethods.isSet(descriptor.getValue())
+                && !isBoolString(descriptor.getValue())) {
+            errors.add(String.format(
+                    "Boolean Param `%s` has a default value `%s` that can not be parsed to bool (true|false).",
                     name, descriptor.getValue()));
-       }
+        }
 
-       if (StringPool.NULL.equalsIgnoreCase(descriptor.getValue()) && descriptor.isRequired()) {
-           errors.add(String.format(
-                   "Null isn't allowed as the default value on required params see `%s`. ",
-                   name)
-           );
-       }
+        if (StringPool.NULL.equalsIgnoreCase(descriptor.getValue()) && descriptor.isRequired()) {
+            errors.add(String.format(
+                    "Null isn't allowed as the default value on required params see `%s`. ",
+                    name)
+            );
+        }
 
-       return errors;
-   }
+        return errors;
+    }
 
     /**
      * Verifies if a string can be parsed to boolean safely
