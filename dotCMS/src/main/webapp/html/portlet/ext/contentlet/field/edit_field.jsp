@@ -586,15 +586,27 @@
 
             <%
               if(!resourceLink.isDownloadRestricted()){ %>
+
+            <%  if(contentlet.isFileAsset()){ %>
                <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
                <div style="padding:10px;">
                 <a id="resourceLink" href="<%=resourceLink.getResourceLinkAsString() %>" target="_new"><%=resourceLink.getResourceLinkUriAsString() %></a>
-                <a id="versionPath" href="<%=resourceLink.getVersionPath() %>" target="_new"><%=resourceLink.getVersionPathUri() %></a>
-                <a id="idPath" href="<%=resourceLink.getIdPath() %>" target="_new"><%=resourceLink.getIdPathUri() %></a>
                </div>
+                <% }  %>
+
+            <%= LanguageUtil.get(pageContext, "VersionPath") %>:
+            <div style="padding:10px;">
+                <a id="versionPath" href="<%=resourceLink.getVersionPath() %>" target="_new"><%=resourceLink.getVersionPath() %></a>
+            </div>
+
+            <%= LanguageUtil.get(pageContext, "IdPath") %>:
+            <div style="padding:10px;">
+                <a id="idPath" href="<%=resourceLink.getIdPath() %>" target="_new"><%=resourceLink.getIdPath() %></a>
+            </div>
              <% } else { %>
                 <br>
              <% }  %>
+
         </div>
             <% if (resourceLink.isEditableAsText()) { %>
                 <%

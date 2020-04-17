@@ -56,11 +56,7 @@ public class ResourceLink {
 
     private final String versionPath;
 
-    private final String versionPathUri;
-
     private final String idPath;
-
-    private final String idPathUri;
 
     private final String mimeType;
 
@@ -79,9 +75,7 @@ public class ResourceLink {
             final boolean editableAsText,
             final boolean downloadRestricted,
             final String versionPath,
-            final String versionPathUri,
-            final String idPath,
-            final String idPathUri) {
+            final String idPath) {
 
         this.resourceLinkAsString    = resourceLinkAsString;
         this.resourceLinkUriAsString = resourceLinkUriAsString;
@@ -91,9 +85,7 @@ public class ResourceLink {
         this.editableAsText          = editableAsText;
         this.downloadRestricted      = downloadRestricted;
         this.versionPath             = versionPath;
-        this.versionPathUri          = versionPathUri;
         this.idPath                  = idPath;
-        this.idPathUri               = idPathUri;
     }
 
     public String getResourceLinkAsString() {
@@ -124,16 +116,8 @@ public class ResourceLink {
         return versionPath;
     }
 
-    public String getVersionPathUri() {
-        return versionPathUri;
-    }
-
     public String getIdPath() {
         return idPath;
-    }
-
-    public String getIdPathUri() {
-        return idPathUri;
     }
 
     public String getFieldVar() {
@@ -166,7 +150,7 @@ public class ResourceLink {
             if (binary==null || identifier == null && UtilMethods.isEmpty(identifier.getInode())){
 
                 return new ResourceLink(StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, StringPool.BLANK, false, true,
-                        StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, StringPool.BLANK);
+                        StringPool.BLANK, StringPool.BLANK);
             }
 
             Host host = getHost((String)request.getAttribute(HOST_REQUEST_ATTRIBUTE) , user);
@@ -186,16 +170,15 @@ public class ResourceLink {
             final String mimeType               = this.getMimiType(binary);
             final String fileAssetName          = binary.getName();
             final Tuple2<String, String> resourceLink = this.createResourceLink(request, user, contentlet, identifier, binary, hostUrlBuilder.toString());
-            final Tuple4<String, String, String, String> versionPathIdPath = this.createVersionPathIdPath(contentlet,
-                    velocityVarName, binary, hostUrlBuilder.toString());
+            final Tuple2<String, String> versionPathIdPath = this.createVersionPathIdPath(contentlet, velocityVarName, binary);
 
             return new ResourceLink(resourceLink._1(), resourceLink._2(), mimeType, contentlet,
                     velocityVarName, isEditableAsText(mimeType, fileAssetName), downloadRestricted,
-                    versionPathIdPath._1(), versionPathIdPath._2(), versionPathIdPath._3(), versionPathIdPath._4());
+                    versionPathIdPath._1(), versionPathIdPath._2());
         }
 
-        private Tuple4<String, String, String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,
-                                                                                final File binary, final String hostUrl) throws DotDataException {
+        private Tuple2<String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,
+                                                                                final File binary) throws DotDataException {
 
             final BinaryToMapTransformer transformer = new BinaryToMapTransformer(contentlet);
             final Map<String, Object> properties = transformer.transform(binary, contentlet,
@@ -204,7 +187,7 @@ public class ResourceLink {
             final String versionPath = (String)properties.get("versionPath");
             final String idPath      = (String)properties.get("idPath");
 
-            return Tuple.of(hostUrl + versionPath, versionPath, hostUrl + idPath, idPath);
+            return Tuple.of(versionPath, idPath);
         }
 
         private Tuple2<String, String> createResourceLink (final HttpServletRequest request, final User user,
