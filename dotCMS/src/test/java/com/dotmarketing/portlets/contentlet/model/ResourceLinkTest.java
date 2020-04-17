@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink.ResourceLinkBuilder;
@@ -17,9 +18,13 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import javax.servlet.http.HttpServletRequest;
+
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -87,6 +92,14 @@ public class ResourceLinkTest {
             boolean isDownloadPermissionBasedRestricted(final Contentlet contentlet,
                     final User user) throws DotDataException {
                 return !USER_ADMIN_ID.equals(user.getUserId());
+            }
+
+            @Override
+            Tuple2<String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,
+                                                            final File binary) throws DotDataException {
+
+                return Tuple.of("/dA/" + APILocator.getShortyAPI().shortify(contentlet.getInode()) + "/" + velocityVarName + "/" + binary.getName(),
+                        "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getIdentifier()) + "/" + velocityVarName + "/" + binary.getName());
             }
         };
         return resourceLinkBuilder;
@@ -176,6 +189,8 @@ public class ResourceLinkTest {
         when(contentlet.getBinary(FileAssetAPI.BINARY_FIELD)).thenReturn(file);
         when(contentlet.getLanguageId()).thenReturn(languageId);
         when(contentlet.isNew()).thenReturn(false);
+        when(contentlet.getInode()).thenReturn(UUIDGenerator.generateUuid());
+
 
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
