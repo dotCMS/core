@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -204,8 +205,15 @@ public class NavToolTest extends IntegrationTestBase{
                     .getNav(site, systemFolder.getPath(), 1, user);
             assertNotNull(navResult);
 
+            /* method below `findShowOnMenuUnderFolder` expects a mutated version of SYSTEM_FOLDER with the hostId altered.
+               So let's create a defensive copy of the SYSTEM_FOLDER, modify it and pass it to the method.
+            */
+            Folder modifiedSystemFolder = new Folder();
+            BeanUtils.copyProperties(modifiedSystemFolder, systemFolder);
+            modifiedSystemFolder.setHostId(site.getIdentifier());
+
             //Find out how many show on menu items we currently have
-            final int currentShowOnMenuItems = findShowOnMenuUnderFolder(systemFolder, user);
+            final int currentShowOnMenuItems = findShowOnMenuUnderFolder(modifiedSystemFolder, user);
 
             assertNotNull(navResult.getChildren());
             assertEquals(currentShowOnMenuItems,navResult.getChildren().size());
