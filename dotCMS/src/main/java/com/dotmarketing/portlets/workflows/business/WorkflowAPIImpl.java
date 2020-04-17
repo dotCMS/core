@@ -3506,9 +3506,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
         final WorkflowAction action = workFlowFactory.findAction(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 
-		System.out.println("Permission 1 " + APILocator.getPermissionAPI().getPermissions(action).stream().map((permission) -> permission.getRoleId()).collect(Collectors.toList()));
-		System.out.println("Permission 1 " + APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).stream().map(role -> role.getId()).collect(Collectors.toList()));
-		
         DotPreconditions.isTrue(
                 workflowActionUtils
 						.hasSpecialWorkflowPermission(user, RESPECT_FRONTEND_ROLES, permissionable, action) ||

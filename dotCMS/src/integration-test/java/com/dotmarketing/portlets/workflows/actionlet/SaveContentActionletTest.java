@@ -87,18 +87,15 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
         final User frontendUserWithoutPermission = createFrontendUserWithoutPermission();
 
         return new TestCase[]{
-                //new TestCase(true, APILocator.systemUser(), contentType, true, true),
-                //new TestCase(false, APILocator.systemUser(), contentType, true, true),
-                new TestCase(true, userWithPermission, contentType, true, true),
-                //new TestCase(false, userWithPermission, contentType, true, true),
-                //new TestCase(true, userWithoutPermission, contentType, false, false),
-                //new TestCase(false, userWithoutPermission, contentType, false, false),
-                //new TestCase(true, userWithJustActionPermission, contentType, true, false),
-                //new TestCase(false, userWithJustActionPermission, contentType, true, false),
-                //new TestCase(true, frontEndUserWithPermission, frontendContentType, true, true),
-                //new TestCase(false, frontEndUserWithPermission, frontendContentType, true, true),
-                //new TestCase(true, frontendUserWithoutPermission, frontendContentType, false, false),
-                //new TestCase(false, frontendUserWithoutPermission, frontendContentType, false, false)
+                new TestCase(true, APILocator.systemUser(), contentType, true, true),
+                new TestCase(false, APILocator.systemUser(), contentType, true, true),
+                new TestCase(true, userWithoutPermission, contentType, false, false),
+                new TestCase(false, userWithoutPermission, contentType, false, false),
+                new TestCase(true, userWithJustActionPermission, contentType, true, false),
+                new TestCase(false, userWithJustActionPermission, contentType, true, false),
+                new TestCase(false, frontEndUserWithPermission, frontendContentType, true, true),
+                new TestCase(true, frontendUserWithoutPermission, frontendContentType, false, false),
+                new TestCase(false, frontendUserWithoutPermission, frontendContentType, false, false)
         };
     }
 
