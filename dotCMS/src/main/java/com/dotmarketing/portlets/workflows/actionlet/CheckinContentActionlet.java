@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.workflows.actionlet;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.util.DotPreconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
@@ -35,9 +36,11 @@ public class CheckinContentActionlet extends WorkFlowActionlet {
 
 	public void executeAction(WorkflowProcessor processor,Map<String,WorkflowActionClassParameter>  params) throws WorkflowActionFailureException {
 		try {
-			final Contentlet contentlet = processor.getContentlet();
 
-			if (contentlet.isLocked()) {
+			final Contentlet contentlet = processor.getContentlet();
+			DotPreconditions.checkNotNull(contentlet);
+
+			if (!contentlet.isNew() && contentlet.isLocked()) {
 				contentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
 				APILocator.getContentletAPI().unlock(contentlet, processor.getUser(),
 						processor.getContentletDependencies() != null
