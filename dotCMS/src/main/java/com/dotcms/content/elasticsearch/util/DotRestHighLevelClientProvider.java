@@ -116,9 +116,15 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
     private RestClientBuilder getClientBuilder(final BasicCredentialsProvider credentialsProvider) {
         final String esAuthType = getESAuthType();
         final String esProtocol = Config.getStringProperty("ES_PROTOCOL", HTTPS_PROTOCOL);
-
-        Logger.info(this.getClass(),
-                "Initializing Elastic RestHighLevelClient using protocol " + esProtocol);
+        final boolean securedConnection = HTTPS_PROTOCOL.equals(esProtocol);
+        if (securedConnection){
+            Logger.info(this.getClass(),
+                    "Initializing Elastic RestHighLevelClient using a secured https connection");
+        } else{
+            Logger.warn(this.getClass(),
+                    "Initializing Elastic RestHighLevelClient using an insecured http connection");
+        }
+        
 
         final RestClientBuilder clientBuilder = RestClient
                 .builder(new HttpHost(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
@@ -126,7 +132,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                 .setHttpClientConfigCallback((httpClientBuilder) -> {
                     if (sslContextFromPem != null) {
                         httpClientBuilder.setSSLContext(sslContextFromPem);
-                    } else if (HTTPS_PROTOCOL.equals(esProtocol)){
+                    } else if (securedConnection){
                         try {
                             httpClientBuilder.setSSLContext(SSLContexts
                                     .custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build());
