@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.apps;
 
+import static com.dotcms.rest.api.v1.apps.Input.*;
 import static com.dotcms.unittest.TestUtil.upperCaseRandom;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -9,6 +10,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.InitDataObject;
@@ -19,7 +21,6 @@ import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
-import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Type;
 import com.dotcms.util.IntegrationTestInitService;
@@ -37,15 +38,11 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.liferay.portal.model.User;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -54,8 +51,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -105,26 +100,6 @@ public class AppsResourceTest extends IntegrationTestBase {
                 appsHelper);
     }
 
-    private InputStream createAppDescriptorFile(final String fileName, final String key,
-            final String appName, final String description, final boolean allowExtraParameters,
-            final SortedMap<String, ParamDescriptor> paramMap) throws IOException {
-        final AppDescriptor appDescriptor = new AppDescriptor(key, appName,
-                description, "/black.png", allowExtraParameters, new TreeMap<>());
-
-        for (final Entry<String, ParamDescriptor> entry : paramMap.entrySet()) {
-            final ParamDescriptor param = entry.getValue();
-            appDescriptor
-                    .addParam(entry.getKey(), param.getValue(), param.isHidden(), param.getType(),
-                            param.getLabel(), param.getHint(), param.isRequired());
-        }
-
-        String basePath = System.getProperty("java.io.tmpdir");
-        basePath = Paths.get(basePath).normalize().toString();
-        final File file = new File(basePath, fileName);
-        ymlMapper.writeValue(file, appDescriptor);
-        return Files.newInputStream(Paths.get(file.getPath()));
-    }
-
     private FormDataMultiPart createFormDataMultiPart(final String fileName,
             final InputStream inputStream) {
         final FormDataBodyPart filePart1 = mock(FormDataBodyPart.class);
@@ -153,27 +128,27 @@ public class AppsResourceTest extends IntegrationTestBase {
             throws IOException {
 
         final Host host = new SiteDataGen().nextPersisted();
-
-        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
-                "p1", ParamDescriptor.newParam("v1", false, Type.STRING, "label", "hint", true),
-                "p2", ParamDescriptor.newParam("v2", false, Type.STRING, "label", "hint", true),
-                "p3", ParamDescriptor.newParam("v3", false, Type.STRING, "label", "hint", true)
-        );
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false,  true)
+                .stringParam("p2", false,  true)
+                .stringParam("p3", false,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(false);
 
         final Map<String, Input> inputParamMap = ImmutableMap.of(
-                "p1", Input.newInputParam("v1".toCharArray(),false),
-                "p2", Input.newInputParam("v1".toCharArray(),false),
-                "p3", Input.newInputParam("v1".toCharArray(),false)
+                "p1", newInputParam("v1".toCharArray(),false),
+                "p2", newInputParam("v1".toCharArray(),false),
+                "p3", newInputParam("v1".toCharArray(),false)
         );
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
         when(request.getRequestURI()).thenReturn("/baseURL");
 
-        final String appKey = String.format("lol_%d", System.currentTimeMillis());
-        final String fileName = String.format("%s.yml", appKey);
-        try(final InputStream inputStream = createAppDescriptorFile(fileName, appKey, "lola",
-                "A bunch of string params to demo the mechanism.", false, paramMap)) {
+        final String appKey =  dataGen.getKey();
+        final String fileName =  dataGen.getFileName();
+        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
             final Response appIntegrationResponse = appsResource
                     .createApp(request, response,
                             createFormDataMultiPart(fileName, inputStream));
@@ -190,7 +165,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertFalse(integrationViewList.isEmpty());
             Assert.assertTrue(
                     integrationViewList.stream().anyMatch(
-                            appView -> "lola"
+                            appView -> dataGen.getName()
                                     .equals(appView.getName())));
 
             final SecretForm secretForm = new SecretForm(inputParamMap);
@@ -206,7 +181,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             final AppView appWithSites = (AppView) responseEntityView2
                     .getEntity();
             Assert.assertEquals(1, appWithSites.getConfigurationsCount());
-            Assert.assertEquals("lola", appWithSites.getName());
+            Assert.assertEquals(dataGen.getName(), appWithSites.getName());
             final List<SiteView> sites = appWithSites.getSites();
             Assert.assertNotNull(sites);
             Assert.assertTrue(sites.size() >= 2);
@@ -251,7 +226,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                     .getEntity();
 
             Assert.assertEquals(0, appHostViewAfterDelete.getConfigurationsCount());
-            Assert.assertEquals("lola", appHostViewAfterDelete.getName());
+            Assert.assertEquals(dataGen.getName(), appHostViewAfterDelete.getName());
             final List<SiteView> expectedEmptyHosts = appHostViewAfterDelete.getSites();
             Assert.assertNotNull(expectedEmptyHosts);
             // Previously this test wasn't expecting any entry here
@@ -274,23 +249,21 @@ public class AppsResourceTest extends IntegrationTestBase {
     public void Test_Create_App_descriptor_Then_Create_App_Integration_Then_Delete_One_Single_Secret()
             throws IOException {
 
-        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
-                "param1", ParamDescriptor
-                        .newParam("default", false, Type.STRING, "label", "hint", true),
-                "param2", ParamDescriptor
-                        .newParam("default", false, Type.STRING, "label", "hint", true),
-                "param3", ParamDescriptor
-                        .newParam("default", false, Type.STRING, "label", "hint", true)
-        );
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false,  true)
+                .stringParam("param2", false,  true)
+                .stringParam("param3", false,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(true);
 
         final Host host = new SiteDataGen().nextPersisted();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         when(request.getRequestURI()).thenReturn("/baseURL");
-        final String appKey = String.format("lol_%d", System.currentTimeMillis());
-        final String fileName = String.format("%s.yml", appKey);
-        try(final InputStream inputStream = createAppDescriptorFile(fileName, appKey, "lola",
-                "A bunch of string params to demo the mechanism.", false, paramMap)) {
+        final String appKey = dataGen.getKey();
+        final String fileName = dataGen.getFileName();
+        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
 
             // Create App integration Descriptor
             final Response appResponse = appsResource
@@ -313,9 +286,9 @@ public class AppsResourceTest extends IntegrationTestBase {
 
             //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
             final Map<String, Input> inputParamMap = ImmutableMap.of(
-                    "param1", Input.newInputParam("v1".toCharArray(),false),
-                    "param2", Input.newInputParam("v1".toCharArray(),false),
-                    "param3", Input.newInputParam("v1".toCharArray(),false));
+                    "param1", newInputParam("v1".toCharArray(),false),
+                    "param2", newInputParam("v1".toCharArray(),false),
+                    "param3", newInputParam("v1".toCharArray(),false));
             // Add secrets to it.
             final SecretForm secretForm = new SecretForm(inputParamMap);
             final Response createSecretResponse = appsResource
@@ -332,7 +305,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                     .getEntity();
 
             Assert.assertEquals(1, appByKeyView.getConfigurationsCount());
-            Assert.assertEquals("lola", appByKeyView.getName());
+            Assert.assertEquals(dataGen.getName(), appByKeyView.getName());
             final List<SiteView> hosts = appByKeyView.getSites();
             Assert.assertNotNull(hosts);
             Assert.assertTrue(hosts.size() >= 2);
@@ -405,22 +378,22 @@ public class AppsResourceTest extends IntegrationTestBase {
     public void Test_Create_App_Descriptor_Then_Create_App_Integration_Then_Delete_App_Descriptor()
             throws IOException {
 
-        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
-                "param1", ParamDescriptor.newParam("", false, Type.STRING, "label", "hint", true),
-                "param2", ParamDescriptor.newParam("", false, Type.STRING, "label", "hint", true),
-                "param3", ParamDescriptor.newParam("", false, Type.STRING, "label", "hint", true)
-        );
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false,  true)
+                .stringParam("param2", false,  true)
+                .stringParam("param3", false,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(true);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
         when(request.getRequestURI()).thenReturn("/baseURL");
 
-        final String appKey = String.format("lol_%d", System.currentTimeMillis());
-        final String fileName = String.format("%s.yml", appKey);
-        try (final InputStream inputStream = createAppDescriptorFile(fileName, appKey,
-                appKey,
-                "This should go away.", false, paramMap)) {
+        final String appKey = dataGen.getKey();
+        final String fileName = dataGen.getFileName();
+        try (final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
             final Response appResponse = appsResource
                     .createApp(request, response,
                             createFormDataMultiPart(fileName, inputStream));
@@ -432,9 +405,9 @@ public class AppsResourceTest extends IntegrationTestBase {
 
                 //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
                 final Map<String, Input> inputParamMap = ImmutableMap.of(
-                        "param1", Input.newInputParam("val-1".toCharArray()),
-                        "param2", Input.newInputParam("val-2".toCharArray()),
-                        "param3", Input.newInputParam("val-3".toCharArray()));
+                        "param1", newInputParam("val-1".toCharArray()),
+                        "param2", newInputParam("val-2".toCharArray()),
+                        "param3", newInputParam("val-3".toCharArray()));
 
                 final Host host = createAppSecret(inputParamMap, appKey, request, response);
                 sites.add(host.getIdentifier());
@@ -482,30 +455,30 @@ public class AppsResourceTest extends IntegrationTestBase {
     /**
      * Test hidden secrets come back protected.
      * Given scenario: We have a descriptor with hidden and non-hidden stuff
-     * Expected Result: Whatever was marked as hidden in the app-descriptor must come back protected.
+     * Expected Result: Whatever was marked as hidden in the app-descriptor must come back protected Also we expect the response to have the params in natural order.
      */
     @Test
-    public void Test_Secret_Serializer_Returned_Values_Match_Descriptor_Verify_Hidden_Secrets_Are_Protected() throws Exception{
+    public void Test_Secret_Serializer_Returned_Values_Match_Descriptor_Verify_Hidden_Secrets_Are_Protected_Verify_Params_Are_Ordered() throws Exception{
 
         final List<String> orderedParamNames = ImmutableList.of("param1","param2","param3","param4");
-        //This is how the descriptor looks like.
-        final SortedMap<String, ParamDescriptor> appDescriptorParamsMap = ImmutableSortedMap.of(
-                orderedParamNames.get(0), ParamDescriptor.newParam("", true, Type.STRING, "label", "hint", true),
-                orderedParamNames.get(1), ParamDescriptor.newParam("", false, Type.BOOL, "label", "hint", true),//Bools shouldn't be hidden
-                orderedParamNames.get(2), ParamDescriptor.newParam("", false, Type.BOOL, "label", "hint", true), //Bools shouldn't be hidden
-                orderedParamNames.get(3), ParamDescriptor.newParam("", false, Type.STRING, "label", "hint", true) //Bools shouldn't be hidden
-        );
+
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam(orderedParamNames.get(0), true,  true)
+                .boolParam(orderedParamNames.get(1), false,  true)
+                .boolParam(orderedParamNames.get(2), false,  true)
+                .stringParam(orderedParamNames.get(3), true,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(true);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
         when(request.getRequestURI()).thenReturn("/baseURL");
 
-        final String appKey = String.format("lol_%d", System.currentTimeMillis());
-        final String fileName = String.format("%s.yml", appKey);
-        try(final InputStream inputStream = createAppDescriptorFile(fileName, appKey,
-                appKey,
-                "Test-hidden-secret-protection", false, appDescriptorParamsMap)) {
+        final String appKey = dataGen.getKey();
+        final String fileName = dataGen.getFileName();
+        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -521,10 +494,10 @@ public class AppsResourceTest extends IntegrationTestBase {
                 //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
                 //Also note we're sending hidden value as true. Trying to override the value on the descriptor.
                 final Map<String, Input> inputParamMap = ImmutableMap.of(
-                        orderedParamNames.get(0), Input.newInputParam("hidden".toCharArray()),
-                        orderedParamNames.get(1), Input.newInputParam("true".toCharArray()),
-                        orderedParamNames.get(2), Input.newInputParam("true".toCharArray()),
-                        orderedParamNames.get(3), Input.newInputParam("non-hidden".toCharArray())
+                        orderedParamNames.get(0), newInputParam("hidden".toCharArray()),
+                        orderedParamNames.get(1), newInputParam("true".toCharArray()),
+                        orderedParamNames.get(2), newInputParam("true".toCharArray()),
+                        orderedParamNames.get(3), newInputParam("non-hidden".toCharArray())
                 );
 
                 sites.add(
@@ -574,7 +547,7 @@ public class AppsResourceTest extends IntegrationTestBase {
 
                         Logger.debug(AppsResourceTest.class, () -> String.format(" `%s` ", asJson));
 
-                        final ParamDescriptor descriptorParam = appDescriptorParamsMap.get(key);
+                        final ParamDescriptor descriptorParam = dataGen.paramMap().get(key);
 
                         final Map<String, Object> deserializedView = mapper.readValue(asJson, new TypeReference<Map<String, Object>>() {});
                         final Type type = Type.valueOf(deserializedView.get("type").toString());
@@ -627,9 +600,11 @@ public class AppsResourceTest extends IntegrationTestBase {
     @Test
     public void Test_App_Key_Casing() throws IOException {
 
-        final SortedMap<String, ParamDescriptor> initialParamsMap = ImmutableSortedMap.of(
-                "param1", ParamDescriptor
-                        .newParam("val-1", false, Type.STRING, "label", "hint", true));
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(true);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -639,10 +614,9 @@ public class AppsResourceTest extends IntegrationTestBase {
         long time = System.currentTimeMillis();
 
         final String appKey1 = String.format("all_lower_case_not_too_short_prefix_%d", time);
-        final String fileName = String.format("%s.yml", appKey1);
-        try(final InputStream inputStream = createAppDescriptorFile(fileName, appKey1,
-                appKey1,
-                "Test-service-casing", false, initialParamsMap)) {
+        dataGen.withKey(appKey1);
+        final String fileName = dataGen.getFileName();
+        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -662,7 +636,7 @@ public class AppsResourceTest extends IntegrationTestBase {
 
                 //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
                 final Map<String, Input> inputParamMap = ImmutableMap.of(
-                    "param1", Input.newInputParam("val-1".toCharArray(),false)
+                    "param1", newInputParam("val-1".toCharArray(),false)
                 );
 
                 sites.add(
@@ -681,31 +655,28 @@ public class AppsResourceTest extends IntegrationTestBase {
 
     /**
      * Test an addSecret operation with missing required params fails.
-     * Given scenario: Test we create an app descriptor that states required field.
+     * Given scenario: Test we create an app descriptor that states required field we send the param but empty.
      * Expected Result: We expect a BAD_REQUEST (400) when the request is sent missing a required value.
      */
     @Test
-    public void Test_Required_Params_One_Single_Descriptor_Param_Empty_Value() throws IOException {
+    public void Test_Required_Params_Sent_Empty_Value_Expect_Bad_Request() throws IOException {
 
-        final SortedMap<String, ParamDescriptor> initialParamsMap = ImmutableSortedMap.of(
-             "param1", ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true)
-        );
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(true);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
         when(request.getRequestURI()).thenReturn("/baseURL");
 
-        long time = System.currentTimeMillis();
-
-        final String key = String.format("all_lower_case_not_too_short_prefix_%d", time);
-        final String fileName = String.format("%s.yml", key);
+        final String key = dataGen.getKey();
+        final String fileName = dataGen.getFileName();
 
         //We're indicating that extra params are allowed to test required params are still required
-        try(final InputStream inputStream = createAppDescriptorFile(fileName, key,
-                key,
-                "Test-required-params",
-                true, initialParamsMap)){
+        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()){
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -716,7 +687,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
             //Here's a secret with an empty param that is marked as required.
             final Map<String, Input> inputParamMap = ImmutableMap.of(
-                    "param1", Input.newInputParam("".toCharArray(),false));
+                    "param1", newInputParam("".toCharArray(),false));
 
             final Host host = new SiteDataGen().nextPersisted();
             final SecretForm secretForm = new SecretForm(inputParamMap);
@@ -728,33 +699,30 @@ public class AppsResourceTest extends IntegrationTestBase {
 
     /**
      * Test a combination of extra params and required params
-     * Given scenario: Test we create an app descriptor that states required fields and allowed params too.
+     * Given scenario: Test we create an app descriptor that states required fields and extra params are allowed params too.
+     * Then we Send an incomplete request
      * Expected Result: We expect a BAD_REQUEST (400)
      */
     @Test
-    public void Test_Required_Params_Multiple_Params_Descriptor_Non_Empty_Value_Missing_Required_Param_Sent()
+    public void Test_Required_Params_Send_Missing_Required_Param_Expect_Bad_Request()
             throws IOException {
 
-        final SortedMap<String, ParamDescriptor> initialParamsMap = ImmutableSortedMap.of(
-                "param1", ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true),
-                "param2", ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true)
-        );
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false,  true)
+                .stringParam("param2", false,  true)
+                .withName("any")
+                .withDescription("demo")
+                //We're indicating that extra params are allowed to test required params are still required.
+                .withExtraParameters(true);
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
         when(request.getRequestURI()).thenReturn("/baseURL");
 
-        long time = System.currentTimeMillis();
-
-        final String key = String.format("all_lower_case_not_too_short_prefix_%d", time);
-        final String fileName = String.format("%s.yml", key);
-
-        //We're indicating that extra params are allowed to test required params are still required
-        try(final InputStream inputStream = createAppDescriptorFile(fileName, key,
-                key,
-                "Test-required-params",
-                true, initialParamsMap)){
+        final String key = dataGen.getKey();
+        final String fileName = dataGen.getFileName();
+        try(final InputStream inputStream = dataGen.nextPersistedDescriptor()){
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -765,8 +733,8 @@ public class AppsResourceTest extends IntegrationTestBase {
             //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
             //We're sending only one parameter when the descriptor says there's another one mandatory.
             final Map<String, Input> inputParamMap = ImmutableMap.of(
-                    "param1", Input.newInputParam("any-value".toCharArray(),false)
-                    //Please Notice We're NOT sending param2
+                    "param1", newInputParam("any-value".toCharArray(),false)
+                    //Please Notice We're NOT sending param2!!!
             );
 
             final Host host = new SiteDataGen().nextPersisted();
@@ -784,17 +752,17 @@ public class AppsResourceTest extends IntegrationTestBase {
      */
     @Test
     public void Test_Create_Descriptor_Then_Add_Dynamic_Prop() throws IOException {
-        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
-                "param1",
-                ParamDescriptor.newParam("val-1", true, Type.STRING, "label", "hint", true)
-        );
 
-        final String key = String.format("lol_%d", System.currentTimeMillis());
-        final String fileName = String.format("%s.yml", key);
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", true,  true)
+                .withName("any")
+                .withDescription("demo")
+                .withExtraParameters(true);
 
-        try (final InputStream inputStream = createAppDescriptorFile(fileName, key,
-                "myAppThatSupportsDynamicProps",
-                "A bunch of string params to demo the mechanism.", true, paramMap)) {
+        final String key = dataGen.getKey();
+        final String fileName = dataGen.getFileName();
+
+        try (final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
             final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -809,7 +777,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             final Host host = new SiteDataGen().nextPersisted();
             final String siteId = host.getIdentifier();
             Map<String, Input> inputParamMap = ImmutableMap.of(
-               "param1", Input.newInputParam("any-value".toCharArray())
+               "param1", newInputParam("any-value".toCharArray())
             );
             final SecretForm secretForm1 = new SecretForm(inputParamMap);
             final Response createSecretResponse1 = appsResource.createAppSecrets(request, response, key, siteId, secretForm1);
@@ -817,8 +785,8 @@ public class AppsResourceTest extends IntegrationTestBase {
 
             //Should we support adding individual dynamic props once all required pros are all set.
             inputParamMap = ImmutableMap.of(
-                    "param1", Input.newInputParam("any-value".toCharArray()),
-                    "dynamicParam1", Input.newInputParam("any-value".toCharArray())
+                    "param1", newInputParam("any-value".toCharArray()),
+                    "dynamicParam1", newInputParam("any-value".toCharArray())
             );
             final SecretForm secretForm2 = new SecretForm(inputParamMap);
             final Response createSecretResponse2 = appsResource.createAppSecrets(request, response, key, host.getIdentifier(), secretForm2);
@@ -855,17 +823,14 @@ public class AppsResourceTest extends IntegrationTestBase {
     public void Test_Pagination_And_Sort_Then_Request_Filter_Expect_Empty_Results()
             throws IOException {
 
-        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
-                "param1", ParamDescriptor
-                        .newParam("val-1", false, Type.STRING, "label", "hint", true),
-                "param2", ParamDescriptor
-                        .newParam("val-2", false, Type.STRING, "label", "hint", true),
-                "param3", ParamDescriptor
-                        .newParam("val-3", false, Type.STRING, "label", "hint", true)
-        );
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("param1", false, true)
+                .stringParam("param2", false, true)
+                .stringParam("param3", false, true)
+                .withName("any").withDescription("demo");
 
         final long timeMark = System.currentTimeMillis();
-        final List<Host> hosts= new ArrayList<>();
+        final List<Host> hosts = new ArrayList<>();
         final char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
         for(final char chr :alphabet) {
            hosts.add(new SiteDataGen().name( String.format("%s,%d",chr, timeMark )).nextPersisted());
@@ -873,11 +838,11 @@ public class AppsResourceTest extends IntegrationTestBase {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         when(request.getRequestURI()).thenReturn("/baseURL");
-        final String key = String.format("lol_%d", System.currentTimeMillis());
-        final String fileName = String.format("%s.yml", key);
-        try (final InputStream inputStream = createAppDescriptorFile(fileName, key,
-                "lola",
-                "A bunch of string params to demo the mechanism.", false, paramMap)) {
+
+        final String key = dataGen.getKey();
+        final String fileName = dataGen.getFileName();
+
+        try (final InputStream inputStream = dataGen.nextPersistedDescriptor()) {
 
             // Create App integration Descriptor
             final Response appResponse = appsResource
@@ -895,7 +860,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertFalse(integrationViewList.isEmpty());
             Assert.assertTrue(
                     integrationViewList.stream().anyMatch(
-                            appView -> "lola"
+                            appView -> dataGen.getName()
                                     .equals(appView.getName())));
 
             // Add secrets to it.
@@ -903,9 +868,9 @@ public class AppsResourceTest extends IntegrationTestBase {
 
                 //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
                 final Map<String, Input> inputParamMap = ImmutableMap.of(
-                        "param1", Input.newInputParam("val-1".toCharArray(),false),
-                        "param2", Input.newInputParam("val-2".toCharArray(),false),
-                        "param3", Input.newInputParam("val-2".toCharArray(),false)
+                        "param1", newInputParam("val-1".toCharArray(),false),
+                        "param2", newInputParam("val-2".toCharArray(),false),
+                        "param3", newInputParam("val-2".toCharArray(),false)
                 );
 
                 createSecret(request, response, key, host, inputParamMap);

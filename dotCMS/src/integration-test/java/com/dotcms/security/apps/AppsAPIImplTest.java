@@ -1,5 +1,7 @@
 package com.dotcms.security.apps;
 
+import static com.dotcms.security.apps.ParamDescriptor.newParam;
+import static com.dotcms.security.apps.Secret.newSecret;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -276,7 +278,7 @@ public class AppsAPIImplTest {
 
         //Now we want to update one of the values within the secret.
         //We want to change the value from `secret3` to `secret-3` for the secret named "test:secret3"
-        final Secret secret = Secret.newSecret("secret-3".toCharArray(), Type.STRING, false);
+        final Secret secret = newSecret("secret-3".toCharArray(), Type.STRING, false);
         //Update the individual secret
         api.saveSecret("appKey-1-Host-1", Tuple.of("test:secret3",secret), host, admin);
         //The other properties of the object should remind the same so lets verify so.
@@ -343,7 +345,7 @@ public class AppsAPIImplTest {
         assertEquals("secret-4", recoveredBean1.getSecrets().get("test:secret4").getString());
 
         //Now lets re-introduce again the property we just deleted
-        final Secret secret = Secret.newSecret("lol".toCharArray(), Type.STRING, false);
+        final Secret secret = newSecret("lol".toCharArray(), Type.STRING, false);
 
         //This should create again the entry we just removed.
         api.saveSecret("appKeyHost-1", Tuple.of("test:secret3",secret), host, admin);
@@ -436,7 +438,7 @@ public class AppsAPIImplTest {
             throws IOException, DotDataException, DotSecurityException {
         Logger.info(AppsAPIImplTest.class, ()->"Evaluating  "+testCase.toString());
         final AppDescriptorDataGen descriptorDataGen = new AppDescriptorDataGen();
-        descriptorDataGen.name(testCase.name).key(testCase.key).description(testCase.description).iconUrl(testCase.iconUrl);
+        descriptorDataGen.withName(testCase.name).withKey(testCase.key).withDescription(testCase.description).withIconUrl(testCase.iconUrl);
         for (final Map.Entry<String, ParamDescriptor> entry : testCase.params.entrySet()) {
             descriptorDataGen.param(entry.getKey(), entry.getValue());
         }
@@ -476,27 +478,27 @@ public class AppsAPIImplTest {
                 //The following test paramDefinition
                 //Null type  is not allowed.
                 new AppTestCase("any-key", "any-name", "desc", "icon", ImmutableSortedMap.of(
-                  "p1", ParamDescriptor.newParam("", true, null, "", "", true)
+                  "p1", newParam("", true, null, "", "", true)
                 )),
                 //Hidden bool param is not allowed.
                 new AppTestCase("any-key", "any-name", "desc", "icon", ImmutableSortedMap.of(
-                  "p1", ParamDescriptor.newParam("", true, Type.BOOL, "label", "hint", true)
+                  "p1", newParam("", true, Type.BOOL, "label", "hint", true)
                 )),
                 //emptyLabel
                 new AppTestCase("any-key", "any-name", "desc", "icon", ImmutableSortedMap.of(
-                  "p1", ParamDescriptor.newParam("v1", true, Type.STRING, "", "", true)
+                  "p1", newParam("v1", true, Type.STRING, "", "", true)
                 )),
                 //emptyHint
                 new AppTestCase("any-key", "any-name", "desc", "icon", ImmutableSortedMap.of(
-                 "p1", ParamDescriptor.newParam("v1", true, Type.STRING, "label", "", true)
+                 "p1", newParam("v1", true, Type.STRING, "label", "", true)
                 )),
                 //Required param with null default
                 new AppTestCase("any-key", "any-name", "desc", "icon", ImmutableSortedMap.of(
-                        "p1", ParamDescriptor.newParam("null", false, Type.STRING, "label", "hint", true)
+                        "p1", newParam("null", false, Type.STRING, "label", "hint", true)
                 )),
                 //non parsable to bool string
                 new AppTestCase("any-key", "any-name", "desc", "icon", ImmutableSortedMap.of(
-                        "p1", ParamDescriptor.newParam("lol", false, Type.BOOL, "label", "hint", true)
+                        "p1", newParam("lol", false, Type.BOOL, "label", "hint", true)
                 ))
         };
     }
@@ -519,16 +521,16 @@ public class AppsAPIImplTest {
        final long postfix = System.currentTimeMillis();
         return new Object[]{
                 new AppTestCase("key1_" + postfix, "any-name", "desc", "icon", ImmutableSortedMap.of(
-                        "p1", ParamDescriptor.newParam("", true, Type.STRING, "label", "hint", true)
+                        "p1", newParam("", true, Type.STRING, "label", "hint", true)
                 )),
                 new AppTestCase("key2_" + postfix, "any-name", "desc", "icon", ImmutableSortedMap.of(
-                        "p1", ParamDescriptor.newParam("", true, Type.STRING, "label", "hint", false)
+                        "p1", newParam("", true, Type.STRING, "label", "hint", false)
                 )),
                 new AppTestCase("key3_" + postfix, "any-name", "desc", "icon", ImmutableSortedMap.of(
-                        "p1", ParamDescriptor.newParam("true", false, Type.BOOL, "label", "hint", true)
+                        "p1", newParam("true", false, Type.BOOL, "label", "hint", true)
                 )),
                 new AppTestCase("key4_" + postfix, "any-name", "desc", "icon", ImmutableSortedMap.of(
-                        "p1", ParamDescriptor.newParam("false", false, Type.BOOL, "label", "hint", true)
+                        "p1", newParam("false", false, Type.BOOL, "label", "hint", true)
                 ))
         };
     }
