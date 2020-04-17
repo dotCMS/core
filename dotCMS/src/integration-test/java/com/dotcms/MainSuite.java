@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
+import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -244,6 +245,8 @@ import org.junit.runners.Suite.SuiteClasses;
         AppsResourceTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
+        DotAssetBaseTypeToContentTypeStrategyImplTest.class,
+        RulesAPIImplIntegrationTest.class,
         RulesAPIImplIntegrationTest.class,
         SiteSearchJobImplTest.class,
         FileAssetAPIImplIntegrationTest.class,

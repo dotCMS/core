@@ -91,9 +91,9 @@ class AppsHelper {
         final List<AppView> views = new ArrayList<>();
         List<AppDescriptor> appDescriptors = appsAPI.getAppDescriptors(user);
         if(UtilMethods.isSet(filter)) {
-           final String regexFilter = "(?i).*"+filter+"(.*)";
-           appDescriptors = appDescriptors.stream().filter(appDescriptor -> appDescriptor.getName().matches(regexFilter)).collect(
-                   Collectors.toList());
+            final String regexFilter = "(?i).*"+filter+"(.*)";
+            appDescriptors = appDescriptors.stream().filter(appDescriptor -> appDescriptor.getName().matches(regexFilter)).collect(
+                    Collectors.toList());
         }
         final Set<String> hostIdentifiers = appsAPI.appKeysByHost().keySet();
         for (final AppDescriptor appDescriptor : appDescriptors) {
@@ -297,10 +297,6 @@ class AppsHelper {
     private void saveSecretForm(final String key, final Host host,
             final AppDescriptor appDescriptor, final SecretForm form, final User user) throws DotSecurityException, DotDataException {
         final Map<String, Input> params = validateFormForSave(form, appDescriptor);
-        final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
-        if (appSecretsOptional.isPresent()) {
-            appsAPI.deleteSecrets(key, host, user);
-        }
         //Create a brand new secret for the present app.
         final AppSecrets.Builder builder = new AppSecrets.Builder();
         builder.withKey(key);
@@ -315,14 +311,21 @@ class AppsHelper {
                 secret = Secret.newSecret(inputParam.getValue(), Type.STRING, inputParam.isHidden());
             } else {
                 if(describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue())){
-                   Logger.debug(AppsHelper.class, ()->"skipping secret sent with no value.");
-                   continue;
+                    Logger.debug(AppsHelper.class, ()->"skipping secret sent with no value.");
+                    continue;
                 }
                 secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(), describedParam.isHidden());
             }
             builder.withSecret(name, secret);
         }
-        appsAPI.saveSecrets(builder.build(), host, user);
+        // We're gonna build the secret upfront and have it ready.
+        // Since the next step is potentially risky (delete a secret that already exist).
+        final AppSecrets secrets = builder.build();
+        final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
+        if (appSecretsOptional.isPresent()) {
+            appsAPI.deleteSecrets(key, host, user);
+        }
+        appsAPI.saveSecrets(secrets, host, user);
     }
 
     /**

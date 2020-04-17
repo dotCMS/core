@@ -117,9 +117,12 @@ class MonitorHelper {
                 .get(this.failFastBooleanPolicy(timeOut, () -> {
                     try{
                         final DotConnect dc = new DotConnect();
-                        dc.setSQL("select count(*) as count from contentlet");
-                        final List<Map<String,String>> results = dc.loadResults();
-                        return Long.parseLong(results.get(0).get("count")) > 0;
+                        if(DbConnectionFactory.isPostgres()) {
+                            return dc.setSQL("SELECT count(*) as count FROM (SELECT 1 FROM dot_cluster LIMIT 1) AS t").getInt("count")>0;
+                        }
+                        else {
+                            return  dc.setSQL("SELECT count(*) as count from dot_cluster").getInt("count")>0;
+                        }
                     }
                     finally{
                         DbConnectionFactory.closeSilently();

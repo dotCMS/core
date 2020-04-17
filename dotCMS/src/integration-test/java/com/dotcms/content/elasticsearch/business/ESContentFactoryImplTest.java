@@ -4,40 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import com.dotcms.IntegrationTestBase;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
-import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -57,6 +27,41 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.ESQueryCache;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import io.vavr.API;
 
 @RunWith(DataProviderRunner.class)
 public class ESContentFactoryImplTest extends IntegrationTestBase {
@@ -537,4 +542,163 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         assertEquals(contentlet.getInode(), hits[0].getSourceAsMap().get("inode"));
     }
 
+    @Test
+    public void test_findContentletByIdentifier() throws Exception {
+    
+        final Language language1 = new LanguageDataGen().nextPersisted();
+        final Language language2 = new LanguageDataGen().nextPersisted();
+        final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
+        
+
+        // create URL-Mapped content
+        final Contentlet workingOneLanguage = new ContentletDataGen(blogType.id())
+                .languageId(language1.getId())
+                .setProperty("body", "myBody")
+                .nextPersisted();
+        
+        // create URL-Mapped content
+        final Contentlet workingTwoLanguage = new ContentletDataGen(blogType.id())
+                .languageId(language1.getId())
+                .setProperty("body", "myBody")
+                .nextPersisted();
+        
+        // create URL-Mapped content
+        final Contentlet publishedTwoLanguage2 = new ContentletDataGen(blogType.id())
+                .languageId(language2.getId())
+                .setProperty("body", "myBody")
+                .setProperty("identifier", workingTwoLanguage.getIdentifier())
+                .nextPersisted();
+        
+        
+        APILocator.getContentletAPI().publish(publishedTwoLanguage2, APILocator.systemUser(), false);
+        
+        
+        
+        assertEquals("workingOneLanguage exists and is working", workingOneLanguage, instance.findContentletByIdentifier(workingOneLanguage.getIdentifier(), false, language1.getId()));
+        assertNull("workingOneLanguage does not exist in 2nd language", instance.findContentletByIdentifier(workingOneLanguage.getIdentifier(), false, language2.getId()));
+        assertNull("workingOneLanguage does not exist in live", instance.findContentletByIdentifier(workingOneLanguage.getIdentifier(), true, language1.getId()));
+
+        assertNull("workingTwoLanguage in language1 is not live", instance.findContentletByIdentifier(workingTwoLanguage.getIdentifier(), true, language1.getId()));
+        assertEquals("workingTwoLanguage exists in langauge1 and is working", workingTwoLanguage, instance.findContentletByIdentifier(workingTwoLanguage.getIdentifier(), false, language1.getId()));
+        assertEquals("workingTwoLanguage exists in langauge2 and is working", publishedTwoLanguage2, instance.findContentletByIdentifier(workingTwoLanguage.getIdentifier(), false, language2.getId()));
+        assertEquals("workingTwoLanguage exists in langauge2 and is live", publishedTwoLanguage2, instance.findContentletByIdentifier(workingTwoLanguage.getIdentifier(), true, language2.getId()));
+
+    }
+    
+    /**
+     * This tests whether we are getting cached results from queries to elasticsearch and that these
+     * results are invalidated when a new piece of content is checked in
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void test_cached_es_query_response() throws Exception {
+        
+        final Language language1 = new LanguageDataGen().nextPersisted();
+
+        final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
+        
+
+        assert(CacheLocator.getESQueryCache() !=null);
+        final String liveQuery = "+baseType:1 +live:true" ;
+        final String workingQuery = "+baseType:1 +live:false" ;
+        
+
+        SearchHits hits = instance.indexSearch(liveQuery, 10, 0, null);
+        
+        //assert we have results
+        assertTrue(hits.getTotalHits().value > 0);
+        
+        SearchHits hits2 = instance.indexSearch(liveQuery, 10, 0, null);
+        
+        // hits and hits2 are the same object in memory (meaning, it came from cache)
+        assertTrue(hits == hits2);
+        
+
+        // checkin a new piece of content
+        new ContentletDataGen(blogType.id())
+                .languageId(language1.getId())
+                .setProperty("body", "myBody")
+                .nextPersisted();
+        
+
+        SearchHits hits3 = instance.indexSearch(liveQuery, 10, 0, null);
+        
+        // Checking in a new piece of content flushed the esQuerycache, we get new results
+        assertTrue(hits != hits3);
+        assertTrue(hits3.getTotalHits().value > 0);
+    }
+    
+    
+    /**
+     * This test insures that we are taking all the parameters of the query into account when
+     * building our cache key
+     * @throws Exception
+     */
+    @Test
+    public void test_cached_es_query_different_responses_for_all_params() throws Exception {
+        final Language language1 = new LanguageDataGen().nextPersisted();
+
+        final ContentType blogType = TestDataUtils.getBlogLikeContentType(site);
+        
+        for(int i=0;i<10;i++) {
+        // checkin a new piece of content
+        Contentlet con = new ContentletDataGen(blogType.id())
+                .languageId(language1.getId())
+                .setProperty("body", "myBody")
+                .nextPersisted();
+            if(i % 2==0) {
+                APILocator.getContentletAPI().publish(con, APILocator.systemUser(), false);
+            }
+        }
+        final String liveQuery = "+baseType:1 +live:true" ;
+        final String workingQuery = "+baseType:1 +live:false" ;
+        
+
+        //default
+        SearchHits hits = instance.indexSearch(liveQuery, 5, 0, null);
+        
+        // working index
+        SearchHits hits1 = instance.indexSearch(workingQuery, 5, 0, null);
+        
+        // different limit
+        SearchHits hits2 = instance.indexSearch(liveQuery, 4, 0, null);
+        
+        // different offset
+        SearchHits hits3 = instance.indexSearch(liveQuery, 5, 1, null);
+        
+        // different sort
+        SearchHits hits4 = instance.indexSearch(liveQuery, 5, 0, "title desc");
+        
+        // different sort direction
+        SearchHits hits5 = instance.indexSearch(liveQuery, 5, 0, "title asc");
+        
+        
+        
+        //assert we have results
+        assertTrue(hits.getTotalHits().value > 0);
+
+        // all parameters are being taken into account when building the cache key
+        assertNotSame(hits, hits1);
+        assertNotEquals(hits , hits1);
+        assertTrue(hits1.getTotalHits().value > 0);
+
+        assertNotSame(hits, hits2);
+        assertNotEquals(hits , hits2);
+        assertTrue(hits2.getTotalHits().value > 0);
+
+        assertNotSame(hits, hits3);
+        assertNotEquals(hits , hits3);
+        assertTrue(hits3.getTotalHits().value > 0);
+
+        assertNotSame(hits, hits4);
+        assertNotEquals(hits , hits4);
+        assertTrue(hits4.getTotalHits().value > 0);
+
+        assertNotSame(hits, hits5);
+        assertNotEquals(hits , hits5);
+        assertTrue(hits5.getTotalHits().value > 0);
+        
+
+    }
 }

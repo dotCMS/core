@@ -206,7 +206,7 @@ public class SecretsStoreKeyStoreImplTest {
     public void Test_Encryption() {
         final String uuid = UUIDGenerator.generateUuid();
         final SecretsStore secretsStore = SecretsStore.INSTANCE.get();
-        final String encrypted = ((SecretsStoreKeyStoreImpl) secretsStore).encrypt(uuid);
+        final char[] encrypted = ((SecretsStoreKeyStoreImpl) secretsStore).encrypt(uuid.toCharArray());
         assertEquals(uuid,new String(((SecretsStoreKeyStoreImpl) secretsStore).decrypt(encrypted)));
 
     }

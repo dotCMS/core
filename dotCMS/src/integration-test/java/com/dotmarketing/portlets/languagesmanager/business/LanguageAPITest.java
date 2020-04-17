@@ -141,7 +141,7 @@ public class LanguageAPITest {
 			contentletEnglish = createTestKeyValueContent(
 					KEY_1, VALUE_1, 1,
 					languageVariableContentType, systemUser);
-
+			CacheLocator.getESQueryCache().clearCache();
 			value = APILocator.getLanguageAPI().getStringKey(APILocator.getLanguageAPI().getDefaultLanguage(),KEY_1);
 
 			Assert.assertEquals(VALUE_1,value);

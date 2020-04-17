@@ -4133,9 +4133,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 final Host host = Try.of(()->APILocator.getHostAPI().find(
                         contentletIn.getHost(), user, false)).getOrNull();
                 if (null != host) {
+
+                    final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+                    final String sessionId = request!=null && request.getSession(false)!=null? request.getSession().getId() : null;
+                    final List<String> accessingList = null != request?
+                            Arrays.asList(user.getUserId(), APILocator.getTempFileAPI().getRequestFingerprint(request), sessionId):
+                            Arrays.asList(user.getUserId(), sessionId);
+
+
                     final Optional<ContentType> contentTypeOpt = typeStrategy.get().apply(baseContentType,
                             CollectionsUtils.map("user", user, "host", host,
-                                    "contentletMap", contentletIn.getMap()));
+                                    "contentletMap", contentletIn.getMap(), "accessingList", accessingList));
 
                     if (contentTypeOpt.isPresent()) {
                         contentletIn.setContentType(contentTypeOpt.get());
@@ -6164,7 +6172,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // validate unique
             if(field.isUnique()){
                 try{
-                    StringBuilder buffy = new StringBuilder();
+                    StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
                     buffy.append(" +structureInode:" + contentlet.getStructureInode());
                     if(UtilMethods.isSet(contentlet.getIdentifier())){
                         buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
@@ -7651,7 +7659,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private boolean isInodeIndexedWithQuery(String luceneQuery) {
-        return isInodeIndexedWithQuery(luceneQuery, -1);
+        return isInodeIndexedWithQuery(luceneQuery + " " + UUIDGenerator.shorty(), -1);
     }
 
     private final List<Integer> fibonacciMapping = Arrays.asList(1, 2, 3, 5, 8, 13, 21, 34, 55); // it is around 14 + 9 (by the timeout delay) seconds, enough to wait
