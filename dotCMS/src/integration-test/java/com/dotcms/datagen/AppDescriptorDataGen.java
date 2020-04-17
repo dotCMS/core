@@ -43,7 +43,7 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
        return paramMap;
     }
 
-    private ImmutableSortedMap.Builder<String, ParamDescriptor> builder = new ImmutableSortedMap.Builder<>(Ordering.natural());
+    private final ImmutableSortedMap.Builder<String, ParamDescriptor> builder = new ImmutableSortedMap.Builder<>(Ordering.natural());
 
     /**
      * Next new non-persisted object
@@ -208,7 +208,7 @@ public class AppDescriptorDataGen extends AbstractDataGen<AppDescriptor> {
      * @param required
      * @return
      */
-    public AppDescriptorDataGen param(final String name, boolean hidden, final Type type,
+    public AppDescriptorDataGen param(final String name, final boolean hidden, final Type type,
             final String label, final String hint, final boolean required) {
        return param(name, ParamDescriptor.newParam(StringPool.BLANK, hidden, type, label, hint, required));
     }
