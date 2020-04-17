@@ -74,6 +74,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
     private RestHighLevelClient client;
 
     private static SSLContext sslContextFromPem;
+    private static final String HTTPS_PROTOCOL = "https";
 
     DotRestHighLevelClientProvider() {
         try {
@@ -89,8 +90,12 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         final String esAuthType = getESAuthType();
 
         //Loading TLS certificates
-        if (Config.getBooleanProperty("ES_TLS_ENABLED", false)) {
+        if (Config.getBooleanProperty("ES_TLS_ENABLED", false) && HTTPS_PROTOCOL
+                .equalsIgnoreCase(Config.getStringProperty("ES_PROTOCOL", HTTPS_PROTOCOL))) {
             loadTLSCertificates();
+        } else{
+            Logger.info(this.getClass(),
+                    "Elastic RestHighLevelClient will be initialized without certificates");
         }
 
         final BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -110,16 +115,18 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     private RestClientBuilder getClientBuilder(final BasicCredentialsProvider credentialsProvider) {
         final String esAuthType = getESAuthType();
-        final String httpsProtocol = "https";
-        final String esProtocol = Config.getStringProperty("ES_PROTOCOL", httpsProtocol);
+        final String esProtocol = Config.getStringProperty("ES_PROTOCOL", HTTPS_PROTOCOL);
+
+        Logger.info(this.getClass(),
+                "Initializing Elastic RestHighLevelClient using protocol " + esProtocol);
+
         final RestClientBuilder clientBuilder = RestClient
                 .builder(new HttpHost(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
                         Config.getIntProperty("ES_PORT", 9200), esProtocol))
                 .setHttpClientConfigCallback((httpClientBuilder) -> {
                     if (sslContextFromPem != null) {
-                        httpClientBuilder
-                                .setSSLContext(sslContextFromPem);
-                    } else if (httpsProtocol.equals(esProtocol)){
+                        httpClientBuilder.setSSLContext(sslContextFromPem);
+                    } else if (HTTPS_PROTOCOL.equals(esProtocol)){
                         try {
                             httpClientBuilder.setSSLContext(SSLContexts
                                     .custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build());
