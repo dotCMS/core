@@ -3512,7 +3512,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
                         this.permissionAPI
                                 .doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user,
                                         RESPECT_FRONTEND_ROLES),
-                () -> "User " + user + " cannot read action " + action.getName() + " " + action.getId(),
+                () -> "User " + user + " cannot read action " + action.getName(),
                 DotSecurityException.class);
 
         return action;
