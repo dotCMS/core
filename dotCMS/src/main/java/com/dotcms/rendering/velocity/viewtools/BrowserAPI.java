@@ -88,66 +88,59 @@ public class BrowserAPI {
         
         public WfData(Contentlet contentlet, List<Integer> permissions, User user, boolean showArchived) throws DotStateException, DotDataException, DotSecurityException {
             
-            try {
-                if (contentlet != null) {
-                	wfActions = APILocator.getWorkflowAPI()
-								.findAvailableActions(contentlet, user, WorkflowAPI.RenderMode.LISTING);
-                }
-            } catch (Exception e) {
-                Logger.error(this, "Could not load workflow actions : ", e);
-                // wfActions = new ArrayList();
-            }
             
-            if (contentlet != null) {
-                if (permissionAPI.doesUserHavePermission(contentlet,
-                        PermissionAPI.PERMISSION_WRITE, user)
-                        && contentlet.isLocked()) {
-                    String lockedUserId = APILocator.getVersionableAPI()
-                            .getLockedBy(contentlet);
-                    if (user.getUserId().equals(lockedUserId)) {
-                        contentEditable = true;
-                    } else {
-                        contentEditable = false;
-                    }
+            if(null==contentlet) {
+                return;
+            }
+
+            wfActions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user, WorkflowAPI.RenderMode.LISTING);
+            
+            if (permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user) && contentlet.isLocked()) {
+                String lockedUserId = APILocator.getVersionableAPI()
+                        .getLockedBy(contentlet);
+                if (user.getUserId().equals(lockedUserId)) {
+                    contentEditable = true;
                 } else {
                     contentEditable = false;
                 }
+            } else {
+                contentEditable = false;
             }
+            
 
 
-            try {
-                if (permissions.contains(PERMISSION_READ)) {
-                    if (!showArchived && contentlet.isArchived()) {
-                        skip=true;
-                        return;
-                    }
-                    final boolean showScheme = (wfActions!=null) ?  wfActions.stream().collect(Collectors.groupingBy(WorkflowAction::getSchemeId)).size()>1 : false;
-                    
-                    for (final WorkflowAction action : wfActions) {
 
-						WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findScheme(action.getSchemeId());
-                        Map<String, Object> wfActionMap = new HashMap<String, Object>();
-                        wfActionMap.put("name", action.getName());
-                        wfActionMap.put("id", action.getId());
-                        wfActionMap.put("icon", action.getIcon());
-                        wfActionMap.put("assignable", action.isAssignable());
-                        wfActionMap.put("commentable", action.isCommentable()
-                                || UtilMethods.isSet(action.getCondition()));
-                        wfActionMap.put("requiresCheckout",
-                                action.requiresCheckout());
-                        
-                        final String actionNameStr = (showScheme) ? LanguageUtil.get(user, action.getName()) +" ( "+LanguageUtil.get(user,wfScheme.getName())+" )" : LanguageUtil.get(user, action.getName());
-
-                        wfActionMap.put("wfActionNameStr",actionNameStr);
-                        wfActionMap.put("hasPushPublishActionlet", action.hasPushPublishActionlet());
-                        wfActionMapList.add(wfActionMap);
-                    }
-
+            if (permissions.contains(PERMISSION_READ)) {
+                if (!showArchived && contentlet.isArchived()) {
+                    skip=true;
+                    return;
                 }
+                final boolean showScheme = (wfActions!=null) ?  wfActions.stream().collect(Collectors.groupingBy(WorkflowAction::getSchemeId)).size()>1 : false;
+                
+                for (final WorkflowAction action : wfActions) {
+
+					WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findScheme(action.getSchemeId());
+                    Map<String, Object> wfActionMap = new HashMap<String, Object>();
+                    wfActionMap.put("name", action.getName());
+                    wfActionMap.put("id", action.getId());
+                    wfActionMap.put("icon", action.getIcon());
+                    wfActionMap.put("assignable", action.isAssignable());
+                    wfActionMap.put("commentable", action.isCommentable()
+                            || UtilMethods.isSet(action.getCondition()));
+                    wfActionMap.put("requiresCheckout",
+                            action.requiresCheckout());
+                    final String actionName = Try.of(() ->LanguageUtil.get(user, action.getName())).getOrElse(action.getName());
+                    final String schemeName = Try.of(() ->LanguageUtil.get(user,wfScheme.getName())).getOrElse(wfScheme.getName());
+                    
+                    final String actionNameStr = (showScheme) ? actionName +" ( "+schemeName+" )" : actionName;
+
+                    wfActionMap.put("wfActionNameStr",actionNameStr);
+                    wfActionMap.put("hasPushPublishActionlet", action.hasPushPublishActionlet());
+                    wfActionMapList.add(wfActionMap);
+                }
+
             }
-            catch(Exception ex) {
-                Logger.error(BrowserAPI.class,"can't process workflow data", ex);
-            }
+
 
         }
     }
@@ -235,13 +228,8 @@ public class BrowserAPI {
 					Logger.error(this, "Could not load folders : ", e1);
 				}
 				for (Folder folder : folders) {
-					List<Integer> permissions = new ArrayList<Integer>();
-					try {
-						permissions = permissionAPI.getPermissionIdsFromRoles(
+					List<Integer> permissions = permissions = permissionAPI.getPermissionIdsFromRoles(
 								folder, roles, user);
-					} catch (DotDataException e) {
-						Logger.error(this, "Could not load permissions : ", e);
-					}
 					if (permissions.contains(PERMISSION_READ)) {
 						Map<String, Object> folderMap = folder.getMap();
 						folderMap.put("permissions", permissions);
@@ -294,12 +282,7 @@ public class BrowserAPI {
 	                returnList.add(linkMap);
 	            }
 	        }
-		    
-		    
-		    
-		    
-		    
-		    
+
             // Getting the html pages directly under the parent folder or host
             List<IHTMLPage> pages = new ArrayList<IHTMLPage>();
             
@@ -338,7 +321,7 @@ public class BrowserAPI {
 
 
 		
-		String luceneQuery=(dotAssets)  ? "+basetype:(4 OR 9)" : "+basetype:4 ";
+		String luceneQuery=(dotAssets)  ? "+basetype:(4 OR 9) " : "+basetype:4 ";
 		luceneQuery+=(languageId>0) ? " +languageid:" +  languageId : "";
 		luceneQuery+=(host!=null)   ? " +conhost:" + host.getIdentifier() + " +confolder:" + Folder.SYSTEM_FOLDER : "";
 		luceneQuery+=(parent!=null) ? " +confolder:" + parent.getInode() :"";
@@ -358,11 +341,6 @@ public class BrowserAPI {
 
 
 		for (Contentlet file : files) {
-
-			if (file == null) {
-                continue;
-            }
-
 
             if (file.getBaseType().get() == BaseContentType.FILEASSET) {
                 FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(file);
