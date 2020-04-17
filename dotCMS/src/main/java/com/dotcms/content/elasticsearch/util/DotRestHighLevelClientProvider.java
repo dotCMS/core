@@ -88,13 +88,13 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
 
     private BasicCredentialsProvider getCredentialsProvider() throws IOException, GeneralSecurityException {
         final String esAuthType = getESAuthType();
-
+        final boolean tlsEnabled = Config.getBooleanProperty("ES_TLS_ENABLED", false);
         //Loading TLS certificates
-        if (Config.getBooleanProperty("ES_TLS_ENABLED", false) && HTTPS_PROTOCOL
+        if (tlsEnabled && HTTPS_PROTOCOL
                 .equalsIgnoreCase(Config.getStringProperty("ES_PROTOCOL", HTTPS_PROTOCOL))) {
             loadTLSCertificates();
-        } else{
-            Logger.info(this.getClass(),
+        } else if (!tlsEnabled){
+            Logger.warn(this.getClass(),
                     "Elastic RestHighLevelClient will be initialized without certificates");
         }
 
@@ -122,9 +122,9 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     "Initializing Elastic RestHighLevelClient using a secured https connection");
         } else{
             Logger.warn(this.getClass(),
-                    "Initializing Elastic RestHighLevelClient using an insecured http connection");
+                    "Initializing Elastic RestHighLevelClient using an unsecured http connection");
         }
-        
+
 
         final RestClientBuilder clientBuilder = RestClient
                 .builder(new HttpHost(Config.getStringProperty("ES_HOSTNAME", "127.0.0.1"),
@@ -132,6 +132,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                 .setHttpClientConfigCallback((httpClientBuilder) -> {
                     if (sslContextFromPem != null) {
                         httpClientBuilder.setSSLContext(sslContextFromPem);
+
                     } else if (securedConnection){
                         try {
                             httpClientBuilder.setSSLContext(SSLContexts
