@@ -36,7 +36,6 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -46,7 +45,6 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -431,7 +429,11 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     @NotNull
-    private Permission getPermission(Role role, Permissionable permissionable, int permissionPublish) {
+    private Permission getPermission(
+            final Role role,
+            final Permissionable permissionable,
+            final int permissionPublish) {
+
         final Permission publishPermission = new Permission();
         publishPermission.setInode(permissionable.getPermissionId());
         publishPermission.setRoleId(role.getId());
