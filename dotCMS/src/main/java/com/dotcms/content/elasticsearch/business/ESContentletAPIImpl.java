@@ -4143,9 +4143,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 final Host host = Try.of(()->APILocator.getHostAPI().find(
                         contentletIn.getHost(), user, false)).getOrNull();
                 if (null != host) {
+
+                    final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+                    final String sessionId = request!=null && request.getSession(false)!=null? request.getSession().getId() : null;
+                    final List<String> accessingList = null != request?
+                            Arrays.asList(user.getUserId(), APILocator.getTempFileAPI().getRequestFingerprint(request), sessionId):
+                            Arrays.asList(user.getUserId(), sessionId);
+
+
                     final Optional<ContentType> contentTypeOpt = typeStrategy.get().apply(baseContentType,
                             CollectionsUtils.map("user", user, "host", host,
-                                    "contentletMap", contentletIn.getMap()));
+                                    "contentletMap", contentletIn.getMap(), "accessingList", accessingList));
 
                     if (contentTypeOpt.isPresent()) {
                         contentletIn.setContentType(contentTypeOpt.get());
