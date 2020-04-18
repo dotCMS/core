@@ -13,6 +13,7 @@ import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
@@ -250,7 +251,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetFactoryIntegrationTest.class,
         FileAssetAPIImplTest.class,
         UserResourceIntegrationTest.class,
-        SiteSearchJobImplTest.class
+        SiteSearchJobImplTest.class,
+        IntegrationResourceLinkTest.class
 })
 public class MainSuite {
 

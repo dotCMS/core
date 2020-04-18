@@ -1,10 +1,6 @@
 package com.dotmarketing.portlets.contentlet.model;
 
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
-import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -14,9 +10,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformer;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -25,14 +19,14 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
-import io.vavr.Tuple4;
 import io.vavr.control.Try;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
+
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
 /***
  * This class is the result of a refactoring from an old JSP Snippet that was originally located in:
@@ -140,7 +134,7 @@ public class ResourceLink {
                 );
             }
 
-            return build(request, user, contentlet, FileAssetAPI.BINARY_FIELD);
+            return build(request, user, contentlet, contentlet.isFileAsset()?FileAssetAPI.BINARY_FIELD: DotAssetContentType.ASSET_FIELD_VAR);
         }
 
         public final ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet, final String velocityVarName) throws DotDataException, DotSecurityException {
@@ -177,7 +171,7 @@ public class ResourceLink {
                     versionPathIdPath._1(), versionPathIdPath._2());
         }
 
-        private Tuple2<String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,
+        Tuple2<String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,
                                                                                 final File binary) throws DotDataException {
 
             final BinaryToMapTransformer transformer = new BinaryToMapTransformer(contentlet);
@@ -190,7 +184,7 @@ public class ResourceLink {
             return Tuple.of(versionPath, idPath);
         }
 
-        private Tuple2<String, String> createResourceLink (final HttpServletRequest request, final User user,
+        Tuple2<String, String> createResourceLink (final HttpServletRequest request, final User user,
                                                            final Contentlet contentlet, final Identifier identifier,
                                                            final File binary, final String hostUrl) throws DotSecurityException, DotDataException {
 

@@ -132,12 +132,7 @@ public class ResourceLinkTest {
         final long languageId = 1L;
         final boolean isSecure = false;
 
-        final File file = FileUtil.createTemporalFile("comments-list", "html");
-        final String content = "This is a test temporal file";
-        try (final FileWriter fileWriter = new FileWriter(file)) {
-
-            fileWriter.write(content);
-        }
+        final File file = FileUtil.createTemporalFile("comments-list", "html", "This is a test temporal file");
 
         final String htmlFileName = file.getName();
         final User adminUser = mockAdminUser();
@@ -171,12 +166,7 @@ public class ResourceLinkTest {
         final long languageId = 1L;
         final boolean isSecure = false;
 
-        final File file = FileUtil.createTemporalFile("comments-list", "html");
-        final String content = "This is a test temporal file";
-        try (final FileWriter fileWriter = new FileWriter(file)) {
-
-            fileWriter.write(content);
-        }
+        final File file = FileUtil.createTemporalFile("comments-list", "html", "This is a test temporal file");
 
         final String htmlFileName = file.getName();
 
@@ -214,12 +204,7 @@ public class ResourceLinkTest {
         final long languageId = 2L;
         final boolean isSecure = false;
 
-        final File file = FileUtil.createTemporalFile("widget-code", "vtl");
-        final String content = "This is a test temporal file";
-        try (final FileWriter fileWriter = new FileWriter(file)) {
-
-            fileWriter.write(content);
-        }
+        final File file = FileUtil.createTemporalFile("widget-code", "vtl", "This is a test temporal file");
 
         final String htmlFileName = file.getName();
 
@@ -256,12 +241,7 @@ public class ResourceLinkTest {
 
         final User limitedUser = mockLimitedUser();
 
-        final File file = FileUtil.createTemporalFile("widget-code", "vtl");
-        final String content = "This is a test temporal file";
-        try (final FileWriter fileWriter = new FileWriter(file)) {
-
-            fileWriter.write(content);
-        }
+        final File file = FileUtil.createTemporalFile("widget-code", "vtl", "This is a test temporal file");
 
         final String htmlFileName = file.getName();
 
@@ -297,12 +277,7 @@ public class ResourceLinkTest {
         final long languageId = 2L;
         final boolean isSecure = false;
 
-        final File file = FileUtil.createTemporalFile("any", "vm");
-        final String content = "This is a test temporal file";
-        try (final FileWriter fileWriter = new FileWriter(file)) {
-
-            fileWriter.write(content);
-        }
+        final File file = FileUtil.createTemporalFile("any", "vm", "This is a test temporal file");
 
         final String htmlFileName = file.getName();
 
@@ -339,12 +314,7 @@ public class ResourceLinkTest {
 
         final User limitedUser = mockLimitedUser();
 
-        final File file = FileUtil.createTemporalFile("any", "vm");
-        final String content = "This is a test temporal file";
-        try (final FileWriter fileWriter = new FileWriter(file)) {
-
-            fileWriter.write(content);
-        }
+        final File file = FileUtil.createTemporalFile("any", "vm", "This is a test temporal file");
 
         final String htmlFileName = file.getName();
         final Contentlet contentlet = mock(Contentlet.class);
