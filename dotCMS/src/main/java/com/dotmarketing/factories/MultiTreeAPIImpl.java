@@ -78,6 +78,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String DELETE_SQL_PERSONALIZATION_PER_PAGE = "delete from multi_tree where parent1=? and personalization = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION = "delete from multi_tree where parent1=? AND relation_type != ? and personalization = ?";
+    private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE =
+            "delete from multi_tree where relation_type != ? and personalization = ? and " +
+                    "child in (select distinct identifier from contentlet where identifier in (select child from multi_tree where parent1 = ?) and language_id = ?)";
     private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
     private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ?";
 
@@ -510,8 +513,30 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     @WrapInTransaction
     public void overridesMultitreesByPersonalization(final String pageId,
+                                                     final String personalization,
+                                                     final List<MultiTree> multiTrees) throws DotDataException {
+
+        this.overridesMultitreesByPersonalization(pageId, personalization, multiTrees,
+                Optional.empty());  // no lang passed, will deletes everything
+    }
+
+    /**
+     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the
+     * {@link MultiTree} linked previously with the page.
+     *
+     * @param pageId {@link String} Page's identifier
+     * @param personalization {@link String} personalization token
+     * @param multiTrees {@link List} of {@link MultiTree} to safe
+     * @param languageIdOpt {@link Optional} {@link Long}   optional language, if present will deletes only the contentlets that have a version on this language.
+     *                                        Since it is by identifier, when deleting for instance in spanish, will remove the english and any other lang version too.
+     * @throws DotDataException
+     */
+    @Override
+    @WrapInTransaction
+    public void overridesMultitreesByPersonalization(final String pageId,
                                                     final String personalization,
-                                                    final List<MultiTree> multiTrees) throws DotDataException {
+                                                    final List<MultiTree> multiTrees,
+                                                     final Optional<Long> languageIdOpt) throws DotDataException {
 
         Logger.info(this, String.format(
                 "Overriding MutiTrees: pageId -> %s personalization -> %s multiTrees-> %s ",
@@ -525,10 +550,20 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
 
         final DotConnect db = new DotConnect();
-        db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION)
-                .addParam(pageId)
-                .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
-                .addParam(personalization).loadResult();
+        if (languageIdOpt.isPresent()) {
+            db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE)
+                    .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
+                    .addParam(personalization)
+                    .addParam(pageId)
+                    .addParam(languageIdOpt.get())
+                    .loadResult();
+        } else {
+
+            db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION)
+                    .addParam(pageId)
+                    .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
+                    .addParam(personalization).loadResult();
+        }
 
         if (!multiTrees.isEmpty()) {
 
@@ -799,8 +834,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 final Set<PersonalizedContentlet> myContents = pageContents.contains(containerId, multiTree.getRelationType())
                         ? pageContents.get(containerId, multiTree.getRelationType())
                         : new LinkedHashSet<>();
-                long byPersonaCount  = myContents.stream().filter(p->p.getPersonalization().equals(personalization)).count();
-                if (container != null && byPersonaCount < container.getMaxContentlets()) {
+
+                if (container != null) {
 
                     myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization));
                 }

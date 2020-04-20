@@ -3,6 +3,7 @@ package com.dotcms.security.apps;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -37,7 +38,7 @@ public class AppDescriptor {
 
     private final boolean allowExtraParameters;
 
-    private final Map<String,Param> params;
+    private final Map<String, ParamDescriptor> params;
 
     /**
      * This constructor isn't used by the object mapper that reads the yml files.
@@ -56,7 +57,7 @@ public class AppDescriptor {
             @JsonProperty("description") final String description,
             @JsonProperty("iconUrl") final String iconUrl,
             @JsonProperty("allowExtraParameters") final boolean allowExtraParameters,
-            @JsonProperty("params") final Map<String,Param> params) {
+            @JsonProperty("params") final Map<String, ParamDescriptor> params) {
         this.key = key;
         this.name = name;
         this.description = description;
@@ -106,16 +107,17 @@ public class AppDescriptor {
     }
 
     /**
-     * Holds the definition of the params expected by the service
+     * Holds the definition of the params expected by the service.
+     * This method returns a defensive copy.
      * @return
      */
-    public Map<String, Param> getParams() {
-        return params;
+    public Map<String, ParamDescriptor> getParams() {
+        return new LinkedHashMap<>(params);
     }
 
     public void addParam(final String name, final String value, final boolean hidden,
             final Type type, final String label, final String hint, final boolean required) {
-        getParams().put(name, Param.newParam(value, hidden, type, label, hint, required));
+        params.put(name, ParamDescriptor.newParam(value, hidden, type, label, hint, required));
     }
 
     @Override

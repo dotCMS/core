@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -1080,6 +1081,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
         Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
                 .bulk(bulkRequest, RequestOptions.DEFAULT));
+        
+        //Delete query cache when a new content has been reindexed
+        CacheLocator.getESQueryCache().clearCache();
     }
 
     private void reindexDependenciesForDeletedContent(final Contentlet contentlet, final List<Relationship> relationships,
@@ -1159,6 +1163,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         Logger.info(this, "Records deleted: " +
                 response.getDeleted() + " from contentType: " + structureName);
+        
+        //Delete query cache when a new content has been reindexed
+        CacheLocator.getESQueryCache().clearCache();
     }
 
     public void fullReindexAbort() {

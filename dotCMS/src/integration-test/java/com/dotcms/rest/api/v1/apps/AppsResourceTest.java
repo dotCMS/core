@@ -15,10 +15,10 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.apps.view.AppView;
+import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
-import com.dotcms.security.apps.Param;
-import com.dotcms.security.apps.Secret;
 import com.dotcms.security.apps.AppDescriptor;
+import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Type;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -29,8 +29,10 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.liferay.portal.model.User;
 import java.io.File;
@@ -40,12 +42,15 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -59,9 +64,9 @@ import org.junit.Test;
 
 public class AppsResourceTest extends IntegrationTestBase {
 
-    static final String ADMIN_DEFAULT_ID = "dotcms.org.1";
-    static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
-    static final String ADMIN_NAME = "User Admin";
+    private static final String ADMIN_DEFAULT_ID = "dotcms.org.1";
+    private static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
+    private static final String ADMIN_NAME = "User Admin";
 
     private static AppsResource appsResource;
 
@@ -96,12 +101,12 @@ public class AppsResourceTest extends IntegrationTestBase {
 
     private InputStream createAppDescriptorFile(final String fileName, final String key,
             final String appName, final String description, final boolean allowExtraParameters,
-            final Map<String, Param> paramMap) throws IOException {
+            final SortedMap<String, ParamDescriptor> paramMap) throws IOException {
         final AppDescriptor appDescriptor = new AppDescriptor(key, appName,
-                description, "/black.png", allowExtraParameters, new HashMap<>());
+                description, "/black.png", allowExtraParameters, new TreeMap<>());
 
-        for (final Entry<String, Param> entry : paramMap.entrySet()) {
-            final Param param = entry.getValue();
+        for (final Entry<String, ParamDescriptor> entry : paramMap.entrySet()) {
+            final ParamDescriptor param = entry.getValue();
             appDescriptor
                     .addParam(entry.getKey(), param.getValue(), param.isHidden(), param.getType(),
                             param.getLabel(), param.getHint(), param.isRequired());
@@ -127,14 +132,32 @@ public class AppsResourceTest extends IntegrationTestBase {
         return formDataMultiPart;
     }
 
+    /**
+     * This method tests quite a few things on the resource. First we create a yml file that exist physically on disc.
+     * The we upload the file with an app definition. Then we Create an App Then list the available apps.
+     * Then we Verify the New app is listed. under the right Host.
+     * Then We delete the app and verify the pagination results make sense.
+     * Given scenario: Test we can create an app then delete it.
+     * Expected Result: Pagination shows all available sites with no configurations
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_Create_app_descriptor_Then_Create_App_Integration_Then_Delete_The_Whole_App() {
 
         final Host host = new SiteDataGen().nextPersisted();
-        final Map<String, Param> paramMap = ImmutableMap.of(
-                "p1", Param.newParam("v1", false, Type.STRING, "label", "hint", true),
-                "p2", Param.newParam("v2", false, Type.STRING, "label", "hint", true),
-                "p3", Param.newParam("v3", false, Type.STRING, "label", "hint", true)
+
+        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
+                "p1", ParamDescriptor.newParam("v1", false, Type.STRING, "label", "hint", true),
+                "p2", ParamDescriptor.newParam("v2", false, Type.STRING, "label", "hint", true),
+                "p3", ParamDescriptor.newParam("v3", false, Type.STRING, "label", "hint", true)
+        );
+
+        final Map<String, Input> inputParamMap = ImmutableMap.of(
+                "p1", Input.newInputParam("v1".toCharArray(),false),
+                "p2", Input.newInputParam("v1".toCharArray(),false),
+                "p3", Input.newInputParam("v1".toCharArray(),false)
         );
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -152,7 +175,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertNotNull(appIntegrationResponse);
             Assert.assertEquals(HttpStatus.SC_OK, appIntegrationResponse.getStatus());
             final Response availableAppsResponse = appsResource
-                    .listAvailableApps(request, response);
+                    .listAvailableApps(request, response, null);
             Assert.assertEquals(HttpStatus.SC_OK, availableAppsResponse.getStatus());
             final ResponseEntityView responseEntityView1 = (ResponseEntityView) availableAppsResponse
                     .getEntity();
@@ -164,9 +187,9 @@ public class AppsResourceTest extends IntegrationTestBase {
                             appView -> "lola"
                                     .equals(appView.getName())));
 
-            final SecretForm secretForm = new SecretForm(appKey,host.getIdentifier(), paramMap);
+            final SecretForm secretForm = new SecretForm(inputParamMap);
             final Response createSecretResponse = appsResource
-                    .createAppSecrets(request, response, secretForm);
+                    .createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm);
             Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
 
             final Response hostIntegrationsResponse = appsResource
@@ -209,7 +232,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             final Response detailedIntegrationResponseAfterDelete = appsResource
                     .getAppDetail(request, response, appKey,
                             host.getIdentifier());
-            Assert.assertEquals(HttpStatus.SC_NOT_FOUND,
+            Assert.assertEquals(HttpStatus.SC_OK,
                     detailedIntegrationResponseAfterDelete.getStatus());
 
             //Now test the entry has been removed from the list of available configurations.
@@ -236,14 +259,26 @@ public class AppsResourceTest extends IntegrationTestBase {
     }
 
 
+    /**
+     * This method tests quite a few things on the resource. First we create a yml file that exist physically on disc.
+     * The we upload the file with an app definition. Then we Create an App Then list the available apps.
+     * Then we Verify the New app is listed. under the right Host.
+     * Then We delete one single entry of the secret.
+     * Given scenario: Test we can create an app then delete individual properties/secrets from it. Not the whole secret
+     * Expected Result: Pagination shows all available sites with no configurations and the default values from the yml are loaded instead.
+     */
     @Test
     public void Test_Create_App_descriptor_Then_Create_App_Integration_Then_Delete_One_Single_Secret() {
 
-        final Map<String, Param> paramMap = ImmutableMap.of(
-                "param1", Param.newParam("val-1", false, Type.STRING, "label", "hint", true),
-                "param2", Param.newParam("val-2", false, Type.STRING, "label", "hint", true),
-                "param3", Param.newParam("val-3", false, Type.STRING, "label", "hint", true)
+        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
+                "param1", ParamDescriptor
+                        .newParam("default", false, Type.STRING, "label", "hint", true),
+                "param2", ParamDescriptor
+                        .newParam("default", false, Type.STRING, "label", "hint", true),
+                "param3", ParamDescriptor
+                        .newParam("default", false, Type.STRING, "label", "hint", true)
         );
+
         final Host host = new SiteDataGen().nextPersisted();
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -260,7 +295,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertNotNull(appResponse);
             Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
             final Response availableAppsResponse = appsResource
-                    .listAvailableApps(request, response);
+                    .listAvailableApps(request, response, null);
             Assert.assertEquals(HttpStatus.SC_OK, availableAppsResponse.getStatus());
             final ResponseEntityView responseEntityView1 = (ResponseEntityView) availableAppsResponse
                     .getEntity();
@@ -272,10 +307,15 @@ public class AppsResourceTest extends IntegrationTestBase {
                             appView -> "lola"
                                     .equals(appView.getName())));
 
+            //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
+            final Map<String, Input> inputParamMap = ImmutableMap.of(
+                    "param1", Input.newInputParam("v1".toCharArray(),false),
+                    "param2", Input.newInputParam("v1".toCharArray(),false),
+                    "param3", Input.newInputParam("v1".toCharArray(),false));
             // Add secrets to it.
-            final SecretForm secretForm = new SecretForm(appKey,host.getIdentifier(), paramMap);
+            final SecretForm secretForm = new SecretForm(inputParamMap);
             final Response createSecretResponse = appsResource
-                    .createAppSecrets(request, response, secretForm);
+                    .createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm);
             Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
 
             //fetch and verify the secrets by app-key
@@ -340,27 +380,36 @@ public class AppsResourceTest extends IntegrationTestBase {
 
             Assert.assertNotNull(appViewAfterDelete.getSites());
             Assert.assertFalse(appViewAfterDelete.getSites().isEmpty());
-            final Map<String, Secret> secretsAfterDelete = appViewAfterDelete
+            final Map<String, SecretView> secretsAfterDelete = appViewAfterDelete
                     .getSites()
-                    .get(0).getSecrets();
-            Assert.assertTrue(secretsAfterDelete.containsKey("param2"));
-            //The ones we removed must not be present.. right?
-            Assert.assertFalse(secretsAfterDelete.containsKey("param1"));
-            Assert.assertFalse(secretsAfterDelete.containsKey("param3"));
+                    .get(0).getSecrets().stream().collect(Collectors.toMap(SecretView::getName,
+                    Function.identity()));
+            Assert.assertEquals(secretsAfterDelete.get("param2").getSecret().getString(),"v1");
+            //The deleted secrets should have returned to show their default vales defined in the yml descriptor.
+            Assert.assertNull(secretsAfterDelete.get("param1").getSecret());
+            Assert.assertNull(secretsAfterDelete.get("param3").getSecret());
+
         }catch (Exception e){
             Logger.error(AppsResourceTest.class, e);
             fail();
         }
     }
 
-
+    /**
+     * Test we can delete an app together with all it definition and associated secrets.
+     * Given scenario: Test we can create an app descriptor and an app then delete the descriptor
+     * Expected Result: App and secrets are gone (404).
+     */
     @Test
     public void Test_Create_App_Descriptor_Then_Create_App_Integration_Then_Delete_App_Descriptor() {
 
-        final Map<String, Param> paramMap = ImmutableMap.of(
-                "param1", Param.newParam("val-1", false, Type.STRING, "label", "hint", true),
-                "param2", Param.newParam("val-2", false, Type.STRING, "label", "hint", true),
-                "param3", Param.newParam("val-3", false, Type.STRING, "label", "hint", true)
+        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
+                "param1", ParamDescriptor
+                        .newParam("val-1", false, Type.STRING, "label", "hint", true),
+                "param2", ParamDescriptor
+                        .newParam("val-2", false, Type.STRING, "label", "hint", true),
+                "param3", ParamDescriptor
+                        .newParam("val-3", false, Type.STRING, "label", "hint", true)
         );
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -381,8 +430,14 @@ public class AppsResourceTest extends IntegrationTestBase {
             final List<String> sites = new ArrayList<>();
             final int max = 10;
             for (int i = 1; i <= max; i++) {
-                final Host host = createAppIntegrationParams(paramMap, appKey, request,
-                        response);
+
+                //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
+                final Map<String, Input> inputParamMap = ImmutableMap.of(
+                        "param1", Input.newInputParam("val-1".toCharArray(),false),
+                        "param2", Input.newInputParam("val-2".toCharArray(),false),
+                        "param3", Input.newInputParam("val-3".toCharArray(),false));
+
+                final Host host = createAppSecret(inputParamMap, appKey, request, response);
                 sites.add(host.getIdentifier());
             }
 
@@ -402,21 +457,21 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertEquals(HttpStatus.SC_OK, deleteAppResponse.getStatus());
 
             final Response availableAppsResponse = appsResource
-                    .listAvailableApps(request, response);
+                    .listAvailableApps(request, response, null);
             Assert.assertEquals(HttpStatus.SC_OK, availableAppsResponse.getStatus());
             final ResponseEntityView responseEntityView1 = (ResponseEntityView) availableAppsResponse
                     .getEntity();
-            final List<AppView> integrationViewList = (List<AppView>) responseEntityView1
+            final List<AppView> appViewList = (List<AppView>) responseEntityView1
                     .getEntity();
-            Assert.assertFalse(integrationViewList.isEmpty());
-            //App is gone.
-            Assert.assertTrue(
-                    integrationViewList.stream()
-                            .noneMatch(view -> appKey.equals(view.getName())));
-            final Response responseAfterDelete = appsResource
-                    .getAppByKey(request, response, appKey, paginationContext());
-            Assert.assertEquals(HttpStatus.SC_NOT_FOUND, responseAfterDelete.getStatus());
-
+            if(!appViewList.isEmpty()) { //it is possible to get an empty list here.
+                //App is gone.
+                Assert.assertTrue(
+                        appViewList.stream()
+                                .noneMatch(view -> appKey.equals(view.getName())));
+                final Response responseAfterDelete = appsResource
+                        .getAppByKey(request, response, appKey, paginationContext());
+                Assert.assertEquals(HttpStatus.SC_NOT_FOUND, responseAfterDelete.getStatus());
+            }
             for (final String siteId : sites) {
                 final Response responseNotFound = appsResource
                         .getAppDetail(request, response, appKey, siteId);
@@ -428,14 +483,21 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test hidden secrets come back protected.
+     * Given scenario: We have a descriptor with hidden and non-hidden stuff
+     * Expected Result: Whatever was marked as hidden in the app-descriptor must come back protected.
+     */
     @Test
-    public void Test_Protected_Hidden_Secret() {
+    public void Test_Protected_Hidden_Secret_And_Values_Returned_Match_Descriptor() {
 
-        final Map<String, Param> initialParamsMap = ImmutableMap.of(
-                "param1", Param.newParam("val-1", false, Type.STRING, "label", "hint", true),
-                "param2", Param.newParam("true", false, Type.BOOL, "label", "hint", true),
-                "param3", Param.newParam("val-2", true, Type.STRING, "label", "hint", true),
-                "param4", Param.newParam("true", true, Type.BOOL, "label", "hint", true)
+        final List<String> orderedParamNames = ImmutableList.of("param1","param2","param3","param4");
+        //This is how the descriptor looks like.
+        final SortedMap<String, ParamDescriptor> appDescriptorParamsMap = ImmutableSortedMap.of(
+                orderedParamNames.get(0), ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true),
+                orderedParamNames.get(1), ParamDescriptor.newParam("true", false, Type.BOOL, "label", "hint", true),
+                orderedParamNames.get(2), ParamDescriptor.newParam("val-2", false, Type.STRING, "label", "hint", true),
+                orderedParamNames.get(3), ParamDescriptor.newParam("true", false, Type.BOOL, "label", "hint", true)
         );
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -447,7 +509,7 @@ public class AppsResourceTest extends IntegrationTestBase {
         final String fileName = String.format("%s.yml", appKey);
         try(final InputStream inputStream = createAppDescriptorFile(fileName, appKey,
                 appKey,
-                "Test-hidden-secret-protection", false, initialParamsMap)) {
+                "Test-hidden-secret-protection", false, appDescriptorParamsMap)) {
 
             final Response appResponse = appsResource
                     .createApp(request, response,
@@ -459,10 +521,18 @@ public class AppsResourceTest extends IntegrationTestBase {
 
             final int max = 10;
             for (int i = 1; i <= max; i++) {
+
+                //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
+                //Also note we're sending hidden value as true. Trying to override the value on the descriptor.
+                final Map<String, Input> inputParamMap = ImmutableMap.of(
+                        "param1", Input.newInputParam("val-1".toCharArray(),true),
+                        "param2", Input.newInputParam("true".toCharArray(),true),
+                        "param3", Input.newInputParam("val-2".toCharArray(),true),
+                        "param4", Input.newInputParam("true".toCharArray(),true)
+                );
+
                 sites.add(
-                        createAppIntegrationParams(initialParamsMap, appKey, request,
-                                response)
-                                .getIdentifier()
+                   createAppSecret(inputParamMap, appKey, request, response).getIdentifier()
                 );
             }
 
@@ -487,19 +557,25 @@ public class AppsResourceTest extends IntegrationTestBase {
                         .getEntity();
                 Assert.assertNotNull(appDetailedView.getSites());
                 Assert.assertFalse(appDetailedView.getSites().isEmpty());
-                final Map<String, Secret> secrets = appDetailedView.getSites().get(0)
-                        .getSecrets();
-                for (Entry<String, Secret> secretEntry : secrets.entrySet()) {
+                final Map<String, SecretView> secrets = appDetailedView.getSites().get(0)
+                        .getSecrets().stream().collect(Collectors.toMap(SecretView::getName,
+                                Function.identity(),(v1, v2) -> v1, LinkedHashMap::new));
+                //Using a LinkedHashMap we guarantee we keep the original order on which the elements were sent.
+                int index = 0;
+                for (Entry<String, SecretView> secretEntry : secrets.entrySet()) {
                     final String key = secretEntry.getKey();
-                    final Secret secret = secretEntry.getValue();
-                    final Param originalParam = initialParamsMap.get(key);
-                    if (secret.isHidden()) {
-                        Assert.assertEquals(AppsHelper.PROTECTED_HIDDEN_SECRET,
-                                new String(secret.getValue()));
+                    final SecretView view = secretEntry.getValue();
+                    final ParamDescriptor originalParam = appDescriptorParamsMap.get(key);
+                    if (view.getSecret().isHidden()) {
+                        Assert.assertEquals(AppsHelper.HIDDEN_SECRET_MASK, new String(view.getSecret().getValue()));
                     } else {
-                        Assert.assertEquals(originalParam.getString(),
-                                new String(secret.getValue()));
+                        Assert.assertEquals(originalParam.getString(), new String(view.getSecret().getValue()));
                     }
+                    //These should always match whatever was specified on the app-descriptor.
+                    Assert.assertEquals(originalParam.isHidden(),view.getSecret().isHidden());
+                    Assert.assertEquals(originalParam.getType(),view.getSecret().getType());
+                    //Test the order on which the secrets were sent back. They must whatever order was specified when building the app-descriptor.
+                    Assert.assertEquals(view.getName(), orderedParamNames.get(index++));
                 }
             }
         }catch (Exception e){
@@ -509,11 +585,17 @@ public class AppsResourceTest extends IntegrationTestBase {
     }
 
 
+    /**
+     * App keys must be case insensitive since they are part of the endpoint URL
+     * Given scenario: Test we generate an app and try to access the resource using a randomly cased app-key
+     * Expected Result: The App should be available when accessed with the randomly cased url.
+     */
     @Test
-    public void Test_App_Key_Casing() throws IOException, DotDataException, DotSecurityException {
+    public void Test_App_Key_Casing()  {
 
-        final Map<String, Param> initialParamsMap = ImmutableMap.of(
-                "param1", Param.newParam("val-1", false, Type.STRING, "label", "hint", true));
+        final SortedMap<String, ParamDescriptor> initialParamsMap = ImmutableSortedMap.of(
+                "param1", ParamDescriptor
+                        .newParam("val-1", false, Type.STRING, "label", "hint", true));
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -543,10 +625,14 @@ public class AppsResourceTest extends IntegrationTestBase {
             final List<String> sites = new ArrayList<>();
             final int max = 5;
             for (int i = 1; i <= max; i++) {
+
+                //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
+                final Map<String, Input> inputParamMap = ImmutableMap.of(
+                    "param1", Input.newInputParam("val-1".toCharArray(),false)
+                );
+
                 sites.add(
-                        createAppIntegrationParams(initialParamsMap, appKey1, request,
-                                response)
-                                .getIdentifier()
+                   createAppSecret(inputParamMap, appKey1, request, response).getIdentifier()
                 );
             }
 
@@ -562,11 +648,16 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test an addSecret operation with missing required params fails.
+     * Given scenario: Test we create an app descriptor that states required field.
+     * Expected Result: We expect a BAD_REQUEST (400) when the request is sent missing a required value.
+     */
     @Test
-    public void Test_Required_Params() throws IOException, DotDataException, DotSecurityException {
+    public void Test_Required_Params_One_Single_Descriptor_Param_Empty_Value()  {
 
-        final Map<String, Param> initialParamsMap = ImmutableMap.of(
-             "param1", Param.newParam("val-1", false, Type.STRING, "label", "hint", true)
+        final SortedMap<String, ParamDescriptor> initialParamsMap = ImmutableSortedMap.of(
+             "param1", ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true)
         );
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -591,15 +682,15 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertNotNull(appResponse);
             Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
 
+            //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
             //Here's a secret with an empty param that is marked as required.
-            final Map<String, Param> secretParam = ImmutableMap.of(
-                    "param1", Param.newParam("", false, Type.STRING, null, null, true)
-            );
+            final Map<String, Input> inputParamMap = ImmutableMap.of(
+                    "param1", Input.newInputParam("".toCharArray(),false));
 
             final Host host = new SiteDataGen().nextPersisted();
-            final SecretForm secretForm = new SecretForm(key, host.getIdentifier(), secretParam);
+            final SecretForm secretForm = new SecretForm(inputParamMap);
             final Response createSecretResponse = appsResource
-                    .createAppSecrets(request, response, secretForm);
+                    .createAppSecrets(request, response, key, host.getIdentifier(), secretForm);
             Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, createSecretResponse.getStatus());
         }catch (Exception e){
             Logger.error(AppsResourceTest.class, e);
@@ -607,14 +698,149 @@ public class AppsResourceTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test a combination of extra params and required params
+     * Given scenario: Test we create an app descriptor that states required fields and allowed params too.
+     * Expected Result: We expect a BAD_REQUEST (400)
+     */
+    @Test
+    public void Test_Required_Params_Multiple_Params_Descriptor_Non_Empty_Value_Missing_Required_Param_Sent()  {
+
+        final SortedMap<String, ParamDescriptor> initialParamsMap = ImmutableSortedMap.of(
+                "param1", ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true),
+                "param2", ParamDescriptor.newParam("val-1", false, Type.STRING, "label", "hint", true)
+        );
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        when(request.getRequestURI()).thenReturn("/baseURL");
+
+        long time = System.currentTimeMillis();
+
+        final String key = String.format("all_lower_case_not_too_short_prefix_%d", time);
+        final String fileName = String.format("%s.yml", key);
+
+        //We're indicating that extra params are allowed to test required params are still required
+        try(final InputStream inputStream = createAppDescriptorFile(fileName, key,
+                key,
+                "Test-required-params",
+                true, initialParamsMap)){
+
+            final Response appResponse = appsResource
+                    .createApp(request, response,
+                            createFormDataMultiPart(fileName, inputStream));
+            Assert.assertNotNull(appResponse);
+            Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
+
+            //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
+            //We're sending only one parameter when the descriptor says there's another one mandatory.
+            final Map<String, Input> inputParamMap = ImmutableMap.of(
+                    "param1", Input.newInputParam("any-value".toCharArray(),false)
+                    //Please Notice We're NOT sending param2
+            );
+
+            final Host host = new SiteDataGen().nextPersisted();
+            final SecretForm secretForm = new SecretForm(inputParamMap);
+            final Response createSecretResponse = appsResource
+                    .createAppSecrets(request, response, key, host.getIdentifier(), secretForm);
+            Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, createSecretResponse.getStatus());
+        }catch (Exception e){
+            Logger.error(AppsResourceTest.class, e);
+            fail();
+        }
+    }
+
+    /**
+     * Test Extra params support
+     * Given scenario: Test we create an app descriptor that states extra params are allowed.
+     * Expected Result: We should be able to add extra params. And they are shown at the end on the site view detail.
+     */
+    @Test
+    public void Test_Create_Descriptor_Then_Add_Dynamic_Prop() {
+        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
+                "param1",
+                ParamDescriptor.newParam("val-1", true, Type.STRING, "label", "hint", true)
+        );
+
+        final String key = String.format("lol_%d", System.currentTimeMillis());
+        final String fileName = String.format("%s.yml", key);
+
+        try (final InputStream inputStream = createAppDescriptorFile(fileName, key,
+                "myAppThatSupportsDynamicProps",
+                "A bunch of string params to demo the mechanism.", true, paramMap)) {
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+
+            // Create App integration Descriptor
+            final Response appResponse = appsResource
+                    .createApp(request, response,
+                            createFormDataMultiPart(fileName, inputStream));
+            Assert.assertNotNull(appResponse);
+            Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
+
+            final Host host = new SiteDataGen().nextPersisted();
+            final String siteId = host.getIdentifier();
+            Map<String, Input> inputParamMap = ImmutableMap.of(
+               "param1", Input.newInputParam("any-value".toCharArray())
+            );
+            final SecretForm secretForm1 = new SecretForm(inputParamMap);
+            final Response createSecretResponse1 = appsResource.createAppSecrets(request, response, key, siteId, secretForm1);
+            Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse1.getStatus());
+
+            //Should we support adding individual dynamic props once all required pros are all set.
+            inputParamMap = ImmutableMap.of(
+                    "param1", Input.newInputParam("any-value".toCharArray()),
+                    "dynamicParam1", Input.newInputParam("any-value".toCharArray())
+            );
+            final SecretForm secretForm2 = new SecretForm(inputParamMap);
+            final Response createSecretResponse2 = appsResource.createAppSecrets(request, response, key, host.getIdentifier(), secretForm2);
+            Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse2.getStatus());
+
+            final Response detailedIntegrationResponse = appsResource.getAppDetail(request, response, key, siteId);
+            final ResponseEntityView responseEntityView = (ResponseEntityView) detailedIntegrationResponse.getEntity();
+            final AppView appDetailedView = (AppView) responseEntityView.getEntity();
+
+            final SiteView siteView = appDetailedView.getSites().get(0);
+            Assert.assertTrue(siteView.isConfigured());
+            //Once a custom comparator is applied to a treemap it becomes unnavigable.
+            final Map<String,SecretView> secrets = siteView.getSecrets().stream().collect(Collectors.toMap(SecretView::getName,
+                    Function.identity()));
+
+            final SecretView param1 = secrets.get("param1");
+            Assert.assertNotNull(param1);
+            Assert.assertFalse(param1.isDynamic());
+            Assert.assertEquals(AppsHelper.HIDDEN_SECRET_MASK, String.valueOf(param1.getSecret().getValue()));
+
+            final SecretView dynamicParam1 = secrets.get("dynamicParam1");
+            Assert.assertNotNull(dynamicParam1);
+            Assert.assertTrue(dynamicParam1.isDynamic());
+            Assert.assertEquals("any-value", String.valueOf(dynamicParam1.getSecret().getValue()));
+
+        } catch (Exception e) {
+            Logger.error(AppsResourceTest.class, e);
+            fail();
+        }
+    }
+
+    /**
+     * This basically test pagination and filtering together.
+     * Given scenario: Test we create an app descriptor that states extra params are allowed.
+     * Expected Result: We should be able to add extra params. And they are shown at the end on the site view detail
+     */
     @Test
     public void Test_Pagination_And_Sort_Then_Request_Filter_Expect_Empty_Results() {
 
-        final Map<String, Param> paramMap = ImmutableMap.of(
-                "param1", Param.newParam("val-1", false, Type.STRING, "label", "hint", true),
-                "param2", Param.newParam("val-2", false, Type.STRING, "label", "hint", true),
-                "param3", Param.newParam("val-3", false, Type.STRING, "label", "hint", true)
+        final SortedMap<String, ParamDescriptor> paramMap = ImmutableSortedMap.of(
+                "param1", ParamDescriptor
+                        .newParam("val-1", false, Type.STRING, "label", "hint", true),
+                "param2", ParamDescriptor
+                        .newParam("val-2", false, Type.STRING, "label", "hint", true),
+                "param3", ParamDescriptor
+                        .newParam("val-3", false, Type.STRING, "label", "hint", true)
         );
+
         final long timeMark = System.currentTimeMillis();
         final List<Host> hosts= new ArrayList<>();
         final char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
@@ -637,7 +863,7 @@ public class AppsResourceTest extends IntegrationTestBase {
             Assert.assertNotNull(appResponse);
             Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
             final Response availableAppsResponse = appsResource
-                    .listAvailableApps(request, response);
+                    .listAvailableApps(request, response, null);
             Assert.assertEquals(HttpStatus.SC_OK, availableAppsResponse.getStatus());
             final ResponseEntityView responseEntityView1 = (ResponseEntityView) availableAppsResponse
                     .getEntity();
@@ -651,7 +877,15 @@ public class AppsResourceTest extends IntegrationTestBase {
 
             // Add secrets to it.
             for(final Host host:hosts) {
-                createSecret(request, response, key, host, paramMap);
+
+                //Secrets are destroyed for security every time. Making the form useless. They need to be re-generated every time.
+                final Map<String, Input> inputParamMap = ImmutableMap.of(
+                        "param1", Input.newInputParam("val-1".toCharArray(),false),
+                        "param2", Input.newInputParam("val-2".toCharArray(),false),
+                        "param3", Input.newInputParam("val-2".toCharArray(),false)
+                );
+
+                createSecret(request, response, key, host, inputParamMap);
             }
 
             //fetch and test pagination
@@ -706,20 +940,19 @@ public class AppsResourceTest extends IntegrationTestBase {
     }
 
     private void createSecret(final HttpServletRequest request, final HttpServletResponse response,
-            final String appKey, final Host host, final Map<String, Param> paramMap){
-        final SecretForm secretForm = new SecretForm(appKey, host.getIdentifier(), paramMap);
+            final String appKey, final Host host, final Map<String, Input> paramMap){
+        final SecretForm secretForm = new SecretForm(paramMap);
         final Response createSecretResponse = appsResource
-                .createAppSecrets(request, response, secretForm);
+                .createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm);
         Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
     }
 
-    private Host createAppIntegrationParams(final Map<String, Param> paramMap,
+    private Host createAppSecret(final Map<String, Input> paramMap,
             final String key, final HttpServletRequest request,
             final HttpServletResponse response) {
         final Host host = new SiteDataGen().nextPersisted();
-        final SecretForm secretForm = new SecretForm(key, host.getIdentifier(), paramMap);
-        final Response createSecretResponse = appsResource
-                .createAppSecrets(request, response, secretForm);
+        final SecretForm secretForm = new SecretForm(paramMap);
+        final Response createSecretResponse = appsResource.createAppSecrets(request, response, key, host.getIdentifier(), secretForm);
         Assert.assertEquals(HttpStatus.SC_OK, createSecretResponse.getStatus());
         return host;
     }
