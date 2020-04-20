@@ -582,32 +582,29 @@
     %>
 
         <%if(canUserWriteToContentlet){%>
-        <div id="<%=field.getVelocityVarName()%>dt" class="field__editable-content">
+        <ul id="<%=field.getVelocityVarName()%>dt" style="margin: 1rem 0;">
 
-            <%
-              if(!resourceLink.isDownloadRestricted()){ %>
+            <% if(!resourceLink.isDownloadRestricted()){ %>
 
-            <%  if(contentlet.isFileAsset()){ %>
-               <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
-               <div style="padding:10px;">
-                <a id="resourceLink" href="<%=resourceLink.getResourceLinkAsString() %>" target="_new"><%=resourceLink.getResourceLinkUriAsString() %></a>
-               </div>
+                <% if(contentlet.isFileAsset()){ %>
+                    <li style="margin: 0.5rem 0;">
+                        <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
+                        <a id="resourceLink" href="<%=resourceLink.getResourceLinkAsString() %>" target="_blank"><%=resourceLink.getResourceLinkUriAsString() %></a>
+                    </li>
                 <% }  %>
-
-            <%= LanguageUtil.get(pageContext, "VersionPath") %>:
-            <div style="padding:10px;">
-                <a id="versionPath" href="<%=resourceLink.getVersionPath() %>" target="_new"><%=resourceLink.getVersionPath() %></a>
-            </div>
-
-            <%= LanguageUtil.get(pageContext, "IdPath") %>:
-            <div style="padding:10px;">
-                <a id="idPath" href="<%=resourceLink.getIdPath() %>" target="_new"><%=resourceLink.getIdPath() %></a>
-            </div>
+                <li style="margin: 0.5rem 0;">
+                    <%= LanguageUtil.get(pageContext, "VersionPath") %>:
+                    <a id="versionPath" href="<%=resourceLink.getVersionPath() %>" target="_blank"><%=resourceLink.getVersionPath() %></a>
+                </li>
+                <li style="margin: 0.5rem 0;">
+                    <%= LanguageUtil.get(pageContext, "IdPath") %>:
+                    <a id="idPath" href="<%=resourceLink.getIdPath() %>" target="_blank"><%=resourceLink.getIdPath() %></a>
+                </li>
              <% } else { %>
                 <br>
              <% }  %>
 
-        </div>
+        </ul>
             <% if (resourceLink.isEditableAsText()) { %>
                 <%
                     if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
