@@ -76,7 +76,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
 
         final List<ServiceParameter> serviceParams = translationService.getServiceParameters();
         for (final ServiceParameter param : serviceParams) {
-            params.add(new WorkflowActionletParameter(param.getKey(), param.getName(), param.getValue(), true));
+            params.add(new WorkflowActionletParameter(param.getKey(), param.getName(), param.getValue(), false));
         }
 
         return params;

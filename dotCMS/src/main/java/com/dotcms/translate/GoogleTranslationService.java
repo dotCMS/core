@@ -1,11 +1,19 @@
 package com.dotcms.translate;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.viewtools.JSONTool;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.base.Strings;
+import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.security.apps.Secret;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -20,9 +28,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringEscapeUtils;
+
+import javax.servlet.http.HttpServletRequest;
 
 public class GoogleTranslationService extends AbstractTranslationService {
 
@@ -121,7 +135,47 @@ public class GoogleTranslationService extends AbstractTranslationService {
 
         this.apiKey = !Strings.isNullOrEmpty(apiKeyValue)
             ?apiKeyValue
-            :Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", "");
+            :this.getFallbackApiKey();
+    }
+
+
+    private String getFallbackApiKey () {
+
+        final String appsTranslationKey    = Config.getStringProperty("apps_translation_key", "app-translation");
+        final String appsTranslationApiKey = Config.getStringProperty("apps_translation_apikey", "apiKey");
+
+        Optional<AppSecrets> appSecretsOpt = Optional.empty();
+        try {
+            appSecretsOpt = APILocator.getAppsAPI().getSecrets
+                    (appsTranslationKey, true, this.resolveHost(), APILocator.systemUser());
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, e.getMessage());
+        }
+
+        if (appSecretsOpt.isPresent()) {
+
+            final Secret secret = appSecretsOpt.get().getSecrets().get(appsTranslationApiKey);
+            if (null != secret) {
+                return secret.getString();
+            }
+        }
+
+        return Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK);
+    }
+
+    private Host resolveHost () {
+
+        Host  host = null;
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        if (null != request) {
+            host = Try.of(()->WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request)).getOrNull();
+        }
+
+        if (null == host) {
+            host = Try.of(() -> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false)).getOrNull();
+        }
+
+        return null == host? APILocator.systemHost(): host;
     }
 
 }
