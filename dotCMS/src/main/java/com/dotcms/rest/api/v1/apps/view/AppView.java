@@ -21,6 +21,8 @@ public class AppView {
 
     private final String iconUrl;
 
+    private final boolean allowExtraParams;
+
     @JsonInclude(Include.NON_NULL)
     private final List<SiteView> sites;
 
@@ -34,6 +36,7 @@ public class AppView {
         this.name = appDescriptor.getName();
         this.description = appDescriptor.getDescription();
         this.iconUrl = appDescriptor.getIconUrl();
+        this.allowExtraParams = appDescriptor.isAllowExtraParameters();
         this.configurationsCount = configurationsCount;
         this.sites = null;
     }
@@ -50,6 +53,7 @@ public class AppView {
         this.name = appDescriptor.getName();
         this.description = appDescriptor.getDescription();
         this.iconUrl = appDescriptor.getIconUrl();
+        this.allowExtraParams = appDescriptor.isAllowExtraParameters();
         this.configurationsCount = configurationsCount;
         this.sites = sites;
     }
@@ -92,6 +96,14 @@ public class AppView {
      */
     public String getIconUrl() {
         return iconUrl;
+    }
+
+    /**
+     * Whether or not extra params are supported
+     * @return
+     */
+    public boolean isAllowExtraParams() {
+        return allowExtraParams;
     }
 
     /**

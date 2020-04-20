@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,7 +73,10 @@ public class SecretView {
      * But if both are set the generated output will show them both merged.
      * The two objects share common properties defined by the AbstractProperty class.
      */
-    static class SecretViewSerializer extends JsonSerializer<SecretView> {
+    public static class SecretViewSerializer extends JsonSerializer<SecretView> {
+
+        @VisibleForTesting
+        public static final String HIDDEN_SECRET_MASK = "*****";
 
         static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
                 .getDefaultObjectMapper();
@@ -107,7 +111,7 @@ public class SecretView {
             if (type.equals(Type.BOOL)) {
                 map.put("value", property.getBoolean());
             } else {
-                map.put("value", property.getString());
+                map.put("value", property.isHidden() ? HIDDEN_SECRET_MASK : property.getString());
             }
         }
 
