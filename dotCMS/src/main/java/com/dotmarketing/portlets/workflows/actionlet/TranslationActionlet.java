@@ -130,7 +130,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
             ? Arrays.asList(ignoreFieldsStr.split("\\s*(,|\\s)\\s*"))
             : new ArrayList<>();
 
-        setServiceParameters(params);
+        setServiceParameters(params, processor.getContentlet());
 
         final User user = processor.getUser();
         final Contentlet sourceContentlet = processor.getContentlet();
@@ -301,7 +301,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
         return savedTranslatedContent;
     }
 
-    private void setServiceParameters(final Map<String, WorkflowActionClassParameter> actionParams) {
+    private void setServiceParameters(final Map<String, WorkflowActionClassParameter> actionParams, final Contentlet contentlet) {
 
         if(translationService!=null) {
 
@@ -316,7 +316,7 @@ public class TranslationActionlet extends WorkFlowActionlet {
                     }
                 }
 
-                translationService.setServiceParameters(serviceParams);
+                translationService.setServiceParameters(serviceParams, Optional.ofNullable(contentlet.getHost()));
             }
         }
     }

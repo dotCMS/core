@@ -1,11 +1,13 @@
 package com.dotcms.translate;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.liferay.portal.model.User;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TranslationService {
 
@@ -40,6 +42,11 @@ public interface TranslationService {
 
 	List<ServiceParameter> getServiceParameters();
 
-	void setServiceParameters(List<ServiceParameter> params);
+	/**
+	 * Set the Service Parameters, the host could be pass in order to get the configuration from the apps if exists.
+	 * @param params {@link List}  parameters
+	 * @param hostIdOpt {@link String} optional host
+	 */
+	void setServiceParameters(List<ServiceParameter> params, Optional<String> hostIdOpt);
 
 }

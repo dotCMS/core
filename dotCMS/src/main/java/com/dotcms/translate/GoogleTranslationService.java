@@ -127,7 +127,7 @@ public class GoogleTranslationService extends AbstractTranslationService {
     }
 
     @Override
-    public void setServiceParameters(List<ServiceParameter> params) {
+    public void setServiceParameters(final List<ServiceParameter> params, final Optional<String> hostOpt) {
         this.params = params;
         Map<String, ServiceParameter> paramsMap = params.stream().collect(
             Collectors.toMap(ServiceParameter::getKey, Function.identity()));
@@ -135,11 +135,11 @@ public class GoogleTranslationService extends AbstractTranslationService {
 
         this.apiKey = !Strings.isNullOrEmpty(apiKeyValue)
             ?apiKeyValue
-            :this.getFallbackApiKey();
+            :this.getFallbackApiKey(hostOpt);
     }
 
 
-    private String getFallbackApiKey () {
+    private String getFallbackApiKey (final Optional<String> hostIdOpt) {
 
         final String appsTranslationKey    = Config.getStringProperty("apps_translation_key", "app-translation");
         final String appsTranslationApiKey = Config.getStringProperty("apps_translation_apikey", "apiKey");
@@ -147,7 +147,7 @@ public class GoogleTranslationService extends AbstractTranslationService {
         Optional<AppSecrets> appSecretsOpt = Optional.empty();
         try {
             appSecretsOpt = APILocator.getAppsAPI().getSecrets
-                    (appsTranslationKey, true, this.resolveHost(), APILocator.systemUser());
+                    (appsTranslationKey, true, this.resolveHost(hostIdOpt), APILocator.systemUser());
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, e.getMessage());
         }
@@ -163,16 +163,21 @@ public class GoogleTranslationService extends AbstractTranslationService {
         return Config.getStringProperty("GOOGLE_TRANSLATE_SERVICE_API_KEY", StringPool.BLANK);
     }
 
-    private Host resolveHost () {
+    private Host resolveHost (final Optional<String> hostIdOpt) {
 
-        Host  host = null;
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        if (null != request) {
-            host = Try.of(()->WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request)).getOrNull();
-        }
+        Host host = hostIdOpt.isPresent()?
+                Try.of(() -> APILocator.getHostAPI().find(hostIdOpt.get(), APILocator.systemUser(),false)).getOrNull():null;
 
         if (null == host) {
-            host = Try.of(() -> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false)).getOrNull();
+
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            if (null != request) {
+                host = Try.of(() -> WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request)).getOrNull();
+            }
+
+            if (null == host) {
+                host = Try.of(() -> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false)).getOrNull();
+            }
         }
 
         return null == host? APILocator.systemHost(): host;
