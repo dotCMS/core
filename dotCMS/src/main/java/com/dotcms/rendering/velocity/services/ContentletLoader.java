@@ -561,11 +561,12 @@ public class ContentletLoader implements DotLoader {
         long language = new Long(key.language);
         ContentletVersionInfo info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, language);
 
-        if (!isLiveVersionAvailable(key, info) && language != defaultLang && APILocator.getLanguageAPI().canDefaultContentToDefaultLanguage()) {
+        if (isLiveVersionNotAvailable(key, info) && shouldCheckForVersionInfoInDefaultLanguage(
+                language)) {
             info = APILocator.getVersionableAPI().getContentletVersionInfo(key.id1, defaultLang);
         }
 
-        if (!isLiveVersionAvailable(key, info)) {
+        if (isLiveVersionNotAvailable(key, info)) {
             throw new ResourceNotFoundException("cannot find content for: " + key);
         }
         Contentlet contentlet =
@@ -581,8 +582,13 @@ public class ContentletLoader implements DotLoader {
 
     }
 
-    private boolean isLiveVersionAvailable(VelocityResourceKey key, ContentletVersionInfo info) {
-        return info != null && key.mode.showLive && UtilMethods.isSet(info.getLiveInode());
+    private boolean shouldCheckForVersionInfoInDefaultLanguage(long language) {
+        return language != defaultLang && APILocator.getLanguageAPI()
+                .canDefaultContentToDefaultLanguage();
+    }
+
+    private boolean isLiveVersionNotAvailable(VelocityResourceKey key, ContentletVersionInfo info) {
+        return info == null || key.mode.showLive && !UtilMethods.isSet(info.getLiveInode());
     }
 
 

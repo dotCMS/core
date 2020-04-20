@@ -23,6 +23,8 @@ import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -119,9 +121,12 @@ public class ContentHelper {
 
         if (null != host && typeStrategy.isPresent()) {
 
+            final String sessionId = request!=null && request.getSession(false)!=null? request.getSession().getId() : null;
             final Optional<ContentType> contentTypeOpt = typeStrategy.get().apply(baseContentType,
                     CollectionsUtils.map("user", user, "host", host,
-                            "contentletMap", contentletMap, "binaryFiles", binaryFiles));
+                            "contentletMap", contentletMap, "binaryFiles", binaryFiles,
+                            "accessingList", Arrays.asList(user.getUserId(),
+                                    APILocator.getTempFileAPI().getRequestFingerprint(request), sessionId)));
 
             if (contentTypeOpt.isPresent()) {
 
