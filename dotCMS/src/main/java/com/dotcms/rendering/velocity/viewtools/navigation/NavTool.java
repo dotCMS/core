@@ -89,13 +89,7 @@ public class NavTool implements ViewTool {
         }
 
         // make a defensive copy to avoid mutating cached version
-        Folder folder = new Folder();
-        try {
-            BeanUtils.copyProperties(folder, originalFolder);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            folder = originalFolder;
-            Logger.warnAndDebug(NavTool.class,"Defensive copy failed. Using original object", e);
-        }
+        Folder folder = getDefensiveCopyOfFolder(originalFolder);
 
         NavResult result = CacheLocator.getNavToolCache()
             .getNav(host.getIdentifier(), folder.getInode(), languageId);
@@ -226,6 +220,17 @@ public class NavTool implements ViewTool {
 
             return new NavResultHydrated(result, this.context);
         }
+    }
+
+    private Folder getDefensiveCopyOfFolder(Folder originalFolder) {
+        Folder folder = new Folder();
+        try {
+            BeanUtils.copyProperties(folder, originalFolder);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            folder = originalFolder;
+            Logger.warnAndDebug(NavTool.class,"Defensive copy failed. Using original object", e);
+        }
+        return folder;
     }
 
     private void addFolderToNav(Host host, long languageId, Folder folder, List<NavResult> children,
