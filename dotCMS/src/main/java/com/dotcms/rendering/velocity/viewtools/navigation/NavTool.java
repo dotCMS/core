@@ -88,7 +88,6 @@ public class NavTool implements ViewTool {
             return null;
         }
 
-        // make a defensive copy to avoid mutating cached version
         Folder folder = getDefensiveCopyOfFolder(originalFolder);
 
         NavResult result = CacheLocator.getNavToolCache()
@@ -222,6 +221,11 @@ public class NavTool implements ViewTool {
         }
     }
 
+    /**
+     * Makes a defensive copy of the given folder to avoid mutating cached version
+     * @param originalFolder folder to make the defensive copy from
+     * @return defensive copy
+     */
     private Folder getDefensiveCopyOfFolder(Folder originalFolder) {
         Folder folder = new Folder();
         try {
