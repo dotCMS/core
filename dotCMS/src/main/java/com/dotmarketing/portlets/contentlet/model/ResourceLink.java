@@ -1,8 +1,7 @@
 package com.dotmarketing.portlets.contentlet.model;
 
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-
-import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.util.MimeTypeUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -10,17 +9,24 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformer;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.Set;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.control.Try;
+
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.util.Map;
+import java.util.Set;
+
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
 
 /***
  * This class is the result of a refactoring from an old JSP Snippet that was originally located in:
@@ -42,9 +48,15 @@ public class ResourceLink {
 
     private final String resourceLinkUriAsString;
 
+    private final String versionPath;
+
+    private final String idPath;
+
     private final String mimeType;
 
-    private final FileAsset fileAsset;
+    private final Contentlet fileAsset;
+
+    private final String fieldVar;
 
     private final boolean editableAsText;
 
@@ -52,15 +64,22 @@ public class ResourceLink {
 
     private ResourceLink(final String resourceLinkAsString, final String resourceLinkUriAsString,
             final String mimeType,
-            final FileAsset fileAsset,
+            final Contentlet fileAsset,
+            final String fieldVariable,
             final boolean editableAsText,
-            final boolean downloadRestricted) {
-        this.resourceLinkAsString = resourceLinkAsString;
+            final boolean downloadRestricted,
+            final String versionPath,
+            final String idPath) {
+
+        this.resourceLinkAsString    = resourceLinkAsString;
         this.resourceLinkUriAsString = resourceLinkUriAsString;
-        this.mimeType = mimeType;
-        this.fileAsset = fileAsset;
-        this.editableAsText = editableAsText;
-        this.downloadRestricted = downloadRestricted;
+        this.mimeType                = mimeType;
+        this.fileAsset               = fileAsset;
+        this.fieldVar                = fieldVariable;
+        this.editableAsText          = editableAsText;
+        this.downloadRestricted      = downloadRestricted;
+        this.versionPath             = versionPath;
+        this.idPath                  = idPath;
     }
 
     public String getResourceLinkAsString() {
@@ -75,7 +94,7 @@ public class ResourceLink {
         return mimeType;
     }
 
-    public FileAsset getFileAsset() {
+    public Contentlet getFileAsset() {
         return fileAsset;
     }
 
@@ -87,6 +106,18 @@ public class ResourceLink {
         return downloadRestricted;
     }
 
+    public String getVersionPath() {
+        return versionPath;
+    }
+
+    public String getIdPath() {
+        return idPath;
+    }
+
+    public String getFieldVar() {
+        return fieldVar;
+    }
+
     @Override
     public String toString() {
         return resourceLinkAsString;
@@ -96,47 +127,76 @@ public class ResourceLink {
 
         public final ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet) throws DotDataException, DotSecurityException {
 
-            if(!(contentlet.getContentType() instanceof FileAssetContentType)){
+            if(!(contentlet.isFileAsset() || contentlet.isDotAsset())) {
+
                 throw new DotStateException(getLocalizedMessageOrDefault(user,"File-asset-contentlet-type-expected",
-                        "Can only build Resource Links out of content with type `File Asset`.",getClass())
+                        "Can only build Resource Links out of content with type `File Asset` or `DotAsset`.",getClass())
                 );
             }
 
+            return build(request, user, contentlet, contentlet.isFileAsset()?FileAssetAPI.BINARY_FIELD: DotAssetContentType.ASSET_FIELD_VAR);
+        }
+
+        public final ResourceLink build(final HttpServletRequest request, final User user, final Contentlet contentlet, final String velocityVarName) throws DotDataException, DotSecurityException {
+
+            final File binary           = Try.of(()->contentlet.getBinary(velocityVarName)).getOrNull();
             final Identifier identifier = getIdentifier(contentlet);
-            if (identifier != null && InodeUtils.isSet(identifier.getInode())){
+            if (binary==null || identifier == null && UtilMethods.isEmpty(identifier.getInode())){
 
-                final boolean downloadRestricted = isDownloadPermissionBasedRestricted(contentlet, user);
-
-                final StringBuilder resourceLink = new StringBuilder();
-                final StringBuilder resourceLinkUri = new StringBuilder();
-
-                Host host = getHost((String)request.getAttribute(HOST_REQUEST_ATTRIBUTE) , user);
-                if(null == host){
-                   host = getHost(contentlet.getHost(), user);
-                }
-
-                if(request.isSecure()){
-                    resourceLink.append(HTTPS_PREFIX);
-                }else{
-                    resourceLink.append(HTTP_PREFIX);
-                }
-                resourceLink.append(host.getHostname());
-                if(request.getServerPort() != 80 && request.getServerPort() != 443){
-                    resourceLink.append(StringPool.COLON).append(request.getServerPort());
-                }
-                resourceLinkUri.append(identifier.getParentPath()).append(contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD));
-                resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri.toString()));
-                resourceLinkUri.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
-                resourceLink.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
-
-                final FileAsset fileAsset = getFileAsset(contentlet);
-                final String mimeType = fileAsset.getMimeType();
-                final String fileAssetName = fileAsset.getFileName();
-
-                return new ResourceLink(resourceLink.toString(), resourceLinkUri.toString(), mimeType, fileAsset, isEditableAsText(mimeType, fileAssetName), downloadRestricted);
+                return new ResourceLink(StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, StringPool.BLANK, false, true,
+                        StringPool.BLANK, StringPool.BLANK);
             }
 
-            return new ResourceLink(StringPool.BLANK, StringPool.BLANK, StringPool.BLANK, null, false, true);
+            Host host = getHost((String)request.getAttribute(HOST_REQUEST_ATTRIBUTE) , user);
+            if(null == host){
+                host = getHost(contentlet.getHost(), user);
+            }
+
+            final StringBuilder hostUrlBuilder = new StringBuilder(request.isSecure()? HTTPS_PREFIX:HTTP_PREFIX);
+            hostUrlBuilder.append(host.getHostname());
+
+            if(request.getServerPort() != 80 && request.getServerPort() != 443) {
+
+                hostUrlBuilder.append(StringPool.COLON).append(request.getServerPort());
+            }
+
+            final boolean downloadRestricted    = isDownloadPermissionBasedRestricted(contentlet, user);
+            final String mimeType               = this.getMimiType(binary);
+            final String fileAssetName          = binary.getName();
+            final Tuple2<String, String> resourceLink = this.createResourceLink(request, user, contentlet, identifier, binary, hostUrlBuilder.toString());
+            final Tuple2<String, String> versionPathIdPath = this.createVersionPathIdPath(contentlet, velocityVarName, binary);
+
+            return new ResourceLink(resourceLink._1(), resourceLink._2(), mimeType, contentlet,
+                    velocityVarName, isEditableAsText(mimeType, fileAssetName), downloadRestricted,
+                    versionPathIdPath._1(), versionPathIdPath._2());
+        }
+
+        Tuple2<String, String> createVersionPathIdPath (final Contentlet contentlet, final String velocityVarName,
+                                                                                final File binary) throws DotDataException {
+
+            final BinaryToMapTransformer transformer = new BinaryToMapTransformer(contentlet);
+            final Map<String, Object> properties = transformer.transform(binary, contentlet,
+                    APILocator.getContentTypeFieldAPI().byContentTypeAndVar(contentlet.getContentType(), velocityVarName));
+
+            final String versionPath = (String)properties.get("versionPath");
+            final String idPath      = (String)properties.get("idPath");
+
+            return Tuple.of(versionPath, idPath);
+        }
+
+        Tuple2<String, String> createResourceLink (final HttpServletRequest request, final User user,
+                                                           final Contentlet contentlet, final Identifier identifier,
+                                                           final File binary, final String hostUrl) throws DotSecurityException, DotDataException {
+
+            final StringBuilder resourceLink    = new StringBuilder(hostUrl);
+            final StringBuilder resourceLinkUri = new StringBuilder();
+
+            resourceLinkUri.append(identifier.getParentPath()).append(binary.getName());
+            resourceLink.append(UtilMethods.encodeURIComponent(resourceLinkUri.toString()));
+            resourceLinkUri.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
+            resourceLink.append(LANG_ID_PARAM).append(contentlet.getLanguageId());
+
+            return Tuple.of(resourceLink.toString(), resourceLinkUri.toString());
         }
 
         private static boolean isEditableAsText(final String mimeType, final String fileAssetName ){
@@ -159,6 +219,11 @@ public class ResourceLink {
             );
         }
 
+        String getMimiType (final File binary) {
+
+            return MimeTypeUtils.getMimeType(binary);
+        }
+
         Host getHost(final String hostId, final User user) throws DotDataException, DotSecurityException{
             return APILocator.getHostAPI().find(hostId , user, false);
         }
@@ -173,10 +238,6 @@ public class ResourceLink {
                 }
             }
             return identifier;
-        }
-
-        FileAsset getFileAsset(final Contentlet contentlet){
-           return APILocator.getFileAssetAPI().fromContentlet(contentlet);
         }
 
         boolean isDownloadPermissionBasedRestricted(final Contentlet contentlet, final User user) throws DotDataException {

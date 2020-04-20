@@ -23,6 +23,8 @@
 <%@page import="com.dotmarketing.util.Parameter"%>
 <%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotmarketing.util.VelocityUtil"%>
+<%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
+<%@ page import="com.dotcms.contenttype.model.type.BaseContentType" %>
 
 
 <%
@@ -428,12 +430,7 @@
                 binInode=sib;
             }
 
-            ResourceLink resourceLink = null;
-
-            if(structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
-                resourceLink = new ResourceLinkBuilder().build(request, user, contentlet);
-            }
-
+            ResourceLink resourceLink = new ResourceLinkBuilder().build(request, user, contentlet, field.getVelocityVarName());
         %>
 
         <!--  display -->
@@ -589,18 +586,31 @@
 
             <%
               if(!resourceLink.isDownloadRestricted()){ %>
+
+            <%  if(contentlet.isFileAsset()){ %>
                <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
                <div style="padding:10px;">
                 <a id="resourceLink" href="<%=resourceLink.getResourceLinkAsString() %>" target="_new"><%=resourceLink.getResourceLinkUriAsString() %></a>
                </div>
+                <% }  %>
+
+            <%= LanguageUtil.get(pageContext, "VersionPath") %>:
+            <div style="padding:10px;">
+                <a id="versionPath" href="<%=resourceLink.getVersionPath() %>" target="_new"><%=resourceLink.getVersionPath() %></a>
+            </div>
+
+            <%= LanguageUtil.get(pageContext, "IdPath") %>:
+            <div style="padding:10px;">
+                <a id="idPath" href="<%=resourceLink.getIdPath() %>" target="_new"><%=resourceLink.getIdPath() %></a>
+            </div>
              <% } else { %>
                 <br>
              <% }  %>
+
         </div>
             <% if (resourceLink.isEditableAsText()) { %>
                 <%
                     if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
-                        final FileAsset fa = resourceLink.getFileAsset();
                 %>
                     <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
                 <%  } %>
