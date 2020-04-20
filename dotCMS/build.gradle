@@ -995,7 +995,7 @@ class DeployWarTomcatTask extends DefaultTask{
 task initNpm(type: NpmTask) {
     args = ['init', '--yes']
 
-    dependsOn 'installDotcmsUI', 'installDotcmsFieldElements'
+    dependsOn 'installDotcmsUI', 'installDotcmsWebComponents'
     finalizedBy 'cleanNodeModules'
 }
 
@@ -1009,10 +1009,9 @@ task installDotcmsUI(type: NpmTask) {
     finalizedBy 'copyDotcmsUI'
 }
 
-task installDotcmsFieldElements(type: NpmTask) {
-
-    args = ['install', 'dotcms-field-elements']
-    finalizedBy 'copyCustomElements'
+task installDotcmsWebComponents(type: NpmTask) {
+    args = ['install', 'dotcms-webcomponents']
+    finalizedBy 'copyDotCMSWebComponents'
 }
 
 task makeDotAdminFolder(type: DefaultTask) {
@@ -1035,12 +1034,10 @@ task copyDotcmsUI(type: Copy) {
     into("./src/main/webapp/$angularFolder")
 }
 
-task copyCustomElements(type: Copy) {
-
-    from "./node_modules/dotcms-field-elements/dist/"
-    into "./src/main/webapp/custom-elements/"
-    include 'dotcmsfields.js'
-    include 'dotcmsfields/*'
+task copyDotCMSWebComponents(type: Copy) {
+    from "./node_modules/dotcms-webcomponents/dist/"
+    into "./src/main/webapp/"
+    include 'dotcms-webcomponents/*'
 }
 
 task downloadDependencies(type: Exec) {
