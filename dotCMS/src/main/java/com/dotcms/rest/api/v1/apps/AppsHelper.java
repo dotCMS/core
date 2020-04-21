@@ -2,12 +2,14 @@ package com.dotcms.rest.api.v1.apps;
 
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.apps.view.AppView;
+import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
-import com.dotcms.security.apps.Param;
-import com.dotcms.security.apps.Secret;
 import com.dotcms.security.apps.AppDescriptor;
-import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.ParamDescriptor;
+import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.Type;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.OrderDirection;
@@ -33,19 +35,23 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
+import jersey.repackaged.com.google.common.collect.Sets;
+import jersey.repackaged.com.google.common.collect.Sets.SetView;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 /**
  * Bridge class that encapsulates the logic necessary to consume the appsAPI
- * And forward to the AppsResource
+ * and forward it to AppsResource
  */
 class AppsHelper {
 
@@ -80,10 +86,15 @@ class AppsHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    List<AppView> getAvailableDescriptorViews(final User user)
+    List<AppView> getAvailableDescriptorViews(final User user, final String filter)
             throws DotSecurityException, DotDataException {
         final List<AppView> views = new ArrayList<>();
-        final List<AppDescriptor> appDescriptors = appsAPI.getAppDescriptors(user);
+        List<AppDescriptor> appDescriptors = appsAPI.getAppDescriptors(user);
+        if(UtilMethods.isSet(filter)) {
+            final String regexFilter = "(?i).*"+filter+"(.*)";
+            appDescriptors = appDescriptors.stream().filter(appDescriptor -> appDescriptor.getName().matches(regexFilter)).collect(
+                    Collectors.toList());
+        }
         final Set<String> hostIdentifiers = appsAPI.appKeysByHost().keySet();
         for (final AppDescriptor appDescriptor : appDescriptors) {
             final String appKey = appDescriptor.getKey();
@@ -164,20 +175,51 @@ class AppsHelper {
             final AppDescriptor appDescriptor = appDescriptorOptional.get();
             final Host host = hostAPI.find(siteId, user, false);
             if (null == host) {
-                throw new DotDataException(
-                        String.format(" Couldn't find any host with identifier `%s` ", siteId));
+                throw new DoesNotExistException(
+                      String.format(" Couldn't find any host with identifier `%s` ", siteId)
+                );
             }
 
             final Optional<AppSecrets> optionalAppSecrets = appsAPI
-                    .getSecrets(key, true, host, user);
-            if (optionalAppSecrets.isPresent()) {
-                final AppSecrets appSecrets = protectHiddenSecrets(
-                        optionalAppSecrets.get());
-                final SiteView siteView = new SiteView(host.getIdentifier(), host.getHostname(),
-                        appSecrets.getSecrets());
-                return Optional.of(new AppView(appDescriptor, 1L,
-                        ImmutableList.of(siteView)));
-            }
+                    .getSecrets(key, false, host, user);
+
+            //We need to return a view with all the secrets and also descriptors of the remaining parameters merged.
+            //So we're gonna need a copy of the params on the yml.
+            final Map<String, ParamDescriptor> descriptorParams = appDescriptor.getParams();
+
+            final Map<String,SecretView> mappedParams = appDescriptor.getParams().keySet().stream()
+                .map(paramKey -> new SecretView(paramKey, null, descriptorParams.get(paramKey)))
+                .collect(Collectors.toMap(SecretView::getName, Function.identity(), (a, b) -> a,
+                        LinkedHashMap::new));
+
+            final AppSecrets appSecrets = optionalAppSecrets.orElseGet(AppSecrets::empty);
+
+            final  Map<String,SecretView> mappedSecrets = appSecrets.getSecrets().entrySet()
+                    .stream()
+                    .map(e -> new SecretView(e.getKey(), e.getValue(), descriptorParams.get(e.getKey())))
+                    .sorted((o1, o2) ->  Boolean.compare(o1.isDynamic(), o2.isDynamic()))
+                    .collect(Collectors.toMap(SecretView::getName, Function.identity(), (a, b) -> a,
+                            LinkedHashMap::new));
+
+            final int secretsCount = mappedSecrets.size();
+
+            final List<SecretView> mergedParamsAndSecrets = mappedParams.entrySet().stream()
+                .map(paramViewEntry -> {
+                    final SecretView secretView = mappedSecrets.remove(paramViewEntry.getKey());
+                    return secretView != null ? secretView : paramViewEntry.getValue();
+                })
+                .collect(Collectors.toList());
+
+            mergedParamsAndSecrets.addAll(
+                    mappedSecrets.values().stream().filter(SecretView::isDynamic)
+                            .collect(Collectors.toList())
+            );
+
+            final SiteView siteView = new SiteView(host.getIdentifier(), host.getHostname(), mergedParamsAndSecrets);
+            return Optional.of(new AppView(appDescriptor, secretsCount,
+                    ImmutableList.of(siteView))
+            );
+
         }
         return Optional.empty();
     }
@@ -201,7 +243,7 @@ class AppsHelper {
         }
         final Host host = hostAPI.find(siteId, user, false);
         if (null == host) {
-            throw new DotDataException(
+            throw new DoesNotExistException(
                     String.format(" Couldn't find any site with identifier `%s` ", siteId));
         }
         appsAPI.deleteSecrets(key, host, user);
@@ -209,66 +251,144 @@ class AppsHelper {
 
 
     /**
-     * Save/Create a secret for the given info on the from
+     * Save/Create a secret for the given info on the from.
      * @param form Secret specific-form
      * @param user Logged in user.
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    void saveUpdateSecret(final SecretForm form, final User user)
+    void saveSecretForm(final String key, final String siteId, final SecretForm form, final User user)
             throws DotSecurityException, DotDataException {
 
-        final String key = form.getKey();
         if (!UtilMethods.isSet(key)) {
             throw new IllegalArgumentException("Required param Key isn't set.");
         }
-        final String siteId = form.getSiteId();
         if (!UtilMethods.isSet(siteId)) {
             throw new IllegalArgumentException("Required Param siteId isn't set.");
         }
         final Host host = hostAPI.find(siteId, user, false);
         if(null == host) {
-            throw new IllegalArgumentException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
+            throw new DoesNotExistException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
         }
         final Optional<AppDescriptor> optionalAppDescriptor = appsAPI
                 .getAppDescriptor(key, user);
         if (!optionalAppDescriptor.isPresent()) {
             throw new DoesNotExistException(  String.format("Unable to find an app descriptor bound to the  Key `%s`. You must upload a yml descriptor.",key));
         }
-        final Map<String, Param> params = form.getParams();
-        if(!UtilMethods.isSet(params)){
-            throw new IllegalArgumentException("Required Params aren't set.");
+
+        final AppDescriptor appDescriptor = optionalAppDescriptor.get();
+        try {
+            saveSecretForm(key, host, appDescriptor, form, user);
+        } finally {
+            form.destroySecretTraces();
+        }
+    }
+
+    /**
+     * Save/Create a secret for the given info on the from.
+     * @param key
+     * @param host
+     * @param appDescriptor
+     * @param form
+     * @param user
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private void saveSecretForm(final String key, final Host host,
+            final AppDescriptor appDescriptor, final SecretForm form, final User user) throws DotSecurityException, DotDataException {
+        final Map<String, Input> params = validateFormForSave(form, appDescriptor);
+        //Create a brand new secret for the present app.
+        final AppSecrets.Builder builder = new AppSecrets.Builder();
+        builder.withKey(key);
+        for (final Entry<String, Input> stringParamEntry : params.entrySet()) {
+            final String name = stringParamEntry.getKey();
+            final ParamDescriptor describedParam = appDescriptor.getParams().get(name);
+            final Input inputParam = stringParamEntry.getValue();
+            final boolean dynamic = null == describedParam;
+            final Secret secret;
+
+            if(dynamic){
+                secret = Secret.newSecret(inputParam.getValue(), Type.STRING, inputParam.isHidden());
+            } else {
+                if(describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue())){
+                    Logger.debug(AppsHelper.class, ()->"skipping secret sent with no value.");
+                    continue;
+                }
+                secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(), describedParam.isHidden());
+            }
+            builder.withSecret(name, secret);
+        }
+        // We're gonna build the secret upfront and have it ready.
+        // Since the next step is potentially risky (delete a secret that already exist).
+        final AppSecrets secrets = builder.build();
+        final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
+        if (appSecretsOptional.isPresent()) {
+            appsAPI.deleteSecrets(key, host, user);
+        }
+        appsAPI.saveSecrets(secrets, host, user);
+    }
+
+    /**
+     * This method allows saving a form according to the app definition.
+     * @param key
+     * @param siteId
+     * @param form
+     * @param user
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    void saveUpdateSecrets(final String key, final String siteId, final SecretForm form, final User user)
+            throws DotSecurityException, DotDataException {
+        if (!UtilMethods.isSet(key)) {
+            throw new IllegalArgumentException("Required param Key isn't set.");
+        }
+        if (!UtilMethods.isSet(siteId)) {
+            throw new IllegalArgumentException("Required Param siteId isn't set.");
+        }
+        final Host host = hostAPI.find(siteId, user, false);
+        if(null == host) {
+            throw new DoesNotExistException(String.format(" Couldn't find any host with identifier `%s` ",siteId));
+        }
+        final Optional<AppDescriptor> optionalAppDescriptor = appsAPI.getAppDescriptor(key, user);
+        if (!optionalAppDescriptor.isPresent()) {
+            throw new DoesNotExistException(  String.format("Unable to find an app descriptor bound to the  Key `%s`. You must upload a yml descriptor.",key));
         }
         final AppDescriptor appDescriptor = optionalAppDescriptor.get();
-        validateIncomingParams(params, appDescriptor);
-
-        final Optional<AppSecrets> appSecretsOptional = appsAPI
-                .getSecrets(key, host, user);
+        final Optional<AppSecrets> appSecretsOptional = appsAPI.getSecrets(key, host, user);
         if (!appSecretsOptional.isPresent()) {
-            //Create a brand new secret for the present app
-            final AppSecrets.Builder builder = new AppSecrets.Builder();
-            builder.withKey(key);
-            for (final Entry<String, Param> stringParamEntry : params.entrySet()) {
-                final String name = stringParamEntry.getKey();
-                final Param param = stringParamEntry.getValue();
-                final Secret secret = Secret.newSecret(param.getValue().toCharArray(), param.getType(), param.isHidden());
-                builder.withSecret(name, secret);
-            }
-            appsAPI.saveSecrets(builder.build(), host, user);
+            saveSecretForm(key, host, appDescriptor, form, user);
         } else {
-           //Update individual secrets/properties.
-            for (final Entry<String, Param> stringParamEntry : params.entrySet()) {
-                final String name = stringParamEntry.getKey();
-                final Param param = stringParamEntry.getValue();
-                final Secret secret = Secret.newSecret(param.getValue().toCharArray(), param.getType(), param.isHidden());
-
-                appsAPI.saveSecret(key, Tuple.of(name, secret), host, user);
+            try {
+                final Map<String, Input> params = validateFormForUpdate(form, appDescriptor);
+                //Update individual secrets/properties.
+                for (final Entry<String, Input> stringParamEntry : params.entrySet()) {
+                    final Input inputParam = stringParamEntry.getValue();
+                    final String name = stringParamEntry.getKey();
+                    final ParamDescriptor describedParam = appDescriptor.getParams().get(name);
+                    final boolean dynamic = null == describedParam;
+                    final Secret secret;
+                    if (dynamic) {
+                        secret = Secret.newSecret(inputParam.getValue(), Type.STRING,
+                                inputParam.isHidden());
+                    } else {
+                        if(describedParam.isHidden() && isAllFilledWithAsters(inputParam.getValue())){
+                            Logger.debug(AppsHelper.class, ()->"skipping secret sent with no value.");
+                            continue;
+                        }
+                        secret = Secret.newSecret(inputParam.getValue(), describedParam.getType(),
+                                describedParam.isHidden());
+                    }
+                    appsAPI.saveSecret(key, Tuple.of(name, secret), host, user);
+                }
+            }finally {
+                form.destroySecretTraces();
             }
         }
     }
 
     /**
      * This method allows deleting a single secret/property from a stored integration.
+     * TODO: if a required property/secret is deleted.. the app must enter into some sort of invalid state.
      * @param form Secret specific-form
      * @param user Logged in user.
      * @throws DotSecurityException
@@ -299,7 +419,7 @@ class AppsHelper {
             throw new IllegalArgumentException("Required Params aren't set.");
         }
         final AppDescriptor appDescriptor = optionalAppDescriptor.get();
-        validateIncomingParams(params, appDescriptor);
+        validateFormForDelete(params, appDescriptor);
 
         final Optional<AppSecrets> appSecretsOptional = appsAPI
                 .getSecrets(key, host, user);
@@ -312,53 +432,147 @@ class AppsHelper {
 
     /**
      * Validate the incoming params match the params described by an appDescriptor yml.
-     * @param incomingParams a set of paramNames
-     * @param appDescriptor the app template
-     * @throws DotDataException This will give bac an exception if you send an invalid param.
+     * This validation is intended to behave as a form validation. It'll make sure that all required values are present at save time.
+     * And nothing else besides the params described are allowed. Unless they app-desciptor establishes that extraParams are allowed.
+     * @param form a set of paramNames.
+     * @param appDescriptor the app template.
+     * @throws IllegalArgumentException This will give back an exception if you send an invalid param.
      */
-    private void validateIncomingParams(final Map<String, Param> incomingParams, final AppDescriptor appDescriptor)
-            throws DotDataException {
+    private Map<String, Input> validateFormForSave(final SecretForm form,
+            final AppDescriptor appDescriptor)
+            throws IllegalArgumentException {
+
+        final Map<String, Input> params = form.getInputParams();
+        if (!UtilMethods.isSet(params)) {
+            throw new IllegalArgumentException("Required Params aren't set.");
+        }
 
         //Param/Property names are case sensitive.
-        final Map<String, Param> appDescriptorParams = appDescriptor.getParams();
-        for (final Entry<String, Param> incomingParamEntry : incomingParams.entrySet()) {
-            final String incomingParamName = incomingParamEntry.getKey();
-            final Param describedParam = appDescriptorParams.get(incomingParamName);
-            if(appDescriptor.isAllowExtraParameters() && null == describedParam){
-               //if the param isn't found in our description but the allow extra params flag is true we're ok
-               continue;
-            }
-            //If the flag isn't true. Then we must reject the unknown param.
-            if(null == describedParam) {
-                throw new IllegalArgumentException(String.format(
-                        "Params named `%s` can not be matched against an app descriptor. ",
-                        incomingParamName));
+        final Map<String, ParamDescriptor> appDescriptorParams = appDescriptor.getParams();
+
+        for (final Entry<String, ParamDescriptor> appDescriptorParam : appDescriptorParams
+                .entrySet()) {
+            final String describedParamName = appDescriptorParam.getKey();
+            final Input input = params.get(describedParamName);
+            if (appDescriptorParam.getValue().isRequired() && (input == null || UtilMethods
+                    .isNotSet(input.getValue()))) {
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Param `%s` is marked required in the descriptor but does not come with a value.",
+                                describedParamName
+                        )
+                );
             }
 
-            final Param incomingParam = incomingParamEntry.getValue();
-            //We revise the incoming param against the definition loaded from the yml.
-            if(describedParam.isRequired() && UtilMethods.isNotSet(incomingParam.getValue())){
-               throw new IllegalArgumentException(
-               String.format("Params named `%s` is marked as required in the descriptor but does not have any value.", incomingParamName));
+            if(null == input){
+              //Param wasn't sent but it doesn't matter since it isn't required.
+              Logger.debug(AppsHelper.class, ()-> String.format("Non required param `%s` was not sent in the request.",describedParamName));
+              continue;
+            }
+
+            if (Type.BOOL.equals(appDescriptorParam.getValue().getType()) && UtilMethods
+                    .isSet(input.getValue())) {
+                final String asString = new String(input.getValue());
+                final boolean bool = (asString.equalsIgnoreCase(Boolean.TRUE.toString())
+                        || asString.equalsIgnoreCase(Boolean.FALSE.toString()));
+                if (!bool) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Can not convert value `%s` to type BOOL for param `%s`.",
+                                    asString, describedParamName
+                            )
+                    );
+                }
             }
         }
+
+        if (!appDescriptor.isAllowExtraParameters()) {
+            final SetView<String> extraParamsFound = Sets
+                    .difference(params.keySet(), appDescriptorParams.keySet());
+
+            if (!extraParamsFound.isEmpty()) {
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Unknown additional params `%s` not allowed by the app descriptor.",
+                                String.join(", ", extraParamsFound)
+                        )
+                );
+            }
+        }
+        return params;
+    }
+
+    /**
+     * This method is meant to validate inputs for an update that can be performed on individual
+     * properties. It assumes there's an instance already saved and only performs validations on the
+     * new incoming params. This gives the flexibility to modify the value on individual properties
+     * that are already saved. If the app We're not expecting
+     * @throws IllegalArgumentException This will give back an exception if you send an invalid param.
+     */
+    private Map<String, Input> validateFormForUpdate(final SecretForm form,
+            final AppDescriptor appDescriptor)
+            throws IllegalArgumentException {
+
+        final Map<String, Input> params = form.getInputParams();
+        if (!UtilMethods.isSet(params)) {
+            throw new IllegalArgumentException("Required Params aren't set.");
+        }
+
+        //Param/Property names are case sensitive.
+        final Map<String, ParamDescriptor> appDescriptorParams = appDescriptor.getParams();
+        for (final Entry<String, Input> entry : params.entrySet()) {
+            final String paramName = entry.getKey();
+            final ParamDescriptor paramDescriptor = appDescriptorParams.get(paramName);
+            if (null == paramDescriptor && !appDescriptor.isAllowExtraParameters()) {
+                throw new IllegalArgumentException(String.format(
+                        "Unknown additional Param `%s` not allowed by the app descriptor.",
+                        paramName));
+            } else {
+                if (null != paramDescriptor && paramDescriptor.isRequired() && null != entry
+                        .getValue() && UtilMethods.isNotSet(entry.getValue().getValue())) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Param `%s` is marked required in the descriptor but does not come with a value.",
+                                    paramName
+                            )
+                    );
+                }
+
+                if (paramDescriptor != null && Type.BOOL.equals(paramDescriptor.getType())
+                        && UtilMethods.isSet(entry.getValue())) {
+                    final String asString = new String(entry.getValue().getValue());
+                    final boolean bool = (asString.equalsIgnoreCase(Boolean.TRUE.toString())
+                            || asString.equalsIgnoreCase(Boolean.FALSE.toString()));
+                    if (!bool) {
+                        throw new IllegalArgumentException(
+                                String.format(
+                                        "Can not convert value `%s` to type BOOL for param `%s`.",
+                                        asString, paramName
+                                )
+                        );
+                    }
+                }
+            }
+        }
+
+        return params;
     }
 
     /**
      * Validate the incoming param names match the params described by an appDescriptor yml.
      * This is mostly useful to validate a delete param request
-     * @param incomingParamNames
+     * @param inputParamNames
      * @param appDescriptor
      * @throws DotDataException
      */
-    private void validateIncomingParams(final Set<String> incomingParamNames, final AppDescriptor appDescriptor)
-            throws DotDataException {
+    private void validateFormForDelete(final Set<String> inputParamNames, final AppDescriptor appDescriptor)
+            throws IllegalArgumentException {
 
         //Param/Property names are case sensitive.
-        final Map<String, Param> appDescriptorParams = appDescriptor.getParams();
-        for (final String incomingParamName : incomingParamNames) {
+        final Map<String, ParamDescriptor> appDescriptorParams = appDescriptor.getParams();
+        for (final String inputParamName : inputParamNames) {
 
-            final Param describedParam = appDescriptorParams.get(incomingParamName);
+            final ParamDescriptor describedParam = appDescriptorParams.get(inputParamName);
             if(appDescriptor.isAllowExtraParameters() && null == describedParam){
                 //if the param isn't found in our description but the allow extra params flag is true we're ok
                 continue;
@@ -366,8 +580,8 @@ class AppsHelper {
             //If the flag isn't true. Then we must reject the unknown param.
             if(null == describedParam) {
                 throw new IllegalArgumentException(String.format(
-                        "Params named `%s` can not be matched against an app descriptor. ",
-                        incomingParamName));
+                        "Params named `%s` can not be matched against the app descriptor. ",
+                        inputParamName));
             }
         }
     }
@@ -407,31 +621,23 @@ class AppsHelper {
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    void removeServiceIntegration(final String key, final User user, final boolean removeDescriptor)
+    void removeApp(final String key, final User user, final boolean removeDescriptor)
             throws DotSecurityException, DotDataException {
         appsAPI.removeApp(key, user, removeDescriptor);
     }
 
-    @VisibleForTesting
-    static final String PROTECTED_HIDDEN_SECRET = "*****";
-
     /**
-     * Hidden secrets should never be exposed so this will replace the secret values with anything
-     * @param appSecrets
+     * This method checks if we're looking at a char array all filled with the character `*`
+     * @param chars
      * @return
      */
-    private AppSecrets protectHiddenSecrets(final AppSecrets appSecrets){
-        final AppSecrets.Builder builder = new AppSecrets.Builder();
-        builder.withKey(appSecrets.getKey());
-        final Map<String,Secret> sourceSecrets = appSecrets.getSecrets();
-        for (final Entry<String, Secret> secretEntry : sourceSecrets.entrySet()) {
-            if(secretEntry.getValue().isHidden()){
-                builder.withHiddenSecret(secretEntry.getKey(), PROTECTED_HIDDEN_SECRET);
-            } else {
-                builder.withSecret(secretEntry.getKey(),secretEntry.getValue());
+    private boolean isAllFilledWithAsters(final char [] chars){
+         for(final char chr: chars){
+            if(chr != '*'){
+               return false;
             }
-        }
-        return builder.build();
+         }
+         return true;
     }
 
 }

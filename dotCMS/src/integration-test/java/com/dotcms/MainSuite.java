@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
+import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -13,6 +14,10 @@ import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplTest;
+import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
 import com.dotmarketing.startup.runonce.Task05210CreateDefaultDotAssetTest;
@@ -241,9 +246,16 @@ import org.junit.runners.Suite.SuiteClasses;
         AppsResourceTest.class,
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
+        DotAssetBaseTypeToContentTypeStrategyImplTest.class,
         RulesAPIImplIntegrationTest.class,
+        RulesAPIImplIntegrationTest.class,
+        SiteSearchJobImplTest.class,
+        FileAssetAPIImplIntegrationTest.class,
+        FileAssetFactoryIntegrationTest.class,
+        FileAssetAPIImplTest.class,
         UserResourceIntegrationTest.class,
-        SiteSearchJobImplTest.class
+        SiteSearchJobImplTest.class,
+        IntegrationResourceLinkTest.class
 })
 public class MainSuite {
 

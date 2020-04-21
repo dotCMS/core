@@ -2,10 +2,11 @@ package com.dotcms.security.apps;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Arrays;
 
 /**
  * This is an implementation of a Secret
- * Class used to collect secrets destiated to be stored into safe keeping
+ * Class used to collect secrets destined to be stored into safe keeping.
  */
 public final class Secret extends AbstractProperty<char[]> {
 
@@ -18,6 +19,10 @@ public final class Secret extends AbstractProperty<char[]> {
             @JsonProperty("type") final Type type,
             @JsonProperty("hidden") final boolean hidden) {
         return new Secret(value, type, hidden);
+    }
+
+    public void destroy(){
+        Arrays.fill(value, (char) 0);
     }
 
 }

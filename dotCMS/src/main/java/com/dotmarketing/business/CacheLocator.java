@@ -6,6 +6,7 @@ import com.dotcms.cache.KeyValueCache;
 import com.dotcms.cache.KeyValueCacheImpl;
 import com.dotcms.cache.VanityUrlCache;
 import com.dotcms.cache.VanityUrlCacheImpl;
+import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
 import com.dotcms.contenttype.business.ContentTypeCache2;
@@ -21,6 +22,8 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCache;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheImpl;
+import com.dotcms.security.apps.AppsCache;
+import com.dotcms.security.apps.AppsCacheImpl;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.portal.PortletCache;
 import com.dotmarketing.cache.ContentTypeCache;
@@ -281,6 +284,11 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static MultiTreeCache getMultiTreeCache() {
         return (MultiTreeCache) getInstance(CacheIndex.MultiTreeCache);
     }
+    
+    public static ESQueryCache getESQueryCache() {
+        return (ESQueryCache) getInstance(CacheIndex.ESQueryCache);
+    }
+    
     /**
      * 
      * @return
@@ -291,6 +299,15 @@ public class CacheLocator extends Locator<CacheIndex>{
     public static ApiTokenCache getApiTokenCache() {
         return (ApiTokenCache) getInstance(CacheIndex.ApiTokenCache);
     }
+
+	/**
+	 * This will get you an instance of the singleton apps cache.
+ 	 * @return
+	 */
+	public static AppsCache getAppsCache() {
+		return (AppsCache) getInstance(CacheIndex.AppsCache);
+	}
+
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
@@ -389,7 +406,9 @@ enum CacheIndex
 	MultiTreeCache("MultiTree Cache"),
 	ApiTokenCache("ApiTokenCache"),
 	PortletCache("PortletCache"),
-	KeyValueCache("Key/Value Cache");
+	ESQueryCache("ESQueryCache"),
+	KeyValueCache("Key/Value Cache"),
+	AppsCache("Apps");
 
 	Cachable create() {
 		switch(this) {
@@ -436,6 +455,8 @@ enum CacheIndex
 	      	case MultiTreeCache : return new MultiTreeCache();
 	      	case ApiTokenCache : return new ApiTokenCache();
 	      	case PortletCache : return new PortletCache();
+			case AppsCache: return new AppsCacheImpl();
+	      	case ESQueryCache : return new com.dotcms.content.elasticsearch.ESQueryCache();
 	      	
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
