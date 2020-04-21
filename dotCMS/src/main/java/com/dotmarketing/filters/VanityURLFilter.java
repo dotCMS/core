@@ -1,14 +1,6 @@
 package com.dotmarketing.filters;
 
-import static com.dotmarketing.filters.Constants.CMS_FILTER_QUERY_STRING_OVERRIDE;
-import static com.dotmarketing.filters.Constants.CMS_FILTER_URI_OVERRIDE;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.Collectors;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -16,10 +8,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.vanityurl.handler.VanityUrlHandler;
 import com.dotcms.vanityurl.handler.VanityUrlHandlerResolver;
@@ -29,9 +18,6 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 
 /**
  * This Filter handles the vanity url logic
