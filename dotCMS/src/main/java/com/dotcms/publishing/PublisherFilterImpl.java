@@ -1,10 +1,15 @@
 package com.dotcms.publishing;
 
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * This class is use to load the values of the filters of a FilterDescriptor that is going to be use
+ * to create a bundle.
+ * Each method check for each filter and check that the asset that is going to be added to the bundle
+ * is accepted.
+ */
 public class PublisherFilterImpl implements PublisherFilter{
 
     private final Set<String> excludeClassesSet = new HashSet<>();

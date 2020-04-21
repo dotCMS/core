@@ -34,6 +34,8 @@ public class PushPublishFilterResourceTest {
         IntegrationTestInitService.getInstance().init();
         resource = new PushPublishFilterResource();
         response = new MockHttpResponse();
+
+        APILocator.getPublisherAPI().getFilterDescriptorMap().clear();
         filterKey = "filterTestAPI.yml";
 
         createFilter();
@@ -45,7 +47,7 @@ public class PushPublishFilterResourceTest {
         final FilterDescriptor filterDescriptor =
                 new FilterDescriptor(filterKey,"Filter Test Title",filtersMap,true,"Reviewer,dotcms.org.2789");
 
-        APILocator.getPublisherAPI().addFilter(filterDescriptor);
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
     }
 
     private HttpServletRequest getHttpRequest(final boolean authorization) {

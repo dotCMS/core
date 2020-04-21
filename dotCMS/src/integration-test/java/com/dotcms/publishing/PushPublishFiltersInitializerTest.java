@@ -50,7 +50,7 @@ public class PushPublishFiltersInitializerTest {
 
         pathStream.forEach(path1 -> pushPublishFiltersInitializer.loadFilter(path1));
 
-        final Map<String,FilterDescriptor> filterDescriptorMap = APILocator.getPublisherAPI().getFilterMap();
+        final Map<String,FilterDescriptor> filterDescriptorMap = APILocator.getPublisherAPI().getFilterDescriptorMap();
         Assert.assertFalse(filterDescriptorMap.isEmpty());
         Assert.assertTrue(filterDescriptorMap.containsKey(filterDescriptor.getKey()));
     }

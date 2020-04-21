@@ -51,11 +51,33 @@ public interface PublisherAPI {
      */
     void addFilter(final FilterDescriptor filterDescriptor);
 
+    /**
+     * Gets all the filters that user has access to.
+     * @param user User that is trying to get the Filters.
+     * @return list of filterDescriptors that the user has access.
+     * @throws DotDataException
+     */
     List<FilterDescriptor> getFiltersByRole(final User user) throws DotDataException;
 
+    /**
+     * Gets the FilterMap that contains all the Filters loaded to the system.
+     * @return map of FilterDescriptors, the FilterDescriptor.Key is used as the key of the map.
+     */
     Map<String, FilterDescriptor> getFilterMap();
 
+    /**
+     * Get a FilterDescriptor using the FilterDescriptor.Key as key
+     * @param filterKey key of the filterDescriptor
+     * @return filterDescriptor referenced to that key
+     */
     FilterDescriptor getFilterDescriptorByKey(final String filterKey);
 
+    /**
+     * Creates and returns a PublisherFilter (that is an object that contains the filters of a filterDescriptor)
+     * @param bundleId BundleId of the bundle that is gonna be created.
+     * @return PublisherFilter with the filters of the FilterDescriptor that was selected for that bundle.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     PublisherFilter createPublisherFilter(final String bundleId) throws DotDataException, DotSecurityException;
 }

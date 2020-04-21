@@ -26,7 +26,6 @@ import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.API;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -153,11 +152,12 @@ public class AjaxDirectorServletIntegrationTest {
         });
 
         //Create new filter to send in the URL
+        APILocator.getPublisherAPI().getFilterDescriptorMap().clear();
         final Map<String,Object> filtersMap1 =
                 ImmutableMap.of("dependencies",true,"relationships",true);
         final FilterDescriptor filterDescriptor1 =
                 new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,false, APILocator.systemUser().getUserId());
-        APILocator.getPublisherAPI().addFilter(filterDescriptor1);
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor1);
 
         remotePublishAjaxActionPushBundle.setRequestJSON("{\n"
                 + "    \"assetIdentifier\": \""+bundleId+"\",\n"

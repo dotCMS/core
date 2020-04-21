@@ -42,9 +42,9 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -55,10 +55,11 @@ import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.felix.framework.OSGIUtil;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -131,6 +132,8 @@ public class PublisherAPITest extends IntegrationTestBase {
         Bundle bundle = null;
 
         try {
+            final String filterKey = "testPublishFailRetry.yml";
+            createFilterDescriptor(filterKey,"testPublishFailRetry",true,null);
             /* Setup sender environment. */
             final String publishEnvironmentName = "Publish Environment";
 
@@ -174,7 +177,7 @@ public class PublisherAPITest extends IntegrationTestBase {
 
             /* Push publish the folder. */
             // Set up Bundle.
-            bundle = new Bundle(null, new Date(), null, adminUser.getUserId(), false,"");
+            bundle = new Bundle(null, new Date(), null, adminUser.getUserId(), false,filterKey);
             bundleAPI.saveBundle(bundle, Lists.newArrayList(environment));
 
             // Set up PublishAuditHistory.
@@ -323,17 +326,18 @@ public class PublisherAPITest extends IntegrationTestBase {
         return file -> !file.getAbsolutePath().endsWith("bundle.xml");
     }
 
-
     @Test
     public void test_addFilter(){
+        publisherAPI.getFilterDescriptorMap().clear();
+
         final Map<String,Object> filtersMap =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
         final FilterDescriptor filterDescriptor =
                 new FilterDescriptor("filterTestAPI.yml","Filter Test Title",filtersMap,false,"Reviewer,dotcms.org.2789");
 
-        publisherAPI.addFilter(filterDescriptor);
+        publisherAPI.addFilterDescriptor(filterDescriptor);
 
-        final Map<String,FilterDescriptor> filterDescriptorMap = APILocator.getPublisherAPI().getFilterMap();
+        final Map<String,FilterDescriptor> filterDescriptorMap = APILocator.getPublisherAPI().getFilterDescriptorMap();
         Logger.info(this,filterDescriptorMap.toString());
         Assert.assertFalse(filterDescriptorMap.isEmpty());
         Assert.assertTrue(filterDescriptorMap.containsKey(filterDescriptor.getKey()));
@@ -341,23 +345,24 @@ public class PublisherAPITest extends IntegrationTestBase {
 
     @Test
     public void test_getFiltersByRole_CMSAdmin() throws DotDataException {
-        final Map<String,Object> filtersMap1 =
+        publisherAPI.getFilterDescriptorMap().clear();
+
+        final Map<String,Object> filtersMap =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
+
         final FilterDescriptor filterDescriptor1 =
-                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,false,"Reviewer,dotcms.org.2789");
+                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap,false,"Reviewer,dotcms.org.2789");
 
-        final Map<String,Object> filtersMap2 =
-                ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
         final FilterDescriptor filterDescriptor2 =
-                new FilterDescriptor("filterTest2.yml","Filter Test Title 2",filtersMap2,false,"Reviewer");
+                new FilterDescriptor("filterTest2.yml","Filter Test Title 2",filtersMap,false,"Reviewer");
 
-        publisherAPI.addFilter(filterDescriptor1);
-        publisherAPI.addFilter(filterDescriptor2);
+        publisherAPI.addFilterDescriptor(filterDescriptor1);
+        publisherAPI.addFilterDescriptor(filterDescriptor2);
 
         final User newUser = new UserDataGen().nextPersisted();
         APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), newUser);
 
-        final List<FilterDescriptor> filterDescriptors = publisherAPI.getFiltersByRole(newUser);
+        final List<FilterDescriptor> filterDescriptors = publisherAPI.getFiltersDescriptorsByRole(newUser);
         Logger.info(this,filterDescriptors.toString());
         Assert.assertFalse(filterDescriptors.isEmpty());
         Assert.assertTrue(filterDescriptors.contains(filterDescriptor1));
@@ -372,22 +377,22 @@ public class PublisherAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_getFiltersByRole_nonCMSAdmin_userId() throws DotDataException {
+        publisherAPI.getFilterDescriptorMap().clear();
+
         final User newUser = new UserDataGen().nextPersisted();
 
-        final Map<String,Object> filtersMap1 =
+        final Map<String,Object> filtersMap =
                 ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
         final FilterDescriptor filterDescriptor1 =
-                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,false,"Reviewer," + newUser.getUserId());
+                new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap,false,"Reviewer," + newUser.getUserId());
 
-        final Map<String,Object> filtersMap2 =
-                ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses","Host,Workflow");
         final FilterDescriptor filterDescriptor2 =
-                new FilterDescriptor("filterTest2.yml","Filter Test Title 2",filtersMap2,false,"Reviewer");
+                new FilterDescriptor("filterTest2.yml","Filter Test Title 2",filtersMap,false,"Reviewer");
 
-        publisherAPI.addFilter(filterDescriptor1);
-        publisherAPI.addFilter(filterDescriptor2);
+        publisherAPI.addFilterDescriptor(filterDescriptor1);
+        publisherAPI.addFilterDescriptor(filterDescriptor2);
 
-        final List<FilterDescriptor> filterDescriptors = publisherAPI.getFiltersByRole(newUser);
+        final List<FilterDescriptor> filterDescriptors = publisherAPI.getFiltersDescriptorsByRole(newUser);
         Logger.info(this,filterDescriptors.toString());
         Assert.assertFalse(filterDescriptors.isEmpty());
         Assert.assertTrue(filterDescriptors.contains(filterDescriptor1));
@@ -413,6 +418,8 @@ public class PublisherAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_getFiltersByRole_nonCMSAdmin_RoleHierarchy() throws DotDataException {
+        publisherAPI.getFilterDescriptorMap().clear();
+
         final User userA = new UserDataGen().nextPersisted();
         final User userB = new UserDataGen().nextPersisted();
         final User userC = new UserDataGen().nextPersisted();
@@ -432,29 +439,178 @@ public class PublisherAPITest extends IntegrationTestBase {
         final FilterDescriptor filterDescriptor1 =
                 new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,false,roleB.getRoleKey()+','+userC.getUserId());
 
-        publisherAPI.addFilter(filterDescriptor1);
+        publisherAPI.addFilterDescriptor(filterDescriptor1);
 
         //User A
-        List<FilterDescriptor> filterDescriptors = publisherAPI.getFiltersByRole(userA);
+        List<FilterDescriptor> filterDescriptors = publisherAPI.getFiltersDescriptorsByRole(userA);
         Logger.info(this,filterDescriptors.toString());
         Assert.assertFalse(filterDescriptors.isEmpty());
         Assert.assertTrue(filterDescriptors.contains(filterDescriptor1));
 
         //User B
-        filterDescriptors = publisherAPI.getFiltersByRole(userB);
+        filterDescriptors = publisherAPI.getFiltersDescriptorsByRole(userB);
         Logger.info(this,filterDescriptors.toString());
         Assert.assertFalse(filterDescriptors.isEmpty());
         Assert.assertTrue(filterDescriptors.contains(filterDescriptor1));
 
         //User C
-        filterDescriptors = publisherAPI.getFiltersByRole(userC);
+        filterDescriptors = publisherAPI.getFiltersDescriptorsByRole(userC);
         Logger.info(this,filterDescriptors.toString());
         Assert.assertFalse(filterDescriptors.isEmpty());
         Assert.assertTrue(filterDescriptors.contains(filterDescriptor1));
 
         //User D
-        filterDescriptors = publisherAPI.getFiltersByRole(userD);
+        filterDescriptors = publisherAPI.getFiltersDescriptorsByRole(userD);
         Logger.info(this,filterDescriptors.toString());
         Assert.assertTrue(filterDescriptors.isEmpty());
+    }
+
+    private void createFilterDescriptor(final String key,final String title,final boolean defaultFilter,Map<String,Object> filtersMap){
+        if(!UtilMethods.isSet(filtersMap)){
+            final List<Object> listExcludeClasses = new ArrayList();
+            listExcludeClasses.add("User");
+            listExcludeClasses.add("OSGI");
+            filtersMap =
+                    ImmutableMap.of("dependencies",true,"relationships",true,"excludeClasses",
+                            listExcludeClasses);
+        }
+        publisherAPI.addFilterDescriptor(new FilterDescriptor(key,title,filtersMap,defaultFilter,"DOTCMS_BACK_END_USER"));
+    }
+
+    /**
+     * This test creates and gets a FilterDescriptor using the key as reference.
+     */
+    @Test
+    public void test_getFilterDescriptorByKey_success(){
+        final String key = "TestByKeySuccess.yml";
+        createFilterDescriptor(key,"TestByKeySuccess",true,null);
+        final FilterDescriptor filterDescriptor = publisherAPI.getFilterDescriptorByKey(key);
+        Assert.assertNotNull(filterDescriptor);
+        Assert.assertEquals(key,filterDescriptor.getKey());
+    }
+
+    /**
+     * This test creates 2 FilterDescriptors (one set as default) tries to get a FilterDescriptor, but since key is not passed,
+     * it returns the FilterDescriptor set as default.
+     */
+    @Test
+    public void test_getFilterDescriptorByKey_emptyKey_returnDefaultFilter(){
+        publisherAPI.getFilterDescriptorMap().clear();
+
+        final String keyDefault = "TestByKeyEmptyKeyDefault.yml";
+        createFilterDescriptor(keyDefault,"TestByKeyEmptyKeyDefault",true,null);
+
+        final String keyNonDefault = "TestByKeyEmptyKeyNonDefault.yml";
+        createFilterDescriptor(keyNonDefault,"TestByKeyEmptyKeyDefault",false,null);
+
+        final FilterDescriptor filterDescriptor = publisherAPI.getFilterDescriptorByKey("");
+        Assert.assertNotNull(filterDescriptor);
+        Assert.assertEquals(keyDefault,filterDescriptor.getKey());
+    }
+
+    /**
+     * This test creates 2 FilterDescriptors (one set as default) tries to get a FilterDescriptor, but since key passed does not belong to any FilterDescriptor,
+     * it returns the FilterDescriptor set as default.
+     */
+    @Test
+    public void test_getFilterDescriptorByKey_filterKeyDoesNotExist_returnDefaultFilter(){
+        publisherAPI.getFilterDescriptorMap().clear();
+
+        final String keyDefault = "TestByKeyDoesNotExistDefault.yml";
+        createFilterDescriptor(keyDefault,"TestByKeyDoesNotExistDefault",true,null);
+
+        final String keyNonDefault = "TestByKeyDoesNotExistNonDefault.yml";
+        createFilterDescriptor(keyNonDefault,"TestByKeyDoesNotExistNonDefault",false,null);
+
+        final FilterDescriptor filterDescriptor = publisherAPI.getFilterDescriptorByKey("thisKeyNotExists");
+        Assert.assertNotNull(filterDescriptor);
+        Assert.assertEquals(keyDefault,filterDescriptor.getKey());
+    }
+
+    /**
+     * This test creates a FilterDescriptor and a Bundle (with the created FilterDescriptor) and
+     * returns a PublisherFilter with the filters of the FilterDescriptor.
+     *
+     * In this case the FilterDescriptor has all the possible filters.
+     */
+    @Test
+    public void test_createPublisherFilter_withAllFilters()
+            throws DotDataException, DotSecurityException {
+        publisherAPI.getFilterDescriptorMap().clear();
+
+        final String filterKey = "TestCreatePublisherFilterAllFilters.yml";
+        final Map<String,Object> filtersMap = new HashMap<>();
+        filtersMap.put("excludeQuery","+baseType:5");
+        final List<Object> listExcludeClasses = new ArrayList();
+        listExcludeClasses.add("User");
+        listExcludeClasses.add("Host");
+        filtersMap.put("excludeClasses", listExcludeClasses);
+        filtersMap.put("dependencies",true);
+        filtersMap.put("excludeDependencyQuery","+baseType:7");
+        filtersMap.put("excludeDependencyClasses", listExcludeClasses);
+        filtersMap.put("forcePush",false);
+        filtersMap.put("relationships",true);
+        createFilterDescriptor(filterKey,"TestCreatePublisherFilter",true,filtersMap);
+
+        final String bundleName = "testCreatePublisherFilterAllFilters";
+        Bundle bundle = new Bundle(bundleName, new Date(), null, adminUser.getUserId(),
+                (Boolean) filtersMap.get("forcePush"),filterKey);
+        APILocator.getBundleAPI().saveBundle(bundle);
+        bundle = APILocator.getBundleAPI().getBundleByName(bundleName);
+        Assert.assertNotNull(bundle);
+        Assert.assertEquals(filterKey,bundle.getFilterKey());
+
+        final PublisherFilter publisherFilter = publisherAPI.createPublisherFilter(bundle.getId());
+        Assert.assertNotNull(publisherFilter);
+        Assert.assertEquals(filtersMap.get("dependencies"),publisherFilter.isDependencies());
+        Assert.assertEquals(filtersMap.get("relationships"),publisherFilter.isRelationships());
+        Assert.assertEquals(filtersMap.get("forcePush"),bundle.isForcePush());
+        Assert.assertFalse(publisherFilter.acceptExcludeClasses("User"));//Will not be accepted since it's in the list
+        Assert.assertTrue(publisherFilter.acceptExcludeClasses("Template"));
+        Assert.assertFalse(publisherFilter.acceptExcludeDependencyClasses("Host"));//Will not be accepted since it's in the list
+        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses("Structure"));
+
+    }
+
+    /**
+     * This test creates a FilterDescriptor and a Bundle (with the created FilterDescriptor) and
+     * returns a PublisherFilter with the filters of the FilterDescriptor.
+     *
+     * In this case the FilterDescriptor has some of the possible filters.
+     */
+    @Test
+    public void test_createPublisherFilter_withSomeFilters()
+            throws DotDataException, DotSecurityException {
+        publisherAPI.getFilterDescriptorMap().clear();
+
+        final String filterKey = "TestCreatePublisherFilter.yml";
+        final List<Object> listExcludeClasses = new ArrayList();
+        listExcludeClasses.add("User");
+        listExcludeClasses.add("OSGI");
+        final Map<String, Object> filtersMap =
+                ImmutableMap
+                        .of("excludeClasses", listExcludeClasses, "dependencies", true, "forcePush", false,
+                                "relationships", true);
+        createFilterDescriptor(filterKey, "TestCreatePublisherFilterSomeFilters", true,
+                filtersMap);
+
+        final String bundleName = "testCreatePublisherFilterSomeFilters";
+        Bundle bundle = new Bundle(bundleName, new Date(), null, adminUser.getUserId(),
+                (Boolean) filtersMap.get("forcePush"), filterKey);
+        APILocator.getBundleAPI().saveBundle(bundle);
+        bundle = APILocator.getBundleAPI().getBundleByName(bundleName);
+        Assert.assertNotNull(bundle);
+        Assert.assertEquals(filterKey, bundle.getFilterKey());
+
+        final PublisherFilter publisherFilter = publisherAPI.createPublisherFilter(bundle.getId());
+        Assert.assertNotNull(publisherFilter);
+        Assert.assertEquals(filtersMap.get("dependencies"), publisherFilter.isDependencies());
+        Assert.assertEquals(filtersMap.get("relationships"), publisherFilter.isRelationships());
+        Assert.assertEquals(filtersMap.get("forcePush"), bundle.isForcePush());
+        Assert.assertFalse(publisherFilter
+                .acceptExcludeClasses("User"));//Will not be accepted since it's in the list
+        Assert.assertTrue(publisherFilter.acceptExcludeClasses("Template"));
+        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses("Host"));
+        Assert.assertTrue(publisherFilter.acceptExcludeDependencyClasses("Structure"));
     }
 }

@@ -101,11 +101,13 @@ public class RemotePublishAjaxActionTest {
 		user = APILocator.getUserAPI().getSystemUser();
 		adminUser = APILocator.getUserAPI().loadByUserByEmail( "admin@dotcms.com", user, false );
 		//Create new filter to send in the URL
+		APILocator.getPublisherAPI().getFilterDescriptorMap().clear();
+
 		final Map<String,Object> filtersMap1 =
 				ImmutableMap.of("dependencies",true,"relationships",true);
 		filterDescriptor1 =
 				new FilterDescriptor("filterTest1.yml","Filter Test Title 1",filtersMap1,false,adminUser.getUserId());
-		APILocator.getPublisherAPI().addFilter(filterDescriptor1);
+		APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor1);
 
 		LicenseTestUtil.getLicense();
 	}
