@@ -7,6 +7,7 @@ export * from './DotCMSHttpClient.model';
 export * from './DotCMSLanguage.model';
 export * from './DotCMSNavigation.model';
 export * from './DotCMSPage.model';
+export * from './DotCMSPageFormat.model';
 export * from './DotCMSSite.model';
 export * from './DotCMSContent.model';
 export * from './DotCMSForm.model';

@@ -1,6 +1,7 @@
 import { DotCMSHttpClient } from '../../utils/DotCMSHttpClient';
 import { DotApiLanguage } from '../DotApiLanguage';
 import { DotApiPage } from '../DotApiPage';
+import { DotCMSPageFormat } from '../../models';
 
 describe('DotApiPage', () => {
     let httpClient: DotCMSHttpClient;
@@ -44,6 +45,20 @@ describe('DotApiPage', () => {
             expect(httpClient.request).toHaveBeenCalledWith({
                 url: '/api/v1/page/json/test',
                 language: '2'
+            });
+        });
+    });
+
+    it('should make request with the correct format', async () => {
+        await dotApiPage.get({ url: '/test' }, DotCMSPageFormat.JSON).then(() => {
+            expect(httpClient.request).toHaveBeenCalledWith({
+                url: '/api/v1/page/json/test'
+            });
+        });
+
+        await dotApiPage.get({ url: '/test' }, DotCMSPageFormat.Render).then(() => {
+            expect(httpClient.request).toHaveBeenCalledWith({
+                url: '/api/v1/page/render/test'
             });
         });
     });

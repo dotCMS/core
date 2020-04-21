@@ -1,6 +1,6 @@
 import { DotCMSPageParams } from './../models/DotCMSPage.model';
 import { DotCMSHttpClient } from '../utils/DotCMSHttpClient';
-import { DotCMSPageAsset, DotCMSError } from '../models';
+import { DotCMSPageAsset, DotCMSError, DotCMSPageFormat } from '../models';
 import { DotApiLanguage } from './DotApiLanguage';
 
 /**
@@ -20,7 +20,10 @@ export class DotApiPage {
      * Given the page url and the language return a {@link DotCMSPageAsset}
      *
      */
-    async get(params: DotCMSPageParams): Promise<DotCMSPageAsset> {
+    async get(
+        params: DotCMSPageParams,
+        format: DotCMSPageFormat = DotCMSPageFormat.JSON
+    ): Promise<DotCMSPageAsset> {
         if (params.language) {
             params = {
                 ...params,
@@ -32,7 +35,7 @@ export class DotApiPage {
 
         params = {
             ...params,
-            url: `/api/v1/page/json${params.url}`
+            url: `/api/v1/page/${format}${params.url}`
         };
 
         return this.dotCMSHttpClient.request(params).then(async (res: Response) => {
