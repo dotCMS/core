@@ -6352,7 +6352,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                             final DotContentletValidationException cve =
                                     new DotContentletValidationException(
-                                            Sneaky.sneak(()->LanguageUtil.get("message.contentlet.binary.file.exceeds.size", binary.getName(), maxLengthString)));
+                                            Sneaky.sneak(()->LanguageUtil.get("message.contentlet.binary.file.exceeds.size", binary.getName(), UtilMethods.prettyByteify(maxLength))));
                             Logger.warn(this, "Name of Binary field [" + fieldName + "] has a length: " + fileLength
                                     + " but the max length is: " + maxLength);
                             cve.addBadTypeField(legacyField);
