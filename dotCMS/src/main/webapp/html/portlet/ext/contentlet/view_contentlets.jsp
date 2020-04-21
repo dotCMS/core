@@ -590,7 +590,7 @@
 <%@ include file="/html/portlet/ext/contentlet/view_bulk_actions_inc.jsp" %>
 
 
-<form method="Post" action="" id="search_form" onsubmit="doSearch();return false;">
+    <form method="Post" action="" id="search_form" onsubmit="doSearch();return false;">
 
     <input type="hidden" name="fullCommand" id="fullCommand" value="">
     <input type="hidden" name="expiredInodes" id="expiredInodes" value=""/>
@@ -614,6 +614,7 @@
     <input type="hidden" value="" name="Identifier" id="Identifier" size="10"/>
     <input type="hidden" value="" name="allSearchedContentsInodes" id="allSearchedContentsInodes" dojoType="dijit.form.TextBox"/>
     <input type="hidden" value="" name="allUncheckedContentsInodes" id="allUncheckedContentsInodes" dojoType="dijit.form.TextBox"/>
+    <dot-asset-drop-zone>
     <!-- START Split Screen -->
     <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer">
 
@@ -779,7 +780,10 @@
                         </div>
 
                     </div>
+
+
                     <table id="results_table" class="listingTable content-search__results-list"></table>
+
                     <div id="results_table_popup_menus"></div>
                     <!-- END Listing Results -->
                 </div>
@@ -828,8 +832,16 @@
         <input type="hidden" name="contentStructureType" value="3"/>
         <% } %>
     </div>
-
+    </dot-asset-drop-zone>
 </form>
+
+    <script>
+        var dotAssetDropZone = document.querySelector('dot-asset-drop-zone');
+        dotAssetDropZone.addEventListener('uploadComplete', function() {
+            setTimeout(()=>{doSearch()}, 1000);
+        });
+    </script>
+
 
 <div class="messageZone" id="messageZone" style="display: none;">
     <i class="loadingIcon"></i>
