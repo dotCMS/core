@@ -36,7 +36,7 @@ public class AppDescriptor {
 
     private final String iconUrl;
 
-    private final boolean allowExtraParameters;
+    private final Boolean allowExtraParameters;
 
     private final Map<String, ParamDescriptor> params;
 
@@ -56,7 +56,7 @@ public class AppDescriptor {
             @JsonProperty("name") final String name,
             @JsonProperty("description") final String description,
             @JsonProperty("iconUrl") final String iconUrl,
-            @JsonProperty("allowExtraParameters") final boolean allowExtraParameters,
+            @JsonProperty("allowExtraParameters") final Boolean allowExtraParameters,
             @JsonProperty("params") final Map<String, ParamDescriptor> params) {
         this.key = key;
         this.name = name;
@@ -103,6 +103,14 @@ public class AppDescriptor {
      * @return
      */
     public boolean isAllowExtraParameters() {
+        return allowExtraParameters;
+    }
+
+    /**
+     * Tells the API if we allow any additional beside the ones already defined in the params map.
+     * @return
+     */
+    public Boolean getAllowExtraParameters() {
         return allowExtraParameters;
     }
 
