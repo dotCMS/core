@@ -310,6 +310,8 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 		final List<Permission> perms =  getPermissions(permissionable, true);
 		final boolean isContentlet = permissionable instanceof Contentlet;
+
+
 		for(Permission p : perms){
 			if(p.matchesPermission(permissionType)){
 				if(respectFrontendRoles){

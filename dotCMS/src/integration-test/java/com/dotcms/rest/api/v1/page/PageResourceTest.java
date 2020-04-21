@@ -436,6 +436,7 @@ public class PageResourceTest {
     public void testRenderWithContent() throws DotDataException, DotSecurityException {
 
         final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final long languageId = 1l;
 
         final Structure structure = new StructureDataGen().nextPersisted();
         final Container localContainer = new ContainerDataGen().withStructure(structure,"").friendlyName("container-1-friendly-name").title("container-1-title").nextPersisted();
@@ -461,12 +462,14 @@ public class PageResourceTest {
 
         final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
         final Contentlet contentlet = contentletDataGen.setProperty("title", "title")
-                .setProperty("body", "body").languageId(1).nextPersisted();
+                .setProperty("body", "body").languageId(languageId).nextPersisted();
 
 
         final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
         final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(), localContainer.getIdentifier(), contentlet.getIdentifier(), "1", 1);
         multiTreeAPI.saveMultiTree(multiTree);
+
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
                 .loadJson(request, this.response, pagePath, "PREVIEW_MODE", null,
@@ -647,6 +650,8 @@ public class PageResourceTest {
         final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(), localContainer1.getIdentifier(), contentlet.getIdentifier(), "1", 1);
         multiTreeAPI.saveMultiTree(multiTree);
 
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
+
         final Response response = pageResource
                 .loadJson(request, this.response, pageUri, null, null,
                         String.valueOf(languageId), null);
@@ -715,7 +720,7 @@ public class PageResourceTest {
                 .setProperty("name", "name")
                 .setProperty("keyTag", "keyTag")
                 .host(host)
-                .languageId(1)
+                .languageId(languageId)
                 .nextPersisted();
 
         final Container container = pageRenderTest.getFirstContainer();
@@ -725,6 +730,8 @@ public class PageResourceTest {
                 page.getIdentifier(),
                 Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getIdentifier()
         );
+
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
                 .render(request, this.response, page.getURI(), null, persona.getIdentifier(),
@@ -763,6 +770,8 @@ public class PageResourceTest {
             final Container container = pageRenderTest.getContainer(id);
             pageRenderTest.createContent(container);
         }
+
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
                 .render(request, this.response, page.getURI(), "EDIT_MODE", null,
@@ -857,6 +866,7 @@ public class PageResourceTest {
 
         final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
         final long languageId = defaultLang.getId();
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final String pageName = "testPage-"+System.currentTimeMillis();
         final HTMLPageAsset page = new HTMLPageDataGen(folder, template)
@@ -873,7 +883,7 @@ public class PageResourceTest {
         when(initDataObject.getUser()).thenReturn(systemUser);
 
         final Contentlet contentlet1 = new ContentletDataGen(contentGenericType.id())
-                .languageId(1)
+                .languageId(languageId)
                 .folder(folder)
                 .host(host)
                 .setProperty("title", "content1")

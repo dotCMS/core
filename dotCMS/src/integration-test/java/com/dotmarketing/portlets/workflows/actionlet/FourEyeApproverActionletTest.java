@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.workflows.business.BaseWorkflowIntegrationTest;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -151,6 +152,7 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
         Contentlet contentletToCleanUp = null;
 
         try {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
             // Create a contentlet first and save it
             final long languageId = languageAPI.getDefaultLanguage().getId();
             final Contentlet cont = new Contentlet();
