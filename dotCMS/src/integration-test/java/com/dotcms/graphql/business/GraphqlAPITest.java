@@ -703,7 +703,8 @@ public class GraphqlAPITest extends IntegrationTestBase {
             throws Exception{
         APILocator.getGraphqlAPI().invalidateSchema();
         final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema();
-        assertNotNull(schema.getQueryType().getFieldDefinition(baseType.name().toLowerCase()
+        assertNotNull("BaseType Collection exists: " + baseType.getAlternateName()
+                +"BaseTypeCollection", schema.getQueryType().getFieldDefinition(baseType.getAlternateName()
                 +"BaseTypeCollection"));
     }
 

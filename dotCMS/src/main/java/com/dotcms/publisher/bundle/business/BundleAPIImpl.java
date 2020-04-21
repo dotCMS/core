@@ -132,8 +132,9 @@ public class BundleAPIImpl implements BundleAPI {
 			throw new DotDataException(e);
 		}
 
-		Logger.info(this, "Removing all pushed assets for a bundle: " + bundleId);
-		this.pushedAssetsAPI.deletePushedAssetsByBundleId(bundleId);
+        //According to https://github.com/dotcms/core/issues/18025
+        //any deleteBundle operation should NOT touch or delete pushedAssets.
+        //pushedAsset should only get removed when calling deletePushedAssetsByEnvironment endpoint.
 
 		Logger.info(this, "Removing all assets from bundle: " + bundleId);
 		this.bundleFactory.deleteAllAssetsFromBundle(bundleId);

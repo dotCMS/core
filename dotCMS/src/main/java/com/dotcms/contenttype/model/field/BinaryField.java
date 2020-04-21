@@ -70,6 +70,6 @@ public abstract class BinaryField extends Field {
 	public Collection<ContentTypeFieldProperties> getFieldContentTypeProperties(){
 	return list(ContentTypeFieldProperties.REQUIRED, ContentTypeFieldProperties.NAME,
 			    ContentTypeFieldProperties.SEARCHABLE, ContentTypeFieldProperties.INDEXED,
-				ContentTypeFieldProperties.HINT);
+				ContentTypeFieldProperties.HINT, ContentTypeFieldProperties.LISTED);
 	}
 }

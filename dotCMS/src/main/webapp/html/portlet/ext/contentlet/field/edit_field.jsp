@@ -23,6 +23,8 @@
 <%@page import="com.dotmarketing.util.Parameter"%>
 <%@page import="com.dotmarketing.util.PortletID"%>
 <%@page import="com.dotmarketing.util.VelocityUtil"%>
+<%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
+<%@ page import="com.dotcms.contenttype.model.type.BaseContentType" %>
 
 
 <%
@@ -91,7 +93,7 @@
         %>
         <%---  Renders the field it self --%>
         <input type="text" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
-                <%=(isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'\\\\d*\\.?\\\\d*', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'" %>
+                <%=(isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'\\\\d*\\\\.?\\\\d*', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox'" %>
                value="<%= UtilMethods.htmlifyString(textValue) %>" <%= isReadOnly?"readonly=\"readonly\"":"" %> />
         <%
         }
@@ -428,12 +430,7 @@
                 binInode=sib;
             }
 
-            ResourceLink resourceLink = null;
-
-            if(structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET){
-                resourceLink = new ResourceLinkBuilder().build(request, user, contentlet);
-            }
-
+            ResourceLink resourceLink = new ResourceLinkBuilder().build(request, user, contentlet, field.getVelocityVarName());
         %>
 
         <!--  display -->
@@ -585,22 +582,32 @@
     %>
 
         <%if(canUserWriteToContentlet){%>
-        <div id="<%=field.getVelocityVarName()%>dt" class="field__editable-content">
+        <ul id="<%=field.getVelocityVarName()%>dt" style="margin: 1rem 0;">
 
-            <%
-              if(!resourceLink.isDownloadRestricted()){ %>
-               <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
-               <div style="padding:10px;">
-                <a id="resourceLink" href="<%=resourceLink.getResourceLinkAsString() %>" target="_new"><%=resourceLink.getResourceLinkUriAsString() %></a>
-               </div>
+            <% if(!resourceLink.isDownloadRestricted()){ %>
+
+                <% if(contentlet.isFileAsset()){ %>
+                    <li style="margin: 0.5rem 0;">
+                        <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
+                        <a id="resourceLink" href="<%=resourceLink.getResourceLinkAsString() %>" target="_blank"><%=resourceLink.getResourceLinkUriAsString() %></a>
+                    </li>
+                <% }  %>
+                <li style="margin: 0.5rem 0;">
+                    <%= LanguageUtil.get(pageContext, "VersionPath") %>:
+                    <a id="versionPath" href="<%=resourceLink.getVersionPath() %>" target="_blank"><%=resourceLink.getVersionPath() %></a>
+                </li>
+                <li style="margin: 0.5rem 0;">
+                    <%= LanguageUtil.get(pageContext, "IdPath") %>:
+                    <a id="idPath" href="<%=resourceLink.getIdPath() %>" target="_blank"><%=resourceLink.getIdPath() %></a>
+                </li>
              <% } else { %>
                 <br>
              <% }  %>
-        </div>
+
+        </ul>
             <% if (resourceLink.isEditableAsText()) { %>
                 <%
                     if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
-                        final FileAsset fa = resourceLink.getFileAsset();
                 %>
                     <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
                 <%  } %>

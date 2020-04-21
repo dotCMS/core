@@ -24,6 +24,7 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.CompanyDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
@@ -31,6 +32,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.TestWorkflowUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -62,10 +64,13 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.Sets;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -133,6 +138,7 @@ public class ContentResourceTest extends IntegrationTestBase {
     private static RelationshipAPI relationshipAPI;
     private static RoleAPI roleAPI;
     private static User user;
+    private static User adminUser;
     private static UserAPI userAPI;
     private static Role adminRole;
     private static Host host;
@@ -167,7 +173,7 @@ public class ContentResourceTest extends IntegrationTestBase {
 
         // Test host
         host = new SiteDataGen().nextPersisted();
-
+        adminUser = TestUserUtils.getAdminUser();
     }
 
     @AfterClass
@@ -537,11 +543,24 @@ public class ContentResourceTest extends IntegrationTestBase {
             if (testCase.limitedUser){
                 newRole = createRole();
 
-                createdLimitedUser = TestUserUtils
-                        .getUser(newRole, "email" + System.currentTimeMillis() + "@dotcms.com",
-                                "name" + System.currentTimeMillis(),
-                                "lastName" + System.currentTimeMillis(),
-                                "password" + System.currentTimeMillis());
+                final Company company = new CompanyDataGen()
+                        .name("TestCompany")
+                        .shortName("TC")
+                        .authType("email")
+                        .autoLogin(true)
+                        .emailAddress("lol@dotCMS.com")
+                        .homeURL("localhost")
+                        .city("NYC")
+                        .mx("MX")
+                        .type("test")
+                        .phone("5552368")
+                        .portalURL("/portalURL")
+                        .nextPersisted();
+
+                createdLimitedUser =
+                    new UserDataGen().firstName("name").lastName("lastName").companyId(company.getCompanyId())
+                        .emailAddress("email" + System.currentTimeMillis() + "@dotcms.com").skinId(UUIDGenerator.generateUuid())
+                        .password("password" + System.currentTimeMillis()).roles(newRole, TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
 
                 //set individual permissions to the child
                 permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -572,7 +591,7 @@ public class ContentResourceTest extends IntegrationTestBase {
             //calls endpoint
             final ContentResource contentResource = new ContentResource();
             final HttpServletRequest request = createHttpRequest(null,
-                    testCase.limitedUser ? createdLimitedUser : null);
+                    testCase.limitedUser ? createdLimitedUser : adminUser);
             final HttpServletResponse response = mock(HttpServletResponse.class);
             final Response endpointResponse = contentResource.getContent(request, response,
                     "/id/" + parent.getIdentifier() + "/live/false/type/" + testCase.responseType
@@ -1333,6 +1352,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         }
 
         when(request.getContentType()).thenReturn(MediaType.APPLICATION_JSON);
+        request.setAttribute(WebKeys.USER,user);
 
         return request;
 

@@ -183,10 +183,21 @@ public class ContentletAPITest extends ContentletBaseTest {
         dotAssetContentlet.setIndexPolicy(IndexPolicy.FORCE);
         dotAssetContentlet.setIndexPolicyDependencies(IndexPolicy.FORCE);
         dotAssetContentlet = contentletAPI.checkin(dotAssetContentlet, user, false);
+        dotAssetContentlet = contentletAPI.find(dotAssetContentlet.getInode(), user, false);
 
         assertNotNull(dotAssetContentlet);
         assertEquals("The Content Type should be: " + variable,
                 dotAssetContentType.variable(), dotAssetContentlet.getContentType().variable());
+
+        final String contentletTitle = dotAssetContentlet.getTitle();
+
+        assertEquals("the contentlet title should be the binary field name", contentletTitle, tempTestFile.getName());
+
+        dotAssetContentlet.getMap().remove(Contentlet.TITTLE_KEY);
+
+        final String contentletTitle2 = dotAssetContentlet.getTitle();
+
+        assertEquals("the contentlet title should be the binary field name", contentletTitle2, contentletTitle);
     }
 
     @Test
@@ -6948,22 +6959,26 @@ public class ContentletAPITest extends ContentletBaseTest {
             contentInSpanish.setLanguageId(spanishLanguage.getId());
             contentInSpanish = ContentletDataGen.checkin(contentInSpanish);
 
+            
+            
+            
+            
             assertEquals(2,
-                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier()  + " " + UUIDGenerator.uuid(),-1,0,"",user,true).size());
 
             contentInSpanish.setIndexPolicy(IndexPolicy.FORCE);
             ContentletDataGen.archive(contentInSpanish);
             ContentletDataGen.delete(contentInSpanish);
 
             assertEquals(1,
-                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier() + " " + UUIDGenerator.uuid(),-1,0,"",user,true).size());
 
             contentInEnglish.setIndexPolicy(IndexPolicy.FORCE);
             ContentletDataGen.archive(contentInEnglish);
             ContentletDataGen.delete(contentInEnglish);
 
             assertEquals(0,
-                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier(),-1,0,"",user,true).size());
+                    contentletAPI.searchIndex("+identifier:"+contentInEnglish.getIdentifier() + " " + UUIDGenerator.uuid(),-1,0,"",user,true).size());
 
         } finally {
             if (contentType != null) {

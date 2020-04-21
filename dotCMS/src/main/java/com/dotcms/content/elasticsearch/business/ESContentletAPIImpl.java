@@ -51,25 +51,20 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.services.VanityUrlServices;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.content.CommitListenerEvent;
+
+import com.dotcms.util.*;
+
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
-import com.dotcms.util.MimeTypeUtils;
+import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.ThreadContextUtil;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.Tree;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
@@ -2916,11 +2911,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
             }
 
-            if(!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-
-                throw new DotSecurityException("User cannot edit Contentlet");
-            }
-
             canLock(contentlet, user);
 
             // persists the webasset
@@ -4142,9 +4132,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 final Host host = Try.of(()->APILocator.getHostAPI().find(
                         contentletIn.getHost(), user, false)).getOrNull();
                 if (null != host) {
+
+                    final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+                    final String sessionId = request!=null && request.getSession(false)!=null? request.getSession().getId() : null;
+                    final List<String> accessingList = null != request?
+                            Arrays.asList(user.getUserId(), APILocator.getTempFileAPI().getRequestFingerprint(request), sessionId):
+                            Arrays.asList(user.getUserId(), sessionId);
+
+
                     final Optional<ContentType> contentTypeOpt = typeStrategy.get().apply(baseContentType,
                             CollectionsUtils.map("user", user, "host", host,
-                                    "contentletMap", contentletIn.getMap()));
+                                    "contentletMap", contentletIn.getMap(), "accessingList", accessingList));
 
                     if (contentTypeOpt.isPresent()) {
                         contentletIn.setContentType(contentTypeOpt.get());
@@ -4391,35 +4389,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotContentletStateException("Contentlet must exist already");
             if (contentlet != null && contentlet.isArchived() && contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null)
                 throw new DotContentletStateException("Unable to checkin an archived piece of content, please un-archive first");
-            if (!permissionAPI.doesUserHavePermission(InodeUtils.isSet(contentlet.getIdentifier()) ? contentlet : contentlet.getStructure(),
-                    PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-                List<Role> rolesPublish = permissionAPI.getRoles(contentlet.getStructure().getPermissionId(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
-                List<Role> rolesWrite = permissionAPI.getRoles(contentlet.getStructure().getPermissionId(), PermissionAPI.PERMISSION_WRITE, "CMS Owner", 0, -1);
-                Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
-                boolean isCMSOwner = false;
-                if (rolesPublish.size() > 0 || rolesWrite.size() > 0) {
-                    for (Role role : rolesPublish) {
-                        if (role.getId().equals(cmsOwner.getId())) {
-                            isCMSOwner = true;
-                            break;
-                        }
-                    }
-                    if (!isCMSOwner) {
-                        for (Role role : rolesWrite) {
-                            if (role.getId().equals(cmsOwner.getId())) {
-                                isCMSOwner = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!isCMSOwner) {
-                        this.throwSecurityException(contentlet, user);
-                    }
-                } else {
 
-                    this.throwSecurityException(contentlet, user);
-                }
-            }
+            checkPermission(contentlet, respectFrontendRoles, user);
 
             if (createNewVersion && cats == null) {
                 throw new IllegalArgumentException(
@@ -4603,6 +4574,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 removeURLFromContentlet( contentlet );
 
                 contentlet.setIdentifier(identifier.getId() );
+                contentlet = applyNullProperties(contentlet);
                 contentlet = contentFactory.save(contentlet);
                 contentlet.setIndexPolicy(indexPolicy);
                 contentlet.setIndexPolicyDependencies(indexPolicyDependencies);
@@ -5065,6 +5037,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
             bubbleUpException(e);
         }
         return contentlet;
+    }
+
+    private void checkPermission(
+            final Contentlet contentlet,
+            final boolean respectFrontendRoles,
+            final User user) throws DotDataException, DotSecurityException {
+
+        DotPreconditions.checkNotNull(contentlet);
+
+        if (InodeUtils.isSet(contentlet.getIdentifier())){
+            if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+                this.throwSecurityException(contentlet, user);
+            }
+        } else if (!permissionAPI.doesUserHavePermission(contentlet.getContentType(),
+                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+            this.throwSecurityException(contentlet, user);
+        }
     }
 
     @VisibleForTesting
@@ -5575,7 +5564,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public String getName(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException,DotContentletStateException, DotDataException {
+    public String getName(final Contentlet contentlet, final User user, final boolean respectFrontendRoles) throws DotSecurityException,DotContentletStateException, DotDataException {
 
         Preconditions.checkNotNull(contentlet, "The contentlet is null");
 
@@ -5586,42 +5575,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     + " cannot read Contentlet: " + contentlet.getIdentifier());
         }
 
-        if (UtilMethods.isSet(contentlet.getIdentifier()) && contentlet.isFileAsset()) {
-           try {
-               final String assetName = APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getAssetName();
-               contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, assetName);
-           }catch (Exception e){
-               Logger.warn(this.getClass(), "Unable to get assetName for contentlet with identifier: " + contentlet.getIdentifier(), e);
-           }
-        }
-
-        String returnValue = (String) contentlet.getMap().get(Contentlet.DOT_NAME_KEY);
-        if(UtilMethods.isSet(returnValue)){
-            return returnValue;
-        }
-
-
-        List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-
-        for (Field fld : fields) {
-
-            try{
-
-                if(fld.isListed() && contentlet.getMap().get(fld.getVelocityVarName())!=null){
-                    returnValue = contentlet.getMap().get(fld.getVelocityVarName()).toString();
-                    returnValue = returnValue.length() > 250 ? returnValue.substring(0,250) : returnValue;
-                    if(UtilMethods.isSet(returnValue)){
-                        contentlet.setStringProperty(Contentlet.DOT_NAME_KEY, returnValue);
-                        return returnValue;
-                    }
-                }
-            }
-            catch(Exception e){
-                Logger.warn(this.getClass(), "unable to get field value " + fld.getVelocityVarName() + " " + e, e);
-            }
-        }
-        contentlet.setStringProperty("__NAME__", contentlet.getIdentifier());
-        return contentlet.getIdentifier();
+        return contentlet.getTitle();
     }
 
     /**
@@ -6217,7 +6171,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             // validate unique
             if(field.isUnique()){
                 try{
-                    StringBuilder buffy = new StringBuilder();
+                    StringBuilder buffy = new StringBuilder(UUIDGenerator.generateUuid());
                     buffy.append(" +structureInode:" + contentlet.getStructureInode());
                     if(UtilMethods.isSet(contentlet.getIdentifier())){
                         buffy.append(" -(identifier:" + contentlet.getIdentifier() + ")");
@@ -7704,7 +7658,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     private boolean isInodeIndexedWithQuery(String luceneQuery) {
-        return isInodeIndexedWithQuery(luceneQuery, -1);
+        return isInodeIndexedWithQuery(luceneQuery + " " + UUIDGenerator.shorty(), -1);
     }
 
     private final List<Integer> fibonacciMapping = Arrays.asList(1, 2, 3, 5, 8, 13, 21, 34, 55); // it is around 14 + 9 (by the timeout delay) seconds, enough to wait
@@ -7868,7 +7822,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
 
         if (!InodeUtils.isSet(contentlet.getInode())) {
-            return checkin(contentlet, contentletRelationships, cats, permissions, user, false);
+            return checkin(contentlet, contentletRelationships, cats, permissions, user, respectFrontendRoles);
         } else {
             canLock(contentlet, user);
             //get the latest and greatest from db
@@ -7887,7 +7841,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (working.getInode().equals(contentlet.getInode())) {
 
                     return checkin(contentlet, contentletRelationships, cats ,
-                            user, false, false, false);
+                            user, respectFrontendRoles, false, false);
 
                 } else {
                     final String workingInode = working.getInode();
@@ -7895,14 +7849,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     working.setInode(workingInode);
                     working.setModUser(user.getUserId());
                     return checkin(contentlet, contentletRelationships, cats ,
-                            user, false, false, false);
+                            user, respectFrontendRoles, false, false);
                 }
             }
 
             contentlet.setInode(null);
             return checkin(contentlet, contentletRelationships,
                     cats,
-                    permissions, user, false);
+                    permissions, user, respectFrontendRoles);
         }
     }
 
@@ -7984,7 +7938,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
 
                 return true;
-            } else if(!APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
+            } else if(!APILocator.getPermissionAPI().doesUserHavePermission(
+                            contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)) {
 
                 throw new DotLockException("User: "+ (user != null ? user.getUserId() : "Unknown")
                         +" does not have Edit Permissions to lock content: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));

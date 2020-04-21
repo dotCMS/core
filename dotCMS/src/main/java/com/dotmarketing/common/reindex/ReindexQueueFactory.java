@@ -81,17 +81,6 @@ public class ReindexQueueFactory {
         }
     }
 
-    private String reindexSelectSQL() {
-        if (DbConnectionFactory.isOracle()) {
-            return "SELECT * FROM table(load_records_to_index(?, ?, ?))";
-        } else if (DbConnectionFactory.isMySql()) {
-            return "{call load_records_to_index(?,?,?)}";
-        } else {
-            return "SELECT * FROM load_records_to_index(?, ?, ?)";
-        }
-
-    }
-
     protected void addAllToReindexQueue() throws DotDataException {
         DotConnect dc = new DotConnect();
         try {

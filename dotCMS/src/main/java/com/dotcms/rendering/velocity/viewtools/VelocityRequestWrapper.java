@@ -20,6 +20,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.*;
 
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.util.WebKeys;
@@ -283,7 +284,8 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
     }
 
     public ServletContext getServletContext() {
-        return _request.getServletContext();
+        SecurityLogger.logInfo(this.getClass(), "User trying to access ServletContext from Velocity");
+        return null;
     }
 
     public boolean isAsyncStarted() {

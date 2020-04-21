@@ -84,6 +84,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionMessages;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
@@ -97,6 +98,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -503,7 +505,8 @@ public class ContentletAjax {
 	 private <T> List<T> distinct (final List<T> collection, final Function<T, Object> indexKeyFunction) {
 
 		 final Map<Object, T> collectionIndexMap = collection.stream().collect(
-		 		Collectors.toMap(indexKeyFunction, Function.identity(), (existing, replacement) -> existing));
+		 		Collectors.toMap(indexKeyFunction, Function.identity(), (existing, replacement) -> existing,
+						LinkedHashMap::new));
 
 		return new ArrayList<>(collectionIndexMap.values());
 	 }
@@ -995,7 +998,7 @@ public class ContentletAjax {
 			headers.add(fieldMap);
 
 			// if there is a type selected, does not make sense to show it on the list.
-			if (Structure.STRUCTURE_TYPE_ALL.equals(structureInode)) {
+			if (Structure.STRUCTURE_TYPE_ALL.equals(structureInode) || this.hasManyContentTypes(structureInode)) {
 				fieldMap = new HashMap<>();
 				fieldMap.put("fieldVelocityVarName", "__type__");
 				fieldMap.put("fieldName", Try.of(() -> LanguageUtil.get(currentUser, "Type")).getOrElse("Type"));
@@ -1035,12 +1038,13 @@ public class ContentletAjax {
 				ContentType type = con.getContentType();
 				searchResult.put("typeVariable", type.variable());
 				searchResult.put("baseType",type.baseType().name());
-				for (String fieldContentlet : fieldsMapping.keySet()) {
+				for (final String fieldContentlet : fieldsMapping.keySet()) {
 					String fieldValue = null;
 					if (con.getMap() != null && con.getMap().get(fieldContentlet) != null) {
 						fieldValue = (con.getMap().get(fieldContentlet)).toString();
 					}
-					Field field = (Field) fieldsMapping.get(fieldContentlet);
+
+					final Field field = fieldsMapping.get(fieldContentlet);
 					if (UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE.toString()) ||
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.TIME.toString()) ||
 							UtilMethods.isSet(fieldValue) && field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
@@ -1068,6 +1072,13 @@ public class ContentletAjax {
 							UtilMethods.isSet(ident) &&
 							UtilMethods.isSet(ident.getAssetName())) {
 						fieldValue = ident.getAssetName();
+					}
+
+					// when a content type is selected and the field is listed and binary, instead of displaying the path, must display just the name
+					if (!Structure.STRUCTURE_TYPE_ALL.equals(structureInode) && field.isListed() && field.getFieldType().equals(
+							Field.FieldType.BINARY.toString())) {
+
+						searchResult.put(fieldContentlet+"_title_", con.getBinary(fieldContentlet).getName());
 					}
 
 					searchResult.put(fieldContentlet, fieldValue);
@@ -1180,7 +1191,7 @@ public class ContentletAjax {
 				Long languageId = con.getLanguageId();
 				searchResult.put("languageId", languageId.toString());
 				final Language language = APILocator.getLanguageAPI().getLanguage(languageId);
-				searchResult.put("language", language.getCountryCode() + '_' + language.getLanguageCode());
+				searchResult.put("language", language.toString());
 				searchResult.put("permissions", permissionsSt.toString());
 
 				//Add mimeType
@@ -1262,7 +1273,12 @@ public class ContentletAjax {
 		return results;
 	}
 
-    /**
+	private boolean hasManyContentTypes(final String structureInode) {
+
+		return null != structureInode && structureInode.split(StringPool.COMMA).length > 1;
+	}
+
+	/**
      *
      * @param fields
      * @param orderBy
@@ -1885,7 +1901,8 @@ public class ContentletAjax {
 						  .cast(rootCause);
 				  clearBinary = handleValidationException(user, ve, saveContentErrors);
 			  } else {
-				  Logger.error(this, e.getMessage(), e);
+				  Logger.debug(this, e.getMessage(), e);
+				  Logger.error(this, e.getMessage());
 				  saveContentErrors.add(e.getMessage());
 				  callbackData.put("saveContentErrors", saveContentErrors);
 				  callbackData.put("referer", referer);

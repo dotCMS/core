@@ -11,15 +11,12 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
 import io.vavr.control.Try;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -354,6 +351,26 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
                     Logger.error(ContentTypeDataGen.class, "Unable to destroy Contentlet.", e);
                 } else {
                     throw new RuntimeException("Unable to destroy Contentlete.", e);
+                }
+            }
+        }
+    }
+
+    public static void unpublish(final Contentlet contentlet) {
+       unpublish(contentlet, true);
+    }
+
+    @WrapInTransaction
+    public static void unpublish(final Contentlet contentlet, final Boolean failSilently) {
+
+        if (null != contentlet) {
+            try {
+                APILocator.getContentletAPI().unpublish(contentlet, APILocator.systemUser(), false);
+            } catch (Exception e) {
+                if (failSilently) {
+                    Logger.error(ContentTypeDataGen.class, "Unable to unpublish Contentlet.", e);
+                } else {
+                    throw new RuntimeException("Unable to unpublish Contentlete.", e);
                 }
             }
         }

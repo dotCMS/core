@@ -87,8 +87,8 @@ public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
                         * 1000);
         config.setMaxLifetime(Integer.parseInt(
                 dockerSecretsMap.getOrDefault(CONNECTION_DB_MAX_WAIT, "60000")));
-        config.setConnectionTestQuery(dockerSecretsMap.getOrDefault(
-                DataSourceStrategyProvider.CONNECTION_DB_VALIDATION_QUERY, "SELECT 1"));
+        config.setConnectionTestQuery(dockerSecretsMap.get(
+                DataSourceStrategyProvider.CONNECTION_DB_VALIDATION_QUERY));
 
         // This property controls the amount of time that a connection can be out of the pool before a message
         // is logged indicating a possible connection leak. A value of 0 means leak detection is disabled.

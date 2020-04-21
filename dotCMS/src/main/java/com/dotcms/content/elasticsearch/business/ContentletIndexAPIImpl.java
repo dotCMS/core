@@ -22,6 +22,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -502,8 +503,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
                 try {
                     Logger.info(this.getClass(), "Updating and optimizing ElasticSearch Indexes");
-                    esIndexApi.moveIndexBackToCluster(newInfo.getWorking());
-                    esIndexApi.moveIndexBackToCluster(newInfo.getLive());
                     optimize(ImmutableList.of(newInfo.getWorking(), newInfo.getLive()));
                 } catch (Exception e) {
                     Logger.warnAndDebug(this.getClass(), "unable to expand ES replicas:" + e.getMessage(), e);
@@ -1082,6 +1081,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
         Sneaky.sneak(() -> RestHighLevelClientProvider.getInstance().getClient()
                 .bulk(bulkRequest, RequestOptions.DEFAULT));
+        
+        //Delete query cache when a new content has been reindexed
+        CacheLocator.getESQueryCache().clearCache();
     }
 
     private void reindexDependenciesForDeletedContent(final Contentlet contentlet, final List<Relationship> relationships,
@@ -1161,6 +1163,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         Logger.info(this, "Records deleted: " +
                 response.getDeleted() + " from contentType: " + structureName);
+        
+        //Delete query cache when a new content has been reindexed
+        CacheLocator.getESQueryCache().clearCache();
     }
 
     public void fullReindexAbort() {
@@ -1181,10 +1186,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final String rel = info.getReindexLive();
 
             APILocator.getIndiciesAPI().point(newinfo);
-
-            esIndexApi.moveIndexBackToCluster(rew);
-            esIndexApi.moveIndexBackToCluster(rel);
-
         } catch (Exception e) {
             throw new ElasticsearchException(e.getMessage(), e);
         }
@@ -1232,10 +1233,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         } else if (IndexType.LIVE.is(indexName)) {
             builder.setLive(null);
         } else if (IndexType.REINDEX_WORKING.is(indexName)) {
-            esIndexApi.moveIndexBackToCluster(info.getReindexWorking());
             builder.setReindexWorking(null);
         } else if (IndexType.REINDEX_LIVE.is(indexName)) {
-            esIndexApi.moveIndexBackToCluster(info.getReindexLive());
             builder.setReindexLive(null);
         }
         APILocator.getIndiciesAPI().point(builder.build());
