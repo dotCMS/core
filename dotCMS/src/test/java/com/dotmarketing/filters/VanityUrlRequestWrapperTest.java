@@ -1,7 +1,11 @@
 package com.dotmarketing.filters;
 
+import java.nio.charset.Charset;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.junit.Test;
 import com.dotcms.mock.request.MockHttpRequest;
 import com.dotcms.mock.request.MockParameterRequest;
@@ -62,6 +66,35 @@ public class VanityUrlRequestWrapperTest {
 
     }
 
+    /**
+     * This tests to insure that the new query string has both the old and the new query parameters
+     * 
+     * see: https://github.com/dotCMS/core/issues/18325
+     */
+    @Test
+    public void test_that_query_string_has_all_the_parameters() {
 
+
+        final HttpServletRequest baseRequest = new MockHttpRequest("testing", "/test?param1=" + URL + "&param2=" + URL).request();
+
+        final VanityUrlResult vanityUrlResult = new VanityUrlResult("/newUrl", "param2=" + VANITY + "&param3=" + VANITY, false);
+
+        final HttpServletRequest request = new VanityUrlRequestWrapper(baseRequest, vanityUrlResult);
+
+        final String queryString= request.getQueryString();
+        assert(queryString!=null);
+        assert(!queryString.startsWith("&"));
+        assert(!queryString.endsWith("&"));
+        assert(queryString.contains("param1=" + URL));
+        assert(queryString.contains("param2=" + URL));
+        assert(queryString.contains("param2=" + VANITY));
+        assert(queryString.contains("param3=" + VANITY));
+        List<NameValuePair> queryParams = URLEncodedUtils.parse(queryString, Charset.forName("UTF-8"));
+        assert(queryParams.size()==4);
+        
+
+    
+        
+    }
 
 }
