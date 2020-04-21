@@ -29,16 +29,16 @@ public class VanityUrlRequestWrapperTest {
     @Test
     public void test_that_vanity_urls_with_query_params_override_incoming_requests() {
 
-        final Map<String, String> formParameters = ImmutableMap.of("param1", FORM, "param2", FORM);
+        // three form params
+        final Map<String, String> formParameters = ImmutableMap.of("param0", FORM, "param1", FORM, "param2", FORM);
 
 
-
+        // two url params (2 overlap)
         final HttpServletRequest baseRequest = new MockParameterRequest(
                         new MockHttpRequest("testing", "/test?param1=" + URL + "&param2=" + URL).request(), formParameters)
                                         .request();
 
-
-
+        // two vanity params (1 overlaps)
         final VanityUrlResult vanityUrlResult = new VanityUrlResult("/newUrl", "param2=" + VANITY + "&param3=" + VANITY, false);
 
 
@@ -47,9 +47,9 @@ public class VanityUrlRequestWrapperTest {
 
 
         // we have 3 objects in our param map
-        assert (request.getParameterMap().size() == 3);
+        assert (request.getParameterMap().size() == 4);
 
-
+        assert (request.getParameter("param0").equals(FORM));
         assert (request.getParameter("param1").equals(URL));
 
         // param2 have been overridden by the vanity url
