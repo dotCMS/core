@@ -153,12 +153,12 @@ public class PublisherAPIImpl implements PublisherAPI {
     }
 
     @Override
-    public void addFilter(final FilterDescriptor filterDescriptor) {
+    public void addFilterDescriptor(final FilterDescriptor filterDescriptor) {
         this.loadedFilters.put(filterDescriptor.getKey(),filterDescriptor);
     }
 
     @Override
-    public List<FilterDescriptor> getFiltersByRole(final User user) throws DotDataException {
+    public List<FilterDescriptor> getFiltersDescriptorsByRole(final User user) throws DotDataException {
         if(APILocator.getUserAPI().isCMSAdmin(user)){
             return new ArrayList<>(this.loadedFilters.values());
         }
@@ -179,7 +179,7 @@ public class PublisherAPIImpl implements PublisherAPI {
     }
 
     @Override
-    public Map<String, FilterDescriptor> getFilterMap() {
+    public Map<String, FilterDescriptor> getFilterDescriptorMap() {
         return this.loadedFilters;
     }
 

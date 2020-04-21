@@ -49,7 +49,7 @@ public interface PublisherAPI {
      * Adds a filter to the map of filters, using the filterDescriptor.Key as the key
      * @param filterDescriptor
      */
-    void addFilter(final FilterDescriptor filterDescriptor);
+    void addFilterDescriptor(final FilterDescriptor filterDescriptor);
 
     /**
      * Gets all the filters that user has access to.
@@ -57,13 +57,13 @@ public interface PublisherAPI {
      * @return list of filterDescriptors that the user has access.
      * @throws DotDataException
      */
-    List<FilterDescriptor> getFiltersByRole(final User user) throws DotDataException;
+    List<FilterDescriptor> getFiltersDescriptorsByRole(final User user) throws DotDataException;
 
     /**
      * Gets the FilterMap that contains all the Filters loaded to the system.
      * @return map of FilterDescriptors, the FilterDescriptor.Key is used as the key of the map.
      */
-    Map<String, FilterDescriptor> getFilterMap();
+    Map<String, FilterDescriptor> getFilterDescriptorMap();
 
     /**
      * Get a FilterDescriptor using the FilterDescriptor.Key as key

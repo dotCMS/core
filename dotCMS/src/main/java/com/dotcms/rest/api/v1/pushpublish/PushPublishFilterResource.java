@@ -51,7 +51,7 @@ public class PushPublishFilterResource {
                             .init();
             final User user = initData.getUser();
 
-            final List<FilterDescriptor> list = APILocator.getPublisherAPI().getFiltersByRole(user);
+            final List<FilterDescriptor> list = APILocator.getPublisherAPI().getFiltersDescriptorsByRole(user);
 
             return Response.ok(new ResponseEntityView(list.stream().map(filterDescriptor -> CollectionsUtils.map
                     ("key",filterDescriptor.getKey(),"title",filterDescriptor.getTitle(),"default",filterDescriptor.isDefaultFilter())).collect(

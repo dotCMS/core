@@ -58,6 +58,6 @@ public class PushPublishFiltersInitializer implements DotInitializer {
         final FilterDescriptor filterDescriptor = YamlUtil.parse(path,FilterDescriptor.class);
         filterDescriptor.setKey(fileName);
         Logger.info(PushPublishFiltersInitializer.class, filterDescriptor.toString());
-        APILocator.getPublisherAPI().addFilter(filterDescriptor);
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
     }
 }
