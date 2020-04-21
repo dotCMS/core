@@ -14,18 +14,18 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.Maps;
-import io.vavr.Function0;
+import com.google.common.collect.ImmutableMap;
 
 
 /**
  * The VanityUrlOverrideRequest merges the parameters set in the original request and merges them
  * with the parameters that are being set in the vanityUrl. In all cases, if there are parameters
- * set in the VanityURL Query String, they will override the ones being sent in by the visitors
- * browser
+ * set in the VanityURL Query String, they will override the ones being sent in by original visitors
+ * request
  *
  */
 class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
+    
     final Map<String, String[]> queryParamMap;
     final String newQueryString;
     final boolean vanityHasQueryString;
@@ -45,16 +45,16 @@ class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
 
 
         // we create a new map here because it merges the 
-        this.queryParamMap = new HashMap<>();
+        Map<String,String[]> tempMap = new HashMap<>(request.getParameterMap());
         if(vanityHasQueryString) {
             List<NameValuePair> additional = URLEncodedUtils.parse(newQueryString, Charset.forName("UTF-8"));
             for(NameValuePair nvp : additional) {
-                this.queryParamMap.compute(nvp.getName(), (k, v) -> (v == null) ? new String[] {nvp.getValue()} : new String[]{nvp.getValue(),v[0]});
+                tempMap.compute(nvp.getName(), (k, v) -> (v == null) ? new String[] {nvp.getValue()} : new String[]{nvp.getValue(),v[0]});
             }
         }
         
 
-        
+        this.queryParamMap = ImmutableMap.copyOf(tempMap);
 
 
 
@@ -70,45 +70,31 @@ class VanityUrlRequestWrapper extends HttpServletRequestWrapper {
 
     @Override
     public String getParameter(final String name) {
-        String[] val = getParameterMap().get(name);
+        String[] val = this.queryParamMap.get(name);
         return val != null && val.length > 0 ? val[0] : null;
     }
 
-    
-    Function0<Map<String,String[]>> paramMapper =  Function0.of(this::buildParamMap).memoized();
-    
+
     /**
      * needs to use a hashmap so the entries get de-duped. ImmutableMap throws an error if two entrys
      * with the same key are put into it.
      */
     @Override
     public Map<String, String[]> getParameterMap() {
-        return paramMapper.apply();
+        return this.queryParamMap;
     }
     
-    /**
-     * builds the combined param map, adding the incoming request parameters first, then overrides them
-     * with any that have been set in the vanity url
-     * 
-     * @return
-     */
-    
-    public Map<String, String[]> buildParamMap() {
-        Map<String, String[]> returnMap = Maps.newHashMap();
-        returnMap.putAll(super.getParameterMap());
-        returnMap.putAll(queryParamMap);
-        return returnMap;
-    }
+
 
     @Override
     public Enumeration<String> getParameterNames() {
-        return Collections.enumeration(getParameterMap().keySet());
+        return Collections.enumeration(this.queryParamMap.keySet());
 
     }
 
     @Override
     public String[] getParameterValues(String name) {
-        return  getParameterMap().get(name);
+        return  this.queryParamMap.get(name);
        
     }
 
