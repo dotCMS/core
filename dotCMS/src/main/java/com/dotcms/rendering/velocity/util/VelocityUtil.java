@@ -338,7 +338,7 @@ public class VelocityUtil {
             if ( request.getAttribute( "User-Agent" ) != null && request.getAttribute( "User-Agent" ).equals( Constants.USER_AGENT_DOTCMS_BROWSER ) ) {
                 rw.setCustomUserAgentHeader( Constants.USER_AGENT_DOTCMS_BROWSER );
             }
-            context = new ChainedContext( ctx, getEngine(), rw, response, Config.CONTEXT );
+            context = new ChainedContext( ctx, getEngine(), rw, response );
         }
 
         context.put("context", context);

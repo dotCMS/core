@@ -535,7 +535,15 @@
     
 
     <%-- File uploader --%>
+
     <div
+            resourceLink="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkAsString() : "" %>"
+            resourceLinkLabel="<%= contentlet.isFileAsset() ? LanguageUtil.get(pageContext, "Resource-Link") : "" %>"
+            versionPath="<%= !resourceLink.isDownloadRestricted() ? resourceLink.getVersionPath() : "" %>"
+            versionPathLabel="<%= LanguageUtil.get(pageContext, "VersionPath") %>"
+            idPath="<%= !resourceLink.isDownloadRestricted() ? resourceLink.getIdPath() : "" %>"
+            idPathLabel="<%= LanguageUtil.get(pageContext, "IdPath") %>:"
+
             id="<%=field.getVelocityVarName()%>"
             name="<%=field.getFieldContentlet()%>"
             fileNameVisible="false"
@@ -582,29 +590,6 @@
     %>
 
         <%if(canUserWriteToContentlet){%>
-        <ul id="<%=field.getVelocityVarName()%>dt" style="margin: 1rem 0;">
-
-            <% if(!resourceLink.isDownloadRestricted()){ %>
-
-                <% if(contentlet.isFileAsset()){ %>
-                    <li style="margin: 0.5rem 0;">
-                        <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
-                        <a id="resourceLink" href="<%=resourceLink.getResourceLinkAsString() %>" target="_blank"><%=resourceLink.getResourceLinkUriAsString() %></a>
-                    </li>
-                <% }  %>
-                <li style="margin: 0.5rem 0;">
-                    <%= LanguageUtil.get(pageContext, "VersionPath") %>:
-                    <a id="versionPath" href="<%=resourceLink.getVersionPath() %>" target="_blank"><%=resourceLink.getVersionPath() %></a>
-                </li>
-                <li style="margin: 0.5rem 0;">
-                    <%= LanguageUtil.get(pageContext, "IdPath") %>:
-                    <a id="idPath" href="<%=resourceLink.getIdPath() %>" target="_blank"><%=resourceLink.getIdPath() %></a>
-                </li>
-             <% } else { %>
-                <br>
-             <% }  %>
-
-        </ul>
             <% if (resourceLink.isEditableAsText()) { %>
                 <%
                     if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
