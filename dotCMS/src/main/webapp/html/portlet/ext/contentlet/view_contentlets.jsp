@@ -589,7 +589,7 @@
 
 <%@ include file="/html/portlet/ext/contentlet/view_bulk_actions_inc.jsp" %>
 
-
+<dot-asset-drop-zone>
     <form method="Post" action="" id="search_form" onsubmit="doSearch();return false;">
 
     <input type="hidden" name="fullCommand" id="fullCommand" value="">
@@ -614,7 +614,7 @@
     <input type="hidden" value="" name="Identifier" id="Identifier" size="10"/>
     <input type="hidden" value="" name="allSearchedContentsInodes" id="allSearchedContentsInodes" dojoType="dijit.form.TextBox"/>
     <input type="hidden" value="" name="allUncheckedContentsInodes" id="allUncheckedContentsInodes" dojoType="dijit.form.TextBox"/>
-    <dot-asset-drop-zone>
+
     <!-- START Split Screen -->
     <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer">
 
@@ -832,9 +832,9 @@
         <input type="hidden" name="contentStructureType" value="3"/>
         <% } %>
     </div>
-    </dot-asset-drop-zone>
-</form>
 
+</form>
+</dot-asset-drop-zone>
     <script>
         var dotAssetDropZone = document.querySelector('dot-asset-drop-zone');
         dotAssetDropZone.addEventListener('uploadComplete', function() {
