@@ -1,10 +1,13 @@
 package com.dotcms.security.apps;
 
+import static com.dotcms.security.apps.ParamDescriptor.newParam;
+import static com.dotcms.security.apps.Secret.newSecret;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.PortletDataGen;
 import com.dotcms.datagen.RoleDataGen;
@@ -19,18 +22,31 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(DataProviderRunner.class)
 public class AppsAPIImplTest {
 
     @BeforeClass
@@ -262,7 +278,7 @@ public class AppsAPIImplTest {
 
         //Now we want to update one of the values within the secret.
         //We want to change the value from `secret3` to `secret-3` for the secret named "test:secret3"
-        final Secret secret = Secret.newSecret("secret-3".toCharArray(), Type.STRING, false);
+        final Secret secret = newSecret("secret-3".toCharArray(), Type.STRING, false);
         //Update the individual secret
         api.saveSecret("appKey-1-Host-1", Tuple.of("test:secret3",secret), host, admin);
         //The other properties of the object should remind the same so lets verify so.
@@ -329,7 +345,7 @@ public class AppsAPIImplTest {
         assertEquals("secret-4", recoveredBean1.getSecrets().get("test:secret4").getString());
 
         //Now lets re-introduce again the property we just deleted
-        final Secret secret = Secret.newSecret("lol".toCharArray(), Type.STRING, false);
+        final Secret secret = newSecret("lol".toCharArray(), Type.STRING, false);
 
         //This should create again the entry we just removed.
         api.saveSecret("appKeyHost-1", Tuple.of("test:secret3",secret), host, admin);
@@ -415,6 +431,160 @@ public class AppsAPIImplTest {
             for (final char chr : secret.getValue()) {
                  assertEquals(chr,(char)0);
             }
+        }
+    }
+
+    private AppDescriptor evaluateAppTestCase(final AppTestCase testCase)
+            throws IOException, DotDataException, DotSecurityException {
+        Logger.info(AppsAPIImplTest.class, () -> "Evaluating  " + testCase.toString());
+        final AppDescriptorDataGen descriptorDataGen = new AppDescriptorDataGen();
+        descriptorDataGen.withName(testCase.name).withKey(testCase.key)
+                .withExtraParameters(testCase.allowExtraParameters)
+                .withDescription(testCase.description).withIconUrl(testCase.iconUrl);
+        for (final Map.Entry<String, ParamDescriptor> entry : testCase.params.entrySet()) {
+            descriptorDataGen.param(entry.getKey(), entry.getValue());
+        }
+        try (final InputStream inputStream = descriptorDataGen.nextPersistedDescriptor()) {
+            final AppsAPI api = APILocator.getAppsAPI();
+            final User admin = TestUserUtils.getAdminUser();
+            return api.createAppDescriptor(inputStream, admin);
+        }
+    }
+
+    /**
+     * Test AppsAPI#createAppDescriptor input validation.
+     * Given scenario: Passing Params that expect to break the validation rules
+     * Expected Result: DotDataValidationException is raised.
+     */
+    @Test(expected = DotDataValidationException.class)
+    @UseDataProvider("getExpectedExceptionTestCases")
+    public void Test_App_Descriptor_Validation_Expect_Validation_Exceptions(final AppTestCase testCase)
+            throws IOException, DotDataException, DotSecurityException {
+        assertNotNull(evaluateAppTestCase(testCase));
+    }
+
+    @DataProvider
+    public static Object[] getExpectedExceptionTestCases() throws Exception {
+        final Map<String, ParamDescriptor> emptyParams = ImmutableMap.of();
+        return new Object[]{
+                //The following test that the general required fields are mandatory.
+                new AppTestCase("", "", "", "", false, emptyParams),
+                new AppTestCase("any-key", "", "", "", false, emptyParams),
+                new AppTestCase("any-key", "any-name", "", "", false, emptyParams),
+                new AppTestCase("any-key", "any-name", "desc", "", false, emptyParams),
+                new AppTestCase("any-key", "any-name", "desc", "icon", false, emptyParams),
+                //Name too large.
+                new AppTestCase(RandomStringUtils
+                        .randomAlphanumeric(AppsAPIImpl.DESCRIPTOR_KEY_MAX_LENGTH + 1), "any-name",
+                        "desc", "icon", false,
+                        emptyParams),
+                //Key-too large.
+                new AppTestCase("any-key", RandomStringUtils
+                        .randomAlphanumeric(AppsAPIImpl.DESCRIPTOR_NAME_MAX_LENGTH + 1), "desc",
+                        "icon", false,
+                        emptyParams),
+                //The following test paramDefinition.
+                //Null type  is not allowed.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                       ImmutableSortedMap.of("p1", newParam("", true, null, "", "", true)
+                )),
+                //Hidden bool param is not allowed.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                       ImmutableSortedMap.of("p1", newParam("", true, Type.BOOL, "label", "hint", true)
+                )),
+                //emptyLabel.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                       ImmutableSortedMap.of("p1", newParam("v1", true, Type.STRING, "", "", true)
+                )),
+                //emptyHint.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                       ImmutableSortedMap.of("p1", newParam("v1", true, Type.STRING, "label", "", true)
+                )),
+                //Required param with null default.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                       ImmutableSortedMap.of("p1", newParam("null", false, Type.STRING, "label", "hint", true)
+                )),
+                //non parsable to bool string.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                        ImmutableSortedMap.of("p1", newParam("lol", false, Type.BOOL, "label", "hint", true)
+                )),
+                //Null hidden to emulate missing hidden field.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                        ImmutableSortedMap.of(
+                                "p1", newParam("false", null, Type.BOOL, "label", "hint", true)
+                        )),
+                //Null required to emulate missing hidden field.
+                new AppTestCase("any-key", "any-name", "desc", "icon", false,
+                        ImmutableSortedMap.of(
+                                "p1", newParam("false", false, Type.BOOL, "label", "hint", null)
+                        ))
+        };
+    }
+
+    /**
+     * Test AppsAPI#createAppDescriptor input validation.
+     * Given scenario: Passing Params that normally wouldn't break the validation rules.
+     * Expected Result: No DotDataValidationException is raised.
+     */
+    @Test
+    @UseDataProvider("getValidExceptionFreeTestCases")
+    public void Test_App_Descriptor_Validation_Exception_Free(final AppTestCase testCase)
+            throws IOException, DotDataException, DotSecurityException {
+        assertNotNull(evaluateAppTestCase(testCase));
+    }
+
+
+    @DataProvider
+    public static Object[] getValidExceptionFreeTestCases() throws Exception {
+        final long postfix = System.currentTimeMillis();
+        return new Object[]{
+                new AppTestCase("key1_" + postfix, "any-name", "desc", "icon", true,
+                        ImmutableSortedMap.of(
+                                "p1", newParam("", true, Type.STRING, "label", "hint", true)
+                        )),
+                new AppTestCase("key2_" + postfix, "any-name", "desc", "icon", true,
+                        ImmutableSortedMap.of(
+                                "p1", newParam("", true, Type.STRING, "label", "hint", false)
+                        )),
+                new AppTestCase("key3_" + postfix, "any-name", "desc", "icon", false,
+                        ImmutableSortedMap.of(
+                                "p1", newParam("true", false, Type.BOOL, "label", "hint", true)
+                        )),
+                new AppTestCase("key4_" + postfix, "any-name", "desc", "icon", false,
+                        ImmutableSortedMap.of(
+                                "p1", newParam("false", false, Type.BOOL, "label", "hint", true)
+                        ))
+        };
+    }
+
+
+    static class AppTestCase {
+
+        private final String key;
+        private final String name;
+        private final String description;
+        private final String iconUrl;
+        private final Boolean allowExtraParameters;
+        private final Map<String,ParamDescriptor> params;
+
+        AppTestCase(
+                final String key,
+                final String name,
+                final String description,
+                final String iconUrl,
+                final Boolean allowExtraParameters,
+                final Map<String, ParamDescriptor> params) {
+            this.key = key;
+            this.name = name;
+            this.description = description;
+            this.iconUrl = iconUrl;
+            this.allowExtraParameters = allowExtraParameters;
+            this.params = params;
+        }
+
+        @Override
+        public String toString() {
+            return ToStringBuilder.reflectionToString(this, ToStringStyle.JSON_STYLE);
         }
     }
 

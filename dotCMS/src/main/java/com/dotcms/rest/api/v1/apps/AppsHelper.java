@@ -181,7 +181,7 @@ class AppsHelper {
             }
 
             final Optional<AppSecrets> optionalAppSecrets = appsAPI
-                    .getSecrets(key, true, host, user);
+                    .getSecrets(key, false, host, user);
 
             //We need to return a view with all the secrets and also descriptors of the remaining parameters merged.
             //So we're gonna need a copy of the params on the yml.
@@ -192,7 +192,7 @@ class AppsHelper {
                 .collect(Collectors.toMap(SecretView::getName, Function.identity(), (a, b) -> a,
                         LinkedHashMap::new));
 
-            final AppSecrets appSecrets = optionalAppSecrets.isPresent() ? protectHiddenSecrets(optionalAppSecrets.get()) : AppSecrets.empty() ;
+            final AppSecrets appSecrets = optionalAppSecrets.orElseGet(AppSecrets::empty);
 
             final  Map<String,SecretView> mappedSecrets = appSecrets.getSecrets().entrySet()
                     .stream()
@@ -464,6 +464,12 @@ class AppsHelper {
                 );
             }
 
+            if(null == input){
+              //Param wasn't sent but it doesn't matter since it isn't required.
+              Logger.debug(AppsHelper.class, ()-> String.format("Non required param `%s` was not sent in the request.",describedParamName));
+              continue;
+            }
+
             if (Type.BOOL.equals(appDescriptorParam.getValue().getType()) && UtilMethods
                     .isSet(input.getValue())) {
                 final String asString = new String(input.getValue());
@@ -618,28 +624,6 @@ class AppsHelper {
     void removeApp(final String key, final User user, final boolean removeDescriptor)
             throws DotSecurityException, DotDataException {
         appsAPI.removeApp(key, user, removeDescriptor);
-    }
-
-    @VisibleForTesting
-    static final String HIDDEN_SECRET_MASK = "*****";
-
-    /**
-     * Hidden secrets should never be exposed so this will replace the secret values with anything
-     * @param appSecrets
-     * @return
-     */
-    private AppSecrets protectHiddenSecrets(final AppSecrets appSecrets){
-        final AppSecrets.Builder builder = new AppSecrets.Builder();
-        builder.withKey(appSecrets.getKey());
-        final Map<String,Secret> sourceSecrets = appSecrets.getSecrets();
-        for (final Entry<String, Secret> secretEntry : sourceSecrets.entrySet()) {
-            if(secretEntry.getValue().isHidden()){
-                builder.withHiddenSecret(secretEntry.getKey(), HIDDEN_SECRET_MASK);
-            } else {
-                builder.withSecret(secretEntry.getKey(),secretEntry.getValue());
-            }
-        }
-        return builder.build();
     }
 
     /**

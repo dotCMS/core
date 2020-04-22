@@ -535,7 +535,15 @@
     
 
     <%-- File uploader --%>
+
     <div
+            resourceLink="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkAsString() : "" %>"
+            resourceLinkLabel="<%= contentlet.isFileAsset() ? LanguageUtil.get(pageContext, "Resource-Link") : "" %>"
+            versionPath="<%= !resourceLink.isDownloadRestricted() ? resourceLink.getVersionPath() : "" %>"
+            versionPathLabel="<%= LanguageUtil.get(pageContext, "VersionPath") %>"
+            idPath="<%= !resourceLink.isDownloadRestricted() ? resourceLink.getIdPath() : "" %>"
+            idPathLabel="<%= LanguageUtil.get(pageContext, "IdPath") %>:"
+
             id="<%=field.getVelocityVarName()%>"
             name="<%=field.getFieldContentlet()%>"
             fileNameVisible="false"
@@ -582,32 +590,6 @@
     %>
 
         <%if(canUserWriteToContentlet){%>
-        <div id="<%=field.getVelocityVarName()%>dt" class="field__editable-content">
-
-            <%
-              if(!resourceLink.isDownloadRestricted()){ %>
-
-            <%  if(contentlet.isFileAsset()){ %>
-               <%= LanguageUtil.get(pageContext, "Resource-Link") %>:
-               <div style="padding:10px;">
-                <a id="resourceLink" href="<%=resourceLink.getResourceLinkAsString() %>" target="_new"><%=resourceLink.getResourceLinkUriAsString() %></a>
-               </div>
-                <% }  %>
-
-            <%= LanguageUtil.get(pageContext, "VersionPath") %>:
-            <div style="padding:10px;">
-                <a id="versionPath" href="<%=resourceLink.getVersionPath() %>" target="_new"><%=resourceLink.getVersionPath() %></a>
-            </div>
-
-            <%= LanguageUtil.get(pageContext, "IdPath") %>:
-            <div style="padding:10px;">
-                <a id="idPath" href="<%=resourceLink.getIdPath() %>" target="_new"><%=resourceLink.getIdPath() %></a>
-            </div>
-             <% } else { %>
-                <br>
-             <% }  %>
-
-        </div>
             <% if (resourceLink.isEditableAsText()) { %>
                 <%
                     if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
