@@ -104,6 +104,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		dojo.connect(this.detailViewIcon, 'click', dojo.hitch(this, this._changeView, 'details'));
 		dojo.connect(this.thumbnailViewIcon, 'click', dojo.hitch(this, this._changeView, 'thumbnails'));
 
+
 	},
 
 	initializeTree: function() {
@@ -265,7 +266,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 
 
 		BrowserAjax.getFolderContentWithDotAssets(this._norm(this.currentFolder.id), this._currentOffset, this._maxNumberOfAssets, this._currentFilter, this.mimeTypes,
-			this.fileExtensions, false, true, this.onlyFiles, this.sortBy, this.sortByDesc, true, dojo.hitch(this, this._selectFolderCallback));
+			this.fileExtensions, false, true, this.onlyFiles, this.sortBy, this.sortByDesc, true, this.includeDotAssets, dojo.hitch(this, this._selectFolderCallback));
 
 	},
 

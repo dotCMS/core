@@ -4,10 +4,9 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDRE
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
+import com.dotcms.browser.BrowserAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.rendering.velocity.viewtools.BrowserAPI;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
@@ -353,7 +352,7 @@ public class BrowserAjax {
 	                   int maxResults, String filter, List<String> mimeTypes,
 	                   List<String> extensions, boolean showArchived, boolean noFolders,
 	                   boolean onlyFiles, String sortBy, boolean sortByDesc,
-	                   boolean excludeLinks) throws DotSecurityException, DotDataException {
+	                   boolean excludeLinks, boolean dotAssets) throws DotSecurityException, DotDataException {
 	       
 	       
 	       
@@ -363,7 +362,7 @@ public class BrowserAjax {
 	        User user = getUser(req);
 	        long getAllLanguages = 0;
 
-	        Map<String, Object> results = browserAPI.getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions, true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, getAllLanguages, true);
+	        Map<String, Object> results = browserAPI.getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions, true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, getAllLanguages, dotAssets);
 	        listCleanup((List<Map<String, Object>>) results.get("list"), getContentSelectedLanguageId(req));
 
 	        return results;
