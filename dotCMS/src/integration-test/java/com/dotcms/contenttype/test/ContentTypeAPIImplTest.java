@@ -906,6 +906,98 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
         }
     }
 
+	@DataProvider
+	public static Object[] getReservedTypeVariables() {
+		return ContentTypeFactoryImpl.reservedContentTypeVars.toArray();
+	}
+
+	@DataProvider
+	public static Object[] getReservedTypeVariablesExcludingHost() {
+		return ContentTypeFactoryImpl.reservedContentTypeVars.stream()
+				.filter(var->!var.equals("host")).toArray();
+	}
+
+	/**
+	 * Given scenario: Content type with reserved var and not marked as system type
+	 * Expected result: Should throw {@link IllegalArgumentException}
+	 */
+	@Test(expected = IllegalArgumentException.class)
+	@UseDataProvider("getReservedTypeVariables")
+	public void testSave_GivenTypeWithReservedVarAndNotSystem_ShouldThrowException(final String varname)
+			throws DotSecurityException, DotDataException {
+
+		ContentType type = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.variable(varname)
+							.name(varname)
+							.system(false) // system false!
+							.owner(user.getUserId())
+							.build());
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+		}
+	}
+
+	/**
+	 * Given scenario: Content type with name set with reserved var and not marked as system type
+	 * Expected result: the resulting var should be different from the given name
+	 */
+	@Test
+	@UseDataProvider("getReservedTypeVariablesExcludingHost")
+	public void testSave_GivenTypeWithReservedVarInNameAndNotSystem_ShouldSaveWithDifferentVar(final String varname)
+			throws DotSecurityException, DotDataException {
+
+		ContentType type = null;
+		try {
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.name(varname) // setting varname as name!
+							.system(false) // system false!
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertNotEquals(varname, type.variable());
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+		}
+	}
+
+	/**
+	 * Given scenario: Content type with reserved var and marked as system type
+	 * Expected result: Should save with given variable
+	 *
+	 * Note: not deleting the type in a finally block because system types can't be deleted
+	 */
+	@Test
+	@UseDataProvider("getReservedTypeVariables")
+	public void testSave_GivenTypeWithReservedVarMarkedAsSystem_ShouldSaveWithGivenVar(final String varname)
+			throws DotSecurityException, DotDataException {
+
+		ContentType type = APILocator.getContentTypeAPI(APILocator.systemUser())
+				.save(ContentTypeBuilder
+						.builder(SimpleContentType.class)
+						.folder(FolderAPI.SYSTEM_FOLDER)
+						.host(Host.SYSTEM_HOST)
+						.variable(varname)
+						.name(varname)
+						.system(true)  // system true!
+						.owner(user.getUserId())
+						.build());
+		Assert.assertEquals(varname, type.variable());
+	}
+
 	@Test
 	@UseDataProvider("testCasesUpdateTypePermissions")
 	public void testDeleteLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
