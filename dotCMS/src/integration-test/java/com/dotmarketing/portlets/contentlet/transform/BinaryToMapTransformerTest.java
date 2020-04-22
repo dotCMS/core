@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,7 +35,6 @@ public class BinaryToMapTransformerTest {
     /**
      * Tests https://github.com/dotCMS/core/issues/16993
      */
-
     @Test
     public void testNullBinaryField_ConstructionShouldSucceed()
             throws IOException, URISyntaxException {
@@ -124,6 +125,45 @@ public class BinaryToMapTransformerTest {
         }
 
         return commentsType;
+    }
+
+    @Test
+    public void test_BinaryToMapTransformer_transform()
+            throws IOException, URISyntaxException {
+
+        // create content type with 1 text field and 2 binary fields
+        final long time = System.currentTimeMillis();
+        ContentType typeWithBinaries = null;
+
+        try {
+            typeWithBinaries = getContentTypeWithBinaries("testBinType" + time);
+
+            final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
+            final File originalTestImage = new File(
+                    ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
+            final File testImage = new File(Files.createTempDir(),
+                    "test_image1" + System.currentTimeMillis() + ".jpg");
+            FileUtil.copyFile(originalTestImage, testImage);
+
+            final Contentlet contentWithBinaries = new ContentletDataGen(typeWithBinaries.id())
+                    .setProperty("bin1", testImage)
+                    .setProperty("bin3", testImage)
+                    .nextPersisted();
+
+            final BinaryToMapTransformer transformer =
+                    new BinaryToMapTransformer(contentWithBinaries);
+
+            final Map<String, Object>  map = transformer.transform(testImage, contentWithBinaries, contentWithBinaries.getContentType().fieldMap().get("bin1"));
+
+            Assert.assertNotNull(map);
+            Assert.assertTrue(map.containsKey("versionPath"));
+            Assert.assertTrue(map.containsKey("idPath"));
+            Assert.assertTrue(map.get("idPath").toString().contains("?language_id="+contentWithBinaries.getLanguageId()));
+
+
+        } finally {
+            ContentTypeDataGen.remove(typeWithBinaries);
+        }
     }
 
 }
