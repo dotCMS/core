@@ -989,8 +989,6 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
         //step 1 System Workflow Actions.
         assertTrue(systemActions.stream().anyMatch(action -> SAVE.equals(action.getName())));
-        assertTrue(systemActions.stream()
-               .anyMatch(action -> SAVE_PUBLISH.equals(action.getName())));
         return systemActions;
     }
 
