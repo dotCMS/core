@@ -74,15 +74,16 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	        </a>
 
 	    </td>
+	    <td>{description}</td>
 	    <td>{modUser}</td>
 	    <td>{modDate}</td>`,
 
-	thumbRowTemplate: `
-	    <div id="file-{id}" style="width:150px;height:150px;" class="selectableFile">
-	    <a>
-	    <div style="display:block;border:1px solid silver;height:100px;min-width:100px;background:url('{thumbnail}');background-size:100px 100px,cover;"></div>
-	    <div>{name}</div>
-	    </a>
+	cardTemplate: `
+        <div id="file-{id}" class="file-selector-tree__card">
+            <div class="thumbnail" style="background-image: url('{thumbnail}');">
+                <img src="{thumbnail}" alt="{name}" aria-label="{name}">
+            </div>
+            <div class="label">{name}</div>
 	   </div>`,
 	widgetsInTemplate: true,
 	style: "width: 1000px; height: 500px;",
@@ -287,7 +288,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		}
 		
 		var className = 'alternate_1';
-		var template = this.currentView == 'details' ? this.detailsRowTemplate : this.thumbRowTemplate;
+		var template = this.currentView == 'details' ? this.detailsRowTemplate : this.cardTemplate;
 
 		var columnNumber = 0;
 		var tableHTML = '';
@@ -320,10 +321,8 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 			var asset = assets[i];
 			var file = dojo.byId('file-' + asset.identifier);
 			file.id+=i;
-			var elements = file.getElementsByTagName("a");
-			var anchor = elements[0];
-			if(anchor.onclick==undefined){
-			   anchor.onclick = dojo.hitch(this, selected, this, asset);
+			if(file.onclick==undefined){
+                file.onclick = dojo.hitch(this, selected, this, asset);
 			}
 		}
 
@@ -400,7 +399,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 
    			if(asset.mimeType != null && asset.mimeType.indexOf('image/') == 0 ){
    			    assetIcon = '/dA/' + asset.inode + '/32w/30q/' + asset.name;
-				assetThumbnail = '/dA/' + asset.inode + '/100w/30q/' + asset.name;
+				assetThumbnail = '/dA/' + asset.inode + '/200w/30q/' + asset.name;
 		
    			}
    		}

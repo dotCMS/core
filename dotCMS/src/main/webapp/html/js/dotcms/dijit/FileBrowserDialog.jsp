@@ -1,5 +1,59 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
+
+
 <div id="${id}" style="display: none;">
+    <style>
+        .file-selector-tree__card-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            grid-template-rows: repeat(auto-fill, minmax(200px, 1fr));
+            grid-gap: 1rem;
+            margin: 2rem;
+            width: 100%;
+        }
+    
+        .file-selector-tree__card {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            height: 100%;
+            position: relative;
+            transition: box-shadow 100ms;
+            width: 100%;
+        }
+        .file-selector-tree__card:hover {
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+        }
+
+        .file-selector-tree .file-selector-tree__card-view .thumbnail {
+            position: relative;
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            width: 100%;
+            height: 100%;
+        }
+
+        .file-selector-tree .file-selector-tree__card-view .thumbnail img {
+            width: 0px;
+            height: 0px;
+            position: absolute;
+        }
+
+        .file-selector-tree .file-selector-tree__card-view .label {
+            font-size: 16px;
+            padding: 1.5rem 1rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .file-selector-tree .selectableFile {
+            align-items: center;
+        }
+    </style>
     <div dojoAttachPoint="dialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Select-a-file")%>" class="file-selector-tree">
         <form dojoAttachPoint="search_form" onsubmit="return false;">
             <div dojotype="dijit.layout.BorderContainer" design="sidebar" gutters="false" livesplitters="false" class="file-selector-tree__container">
@@ -57,7 +111,8 @@
                                 <tbody dojoAttachPoint="detailsTableBody">
                                 </tbody>
                             </table>
-                            <div dojoAttachPoint="thumbnailsTable" style="display: none;display: flex;flex-wrap:wrap;" class="thumbnailTD">
+
+                            <div dojoAttachPoint="thumbnailsTable" style="display: none" class="file-selector-tree__card-view">
                             </div>
                         </div>
                         <div dojoAttachPoint="tablesSummary" style="display:none" class="file-selector-tree__pagination portlet-pagination">
