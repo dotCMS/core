@@ -206,6 +206,8 @@ public class BrowserAPI {
 	                    .showFolders(!noFolders)
 	                    .showArchived(showArchived)
 	                    .showWorking(showWorking)
+                        .showMimeTypes(mimeTypes)
+                        .maxResults(maxResults)
 	                    .sortBy(sortBy)
 	                    .sortByDesc(sortByDesc)
 	                    .withUser(user).build();
