@@ -57,7 +57,7 @@ public class CMSUrlUtil {
 
 	public static final Set<String> BACKEND_FILTERED_COLLECTION =
 			Stream.of("/api", "/webdav", "/dA", "/c/", "/contentAsset", "/DOTSASS", "/DOTLESS",
-					"/html", "/dotAdmin", "/dwr")
+					"/html", "/dotAdmin", "/custom-elements","/dotcms-webcomponents","/dwr")
 					.collect(Collectors.collectingAndThen(toSet(), Collections::unmodifiableSet));
 
 	/**
