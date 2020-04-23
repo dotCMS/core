@@ -27,6 +27,14 @@ public class MimeTypeUtilsTest extends UnitTestBase {
     }
 
     @Test
+    public void test_wrong_mime_MimeType_all(){
+
+        boolean match = MimeTypeUtils.match("*/pdf", "pdf");
+
+        Assert.assertFalse("* must not match", match);
+    }
+
+    @Test
     public void test_match_MimeType_all() throws IOException {
 
         boolean match = MimeTypeUtils.match("*/*", "image/jpeg");

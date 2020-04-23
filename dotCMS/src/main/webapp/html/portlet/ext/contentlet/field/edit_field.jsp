@@ -538,6 +538,7 @@
 
     <div
             resourceLink="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkAsString() : "" %>"
+            resourceLinkUri="<%= contentlet.isFileAsset() ? resourceLink.getResourceLinkUriAsString() : "" %>"
             resourceLinkLabel="<%= contentlet.isFileAsset() ? LanguageUtil.get(pageContext, "Resource-Link") : "" %>"
             versionPath="<%= !resourceLink.isDownloadRestricted() ? resourceLink.getVersionPath() : "" %>"
             versionPathLabel="<%= LanguageUtil.get(pageContext, "VersionPath") %>"

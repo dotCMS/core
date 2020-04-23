@@ -6,6 +6,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
 
 import javax.activation.MimeType;
 import java.io.File;
@@ -68,8 +69,8 @@ public class MimeTypeUtils {
             return false;
         }
 
-        final MimeType mimeTypeObj1 = Sneaky.sneak(() -> new MimeType(mimeType1));
-        final MimeType mimeTypeObj2 = Sneaky.sneak(() -> new MimeType(mimeType2));
-        return mimeTypeObj1.match(mimeTypeObj2);
+        final MimeType mimeTypeObj1 = Try.of(() -> new MimeType(mimeType1)).getOrNull();
+        final MimeType mimeTypeObj2 = Try.of(() -> new MimeType(mimeType2)).getOrNull();
+        return mimeTypeObj1 != null && mimeTypeObj2 != null && mimeTypeObj1.match(mimeTypeObj2);
     }
 }
