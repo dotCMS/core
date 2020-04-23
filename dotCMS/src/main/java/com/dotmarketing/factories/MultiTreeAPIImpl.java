@@ -530,7 +530,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @param multiTrees {@link List} of {@link MultiTree} to safe
      * @param languageIdOpt {@link Optional} {@link Long}   optional language, if present will deletes only the contentlets that have a version on this language.
      *                                        Since it is by identifier, when deleting for instance in spanish, will remove the english and any other lang version too.
-     * @throws DotDataException
+     * @throws DotDataException 
      */
     @Override
     @WrapInTransaction
