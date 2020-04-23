@@ -375,10 +375,10 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     	dbInsert(retType);
 
     	if (isNew) {
-    		if (ContentTypeAPI.reservedStructureNames.contains(retType.name().toLowerCase())) {
+    		if (ContentTypeAPI.reservedStructureNames.contains(retType.name().toLowerCase()) && !retType.system()) {
     			throw new DotDataException("cannot save a structure with name:" + retType.name());
     		}
-    		if (ContentTypeAPI.reservedStructureVars.contains(retType.variable().toLowerCase())) {
+    		if (ContentTypeAPI.reservedStructureVars.contains(retType.variable().toLowerCase()) && !retType.system()) {
     			throw new DotDataException("cannot save a structure with name:" + retType.name());
     		}
     	}
