@@ -584,14 +584,10 @@
 
 
     });
-    
-
 </script>
 
 
 <%@ include file="/html/portlet/ext/contentlet/view_bulk_actions_inc.jsp" %>
-
-
 
 
 <form method="Post" action="" id="search_form" onsubmit="doSearch();return false;">
@@ -783,145 +779,7 @@
                         </div>
 
                     </div>
-<style>
-
-#drop_zone {
-  border: 5px dotted white;
-
-}
-
-
-</style>
-<script>
-
-   function dragOut(ev) {
-    ev.preventDefault();
-    document.getElementById("drop_zone").style.border="5px dotted white"
-   
-     
-  }
-
-
-   function dragEnter(ev) {
-       ev.preventDefault();
-       document.getElementById("drop_zone").style.border="5px dotted #ADD8E6"
-     }
-
-   function dragOverHandler(ev) {
-       ev.preventDefault();
-       document.getElementById("drop_zone").style.border="5px dotted #ADD8E6"
-
-
-       
-     }
-   
-   
-   // build list of files
-    function dropHandler(ev) {
-        ev.preventDefault();
-        var files = new Array();
-        if (ev.dataTransfer.items) {
-          // Use DataTransferItemList interface to access the file(s)
-          for (var i = 0; i < ev.dataTransfer.items.length; i++) {
-            // If dropped items aren't files, reject them
-            if (ev.dataTransfer.items[i].kind === 'file') {
-              var file = ev.dataTransfer.items[i].getAsFile();
-              files.push(file);
-            }
-          }
-        } else {
-          // Use DataTransfer interface to access the file(s)
-          for (var i = 0; i < ev.dataTransfer.files.length; i++) {
-            console.log('... file[' + i + '].name = ' + ev.dataTransfer.files[i].name);
-            files.push(file);
-          }
-        }
-        
-        console.log(files.length + ' File(s) dropped');
-        doMultiUpload(files);
-      }
-    
-    // upload to temp resource
-    function doMultiUpload(files){
-        var xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = function(e) {
-            var percentComplete = (e.loaded / e.total) * 100;
-            console.log("Uploaded: " + percentComplete + "%");
-        };
-
-        xhr.onload = function() {
-            if (xhr.status == 200) {
-                checkInAssets(xhr.responseText);
-            } else {
-                alert("Error! Upload failed");
-            }
-        };
-        xhr.onerror = function() {
-            alert("Error! Upload failed. Can not connect to server.");
-        };
-
-        var formData = new FormData();
-        for(var file in files) {
-            formData.append("files", files[file]);
-        }
-        xhr.open("POST", "/api/v1/temp/", true);
-        xhr.send(formData);
-
-    }
-    
-    // check in the assets
-    function checkInAssets(response){
-        var json = JSON.parse(response);
-        var expected=json.tempFiles.length;
-        var uploaded=0;
-        for(i=0;i<expected;i++){
-            var xhr = new XMLHttpRequest();
-            xhr.onreadystatechange = function() {
-                ++uploaded;
-                if(xhr.readyState === XMLHttpRequest.DONE) {
-                   if (xhr.status == 200) {
-
-                       console.log("uploaded:" + uploaded)
-                       //if we are done uploading
-                       if(uploaded==expected){
-                           doneUploading(expected);
-                       }
-                   } else {
-                       console.log("uh oh:" + xhr.status);
-                       console.log(xhr.responseText);
-                   }
-                }
-                document.getElementById("drop_zone").style.border="5px dotted white";
-            }
-
-
-            var data = {};
-            data.actionName="save";
-            data.contentlet={};
-            data.contentlet.asset = json.tempFiles[i].id;
-            data.contentlet.contentType="dotAsset";
-            data.contentlet.language = "<%=languageId%>";
-            xhr.open("PUT", "/api/v1/workflow/actions/fire", true);
-            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-            xhr.send(JSON.stringify(data));
-           
-        }
-
-     }
-    
-    function doneUploading(expected){
-        doSearch();
-        console.log("uploaded " + expected + " files")
-        window.setTimeout(doSearch, "3000");
-    }    
-    
-    
-    
-</script> 
-                    
-                    <div id="drop_zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" ondragenter="dragEnter(event);" ondragleave="dragOut(event)" >
-                        <table id="results_table" class="listingTable content-search__results-list"></table>
-                    </div>
+                    <table id="results_table" class="listingTable content-search__results-list"></table>
                     <div id="results_table_popup_menus"></div>
                     <!-- END Listing Results -->
                 </div>
