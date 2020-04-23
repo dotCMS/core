@@ -69,7 +69,9 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	detailsRowTemplate: `
 	    <td id="file-{id}" nowrap>
 	        <a class="selectableFile">
-    	        <div style="border:1px solid white;width:32px;height:32px;background: url('{thumbnail}'); "></div>
+                <div class="thumbnail" style="background-image: url('{thumbnail}');">
+                    <img src="{thumbnail}" alt="{name}" aria-label="{name}">
+                </div>
 	            <div style="margin:5px;">{name}</div>
 	        </a>
 
@@ -265,7 +267,6 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 		this._removeRows(this.detailsTableBody);
 		this._removeRows(this.thumbnailsTable);
 
-
 		BrowserAjax.getFolderContentWithDotAssets(this._norm(this.currentFolder.id), this._currentOffset, this._maxNumberOfAssets, this._currentFilter, this.mimeTypes,
 			this.fileExtensions, false, true, this.onlyFiles, this.sortBy, this.sortByDesc, true, this.includeDotAssets, dojo.hitch(this, this._selectFolderCallback));
 
@@ -393,7 +394,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
    		var assetIcon = '/icon?i=' + asset.extension;
    		var assetThumbnail = '/icon?i=' + asset.extension;
 
-   		if (asset.type == 'file_asset') {
+   		if (asset.type == 'file_asset' || asset.type == 'dotasset') {
    			name = asset.fileName;
             assetIcon = '/html/images/icons/' + asset.extension + '.png';
 

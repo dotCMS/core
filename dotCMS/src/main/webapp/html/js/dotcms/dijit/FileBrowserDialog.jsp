@@ -35,7 +35,6 @@
             width: 100%;
             height: 100%;
         }
-
         .file-selector-tree .file-selector-tree__card-view .thumbnail img {
             width: 0px;
             height: 0px;
@@ -52,7 +51,19 @@
 
         .file-selector-tree .selectableFile {
             align-items: center;
+            cursor: pointer;
         }
+
+        .file-selector-tree .selectableFile .thumbnail {
+            width: 48px;
+            margin-right: 8px;
+        }
+
+        .file-selector-tree .thumbnail img {
+            max-width: 100%;
+            margin: 0;
+        }
+
     </style>
     <div dojoAttachPoint="dialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Select-a-file")%>" class="file-selector-tree">
         <form dojoAttachPoint="search_form" onsubmit="return false;">
