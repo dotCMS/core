@@ -125,6 +125,7 @@ public class SecretView {
             buildCommonJson(paramDescriptor, map);
             map.put("hint", paramDescriptor.getHint());
             map.put("label", paramDescriptor.getLabel());
+            map.put("required", paramDescriptor.isRequired());
         }
 
         private void mergeSecretAndParam(final Secret secret,

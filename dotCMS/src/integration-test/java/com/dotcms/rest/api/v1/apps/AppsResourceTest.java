@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.apps;
 import static com.dotcms.rest.api.v1.apps.Input.newInputParam;
 import static com.dotcms.unittest.TestUtil.upperCaseRandom;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.mockito.Matchers.any;
@@ -545,6 +546,7 @@ public class AppsResourceTest extends IntegrationTestBase {
                         final Type type = Type.valueOf(deserializedView.get("type").toString());
                         final boolean hidden = Boolean.parseBoolean(deserializedView.get("hidden").toString());
                         final String value = deserializedView.get("value").toString();
+                        assertNotNull(deserializedView.get("required"));
 
                         Assert.assertEquals(
                                 "If it comes back as hidden it's because the descriptor also says it is hidden ",
