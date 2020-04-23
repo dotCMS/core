@@ -3,7 +3,7 @@ package com.dotmarketing.util;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 
 public class UtilHTML {
 
@@ -405,20 +406,29 @@ public class UtilHTML {
 
         Identifier ident = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
 
-        return (type.baseType().ordinal() ==1)
-                ? "contentIcon"
-                        :  (type.baseType().ordinal() ==2)
-                        ? "gearIcon"
-                                :  (type.baseType().ordinal() ==3)
-                                ? "formIcon"
-                                    :  (type.baseType().ordinal() ==4)
-                                    ? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
-                                        :  (type.baseType().ordinal() ==5)
-                                        ? "pageIcon"
-                                                : "personaIcon";
-	    
+        switch(type.baseType()) {
+            case CONTENT:
+                return "contentIcon";
+            case WIDGET:
+                return "gearIcon";
+            case FORM:
+                return "formIcon";
+            case FILEASSET:
+                return "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon";
+            case HTMLPAGE:
+                return "pageIcon";
+            case KEY_VALUE:
+                return "keyValueIcon";
+            case PERSONA:
+                return "personaIcon";
+            case VANITY_URL:
+                return "vanityIcon";
+            case DOTASSET:
+                return "uknIcon " + UtilMethods.getFileExtension( Try.of(()-> contentlet.getBinary("asset").getName()).getOrElse("ukn") )+ "Icon";
+            default:
+                return "uknIcon";
+        }
 	}
-	
 	
 	
 	

@@ -514,7 +514,7 @@ public class BrowserAPI {
         fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(fileAsset));
         fileMap.put("statusIcons", UtilHTML.getStatusIcons(fileAsset));
         fileMap.put("hasTitleImage",String.valueOf(fileAsset.getTitleImage().isPresent()));
-        fileMap.put("__icon__", UtilMethods.getFileExtension( ident.getURI()) + "Icon");
+        fileMap.put("__icon__", UtilHTML.getIconClass(fileAsset ));
         return fileMap;
 	    
 	    
@@ -567,7 +567,7 @@ public class BrowserAPI {
 	        fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(dotAsset));
 	        fileMap.put("statusIcons", UtilHTML.getStatusIcons(dotAsset));
 	        fileMap.put("hasTitleImage",String.valueOf(dotAsset.getTitleImage().isPresent()));
-	        fileMap.put("__icon__", UtilMethods.getFileExtension( ident.getURI()) + "Icon");
+	        fileMap.put("__icon__", UtilHTML.getIconClass(dotAsset));
 	        return fileMap;
 	        
 	        
