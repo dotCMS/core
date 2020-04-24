@@ -4,14 +4,14 @@ roles:                    DOTCMS_BACK_END_USER
 filters:
        ## Lucene query that exclude content to be added to the bundle
        excludeQuery:             ""
-       ## list of classes that should never be pushed: Structure, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category, User, OSGI
-       excludeClasses:           [Structure,Template,Containers,Folder,Host,Links,Workflow,Language,Rule,Category,User,OSGI]
+       ## list of classes that should never be pushed: ContentType, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category, User, OSGI
+       excludeClasses:           [ContentType,Template,Containers,Folder,Host,Links,Workflow,Language,Rule,Category,User,OSGI]
        ## check for any dependency that the pushed asset may need (if false will not look for any dependency or relationship)
        dependencies:             true
         ## Lucene query that exclude content to be added to the bundle as a dependency
        excludeDependencyQuery:   ""
-       ##  list of classes that should never be pushed as dependencies: Structure, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category
-       excludeDependencyClasses: [Structure,Template,Containers,Folder,Host,Links,Workflow,Language,Rule,Category]
+       ##  list of classes that should never be pushed as dependencies: ContentType, Template, Containers, Folder, Host, Links, Workflow, Language, Rule, Contentlet, Category
+       excludeDependencyClasses: [ContentType,Template,Containers,Folder,Host,Links,Workflow,Language,Rule,Category]
        ## force push as always worked, if true will push regardless the pushed asset history
        forcePush:                false
        ## check for content relationships

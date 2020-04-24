@@ -89,7 +89,7 @@ public class DependencyManager {
 	private DependencySet folders;
 	private DependencySet htmlPages;
 	private DependencySet templates;
-	private DependencySet structures;
+	private DependencySet contentTypes;
 	private DependencySet containers;
 	private DependencySet contents;
 	private DependencySet links;
@@ -103,13 +103,13 @@ public class DependencyManager {
 	private Set<String> foldersSet;
 	private Set<String> htmlPagesSet;
 	private Set<String> templatesSet;
-	private Set<String> structuresSet;
+	private Set<String> contentTypesSet;
 	private Set<String> containersSet;
 	private Set<String> fileAssetContainersSet;
 	private Set<String> contentsSet;
 	private Set<String> linksSet;
 	private Set<String> ruleSet;
-	private Set<String> solvedStructures;
+	private Set<String> solvedContentTypes;
 
 	private User user;
 
@@ -133,7 +133,7 @@ public class DependencyManager {
 		folders = new DependencySet(config.getId(), "folder", config.isDownloading(), isPublish, config.isStatic());
 		htmlPages = new DependencySet(config.getId(), "htmlpage", config.isDownloading(), isPublish, config.isStatic());
 		templates = new DependencySet(config.getId(), "template", config.isDownloading(), isPublish, config.isStatic());
-		structures = new DependencySet(config.getId(), "structure", config.isDownloading(), isPublish, config.isStatic());
+		contentTypes = new DependencySet(config.getId(), "contenttype", config.isDownloading(), isPublish, config.isStatic());
 		containers = new DependencySet(config.getId(), "container", config.isDownloading(), isPublish, config.isStatic());
 		contents = new DependencySet(config.getId(), "content", config.isDownloading(), isPublish, config.isStatic());
 		relationships = new DependencySet(config.getId(), "relationship", config.isDownloading(), isPublish, config.isStatic());
@@ -148,13 +148,13 @@ public class DependencyManager {
 		foldersSet = new HashSet<>();
 		htmlPagesSet = new HashSet<>();
 		templatesSet = new HashSet<>();
-		structuresSet = new HashSet<>();
+		contentTypesSet = new HashSet<>();
 		containersSet = new HashSet<>();
 		contentsSet = new HashSet<>();
 		fileAssetContainersSet = new HashSet<>();
 		linksSet = new HashSet<>();
 		this.ruleSet = new HashSet<>();
-		solvedStructures = new HashSet<>();
+		solvedContentTypes = new HashSet<>();
 
 		this.user = user;
 
@@ -192,8 +192,8 @@ public class DependencyManager {
 					if(st == null) {
 						Logger.warn(getClass(), "Structure id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 					} else {
-						structures.add(asset.getAsset(), st.getModDate());
-						structuresSet.add(asset.getAsset());
+						contentTypes.add(asset.getAsset(), st.getModDate());
+						contentTypesSet.add(asset.getAsset());
 					}
 
 				} catch (Exception e) {
@@ -352,7 +352,7 @@ public class DependencyManager {
 		config.setHTMLPages(htmlPages);
 		config.setTemplates(templates);
 		config.setContainers(containers);
-		config.setStructures(structures);
+		config.setStructures(contentTypes);
 		config.setContents(contents);
 		config.setLinks(links);
 		config.setRelationships(relationships);
@@ -490,8 +490,8 @@ public class DependencyManager {
 					final List<Structure> structuresList = StructureFactory
 							.getStructuresUnderHost(h, user, false);
 					for (Structure structure : structuresList) {
-						structures.addOrClean(structure.getInode(), structure.getModDate());
-						structuresSet.add(structure.getInode());
+						contentTypes.addOrClean(structure.getInode(), structure.getModDate());
+						contentTypesSet.add(structure.getInode());
 					}
 				}
 
@@ -610,8 +610,8 @@ public class DependencyManager {
 				List<Structure> structureList = APILocator.getFolderAPI()
 						.getStructures(f, user, false);
 				for (Structure structure : structureList) {
-					structures.addOrClean(structure.getInode(), structure.getModDate());
-					structuresSet.add(structure.getInode());
+					contentTypes.addOrClean(structure.getInode(), structure.getModDate());
+					contentTypesSet.add(structure.getInode());
 				}
 
 				//Add the default structure of this folder
@@ -619,10 +619,10 @@ public class DependencyManager {
 					Structure defaultStructure = CacheLocator.getContentTypeCache()
 							.getStructureByInode(f.getDefaultFileType());
 					if ((defaultStructure != null && InodeUtils.isSet(defaultStructure.getInode()))
-							&& !structuresSet.contains(defaultStructure.getInode())) {
-						structures.addOrClean(defaultStructure.getInode(),
+							&& !contentTypesSet.contains(defaultStructure.getInode())) {
+						contentTypes.addOrClean(defaultStructure.getInode(),
 								defaultStructure.getModDate());
-						structuresSet.add(defaultStructure.getInode());
+						contentTypesSet.add(defaultStructure.getInode());
 					}
 				}
 			}
@@ -801,9 +801,9 @@ public class DependencyManager {
 						for (ContainerStructure containerStructure : csList) {
 							Structure st = CacheLocator.getContentTypeCache()
 									.getStructureByInode(containerStructure.getStructureId());
-							structures.addOrClean(containerStructure.getStructureId(),
+							contentTypes.addOrClean(containerStructure.getStructureId(),
 									st.getModDate());
-							structuresSet.add(containerStructure.getStructureId());
+							contentTypesSet.add(containerStructure.getStructureId());
 						}
 					}
 
@@ -977,9 +977,9 @@ public class DependencyManager {
 						for (ContainerStructure containerStructure : csList) {
 							Structure st = CacheLocator.getContentTypeCache()
 									.getStructureByInode(containerStructure.getStructureId());
-							structures.addOrClean(containerStructure.getStructureId(),
+							contentTypes.addOrClean(containerStructure.getStructureId(),
 									st.getModDate());
-							structuresSet.add(containerStructure.getStructureId());
+							contentTypesSet.add(containerStructure.getStructureId());
 						}
 					}
 
@@ -1061,7 +1061,7 @@ public class DependencyManager {
 	private void setStructureDependencies(final PublisherFilter publisherFilter)  throws DotDataException, DotSecurityException {
 		try {
 
-			for (String inode : structuresSet) {
+			for (String inode : contentTypesSet) {
 				structureDependencyHelper(inode,publisherFilter);
 			}
 
@@ -1125,27 +1125,27 @@ public class DependencyManager {
 			for (final Relationship relationship : relations) {
 				relationships.addOrClean(relationship.getInode(), relationship.getModDate());
 
-				if (!structures.contains(relationship.getChildStructureInode()) && config
+				if (!contentTypes.contains(relationship.getChildStructureInode()) && config
 						.getOperation().equals(Operation.PUBLISH)) {
 					Structure struct = CacheLocator.getContentTypeCache()
 							.getStructureByInode(relationship.getChildStructureInode());
-					solvedStructures.add(stInode);
-					structures
+					solvedContentTypes.add(stInode);
+					contentTypes
 							.addOrClean(relationship.getChildStructureInode(), struct.getModDate());
 
-					if (!solvedStructures.contains(relationship.getChildStructureInode()))
+					if (!solvedContentTypes.contains(relationship.getChildStructureInode()))
 						structureDependencyHelper(relationship.getChildStructureInode(),
 								publisherFilter);
 				}
-				if (!structures.contains(relationship.getParentStructureInode()) && config
+				if (!contentTypes.contains(relationship.getParentStructureInode()) && config
 						.getOperation().equals(Operation.PUBLISH)) {
 					Structure struct = CacheLocator.getContentTypeCache()
 							.getStructureByInode(relationship.getParentStructureInode());
-					solvedStructures.add(stInode);
-					structures.addOrClean(relationship.getParentStructureInode(),
+					solvedContentTypes.add(stInode);
+					contentTypes.addOrClean(relationship.getParentStructureInode(),
 							struct.getModDate());
 
-					if (!solvedStructures.contains(relationship.getParentStructureInode()))
+					if (!solvedContentTypes.contains(relationship.getParentStructureInode()))
 						structureDependencyHelper(relationship.getParentStructureInode(),
 								publisherFilter);
 				}
@@ -1280,7 +1280,7 @@ public class DependencyManager {
 
 			if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_STRUCTURES", true) && publisherFilter.acceptExcludeDependencyClasses(PusheableAsset.CONTENT_TYPE.getType())) {
 				Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
-				structures.addOrClean( con.getStructureInode(), struct.getModDate());
+				contentTypes.addOrClean( con.getStructureInode(), struct.getModDate());
 				structureDependencyHelper(con.getStructureInode(),publisherFilter);
 			}
 
@@ -1302,7 +1302,7 @@ public class DependencyManager {
             if (!listKeyValueLang.isEmpty()) {// if there is any language variable add the content type
                 Structure struct = CacheLocator.getContentTypeCache()
                                 .getStructureByInode(listKeyValueLang.get(0).getContentTypeId());
-                structures.addOrClean(struct.getIdentifier(), struct.getModDate());
+                contentTypes.addOrClean(struct.getIdentifier(), struct.getModDate());
                 structureDependencyHelper(struct.getIdentifier(),publisherFilter);
             }
             for (Contentlet keyValue : listKeyValueLang) {// add the language variable
