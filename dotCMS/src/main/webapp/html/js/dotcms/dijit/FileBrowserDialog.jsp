@@ -6,28 +6,28 @@
         .file-selector-tree__card-view {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            grid-template-rows: repeat(auto-fill, minmax(200px, 1fr));
-            grid-gap: 1rem;
+            grid-template-rows: repeat(auto-fill, minmax(220px, 1fr));
+            grid-gap: 0.75rem;
             margin: 2rem;
             width: 100%;
         }
-    
+
         .file-selector-tree__card {
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
             cursor: pointer;
             display: flex;
             flex-direction: column;
-            flex: 1 1 auto;
             height: 100%;
-            position: relative;
             transition: box-shadow 100ms;
-            width: 100%;
+            min-height: 220px;
+            margin: 0.25rem;
         }
+
         .file-selector-tree__card:hover {
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
         }
 
-        .file-selector-tree .file-selector-tree__card-view .thumbnail {
+        .file-selector-tree .file-selector-tree__card .thumbnail {
             position: relative;
             background-size: cover;
             background-position: center center;
@@ -36,23 +36,70 @@
             height: 100%;
         }
 
-        .file-selector-tree .file-selector-tree__card-view .thumbnail img {
+        .file-selector-tree .file-selector-tree__card .icon {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-selector-tree .file-selector-tree__card div[class$="Icon"] {
+            font-size: 72px;
+            height: 72px;
+            line-height: 1;
+            width: 72px;
+        }
+
+        .file-selector-tree .file-selector-tree__card .thumbnail img {
             width: 0px;
             height: 0px;
             position: absolute;
         }
 
-        .file-selector-tree .file-selector-tree__card-view .label {
+        .file-selector-tree .file-selector-tree__card .label {
             font-size: 16px;
             padding: 1.5rem 1rem;
             text-overflow: ellipsis;
             white-space: nowrap;
             overflow: hidden;
+            flex-shrink: 0;
         }
 
         .file-selector-tree .selectableFile {
             align-items: center;
+            cursor: pointer;
         }
+
+        .file-selector-tree .selectableFile .thumbnail {
+            width: 48px;
+            margin-right: 8px;
+        }
+
+        .file-selector-tree .thumbnail img {
+            max-width: 100%;
+            margin: 0;
+        }
+
+        .file-selector-tree__views-menu {
+            align-items: center;
+        }
+
+        .file-selector-tree__table {
+            margin-bottom: 80px;
+            overflow-y: scroll;
+
+        }
+
+        .file-selector-tree .portlet-main {
+            overflow-y: inherit;
+        }
+
+        .file-selector-tree__main {
+            overflow: inherit;
+        }
+
     </style>
     <div dojoAttachPoint="dialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Select-a-file")%>" class="file-selector-tree">
         <form dojoAttachPoint="search_form" onsubmit="return false;">
