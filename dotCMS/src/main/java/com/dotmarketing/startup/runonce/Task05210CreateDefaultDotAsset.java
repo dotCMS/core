@@ -151,7 +151,7 @@ public class Task05210CreateDefaultDotAsset implements StartupTask {
                 StringPool.BLANK, noFixed, noReadOnly, isSearchable, noUnique);
 
         // Asset
-        final Map<String, Object> assetField = setFieldElements("Binary Asset",
+        final Map<String, Object> assetField = setFieldElements("Asset",
                 BinaryField.class.getName(), StringPool.BLANK, "system_field", isRequired, listed, isIndexed,
                 DotAssetContentType.ASSET_FIELD_VAR, 1, StringPool.BLANK, StringPool.BLANK, StringPool.BLANK,
                 StringPool.BLANK, isFixed, noReadOnly, isSearchable, noUnique);

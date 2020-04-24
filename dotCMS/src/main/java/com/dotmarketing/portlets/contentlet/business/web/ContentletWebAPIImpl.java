@@ -57,6 +57,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static com.dotmarketing.portlets.contentlet.util.ActionletUtil.hasPushPublishActionlet;
+import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.WHERE_TO_SEND;
 import static com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet.getEnvironmentsToSendTo;
 
@@ -404,7 +405,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					throw new DotSecurityException("User has no Add Children Permissions on selected host");
 				}
 				currentContentlet.setHost(hostId);
-				currentContentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+				currentContentlet.setFolder(SYSTEM_FOLDER);
 			}
 
 			if("folderInode".equalsIgnoreCase(elementName) &&
@@ -576,8 +577,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					false);
 			if (parentFolder != null
 					&& InodeUtils.isSet(parentFolder.getInode())) {
+
 				Host host = hostAPI.find(parentFolder.getHostId(), systemUser,
 						true);
+
 				String parentFolderPath = parentFolder.getPath();
 				if (UtilMethods.isSet(parentFolderPath)) {
 					if (!parentFolderPath.startsWith("/")) {
