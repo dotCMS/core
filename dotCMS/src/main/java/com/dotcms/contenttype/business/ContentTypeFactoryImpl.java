@@ -366,25 +366,26 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     ContentType retType = builder.build();
-    if(reservedContentTypeVars.contains(retType.variable().toLowerCase()) && !retType.system()){
+
+    if (oldContentType == null) {
+      if(reservedContentTypeVars.contains(retType.variable().toLowerCase()) && !retType.system()){
         Logger.warn(this, "Invalid content type variable - reserved var name: " + retType.variable().toLowerCase());
         throw new IllegalArgumentException("Invalid content type variable - reserved var name: " + retType.variable().toLowerCase());
-    }
-    if (oldContentType == null) {
-    	dbInodeInsert(retType);
-    	dbInsert(retType);
+      }
 
-    	if (isNew) {
-    		if (ContentTypeAPI.reservedStructureNames.contains(retType.name().toLowerCase()) && !retType.system()) {
-    			throw new DotDataException("cannot save a structure with name:" + retType.name());
-    		}
-    		if (ContentTypeAPI.reservedStructureVars.contains(retType.variable().toLowerCase()) && !retType.system()) {
-    			throw new DotDataException("cannot save a structure with name:" + retType.name());
-    		}
-    	}
+      dbInodeInsert(retType);
+      dbInsert(retType);
+
+      if (isNew) {
+          if (ContentTypeAPI.reservedStructureNames.contains(retType.name().toLowerCase()) && !retType.system()) {
+              throw new DotDataException("cannot save a structure with name:" + retType.name());
+          }
+          if (ContentTypeAPI.reservedStructureVars.contains(retType.variable().toLowerCase()) && !retType.system()) {
+              throw new DotDataException("cannot save a structure with name:" + retType.name());
+          }
+      }
 
     } else {
-
     	dbInodeUpdate(retType);
     	dbUpdate(retType);
     	retType = new ImplClassContentTypeTransformer(retType).from();

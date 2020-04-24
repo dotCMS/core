@@ -998,6 +998,51 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		Assert.assertEquals(varname, type.variable());
 	}
 
+	/**
+	 * Given scenario: Existing Content type with variable set with reserved var and not marked as system type
+	 * Expected result: should let update the Content Type and keep the same variable
+	 */
+	@Test
+	@UseDataProvider("getReservedTypeVariablesExcludingHost")
+	public void testSave_GivenExistingTypeWithReservedVar_ShouldUpdateAndKeepOriginalVar(final String varname)
+			throws DotSecurityException, DotDataException {
+
+		ContentType type = null;
+		try {
+			// let's first save it as system to bypass the validation
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.folder(FolderAPI.SYSTEM_FOLDER)
+							.host(Host.SYSTEM_HOST)
+							.variable(varname) // setting varname as variable!
+							.name(varname) // setting varname as name!
+							.system(true) // system true!
+							.owner(user.getUserId())
+							.build());
+
+			Assert.assertEquals(varname, type.variable());
+
+			// now let's try to update the Content type's name and system=false
+			type = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.save(ContentTypeBuilder
+							.builder(SimpleContentType.class)
+							.from(type)
+							.name("new name")
+							.system(false) // system false!
+							.build());
+
+			assertEquals("new name", type.name());
+			assertFalse(type.system());
+
+		} finally {
+			if(type!=null) {
+				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+			}
+		}
+	}
+
+
 	@Test
 	@UseDataProvider("testCasesUpdateTypePermissions")
 	public void testDeleteLimitedUserPermissions(final TestCaseUpdateContentTypePermissions testCase)
