@@ -6,6 +6,7 @@ import java.util.List;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.IconType;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
@@ -399,34 +400,50 @@ public class UtilHTML {
 
 		return strHTML.toString();
 	}
-	
-	public static String getIconClass(Contentlet contentlet) throws DotDataException {
-	    
-        ContentType type = contentlet.getContentType();
 
-        Identifier ident = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+	/**
+	 * Return the Icon Class for the Front End
+	 * @param contentlet {@link Contentlet}
+	 * @return String
+	 * @throws DotDataException
+	 */
+	public static String getIconClass(final Contentlet contentlet) throws DotDataException {
+	    
+        final ContentType type = contentlet.getContentType();
 
         switch(type.baseType()) {
             case CONTENT:
-                return "contentIcon";
+
+                return IconType.CONTENT.iconName();
             case WIDGET:
-                return "gearIcon";
+
+                return IconType.WIDGET.iconName();
             case FORM:
-                return "formIcon";
+
+                return IconType.FORM.iconName();
             case FILEASSET:
-                return "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon";
+
+				final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+                return "uknIcon " + UtilMethods.getFileExtension( identifier.getURI()) + "Icon";
             case HTMLPAGE:
-                return "pageIcon";
+
+                return IconType.HTMLPAGE.iconName();
             case KEY_VALUE:
-                return "keyValueIcon";
+
+                return IconType.KEY_VALUE.iconName();
             case PERSONA:
-                return "personaIcon";
+
+                return IconType.PERSONA.iconName();
             case VANITY_URL:
-                return "vanityIcon";
+
+                return IconType.VANITY_URL.iconName();
             case DOTASSET:
-                return "uknIcon " + UtilMethods.getFileExtension( Try.of(()-> contentlet.getBinary("asset").getName()).getOrElse("ukn") )+ "Icon";
+
+                return "uknIcon " + UtilMethods.getFileExtension(
+                		Try.of(()-> contentlet.getBinary("asset").getName())
+								.getOrElse("ukn") )+ "Icon";
             default:
-                return "uknIcon";
+                return IconType.UNKNOWN.iconName();
         }
 	}
 	

@@ -28,28 +28,26 @@ public class BrowserQuery {
                         + languageId + ", extensions:" + extensions + ", mimeTypes:" + mimeTypes + "}";
     }
 
+    private BrowserQuery(final Builder builder) {
 
-    private BrowserQuery(Builder builder) {
-        this.user = (builder.user==null) ? APILocator.systemUser() : builder.user;
-        this.hostFolderId = builder.hostFolderId;
-        this.filter = builder.filter;
-        this.mimeTypes = builder.mimeTypes;
-        this.extensions = builder.extensions;
-        this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
-        this.offset = builder.offset;
-        this.maxResults = builder.maxResults>500 ? 500 : builder.maxResults;
-        this.showWorking = builder.showWorking;
-        this.showArchived = builder.showArchived;
-        this.showFolders = builder.showFolders;
-        this.showFiles = builder.showFiles;
-        this.sortByDesc = builder.sortByDesc;
-        this.showLinks = builder.showLinks;
-        this.showPages = builder.showPages;
+        this.user          = builder.user == null? APILocator.systemUser() : builder.user;
+        this.hostFolderId  = builder.hostFolderId;
+        this.filter        = builder.filter;
+        this.mimeTypes     = builder.mimeTypes;
+        this.extensions    = builder.extensions;
+        this.sortBy        = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
+        this.offset        = builder.offset;
+        this.maxResults    = builder.maxResults>500 ? 500 : builder.maxResults;
+        this.showWorking   = builder.showWorking;
+        this.showArchived  = builder.showArchived;
+        this.showFolders   = builder.showFolders;
+        this.showFiles     = builder.showFiles;
+        this.sortByDesc    = builder.sortByDesc;
+        this.showLinks     = builder.showLinks;
+        this.showPages     = builder.showPages;
         this.showDotAssets = builder.showDotAssets;
-        this.languageId = builder.languageId;
-  
+        this.languageId    = builder.languageId;
     }
-
 
     /**
      * Creates builder to build {@link BrowserQuery}.
@@ -218,8 +216,6 @@ public class BrowserQuery {
             return new BrowserQuery(this);
         }
     }
-
-
 
 }
 
