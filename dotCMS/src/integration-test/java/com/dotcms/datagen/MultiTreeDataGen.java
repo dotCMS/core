@@ -22,6 +22,8 @@ public class MultiTreeDataGen extends AbstractDataGen<MultiTree> {
         multiTree.setContainer(container);
         multiTree.setContentlet(contentlet);
         multiTree.setInstanceId(instanceID);
+        multiTree.setTreeOrder(treeOrder);
+        multiTree.setPersonalization(personalization);
         multiTree.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
         multiTree.setTreeOrder(1);
 
