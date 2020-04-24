@@ -63,30 +63,45 @@ dojo.require("dijit.Tree")
 dojo.require("dijit.Dialog")
 dojo.require("dotcms.dijit.tree.HostFolderTreeReadStoreModel")
 
+function getItemImage(data) {
+    return data.thumbnail ? 
+    `<div class="thumbnail" style="background-image: url('{thumbnail}');">
+        <img src="{thumbnail}" alt="{name}" aria-label="{name}">
+    </div>`
+    :
+    `<div class="icon"><div class="${data.icon}"></div></div>`
+}
+
 dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated], {
 
 	templatePath: dojo.moduleUrl("dotcms", "dijit/FileBrowserDialog.jsp"),
-	detailsRowTemplate: `
-	    <td id="file-{id}" nowrap>
-	        <a class="selectableFile">
-                <div class="thumbnail" style="background-image: url('{thumbnail}');">
-                    <img src="{thumbnail}" alt="{name}" aria-label="{name}">
-                </div>
-	            <div style="margin:5px;">{name}</div>
-	        </a>
+	detailsRowTemplate: (data) => {
+        var image = getItemImage(data)
 
-	    </td>
-	    <td>{description}</td>
-	    <td>{modUser}</td>
-	    <td>{modDate}</td>`,
+        return `
+            <td id="file-{id}" nowrap>
+                <a class="selectableFile">
+                    ${image}
+                    <div style="margin:5px;">{name}</div>
+                </a>
 
-	cardTemplate: `
-        <div id="file-{id}" class="file-selector-tree__card">
-            <div class="thumbnail" style="background-image: url('{thumbnail}');">
-                <img src="{thumbnail}" alt="{name}" aria-label="{name}">
+            </td>
+            <td>{description}</td>
+            <td>{modUser}</td>
+            <td>{modDate}</td>
+        `
+    },
+
+	cardTemplate: (data) => {
+        var image = getItemImage(data)
+        return `
+            <div id="file-{id}" class="file-selector-tree__card">
+                ${image}
+                <div class="label">{name}</div>
             </div>
-            <div class="label">{name}</div>
-	   </div>`,
+       `
+       
+    },
 	widgetsInTemplate: true,
 	style: "width: 1000px; height: 500px;",
 	currentView: 'details',
@@ -297,14 +312,24 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 			var asset = assets[i];
 			this._normalizeAssetData(asset);
             // Shorten 'name' and 'title' values to 30 chars max, for display purposes ONLY. Leave original values as they are
-			var rowHTML = dojo.replace(template, { id: asset.identifier, firstLetter: shortenString(asset.title, 1), name: shortenString(asset.title, 30), description: (asset.friendlyName) ? asset.friendlyName : "",
-					modUser: asset.modUserName, modDate: asset.modDateFormatted, className: className, icon: asset.icon, thumbnail: asset.thumbnail, title: shortenString(asset.title, 30) });
+            var data = {
+                id: asset.identifier,
+                firstLetter: shortenString(asset.title, 1),
+                name: shortenString(asset.title, 30),
+                description: (asset.friendlyName) ? asset.friendlyName : "",
+                modUser: asset.modUserName,
+                modDate: asset.modDateFormatted,
+                className: className, icon: asset.icon,
+                thumbnail: asset.thumbnail,
+                title: shortenString(asset.title, 30)
+            }
+			var rowHTML = dojo.replace(template(data), data);
 
 			if(columnNumber == 0) {
 				if(this.currentView == 'details')
-					rowHTML = 	'<tr class="' + className + '">' + rowHTML;
+					rowHTML = '<tr class="' + className + '">' + rowHTML;
 				else
-					rowHTML = 	'' + rowHTML;
+					rowHTML = '' + rowHTML;
 			}
 
 
@@ -390,29 +415,30 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 
 	_normalizeAssetData: function(asset) {
 
+        var iconMap = {
+            file_asset: 'fileIcon',
+            dotasset: 'dotAssetIcon',
+            htmlpage: 'pageIcon',
+            links: 'linkIcon',
+        }
+
         var name = asset.title;
-   		var assetIcon = '/icon?i=' + asset.extension;
-   		var assetThumbnail = '/icon?i=' + asset.extension;
+   		var assetIcon = iconMap[asset.type]
+   		let assetThumbnail;
 
    		if (asset.type == 'file_asset' || asset.type == 'dotasset') {
    			name = asset.fileName;
-            assetIcon = '/html/images/icons/' + asset.extension + '.png';
 
-   			if(asset.mimeType != null && asset.mimeType.indexOf('image/') == 0 ){
-   			    assetIcon = '/dA/' + asset.inode + '/32w/30q/' + asset.name;
+   			if (asset.mimeType != null && asset.mimeType.indexOf('image/') == 0 ){
 				assetThumbnail = '/dA/' + asset.inode + '/200w/30q/' + asset.name;
-		
    			}
-   		}
+        }
+           
    		if (asset.type == 'htmlpage') {
    			name = asset.pageUrl;
-   			assetIcon = '/html/images/icons/blog-blue.png';
-   			assetThumbnail = assetIcon;
-   		}
-   		if (asset.type == 'links') {
-   			assetIcon = '/icon?i=entry16';
-   			assetThumbnail = assetIcon;
-		}
+        }
+
+
 
 		if(asset.modDate) {
 			var hours = asset.modDate.getHours() < 10?"0" + asset.modDate.getHours():asset.modDate.getHours();
@@ -425,7 +451,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 
 		}
 		else
-			var modDate = "";
+        var modDate = "";
 
 		asset.name = name;
 		asset.icon = assetIcon;
