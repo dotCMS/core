@@ -36,7 +36,7 @@ public class NormalizationFilter implements Filter {
                  2. A ".." segment is removed only if it is preceded by a non-".." segment.
                  3. Normalization has no effect upon opaque URIs. (mailto:a@b.com)
                  */
-                return URI.create(super.getRequestURI()).normalize().toString();
+                return URI.create(super.getRequestURI()).normalize().toString().replace("//", "/");
             }
 
         };
