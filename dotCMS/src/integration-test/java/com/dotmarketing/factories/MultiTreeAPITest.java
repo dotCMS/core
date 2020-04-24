@@ -633,6 +633,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .languageId(defaultLanguage.getId())
                 .nextPersisted();
 
+        final Contentlet enContentlet2 = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
         final Contentlet espContentlet = new ContentletDataGen(contentType.id())
                 .languageId(espLanguage.getId())
                 .nextPersisted();
@@ -657,6 +661,15 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         new MultiTreeDataGen()
                 .setPage(page)
                 .setContainer(container)
+                .setContentlet(enContentlet2)
+                .setInstanceID(uniqueId)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContainer(container)
                 .setContentlet(espContentlet)
                 .setInstanceID(uniqueId)
                 .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
@@ -674,7 +687,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setInstanceID(uniqueId)
                 .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
                 .setTreeOrder(1)
-                .nextPersisted();
+                .next();
 
         APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
                 page.getIdentifier(),
@@ -751,7 +764,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setInstanceID(uniqueId)
                 .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
                 .setTreeOrder(1)
-                .nextPersisted();
+                .next();
 
         APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
                 page.getIdentifier(),
