@@ -640,4 +640,13 @@ class AppsHelper {
          return true;
     }
 
+    /**
+     * Removes orphans left behind after having removed the site that once owned them.
+     * @param user
+     */
+    Map<String, Set<String>> destroyOrphans(final User user)
+            throws DotSecurityException, DotDataException {
+       return appsAPI.destroyOrphanSecrets(user);
+    }
+
 }

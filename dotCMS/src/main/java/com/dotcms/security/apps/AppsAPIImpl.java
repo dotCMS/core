@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -21,6 +22,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.Sets;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
@@ -44,6 +48,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This API serves as the bridge between the secrets safe repository
@@ -130,13 +135,24 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     @Override
-    public Map<String, Set<String>> appKeysByHost() {
-        return secretsStore.listKeys().stream()
+    public Map<String, Set<String>> appKeysByHost() throws DotSecurityException, DotDataException{
+      return appKeysByHost(true);
+    }
+
+    @Override
+    public Map<String, Set<String>> appKeysByHost(final boolean filterNonExisting)
+            throws DotSecurityException, DotDataException {
+        Stream<String[]> stream = secretsStore.listKeys().stream()
                 .filter(s -> s.contains(HOST_SECRET_KEY_SEPARATOR))
                 .map(s -> s.split(HOST_SECRET_KEY_SEPARATOR))
-                .filter(strings -> strings.length == 2)
-                .collect(Collectors.groupingBy(strings -> strings[0],
-                        Collectors.mapping(strings -> strings[1], Collectors.toSet())));
+                .filter(strings -> strings.length == 2);
+        if (filterNonExisting) {
+            final Set<String> validSites = hostAPI.findAll(APILocator.systemUser(), false).stream()
+                    .map(Contentlet::getIdentifier).map(String::toLowerCase).collect(Collectors.toSet());
+            stream = stream.filter(strings -> validSites.contains(strings[0]));
+        }
+        return stream.collect(Collectors.groupingBy(strings -> strings[0],
+                Collectors.mapping(strings -> strings[1], Collectors.toSet())));
     }
 
     @Override
@@ -294,12 +310,18 @@ public class AppsAPIImpl implements AppsAPI {
     @Override
     public void deleteSecrets(final String key, final Host host, final User user)
             throws DotDataException, DotSecurityException {
+        deleteSecrets(key, host.getIdentifier(), user);
+    }
+
+
+    private void deleteSecrets(final String key, final String siteIdentifier, final User user)
+            throws DotDataException, DotSecurityException {
         if (userDoesNotHaveAccess(user)) {
             throw new DotSecurityException(String.format(
                     "Invalid service delete attempt on `%s` for host `%s` performed by user with id `%s`",
-                    key, host.getIdentifier(), user.getUserId()));
+                    key, siteIdentifier, user.getUserId()));
         } else {
-            secretsStore.deleteValue(internalKey(key, host));
+            secretsStore.deleteValue(internalKey(key, siteIdentifier));
         }
     }
 
@@ -411,7 +433,7 @@ public class AppsAPIImpl implements AppsAPI {
         }else{
             // if we succeed trying to find the descriptor.
             // Lets get all the service-keys and organized by host-id
-            final Map<String, Set<String>> appKeysByHost = appKeysByHost();
+            final Map<String, Set<String>> appKeysByHost = appKeysByHost(true);
             for (final Entry<String, Set<String>> entry : appKeysByHost.entrySet()) {
                 final String hostId = entry.getKey();
                 final Set<String> appKeys = entry.getValue();
@@ -665,6 +687,30 @@ public class AppsAPIImpl implements AppsAPI {
                             serviceDescriptor.getKey()));
         }
         return true;
+    }
+
+    /**
+     * Orphan secretas are secrets that can not be recovered from the UI because the site they belong to is no longer there
+     * it has been removed.
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Override
+    public Map<String, Set<String>> destroyOrphanSecrets(final User user) throws DotDataException, DotSecurityException {
+        final Builder<String, Set<String>> builder = new ImmutableMap.Builder<>();
+        final Set<String> validSites = hostAPI.findAll(APILocator.systemUser(), false).stream()
+                .map(Contentlet::getIdentifier).map(String::toLowerCase).collect(Collectors.toSet());
+        final Map<String, Set<String>> keysByHost = appKeysByHost(false);
+        final Set<String> allIncludingAnyRemovedSite = keysByHost.keySet();
+        final Set<String> invalidSites = Sets.difference(allIncludingAnyRemovedSite, validSites);
+        for(final String invalidSite:invalidSites){
+            final Set<String> invalidKeys = keysByHost.get(invalidSite);
+            for (final String invalidKey : invalidKeys) {
+                deleteSecrets(invalidKey, invalidSite, user);
+            }
+            builder.put(invalidSite,invalidKeys);
+        }
+        return builder.build();
     }
 
 }

@@ -34,7 +34,9 @@ public interface AppsAPI {
      * Conforms a map where the Elements are lists of app unique names, organized by host as key.
      * @return
      */
-    Map<String, Set<String>> appKeysByHost();
+    Map<String, Set<String>> appKeysByHost() throws DotSecurityException, DotDataException;
+
+    Map<String, Set<String>> appKeysByHost(boolean filterExisting) throws DotSecurityException, DotDataException;
 
     /**
      * This returns a json object read from the secret store that contains the apps integration configuration and secret.
@@ -151,6 +153,16 @@ public interface AppsAPI {
     void removeApp(final String key, final User user,
             final boolean removeDescriptor)
             throws DotSecurityException, DotDataException;
+
+    /**
+     * Clean up method that will destroy any orphans secrets left hanging for deleted sites.
+     * @param user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    Map<String, Set<String>> destroyOrphanSecrets(
+            User user) throws DotDataException, DotSecurityException;
 
     enum INSTANCE {
         INSTANCE;

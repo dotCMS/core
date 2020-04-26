@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "423987b3-9e86-45ef-998d-e85d613647ab",
+		"_postman_id": "0cc2d44c-aaa4-434d-a0b7-5255d8d09e69",
 		"name": "Apps",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -1252,6 +1252,81 @@
 								"v1",
 								"apps",
 								"{{key}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "apps-remove-orphans",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "fc16be18-0766-4241-b8c9-0505c45c83b7",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotCMS.com",
+									"type": "string"
+								},
+								{
+									"key": "saveHelperData",
+									"type": "any"
+								},
+								{
+									"key": "showPassword",
+									"value": false,
+									"type": "boolean"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/{{key}}?removeDescriptor=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apps",
+								"{{key}}"
+							],
+							"query": [
+								{
+									"key": "removeDescriptor",
+									"value": "true"
+								}
 							]
 						}
 					},

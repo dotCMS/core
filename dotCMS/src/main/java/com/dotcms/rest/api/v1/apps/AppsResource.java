@@ -17,7 +17,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BeanParam;
@@ -432,5 +434,42 @@ public class AppsResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
+
+    /**
+     * Removes orphans left behind after having removed the site that once owned them.
+     * This is intended for support use.
+     * @param request
+     * @param response
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @DELETE
+    @Path("/orphans")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response destroyOrphan(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response
+    ) {
+        try {
+            final InitDataObject initData =
+                    new WebResource.InitBuilder(webResource)
+                            .requiredBackendUser(true)
+                            .requiredFrontendUser(false)
+                            .requestAndResponse(request, response)
+                            .rejectWhenNoUser(true)
+                            .init();
+            final User user = initData.getUser();
+            final Map<String, Set<String>> stats = helper.destroyOrphans(user);
+            return Response.ok(new ResponseEntityView(stats)).build(); // 200
+        } catch (Exception e) {
+            //By doing this mapping here. The resource becomes integration test friendly.
+            Logger.error(this.getClass(),"Exception removing orphans");
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
 
 }

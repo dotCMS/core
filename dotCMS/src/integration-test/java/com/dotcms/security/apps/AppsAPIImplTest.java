@@ -24,6 +24,7 @@ import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -39,6 +40,7 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -597,6 +599,38 @@ public class AppsAPIImplTest {
             portlet = portletDataGen.portletId(integrationsPortletId).nextPersisted();
         }
         return portlet;
+    }
+
+    @Test
+    public void Test_Destroy_Orphan_Secrets()
+            throws DotDataException, DotSecurityException {
+        final AppsAPI api = APILocator.getAppsAPI();
+        final User admin = TestUserUtils.getAdminUser();
+        final Map<String,Set<String>> stats = api.destroyOrphanSecrets(admin);
+
+        assertTrue(stats.isEmpty());
+        final String appKey ="appKeyHost-1";
+        //Let's create a set of secrets for a service
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final AppSecrets secrets1 = builder1.withKey(appKey)
+                .withHiddenSecret("test:secret1", "secret-1")
+                .withHiddenSecret("test:secret2", "secret-2")
+                .build();
+        final Host newSite = new SiteDataGen().nextPersisted();
+        //Save it
+        api.saveSecrets(secrets1, newSite, admin);
+        //Now delete the site
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        hostAPI.archive(newSite, admin, false);
+        hostAPI.delete(newSite, admin, false);
+        final Set<String> validSites = hostAPI.findAll(admin, false).stream().map(Host::getIdentifier).collect(Collectors.toSet());
+        assertFalse(validSites.contains(newSite.getIdentifier()));
+        //Passed this point we're ready to run our real-test.
+        final Map<String,Set<String>> postSiteDeleteStats = api.destroyOrphanSecrets(admin);
+        assertEquals(1, postSiteDeleteStats.size());
+        final Set<String> appKeys = postSiteDeleteStats.get(newSite.getIdentifier());
+        assertNotNull(appKeys);
+        assertTrue(appKeys.contains(appKey.toLowerCase()));
     }
 
 }
