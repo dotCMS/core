@@ -87,7 +87,7 @@ public class BrowserAjax {
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
 	private ContentletAPI contentletAPI = APILocator.getContentletAPI();
 	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
-	private BrowserAPI browserAPI = new BrowserAPI();
+	private BrowserAPI browserAPI = APILocator.getBrowserAPI();
 	private VersionableAPI versionAPI = APILocator.getVersionableAPI();
 	private IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 

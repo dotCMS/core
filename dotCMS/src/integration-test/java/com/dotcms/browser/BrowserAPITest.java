@@ -50,7 +50,7 @@ import io.vavr.Tuple3;
 
 public class BrowserAPITest extends IntegrationTestBase {
 
-    final BrowserAPI browserAPI = new BrowserAPI();
+    final BrowserAPI browserAPI = APILocator.getBrowserAPI();
     final FolderAPI folderAPI = APILocator.getFolderAPI();
     final UserAPI userAPI = APILocator.getUserAPI();
     final HostAPI hostAPI = APILocator.getHostAPI();
