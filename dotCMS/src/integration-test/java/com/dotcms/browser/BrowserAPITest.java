@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -64,17 +67,6 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     static Link testlink;
 
-
-    @AfterClass
-    public static void delete() throws Exception {
-        
-        //APILocator.getHostAPI().unpublish(testHost, APILocator.systemUser(), false);
-        //APILocator.getHostAPI().archive(testHost, APILocator.systemUser(), false);
-        //APILocator.getHostAPI().delete(testHost, APILocator.systemUser(), false);
-    }
-    
-    
-    
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -126,16 +118,12 @@ public class BrowserAPITest extends IntegrationTestBase {
 
 
     
-    @Test
-    public void testGetFolderContentWithInvalidIdentifier() { // https://github.com/dotCMS/core/issues/11829
+    @Test(expected = NotFoundInDbException.class)
+    public void testGetFolderContentWithInvalidIdentifier() throws DotDataException, DotSecurityException { // https://github.com/dotCMS/core/issues/11829
 
         final String NOT_EXISTING_ID = "01234567-1234-1234-1234-123456789012";
 
-        try {
-            browserAPI.getFolderContent( APILocator.systemUser(), NOT_EXISTING_ID, 0, -1, "", null, null, true, false, false, false, "", false, false, 1 );
-        } catch ( Exception e ){
-            Assert.assertTrue( e instanceof NotFoundInDbException );
-        }
+        browserAPI.getFolderContent( APILocator.systemUser(), NOT_EXISTING_ID, 0, -1, "", null, null, true, false, false, false, "", false, false, 1 );
     }
 
     @Test
