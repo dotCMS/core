@@ -186,6 +186,12 @@ public class CMSFilter implements Filter {
                 return;
             }
         }
+        
+        // allow vanities to forward to a dA asset
+        if(request instanceof VanityUrlRequestWrapper && !response.isCommitted() && (uri.startsWith("/dA/") || uri.startsWith("/contentAsset/")) ) {
+            request.getRequestDispatcher(uri).forward(request, response);
+            return;
+        }
 
 
         chain.doFilter(req, res);

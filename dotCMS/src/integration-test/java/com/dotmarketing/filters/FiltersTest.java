@@ -2,6 +2,7 @@ package com.dotmarketing.filters;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotcms.vanityurl.business.VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -14,6 +15,9 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.mock.request.MockHttpRequest;
+import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.rendering.velocity.servlet.VelocityServlet;
 import com.dotcms.util.FiltersUtil;
 import com.dotcms.util.IntegrationTestInitService;
@@ -274,6 +278,96 @@ public class FiltersTest {
 
         }
     }
+    
+    
+    final static String VANITY="VANITY";
+    final static String URL="URL";
+    
+    /**
+     * this method tests whether url query params are being passed properly
+     * @throws IOException
+     * @throws DotDataException
+     * @throws ServletException 
+     */
+    @Test
+    public void vanityUrlsShouldPassParams() throws Exception {
+
+
+        
+        //Init APIs and test values
+        Contentlet vanityUrl1 = null;
+        Contentlet vanityUrl2 = null;
+
+        // build them up
+        vanityUrl1 = filtersUtil.createVanityUrl("test link1", Host.SYSTEM_HOST, "/testLink1",
+                "/about-us/" + CMSFilter.CMS_INDEX_PAGE + "?param1="+ VANITY, 200, 1, defaultLanguageId);
+        filtersUtil.publishVanityUrl(vanityUrl1);
+
+        vanityUrl2 = filtersUtil.createVanityUrl("test link2", site.getIdentifier(),
+                "/testLink2", "/about-us/" + CMSFilter.CMS_INDEX_PAGE+ "?param1=" + VANITY, 200, 1,
+                defaultLanguageId);
+        filtersUtil.publishVanityUrl(vanityUrl2);
+
+        VanityURLFilter filter = new VanityURLFilter();
+        
+        HttpServletResponse response = new MockHttpStatusResponse(new MockHttpResponse().response()).response();
+        HttpServletRequest request = new MockHttpRequest(site.getHostname(), "/testLink1?param2=" + URL).request();
+        
+        MockFilterChain chain = new MockFilterChain();
+        
+        Logger.info(this.getClass(),
+                "/testLink1 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
+
+        filter.doFilter(request, response, chain);
+        
+        //get the wrapped request out of the chain
+        request =(HttpServletRequest) chain.request;
+        
+        //assert that we have a new request wrapper
+        assertTrue(request instanceof VanityUrlRequestWrapper);
+        
+        Assert.assertEquals(200, response.getStatus());
+        Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE, request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
+        
+        
+        assertTrue(VANITY.equals(request.getParameter("param1")));
+        assertTrue(URL.equals(request.getParameter("param2")));
+        
+
+        Logger.info(this.getClass(),
+                "/testLink2 should forward to /about-us/" + CMSFilter.CMS_INDEX_PAGE);
+        
+        request = new MockHttpRequest(site.getHostname(), "/testLink2?param1=" + URL + "&param2=" + URL).request();
+        
+        response = new MockHttpStatusResponse(new MockHttpResponse().response()).response();
+        filter.doFilter(request, response, chain);
+        //get the wrapped request out of the chain
+        request =(HttpServletRequest) chain.request;
+        
+        
+        Assert.assertEquals(200, response.getStatus());
+        Assert.assertEquals("/about-us/" + CMSFilter.CMS_INDEX_PAGE,
+                request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
+
+        // VANITY - from the VANITY takes priority
+        assertTrue(VANITY.equals(request.getParameter("param1")));
+
+        // the value passed in the URL takes secondary priority
+        assertTrue(VANITY.equals(request.getParameterValues("param1")[0]));
+        assertTrue(URL.equals(request.getParameterValues("param1")[1]));
+        assertTrue(URL.equals(request.getParameter("param2")));
+
+
+
+    }
+    
+    
+    
+    
+    
+    
+    
+    
 
     /**
      * Creates a vanity url that will change the cmsHomePage(redirect) to about-us/index.
@@ -831,5 +925,27 @@ public class FiltersTest {
             return null;
         }
     }
+    
+    class MockFilterChain implements FilterChain{
+
+        public ServletRequest request;
+        
+        
+        
+        
+        @Override
+        public void doFilter(ServletRequest arg0, ServletResponse arg1) throws IOException, ServletException {
+            this.request=arg0;
+            
+        }
+        
+        
+        
+        
+    }
+
+    
+    
+    
 
 }
