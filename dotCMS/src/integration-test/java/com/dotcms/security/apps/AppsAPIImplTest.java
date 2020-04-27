@@ -633,4 +633,35 @@ public class AppsAPIImplTest {
         assertTrue(appKeys.contains(appKey.toLowerCase()));
     }
 
+
+    @Test
+    public void Test_Delete_Secrets_On_Site_Delete()
+            throws DotDataException, DotSecurityException {
+        final AppsAPI api = APILocator.getAppsAPI();
+        final User admin = TestUserUtils.getAdminUser();
+
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final String appKey ="appKeyHost";
+        //Let's create a set of secrets for a service
+        final AppSecrets secrets1 = builder1.withKey(appKey)
+                .withHiddenSecret("test:secret1", "secret-1")
+                .withHiddenSecret("test:secret2", "secret-2")
+                .build();
+        final Host newSite = new SiteDataGen().nextPersisted();
+        //Save it
+        api.saveSecrets(secrets1, newSite, admin);
+
+        final Optional<AppSecrets> secrets = api.getSecrets(appKey, newSite, admin);
+        assertTrue(secrets.isPresent());
+
+        //Now delete the site
+        final HostAPI hostAPI = APILocator.getHostAPI();
+        hostAPI.archive(newSite, admin, false);
+        hostAPI.delete(newSite, admin, false);
+
+        final Optional<AppSecrets> secretsAfterSiteDelete = api.getSecrets(appKey, newSite, admin);
+        assertFalse(secretsAfterSiteDelete.isPresent());
+
+    }
+
 }
