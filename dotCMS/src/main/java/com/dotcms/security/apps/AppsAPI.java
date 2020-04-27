@@ -118,7 +118,7 @@ public interface AppsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     *
+     * Given an app key and the current user this will give back the appDescriptor
      * @param key
      * @param user
      * @return
@@ -129,7 +129,7 @@ public interface AppsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     *
+     * Create an App-Descriptor given an InputStream from a yml file read
      * @param inputStream
      * @param user
      * @throws IOException
@@ -141,7 +141,7 @@ public interface AppsAPI {
             User user) throws IOException, DotDataException, DotSecurityException;
 
     /**
-     *
+     * Remove an App and all the secrets underneath.
      * @param key
      * @param user
      * @param removeDescriptor
@@ -153,17 +153,7 @@ public interface AppsAPI {
             throws DotSecurityException, DotDataException;
 
     /**
-     * Clean up method that will destroy any orphans secrets left hanging for deleted sites.
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    Map<String, Set<String>> destroyOrphanSecrets(
-            User user) throws DotDataException, DotSecurityException;
-
-    /**
-     * Method mean to to be consumed from a site delete event.
+     * Method meant to to be consumed from a site delete event.
      * @param host
      * @param user
      * @throws DotDataException
@@ -171,6 +161,31 @@ public interface AppsAPI {
      */
     void removeSecretsForSite(Host host, User user)
                     throws DotDataException, DotSecurityException;
+    /**
+     * Warnings are any secrets missing required values stated on the AppDescriptor
+     * @param appDescriptor
+     * @param sitesWithConfigurations
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    Map<String, Map<String, List<String>>> computeWarningsBySite(final AppDescriptor appDescriptor,
+            final Set<String> sitesWithConfigurations, final User user)
+            throws DotSecurityException, DotDataException;
+
+    /**
+     * Warnings are any secrets missing required values stated on the AppDescriptor
+     * @param appDescriptor
+     * @param site
+     * @param user
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    Map<String, List<String>> computeSecretWarnings(final AppDescriptor appDescriptor, final Host site, final User user)
+            throws DotSecurityException, DotDataException;
+
 
     enum INSTANCE {
         INSTANCE;

@@ -2,7 +2,8 @@ package com.dotcms.security.apps;
 
 import static com.dotcms.security.apps.AppsUtil.readJson;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
-
+import static com.google.common.collect.ImmutableList.of;
+import static java.util.Collections.emptyMap;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -487,8 +489,70 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
-    private synchronized void invalidateCache(){
-        appsCache.invalidateDescriptorsCache();
+    /**
+     * This gives a Map organized by host id that contains a Map of secrets and their warnings asa list.
+     * @param appDescriptor
+     * @param sitesWithConfigurations
+     * @param user
+     * @return A Map organized by host id that contains a Map of secrets and their warnings
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public Map<String, Map<String, List<String>>> computeWarningsBySite(final AppDescriptor appDescriptor,
+            final Set<String> sitesWithConfigurations, final User user)
+            throws DotSecurityException, DotDataException {
+        final Builder<String, Map<String, List<String>>> builder = ImmutableMap.builder();
+        for (String hostId : sitesWithConfigurations) {
+            final Host site = hostAPI.find(hostId, user, false);
+            if(null != site){
+               final Map<String, List<String>> warnings = computeSecretWarnings(appDescriptor, site, user);
+               builder.put(site.getIdentifier(), warnings);
+            }
+        }
+        return builder.build();
+    }
+
+    /**
+     * The returned list for now will only have one entry. However the structure is a Map of list to allow several warnings in future implementations.
+     * @param appDescriptor
+     * @param site
+     * @param user
+     * @return Map of params and a List of warnings.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public Map<String, List<String>> computeSecretWarnings(final AppDescriptor appDescriptor,
+            final Host site, final User user)
+            throws DotSecurityException, DotDataException {
+        final String appKey = appDescriptor.getKey();
+        final boolean hasConfigurations = !filterSitesForAppKey(appKey, of(site.getIdentifier()),
+                user).isEmpty();
+        if (hasConfigurations) {
+            final Optional<AppSecrets> secretsOptional = getSecrets(appKey, site, user);
+            if (secretsOptional.isPresent()) {
+                final Map<String, List<String>> warnings = new HashMap<>();
+                final AppSecrets appSecrets = secretsOptional.get();
+                for (final Entry<String, ParamDescriptor> entry : appDescriptor.getParams().entrySet()) {
+                    final String paramName = entry.getKey();
+                    final ParamDescriptor descriptor = entry.getValue();
+                    final Secret secret = appSecrets.getSecrets().get(paramName);
+                    if (descriptor.isRequired() && UtilMethods.isNotSet(descriptor.getValue()) && (
+                            null == secret || UtilMethods.isNotSet(secret.getValue()))) {
+                        warnings.put(paramName, of(String
+                                .format("`%s` is required. It is missing a value and no default is provided.",
+                                        paramName)));
+                    }
+                }
+                return warnings;
+            }
+        }
+        return emptyMap();
+    }
+
+    private void invalidateCache() {
+        synchronized (AppsAPIImpl.class) {
+            appsCache.invalidateDescriptorsCache();
+        }
     }
 
     private static String getServiceDescriptorDirectory() {
@@ -703,35 +767,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
-     * Orphan secrets are secrets that can not be recovered from the UI because the site they belong to is no longer there
-     * it has been removed.
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @Override
-    public Map<String, Set<String>> destroyOrphanSecrets(final User user)
-            throws DotDataException, DotSecurityException {
-        final Builder<String, Set<String>> builder = new ImmutableMap.Builder<>();
-        final Set<String> validSites = hostAPI.findAll(APILocator.systemUser(), false).stream()
-                .map(Contentlet::getIdentifier).map(String::toLowerCase)
-                .collect(Collectors.toSet());
-        final Map<String, Set<String>> keysByHost = appKeysByHost(false);
-        final Set<String> allIncludingAnyRemovedSite = keysByHost.keySet();
-        final Set<String> invalidSites = Sets.difference(allIncludingAnyRemovedSite, validSites);
-        for (final String invalidSite : invalidSites) {
-            final Set<String> invalidKeys = keysByHost.get(invalidSite);
-            if (null != invalidKeys) {
-                for (final String invalidKey : invalidKeys) {
-                    deleteSecrets(invalidKey, invalidSite, user);
-                }
-                builder.put(invalidSite, invalidKeys);
-            }
-        }
-        return builder.build();
-    }
-
-    /**
-     * Method mean to to be consumed from a site delete event.
+     * Method meant to to be consumed from a delete site event.
      * @param host
      * @param user
      * @throws DotDataException
@@ -740,12 +776,14 @@ public class AppsAPIImpl implements AppsAPI {
     @Override
     public void removeSecretsForSite(final Host host, final User user)
             throws DotDataException, DotSecurityException {
+        Logger.info(AppsAPIImpl.class, () -> String.format(" Removing secrets under site `%s` ", host.getName()));
         //This must be called with param filterNonExisting in false since the first thing that delete-site does is clear cache.
         final Map<String, Set<String>> keysByHost = appKeysByHost(false);
         final Set<String> secretKeys = keysByHost.get(host.getIdentifier().toLowerCase());
         if (null != secretKeys) {
             for (final String secretKey : secretKeys) {
                 deleteSecrets(secretKey, host.getIdentifier(), user);
+                Logger.info(AppsAPIImpl.class, () -> String.format(" Secret with `%s` has been removed. ", secretKey));
             }
         }
     }

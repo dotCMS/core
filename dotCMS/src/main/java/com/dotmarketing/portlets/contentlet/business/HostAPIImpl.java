@@ -746,7 +746,7 @@ public class HostAPIImpl implements HostAPI {
                 Contentlet c = contentAPI.find(host.getInode(), user, respectFrontendRoles);
                 contentAPI.delete(c, user, respectFrontendRoles);
 
-                APILocator.getAppsAPI().removeSecretsForSite(host, user);
+                APILocator.getAppsAPI().removeSecretsForSite(host, APILocator.systemUser());
 
                 hostCache.remove(host);
                 hostCache.clearAliasCache();
