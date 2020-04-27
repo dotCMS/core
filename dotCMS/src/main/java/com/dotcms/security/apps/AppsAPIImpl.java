@@ -2,6 +2,8 @@ package com.dotcms.security.apps;
 
 import static com.dotcms.security.apps.AppsUtil.readJson;
 import static com.dotcms.security.apps.AppsUtil.toJsonAsChars;
+import static com.google.common.collect.ImmutableList.of;
+import static java.util.Collections.emptyMap;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -21,6 +23,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
@@ -35,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -452,8 +457,70 @@ public class AppsAPIImpl implements AppsAPI {
         }
     }
 
-    private synchronized void invalidateCache(){
-        appsCache.invalidateDescriptorsCache();
+    /**
+     * This gives a Map organized by host id that contains a Map of secrets and their warnings asa list.
+     * @param appDescriptor
+     * @param sitesWithConfigurations
+     * @param user
+     * @return A Map organized by host id that contains a Map of secrets and their warnings
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public Map<String, Map<String, List<String>>> computeWarningsBySite(final AppDescriptor appDescriptor,
+            final Set<String> sitesWithConfigurations, final User user)
+            throws DotSecurityException, DotDataException {
+        final Builder<String, Map<String, List<String>>> builder = ImmutableMap.builder();
+        for (String hostId : sitesWithConfigurations) {
+            final Host site = hostAPI.find(hostId, user, false);
+            if(null != site){
+               final Map<String, List<String>> warnings = computeSecretWarnings(appDescriptor, site, user);
+               builder.put(site.getIdentifier(), warnings);
+            }
+        }
+        return builder.build();
+    }
+
+    /**
+     * The returned list for now will only have one entry. However the structure is a Map of list to allow several warnings in future implementations.
+     * @param appDescriptor
+     * @param site
+     * @param user
+     * @return Map of params and a List of warnings.
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public Map<String, List<String>> computeSecretWarnings(final AppDescriptor appDescriptor,
+            final Host site, final User user)
+            throws DotSecurityException, DotDataException {
+        final String appKey = appDescriptor.getKey();
+        final boolean hasConfigurations = !filterSitesForAppKey(appKey, of(site.getIdentifier()),
+                user).isEmpty();
+        if (hasConfigurations) {
+            final Optional<AppSecrets> secretsOptional = getSecrets(appKey, site, user);
+            if (secretsOptional.isPresent()) {
+                final Map<String, List<String>> warnings = new HashMap<>();
+                final AppSecrets appSecrets = secretsOptional.get();
+                for (final Entry<String, ParamDescriptor> entry : appDescriptor.getParams().entrySet()) {
+                    final String paramName = entry.getKey();
+                    final ParamDescriptor descriptor = entry.getValue();
+                    final Secret secret = appSecrets.getSecrets().get(paramName);
+                    if (descriptor.isRequired() && UtilMethods.isNotSet(descriptor.getValue()) && (
+                            null == secret || UtilMethods.isNotSet(secret.getValue()))) {
+                        warnings.put(paramName, of(String
+                                .format("`%s` is required. It is missing a value and no default is provided.",
+                                        paramName)));
+                    }
+                }
+                return warnings;
+            }
+        }
+        return emptyMap();
+    }
+
+    private void invalidateCache() {
+        synchronized (AppsAPIImpl.class) {
+            appsCache.invalidateDescriptorsCache();
+        }
     }
 
     private static String getServiceDescriptorDirectory() {

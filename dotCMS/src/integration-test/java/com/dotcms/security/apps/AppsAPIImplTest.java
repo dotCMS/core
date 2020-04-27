@@ -2,10 +2,13 @@ package com.dotcms.security.apps;
 
 import static com.dotcms.security.apps.ParamDescriptor.newParam;
 import static com.dotcms.security.apps.Secret.newSecret;
+import static com.google.common.collect.ImmutableMap.of;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.LayoutDataGen;
@@ -36,6 +39,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -432,6 +436,88 @@ public class AppsAPIImplTest {
                  assertEquals(chr,(char)0);
             }
         }
+    }
+
+    /**
+     * Test computeSecretWarnings.
+     * Given scenario: You create a secret with no value the secret is expected to be required according to the descriptor.
+     * Expected Result: Such situation should generate a warning
+     */
+    @Test
+    public void Test_Secret_Integrity_Check_Expect_Warning()
+            throws DotDataException, DotSecurityException {
+        final AppsAPI api = APILocator.getAppsAPI();
+
+        final String appKey = "any-key";
+
+        final AppDescriptor descriptor = mock(AppDescriptor.class);
+        when(descriptor.isAllowExtraParameters()).thenReturn(false);
+        final Map<String, ParamDescriptor> params = of(
+        "requiredNoDefault",newParam(null, false, Type.STRING, "any", "hint", true), // This is the rule we intend to break
+        "requiredDefault", newParam("default", false, Type.STRING, "any", "hint", true),
+        "nonRequiredNoDefault", newParam(null, false, Type.STRING, "any", "hint", false)
+         );
+        when(descriptor.getParams()).thenReturn(params);
+        when(descriptor.getName()).thenReturn("any-name");
+        when(descriptor.getKey()).thenReturn(appKey);
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final User admin = TestUserUtils.getAdminUser();
+
+        //Let's create a set of secrets for a service
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final AppSecrets secrets = builder1.withKey(appKey)
+                .withHiddenSecret("requiredNoDefault", "") //Here's the offense.
+                .withHiddenSecret("requiredDefault", "secret-2")
+                .build();
+        //Save it
+        api.saveSecrets(secrets, site, admin);
+        final Map<String, List<String>> optionalAppWarning = api.computeSecretWarnings(descriptor, site, admin);
+        assertFalse(optionalAppWarning.isEmpty());
+
+        final Map<String, Map<String, List<String>>> warningsBySite = api.computeWarningsBySite(descriptor, ImmutableSet.of(site.getIdentifier()), admin);
+        assertFalse(warningsBySite.get(site.getIdentifier()).isEmpty());
+    }
+
+    /**
+     * Test computeSecretWarnings.
+     * Given scenario: You create a descriptor that states a param to be required. Then you set a Param that has no value on the expected required param.
+     * Expected Result: Such situation should NOT generate no warning.
+     */
+    @Test
+    public void Test_Secret_Integrity_Check_Expect_No_Warning()
+            throws DotDataException, DotSecurityException {
+        final AppsAPI api = APILocator.getAppsAPI();
+
+        final String appKey = "any-key";
+
+        final AppDescriptor descriptor = mock(AppDescriptor.class);
+        when(descriptor.isAllowExtraParameters()).thenReturn(false);
+        final Map<String, ParamDescriptor> params = of(
+                "requiredNoDefault",newParam(null, false, Type.STRING, "any", "hint", true),
+                "requiredDefault", newParam("default", false, Type.STRING, "any", "hint", true),
+                "nonRequiredNoDefault", newParam(null, false, Type.STRING, "any", "hint", false)
+        );
+        when(descriptor.getParams()).thenReturn(params);
+        when(descriptor.getName()).thenReturn("any-name");
+        when(descriptor.getKey()).thenReturn(appKey);
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final User admin = TestUserUtils.getAdminUser();
+
+        //Let's create a set of secrets for a service
+        final AppSecrets.Builder builder1 = new AppSecrets.Builder();
+        final AppSecrets secrets = builder1.withKey(appKey)
+                .withHiddenSecret("requiredNoDefault", "value") //We're providing the expected value
+                .withHiddenSecret("requiredDefault", "secret-2")
+                .build();
+        //Save it
+        api.saveSecrets(secrets, site, admin);
+        final Map<String, List<String>> optionalAppWarning = api.computeSecretWarnings(descriptor, site, admin);
+        assertTrue(optionalAppWarning.isEmpty());
+
+        final Map<String, Map<String, List<String>>> warningsBySite = api.computeWarningsBySite(descriptor, ImmutableSet.of(site.getIdentifier()), admin);
+        assertTrue(warningsBySite.get(site.getIdentifier()).isEmpty());
     }
 
     private AppDescriptor evaluateAppTestCase(final AppTestCase testCase)
