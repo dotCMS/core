@@ -5,6 +5,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.enterprise.achecker.utility.Utility;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
@@ -17,6 +18,9 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.DbConnectionUtil;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -78,9 +82,15 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String DELETE_SQL_PERSONALIZATION_PER_PAGE = "delete from multi_tree where parent1=? and personalization = ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL = "delete from multi_tree where parent1=? AND relation_type != ?";
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION = "delete from multi_tree where parent1=? AND relation_type != ? and personalization = ?";
-    private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE =
+    private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL =
             "delete from multi_tree where relation_type != ? and personalization = ? and " +
-                    "child in (select distinct identifier from contentlet where identifier in (select child from multi_tree where parent1 = ?) and language_id = ?)";
+                    "child in (select distinct identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ?)";
+
+    private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_SQL =
+            "delete from multi_tree where relation_type != ? and personalization = ? and child in (%s)";
+    private static final String SELECT_MULTI_TREE_BY_LANG =
+            "select distinct contentlet.identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ?";
+
     private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
     private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ?";
 
@@ -529,7 +539,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @param multiTrees {@link List} of {@link MultiTree} to safe
      * @param languageIdOpt {@link Optional} {@link Long}   optional language, if present will deletes only the contentlets that have a version on this language.
      *                                        Since it is by identifier, when deleting for instance in spanish, will remove the english and any other lang version too.
-     * @throws DotDataException
+     * @throws DotDataException 
      */
     @Override
     @WrapInTransaction
@@ -551,12 +561,16 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         final DotConnect db = new DotConnect();
         if (languageIdOpt.isPresent()) {
-            db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE)
-                    .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
-                    .addParam(personalization)
-                    .addParam(pageId)
-                    .addParam(languageIdOpt.get())
-                    .loadResult();
+            if (DbConnectionFactory.isMySql()) {
+                deleteMultiTreeToMySQL(pageId, personalization, languageIdOpt);
+           } else {
+                db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL)
+                        .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
+                        .addParam(personalization)
+                        .addParam(pageId)
+                        .addParam(languageIdOpt.get())
+                        .loadResult();
+            }
         } else {
 
             db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION)
@@ -582,6 +596,29 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         updateHTMLPageVersionTS(pageId);
         refreshPageInCache(pageId);
+    }
+
+    private void deleteMultiTreeToMySQL(
+            final String pageId,
+            final String personalization,
+            final Optional<Long> languageIdOpt) throws DotDataException {
+        final DotConnect db = new DotConnect();
+
+        final List<String> multiTreesId = db.setSQL(SELECT_MULTI_TREE_BY_LANG)
+            .addParam(pageId)
+            .addParam(languageIdOpt.get())
+            .loadObjectResults()
+            .stream()
+            .map(map -> String.format("'%s'", map.get("identifier")))
+            .collect(Collectors.toList());
+
+        if (!multiTreesId.isEmpty()) {
+
+            db.setSQL(String.format(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_SQL, Utility.joinList(",", multiTreesId)))
+                    .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
+                    .addParam(personalization)
+                    .loadResult();
+        }
     }
 
     @Override
