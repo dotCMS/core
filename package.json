@@ -38,7 +38,7 @@
         "@angular/platform-browser-dynamic": "~7.2.0",
         "@angular/router": "~7.2.0",
         "@ctrl/tinycolor": "^2.0.0",
-        "angular2-hotkeys": "^2.1.2",
+        "angular2-hotkeys": "2.1.2",
         "angular2-tinymce": "^2.1.2",
         "core-js": "^2.5.4",
         "dotcms-models": "^0.0.8",
