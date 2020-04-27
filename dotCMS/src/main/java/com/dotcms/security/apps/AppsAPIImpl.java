@@ -683,7 +683,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
-     * Verifies if a string can be parsed to boolean safely
+     * Verifies if a string can be parsed to boolean safely.
      * @param value
      * @return
      */
@@ -709,19 +709,23 @@ public class AppsAPIImpl implements AppsAPI {
      * @throws DotSecurityException
      */
     @Override
-    public Map<String, Set<String>> destroyOrphanSecrets(final User user) throws DotDataException, DotSecurityException {
+    public Map<String, Set<String>> destroyOrphanSecrets(final User user)
+            throws DotDataException, DotSecurityException {
         final Builder<String, Set<String>> builder = new ImmutableMap.Builder<>();
         final Set<String> validSites = hostAPI.findAll(APILocator.systemUser(), false).stream()
-                .map(Contentlet::getIdentifier).map(String::toLowerCase).collect(Collectors.toSet());
+                .map(Contentlet::getIdentifier).map(String::toLowerCase)
+                .collect(Collectors.toSet());
         final Map<String, Set<String>> keysByHost = appKeysByHost(false);
         final Set<String> allIncludingAnyRemovedSite = keysByHost.keySet();
         final Set<String> invalidSites = Sets.difference(allIncludingAnyRemovedSite, validSites);
-        for(final String invalidSite:invalidSites){
+        for (final String invalidSite : invalidSites) {
             final Set<String> invalidKeys = keysByHost.get(invalidSite);
-            for (final String invalidKey : invalidKeys) {
-                deleteSecrets(invalidKey, invalidSite, user);
+            if (null != invalidKeys) {
+                for (final String invalidKey : invalidKeys) {
+                    deleteSecrets(invalidKey, invalidSite, user);
+                }
+                builder.put(invalidSite, invalidKeys);
             }
-            builder.put(invalidSite,invalidKeys);
         }
         return builder.build();
     }
@@ -736,10 +740,13 @@ public class AppsAPIImpl implements AppsAPI {
     @Override
     public void removeSecretsForSite(final Host host, final User user)
             throws DotDataException, DotSecurityException {
-        final Map<String, Set<String>> keysByHost = appKeysByHost();
+        //This must be called with param filterNonExisting in false since the first thing that delete-site does is clear cache.
+        final Map<String, Set<String>> keysByHost = appKeysByHost(false);
         final Set<String> secretKeys = keysByHost.get(host.getIdentifier().toLowerCase());
-        for (final String secretKey : secretKeys) {
-            deleteSecrets(secretKey, host.getIdentifier(), user);
+        if (null != secretKeys) {
+            for (final String secretKey : secretKeys) {
+                deleteSecrets(secretKey, host.getIdentifier(), user);
+            }
         }
     }
 
