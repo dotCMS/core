@@ -126,6 +126,9 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	},
 
 	initializeTree: function() {
+        this.dropzone.addEventListener('uploadComplete', (e) => {
+            this._loadFolder()
+        })
 	    this.currentView = (this.currentView=="list") ? "details" : this.currentView;
 
 
@@ -239,6 +242,7 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
     },
 
 	_selectFolder: function(item) {
+        this.dropzone.folder = item.id;
 
 		this.currentFolder = item;
 		this._currentOffset = 0;
