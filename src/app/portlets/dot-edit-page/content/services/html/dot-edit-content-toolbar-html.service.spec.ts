@@ -93,7 +93,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                     htmlElement.appendChild(dummyContainer);
                     dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
                     menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
-                    const menuItemsLabels = Array.from(menuItems).map((item) =>
+                    const menuItemsLabels = Array.from(menuItems).map(item =>
                         item.textContent.replace(/\s/g, '')
                     );
 
@@ -108,7 +108,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                     htmlElement.appendChild(dummyContainer);
                     dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
                     menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
-                    const menuItemsLabels = Array.from(menuItems).map((item) =>
+                    const menuItemsLabels = Array.from(menuItems).map(item =>
                         item.textContent.replace(/\s/g, '')
                     );
 
@@ -123,7 +123,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                     htmlElement.appendChild(dummyContainer);
                     dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
                     menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
-                    const menuItemsLabels = Array.from(menuItems).map((item) =>
+                    const menuItemsLabels = Array.from(menuItems).map(item =>
                         item.textContent.replace(/\s/g, '')
                     );
 
@@ -159,6 +159,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                         expect(
                             menuItems[2].classList.contains('dotedit-menu__item--disabled')
                         ).toBeTruthy();
+                        expect(menuItems[2].getAttribute('dot-title')).toBe('Enterprise Only');
                     });
                 });
 
@@ -171,13 +172,17 @@ describe('DotEditContentToolbarHtmlService', () => {
                                 </div>
                             </div>
                         `;
-                        const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
+                        const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName(
+                            'html'
+                        )[0];
                         htmlElement.appendChild(dummyContainer);
                         dotEditContentToolbarHtmlService.addContainerToolbar(testDoc);
                     });
 
                     it('should create container toolbar', () => {
-                        containerEl = <HTMLElement>testDoc.querySelector('[data-dot-object="container"]');
+                        containerEl = <HTMLElement>testDoc.querySelector(
+                            '[data-dot-object="container"]'
+                        );
                         containerEl.innerHTML = `
                         <div data-dot-object="contentlet">
                             <div class="large-column"></div>
@@ -193,12 +198,21 @@ describe('DotEditContentToolbarHtmlService', () => {
                         expect(
                             menuItems[0].classList.contains('dotedit-menu__item--disabled')
                         ).toBeTruthy();
+                        expect(menuItems[0].getAttribute('dot-title')).toBe(
+                            'Max contentlets limit reached'
+                        );
                         expect(
                             menuItems[1].classList.contains('dotedit-menu__item--disabled')
                         ).toBeTruthy();
+                        expect(menuItems[1].getAttribute('dot-title')).toBe(
+                            'Max contentlets limit reached'
+                        );
                         expect(
                             menuItems[2].classList.contains('dotedit-menu__item--disabled')
                         ).toBeTruthy();
+                        expect(menuItems[2].getAttribute('dot-title')).toBe(
+                            'Max contentlets limit reached'
+                        );
                     });
                 });
             });

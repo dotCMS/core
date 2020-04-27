@@ -218,6 +218,10 @@ export const getEditPageCss = (timestampId: string): string => {
         z-index: 2147483647 !important;
     }
 
+    ${timestampId} .dotedit-menu__item {
+        position: relative;
+    }
+
     ${timestampId} .dotedit-menu__item a {
         cursor: pointer !important;
         display: block !important;
@@ -231,11 +235,19 @@ export const getEditPageCss = (timestampId: string): string => {
         text-decoration: none !important;
     }
 
-    ${timestampId} .dotedit-menu__item[title]:hover:after {
-        content: attr(title) !important;
-        left: 100% !important;
+    ${timestampId} .dotedit-menu__item[dot-title]:hover:after {
+        content: attr(dot-title) !important;
+        right: 100% !important;
         position: absolute !important;
-        top: 100% !important;
+        top: 4px !important;
+        background: rgba(0,0,0,.7);
+        font-size: 12px;
+        color: #fff;
+        padding: 4px;
+        border-radius: 3px;
+        margin-right: 4px;
+        line-height: 14px;
+        white-space: nowrap;
     }
 
     ${timestampId} .dotedit-menu__item a,
