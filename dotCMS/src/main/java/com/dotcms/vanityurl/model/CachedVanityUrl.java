@@ -4,11 +4,15 @@ import static com.liferay.util.StringUtil.GROUP_REPLACEMENT_PREFIX;
 import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.servlet.http.HttpServletResponse;
+import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.vanityurl.util.VanityUrlUtil;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
 
 /**
  * This class construct a reduced version of the {@link VanityUrl}
@@ -189,6 +193,33 @@ public class CachedVanityUrl implements Serializable {
         final String uriRegEx = addOptionalForwardSlashSupport(uri);
         return VanityUrlUtil.isValidRegex(uriRegEx) ? uriRegEx : StringPool.BLANK;
     }
+    
+    
+    public VanityUrlResult handle(final String uriIn,
+                    final HttpServletResponse response) {
+        
+        final Tuple2<String,String> rewritten = processForward(uriIn);
+        final String rewrite = rewritten._1;
+        final String queryString = rewritten._2;
+
+
+        if (this.response==301 || this.response==302 ) {
+            response.setStatus(this.response);
+            response.setHeader("Location", rewrite);
+            return new VanityUrlResult(rewrite, queryString, true);
+        }
+        
+        if (this.response==200 && UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
+            Try.run(()-> new CircuitBreakerUrl(rewrite).doOut(response)).onFailure(e->{throw new DotRuntimeException(e);});
+            return new VanityUrlResult(rewrite, queryString, true);
+        }
+
+        return new VanityUrlResult(rewrite, queryString, false);
+        
+        
+    }
+    
+    
 
 
     @Override

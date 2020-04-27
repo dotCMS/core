@@ -646,7 +646,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getWorkflowAPI().fireWorkflowPostCheckin(workflow);
         }
 
-        if(contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+        if(contentlet.isFileAsset()) {
 
             cleanFileAssetCache(contentlet, user, respectFrontendRoles);
         }
@@ -657,6 +657,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, true);
         }
 
+        if(contentlet.isVanityUrl()) {
+
+            APILocator.getVanityUrlAPI().invalidateVanityUrl(contentlet);
+        }
+        
+        
         /*
         Triggers a local system event when this contentlet commit listener is executed,
         anyone who need it can subscribed to this commit listener event, on this case will be

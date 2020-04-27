@@ -245,32 +245,32 @@ public class VanityUrlAPITest {
   
         
         final String url = "/testing" + System.currentTimeMillis();
+        final String forwardTo = "https://www.google.com";
         
         Contentlet vanityURLContentlet = new VanityUrlDataGen()
                 .title("test Vanity Url " + url)
                 .site(defaultHost.getIdentifier())
                 .uri(url)
-                .forwardTo("https://www.google.com")
+                .forwardTo(forwardTo)
                 .action(200)
                 .order(1)
                 .language(defaultLanguage.getId()).nextPersisted();
+        
             filtersUtil.publishVanityUrl(vanityURLContentlet);
 
-            CachedVanityUrl vanityURLCached = vanityUrlCache
-                .getCachedVanityUrls(defaultHost, defaultLanguage)
-                .stream()
-                .filter(vc->vc.getUrl().equals(url))
-                .findFirst().get();
+            
 
-            Assert.assertNotNull(vanityURLCached);
 
             Optional<CachedVanityUrl> vanity = vanityUrlAPI.resolveVanityUrl(url, defaultHost, defaultLanguage);
 
-            Assert.assertFalse(vanityUrlCache.is404(defaultHost, defaultLanguage, url));
+    
             Assert.assertTrue(vanity.isPresent());
-            Assert.assertEquals(vanityURLCached,vanity.get());
+            CachedVanityUrl vanityURLCached =  vanity.get();
+            Assert.assertFalse(vanityUrlCache.is404(defaultHost, defaultLanguage, url));
+            
+            Assert.assertEquals(vanityURLCached.getUrl(),url);
 
-            Assert.assertEquals(url, vanityURLCached.getUrl());
+            Assert.assertEquals(vanityURLCached.getForwardTo(),forwardTo);
 
             final String url2 = "/testing" + System.currentTimeMillis();
             Contentlet vanityURLContentletUpdated = contentletAPI.checkout(vanityURLContentlet.getInode(), user, false);

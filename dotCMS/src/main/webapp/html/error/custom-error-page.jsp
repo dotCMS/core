@@ -1,3 +1,4 @@
+<%@page import="java.util.Optional"%>
 <%@page import="com.dotmarketing.util.PageMode"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page isErrorPage="true" %>
@@ -43,10 +44,10 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
     }
     final String errorPage = "/cms" + status + "Page";
     final Host site = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-    // Get from virtual link
-    if (CMSUrlUtil.getInstance().isVanityUrl(errorPage, site, languageId)) {
-      final CachedVanityUrl vanityurl = APILocator.getVanityUrlAPI().getLiveCachedVanityUrl(errorPage, site, languageId, APILocator.systemUser());
-      final String uri = vanityurl.getForwardTo();
+    final Optional<CachedVanityUrl> vanityurl = APILocator.getVanityUrlAPI().resolveVanityUrl(errorPage, host, language);
+    if (vanityurl.isPresent()) {
+      
+      final String uri = vanityurl.get().getForwardTo();
       if (uri.contains("://")) {
         response.setStatus(301);
         response.setHeader("Location", uri);

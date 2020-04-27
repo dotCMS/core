@@ -7,11 +7,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
-
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
@@ -33,10 +30,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
-import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-
 import io.vavr.control.Try;
 
 /**
@@ -51,18 +46,18 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   private final Set<Integer> allowedActions = new ImmutableSet.Builder<Integer>().add(200).add(301).add(302).build();
 
   private static final String SELECT_LIVE_VANITY_URL_INODES =
-      "SELECT cvi.live_inode" + " FROM contentlet c," + " identifier i," + " contentlet_version_info cvi,    " + " structure s  "
-          + " where  " + " s.structuretype=  " + BaseContentType.VANITY_URL.getType() + " and c.structure_inode=s.inode"
-          + " and cvi.live_inode=c.inode" + " and cvi.identifier = i.id" + " and i.host_inode = ?" + " and cvi.lang =?";
+      "SELECT cvi.live_inode FROM contentlet c, identifier i, contentlet_version_info cvi, structure s "
+          + " where s.structuretype= 7 and c.structure_inode=s.inode "
+          + " and cvi.live_inode=c.inode and cvi.identifier = i.id  and i.host_inode = ? and cvi.lang =? ";
 
   public static final String URL_SUFFIX = "/";
   public static final String LEGACY_CMS_HOME_PAGE = "/cmsHomePage";
   private final ContentletAPI contentletAPI;
   private final VanityUrlCache cache;
   private final LanguageAPI languageAPI;
-  private final Language defaultLanguage;
 
-  public VanityUrlAPIImpl() throws DotDataException {
+
+  public VanityUrlAPIImpl()  {
     this(APILocator.getContentletAPI(),
         APILocator.getLanguageAPI(), 
         APILocator.getUserAPI(),
@@ -73,11 +68,10 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   public VanityUrlAPIImpl(final ContentletAPI contentletAPI, 
       final LanguageAPI languageAPI, 
       final UserAPI userAPI,
-      final VanityUrlCache cache) throws DotDataException {
+      final VanityUrlCache cache) {
     this.contentletAPI = contentletAPI;
     this.languageAPI = languageAPI;
     this.cache = cache;
-    this.defaultLanguage = languageAPI.getDefaultLanguage();
 
   }
 
@@ -179,8 +173,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     }
 
     // try language fallback
-    if (!matched.isPresent() && !lang.equals(defaultLanguage)) {
-      matched = resolveVanityUrl(url, host, defaultLanguage);
+    if (!matched.isPresent() && !languageAPI.getDefaultLanguage().equals(lang)) {
+      matched = resolveVanityUrl(url, host, languageAPI.getDefaultLanguage());
     }
 
     // nothing? stick this in the 404 cache

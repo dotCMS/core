@@ -73,7 +73,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
             return;
         }
 
-        List<Language> langs = APILocator.getLanguageAPI().getLanguages();
+        final List<Language> langs = APILocator.getLanguageAPI().getLanguages();
 
         for (Language lang : langs) {
             remove(vanityHost, lang);
@@ -83,7 +83,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
 
     @Override
-    public void remove(final Host vanityHost, Language lang) {
+    public void remove(final Host vanityHost, final Language lang) {
         if (vanityHost == null || lang == null) {
             return;
         }
@@ -95,8 +95,8 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
 
     @Override
-    public void put(final Host host, Language lang, List<CachedVanityUrl> vanityURLs) {
-        if (host == null || lang == null || vanityURLs == null) {
+    public void put(final Host host, final Language lang, final List<CachedVanityUrl> vanityURLs) {
+        if (host == null || host.getIdentifier()==null || lang == null || vanityURLs == null) {
             return;
         }
         cache.put(key(host, lang), vanityURLs, PRIMARY_GROUP);
@@ -105,7 +105,7 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
     @Override
     public List<CachedVanityUrl> getCachedVanityUrls(final Host host, final Language lang) {
-        if (host == null || lang == null) {
+        if (host == null || lang == null || host.getIdentifier()==null) {
             return null;
         }
         final String key = key(host, lang);

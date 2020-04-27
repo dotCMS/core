@@ -1203,17 +1203,8 @@ enum APIIndex
 	 */
 	private static VanityUrlAPI createVanityUrlAPI () {
 
-		VanityUrlAPI vanityUrlAPI = null;
-
-		try {
-
-			vanityUrlAPI = new VanityUrlAPIImpl();
-		} catch (DotDataException e) {
-			Logger.error(APILocator.class, "The Vanity API couldn't be created", e);
-		}
-
-		return vanityUrlAPI;
-	} // createVanityUrlAPI.
+		return new VanityUrlAPIImpl();
+	}
 
     /**
      * Correctly initializes a new single instance of the {@link FileWatcherAPI}.
