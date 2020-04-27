@@ -237,7 +237,8 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	_currentFilter: '',
 
 	_getRootFiles: function(hostId){
-		this.currentFolder= hostId;
+        this.currentFolder= hostId;
+        this.dropzone.folder = hostId;
 		this._loadFolder();
     },
 
