@@ -36,8 +36,6 @@ public interface AppsAPI {
      */
     Map<String, Set<String>> appKeysByHost() throws DotSecurityException, DotDataException;
 
-    Map<String, Set<String>> appKeysByHost(boolean filterExisting) throws DotSecurityException, DotDataException;
-
     /**
      * This returns a json object read from the secret store that contains the apps integration configuration and secret.
      * @param key the unique app identifier
@@ -163,6 +161,16 @@ public interface AppsAPI {
      */
     Map<String, Set<String>> destroyOrphanSecrets(
             User user) throws DotDataException, DotSecurityException;
+
+    /**
+     * Method mean to to be consumed from a site delete event.
+     * @param host
+     * @param user
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    void removeSecretsForSite(Host host, User user)
+                    throws DotDataException, DotSecurityException;
 
     enum INSTANCE {
         INSTANCE;

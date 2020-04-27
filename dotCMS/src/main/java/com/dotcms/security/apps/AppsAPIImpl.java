@@ -134,13 +134,26 @@ public class AppsAPIImpl implements AppsAPI {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     @Override
     public Map<String, Set<String>> appKeysByHost() throws DotSecurityException, DotDataException{
       return appKeysByHost(true);
     }
 
-    @Override
-    public Map<String, Set<String>> appKeysByHost(final boolean filterNonExisting)
+    /**
+     * This private version basically adds the possibility to filter sites that exist in our db
+     * This becomes handy when people has secrets associated to a site and then for some reason decides to remove the site.
+     * @param filterNonExisting
+     * @return
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    private Map<String, Set<String>> appKeysByHost(final boolean filterNonExisting)
             throws DotSecurityException, DotDataException {
         Stream<String[]> stream = secretsStore.listKeys().stream()
                 .filter(s -> s.contains(HOST_SECRET_KEY_SEPARATOR))
@@ -690,7 +703,7 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
-     * Orphan secretas are secrets that can not be recovered from the UI because the site they belong to is no longer there
+     * Orphan secrets are secrets that can not be recovered from the UI because the site they belong to is no longer there
      * it has been removed.
      * @throws DotDataException
      * @throws DotSecurityException
@@ -711,6 +724,23 @@ public class AppsAPIImpl implements AppsAPI {
             builder.put(invalidSite,invalidKeys);
         }
         return builder.build();
+    }
+
+    /**
+     * Method mean to to be consumed from a site delete event.
+     * @param host
+     * @param user
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Override
+    public void removeSecretsForSite(final Host host, final User user)
+            throws DotDataException, DotSecurityException {
+        final Map<String, Set<String>> keysByHost = appKeysByHost();
+        final Set<String> secretKeys = keysByHost.get(host.getIdentifier().toLowerCase());
+        for (final String secretKey : secretKeys) {
+            deleteSecrets(secretKey, host.getIdentifier(), user);
+        }
     }
 
 }
