@@ -424,10 +424,7 @@ public class UtilHTML {
             case FILEASSET:
 
 				final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
-				final String      uri       = identifier.getURI();
-				final String      icon      = UtilMethods.getFileExtension(uri);
-
-				return uri.equals(icon)? "uknIcon": icon + "Icon";
+                return "uknIcon " + UtilMethods.getFileExtension( identifier.getURI()) + "Icon";
             case HTMLPAGE:
 
                 return IconType.HTMLPAGE.iconName();

@@ -1,6 +1,6 @@
-@charset "UTF-8";
 @import url("https://fonts.googleapis.com/css?family=Roboto:400,700");
 @import url("https://fonts.googleapis.com/icon?family=Material+Icons");
+@charset "UTF-8";
 :root {
   --color-background: #3a3847;
   --color-main: #c336e5;
@@ -10,8 +10,9 @@
   --color-sec_rgb: 84, 66, 142;
 }
 
-/* FONT PATH
- * -------------------------- */
+
+/* FONT PATH * -------------------------- */
+
 @font-face {
   font-family: 'FontAwesome';
   src: url("../fonts/fontawesome-webfont.eot?v=4.7.0");
@@ -29,8 +30,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Font Awesome uses the Unicode Private Use Area (PUA) to ensure screen
-   readers do not read off random characters that represent icons */
 .fa-glass:before {
   content: "";
 }
@@ -2842,13 +2841,16 @@
   content: "";
 }
 
-html, body {
+html,
+body {
   font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 13px;
   color: #161616;
 }
 
-*, *:before, *:after {
+*,
+*:before,
+*:after {
   outline: none;
   box-sizing: border-box;
 }
@@ -2857,7 +2859,8 @@ html, body {
   padding: 0;
 }
 
-.dojoDndItemItemOver, .dojoDndItemItemAfter {
+.dojoDndItemItemOver,
+.dojoDndItemItemAfter {
   padding: 0;
 }
 
@@ -2880,7 +2883,204 @@ html, body {
   width: 0;
 }
 
-#font-icon-base, #dijit-icon, .dijitIcon, .uknIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .dotAssetIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .languageVarIcon, .licenseIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rolesIcon, .rServerIcon, .saveIcon, .statusIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vanityIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .webpIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before, .required:before, .dijitIconCopy {
+#font-icon-base,
+#dijit-icon,
+.dijitIcon,
+.uknIcon,
+.actionIcon,
+.addIcon,
+.androidIcon,
+.appleIcon,
+.appMonitorIcon,
+.archiveIcon,
+.archivedIcon,
+.arrowLeftIcon,
+.arrowRightIcon,
+.assignWorkflowIcon,
+.backupIcon,
+.bgIcon,
+.browseIcon,
+.bugIcon,
+.bundleIcon,
+.calClockIcon,
+.calDayIcon,
+.calListIcon,
+.calMonthIcon,
+.calWeekIcon,
+.cancelIcon,
+.cancelWorkflowIcon,
+.cartIcon,
+.checkBoxIcon,
+.chevronIcon,
+.chevronExpandIcon,
+.closeIcon,
+.colorIcon,
+.contentIcon,
+.copyIcon,
+.cutIcon,
+.deleteIcon,
+.deleteWorkflowIcon,
+.detailViewIcon,
+.docConvertIcon,
+.docCopyIcon,
+.docNumIcon,
+.docTextIcon,
+.documentIcon,
+.dotAssetIcon,
+.downloadIcon,
+.dropIcon,
+.editIcon,
+.editScriptIcon,
+.encryptIcon,
+.exclamation-redIcon,
+.exclamationIcon,
+.femaleIcon,
+.fileIcon,
+.fileMultiIcon,
+.fileNewIcon,
+.fixIcon,
+.folderIcon,
+.folderAddIcon,
+.folderCopyIcon,
+.folderDeleteIcon,
+.folderEditIcon,
+.folderFilesIcon,
+.folderGlobeIcon,
+.folderOpenIcon,
+.folderSelectedIcon,
+.formIcon,
+.formNewIcon,
+.gearIcon,
+.gearMinusIcon,
+.gearPencilIcon,
+.gearPlusIcon,
+.greyDotIcon,
+.helpIcon,
+.hideIcon,
+.hintIcon,
+.hostIcon,
+.hostArchivedIcon,
+.hostDefaultIcon,
+.hostStoppedIcon,
+.hourGlassIcon,
+.imageNewIcon,
+.infoIcon,
+.keyIcon,
+.keyvalueIcon,
+.languageVarIcon,
+.licenseIcon,
+.linkAddIcon,
+.listViewIcon,
+.liveIcon,
+.lockIcon,
+.loginIcon,
+.loginAsIcon,
+.mailListIcon,
+.mapPinIcon,
+.minusIcon,
+.mobileIcon,
+.movePageIcon,
+.multiSelectIcon,
+.newPageIcon,
+.newTaskIcon,
+.newWorkflowIcon,
+.nextIcon,
+.pageIcon,
+.pagePropIcon,
+.pasteIcon,
+.personaIcon,
+.plusIcon,
+.previewIcon,
+.previousIcon,
+.propertyIcon,
+.publishIcon,
+.queryIcon,
+.radioIcon,
+.reindexIcon,
+.rememberIcon,
+.reopenWorkflowIcon,
+.reorderIcon,
+.repeatIcon,
+.republishIcon,
+.requiredIcon,
+.resetIcon,
+.resolveIcon,
+.resolveWorkflowIcon,
+.rolesIcon,
+.rServerIcon,
+.saveIcon,
+.statusIcon,
+.saveAssignIcon,
+.scrollPaneIcon,
+.searchIcon,
+.selectIcon,
+.shrinkIcon,
+.spellIcon,
+.splitterIcon,
+.sServerIcon,
+.statisticsIcon,
+.stopIcon,
+.tabIcon,
+.tagIcon,
+.textFieldIcon,
+.thumbnailViewIcon,
+.toggleCloseIcon,
+.toggleOpenIcon,
+.trashIcon,
+.unarchiveIcon,
+.unlockIcon,
+.unpublishIcon,
+.uploadIcon,
+.userIcon,
+.vanityIcon,
+.vtlIcon,
+.windowsIcon,
+.workflowIcon,
+.workingIcon,
+.workStreamIcon,
+.wysiwygIcon,
+.asfIcon,
+.aviIcon,
+.movIcon,
+.mp4Icon,
+.mpgIcon,
+.oggIcon,
+.ogvIcon,
+.rmIcon,
+.vobIcon,
+.csvIcon,
+.numbersIcon,
+.wksIcon,
+.xlsIcon,
+.xlsxIcon,
+.bmpIcon,
+.imageIcon,
+.jpegIcon,
+.jpgIcon,
+.pctIcon,
+.pngIcon,
+.gifIcon,
+.webpIcon,
+.svgIcon,
+.pdfIcon,
+.keynoteIcon,
+.pptIcon,
+.pptxIcon,
+.docIcon,
+.docxIcon,
+.aacIcon,
+.aifIcon,
+.iffIcon,
+.m3uIcon,
+.midIcon,
+.mp3Icon,
+.mpaIcon,
+.raIcon,
+.wavIcon,
+.wmaIcon,
+.tagLink.persona:before,
+.required:before,
+.dijitIconCopy {
   font: normal normal normal 14px/1 FontAwesome;
   text-rendering: auto;
   -webkit-font-smoothing: antialiased;
@@ -2888,7 +3088,202 @@ html, body {
   transform: translate(0, 0);
 }
 
-#dijit-icon, .dijitIcon, .uknIcon, .actionIcon, .addIcon, .androidIcon, .appleIcon, .appMonitorIcon, .archiveIcon, .archivedIcon, .arrowLeftIcon, .arrowRightIcon, .assignWorkflowIcon, .backupIcon, .bgIcon, .browseIcon, .bugIcon, .bundleIcon, .calClockIcon, .calDayIcon, .calListIcon, .calMonthIcon, .calWeekIcon, .cancelIcon, .cancelWorkflowIcon, .cartIcon, .checkBoxIcon, .chevronIcon, .chevronExpandIcon, .closeIcon, .colorIcon, .contentIcon, .copyIcon, .cutIcon, .deleteIcon, .deleteWorkflowIcon, .detailViewIcon, .docConvertIcon, .docCopyIcon, .docNumIcon, .docTextIcon, .documentIcon, .dotAssetIcon, .downloadIcon, .dropIcon, .editIcon, .editScriptIcon, .encryptIcon, .exclamation-redIcon, .exclamationIcon, .femaleIcon, .fileIcon, .fileMultiIcon, .fileNewIcon, .fixIcon, .folderIcon, .folderAddIcon, .folderCopyIcon, .folderDeleteIcon, .folderEditIcon, .folderFilesIcon, .folderGlobeIcon, .folderOpenIcon, .folderSelectedIcon, .formIcon, .formNewIcon, .gearIcon, .gearMinusIcon, .gearPencilIcon, .gearPlusIcon, .greyDotIcon, .helpIcon, .hideIcon, .hintIcon, .hostIcon, .hostArchivedIcon, .hostDefaultIcon, .hostStoppedIcon, .hourGlassIcon, .imageNewIcon, .infoIcon, .keyIcon, .keyvalueIcon, .languageVarIcon, .licenseIcon, .linkAddIcon, .listViewIcon, .liveIcon, .lockIcon, .loginIcon, .loginAsIcon, .mailListIcon, .mapPinIcon, .minusIcon, .mobileIcon, .movePageIcon, .multiSelectIcon, .newPageIcon, .newTaskIcon, .newWorkflowIcon, .nextIcon, .pageIcon, .pagePropIcon, .pasteIcon, .personaIcon, .plusIcon, .previewIcon, .previousIcon, .propertyIcon, .publishIcon, .queryIcon, .radioIcon, .reindexIcon, .rememberIcon, .reopenWorkflowIcon, .reorderIcon, .repeatIcon, .republishIcon, .requiredIcon, .resetIcon, .resolveIcon, .resolveWorkflowIcon, .rolesIcon, .rServerIcon, .saveIcon, .statusIcon, .saveAssignIcon, .scrollPaneIcon, .searchIcon, .selectIcon, .shrinkIcon, .spellIcon, .splitterIcon, .sServerIcon, .statisticsIcon, .stopIcon, .tabIcon, .tagIcon, .textFieldIcon, .thumbnailViewIcon, .toggleCloseIcon, .toggleOpenIcon, .trashIcon, .unarchiveIcon, .unlockIcon, .unpublishIcon, .uploadIcon, .userIcon, .vanityIcon, .vtlIcon, .windowsIcon, .workflowIcon, .workingIcon, .workStreamIcon, .wysiwygIcon, .asfIcon, .aviIcon, .movIcon, .mp4Icon, .mpgIcon, .oggIcon, .ogvIcon, .rmIcon, .vobIcon, .csvIcon, .numbersIcon, .wksIcon, .xlsIcon, .xlsxIcon, .bmpIcon, .imageIcon, .jpegIcon, .jpgIcon, .pctIcon, .pngIcon, .gifIcon, .webpIcon, .svgIcon, .pdfIcon, .keynoteIcon, .pptIcon, .pptxIcon, .docIcon, .docxIcon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mp3Icon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon, .tagLink.persona:before, .required:before {
+#dijit-icon,
+.dijitIcon,
+.uknIcon,
+.actionIcon,
+.addIcon,
+.androidIcon,
+.appleIcon,
+.appMonitorIcon,
+.archiveIcon,
+.archivedIcon,
+.arrowLeftIcon,
+.arrowRightIcon,
+.assignWorkflowIcon,
+.backupIcon,
+.bgIcon,
+.browseIcon,
+.bugIcon,
+.bundleIcon,
+.calClockIcon,
+.calDayIcon,
+.calListIcon,
+.calMonthIcon,
+.calWeekIcon,
+.cancelIcon,
+.cancelWorkflowIcon,
+.cartIcon,
+.checkBoxIcon,
+.chevronIcon,
+.chevronExpandIcon,
+.closeIcon,
+.colorIcon,
+.contentIcon,
+.copyIcon,
+.cutIcon,
+.deleteIcon,
+.deleteWorkflowIcon,
+.detailViewIcon,
+.docConvertIcon,
+.docCopyIcon,
+.docNumIcon,
+.docTextIcon,
+.documentIcon,
+.dotAssetIcon,
+.downloadIcon,
+.dropIcon,
+.editIcon,
+.editScriptIcon,
+.encryptIcon,
+.exclamation-redIcon,
+.exclamationIcon,
+.femaleIcon,
+.fileIcon,
+.fileMultiIcon,
+.fileNewIcon,
+.fixIcon,
+.folderIcon,
+.folderAddIcon,
+.folderCopyIcon,
+.folderDeleteIcon,
+.folderEditIcon,
+.folderFilesIcon,
+.folderGlobeIcon,
+.folderOpenIcon,
+.folderSelectedIcon,
+.formIcon,
+.formNewIcon,
+.gearIcon,
+.gearMinusIcon,
+.gearPencilIcon,
+.gearPlusIcon,
+.greyDotIcon,
+.helpIcon,
+.hideIcon,
+.hintIcon,
+.hostIcon,
+.hostArchivedIcon,
+.hostDefaultIcon,
+.hostStoppedIcon,
+.hourGlassIcon,
+.imageNewIcon,
+.infoIcon,
+.keyIcon,
+.keyvalueIcon,
+.languageVarIcon,
+.licenseIcon,
+.linkAddIcon,
+.listViewIcon,
+.liveIcon,
+.lockIcon,
+.loginIcon,
+.loginAsIcon,
+.mailListIcon,
+.mapPinIcon,
+.minusIcon,
+.mobileIcon,
+.movePageIcon,
+.multiSelectIcon,
+.newPageIcon,
+.newTaskIcon,
+.newWorkflowIcon,
+.nextIcon,
+.pageIcon,
+.pagePropIcon,
+.pasteIcon,
+.personaIcon,
+.plusIcon,
+.previewIcon,
+.previousIcon,
+.propertyIcon,
+.publishIcon,
+.queryIcon,
+.radioIcon,
+.reindexIcon,
+.rememberIcon,
+.reopenWorkflowIcon,
+.reorderIcon,
+.repeatIcon,
+.republishIcon,
+.requiredIcon,
+.resetIcon,
+.resolveIcon,
+.resolveWorkflowIcon,
+.rolesIcon,
+.rServerIcon,
+.saveIcon,
+.statusIcon,
+.saveAssignIcon,
+.scrollPaneIcon,
+.searchIcon,
+.selectIcon,
+.shrinkIcon,
+.spellIcon,
+.splitterIcon,
+.sServerIcon,
+.statisticsIcon,
+.stopIcon,
+.tabIcon,
+.tagIcon,
+.textFieldIcon,
+.thumbnailViewIcon,
+.toggleCloseIcon,
+.toggleOpenIcon,
+.trashIcon,
+.unarchiveIcon,
+.unlockIcon,
+.unpublishIcon,
+.uploadIcon,
+.userIcon,
+.vanityIcon,
+.vtlIcon,
+.windowsIcon,
+.workflowIcon,
+.workingIcon,
+.workStreamIcon,
+.wysiwygIcon,
+.asfIcon,
+.aviIcon,
+.movIcon,
+.mp4Icon,
+.mpgIcon,
+.oggIcon,
+.ogvIcon,
+.rmIcon,
+.vobIcon,
+.csvIcon,
+.numbersIcon,
+.wksIcon,
+.xlsIcon,
+.xlsxIcon,
+.bmpIcon,
+.imageIcon,
+.jpegIcon,
+.jpgIcon,
+.pctIcon,
+.pngIcon,
+.gifIcon,
+.webpIcon,
+.svgIcon,
+.pdfIcon,
+.keynoteIcon,
+.pptIcon,
+.pptxIcon,
+.docIcon,
+.docxIcon,
+.aacIcon,
+.aifIcon,
+.iffIcon,
+.m3uIcon,
+.midIcon,
+.mp3Icon,
+.mpaIcon,
+.raIcon,
+.wavIcon,
+.wmaIcon,
+.tagLink.persona:before,
+.required:before {
   display: inline-block;
   height: 16px;
   line-height: 16px;
@@ -3609,18 +4004,21 @@ html, body {
   width: 0;
 }
 
-.dijitComboButtonFocused, .dijitComboButtonHoverFocused {
+.dijitComboButtonFocused,
+.dijitComboButtonHoverFocused {
   background-color: #fff;
   border: solid 1px var(--color-main);
   color: var(--color-main);
   box-shadow: 0;
 }
 
-.dijitComboButtonFocused .dijitArrowButtonInner, .dijitComboButtonHoverFocused .dijitArrowButtonInner {
+.dijitComboButtonFocused .dijitArrowButtonInner,
+.dijitComboButtonHoverFocused .dijitArrowButtonInner {
   background-color: transparent;
 }
 
-.dijitComboButtonFocused .dijitArrowButtonInner:before, .dijitComboButtonHoverFocused .dijitArrowButtonInner:before {
+.dijitComboButtonFocused .dijitArrowButtonInner:before,
+.dijitComboButtonHoverFocused .dijitArrowButtonInner:before {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3675,14 +4073,17 @@ html, body {
   visibility: visible;
 }
 
-.dijitToggleButtonFocused, .dijitToggleButtonChecked {
+.dijitToggleButtonFocused,
+.dijitToggleButtonChecked {
   background-color: #fff;
   border: solid 1px var(--color-main);
   color: var(--color-main);
   box-shadow: 0;
 }
 
-.dijitToggleButtonHover, .dijitToggleButtonHoverFocused, .dijitToggleButtonCheckedHover {
+.dijitToggleButtonHover,
+.dijitToggleButtonHoverFocused,
+.dijitToggleButtonCheckedHover {
   background-color: #fff;
   border: solid 1px var(--color-main);
   color: var(--color-main);
@@ -3706,7 +4107,7 @@ html, body {
 
 .dijitCheckBoxChecked {
   border: solid 1px var(--color-main);
-  background: var(--color-main) url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=") center center no-repeat;
+  background: var(--color-main) url("data: image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=") center center no-repeat;
 }
 
 .dijitCheckBoxDisabled {
@@ -3716,7 +4117,7 @@ html, body {
 
 .dijitCheckBoxCheckedDisabled {
   border: solid 1px transparent;
-  background: #C5C5C5 url("data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=") center center no-repeat;
+  background: #C5C5C5 url("data: image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=") center center no-repeat;
 }
 
 .dijitRadio {
@@ -3755,7 +4156,11 @@ html, body {
   background-color: #C5C5C5;
 }
 
-#select-arrow, .dijitSelect .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectHover .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectActive .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectOpened .dijitArrowButton > .dijitArrowButtonInner {
+#select-arrow,
+.dijitSelect .dijitArrowButton>.dijitArrowButtonInner,
+.dijitSelectHover .dijitArrowButton>.dijitArrowButtonInner,
+.dijitSelectActive .dijitArrowButton>.dijitArrowButtonInner,
+.dijitSelectOpened .dijitArrowButton>.dijitArrowButtonInner {
   float: none;
   height: 0 !important;
   margin: 0;
@@ -3783,7 +4188,7 @@ html, body {
   background-color: transparent;
 }
 
-.dijitSelect .dijitArrowButton > .dijitArrowButtonInner {
+.dijitSelect .dijitArrowButton>.dijitArrowButtonInner {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3812,7 +4217,7 @@ html, body {
   background-color: transparent;
 }
 
-.dijitSelectHover .dijitArrowButton > .dijitArrowButtonInner {
+.dijitSelectHover .dijitArrowButton>.dijitArrowButtonInner {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3826,18 +4231,21 @@ html, body {
   width: 0;
 }
 
-.dijitSelectActive, .dijitSelectOpened {
+.dijitSelectActive,
+.dijitSelectOpened {
   background-color: #fff;
   border: solid 1px var(--color-sec);
   color: #161616;
 }
 
-.dijitSelectActive .dijitArrowButton, .dijitSelectOpened .dijitArrowButton {
+.dijitSelectActive .dijitArrowButton,
+.dijitSelectOpened .dijitArrowButton {
   border-left: solid 1px var(--color-sec);
   background-color: transparent;
 }
 
-.dijitSelectActive .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectOpened .dijitArrowButton > .dijitArrowButtonInner {
+.dijitSelectActive .dijitArrowButton>.dijitArrowButtonInner,
+.dijitSelectOpened .dijitArrowButton>.dijitArrowButtonInner {
   left: 50%;
   margin-left: -5px;
   margin-top: -2.5px;
@@ -3974,11 +4382,13 @@ html, body {
   border-top-color: #fff;
 }
 
-.dijitSliderBarH, .dijitSliderBumperH {
+.dijitSliderBarH,
+.dijitSliderBumperH {
   height: 6px;
 }
 
-.dijitSliderBarV, .dijitSliderBumperV {
+.dijitSliderBarV,
+.dijitSliderBumperV {
   width: 6px;
 }
 
@@ -3992,12 +4402,16 @@ html, body {
   border: solid 1px #ECEDEE;
 }
 
-.dijitSliderProgressBar, .dijitSliderBottomBumper, .dijitSliderLeftBumper {
+.dijitSliderProgressBar,
+.dijitSliderBottomBumper,
+.dijitSliderLeftBumper {
   background: var(--color-main);
   border-color: #ECEDEE;
 }
 
-.dijitSliderRemainingBar, .dijitSliderTopBumper, .dijitSliderRightBumper {
+.dijitSliderRemainingBar,
+.dijitSliderTopBumper,
+.dijitSliderRightBumper {
   background: #fff;
   border-color: #ECEDEE;
 }
@@ -4018,7 +4432,10 @@ html, body {
   border-top-width: 1px;
 }
 
-.dijitSliderDecrementIconH, .dijitSliderIncrementIconH, .dijitSliderDecrementIconV, .dijitSliderIncrementIconV {
+.dijitSliderDecrementIconH,
+.dijitSliderIncrementIconH,
+.dijitSliderDecrementIconV,
+.dijitSliderIncrementIconV {
   border-radius: 2px;
   width: 20px;
   height: 16px;
@@ -4027,11 +4444,15 @@ html, body {
   position: relative;
 }
 
-.dijitSliderDecrementIconH .dijitSliderButtonInner, .dijitSliderIncrementIconH .dijitSliderButtonInner, .dijitSliderDecrementIconV .dijitSliderButtonInner, .dijitSliderIncrementIconV .dijitSliderButtonInner {
+.dijitSliderDecrementIconH .dijitSliderButtonInner,
+.dijitSliderIncrementIconH .dijitSliderButtonInner,
+.dijitSliderDecrementIconV .dijitSliderButtonInner,
+.dijitSliderIncrementIconV .dijitSliderButtonInner {
   display: none;
 }
 
-.dijitSliderDecrementButtonHover, .dijitSliderIncrementButtonHover {
+.dijitSliderDecrementButtonHover,
+.dijitSliderIncrementButtonHover {
   border: solid 1px var(--color-main);
 }
 
@@ -4071,7 +4492,8 @@ html, body {
   width: 0;
 }
 
-.dijitSliderDecrementButtonActive, .dijitSliderIncrementButtonActive {
+.dijitSliderDecrementButtonActive,
+.dijitSliderIncrementButtonActive {
   background-color: #fff;
   border: solid 1px var(--color-main);
 }
@@ -4202,7 +4624,7 @@ html, body {
   padding: 0 8px;
 }
 
-.dijitAccordionTitle:last-child {
+.dijitAccordionTitle: last-child {
   border-bottom: solid 1px #ECEDEE;
 }
 
@@ -4299,7 +4721,8 @@ html, body {
   margin-left: 0;
 }
 
-.dijitDialogCloseIcon:before, .dijitDialogCloseIcon:after {
+.dijitDialogCloseIcon:before,
+.dijitDialogCloseIcon:after {
   background-color: #fff;
   content: "";
   display: block;
@@ -4319,7 +4742,8 @@ html, body {
   transform: rotate(-45deg);
 }
 
-.dijitDialogPaneActionBar, .dijitDialogPaneContent {
+.dijitDialogPaneActionBar,
+.dijitDialogPaneContent {
   padding: 16px;
 }
 
@@ -4427,7 +4851,8 @@ html, body {
   overflow: visible;
 }
 
-.dijitTabChecked, .dijitTabChecked.dijitTabCheckedHover {
+.dijitTabChecked,
+.dijitTabChecked.dijitTabCheckedHover {
   background-color: #fff;
   border-width: 5px 1px 0 0;
   border-style: solid;
@@ -4445,7 +4870,8 @@ html, body {
   margin-left: 0;
 }
 
-.dijitTabCloseIcon:before, .dijitTabCloseIcon:after {
+.dijitTabCloseIcon:before,
+.dijitTabCloseIcon:after {
   background-color: #161616;
   display: block;
   content: "";
@@ -4572,7 +4998,10 @@ html, body {
   border-top-color: #C5C5C5;
 }
 
-.dijitTabContainerBottom-container, .dijitTabContainerTop-container, .dijitTabContainerLeft-container, .dijitTabContainerRight-container {
+.dijitTabContainerBottom-container,
+.dijitTabContainerTop-container,
+.dijitTabContainerLeft-container,
+.dijitTabContainerRight-container {
   border-width: 0;
   border-style: solid;
   border-color: transparent;
@@ -4587,12 +5016,14 @@ html, body {
   border-bottom: none;
 }
 
-.dijitTabContainerTop-tabs, .dijitTabContainerBottom-tabs {
+.dijitTabContainerTop-tabs,
+.dijitTabContainerBottom-tabs {
   height: 44px;
   border: none;
 }
 
-.dijitTabListContainer-top, .dijitTabListContainer-bottom {
+.dijitTabListContainer-top,
+.dijitTabListContainer-bottom {
   box-sizing: "content-box";
   border-width: 0 0 1px;
   border-style: solid;
@@ -4685,7 +5116,8 @@ html, body {
   padding: 2px 0;
 }
 
-.dijitTreeRow .dijitTreeIcon, .dijitTreeRow .dijitTreeExpando {
+.dijitTreeRow .dijitTreeIcon,
+.dijitTreeRow .dijitTreeExpando {
   display: inline-block;
   vertical-align: sub;
 }
@@ -4742,7 +5174,8 @@ html, body {
   height: 16px;
 }
 
-.dijitFolderOpened, .dijitFolderClosed {
+.dijitFolderOpened,
+.dijitFolderClosed {
   margin: 3px 3px 0 3px;
 }
 
@@ -4758,7 +5191,8 @@ html, body {
   background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/leaf.gif") no-repeat;
 }
 
-.dijitTreeNode .dojoDndItemBefore, .dijitTreeNode .dojoDndItemAfter {
+.dijitTreeNode .dojoDndItemBefore,
+.dijitTreeNode .dojoDndItemAfter {
   border-bottom: none;
   border-top: none;
 }
@@ -4771,13 +5205,16 @@ html, body {
   border-bottom: 2px solid #369;
 }
 
-html, body {
+html,
+body {
   font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 13px;
   color: #161616;
 }
 
-*, *:before, *:after {
+*,
+*:before,
+*:after {
   outline: none;
   box-sizing: border-box;
 }
@@ -4786,7 +5223,8 @@ html, body {
   padding: 0;
 }
 
-.dojoDndItemItemOver, .dojoDndItemItemAfter {
+.dojoDndItemItemOver,
+.dojoDndItemItemAfter {
   padding: 0;
 }
 
@@ -4821,7 +5259,8 @@ html, body {
   text-align: center;
 }
 
-.dijitCalendarDayLabelTemplate, .dijitCalendarDateTemplate {
+.dijitCalendarDayLabelTemplate,
+.dijitCalendarDateTemplate {
   transition: background-color 0.1s;
   background-color: #fff;
   color: #5B5B5B;
@@ -4924,21 +5363,24 @@ html, body {
   background-color: #FAFAFA;
 }
 
-.dijitCalendarMonthLabel:last-child {
+.dijitCalendarMonthLabel: last-child {
   border-bottom: none;
 }
 
-.dijitCalendarPreviousMonth, .dijitCalendarNextMonth {
+.dijitCalendarPreviousMonth,
+.dijitCalendarNextMonth {
   background-color: #FAFAFA;
   color: #ECEDEE;
 }
 
-.dijitCalendarPreviousMonth.dijitCalendarHoveredDate, .dijitCalendarNextMonth.dijitCalendarHoveredDate {
+.dijitCalendarPreviousMonth.dijitCalendarHoveredDate,
+.dijitCalendarNextMonth.dijitCalendarHoveredDate {
   background-color: #FAFAFA;
   color: #8A8A8A;
 }
 
-.dijitCalendarNextYear, .dijitCalendarPreviousYear {
+.dijitCalendarNextYear,
+.dijitCalendarPreviousYear {
   color: rgba(255, 255, 255, 0.5);
 }
 
@@ -4981,7 +5423,7 @@ html, body {
   height: 36px;
 }
 
-.dijitMenu .dijitMenuItem:last-child {
+.dijitMenu .dijitMenuItem: last-child {
   border-bottom: none;
 }
 
@@ -5167,7 +5609,8 @@ html, body {
   border: 0px;
 }
 
-.dojoxGrid .dojoxGridRow .dojoxGridRowTable .dojoxGridCell, .dojoxGrid .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
+.dojoxGrid .dojoxGridRow .dojoxGridRowTable .dojoxGridCell,
+.dojoxGrid .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
   font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   padding: 10px 8px;
 }
@@ -5192,7 +5635,8 @@ html, body {
   padding-right: 15px;
 }
 
-.container:before, .container:after {
+.container:before,
+.container:after {
   content: " ";
   display: table;
 }
@@ -5226,7 +5670,8 @@ html, body {
   padding-right: 15px;
 }
 
-.container-fluid:before, .container-fluid:after {
+.container-fluid:before,
+.container-fluid:after {
   content: " ";
   display: table;
 }
@@ -5240,7 +5685,8 @@ html, body {
   margin-right: -15px;
 }
 
-.row:before, .row:after {
+.row:before,
+.row:after {
   content: " ";
   display: table;
 }
@@ -5249,14 +5695,72 @@ html, body {
   clear: both;
 }
 
-.col-xs-1, .col-sm-1, .col-md-1, .col-lg-1, .col-xs-2, .col-sm-2, .col-md-2, .col-lg-2, .col-xs-3, .col-sm-3, .col-md-3, .col-lg-3, .col-xs-4, .col-sm-4, .col-md-4, .col-lg-4, .col-xs-5, .col-sm-5, .col-md-5, .col-lg-5, .col-xs-6, .col-sm-6, .col-md-6, .col-lg-6, .col-xs-7, .col-sm-7, .col-md-7, .col-lg-7, .col-xs-8, .col-sm-8, .col-md-8, .col-lg-8, .col-xs-9, .col-sm-9, .col-md-9, .col-lg-9, .col-xs-10, .col-sm-10, .col-md-10, .col-lg-10, .col-xs-11, .col-sm-11, .col-md-11, .col-lg-11, .col-xs-12, .col-sm-12, .col-md-12, .col-lg-12 {
+.col-xs-1,
+.col-sm-1,
+.col-md-1,
+.col-lg-1,
+.col-xs-2,
+.col-sm-2,
+.col-md-2,
+.col-lg-2,
+.col-xs-3,
+.col-sm-3,
+.col-md-3,
+.col-lg-3,
+.col-xs-4,
+.col-sm-4,
+.col-md-4,
+.col-lg-4,
+.col-xs-5,
+.col-sm-5,
+.col-md-5,
+.col-lg-5,
+.col-xs-6,
+.col-sm-6,
+.col-md-6,
+.col-lg-6,
+.col-xs-7,
+.col-sm-7,
+.col-md-7,
+.col-lg-7,
+.col-xs-8,
+.col-sm-8,
+.col-md-8,
+.col-lg-8,
+.col-xs-9,
+.col-sm-9,
+.col-md-9,
+.col-lg-9,
+.col-xs-10,
+.col-sm-10,
+.col-md-10,
+.col-lg-10,
+.col-xs-11,
+.col-sm-11,
+.col-md-11,
+.col-lg-11,
+.col-xs-12,
+.col-sm-12,
+.col-md-12,
+.col-lg-12 {
   position: relative;
   min-height: 1px;
   padding-left: 15px;
   padding-right: 15px;
 }
 
-.col-xs-1, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9, .col-xs-10, .col-xs-11, .col-xs-12 {
+.col-xs-1,
+.col-xs-2,
+.col-xs-3,
+.col-xs-4,
+.col-xs-5,
+.col-xs-6,
+.col-xs-7,
+.col-xs-8,
+.col-xs-9,
+.col-xs-10,
+.col-xs-11,
+.col-xs-12 {
   float: left;
 }
 
@@ -5465,7 +5969,18 @@ html, body {
 }
 
 @media (min-width: 768px) {
-  .col-sm-1, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-sm-10, .col-sm-11, .col-sm-12 {
+  .col-sm-1,
+  .col-sm-2,
+  .col-sm-3,
+  .col-sm-4,
+  .col-sm-5,
+  .col-sm-6,
+  .col-sm-7,
+  .col-sm-8,
+  .col-sm-9,
+  .col-sm-10,
+  .col-sm-11,
+  .col-sm-12 {
     float: left;
   }
   .col-sm-1 {
@@ -5624,7 +6139,18 @@ html, body {
 }
 
 @media (min-width: 992px) {
-  .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12 {
+  .col-md-1,
+  .col-md-2,
+  .col-md-3,
+  .col-md-4,
+  .col-md-5,
+  .col-md-6,
+  .col-md-7,
+  .col-md-8,
+  .col-md-9,
+  .col-md-10,
+  .col-md-11,
+  .col-md-12 {
     float: left;
   }
   .col-md-1 {
@@ -5783,7 +6309,18 @@ html, body {
 }
 
 @media (min-width: 1200px) {
-  .col-lg-1, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-lg-10, .col-lg-11, .col-lg-12 {
+  .col-lg-1,
+  .col-lg-2,
+  .col-lg-3,
+  .col-lg-4,
+  .col-lg-5,
+  .col-lg-6,
+  .col-lg-7,
+  .col-lg-8,
+  .col-lg-9,
+  .col-lg-10,
+  .col-lg-11,
+  .col-lg-12 {
     float: left;
   }
   .col-lg-1 {
@@ -5941,12 +6478,6 @@ html, body {
   }
 }
 
-/*
-Copyright (c) 2009, Yahoo! Inc. All rights reserved.
-Code licensed under the BSD License:
-http://developer.yahoo.net/yui/license.txt
-version: 2.8.0r4
-*/
 html {
   color: #000;
   background: transparent;
@@ -6504,7 +7035,8 @@ tt {
   zoom: 1;
 }
 
-html, body {
+html,
+body {
   height: 100%;
 }
 
@@ -6845,7 +7377,6 @@ select[multiple]:hover {
   min-width: 250px;
 }
 
-/* NAV SUB STYLES 2.0 */
 #admin-banner-logo-div {
   position: absolute;
   top: 10px;
@@ -7044,9 +7575,7 @@ select[multiple]:hover {
   background: #000;
   margin-bottom: -1px;
   opacity: 0.7;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=70)";
-  /* IE 8 */
-  /* IE 7 and olders */
+  -ms-filter: "progid: DXImageTransform.Microsoft.Alpha(Opacity=70)";
   -khtml-opacity: 0.7;
   -moz-opacity: 0.7;
   -webkit-opcity: 0.7;
@@ -7072,9 +7601,7 @@ select[multiple]:hover {
 .dotcmsHelpButton:hover {
   background: #000;
   opacity: 0.9;
-  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=90)";
-  /* IE 8 */
-  /* IE 7 and olders */
+  -ms-filter: "progid: DXImageTransform.Microsoft.Alpha(Opacity=90)";
   -khtml-opacity: 0.9;
   -moz-opacity: 0.9;
   -webkit-opcity: 0.9;
@@ -7104,8 +7631,9 @@ select[multiple]:hover {
   width: 300px;
 }
 
-/* TABLE STYLES 2.0 */
-#listing-table, .dojoxUploaderFileListTable, .listingTable {
+#listing-table,
+.dojoxUploaderFileListTable,
+.listingTable {
   border-bottom: 1px solid #ECEDEE;
   border-collapse: collapse;
   font-size: 13px;
@@ -7113,33 +7641,56 @@ select[multiple]:hover {
   width: 100%;
 }
 
-#listing-table p:last-child, .dojoxUploaderFileListTable p:last-child, .listingTable p:last-child {
+#listing-table p: last-child,
+.dojoxUploaderFileListTable p: last-child,
+.listingTable p: last-child {
   margin-bottom: 0;
 }
 
-#listing-table tr, .dojoxUploaderFileListTable tr, .listingTable tr {
+#listing-table tr,
+.dojoxUploaderFileListTable tr,
+.listingTable tr {
   transition: background-color 0.1s;
 }
 
-#listing-table tr .selected, .dojoxUploaderFileListTable tr .selected, .listingTable tr .selected {
+#listing-table tr .selected,
+.dojoxUploaderFileListTable tr .selected,
+.listingTable tr .selected {
   background-color: #E0E9F6;
 }
 
-#listing-table th, .dojoxUploaderFileListTable th, .listingTable th, #listing-table td, .dojoxUploaderFileListTable td, .listingTable td {
+#listing-table th,
+.dojoxUploaderFileListTable th,
+.listingTable th,
+#listing-table td,
+.dojoxUploaderFileListTable td,
+.listingTable td {
   padding: 10px 8px;
   border-bottom: 1px solid #ECEDEE;
   vertical-align: middle;
 }
 
-#listing-table th:first-child, .dojoxUploaderFileListTable th:first-child, .listingTable th:first-child, #listing-table td:first-child, .dojoxUploaderFileListTable td:first-child, .listingTable td:first-child {
+#listing-table th:first-child,
+.dojoxUploaderFileListTable th:first-child,
+.listingTable th:first-child,
+#listing-table td:first-child,
+.dojoxUploaderFileListTable td:first-child,
+.listingTable td:first-child {
   padding-left: 24px;
 }
 
-#listing-table th:last-child, .dojoxUploaderFileListTable th:last-child, .listingTable th:last-child, #listing-table td:last-child, .dojoxUploaderFileListTable td:last-child, .listingTable td:last-child {
+#listing-table th: last-child,
+.dojoxUploaderFileListTable th: last-child,
+.listingTable th: last-child,
+#listing-table td: last-child,
+.dojoxUploaderFileListTable td: last-child,
+.listingTable td: last-child {
   padding-right: 24px;
 }
 
-#listing-table th, .dojoxUploaderFileListTable th, .listingTable th {
+#listing-table th,
+.dojoxUploaderFileListTable th,
+.listingTable th {
   font-weight: bold;
   background-color: #FAFAFA;
 }
@@ -7169,7 +7720,6 @@ select[multiple]:hover {
   border: 0px;
 }
 
-/* CONTENT TYPE TABLE */
 .sTypeTable {
   border: 1px solid #ECEDEE;
   border-collapse: collapse;
@@ -7202,7 +7752,6 @@ select[multiple]:hover {
   text-decoration: none;
 }
 
-/* RELATIONSHIP TABLE */
 .relationLanguageFlag th,
 .relationLanguageFlag td {
   padding: 0px 0px;
@@ -7259,7 +7808,6 @@ tr.active {
   cursor: pointer;
 }
 
-/* Use with .callOutBox2 */
 #loadingPermissionsAccordion {
   margin: 50px auto;
   width: 100px;
@@ -7275,7 +7823,6 @@ tr.active {
   text-decoration: none;
 }
 
-/* FORM STYLES 2.0 */
 .lockedAgo {
   display: block;
   color: #999;
@@ -7524,7 +8071,6 @@ ul.withBullets li {
   list-style: circle;
 }
 
-/* STRUCTURE MANAGER STYLES 2.0 */
 .selectBoxImage {
   padding-right: 3px;
   padding-top: 3px;
@@ -7532,7 +8078,6 @@ ul.withBullets li {
   vertical-align: bottom;
 }
 
-/* POPUP MENU STYLES */
 .dotContextMenu {
   border-left: 1px solid #d1d1d1;
   -moz-box-shadow: 0px 0px 5px #ccc;
@@ -7547,7 +8092,6 @@ tr.pop_divider {
   border-top: 1px dotted silver;
 }
 
-/* NAV MENU ICONS 2.0 */
 #menu ul.dropdown li.dotCMS_site-search a span {
   background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -60px;
 }
@@ -7751,7 +8295,6 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-/*#menu ul.dropdown li.dotCMS_dynamic-plugins a span{background: url(/html/images/icons/osgi.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}*/
 #menu ul.dropdown li.dotCMS_dynamic-plugins a span {
   background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1860px;
   width: 18px;
@@ -7796,7 +8339,6 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-/* Action Panel */
 .actionPanelPage {
   position: relative;
 }
@@ -7853,8 +8395,6 @@ tr.pop_divider {
   vertical-align: top;
 }
 
-/* dotCMS 1.0 STYLES */
-/*===== WELCOME MESSAGE ===== */
 .welcome_wrapper a {
   color: #3B3B3B;
   text-decoration: none;
@@ -7864,7 +8404,6 @@ tr.pop_divider {
   text-decoration: underline;
 }
 
-/* ====================== BROWSER, HMTL, LINKS, FILES, TEMPLATES, CONTAINERS  (all POP UPs) ================= */
 table.sTypeTd {
   vertical-align: top;
 }
@@ -7875,7 +8414,6 @@ table.sTypeTable.sTypeItem {
   min-width: 175px;
 }
 
-/* use in hmtl, templates, etc NOT in Browser Tree pop-ups*/
 #dotCMSErrors {
   background-color: #ffbcbc;
   border: 1px solid gray;
@@ -7973,7 +8511,6 @@ table.sTypeTable.sTypeItem {
   margin: 0 0 3px 0;
 }
 
-/* loading message for content search */
 .messageZone {
   position: fixed;
   z-index: 9999 !important;
@@ -8028,8 +8565,6 @@ table.sTypeTable.sTypeItem {
   cursor: pointer;
 }
 
-/* To display DotContentletValidationExceptions on content normal save */
-/* http://jira.dotmarketing.net/browse/DOTCMS-2273 */
 #saveContentMessages {
   background-color: #fff;
   border: 1px solid gray;
@@ -8053,7 +8588,6 @@ table.sTypeTable.sTypeItem {
   float: right;
 }
 
-/* Login as widget */
 .loginAsWrapper {
   display: none;
   position: absolute;
@@ -8077,7 +8611,6 @@ table.sTypeTable.sTypeItem {
   padding-bottom: 5px;
 }
 
-/* for the dotCMS ligthbox overlay utils */
 #dotCMS_lightbox_overlay {
   z-index: 1000;
   position: absolute;
@@ -8085,7 +8618,6 @@ table.sTypeTable.sTypeItem {
   background: url("/html/js/dotcms-utils/overlay.png");
 }
 
-/* Host folders selector */
 .dijitHostFoldersTreeWrapper {
   overflow: auto;
   position: absolute;
@@ -8101,7 +8633,6 @@ table.sTypeTable.sTypeItem {
   margin: 3px 3px 0 3px;
 }
 
-/* Role selector */
 .dijitRolesSelectTreeWrapper {
   overflow: auto;
   position: absolute;
@@ -8112,14 +8643,12 @@ table.sTypeTable.sTypeItem {
   float: none;
 }
 
-/* File Browser Dialog */
 .filterBox {
   padding: 8px 10px 8px 10px;
 }
 
 .selectableFile {
   cursor: pointer;
-  vertical-align: middle;
 }
 
 .selectableFile img {
@@ -8182,7 +8711,6 @@ table.sTypeTable.sTypeItem {
   visibility: hidden;
 }
 
-/* Dashboard classes */
 .siteOverview {
   font-weight: bold;
   text-align: center;
@@ -8301,7 +8829,6 @@ table.dojoxLegendNode td {
   height: 99%;
 }
 
-/* Dojo Color Picker */
 .dojoxColorPicker {
   padding: 8px;
   -moz-border-radius: 8px;
@@ -8444,7 +8971,6 @@ table.dojoxLegendNode td {
   font-size: 11px;
 }
 
-/* Image Picker */
 table.bgThumbnail {
   margin: 5px 10px 15px 10px;
 }
@@ -8472,7 +8998,6 @@ table.bgThumbnail td div a {
   cursor: pointer;
 }
 
-/* Help Dialog */
 div#_dotHelpMenu {
   color: red;
 }
@@ -8554,7 +9079,7 @@ div#_dotHelpMenu {
   background-color: #fff;
 }
 
-.navbar .horizontal li.level1:hover > .dropdown {
+.navbar .horizontal li.level1:hover>.dropdown {
   visibility: visible;
   opacity: 1;
 }
@@ -8563,7 +9088,7 @@ div#_dotHelpMenu {
   color: #c00;
 }
 
-.navbar .horizontal li.level1:last-child {
+.navbar .horizontal li.level1: last-child {
   border-right: solid 1px #DADADA;
 }
 
@@ -8597,7 +9122,6 @@ div#_dotHelpMenu {
   padding: 0;
 }
 
-/* CRUMBTRAIL STYLES 2.0 */
 .subNavCrumbTrail {
   display: none;
 }
@@ -8649,9 +9173,6 @@ div#_dotHelpMenu {
   padding: 5px 10px 6px 15px;
 }
 
-/* ----------------------------------- */
-/* -------------- ICONS -------------- */
-/* ----------------------------------- */
 .addIcon,
 .androidIcon,
 .appleIcon,
@@ -8659,6 +9180,7 @@ div#_dotHelpMenu {
 .archiveIcon,
 .arrowLeftIcon,
 .arrowRightIcon,
+.assetIcon,
 .assignWorkflowIcon,
 .backupIcon,
 .bgIcon,
@@ -8951,7 +9473,7 @@ div#_dotHelpMenu {
 }
 
 .dotAssetIcon:before {
-    content: "";
+  content: "";
 }
 
 .downloadIcon:before {
@@ -9605,11 +10127,6 @@ div#_dotHelpMenu {
   margin-right: 4px;
 }
 
-/*
-
-Styles for commons fields along the backend
-
-*/
 .glossaryTermPopup {
   border-radius: 2px;
   background-color: #FAFAFA;
@@ -9635,7 +10152,7 @@ Styles for commons fields along the backend
   width: 100%;
 }
 
-.fileAjaxUploader input[type="file"]::-webkit-file-upload-button {
+.fileAjaxUploader input[type="file"]:: -webkit-file-upload-button {
   background-color: var(--color-main);
   height: 36px;
   border: 0;
@@ -9643,7 +10160,7 @@ Styles for commons fields along the backend
   cursor: pointer;
 }
 
-.fileAjaxUploader input[type="file"]::-webkit-file-upload-button:hover {
+.fileAjaxUploader input[type="file"]:: -webkit-file-upload-button:hover {
   background-color: var(--color-main_mod);
 }
 
@@ -9717,13 +10234,17 @@ Styles for commons fields along the backend
   margin: 48px 0 24px;
 }
 
-#editor-toolbar, .editor-toolbar, .wysiwyg-tools {
+#editor-toolbar,
+.editor-toolbar,
+.wysiwyg-tools {
   display: flex;
   justify-content: space-between;
   margin-top: 8px;
 }
 
-#editor-toolbar .checkbox, .editor-toolbar .checkbox, .wysiwyg-tools .checkbox,
+#editor-toolbar .checkbox,
+.editor-toolbar .checkbox,
+.wysiwyg-tools .checkbox,
 #editor-toolbar .radio,
 .editor-toolbar .radio,
 .wysiwyg-tools .radio {
@@ -9759,7 +10280,7 @@ Styles for commons fields along the backend
   margin-right: 8px;
 }
 
-.key-value-form .dijit:last-child {
+.key-value-form .dijit: last-child {
   margin-right: 0;
 }
 
@@ -9820,7 +10341,7 @@ Styles for commons fields along the backend
   background-color: #ECEDEE;
 }
 
-.tagsOptions a:last-child {
+.tagsOptions a: last-child {
   border-bottom: none;
 }
 
@@ -9894,26 +10415,27 @@ Styles for commons fields along the backend
   margin-right: 16px;
 }
 
-/*
------------- FORMS ------------
-- Extract from: base.css
-- Handle vertical and horizontal forms
-*/
-#label, dl.vertical dt label, .fieldName {
+#label,
+dl.vertical dt label,
+.fieldName {
   color: #5B5B5B;
   display: block;
   font-size: 12px;
   margin-bottom: 4px;
 }
 
-#checkbox-radio, .radio, .checkbox {
+#checkbox-radio,
+.radio,
+.checkbox {
   align-items: center;
   display: flex;
   margin: 8px 0;
   white-space: nowrap;
 }
 
-#checkbox-radio > .dijit, .radio > .dijit, .checkbox > .dijit {
+#checkbox-radio>.dijit,
+.radio>.dijit,
+.checkbox>.dijit {
   margin-right: 4px;
 }
 
@@ -9926,58 +10448,77 @@ Styles for commons fields along the backend
   left: 2px;
 }
 
-#inline-form, .fileSelectorControls, .inline-form {
+#inline-form,
+.fileSelectorControls,
+.inline-form {
   display: flex;
   align-items: center;
 }
 
-#inline-form > label, .fileSelectorControls > label, .inline-form > label,
-#inline-form > div,
-.fileSelectorControls > div,
-.inline-form > div {
+#inline-form>label,
+.fileSelectorControls>label,
+.inline-form>label,
+#inline-form>div,
+.fileSelectorControls>div,
+.inline-form>div {
   margin-right: 8px;
   white-space: nowrap;
 }
 
-#inline-form > label, .fileSelectorControls > label, .inline-form > label {
+#inline-form>label,
+.fileSelectorControls>label,
+.inline-form>label {
   line-height: 36px;
   align-self: baseline;
 }
 
-#inline-form > .checkbox, .fileSelectorControls > .checkbox, .inline-form > .checkbox,
-#inline-form > .radio,
-.fileSelectorControls > .radio,
-.inline-form > .radio {
+#inline-form>.checkbox,
+.fileSelectorControls>.checkbox,
+.inline-form>.checkbox,
+#inline-form>.radio,
+.fileSelectorControls>.radio,
+.inline-form>.radio {
   margin-right: 16px;
 }
 
-#inline-form > .checkbox label, .fileSelectorControls > .checkbox label, .inline-form > .checkbox label,
-#inline-form > .radio label,
-.fileSelectorControls > .radio label,
-.inline-form > .radio label {
+#inline-form>.checkbox label,
+.fileSelectorControls>.checkbox label,
+.inline-form>.checkbox label,
+#inline-form>.radio label,
+.fileSelectorControls>.radio label,
+.inline-form>.radio label {
   line-height: 1;
 }
 
-#inline-form > .checkbox, .fileSelectorControls > .checkbox, .inline-form > .checkbox {
+#inline-form>.checkbox,
+.fileSelectorControls>.checkbox,
+.inline-form>.checkbox {
   flex: none;
 }
 
-#inline-form .dijit, .fileSelectorControls .dijit, .inline-form .dijit {
+#inline-form .dijit,
+.fileSelectorControls .dijit,
+.inline-form .dijit {
   margin-right: 8px;
 }
 
-#inline-form .dijit:last-child, .fileSelectorControls .dijit:last-child, .inline-form .dijit:last-child {
+#inline-form .dijit: last-child,
+.fileSelectorControls .dijit: last-child,
+.inline-form .dijit: last-child {
   margin-right: 0;
 }
 
-#inline-form .dijitRadio, .fileSelectorControls .dijitRadio, .inline-form .dijitRadio,
+#inline-form .dijitRadio,
+.fileSelectorControls .dijitRadio,
+.inline-form .dijitRadio,
 #inline-form .dijitCheckBox,
 .fileSelectorControls .dijitCheckBox,
 .inline-form .dijitCheckBox {
   margin-right: 4px;
 }
 
-.listingTable .radio, .listingTable .checkbox {
+.listingTable .radio,
+.listingTable .checkbox {
   margin: 0;
 }
 
@@ -9994,16 +10535,25 @@ Styles for commons fields along the backend
   margin-top: 5px;
 }
 
-dl#indexed dd, dl#listed dd, dl#required dd, dl#unique dd, dl#userSearchable dd {
+dl#indexed dd,
+dl#listed dd,
+dl#required dd,
+dl#unique dd,
+dl#userSearchable dd {
   min-height: auto;
   line-height: normal;
 }
 
-dl#indexed dd .dijitCheckBox, dl#listed dd .dijitCheckBox, dl#required dd .dijitCheckBox, dl#unique dd .dijitCheckBox, dl#userSearchable dd .dijitCheckBox {
+dl#indexed dd .dijitCheckBox,
+dl#listed dd .dijitCheckBox,
+dl#required dd .dijitCheckBox,
+dl#unique dd .dijitCheckBox,
+dl#userSearchable dd .dijitCheckBox {
   margin: 0;
 }
 
-dl.vertical dd, dl.vertical dt {
+dl.vertical dd,
+dl.vertical dt {
   clear: none;
   float: none;
   margin: 0;
@@ -10024,7 +10574,8 @@ dl.radio-check-one-line {
   margin-bottom: 16px;
 }
 
-dl.radio-check-one-line dt, dl.radio-check-one-line dd {
+dl.radio-check-one-line dt,
+dl.radio-check-one-line dd {
   float: none;
   margin: 0;
   min-height: 0;
@@ -10033,7 +10584,8 @@ dl.radio-check-one-line dt, dl.radio-check-one-line dd {
   width: auto;
 }
 
-dl.radio-check-one-line dd .radio, dl.radio-check-one-line dd .checkbox {
+dl.radio-check-one-line dd .radio,
+dl.radio-check-one-line dd .checkbox {
   display: inline-block;
   margin: 0;
 }
@@ -10063,13 +10615,17 @@ dd .buttonCaption {
   padding-left: 8px !important;
 }
 
-#form-horizontal-flexbox dl, .form-horizontal dl {
+#form-horizontal-flexbox dl,
+.form-horizontal dl {
   display: flex;
   margin-bottom: 8px;
   min-height: 36px;
 }
 
-#form-horizontal-flexbox dd, .form-horizontal dd, #form-horizontal-flexbox dt, .form-horizontal dt {
+#form-horizontal-flexbox dd,
+.form-horizontal dd,
+#form-horizontal-flexbox dt,
+.form-horizontal dt {
   clear: none;
   float: none;
   margin: 0;
@@ -10079,18 +10635,23 @@ dd .buttonCaption {
   width: auto;
 }
 
-#form-horizontal-flexbox dd, .form-horizontal dd {
+#form-horizontal-flexbox dd,
+.form-horizontal dd {
   align-self: center;
 }
 
-#form-horizontal-flexbox dt, .form-horizontal dt {
+#form-horizontal-flexbox dt,
+.form-horizontal dt {
   line-height: 1;
   padding: 9px 16px 0;
   text-align: right;
   width: 150px;
 }
 
-#form-horizontal-flexbox dt.checkbox, .form-horizontal dt.checkbox, #form-horizontal-flexbox dt.radio, .form-horizontal dt.radio {
+#form-horizontal-flexbox dt.checkbox,
+.form-horizontal dt.checkbox,
+#form-horizontal-flexbox dt.radio,
+.form-horizontal dt.radio {
   justify-content: flex-end;
   padding-top: 0;
 }
@@ -10099,7 +10660,7 @@ dd .buttonCaption {
   display: table;
 }
 
-#form-horizontal-table > div {
+#form-horizontal-table>div {
   display: table-row-group;
 }
 
@@ -10107,7 +10668,8 @@ dd .buttonCaption {
   display: table-row;
 }
 
-#form-horizontal-table dd, #form-horizontal-table dt {
+#form-horizontal-table dd,
+#form-horizontal-table dt {
   display: table-cell;
 }
 
@@ -10125,13 +10687,13 @@ dd .buttonCaption {
   position: relative;
 }
 
-.fieldName > a {
+.fieldName>a {
   position: absolute;
   left: 0;
   top: -2px;
 }
 
-.fieldName > a + span + span {
+.fieldName>a+span+span {
   padding-left: 20px;
 }
 
@@ -10153,7 +10715,7 @@ dd .buttonCaption {
   padding-left: 0;
 }
 
-.editcontentlet__col:last-child {
+.editcontentlet__col: last-child {
   padding-right: 0;
 }
 
@@ -10185,7 +10747,6 @@ dd .buttonCaption {
   padding: 4px;
 }
 
-/* PORTLET STYLES 2.0 */
 .portlet-main {
   padding: 24px 0;
 }
@@ -10208,7 +10769,10 @@ dd .buttonCaption {
   overflow: auto;
 }
 
-.portlet-pagination, .portlet-toolbar, .portlet-toolbar__actions, .portlet-toolbar__info {
+.portlet-pagination,
+.portlet-toolbar,
+.portlet-toolbar__actions,
+.portlet-toolbar__info {
   display: flex;
   justify-content: space-between;
 }
@@ -10231,7 +10795,7 @@ dd .buttonCaption {
   margin: 0 0 16px;
 }
 
-.portlet-toolbar > * {
+.portlet-toolbar>* {
   align-self: center;
 }
 
@@ -10259,7 +10823,7 @@ dd .buttonCaption {
   margin: 0;
 }
 
-.portlet-toolbar__center + .portlet-toolbar__actions {
+.portlet-toolbar__center+.portlet-toolbar__actions {
   flex: 1;
   justify-content: flex-end;
 }
@@ -10300,7 +10864,7 @@ dd .buttonCaption {
   margin-bottom: 16px;
 }
 
-.callOutBox2 p:last-child {
+.callOutBox2 p: last-child {
   margin-bottom: 0;
 }
 
@@ -10347,7 +10911,6 @@ dd .buttonCaption {
   padding: 8px;
 }
 
-/* WEEK VIEW STYLES */
 .weeklyCalendarBody td {
   min-height: 400px;
   height: auto;
@@ -10361,37 +10924,41 @@ dd .buttonCaption {
   text-align: left;
 }
 
-/* DAY VIEW STYLES */
-#dailyEvents h3, #ongoingEvents h3 {
+#dailyEvents h3,
+#ongoingEvents h3 {
   background: #FAFAFA;
   padding: 8px;
   border-bottom: 1px solid #ECEDEE;
   margin: 0;
 }
 
-#dailyEvents ul, #ongoingEvents ul {
+#dailyEvents ul,
+#ongoingEvents ul {
   margin: 0;
   padding: 0;
 }
 
-#dailyEvents ul:last-child li:last-child, #ongoingEvents ul:last-child li:last-child {
+#dailyEvents ul: last-child li: last-child,
+#ongoingEvents ul: last-child li: last-child {
   border-bottom: none;
 }
 
-#dailyEvents li, #ongoingEvents li {
+#dailyEvents li,
+#ongoingEvents li {
   padding: 8px;
   margin: 0;
   border-bottom: 1px solid #ECEDEE;
 }
 
 #dailyEvents li [class$="Icon"],
-#dailyEvents li [class*="Icon"], #ongoingEvents li [class$="Icon"],
+#dailyEvents li [class*="Icon"],
+#ongoingEvents li [class$="Icon"],
 #ongoingEvents li [class*="Icon"] {
   margin-right: 4px;
 }
 
-/* MONTH VIEW STYLES */
-.calendarBody, .weeklyCalendarBody td {
+.calendarBody,
+.weeklyCalendarBody td {
   min-height: 100px;
   height: auto;
   height: 100px;
@@ -10454,7 +11021,6 @@ dd .buttonCaption {
   font-size: 77%;
 }
 
-/* NAV MENU STYLES */
 .navDay a,
 .navLastDay a,
 .navSelectedDay a {
@@ -10516,7 +11082,9 @@ dd .buttonCaption {
   overflow: hidden;
 }
 
-#eventDetailDate, #eventDetailTags, #eventDetailCategories {
+#eventDetailDate,
+#eventDetailTags,
+#eventDetailCategories {
   padding-left: 10px;
 }
 
@@ -10558,7 +11126,8 @@ dd .buttonCaption {
   border: 1px solid #ECEDEE;
 }
 
-#categoriesFilterBox, #tagsFilterBox {
+#categoriesFilterBox,
+#tagsFilterBox {
   padding: 10px 5px;
 }
 
@@ -10568,21 +11137,25 @@ dd .buttonCaption {
   text-align: left;
 }
 
-.tagFilterLink, .categoryFilterLink {
+.tagFilterLink,
+.categoryFilterLink {
   padding-top: 5px;
 }
 
-.tagFilterLink a, .categoryFilterLink a {
+.tagFilterLink a,
+.categoryFilterLink a {
   font-weight: normal;
   color: black;
 }
 
-.tagFilterLink a:hover, .categoryFilterLink a:hover {
+.tagFilterLink a:hover,
+.categoryFilterLink a:hover {
   font-weight: normal;
   color: black;
 }
 
-.tagFilterLink a:hover, .categoryFilterLink a:hover {
+.tagFilterLink a:hover,
+.categoryFilterLink a:hover {
   text-decoration: underline;
 }
 
@@ -10615,11 +11188,14 @@ dd .buttonCaption {
   text-align: center;
 }
 
-.whenListView, .ratingListView, .tagsListView {
+.whenListView,
+.ratingListView,
+.tagsListView {
   padding-left: 21px;
 }
 
-a.category_higlighted, a.tag_higlighted {
+a.category_higlighted,
+a.tag_higlighted {
   font-weight: bolder;
 }
 
@@ -10659,7 +11235,8 @@ a.category_higlighted, a.tag_higlighted {
   width: 100%;
 }
 
-.network-action__list th, .network-action__list td {
+.network-action__list th,
+.network-action__list td {
   padding: 4px;
 }
 
@@ -10708,7 +11285,8 @@ a.category_higlighted, a.tag_higlighted {
   width: 100%;
 }
 
-.network-action__list th, .network-action__list td {
+.network-action__list th,
+.network-action__list td {
   padding: 4px;
 }
 
@@ -10733,11 +11311,12 @@ a.category_higlighted, a.tag_higlighted {
   min-height: 200px;
   text-overflow: clip;
   white-space: nowrap;
-  font-family: Monaco,Menlo,sans-serif;
+  font-family: Monaco, Menlo, sans-serif;
   font-size: 12px;
 }
 
-.aceTextTemplate, .aceTall {
+.aceTextTemplate,
+.aceTall {
   height: 600px;
 }
 
@@ -10749,7 +11328,7 @@ a.category_higlighted, a.tag_higlighted {
   width: 100%;
   text-overflow: clip;
   white-space: nowrap;
-  font-family: Monaco,Menlo,sans-serif;
+  font-family: Monaco, Menlo, sans-serif;
   font-size: 12px;
 }
 
@@ -10823,7 +11402,7 @@ a.category_higlighted, a.tag_higlighted {
   color: #161616;
 }
 
-.content-edit-actions a:last-of-type {
+.content-edit-actions a: last-of-type {
   margin-bottom: 0px;
   border-bottom: none;
 }
@@ -10836,7 +11415,8 @@ a.category_higlighted, a.tag_higlighted {
   width: 100%;
 }
 
-.content-edit-workflow table td, .content-edit-workflow table th {
+.content-edit-workflow table td,
+.content-edit-workflow table th {
   padding-bottom: 4px;
   padding-top: 4px;
 }
@@ -10979,7 +11559,8 @@ a.category_higlighted, a.tag_higlighted {
   white-space: nowrap;
 }
 
-.content-type__fields-list-header, .content-type__fields-list-row {
+.content-type__fields-list-header,
+.content-type__fields-list-row {
   border-bottom: 1px solid #ECEDEE;
   display: flex;
   justify-content: space-between;
@@ -11225,7 +11806,7 @@ a.category_higlighted, a.tag_higlighted {
   margin-bottom: 16px;
 }
 
-.view-users__additional-info .dojoxGridRowTable td:last-child {
+.view-users__additional-info .dojoxGridRowTable td: last-child {
   text-align: center;
 }
 
@@ -11329,7 +11910,11 @@ a.category_higlighted, a.tag_higlighted {
   padding-left: 24px;
 }
 
-.view-actions .container-fluid, .view-actions .container-fluid > .row:last-child, .view-actions > form, .view-actions .view-actions__permissions, .view-actions .view-actions__sub-actions {
+.view-actions .container-fluid,
+.view-actions .container-fluid>.row: last-child,
+.view-actions>form,
+.view-actions .view-actions__permissions,
+.view-actions .view-actions__sub-actions {
   height: 90vh;
 }
 
@@ -11368,14 +11953,16 @@ a.category_higlighted, a.tag_higlighted {
   border-top: 1px solid #ECEDEE;
 }
 
-.view-actions__permissions h3, .view-actions__sub-actions h3 {
+.view-actions__permissions h3,
+.view-actions__sub-actions h3 {
   background-color: #ECEDEE;
   line-height: 40px;
   padding-left: 16px;
   margin-bottom: 32px;
 }
 
-.view-actions__permissions .row, .view-actions__sub-actions .row {
+.view-actions__permissions .row,
+.view-actions__sub-actions .row {
   margin-bottom: 8px;
 }
 
@@ -11400,7 +11987,8 @@ a.category_higlighted, a.tag_higlighted {
   }
 }
 
-.tag-manager__tags-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell:first-child, .tag-manager__tags-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell:first-child {
+.tag-manager__tags-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell:first-child,
+.tag-manager__tags-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell:first-child {
   width: 40px !important;
   padding-left: 24px;
 }
@@ -11431,7 +12019,7 @@ a.category_higlighted, a.tag_higlighted {
   text-decoration: none;
 }
 
-.categories-selector__breadcrumbs a:last-child {
+.categories-selector__breadcrumbs a: last-child {
   color: #161616;
 }
 
@@ -11440,7 +12028,7 @@ a.category_higlighted, a.tag_higlighted {
   justify-content: space-between;
 }
 
-.categories-selector-toolbar-actions-secondary > div {
+.categories-selector-toolbar-actions-secondary>div {
   display: flex;
   justify-content: flex-end;
 }
@@ -11491,6 +12079,34 @@ a.category_higlighted, a.tag_higlighted {
   padding: 0 16px;
 }
 
+.file-selector-tree .selectableFile {
+  align-items: center;
+  cursor: pointer;
+}
+
+.file-selector-tree .selectableFile .thumbnail {
+  width: 48px;
+  margin-right: 8px;
+}
+
+.file-selector-tree .thumbnail img {
+  max-width: 100%;
+  margin: 0;
+}
+
+.file-selector-tree__views-menu {
+  align-items: center;
+}
+
+.file-selector-tree__table {
+  margin-bottom: 80px;
+  overflow-y: scroll;
+}
+
+.file-selector-tree .portlet-main {
+  overflow-y: inherit;
+}
+
 .file-selector-tree.dijitDialog {
   height: 90vh;
   width: 90vw;
@@ -11529,7 +12145,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .file-selector-tree__pagination.portlet-pagination {
-  background: #FFFFFF;
+  background: #ffffff;
   padding: 16px;
   position: absolute;
   width: 100%;
@@ -11552,6 +12168,7 @@ a.category_higlighted, a.tag_higlighted {
   display: flex;
   height: 84vh !important;
   width: calc(100% - 200px) !important;
+  overflow: inherit;
 }
 
 .file-selector-tree__sidebar {
@@ -11591,20 +12208,84 @@ a.category_higlighted, a.tag_higlighted {
   margin: 0 4px;
 }
 
+.file-selector-tree__card-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-rows: repeat(auto-fill, 220px);
+  grid-gap: 0.75rem;
+  margin: 2rem;
+  width: 100%;
+}
+
+.file-selector-tree__card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 220px;
+  transition: box-shadow 100ms;
+  margin: 0.25rem;
+}
+
+.file-selector-tree__card:hover {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
+
+.file-selector-tree__card .thumbnail {
+  position: relative;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  width: 100%;
+  height: 100%;
+}
+
+.file-selector-tree__card .icon {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-selector-tree__card div[class$="Icon"] {
+  font-size: 72px;
+  height: 72px;
+  line-height: 1;
+  width: 72px;
+}
+
+.file-selector-tree__card .thumbnail img {
+  width: 0px;
+  height: 0px;
+  position: absolute;
+}
+
+.file-selector-tree__card .label {
+  font-size: 16px;
+  padding: 1.5rem 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
 .host-list__item a {
   color: #161616;
   text-decoration: none;
 }
 
-.host-list__item .hostArchivedIcon + a {
+.host-list__item .hostArchivedIcon+a {
   color: #CB3927;
 }
 
-.host-list__item .hostDefaultIcon + a {
+.host-list__item .hostDefaultIcon+a {
   color: var(--color-main);
 }
 
-.host-list__item .hostStoppedIcon + a {
+.host-list__item .hostStoppedIcon+a {
   color: #C5C5C5;
 }
 
@@ -11742,7 +12423,8 @@ a.category_higlighted, a.tag_higlighted {
   width: 100%;
 }
 
-.permissionTableTitle td, .permissionTableTitle th,
+.permissionTableTitle td,
+.permissionTableTitle th,
 .permissionTable td,
 .permissionTable th,
 .accordionEntry td,
@@ -11889,7 +12571,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 #imageToolIframe {
-  /*border:1px solid blue;*/
   display: block;
   position: absolute;
   left: 0px;
@@ -11921,7 +12602,6 @@ a.category_higlighted, a.tag_higlighted {
   bottom: 0px;
   left: 0px;
   right: 0px;
-  /*border:1px solid blue;*/
 }
 
 #exif {
@@ -11957,11 +12637,8 @@ a.category_higlighted, a.tag_higlighted {
   display: none;
 }
 
-/* part of the widget: drag handle styles */
 .imageDragger {
-  /* required: */
   position: absolute;
-  /* optional: */
   cursor: move;
   z-index: 999;
   background: #fff;
@@ -12112,11 +12789,9 @@ a.category_higlighted, a.tag_higlighted {
   right: 8px;
 }
 
-/*********
 
-Resize Handle
+/*********Resize Handle********/
 
-********/
 .dojoxResizeHandle {
   float: right;
   position: absolute;
@@ -12157,7 +12832,8 @@ Resize Handle
   margin-right: 8px;
 }
 
-#search_form, #borderContainer {
+#search_form,
+#borderContainer {
   height: 100%;
 }
 
@@ -12177,7 +12853,7 @@ Resize Handle
   padding: 2px 6px 2px 4px;
   text-decoration: none;
   text-transform: uppercase;
-  transition: background-color 150ms ease,color 150ms ease;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 .api-link:hover {
@@ -12185,13 +12861,21 @@ Resize Handle
   color: #fff;
 }
 
-#cell-actions, .listingTable .listingTable__actions, .content-type__cell-actions, .job-scheduler__host-list-actions, .license-manager__listing-action {
+#cell-actions,
+.listingTable .listingTable__actions,
+.content-type__cell-actions,
+.job-scheduler__host-list-actions,
+.license-manager__listing-action {
   text-align: center;
   width: 65px;
   white-space: nowrap;
 }
 
-#cell-actions a, .listingTable .listingTable__actions a, .content-type__cell-actions a, .job-scheduler__host-list-actions a, .license-manager__listing-action a {
+#cell-actions a,
+.listingTable .listingTable__actions a,
+.content-type__cell-actions a,
+.job-scheduler__host-list-actions a,
+.license-manager__listing-action a {
   display: inline-block;
   margin: 0 4px;
   text-decoration: none;
@@ -12221,7 +12905,6 @@ body {
   font-weight: normal;
   font-style: normal;
   font-size: 24px;
-  /* Preferred icon size */
   display: inline-block;
   line-height: 1;
   text-transform: none;
@@ -12229,12 +12912,8 @@ body {
   word-wrap: normal;
   white-space: nowrap;
   direction: ltr;
-  /* Support for all WebKit browsers. */
   -webkit-font-smoothing: antialiased;
-  /* Support for Safari and Chrome. */
   text-rendering: optimizeLegibility;
-  /* Support for Firefox. */
   -moz-osx-font-smoothing: grayscale;
-  /* Support for IE. */
   font-feature-settings: "liga";
 }
