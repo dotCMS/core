@@ -1,6 +1,7 @@
 package com.dotcms.vanityurl.cache;
 
 import java.util.List;
+import java.util.Optional;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -23,8 +24,8 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
 
     private DotCacheAdministrator cache;
 
-    private static final String PRIMARY_GROUP = "VanityURLCache";
-    private static final String VANITY_URL_404_GROUP = "VanityURL404Cache";
+    private static final String VANITY_URL_SITE_GROUP = "VanityURLSiteCache";
+    private static final String VANITY_URL_DIRECT_GROUP = "VanityURLDirectCache";
 
 
 
@@ -35,19 +36,19 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     @Override
     public String getPrimaryGroup() {
 
-        return PRIMARY_GROUP;
+        return VANITY_URL_SITE_GROUP;
     }
 
     @Override
     public String[] getGroups() {
 
-        return new String[] {PRIMARY_GROUP, VANITY_URL_404_GROUP};
+        return new String[] {VANITY_URL_SITE_GROUP, VANITY_URL_DIRECT_GROUP};
     }
 
     @Override
     public void clearCache() {
-        cache.flushGroup(PRIMARY_GROUP);
-        cache.flushGroup(VANITY_URL_404_GROUP);
+        cache.flushGroup(VANITY_URL_SITE_GROUP);
+        cache.flushGroup(VANITY_URL_DIRECT_GROUP);
 
     }
 
@@ -88,47 +89,53 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
             return;
         }
 
-        cache.remove(key(vanityHost, lang), PRIMARY_GROUP);
-        cache.flushGroup(VANITY_URL_404_GROUP);
+        cache.remove(key(vanityHost, lang), VANITY_URL_SITE_GROUP);
+        cache.flushGroup(VANITY_URL_DIRECT_GROUP);
 
     }
 
 
     @Override
-    public void put(final Host host, final Language lang, final List<CachedVanityUrl> vanityURLs) {
-        if (host == null || host.getIdentifier()==null || lang == null || vanityURLs == null) {
+    public void putSiteMappings(final Host host, final Language lang, final List<CachedVanityUrl> vanityURLs) {
+        if (host == null || host.getIdentifier() == null || lang == null || vanityURLs == null) {
             return;
         }
-        cache.put(key(host, lang), vanityURLs, PRIMARY_GROUP);
-        cache.flushGroup(VANITY_URL_404_GROUP);
+        cache.put(key(host, lang), vanityURLs, VANITY_URL_SITE_GROUP);
+        cache.flushGroup(VANITY_URL_DIRECT_GROUP);
     }
 
     @Override
-    public List<CachedVanityUrl> getCachedVanityUrls(final Host host, final Language lang) {
-        if (host == null || lang == null || host.getIdentifier()==null) {
+    public List<CachedVanityUrl> getSiteMappings(final Host host, final Language lang) {
+        if (host == null || lang == null || host.getIdentifier() == null) {
             return null;
         }
         final String key = key(host, lang);
 
-        return (List<CachedVanityUrl>) cache.getNoThrow(key, PRIMARY_GROUP);
+        return (List<CachedVanityUrl>) cache.getNoThrow(key, VANITY_URL_SITE_GROUP);
 
     }
 
-
+    @Override
+    public Optional<CachedVanityUrl> getDirectMapping(final Host host, final Language lang, final String url) {
+        Optional<CachedVanityUrl> cachedVanity = (Optional<CachedVanityUrl>) cache.getNoThrow(key(host, lang, url), VANITY_URL_DIRECT_GROUP);
+        return cachedVanity !=null? cachedVanity : Optional.empty();
+    }
+    
 
     @Override
     public boolean is404(final Host host, final Language lang, final String url) {
 
-        return cache.getNoThrow(key(host, lang, url), VANITY_URL_404_GROUP) != null;
+        Optional<CachedVanityUrl> cachedVanity = (Optional<CachedVanityUrl>) cache.getNoThrow(key(host, lang, url), VANITY_URL_DIRECT_GROUP);
+        return cachedVanity !=null && !cachedVanity.isPresent();
     }
+
 
     @Override
-    public void put404(final Host host, final Language lang, final String url) {
+    public void putDirectMapping(final Host host, final Language lang, final String url, final Optional<CachedVanityUrl> vanityUrl) {
 
-        cache.put(key(host, lang, url), Boolean.TRUE, VANITY_URL_404_GROUP);
+        cache.put(key(host, lang, url), vanityUrl, VANITY_URL_DIRECT_GROUP);
 
     }
-
 
 
     String key(final Host host, final Language lang) {
@@ -145,10 +152,5 @@ public class VanityUrlCacheImpl extends VanityUrlCache {
     }
 
 
-    
-    
-    
-    
-    
 
 }

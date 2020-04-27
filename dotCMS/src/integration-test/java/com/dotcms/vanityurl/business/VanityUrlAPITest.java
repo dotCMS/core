@@ -179,10 +179,10 @@ public class VanityUrlAPITest {
 
             Assert.assertTrue(vanityCached.isPresent());
 
-            Assert.assertEquals(site, vanityCached.get().getSiteId());
-            Assert.assertEquals(uri, vanityCached.get().getUrl());
-            Assert.assertEquals(forwardTo, vanityCached.get().getForwardTo());
-            Assert.assertEquals(action, vanityCached.get().getResponse());
+            Assert.assertEquals(site, vanityCached.get().siteId);
+            Assert.assertEquals(uri, vanityCached.get().url);
+            Assert.assertEquals(forwardTo, vanityCached.get().forwardTo);
+            Assert.assertEquals(action, vanityCached.get().response);
 
 
             vanityCached = vanityUrlAPI.resolveVanityUrl(uri2, defaultHost, defaultLanguage);
@@ -268,9 +268,9 @@ public class VanityUrlAPITest {
             CachedVanityUrl vanityURLCached =  vanity.get();
             Assert.assertFalse(vanityUrlCache.is404(defaultHost, defaultLanguage, url));
             
-            Assert.assertEquals(vanityURLCached.getUrl(),url);
+            Assert.assertEquals(vanityURLCached.url,url);
 
-            Assert.assertEquals(vanityURLCached.getForwardTo(),forwardTo);
+            Assert.assertEquals(vanityURLCached.forwardTo,forwardTo);
 
             final String url2 = "/testing" + System.currentTimeMillis();
             Contentlet vanityURLContentletUpdated = contentletAPI.checkout(vanityURLContentlet.getInode(), user, false);
@@ -281,14 +281,14 @@ public class VanityUrlAPITest {
             vanity = vanityUrlAPI.resolveVanityUrl(url, defaultHost, defaultLanguage);
 
             vanityURLCached = vanityUrlCache
-                .getCachedVanityUrls(defaultHost, defaultLanguage)
+                .getSiteMappings(defaultHost, defaultLanguage)
                 .stream()
-                .filter(vc->vc.getUrl().equals(url2))
+                .filter(vc->vc.url.equals(url2))
                 .findFirst().get();
 
             Assert.assertNotNull(vanityURLCached);
 
-            Assert.assertEquals(url2, vanityURLCached.getUrl());
+            Assert.assertEquals(url2, vanityURLCached.url);
 
     }
 
@@ -317,14 +317,14 @@ public class VanityUrlAPITest {
         Assert.assertNotNull(v1);
         Assert.assertTrue(v1.isPresent());
 
-        Assert.assertEquals(v1.get().getForwardTo(),forwardTo);
+        Assert.assertEquals(v1.get().forwardTo,forwardTo);
 
         final Optional<CachedVanityUrl> v2 = vanityUrlAPI.resolveVanityUrl(testUri2, host, defaultLanguage);
         Assert.assertNotNull(v2);
         Assert.assertTrue(v2.isPresent());
-        Assert.assertEquals(v2.get().getForwardTo(),forwardTo);
+        Assert.assertEquals(v2.get().forwardTo,forwardTo);
 
-        final List<CachedVanityUrl> vanityURLCached = vanityUrlCache.getCachedVanityUrls(host, defaultLanguage);
+        final List<CachedVanityUrl> vanityURLCached = vanityUrlCache.getSiteMappings(host, defaultLanguage);
 
         Assert.assertNotNull(vanityURLCached);
         Assert.assertTrue(!vanityURLCached.isEmpty());

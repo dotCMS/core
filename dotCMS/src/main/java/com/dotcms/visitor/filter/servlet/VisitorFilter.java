@@ -114,7 +114,7 @@ public class VisitorFilter implements Filter {
 
         Optional<CachedVanityUrl> vanityUrl = APILocator.getVanityUrlAPI().resolveVanityUrl(uri, host, language);
         if(vanityUrl.isPresent()) {
-            request.setAttribute(VANITY_URL_ATTRIBUTE, vanityUrl.get().getVanityUrlId());
+            request.setAttribute(VANITY_URL_ATTRIBUTE, vanityUrl.get().vanityUrlId);
         }
             
         

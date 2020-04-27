@@ -12,8 +12,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
-import com.dotcms.vanityurl.handler.DefaultVanityUrlHandler;
-import com.dotcms.vanityurl.handler.VanityUrlHandler;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrlResult;
 import com.dotmarketing.beans.Host;
@@ -33,7 +31,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 // todo: change this to an interceptor
 public class VanityURLFilter implements Filter {
 
-  private final VanityUrlHandler vanityUrlHandler;
+
   private final CMSUrlUtil urlUtil;
   private final HostWebAPI hostWebAPI;
   private final LanguageWebAPI languageWebAPI;
@@ -41,15 +39,15 @@ public class VanityURLFilter implements Filter {
 
   public VanityURLFilter() {
 
-    this(new DefaultVanityUrlHandler(), CMSUrlUtil.getInstance(), WebAPILocator.getHostWebAPI(), WebAPILocator.getLanguageWebAPI(),
+    this(CMSUrlUtil.getInstance(), WebAPILocator.getHostWebAPI(), WebAPILocator.getLanguageWebAPI(),
        APILocator.getVanityUrlAPI());
   }
 
   @VisibleForTesting
-  protected VanityURLFilter(final VanityUrlHandler vanityUrlHandler, final CMSUrlUtil urlUtil, final HostWebAPI hostWebAPI,
+  protected VanityURLFilter( final CMSUrlUtil urlUtil, final HostWebAPI hostWebAPI,
       final LanguageWebAPI languageWebAPI, final VanityUrlAPI vanityApi) {
     this.vanityApi = vanityApi;
-    this.vanityUrlHandler = vanityUrlHandler;
+
     this.urlUtil = urlUtil;
     this.hostWebAPI = hostWebAPI;
     this.languageWebAPI = languageWebAPI;
@@ -79,12 +77,13 @@ public class VanityURLFilter implements Filter {
           final Optional<CachedVanityUrl> cachedVanity = vanityApi.resolveVanityUrl(uri, host, language);
           
           if (cachedVanity.isPresent()) {
-              final VanityUrlResult vanityUrlResult = vanityUrlHandler.handle(cachedVanity.get(), uri, response);
+              final VanityUrlResult vanityUrlResult = cachedVanity.get().handle( uri, response);
               // If the handler already resolved the requested URI we stop the processing here
               if (vanityUrlResult.isResolved()) {
                 return;
               }
               filterChain.doFilter(new VanityUrlRequestWrapper(request, vanityUrlResult), response);
+              return;
           }
 
       }

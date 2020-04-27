@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 /**
@@ -86,7 +87,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
    */
   private void populateVanityURLsCacheBySite(final Host host) {
     for (Language lang : languageAPI.getLanguages()) {
-      cache.put(host, lang, findInDb(host, lang));
+      cache.putSiteMappings(host, lang, findInDb(host, lang));
     }
   }
 
@@ -138,13 +139,13 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   
   
   private List<CachedVanityUrl> load(Host host, Language lang){
-    List<CachedVanityUrl> cachedVanities = cache.getCachedVanityUrls(host, lang);
+    List<CachedVanityUrl> cachedVanities = cache.getSiteMappings(host, lang);
     if(cachedVanities==null) {
       synchronized (VanityUrlAPI.class) {
-        cachedVanities = cache.getCachedVanityUrls(host, lang);
+        cachedVanities = cache.getSiteMappings(host, lang);
         if(cachedVanities==null) {
           cachedVanities=findInDb(host, lang);
-          cache.put(host, lang, findInDb(host, lang));
+          cache.putSiteMappings(host, lang, findInDb(host, lang));
         }
       }
     }
@@ -163,24 +164,35 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     }
 
 
-    // tries the site first
-    Optional<CachedVanityUrl> matched =load(host, lang).parallelStream().filter(vc -> vc.getPattern().matcher(url).find()).findFirst();
+    // tries specific site first
+    Optional<CachedVanityUrl> matched =load(host, lang).parallelStream().filter(vc -> vc.url.equalsIgnoreCase(url) || vc.pattern.matcher(url).find()).findFirst();
 
     
     // tries SYSTEM_HOST
     if (!matched.isPresent()) {
-      matched = load(host, lang).parallelStream().filter(vc -> vc.getPattern().matcher(url).find()).findFirst();
+      matched = load(APILocator.systemHost(), lang).parallelStream().filter(vc -> vc.pattern.matcher(url).find()).findFirst();
     }
 
+    // if this is the /cmsHomePage vanity
+    if (!matched.isPresent() && StringPool.FORWARD_SLASH.equals(url)) {
+        matched = resolveVanityUrl(LEGACY_CMS_HOME_PAGE, host, lang);
+    }
+    
+    
+    
+    
     // try language fallback
     if (!matched.isPresent() && !languageAPI.getDefaultLanguage().equals(lang)) {
       matched = resolveVanityUrl(url, host, languageAPI.getDefaultLanguage());
     }
+    
 
-    // nothing? stick this in the 404 cache
-    if (!matched.isPresent()) {
-      cache.put404(host, lang, url);
-    }
+    
+    
+
+    // whatever we have, stick it into the cache so it can be remembered
+    cache.putDirectMapping(host, lang, url,matched);
+
 
     return matched;
   } // isVanityUrl
