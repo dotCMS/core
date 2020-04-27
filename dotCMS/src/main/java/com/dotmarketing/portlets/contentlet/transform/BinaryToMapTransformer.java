@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -79,7 +81,9 @@ public class BinaryToMapTransformer implements FieldsToMapTransformer {
         final Map<String, Object> map = new HashMap<>();
 
         map.put("versionPath", "/dA/" + APILocator.getShortyAPI().shortify(con.getInode()) + "/" + field.variable() + "/" + file.getName());
-        map.put("idPath", "/dA/" + APILocator.getShortyAPI().shortify(con.getIdentifier()) + "/" + field.variable() + "/" + file.getName());
+        final int contentLanguageSize = Try.of(()->APILocator.getLanguageAPI().getLanguages()).getOrElse(Collections.emptyList()).size();
+        map.put("idPath", "/dA/" + APILocator.getShortyAPI().shortify(con.getIdentifier()) + "/" + field.variable() + "/" + file.getName()
+                + (contentLanguageSize > 1?"?language_id=" + con.getLanguageId(): StringPool.BLANK));
         map.put("name", file.getName());
         map.put("size", file.length());
         map.put("mime", Config.CONTEXT.getMimeType(file.getName()));

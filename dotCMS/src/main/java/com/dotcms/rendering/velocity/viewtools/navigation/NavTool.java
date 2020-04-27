@@ -26,11 +26,13 @@ import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
 
 import com.liferay.util.StringPool;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -77,13 +79,17 @@ public class NavTool implements ViewTool {
             path = path.substring(0, path.lastIndexOf("/"));
         }
 
-        Folder folder = !path.equals("/") ? APILocator.getFolderAPI()
+        final Folder originalFolder = !path.equals("/") ? APILocator.getFolderAPI()
             .findFolderByPath(path, host, systemUserParam, true)
                 : APILocator.getFolderAPI()
                     .findSystemFolder();
-        if (folder == null || !UtilMethods.isSet(folder.getIdentifier())) {
+
+        if (originalFolder == null || !UtilMethods.isSet(originalFolder.getIdentifier())) {
             return null;
         }
+
+        Folder folder = getDefensiveCopyOfFolder(originalFolder);
+
         NavResult result = CacheLocator.getNavToolCache()
             .getNav(host.getIdentifier(), folder.getInode(), languageId);
         if (result != null) {
@@ -213,6 +219,22 @@ public class NavTool implements ViewTool {
 
             return new NavResultHydrated(result, this.context);
         }
+    }
+
+    /**
+     * Makes a defensive copy of the given folder to avoid mutating cached version
+     * @param originalFolder folder to make the defensive copy from
+     * @return defensive copy
+     */
+    private Folder getDefensiveCopyOfFolder(Folder originalFolder) {
+        Folder folder = new Folder();
+        try {
+            BeanUtils.copyProperties(folder, originalFolder);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            folder = originalFolder;
+            Logger.warnAndDebug(NavTool.class,"Defensive copy failed. Using original object", e);
+        }
+        return folder;
     }
 
     private void addFolderToNav(Host host, long languageId, Folder folder, List<NavResult> children,

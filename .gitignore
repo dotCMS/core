@@ -47,7 +47,7 @@ dotCMS/src/integration-test/resources/starter.zip
 .gradle/
 /*.local.*
 dotCMS/src/main/webapp/dotAdmin
-dotCMS/src/main/webapp/custom-elements
+dotCMS/src/main/webapp/dotcms-webcomponents
 dotCMS/bin/*
 dotCMS/classes
 

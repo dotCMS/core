@@ -272,7 +272,8 @@ public class ExceptionUtil {
             if (ve.hasBadTypeErrors()) {
                 final List<Field> reqs = ve.getNotValidFields().get(VALIDATION_FAILED_BADTYPE);
                 for (final Field field : reqs) {
-                    String errorString = LanguageUtil.get(user, "message.contentlet.type");
+                    String errorString = UtilMethods.isNotSet(ve.getMessage())?
+                            LanguageUtil.get(user, "message.contentlet.type"): ve.getMessage();
                     errorString = errorString.replace("{0}", field.getFieldName());
                     contentValidationErrors
                             .computeIfAbsent(VALIDATION_FAILED_BADTYPE, k -> new ArrayList<>())
